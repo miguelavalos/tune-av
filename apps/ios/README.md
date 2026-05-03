@@ -9,7 +9,7 @@ SwiftUI iOS app for AV Tunesys.
 3. Generate `Config/Local.xcconfig` from the repo root with `bun run ios:config`.
 4. Open `Avtunesys.xcodeproj` in Xcode.
 
-The public repository ships with neutral defaults. Local builds can override `AVTUNESYS_BUNDLE_IDENTIFIER`, `AVTUNESYS_DEVELOPMENT_TEAM`, and the other client-facing values in the local, non-versioned `Config/Local.xcconfig`.
+The public repository ships with neutral defaults. Local builds can override `AVTUNESYS_BUNDLE_IDENTIFIER`, `AVALSYS_APPLE_DEVELOPMENT_TEAM`, and the other client-facing values in the local, non-versioned `Config/Local.xcconfig`.
 
 Optional local subscription config:
 

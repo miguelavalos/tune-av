@@ -35,7 +35,7 @@ do
   fi
 done
 
-content_pattern='pk_(live|test)_[A-Za-z0-9_]+|sk_(live|test)_[A-Za-z0-9_]+|real_publishable_key|CLERK_SECRET_KEY=|AVACCOUNT_SUBSCRIPTION_SYNC_TOKEN=|https://api\.av-account\.avalsys\.com|avaccount_api_base_url=.*127\.0\.0\.1:8788|346677S99H|miguel@|elisca'
+content_pattern='pk_(live|test)_[A-Za-z0-9_]+|sk_(live|test)_[A-Za-z0-9_]+|real_publishable_key|CLERK_SECRET_KEY=|AVACCOUNT_SUBSCRIPTION_SYNC_TOKEN=|https://api\.av-account\.avalsys\.com|avaccount_api_base_url=.*127\.0\.0\.1:8788|AVALSYS_APPLE_DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*[A-Z0-9]{10}|DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*[A-Z0-9]{10}|miguel@|elisca'
 
 if tracked_files \
   | grep -z -v '^scripts/check-public-config-hygiene\.sh$' \

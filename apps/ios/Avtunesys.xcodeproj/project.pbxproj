@@ -488,7 +488,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					6D25BBF40A8A65CBA54E1974 = {
-						DevelopmentTeam = "$(AVTUNESYS_DEVELOPMENT_TEAM)";
+						DevelopmentTeam = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 						ProvisioningStyle = Automatic;
 					};
 					D659B18DE236A62BF89FE1EE = {
@@ -732,7 +732,7 @@
 				CODE_SIGN_ENTITLEMENTS = Avtunesys/App/Avtunesys.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(AVTUNESYS_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Avtunesys/App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -872,7 +872,7 @@
 				CODE_SIGN_ENTITLEMENTS = Avtunesys/App/Avtunesys.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(AVTUNESYS_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Avtunesys/App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -47,7 +47,7 @@ account_management_url="$(printenv_value AVACCOUNT_MANAGEMENT_URL)"
 terms_url="$(printenv_value AVTUNESYS_TERMS_URL)"
 privacy_url="$(printenv_value AVTUNESYS_PRIVACY_URL)"
 open_source_url="$(printenv_value AVTUNESYS_OPEN_SOURCE_URL)"
-development_team="$(printenv_value AVTUNESYS_DEVELOPMENT_TEAM)"
+development_team="$(printenv_value AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 
 required_values=(
   account_publishable_key
@@ -127,7 +127,7 @@ render_config() {
   local resolved_bundle_identifier="$1"
   cat <<EOF
 AVTUNESYS_BUNDLE_IDENTIFIER = $resolved_bundle_identifier
-AVTUNESYS_DEVELOPMENT_TEAM = $development_team
+AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 AVACCOUNT_PUBLISHABLE_KEY = $account_publishable_key
 AVTUNESYS_PREMIUM_PRODUCT_IDS = $premium_product_ids
 AVTUNESYS_SUPPORT_EMAIL = $support_email
