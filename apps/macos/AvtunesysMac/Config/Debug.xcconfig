@@ -1,0 +1,7 @@
+AVTUNESYS_BUNDLE_IDENTIFIER = com.avalsys.avtunesys.mac.dev
+PRODUCT_BUNDLE_IDENTIFIER = $(AVTUNESYS_BUNDLE_IDENTIFIER)
+AVTUNESYS_DISPLAY_NAME = AV Tunesys
+AVACCOUNT_API_BASE_URL = $(inherited)
+AVACCOUNT_MANAGEMENT_URL = $(inherited)
+
+#include? "Local.xcconfig"

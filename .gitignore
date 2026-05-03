@@ -1,0 +1,32 @@
+.DS_Store
+.idea/
+.vscode/
+.infisical/*
+.codex/
+node_modules/
+
+# Xcode
+DerivedData/
+.DerivedData*/
+.derived-data/
+build/
+*.xcresult
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserdatad/
+*.xcuserstate
+
+# Local secrets
+apps/ios/Config/Local.xcconfig
+
+# Override global ignore rules so iOS app sources remain trackable.
+!/apps/ios/
+!/apps/ios/Avtunesys/
+!/apps/ios/Avtunesys/**
+
+# Override global ignore rules so macOS app sources remain trackable.
+!/apps/macos/
+!/apps/macos/**
+
+# macOS local config is generated from private Infisical/Varlock values.
+apps/macos/AvtunesysMac/Config/Local.xcconfig

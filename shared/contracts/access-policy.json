@@ -1,0 +1,72 @@
+{
+  "appId": "avtunesys",
+  "schemaVersion": 1,
+  "accessModes": {
+    "guest": {
+      "planTier": "free",
+      "capabilities": {
+        "isSignedIn": false,
+        "canUseBackend": false,
+        "canUsePremiumFeatures": false,
+        "canUseCloudSync": false,
+        "canManagePlan": false
+      },
+      "limits": {
+        "favoriteStations": 5,
+        "recentStations": 10,
+        "discoveredTracks": 20,
+        "savedTracks": 5,
+        "lyricsSearchesPerDay": 3,
+        "webSearchesPerDay": 3,
+        "youtubeSearchesPerDay": 3,
+        "appleMusicSearchesPerDay": 3,
+        "spotifySearchesPerDay": 3,
+        "discoverySharesPerDay": 1
+      }
+    },
+    "signedInFree": {
+      "planTier": "free",
+      "capabilities": {
+        "isSignedIn": true,
+        "canUseBackend": false,
+        "canUsePremiumFeatures": false,
+        "canUseCloudSync": false,
+        "canManagePlan": true
+      },
+      "limits": {
+        "favoriteStations": 15,
+        "recentStations": 25,
+        "discoveredTracks": 50,
+        "savedTracks": 20,
+        "lyricsSearchesPerDay": 10,
+        "webSearchesPerDay": 10,
+        "youtubeSearchesPerDay": 10,
+        "appleMusicSearchesPerDay": 10,
+        "spotifySearchesPerDay": 10,
+        "discoverySharesPerDay": 3
+      }
+    },
+    "signedInPro": {
+      "planTier": "pro",
+      "capabilities": {
+        "isSignedIn": true,
+        "canUseBackend": true,
+        "canUsePremiumFeatures": true,
+        "canUseCloudSync": true,
+        "canManagePlan": true
+      },
+      "limits": {
+        "favoriteStations": 500,
+        "recentStations": 200,
+        "discoveredTracks": 1000,
+        "savedTracks": 1000,
+        "lyricsSearchesPerDay": null,
+        "webSearchesPerDay": null,
+        "youtubeSearchesPerDay": null,
+        "appleMusicSearchesPerDay": null,
+        "spotifySearchesPerDay": null,
+        "discoverySharesPerDay": null
+      }
+    }
+  }
+}

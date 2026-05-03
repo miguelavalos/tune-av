@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible AV Tunesys bug.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the issue briefly.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Open...
+        2. Tap...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version or commit
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and OS version
+      placeholder: "iPhone 17 simulator, iOS 26.4"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Do not include secrets, tokens, purchase receipts, or personal account data.

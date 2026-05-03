@@ -1,0 +1,99 @@
+name: Avtunesys
+options:
+  bundleIdPrefix: com.avalsys
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+
+settings:
+  base:
+    DEVELOPMENT_LANGUAGE: en
+    PRODUCT_NAME: Avtunesys
+    SWIFT_VERSION: "6.0"
+
+packages:
+  Clerk:
+    url: https://github.com/clerk/clerk-ios
+    from: 1.0.0
+
+fileGroups:
+  - Config/StoreKit/LocalSubscriptions.storekit
+
+schemes:
+  Avtunesys:
+    build:
+      targets:
+        Avtunesys: all
+    run:
+      config: Debug
+      executable: Avtunesys
+      storeKitConfiguration: Config/StoreKit/LocalSubscriptions.storekit
+    test:
+      config: Debug
+      targets:
+        - AvtunesysTests
+        - AvtunesysUITests
+    analyze:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release
+    management:
+      shared: true
+
+targets:
+  Avtunesys:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
+    sources:
+      - path: Avtunesys
+      - path: ../../shared/apple
+    dependencies:
+      - package: Clerk
+        product: ClerkKit
+      - package: Clerk
+        product: ClerkKitUI
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Avtunesys/App/Avtunesys.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "$(AVTUNESYS_DEVELOPMENT_TEAM)"
+        INFOPLIST_FILE: Avtunesys/App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: "$(PRODUCT_BUNDLE_IDENTIFIER)"
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: NO
+
+  AvtunesysUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: AvtunesysUITests
+    dependencies:
+      - target: Avtunesys
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_MODULE_NAME: AvtunesysUITests
+        PRODUCT_BUNDLE_IDENTIFIER: "$(AVTUNESYS_BUNDLE_IDENTIFIER).uitests"
+        TARGETED_DEVICE_FAMILY: "1"
+
+  AvtunesysTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AvtunesysTests
+    dependencies:
+      - target: Avtunesys
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_MODULE_NAME: AvtunesysTests
+        PRODUCT_BUNDLE_IDENTIFIER: "$(AVTUNESYS_BUNDLE_IDENTIFIER).tests"
+        TARGETED_DEVICE_FAMILY: "1"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Avtunesys.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Avtunesys"

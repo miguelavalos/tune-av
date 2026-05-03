@@ -1,0 +1,93 @@
+{
+  "identifier" : "A6D94E21",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "9C4B1F72",
+      "localizations" : [
+
+      ],
+      "name" : "AV Tunesys Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "1D5A8C33",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AV Tunesys access billed monthly.",
+              "displayName" : "AV Tunesys Pro Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Acceso ilimitado a AV Tunesys con cobro mensual.",
+              "displayName" : "AV Tunesys Pro Mensual",
+              "locale" : "es_ES"
+            }
+          ],
+          "productID" : "com.avalsys.avtunesys.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "AV Tunesys Pro Monthly",
+          "subscriptionGroupID" : "9C4B1F72",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "7F2E4A90",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AV Tunesys access billed yearly.",
+              "displayName" : "AV Tunesys Pro Yearly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Acceso ilimitado a AV Tunesys con cobro anual.",
+              "displayName" : "AV Tunesys Pro Anual",
+              "locale" : "es_ES"
+            }
+          ],
+          "productID" : "com.avalsys.avtunesys.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "AV Tunesys Pro Yearly",
+          "subscriptionGroupID" : "9C4B1F72",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
