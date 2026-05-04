@@ -23,7 +23,8 @@ Optional shared-platform access config:
 
 - set `ACCOUNTAV_API_BASE_URL` in `Config/Local.xcconfig` to enable backend-owned access resolution through Account AV
 - when both `ACCOUNTAV_PUBLISHABLE_KEY` and `ACCOUNTAV_API_BASE_URL` are configured, signed-in access refreshes from `GET /v1/me/access`
-- StoreKit remains the client fallback while purchase-to-entitlement reconciliation is still being finalized outside this repo
+- before StoreKit purchase or restore, the app registers the Apple `appAccountToken` with Account AV so Apple server notifications can be reconciled to the signed-in platform user
+- StoreKit remains a local fallback for client access while Account AV remains the backend source of truth for production Pro entitlements
 
 ## Current app shape
 

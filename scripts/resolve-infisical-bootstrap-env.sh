@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+workspace_root="$(cd "$repo_root/../.." && pwd)"
 profile="${1:-local}"
 
 required_keys=(
@@ -49,7 +50,7 @@ print_exports() {
   fi
 }
 
-bootstrap_file="${TUNEAV_INFISICAL_BOOTSTRAP_FILE:-${INFISICAL_BOOTSTRAP_FILE:-$repo_root/.infisical/bootstrap.env}}"
+bootstrap_file="${TUNEAV_INFISICAL_BOOTSTRAP_FILE:-${INFISICAL_BOOTSTRAP_FILE:-$workspace_root/.infisical/bootstrap.env}}"
 
 if has_required_keys; then
   print_exports

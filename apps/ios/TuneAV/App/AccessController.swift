@@ -94,7 +94,8 @@ final class AccessController: ObservableObject {
         }
 
         let outcome = try await entitlementService.purchasePro(for: accountUser, productID: productID)
-        resolveAccessState()
+        let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
+        applyResolvedAccess(refreshedAccess)
         return outcome
     }
 
@@ -104,7 +105,8 @@ final class AccessController: ObservableObject {
         }
 
         let outcome = try await entitlementService.restorePurchases(for: accountUser)
-        resolveAccessState()
+        let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
+        applyResolvedAccess(refreshedAccess)
         return outcome
     }
 

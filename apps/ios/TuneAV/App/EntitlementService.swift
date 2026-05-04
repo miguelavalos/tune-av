@@ -288,11 +288,13 @@ final class PlatformBackedEntitlementService: EntitlementService {
     }
 
     func purchasePro(for user: AccountUser, productID: String) async throws -> SubscriptionPurchaseOutcome {
-        try await fallback.purchasePro(for: user, productID: productID)
+        try await registerAppleSubscriptionAccountTokenIfPossible(for: user)
+        return try await fallback.purchasePro(for: user, productID: productID)
     }
 
     func restorePurchases(for user: AccountUser) async throws -> RestorePurchasesOutcome {
-        try await fallback.restorePurchases(for: user)
+        try await registerAppleSubscriptionAccountTokenIfPossible(for: user)
+        return try await fallback.restorePurchases(for: user)
     }
 
     private func mergeBackendAccess(_ backendAccess: ResolvedAccess, fallbackAccess: ResolvedAccess) -> ResolvedAccess {
@@ -302,6 +304,16 @@ final class PlatformBackedEntitlementService: EntitlementService {
         }
 
         return backendAccess
+    }
+
+    private func registerAppleSubscriptionAccountTokenIfPossible(for user: AccountUser) async throws {
+        guard apiClient.isConfigured(), !Self.shouldUseUITestAccessOverride else {
+            return
+        }
+
+        try await apiClient.registerAppleSubscriptionAccountToken(
+            StoreKitEntitlementService.appAccountToken(for: user)
+        )
     }
 
     private static var shouldUseUITestAccessOverride: Bool {

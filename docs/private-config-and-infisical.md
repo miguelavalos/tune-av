@@ -19,7 +19,7 @@ bun install
 bun run ios:config
 ```
 
-The command resolves through the private Account AV Varlock/Infisical bootstrap. This public repository should not contain `.env.example`, `.infisical/bootstrap.env.example`, or generated local config examples.
+The command resolves through the shared avalsys workspace bootstrap at `../../.infisical/bootstrap.env` by default. This public repository should not contain `.env.example`, `.infisical/bootstrap.env`, `.infisical/bootstrap.env.example`, or generated local config examples.
 
 Production/App Store preparation:
 

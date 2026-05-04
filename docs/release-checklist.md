@@ -5,15 +5,27 @@ Use this checklist before creating the first public GitHub release and before ea
 ## Repository Hygiene
 
 1. Run `bun install`.
-2. Run `bun run config:hygiene`.
-3. Confirm no generated config files are present:
+2. Run the default hygiene check during local development:
+
+   ```bash
+   bun run config:hygiene
+   ```
+
+3. Run the strict hygiene check before tagging or publishing:
+
+   ```bash
+   TUNEAV_STRICT_PUBLIC_HYGIENE=1 bun run config:hygiene
+   ```
+
+   The default check validates tracked files and keeps development usable. Strict mode verifies the public release workspace is clean.
+4. Confirm no generated config files are present in the strict release workspace:
    - `apps/ios/Config/Local.xcconfig`
    - `apps/macos/TuneAVMac/Config/Local.xcconfig`
    - `.env`
    - `.env.*`
    - `.infisical/bootstrap.env`
-4. Confirm no signing files, provisioning profiles, private keys, exported certificates, or local build products are present.
-5. Confirm public docs do not contain private email addresses, personal account names, Team IDs, local backend URLs, or provider secrets.
+5. Confirm no signing files, provisioning profiles, private keys, exported certificates, or local build products are present.
+6. Confirm public docs do not contain private email addresses, personal account names, Team IDs, local backend URLs, or provider secrets.
 
 ## Build Verification
 
@@ -55,6 +67,21 @@ Use this checklist before creating the first public GitHub release and before ea
    - In-App Purchase, when subscriptions are shipped.
    - Associated Domains, Push Notifications, or iCloud only if the shipped target uses them.
 5. Keep the Apple team value in private configuration as `AVALSYS_APPLE_DEVELOPMENT_TEAM`; do not commit a literal Team ID.
+
+## App Store Subscriptions
+
+1. Confirm the production subscription group and every product ID in `TUNEAV_PREMIUM_PRODUCT_IDS` exist in App Store Connect.
+2. Confirm the product IDs match the backend Apple product map used by Account AV.
+3. Confirm the App Store Server Notifications URL targets:
+
+   ```text
+   /v1/apps/tuneav/subscriptions/apple-notifications
+   ```
+
+4. Confirm Account AV production has Apple notification certificate root pins configured before accepting production notifications.
+5. Confirm a signed-in production build can register its Apple `appAccountToken` with Account AV before purchase.
+6. Confirm a sandbox purchase grants Pro only after Account AV receives and reconciles the Apple notification.
+7. Confirm restore purchases refreshes Account AV-backed access and does not rely only on local StoreKit cache.
 
 ## Clerk And Account AV
 
