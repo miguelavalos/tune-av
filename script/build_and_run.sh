@@ -2,11 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/apps/macos/AvtunesysMac"
-PROJECT="$APP_DIR/AvtunesysMac.xcodeproj"
-SCHEME="AvtunesysMac"
+APP_DIR="$ROOT_DIR/apps/macos/TuneAVMac"
+PROJECT="$APP_DIR/TuneAVMac.xcodeproj"
+SCHEME="TuneAVMac"
 CONFIGURATION="Debug"
-APP_NAME="AV Tunesys"
+APP_NAME="Tune AV"
 DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
 
 VERIFY=false
@@ -28,7 +28,7 @@ for arg in "$@"; do
 done
 
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
-pkill -x "AvtunesysMac" >/dev/null 2>&1 || true
+pkill -x "TuneAVMac" >/dev/null 2>&1 || true
 
 if command -v xcodegen >/dev/null 2>&1; then
   (cd "$APP_DIR" && xcodegen generate)

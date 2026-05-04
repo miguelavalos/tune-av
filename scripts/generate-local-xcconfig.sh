@@ -7,12 +7,12 @@ output_mode="${2:-write}"
 
 case "$profile" in
   local)
-    bundle_identifier="com.avalsys.avtunesys.dev"
-    mac_bundle_identifier="com.avalsys.avtunesys.mac.dev"
+    bundle_identifier="com.avalsys.tuneav.dev"
+    mac_bundle_identifier="com.avalsys.tuneav.mac.dev"
     ;;
   production)
-    bundle_identifier="com.avalsys.avtunesys"
-    mac_bundle_identifier="com.avalsys.avtunesys.mac"
+    bundle_identifier="com.avalsys.tuneav"
+    mac_bundle_identifier="com.avalsys.tuneav.mac"
     ;;
   *)
     echo "Unsupported profile: $profile" >&2
@@ -34,19 +34,31 @@ printenv_value() {
   "$varlock_bin" printenv --path "$repo_root/" "$key" 2>/dev/null || true
 }
 
+printenv_first_value() {
+  local key
+  local value
+  for key in "$@"; do
+    value="$(printenv_value "$key")"
+    if [ -n "$value" ]; then
+      printf '%s' "$value"
+      return 0
+    fi
+  done
+}
+
 xcodebuild_url_value() {
   local value="$1"
   printf '%s' "$value" | sed 's#//#/$()/#g'
 }
 
-account_publishable_key="$(printenv_value AVACCOUNT_PUBLISHABLE_KEY)"
-premium_product_ids="$(printenv_value AVTUNESYS_PREMIUM_PRODUCT_IDS)"
-support_email="$(printenv_value AVTUNESYS_SUPPORT_EMAIL)"
-avaccount_api_base_url="$(printenv_value AVACCOUNT_API_BASE_URL)"
-account_management_url="$(printenv_value AVACCOUNT_MANAGEMENT_URL)"
-terms_url="$(printenv_value AVTUNESYS_TERMS_URL)"
-privacy_url="$(printenv_value AVTUNESYS_PRIVACY_URL)"
-open_source_url="$(printenv_value AVTUNESYS_OPEN_SOURCE_URL)"
+account_publishable_key="$(printenv_value ACCOUNTAV_PUBLISHABLE_KEY)"
+premium_product_ids="$(printenv_value TUNEAV_PREMIUM_PRODUCT_IDS)"
+support_email="$(printenv_value TUNEAV_SUPPORT_EMAIL)"
+avaccount_api_base_url="$(printenv_value ACCOUNTAV_API_BASE_URL)"
+account_management_url="$(printenv_value ACCOUNTAV_MANAGEMENT_URL)"
+terms_url="$(printenv_value TUNEAV_TERMS_URL)"
+privacy_url="$(printenv_value TUNEAV_PRIVACY_URL)"
+open_source_url="$(printenv_value TUNEAV_OPEN_SOURCE_URL)"
 development_team="$(printenv_value AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 
 required_values=(
@@ -75,30 +87,30 @@ assert_no_legacy_value() {
   normalized_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | tr -d ' _-')"
 
   case "$normalized_value" in
-    *avradio*|*avapps*)
-      if [[ "$normalized_value" == *avradio* ]]; then
+    *avtunesys*|*avapps*)
+      if [[ "$normalized_value" == *avtunesys* ]]; then
         echo "Legacy radio product value found in Infisical-derived config: $value_name" >&2
       else
         echo "Legacy account platform value found in Infisical-derived config: $value_name" >&2
       fi
       case "$value_name" in
         premium_product_ids)
-          expected_value="com.avalsys.avtunesys.pro.monthly,com.avalsys.avtunesys.pro.yearly"
+          expected_value="com.avalsys.tuneav.pro.monthly,com.avalsys.tuneav.pro.yearly"
           ;;
         avaccount_api_base_url)
-          expected_value="Use the AV Account API base URL."
+          expected_value="Use the Account AV API base URL."
           ;;
         account_management_url)
-          expected_value="Use the AV Tunesys account management URL."
+          expected_value="Use the Tune AV account management URL."
           ;;
         terms_url)
-          expected_value="Use the AV Tunesys terms URL."
+          expected_value="Use the Tune AV terms URL."
           ;;
         privacy_url)
-          expected_value="Use the AV Tunesys privacy URL."
+          expected_value="Use the Tune AV privacy URL."
           ;;
         open_source_url)
-          expected_value="https://github.com/miguelavalos/av-tunesys"
+          expected_value="https://github.com/miguelavalos/tune-av"
           ;;
       esac
       if [ -n "$expected_value" ]; then
@@ -126,16 +138,16 @@ done
 render_config() {
   local resolved_bundle_identifier="$1"
   cat <<EOF
-AVTUNESYS_BUNDLE_IDENTIFIER = $resolved_bundle_identifier
+TUNEAV_BUNDLE_IDENTIFIER = $resolved_bundle_identifier
 AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
-AVACCOUNT_PUBLISHABLE_KEY = $account_publishable_key
-AVTUNESYS_PREMIUM_PRODUCT_IDS = $premium_product_ids
-AVTUNESYS_SUPPORT_EMAIL = $support_email
-AVACCOUNT_API_BASE_URL = $(xcodebuild_url_value "$avaccount_api_base_url")
-AVACCOUNT_MANAGEMENT_URL = $(xcodebuild_url_value "$account_management_url")
-AVTUNESYS_TERMS_URL = $(xcodebuild_url_value "$terms_url")
-AVTUNESYS_PRIVACY_URL = $(xcodebuild_url_value "$privacy_url")
-AVTUNESYS_OPEN_SOURCE_URL = $(xcodebuild_url_value "$open_source_url")
+ACCOUNTAV_PUBLISHABLE_KEY = $account_publishable_key
+TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
+TUNEAV_SUPPORT_EMAIL = $support_email
+ACCOUNTAV_API_BASE_URL = $(xcodebuild_url_value "$avaccount_api_base_url")
+ACCOUNTAV_MANAGEMENT_URL = $(xcodebuild_url_value "$account_management_url")
+TUNEAV_TERMS_URL = $(xcodebuild_url_value "$terms_url")
+TUNEAV_PRIVACY_URL = $(xcodebuild_url_value "$privacy_url")
+TUNEAV_OPEN_SOURCE_URL = $(xcodebuild_url_value "$open_source_url")
 EOF
 }
 
@@ -143,7 +155,7 @@ ios_rendered_config="$(render_config "$bundle_identifier")"
 macos_rendered_config="$(render_config "$mac_bundle_identifier")"
 
 ios_target_file="$repo_root/apps/ios/Config/Local.xcconfig"
-macos_target_file="$repo_root/apps/macos/AvtunesysMac/Config/Local.xcconfig"
+macos_target_file="$repo_root/apps/macos/TuneAVMac/Config/Local.xcconfig"
 
 case "$output_mode" in
   write)

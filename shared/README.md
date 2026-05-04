@@ -1,6 +1,6 @@
 # Shared Code
 
-This directory is the single root for code and contracts shared across AV Tunesys clients.
+This directory is the single root for code and contracts shared across Tune AV clients.
 
 ## Layout
 
@@ -54,7 +54,7 @@ When changing `shared/apple`:
 
 1. Regenerate Xcode projects if files were added or removed:
    - `cd apps/ios && xcodegen generate`
-   - `cd apps/macos/AvtunesysMac && xcodegen generate`
+   - `cd apps/macos/TuneAVMac && xcodegen generate`
 2. Run the focused iOS shared support tests.
 3. Build the macOS target.
 

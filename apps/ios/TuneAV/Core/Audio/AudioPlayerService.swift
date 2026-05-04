@@ -1,0 +1,893 @@
+@preconcurrency import AVFoundation
+import Foundation
+import MediaPlayer
+import Network
+import UIKit
+
+@MainActor
+final class AudioPlayerService: NSObject, ObservableObject {
+    struct PlaybackQueue: Equatable {
+        enum Source: Equatable {
+            case homeRecents
+            case homeFavorites
+            case homeDiscovery
+            case searchResults
+            case libraryRecents
+            case libraryFavorites
+            case singleStation
+        }
+
+        let source: Source
+        let stations: [Station]
+    }
+
+    enum PlaybackStatus: Equatable {
+        case idle
+        case loading
+        case playing
+        case paused
+        case failed(String)
+
+        var label: String {
+            switch self {
+            case .idle:
+                return L10n.string("audio.status.ready")
+            case .loading:
+                return L10n.string("audio.status.loading")
+            case .playing:
+                return L10n.string("audio.status.playing")
+            case .paused:
+                return L10n.string("audio.status.paused")
+            case .failed(let message):
+                return message
+            }
+        }
+    }
+
+    @Published private(set) var currentStation: Station?
+    @Published private(set) var status: PlaybackStatus = .idle
+    @Published private(set) var sleepTimerDescription: String?
+    @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var currentTrackTitle: String?
+    @Published private(set) var currentTrackArtist: String?
+    @Published private(set) var currentTrackAlbumTitle: String?
+    @Published private(set) var currentTrackArtworkURL: URL?
+    @Published private(set) var playbackQueue: PlaybackQueue = .init(source: .singleStation, stations: [])
+
+    var isPlaying: Bool {
+        if case .playing = status {
+            return true
+        }
+        return false
+    }
+
+    var isLoading: Bool {
+        if case .loading = status {
+            return true
+        }
+        return false
+    }
+
+    var hasFailure: Bool {
+        if case .failed = status {
+            return true
+        }
+        return false
+    }
+
+    private var player: AVPlayer?
+    private var playerItemStatusObserver: NSKeyValueObservation?
+    private var timeControlStatusObserver: NSKeyValueObservation?
+    private var interruptionObserver: NSObjectProtocol?
+    private var routeChangeObserver: NSObjectProtocol?
+    private var failedToEndObserver: NSObjectProtocol?
+    private var playbackStalledObserver: NSObjectProtocol?
+    private let networkMonitor = NWPathMonitor()
+    private let networkMonitorQueue = DispatchQueue(label: "com.tuneav.audio-network-monitor")
+    private var lastNetworkPathStatus: NWPath.Status?
+    private var userRequestedPlayback = false
+    private var metadataOutput: AVPlayerItemMetadataOutput?
+    private var metadataDelegate: StreamMetadataDelegate?
+    private var sleepTimer: Timer?
+    private var sleepTimerEndDate: Date?
+    private var loadingTimeoutTask: Task<Void, Never>?
+    private var nowPlayingPollingTask: Task<Void, Never>?
+    private var artworkResolutionTask: Task<Void, Never>?
+    private var nowPlayingArtworkTask: Task<Void, Never>?
+    private let nowPlayingService = NowPlayingService()
+    private let trackArtworkService = TrackArtworkService()
+    private var currentTrackSource: TrackSource?
+    private var cachedNowPlayingByStationID: [String: CachedNowPlayingState] = [:]
+    private var nowPlayingArtworkImage: UIImage?
+    private var nowPlayingArtworkSourceURL: URL?
+
+    private enum TrackSource {
+        case stream
+        case fallback
+        case cached
+    }
+
+    private struct CachedNowPlayingState {
+        let title: String?
+        let artist: String?
+        let albumTitle: String?
+        let artworkURL: URL?
+    }
+
+    fileprivate struct StreamMetadataEvent: Sendable {
+        let value: String
+        let commonKey: String
+        let identifier: String
+    }
+
+    override init() {
+        super.init()
+        configureAudioSession()
+        configureRemoteCommands()
+        observeAudioSessionNotifications()
+        observeNetworkChanges()
+    }
+
+    deinit {
+        networkMonitor.cancel()
+    }
+
+    func applyUITestTrackMetadata(title: String?, artist: String?) {
+        guard ProcessInfo.processInfo.environment["TUNEAV_UI_TESTS"] == "1" else { return }
+        currentTrackTitle = title
+        currentTrackArtist = artist
+        currentTrackSource = title == nil && artist == nil ? nil : .fallback
+        persistCurrentNowPlayingState()
+        updateNowPlayingInfo()
+    }
+
+    func play(station: Station, queue: PlaybackQueue? = nil) {
+        if case .loading = status, currentStation?.id == station.id {
+            return
+        }
+
+        if let queue {
+            playbackQueue = sanitizedPlaybackQueue(queue, currentStationID: station.id)
+        }
+
+        guard let url = URL(string: station.streamURL) else {
+            setFailure(L10n.string("audio.error.invalidURL"))
+            return
+        }
+
+        resetTransientStateForNewPlayback()
+        userRequestedPlayback = true
+        currentStation = station
+        restoreCachedNowPlaying(for: station)
+        status = .loading
+
+        let item = AVPlayerItem(url: url)
+        player = AVPlayer(playerItem: item)
+        attachObservers(to: item)
+        observePlayerItemNotifications(for: item)
+        startLoadingTimeout()
+        startNowPlayingFallback(for: station)
+        activateSessionIfNeeded()
+        player?.play()
+        updateNowPlayingInfo()
+    }
+
+    func togglePlayback() {
+        switch status {
+        case .playing:
+            pause()
+        case .paused:
+            resume()
+        case .failed:
+            retry()
+        case .idle:
+            if let currentStation {
+                play(station: currentStation)
+            } else if let station = Station.samples.first {
+                play(station: station)
+            }
+        case .loading:
+            break
+        }
+    }
+
+    func resume() {
+        guard currentStation != nil else {
+            if let station = Station.samples.first {
+                play(station: station)
+            }
+            return
+        }
+
+        if shouldReloadCurrentStation {
+            retry()
+            return
+        }
+
+        activateSessionIfNeeded()
+        player?.play()
+        status = .loading
+        userRequestedPlayback = true
+        lastErrorMessage = nil
+        updateNowPlayingInfo()
+    }
+
+    func pause() {
+        player?.pause()
+        userRequestedPlayback = false
+        if currentStation != nil {
+            status = .paused
+        }
+        updateNowPlayingInfo()
+    }
+
+    func stop() {
+        persistCurrentNowPlayingState()
+        loadingTimeoutTask?.cancel()
+        loadingTimeoutTask = nil
+        nowPlayingPollingTask?.cancel()
+        nowPlayingPollingTask = nil
+        artworkResolutionTask?.cancel()
+        artworkResolutionTask = nil
+        nowPlayingArtworkTask?.cancel()
+        nowPlayingArtworkTask = nil
+        player?.pause()
+        userRequestedPlayback = false
+        player = nil
+        playerItemStatusObserver = nil
+        timeControlStatusObserver = nil
+        failedToEndObserver = nil
+        playbackStalledObserver = nil
+        metadataOutput = nil
+        metadataDelegate = nil
+        currentTrackSource = nil
+        status = .idle
+        lastErrorMessage = nil
+        currentTrackTitle = nil
+        currentTrackArtist = nil
+        currentTrackAlbumTitle = nil
+        currentTrackArtworkURL = nil
+        nowPlayingArtworkImage = nil
+        nowPlayingArtworkSourceURL = nil
+        playbackQueue = .init(source: .singleStation, stations: [])
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
+
+    func retry() {
+        guard let currentStation else { return }
+        userRequestedPlayback = true
+        play(station: currentStation)
+    }
+
+    var canCyclePlaybackQueue: Bool {
+        playbackQueueStations.count > 1
+    }
+
+    func playNextInQueue() {
+        guard let resolvedQueue = resolvedPlaybackQueue() else { return }
+
+        let nextIndex = resolvedQueue.stations.index(after: resolvedQueue.currentIndex)
+        let resolvedIndex = nextIndex < resolvedQueue.stations.endIndex ? nextIndex : resolvedQueue.stations.startIndex
+        play(station: resolvedQueue.stations[resolvedIndex], queue: playbackQueue)
+    }
+
+    func playPreviousInQueue() {
+        guard let resolvedQueue = resolvedPlaybackQueue() else { return }
+
+        let previousIndex = resolvedQueue.currentIndex == resolvedQueue.stations.startIndex
+            ? resolvedQueue.stations.index(before: resolvedQueue.stations.endIndex)
+            : resolvedQueue.stations.index(before: resolvedQueue.currentIndex)
+        play(station: resolvedQueue.stations[previousIndex], queue: playbackQueue)
+    }
+
+    func setSleepTimer(minutes: Int?) {
+        sleepTimer?.invalidate()
+        sleepTimer = nil
+        sleepTimerEndDate = nil
+        sleepTimerDescription = nil
+
+        guard let minutes else { return }
+
+        sleepTimerEndDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        sleepTimerDescription = L10n.string("audio.sleep.inMinutes", minutes)
+        sleepTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(minutes * 60), repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.stop()
+                self?.sleepTimerDescription = L10n.string("audio.sleep.ended")
+            }
+        }
+    }
+
+    func clearSleepTimerNotice() {
+        if case .idle = status {
+            sleepTimerDescription = nil
+        }
+    }
+
+    func isCurrent(_ station: Station) -> Bool {
+        currentStation?.id == station.id
+    }
+
+    private var playbackQueueStations: [Station] {
+        guard let currentStation else { return [] }
+        return sanitizedPlaybackQueue(playbackQueue, currentStationID: currentStation.id).stations
+    }
+
+    private struct ResolvedPlaybackQueue {
+        let stations: [Station]
+        let currentIndex: Int
+    }
+
+    private func resolvedPlaybackQueue() -> ResolvedPlaybackQueue? {
+        guard let currentStation else { return nil }
+        let stations = playbackQueueStations
+        guard stations.count > 1,
+              let currentIndex = stations.firstIndex(where: { $0.id == currentStation.id }) else {
+            return nil
+        }
+
+        return ResolvedPlaybackQueue(stations: stations, currentIndex: currentIndex)
+    }
+
+    private func sanitizedPlaybackQueue(_ queue: PlaybackQueue, currentStationID: String) -> PlaybackQueue {
+        var seenStationIDs = Set<String>()
+        var stations = queue.stations.filter { station in
+            seenStationIDs.insert(station.id).inserted
+        }
+
+        if let currentStation, seenStationIDs.insert(currentStation.id).inserted, currentStation.id == currentStationID {
+            stations.insert(currentStation, at: 0)
+        }
+
+        return PlaybackQueue(source: queue.source, stations: stations)
+    }
+
+    private func configureAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+        } catch {
+            status = .failed(L10n.string("audio.error.sessionUnavailable"))
+        }
+    }
+
+    private func attachObservers(to item: AVPlayerItem) {
+        playerItemStatusObserver = item.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                switch item.status {
+                case .readyToPlay:
+                    self.loadingTimeoutTask?.cancel()
+                    self.loadingTimeoutTask = nil
+                    if self.player?.timeControlStatus == .playing {
+                        self.status = .playing
+                    }
+                    self.activateSessionIfNeeded()
+                    self.updateNowPlayingInfo()
+                case .failed:
+                    self.setFailure(L10n.string("audio.error.streamLoadFailed"))
+                case .unknown:
+                    self.status = .loading
+                @unknown default:
+                    self.status = .loading
+                }
+            }
+        }
+
+        timeControlStatusObserver = player?.observe(\.timeControlStatus, options: [.new, .initial]) { [weak self] player, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                switch player.timeControlStatus {
+                case .playing:
+                    self.loadingTimeoutTask?.cancel()
+                    self.loadingTimeoutTask = nil
+                    self.status = .playing
+                case .paused:
+                    if case .loading = self.status { break }
+                    if case .failed = self.status { break }
+                    self.status = .paused
+                case .waitingToPlayAtSpecifiedRate:
+                    self.status = .loading
+                @unknown default:
+                    break
+                }
+                self.updateNowPlayingInfo()
+            }
+        }
+
+        let metadataDelegate = StreamMetadataDelegate { [weak self] events in
+            Task { @MainActor in
+                await self?.updateTrackMetadata(from: events)
+            }
+        }
+        let metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
+        metadataOutput.setDelegate(metadataDelegate, queue: .main)
+        item.add(metadataOutput)
+        self.metadataOutput = metadataOutput
+        self.metadataDelegate = metadataDelegate
+    }
+
+    private func observePlayerItemNotifications(for item: AVPlayerItem) {
+        let center = NotificationCenter.default
+        failedToEndObserver = center.addObserver(
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.setFailure(L10n.string("audio.error.streamInterrupted"))
+            }
+        }
+
+        playbackStalledObserver = center.addObserver(
+            forName: AVPlayerItem.playbackStalledNotification,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                if self.userRequestedPlayback {
+                    self.status = .loading
+                    self.startLoadingTimeout()
+                }
+            }
+        }
+    }
+
+    private func startLoadingTimeout() {
+        loadingTimeoutTask?.cancel()
+        loadingTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(12))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                guard let self else { return }
+                if case .loading = self.status {
+                    self.setFailure(L10n.string("audio.error.streamTimeout"))
+                }
+            }
+        }
+    }
+
+    private func setFailure(_ message: String) {
+        persistCurrentNowPlayingState()
+        loadingTimeoutTask?.cancel()
+        loadingTimeoutTask = nil
+        nowPlayingPollingTask?.cancel()
+        nowPlayingPollingTask = nil
+        artworkResolutionTask?.cancel()
+        artworkResolutionTask = nil
+        nowPlayingArtworkTask?.cancel()
+        nowPlayingArtworkTask = nil
+        status = .failed(message)
+        lastErrorMessage = message
+        player?.pause()
+        updateNowPlayingInfo()
+    }
+
+    private func observeNetworkChanges() {
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                self?.handleNetworkPathUpdate(path)
+            }
+        }
+        networkMonitor.start(queue: networkMonitorQueue)
+    }
+
+    private func handleNetworkPathUpdate(_ path: NWPath) {
+        let previousStatus = lastNetworkPathStatus
+        lastNetworkPathStatus = path.status
+
+        guard path.status == .satisfied,
+              previousStatus != nil,
+              previousStatus != .satisfied,
+              userRequestedPlayback,
+              currentStation != nil else {
+            return
+        }
+
+        switch status {
+        case .failed, .loading, .paused:
+            retry()
+        case .idle, .playing:
+            break
+        }
+    }
+
+    private func resetTransientStateForNewPlayback() {
+        persistCurrentNowPlayingState()
+        loadingTimeoutTask?.cancel()
+        loadingTimeoutTask = nil
+        nowPlayingPollingTask?.cancel()
+        nowPlayingPollingTask = nil
+        artworkResolutionTask?.cancel()
+        artworkResolutionTask = nil
+        nowPlayingArtworkTask?.cancel()
+        nowPlayingArtworkTask = nil
+        lastErrorMessage = nil
+        player?.pause()
+        player = nil
+        playerItemStatusObserver = nil
+        timeControlStatusObserver = nil
+        failedToEndObserver = nil
+        playbackStalledObserver = nil
+        metadataOutput = nil
+        metadataDelegate = nil
+        currentTrackTitle = nil
+        currentTrackArtist = nil
+        currentTrackAlbumTitle = nil
+        currentTrackArtworkURL = nil
+        currentTrackSource = nil
+        nowPlayingArtworkImage = nil
+        nowPlayingArtworkSourceURL = nil
+    }
+
+    private var shouldReloadCurrentStation: Bool {
+        guard currentStation != nil else { return false }
+        guard let player else { return true }
+        guard let item = player.currentItem else { return true }
+
+        if item.status == .failed {
+            return true
+        }
+
+        if case .failed = status {
+            return true
+        }
+
+        return false
+    }
+
+    private func activateSessionIfNeeded() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            status = .failed(L10n.string("audio.error.activateAudio"))
+        }
+    }
+
+    private func updateNowPlayingInfo() {
+        guard let currentStation else {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: currentTrackTitle ?? currentStation.name,
+            MPMediaItemPropertyArtist: currentTrackArtist ?? currentStation.country,
+            MPNowPlayingInfoPropertyIsLiveStream: true,
+            MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0
+        ]
+
+        info[MPMediaItemPropertyAlbumTitle] = currentStation.name
+
+        if let artworkImage = resolvedNowPlayingArtworkImage(for: currentStation) {
+            info[MPMediaItemPropertyArtwork] = Self.makeNowPlayingArtwork(from: artworkImage)
+        }
+
+        if let elapsed = player?.currentTime().seconds, elapsed.isFinite {
+            info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        }
+
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        refreshNowPlayingArtworkIfNeeded(for: currentStation)
+    }
+
+    private func updateTrackMetadata(from events: [StreamMetadataEvent]) async {
+        guard !events.isEmpty else { return }
+
+        var resolvedTitle = currentTrackTitle
+        var resolvedArtist = currentTrackArtist
+        var resolvedFromStream = false
+
+        for event in events {
+            let value = event.value
+            let commonKey = event.commonKey
+            let identifier = event.identifier
+
+            if commonKey == "title" || identifier.contains("title") || identifier.contains("streamtitle") {
+                let parsed = TuneAVTrackMetadataParser.parse(value)
+                resolvedTitle = parsed.title ?? resolvedTitle
+                resolvedArtist = parsed.artist ?? resolvedArtist
+                if parsed.title != nil || parsed.artist != nil {
+                    resolvedFromStream = true
+                }
+                continue
+            }
+
+            if commonKey == "artist" || identifier.contains("artist") {
+                if let sanitizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(value) {
+                    resolvedArtist = sanitizedArtist
+                    resolvedFromStream = true
+                }
+            }
+        }
+
+        if resolvedFromStream {
+            currentTrackSource = .stream
+        }
+
+        if TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(resolvedTitle, stationName: currentStation?.name) {
+            resolvedTitle = nil
+            resolvedArtist = nil
+        } else if TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(resolvedArtist, stationName: currentStation?.name) {
+            resolvedArtist = nil
+        }
+
+        if resolvedTitle != currentTrackTitle || resolvedArtist != currentTrackArtist {
+            currentTrackTitle = resolvedTitle
+            currentTrackArtist = resolvedArtist
+            persistCurrentNowPlayingState()
+            resolveArtworkForCurrentTrack()
+            updateNowPlayingInfo()
+        }
+    }
+
+    private func startNowPlayingFallback(for station: Station) {
+        nowPlayingPollingTask?.cancel()
+        nowPlayingPollingTask = Task { [weak self] in
+            guard let self else { return }
+            guard nowPlayingService.supports(station) else { return }
+
+            try? await Task.sleep(for: .seconds(4))
+
+            while !Task.isCancelled {
+                guard self.currentStation?.id == station.id else { return }
+                if self.currentTrackSource == .stream { return }
+
+                if let track = await nowPlayingService.fetchTrack(for: station) {
+                    self.applyFallbackTrack(track, for: station)
+                }
+
+                try? await Task.sleep(for: .seconds(25))
+            }
+        }
+    }
+
+    private func applyFallbackTrack(_ track: NowPlayingTrack, for station: Station) {
+        guard currentStation?.id == station.id else { return }
+        guard currentTrackSource != .stream else { return }
+
+        let normalizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(track.artist)
+        guard let normalizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(track.title, artist: normalizedArtist) else { return }
+        guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(normalizedTitle, stationName: station.name) else { return }
+
+        let resolvedArtist = TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(normalizedArtist, stationName: station.name)
+            ? nil
+            : normalizedArtist
+
+        if currentTrackTitle == normalizedTitle && currentTrackArtist == resolvedArtist {
+            return
+        }
+
+        currentTrackTitle = normalizedTitle
+        currentTrackArtist = resolvedArtist
+        currentTrackSource = .fallback
+        persistCurrentNowPlayingState()
+        resolveArtworkForCurrentTrack()
+        updateNowPlayingInfo()
+    }
+
+    private func resolveArtworkForCurrentTrack() {
+        artworkResolutionTask?.cancel()
+
+        guard let artist = currentTrackArtist, let title = currentTrackTitle else {
+            currentTrackAlbumTitle = nil
+            currentTrackArtworkURL = nil
+            return
+        }
+
+        currentTrackAlbumTitle = nil
+        currentTrackArtworkURL = nil
+
+        artworkResolutionTask = Task { [weak self] in
+            guard let self else { return }
+            let resolved = await trackArtworkService.resolveArtwork(artist: artist, title: title)
+            guard !Task.isCancelled else { return }
+            guard self.currentTrackArtist == artist, self.currentTrackTitle == title else { return }
+
+            self.currentTrackAlbumTitle = resolved?.albumTitle
+            self.currentTrackArtworkURL = resolved?.artworkURL
+            self.persistCurrentNowPlayingState()
+            self.updateNowPlayingInfo()
+        }
+    }
+
+    private func resolvedNowPlayingArtworkImage(for station: Station) -> UIImage? {
+        if let nowPlayingArtworkImage {
+            return nowPlayingArtworkImage
+        }
+
+        return UIImage(named: "BrandMark")
+    }
+
+    private func refreshNowPlayingArtworkIfNeeded(for station: Station) {
+        let artworkURL = currentTrackArtworkURL ?? station.displayArtworkURL
+
+        if artworkURL == nowPlayingArtworkSourceURL, nowPlayingArtworkImage != nil {
+            return
+        }
+
+        if artworkURL == nil, nowPlayingArtworkSourceURL == nil, nowPlayingArtworkImage != nil {
+            return
+        }
+
+        nowPlayingArtworkTask?.cancel()
+        nowPlayingArtworkTask = Task { [weak self] in
+            guard let self else { return }
+            let resolvedImage = await self.loadNowPlayingArtworkImage(from: artworkURL)
+            guard !Task.isCancelled else { return }
+            guard self.currentStation?.id == station.id else { return }
+
+            self.nowPlayingArtworkSourceURL = artworkURL
+            self.nowPlayingArtworkImage = resolvedImage ?? UIImage(named: "BrandMark")
+            self.updateNowPlayingInfo()
+        }
+    }
+
+    private func loadNowPlayingArtworkImage(from url: URL?) async -> UIImage? {
+        guard let url else { return UIImage(named: "BrandMark") }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard !Task.isCancelled else { return nil }
+            return UIImage(data: data)
+        } catch {
+            return UIImage(named: "BrandMark")
+        }
+    }
+
+    private func persistCurrentNowPlayingState() {
+        guard let stationID = currentStation?.id else { return }
+
+        let hasVisibleMetadata =
+            currentTrackTitle != nil ||
+            currentTrackArtist != nil ||
+            currentTrackAlbumTitle != nil ||
+            currentTrackArtworkURL != nil
+
+        guard hasVisibleMetadata else { return }
+
+        cachedNowPlayingByStationID[stationID] = CachedNowPlayingState(
+            title: currentTrackTitle,
+            artist: currentTrackArtist,
+            albumTitle: currentTrackAlbumTitle,
+            artworkURL: currentTrackArtworkURL
+        )
+    }
+
+    private func restoreCachedNowPlaying(for station: Station) {
+        guard let cachedState = cachedNowPlayingByStationID[station.id] else { return }
+
+        let sanitizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(cachedState.artist)
+        let sanitizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(cachedState.title, artist: sanitizedArtist)
+
+        currentTrackTitle = sanitizedTitle
+        currentTrackArtist = sanitizedArtist
+        currentTrackAlbumTitle = cachedState.albumTitle
+        currentTrackArtworkURL = cachedState.artworkURL
+        currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
+    }
+
+    private nonisolated static func makeNowPlayingArtwork(from image: UIImage) -> MPMediaItemArtwork {
+        let boundsSize = image.size
+        return MPMediaItemArtwork(boundsSize: boundsSize) { _ in image }
+    }
+
+    private func configureRemoteCommands() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.pauseCommand.isEnabled = true
+        commandCenter.togglePlayPauseCommand.isEnabled = true
+
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.resume() }
+            return .success
+        }
+
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.pause() }
+            return .success
+        }
+
+        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.togglePlayback() }
+            return .success
+        }
+    }
+
+    private func observeAudioSessionNotifications() {
+        let center = NotificationCenter.default
+
+        interruptionObserver = center.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let userInfo = notification.userInfo
+            let typeValue = userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt
+
+            Task { @MainActor in
+                guard let self else { return }
+                guard let typeValue,
+                      let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+                    return
+                }
+
+                if type == .began {
+                    self.player?.pause()
+                    if self.currentStation != nil {
+                        self.status = .paused
+                    }
+                    self.updateNowPlayingInfo()
+                    return
+                }
+
+                if let optionsValue {
+                    let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                    if options.contains(.shouldResume) {
+                        self.resume()
+                    }
+                }
+            }
+        }
+
+        routeChangeObserver = center.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateNowPlayingInfo()
+            }
+        }
+    }
+}
+
+private final class StreamMetadataDelegate: NSObject, AVPlayerItemMetadataOutputPushDelegate {
+    private let handler: @Sendable ([AudioPlayerService.StreamMetadataEvent]) async -> Void
+
+    init(handler: @escaping @Sendable ([AudioPlayerService.StreamMetadataEvent]) async -> Void) {
+        self.handler = handler
+    }
+
+    func metadataOutput(
+        _ output: AVPlayerItemMetadataOutput,
+        didOutputTimedMetadataGroups groups: [AVTimedMetadataGroup],
+        from track: AVPlayerItemTrack?
+    ) {
+        let metadataItems = MetadataItemsBox(groups.flatMap(\.items))
+        guard !metadataItems.items.isEmpty else { return }
+
+        Task { [handler, metadataItems] in
+            var events: [AudioPlayerService.StreamMetadataEvent] = []
+            events.reserveCapacity(metadataItems.items.count)
+
+            for item in metadataItems.items {
+                let value = try? await item.load(.stringValue)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let value, !value.isEmpty else { continue }
+
+                events.append(
+                    AudioPlayerService.StreamMetadataEvent(
+                        value: value,
+                        commonKey: item.commonKey?.rawValue.lowercased() ?? "",
+                        identifier: item.identifier?.rawValue.lowercased() ?? ""
+                    )
+                )
+            }
+
+            guard !events.isEmpty else { return }
+            await handler(events)
+        }
+    }
+}
+
+private final class MetadataItemsBox: @unchecked Sendable {
+    let items: [AVMetadataItem]
+
+    init(_ items: [AVMetadataItem]) {
+        self.items = items
+    }
+}

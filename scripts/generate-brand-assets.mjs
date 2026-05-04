@@ -11,8 +11,8 @@ const palette = {
 };
 
 const iosBrandingDir = path.join(rootDir, "apps/ios/branding");
-const iosAssetsDir = path.join(rootDir, "apps/ios/Avtunesys/App/Assets.xcassets");
-const macAssetsDir = path.join(rootDir, "apps/macos/AvtunesysMac/Assets.xcassets");
+const iosAssetsDir = path.join(rootDir, "apps/ios/TuneAV/App/Assets.xcassets");
+const macAssetsDir = path.join(rootDir, "apps/macos/TuneAVMac/Assets.xcassets");
 
 function svgDocument(width, height, content, label) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}">
@@ -35,7 +35,7 @@ async function wordmarkSvg() {
   <text x="394" y="198" fill="${palette.green}" font-family="Sora, Manrope, Arial, sans-serif" font-size="116" font-weight="800" letter-spacing="0">AV</text>
   <text x="568" y="198" fill="${palette.black}" font-family="Sora, Manrope, Arial, sans-serif" font-size="116" font-weight="800" letter-spacing="0">Tune</text>
   <text x="850" y="198" fill="${palette.green}" font-family="Sora, Manrope, Arial, sans-serif" font-size="116" font-weight="800" letter-spacing="0">sys</text>
-`, "AV Tunesys wordmark");
+`, "Tune AV wordmark");
 }
 
 async function renderPng(svg, outputPath, width, height) {
@@ -52,12 +52,12 @@ async function renderPng(svg, outputPath, width, height) {
 
 async function writeSourceSvgs(wordmark) {
   await fs.mkdir(iosBrandingDir, { recursive: true });
-  await fs.writeFile(path.join(iosBrandingDir, "avtunesys-wordmark.svg"), wordmark, "utf8");
+  await fs.writeFile(path.join(iosBrandingDir, "tuneav-wordmark.svg"), wordmark, "utf8");
 }
 
 async function writeWordmarkAssets(wordmark) {
-  await renderPng(wordmark, path.join(iosAssetsDir, "OnboardingWordmark.imageset/av-tunesys-logo.png"), 1400, 300);
-  await renderPng(wordmark, path.join(macAssetsDir, "OnboardingWordmark.imageset/av-tunesys-logo.png"), 1400, 300);
+  await renderPng(wordmark, path.join(iosAssetsDir, "OnboardingWordmark.imageset/tune-av-logo.png"), 1400, 300);
+  await renderPng(wordmark, path.join(macAssetsDir, "OnboardingWordmark.imageset/tune-av-logo.png"), 1400, 300);
 }
 
 const wordmark = await wordmarkSvg();

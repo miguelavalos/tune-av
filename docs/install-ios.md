@@ -1,13 +1,13 @@
-# AV Tunesys iOS Installation
+# Tune AV iOS Installation
 
-This guide is for local simulator runs and for installing `AV Tunesys` on a connected iOS device.
+This guide is for local simulator runs and for installing `Tune AV` on a connected iOS device.
 
 ## Current signing setup
 
-- Xcode project: `apps/ios/Avtunesys.xcodeproj`
-- scheme: `Avtunesys`
+- Xcode project: `apps/ios/TuneAV.xcodeproj`
+- scheme: `TuneAV`
 - development team: use your own Apple Developer team when signing for device installs
-- device bundle identifier: set `AVTUNESYS_BUNDLE_IDENTIFIER` in `apps/ios/Config/Local.xcconfig` to a development bundle identifier that belongs to your team
+- device bundle identifier: set `TUNEAV_BUNDLE_IDENTIFIER` in `apps/ios/Config/Local.xcconfig` to a development bundle identifier that belongs to your team
 
 ## Prerequisites
 
@@ -37,22 +37,22 @@ Do not copy production values, example secret files, or bootstrap examples into 
 ## Run on simulator
 
 ```bash
-xcodebuild -project apps/ios/Avtunesys.xcodeproj \
-  -scheme Avtunesys \
+xcodebuild -project apps/ios/TuneAV.xcodeproj \
+  -scheme TuneAV \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   build
 ```
 
-You can also open `apps/ios/Avtunesys.xcodeproj` in Xcode and run `Avtunesys`.
+You can also open `apps/ios/TuneAV.xcodeproj` in Xcode and run `TuneAV`.
 
 ## Install on a connected iOS device
 
 Build for the device:
 
 ```bash
-xcodebuild -project apps/ios/Avtunesys.xcodeproj \
-  -scheme Avtunesys \
+xcodebuild -project apps/ios/TuneAV.xcodeproj \
+  -scheme TuneAV \
   -configuration Debug \
   -destination 'id=<DEVICE_UDID>' \
   -allowProvisioningUpdates \
@@ -67,7 +67,7 @@ Install the generated app:
 ```bash
 xcrun devicectl device install app \
   --device <DEVICE_UDID> \
-  ~/Library/Developer/Xcode/DerivedData/Avtunesys-*/Build/Products/Debug-iphoneos/Avtunesys.app
+  ~/Library/Developer/Xcode/DerivedData/TuneAV-*/Build/Products/Debug-iphoneos/TuneAV.app
 ```
 
 Launch it:
@@ -86,7 +86,7 @@ If iOS refuses to open the app after install, trust the developer profile once o
 1. Open `Settings > General > VPN & Device Management`
 2. Open the developer app entry that matches the Apple account used for signing
 3. Tap `Trust`
-4. Open `AV Tunesys` again from the device home screen
+4. Open `Tune AV` again from the device home screen
 
 ## Known local-dev constraints
 

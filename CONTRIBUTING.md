@@ -2,7 +2,7 @@
 
 ## Scope
 
-This repository contains the open-source iOS client for AV Tunesys.
+This repository contains the open-source iOS client for Tune AV.
 
 Contributions are welcome for:
 

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="300" viewBox="0 0 1400 300" role="img" aria-labelledby="title desc">
+  <title id="title">Tune AV logo</title>
+  <desc id="desc">Tune AV lockup using the finalized radio icon, Tune in the Avalsys dark color, and the AV mark in green.</desc>
+  <defs>
+    <style>
+      .word {
+        font-family: Sora, Manrope, Inter, Arial, sans-serif;
+        font-size: 112px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+    </style>
+  </defs>
+  <rect width="1400" height="300" fill="transparent"/>
+  <image href="icons/radio-av-icon.png" x="60" y="40" width="220" height="220" preserveAspectRatio="xMidYMid meet"/>
+  <line x1="322" y1="58" x2="322" y2="242" stroke="#C8D1CB" stroke-width="3"/>
+  <text x="392" y="194" class="word" fill="#3A3A36">Tune</text>
+  <g transform="translate(724 119) scale(0.743)" fill="none" stroke="#6DBE45" stroke-width="21" stroke-linecap="round" stroke-linejoin="round" aria-label="AV">
+    <path d="M0 88 L52 0 L104 88"/>
+    <path d="M108 0 L160 88 L212 0"/>
+  </g>
+</svg>

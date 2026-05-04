@@ -4,7 +4,7 @@ This repository is public and open source. Anything committed here can become pu
 
 ## Rules
 
-1. Do not commit `apps/ios/Config/Local.xcconfig` or `apps/macos/AvtunesysMac/Config/Local.xcconfig`.
+1. Do not commit `apps/ios/Config/Local.xcconfig` or `apps/macos/TuneAVMac/Config/Local.xcconfig`.
 2. Do not commit `.env`, `.env.*`, `.infisical/bootstrap.env`, signing files, provisioning profiles, keystores, or generated build output.
 3. Do not commit real Clerk keys, StoreKit or Play billing secrets, backend tokens, subscription sync tokens, or private service credentials.
 4. Do not add production backend URLs as fallback constants in source or scripts. Production values must come from Infisical.
@@ -19,7 +19,7 @@ bun install
 bun run ios:config
 ```
 
-The command resolves through the private AV Account Varlock/Infisical bootstrap. This public repository should not contain `.env.example`, `.infisical/bootstrap.env.example`, or generated local config examples.
+The command resolves through the private Account AV Varlock/Infisical bootstrap. This public repository should not contain `.env.example`, `.infisical/bootstrap.env.example`, or generated local config examples.
 
 Production/App Store preparation:
 

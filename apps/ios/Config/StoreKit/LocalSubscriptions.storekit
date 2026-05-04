@@ -15,7 +15,7 @@
       "localizations" : [
 
       ],
-      "name" : "AV Tunesys Pro",
+      "name" : "Tune AV Pro",
       "subscriptions" : [
         {
           "adHocOffers" : [
@@ -31,19 +31,19 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Unlimited AV Tunesys access billed monthly.",
-              "displayName" : "AV Tunesys Pro Monthly",
+              "description" : "Unlimited Tune AV access billed monthly.",
+              "displayName" : "Tune AV Pro Monthly",
               "locale" : "en_US"
             },
             {
-              "description" : "Acceso ilimitado a AV Tunesys con cobro mensual.",
-              "displayName" : "AV Tunesys Pro Mensual",
+              "description" : "Acceso ilimitado a Tune AV con cobro mensual.",
+              "displayName" : "Tune AV Pro Mensual",
               "locale" : "es_ES"
             }
           ],
-          "productID" : "com.avalsys.avtunesys.pro.monthly",
+          "productID" : "com.avalsys.tuneav.pro.monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "AV Tunesys Pro Monthly",
+          "referenceName" : "Tune AV Pro Monthly",
           "subscriptionGroupID" : "9C4B1F72",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -64,19 +64,19 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Unlimited AV Tunesys access billed yearly.",
-              "displayName" : "AV Tunesys Pro Yearly",
+              "description" : "Unlimited Tune AV access billed yearly.",
+              "displayName" : "Tune AV Pro Yearly",
               "locale" : "en_US"
             },
             {
-              "description" : "Acceso ilimitado a AV Tunesys con cobro anual.",
-              "displayName" : "AV Tunesys Pro Anual",
+              "description" : "Acceso ilimitado a Tune AV con cobro anual.",
+              "displayName" : "Tune AV Pro Anual",
               "locale" : "es_ES"
             }
           ],
-          "productID" : "com.avalsys.avtunesys.pro.yearly",
+          "productID" : "com.avalsys.tuneav.pro.yearly",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "AV Tunesys Pro Yearly",
+          "referenceName" : "Tune AV Pro Yearly",
           "subscriptionGroupID" : "9C4B1F72",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

@@ -1,4 +1,4 @@
-name: Avtunesys
+name: TuneAV
 options:
   bundleIdPrefix: com.avalsys
   deploymentTarget:
@@ -8,7 +8,7 @@ options:
 settings:
   base:
     DEVELOPMENT_LANGUAGE: en
-    PRODUCT_NAME: Avtunesys
+    PRODUCT_NAME: TuneAV
     SWIFT_VERSION: "6.0"
 
 packages:
@@ -20,19 +20,19 @@ fileGroups:
   - Config/StoreKit/LocalSubscriptions.storekit
 
 schemes:
-  Avtunesys:
+  TuneAV:
     build:
       targets:
-        Avtunesys: all
+        TuneAV: all
     run:
       config: Debug
-      executable: Avtunesys
+      executable: TuneAV
       storeKitConfiguration: Config/StoreKit/LocalSubscriptions.storekit
     test:
       config: Debug
       targets:
-        - AvtunesysTests
-        - AvtunesysUITests
+        - TuneAVTests
+        - TuneAVUITests
     analyze:
       config: Debug
     profile:
@@ -43,14 +43,14 @@ schemes:
       shared: true
 
 targets:
-  Avtunesys:
+  TuneAV:
     type: application
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: Avtunesys
+      - path: TuneAV
       - path: ../../shared/apple
     dependencies:
       - package: Clerk
@@ -60,40 +60,40 @@ targets:
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_ENTITLEMENTS: Avtunesys/App/Avtunesys.entitlements
+        CODE_SIGN_ENTITLEMENTS: TuneAV/App/TuneAV.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)"
-        INFOPLIST_FILE: Avtunesys/App/Info.plist
+        INFOPLIST_FILE: TuneAV/App/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         PRODUCT_BUNDLE_IDENTIFIER: "$(PRODUCT_BUNDLE_IDENTIFIER)"
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
 
-  AvtunesysUITests:
+  TuneAVUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: AvtunesysUITests
+      - path: TuneAVUITests
     dependencies:
-      - target: Avtunesys
+      - target: TuneAV
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_MODULE_NAME: AvtunesysUITests
-        PRODUCT_BUNDLE_IDENTIFIER: "$(AVTUNESYS_BUNDLE_IDENTIFIER).uitests"
+        PRODUCT_MODULE_NAME: TuneAVUITests
+        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER).uitests"
         TARGETED_DEVICE_FAMILY: "1"
 
-  AvtunesysTests:
+  TuneAVTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: AvtunesysTests
+      - path: TuneAVTests
     dependencies:
-      - target: Avtunesys
+      - target: TuneAV
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_MODULE_NAME: AvtunesysTests
-        PRODUCT_BUNDLE_IDENTIFIER: "$(AVTUNESYS_BUNDLE_IDENTIFIER).tests"
+        PRODUCT_MODULE_NAME: TuneAVTests
+        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER).tests"
         TARGETED_DEVICE_FAMILY: "1"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Avtunesys.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Avtunesys"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TuneAV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuneAV"

@@ -17,6 +17,6 @@ Do not use public issues for vulnerabilities. Follow [`SECURITY.md`](SECURITY.md
 
 ## Account And Billing
 
-This repository contains the open-source AV Tunesys clients. Account, billing, subscriptions, and entitlement systems are operated outside this repository.
+This repository contains the open-source Tune AV clients. Account, billing, subscriptions, and entitlement systems are operated outside this repository.
 
 For public repo issues, do not include purchase receipts, account identifiers, access tokens, screenshots containing private account data, or personal contact details.

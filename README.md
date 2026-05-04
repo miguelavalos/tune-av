@@ -1,12 +1,12 @@
-# AV Tunesys
+# Tune AV
 
-Open-source native product repo for AV Tunesys.
+Open-source native product repo for Tune AV.
 
-This repository contains the AV Tunesys clients for iOS and macOS, together with local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
+This repository contains the Tune AV clients for iOS and macOS, together with local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
 
 The current main product target is `iOS`. `macOS` exists as a native companion target, but it is secondary for now.
 
-When configured, the iOS client can resolve signed-in access from the shared AV Account backend while remaining local-first by default.
+When configured, the iOS client can resolve signed-in access from the shared Account AV backend while remaining local-first by default.
 
 ## License
 
@@ -44,7 +44,7 @@ shared/
 - `shared/apple` is the single shared Swift implementation root for iOS/macOS behavior
 - `shared/contracts` is reserved for platform-neutral backend/client contracts when a non-Apple consumer exists
 - the repo remains local-first overall, and platform/backend adoption is intentionally narrow
-- current product focus is `av-tunesys iOS`; macOS should be treated as a lower-priority follow-up unless explicitly promoted
+- current product focus is `tune-av iOS`; macOS should be treated as a lower-priority follow-up unless explicitly promoted
 
 ## Local Setup
 
@@ -52,14 +52,14 @@ shared/
 
 1. Install repo tooling:
    `bun install`
-2. Resolve the local iOS config through the private AV Account Varlock + Infisical bootstrap:
+2. Resolve the local iOS config through the private Account AV Varlock + Infisical bootstrap:
    `bun run ios:config`
 3. This writes `apps/ios/Config/Local.xcconfig` with the client-side values needed for your build.
-4. Open `apps/ios/Avtunesys.xcodeproj` in Xcode and run the `Avtunesys` scheme.
+4. Open `apps/ios/TuneAV.xcodeproj` in Xcode and run the `TuneAV` scheme.
 
 ### macOS
 
-- The repo contains `apps/macos/AvtunesysMac` as a native SwiftUI target for local Xcode work.
+- The repo contains `apps/macos/TuneAVMac` as a native SwiftUI target for local Xcode work.
 
 For local signed builds, keep the real values out of git and regenerate local config through Varlock + Infisical when needed.
 
@@ -78,30 +78,30 @@ See [docs/install-ios.md](docs/install-ios.md) for setup details.
 
 ## Platform integration
 
-- iOS can use `AVACCOUNT_API_BASE_URL` to refresh signed-in access through `GET /v1/me/access`
+- iOS can use `ACCOUNTAV_API_BASE_URL` to refresh signed-in access through `GET /v1/me/access`
 - backend-backed app-data sync is available when account access enables cloud sync
-- subscription/provider reconciliation is owned by the private AV Account backend; this public client consumes the resulting access state
+- subscription/provider reconciliation is owned by the private Account AV backend; this public client consumes the resulting access state
 
 ## Third-Party Services And Data Sources
 
 - Station discovery currently relies on `Radio Browser`.
-- Playback relies on direct third-party station stream hosts that AV Tunesys does not control.
+- Playback relies on direct third-party station stream hosts that Tune AV does not control.
 - Artwork resolution may use Apple `iTunes Search`.
 - Favicon fallback resolution may use Google's favicon endpoint when station metadata does not provide a usable icon.
-- Signed-in account and entitlement flows depend on the private AV Account backend and related identity infrastructure.
+- Signed-in account and entitlement flows depend on the private Account AV backend and related identity infrastructure.
 - Profile surfaces now expose an in-product data-source reference for `Radio Browser`.
 
 ## Account Deletion Support
 
-- Public deletion support URL: `https://av-tunesys.avalsys.com/delete-account`
+- Public deletion support URL: `https://tune-av.avalsys.com/delete-account`
 - Local-only users can remove on-device data from inside the app or by deleting the app.
-- If an AV Account was used, the public deletion page documents the out-of-app request path and the provider-subscription caveats.
+- If an Account AV was used, the public deletion page documents the out-of-app request path and the provider-subscription caveats.
 
 ## Pending work
 
-1. Keep App Store and Google Play production reconciliation owned in private AV Account infrastructure.
+1. Keep App Store and Google Play production reconciliation owned in private Account AV infrastructure.
 2. Continue expanding product-specific cloud sync UX and conflict/merge handling across devices.
-3. Keep active AV Tunesys work focused on `iOS`, using macOS mainly as a secondary reference until priorities change.
+3. Keep active Tune AV work focused on `iOS`, using macOS mainly as a secondary reference until priorities change.
 4. Keep Apple-client access behavior aligned on backend-owned capabilities.
 5. Decide later whether macOS becomes a maintained first-class target or stays a companion/experimental app.
 6. Keep store disclosures aligned with the shipped account/deletion flow as production distribution expands.

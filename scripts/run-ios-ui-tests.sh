@@ -4,16 +4,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IOS_DIR="$ROOT_DIR/apps/ios"
-PROJECT_PATH="$IOS_DIR/Avtunesys.xcodeproj"
-SCHEME="Avtunesys"
+PROJECT_PATH="$IOS_DIR/TuneAV.xcodeproj"
+SCHEME="TuneAV"
 DESTINATION="platform=iOS Simulator,OS=18.5,name=iPhone 16"
 
 TESTS=(
-  "AvtunesysUITests/HomeUITests"
-  "AvtunesysUITests/PlayerQueueUITests"
-  "AvtunesysUITests/SearchQueueUITests"
-  "AvtunesysUITests/ZHomeEmptyStateUITests"
-  "AvtunesysUITests/HomeRefreshUITests"
+  "TuneAVUITests/HomeUITests"
+  "TuneAVUITests/PlayerQueueUITests"
+  "TuneAVUITests/SearchQueueUITests"
+  "TuneAVUITests/ZHomeEmptyStateUITests"
+  "TuneAVUITests/HomeRefreshUITests"
 )
 
 cd "$IOS_DIR"

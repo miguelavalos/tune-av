@@ -8,7 +8,7 @@ Use this checklist before creating the first public GitHub release and before ea
 2. Run `bun run config:hygiene`.
 3. Confirm no generated config files are present:
    - `apps/ios/Config/Local.xcconfig`
-   - `apps/macos/AvtunesysMac/Config/Local.xcconfig`
+   - `apps/macos/TuneAVMac/Config/Local.xcconfig`
    - `.env`
    - `.env.*`
    - `.infisical/bootstrap.env`
@@ -26,8 +26,8 @@ Use this checklist before creating the first public GitHub release and before ea
 2. Build iOS for simulator:
 
    ```bash
-   xcodebuild -project apps/ios/Avtunesys.xcodeproj \
-     -scheme Avtunesys \
+   xcodebuild -project apps/ios/TuneAV.xcodeproj \
+     -scheme TuneAV \
      -configuration Debug \
      -destination 'platform=iOS Simulator,name=iPhone 17' \
      build
@@ -36,8 +36,8 @@ Use this checklist before creating the first public GitHub release and before ea
 3. Run focused tests when touching shared policy, access, or persistence behavior:
 
    ```bash
-   xcodebuild -project apps/ios/Avtunesys.xcodeproj \
-     -scheme Avtunesys \
+   xcodebuild -project apps/ios/TuneAV.xcodeproj \
+     -scheme TuneAV \
      -configuration Debug \
      -destination 'platform=iOS Simulator,name=iPhone 17' \
      test
@@ -47,8 +47,8 @@ Use this checklist before creating the first public GitHub release and before ea
 
 ## Apple Developer
 
-1. Confirm the production App ID exists for `com.avalsys.avtunesys`.
-2. Confirm the development App ID exists for `com.avalsys.avtunesys.dev`.
+1. Confirm the production App ID exists for `com.avalsys.tuneav`.
+2. Confirm the development App ID exists for `com.avalsys.tuneav.dev`.
 3. Confirm the macOS App IDs are only used if the macOS target is part of the release.
 4. Confirm required capabilities are enabled before archiving:
    - Sign in with Apple, when native login is shipped.
@@ -56,12 +56,12 @@ Use this checklist before creating the first public GitHub release and before ea
    - Associated Domains, Push Notifications, or iCloud only if the shipped target uses them.
 5. Keep the Apple team value in private configuration as `AVALSYS_APPLE_DEVELOPMENT_TEAM`; do not commit a literal Team ID.
 
-## Clerk And AV Account
+## Clerk And Account AV
 
 1. Confirm Clerk production Apple SSO is configured before enabling native Apple sign-in.
-2. Confirm Clerk development and production allowed origins and redirect URLs cover the AV Account surfaces used by this build.
-3. Confirm `AVACCOUNT_PUBLISHABLE_KEY` is the shared public client key for AV Account.
-4. Confirm account management links resolve through `AVACCOUNT_MANAGEMENT_URL`.
+2. Confirm Clerk development and production allowed origins and redirect URLs cover the Account AV surfaces used by this build.
+3. Confirm `ACCOUNTAV_PUBLISHABLE_KEY` is the shared public client key for Account AV.
+4. Confirm account management links resolve through `ACCOUNTAV_MANAGEMENT_URL`.
 5. Confirm no Clerk secret key, smoke token, private relay config, or provider secret is present in this public repo.
 
 ## Infisical
@@ -69,22 +69,22 @@ Use this checklist before creating the first public GitHub release and before ea
 1. Resolve local values through ambient `INFISICAL_*` variables or private operator tooling outside this repo.
 2. Required shared values:
    - `AVALSYS_APPLE_DEVELOPMENT_TEAM`
-   - `AVACCOUNT_PUBLISHABLE_KEY`
-   - `AVACCOUNT_API_BASE_URL`
-   - `AVACCOUNT_MANAGEMENT_URL`
-3. Required AV Tunesys values:
-   - `AVTUNESYS_PREMIUM_PRODUCT_IDS`
-   - `AVTUNESYS_SUPPORT_EMAIL`
-   - `AVTUNESYS_TERMS_URL`
-   - `AVTUNESYS_PRIVACY_URL`
-   - `AVTUNESYS_OPEN_SOURCE_URL`
+   - `ACCOUNTAV_PUBLISHABLE_KEY`
+   - `ACCOUNTAV_API_BASE_URL`
+   - `ACCOUNTAV_MANAGEMENT_URL`
+3. Required Tune AV values:
+   - `TUNEAV_PREMIUM_PRODUCT_IDS`
+   - `TUNEAV_SUPPORT_EMAIL`
+   - `TUNEAV_TERMS_URL`
+   - `TUNEAV_PRIVACY_URL`
+   - `TUNEAV_OPEN_SOURCE_URL`
 4. Do not add `.infisical/bootstrap.env`, `.env`, `.env.example`, or generated `Local.xcconfig` examples to the public repository.
 
 ## Cloudflare And API Dependencies
 
-1. Confirm `AVACCOUNT_API_BASE_URL` points at the intended AV Account API environment for the build.
+1. Confirm `ACCOUNTAV_API_BASE_URL` points at the intended Account AV API environment for the build.
 2. Confirm `GET /v1/me/access` is available when signed-in access is enabled.
-3. Confirm AV Account production or preview smokes pass from the private infrastructure before releasing a client that depends on those routes.
+3. Confirm Account AV production or preview smokes pass from the private infrastructure before releasing a client that depends on those routes.
 4. Confirm public support, terms, privacy, open-source, and account-management URLs are reachable.
 5. Keep Worker names, D1/R2 names, API tokens, and Cloudflare account details in private infrastructure only.
 

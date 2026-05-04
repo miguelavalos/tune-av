@@ -1,0 +1,2 @@
+typealias TrackArtwork = TuneAVTrackArtwork
+typealias TrackArtworkService = TuneAVTrackArtworkService

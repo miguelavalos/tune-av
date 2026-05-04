@@ -1,2 +1,0 @@
-typealias TrackArtwork = AVTunesysTrackArtwork
-typealias TrackArtworkService = AVTunesysTrackArtworkService

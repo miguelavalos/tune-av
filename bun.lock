@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "avtunesys",
+      "name": "tuneav",
       "devDependencies": {
         "@varlock/infisical-plugin": "0.0.6",
         "sharp": "^0.34.5",

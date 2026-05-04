@@ -1,0 +1,69 @@
+name: TuneAVMac
+options:
+  bundleIdPrefix: com.avalsys
+  deploymentTarget:
+    macOS: "14.0"
+targets:
+  TuneAVMac:
+    type: application
+    platform: macOS
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
+    info:
+      path: Supporting/Info.plist
+      properties:
+        CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
+        ACCOUNTAV_API_BASE_URL: $(ACCOUNTAV_API_BASE_URL)
+        ACCOUNTAV_MANAGEMENT_URL: $(ACCOUNTAV_MANAGEMENT_URL)
+        LSApplicationCategoryType: public.app-category.music
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    sources:
+      - path: Sources
+      - path: ../../../shared/apple
+      - path: Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER)"
+        PRODUCT_NAME: Tune AV
+        PRODUCT_MODULE_NAME: TuneAVMac
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: 5.10
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)"
+
+  TuneAVMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: TuneAVMac
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_MODULE_NAME: TuneAVMacTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.avalsys.tuneav.mac.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV"
+
+schemes:
+  TuneAVMac:
+    build:
+      targets:
+        TuneAVMac: all
+    run:
+      config: Debug
+      executable: TuneAVMac
+    test:
+      config: Debug
+      targets:
+        - TuneAVMacTests
+    analyze:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release
+    management:
+      shared: true

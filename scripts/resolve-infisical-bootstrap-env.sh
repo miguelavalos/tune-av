@@ -49,7 +49,7 @@ print_exports() {
   fi
 }
 
-bootstrap_file="${AVTUNESYS_INFISICAL_BOOTSTRAP_FILE:-${INFISICAL_BOOTSTRAP_FILE:-$repo_root/.infisical/bootstrap.env}}"
+bootstrap_file="${TUNEAV_INFISICAL_BOOTSTRAP_FILE:-${INFISICAL_BOOTSTRAP_FILE:-$repo_root/.infisical/bootstrap.env}}"
 
 if has_required_keys; then
   print_exports

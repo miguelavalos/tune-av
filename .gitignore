@@ -21,12 +21,12 @@ apps/ios/Config/Local.xcconfig
 
 # Override global ignore rules so iOS app sources remain trackable.
 !/apps/ios/
-!/apps/ios/Avtunesys/
-!/apps/ios/Avtunesys/**
+!/apps/ios/TuneAV/
+!/apps/ios/TuneAV/**
 
 # Override global ignore rules so macOS app sources remain trackable.
 !/apps/macos/
 !/apps/macos/**
 
 # macOS local config is generated from private Infisical/Varlock values.
-apps/macos/AvtunesysMac/Config/Local.xcconfig
+apps/macos/TuneAVMac/Config/Local.xcconfig

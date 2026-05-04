@@ -1,0 +1,954 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02843437F1D7870140001E06 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46AC4532922BA21AABB10A9A /* InAppBrowserView.swift */; };
+		0379E044D17FF3BD0ED4A5F7 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE05F9AC24E1DEE437CC0E5F /* RootView.swift */; };
+		07A31821D48A961A761B329F /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1EA6C5F9425526964DEE766 /* NowPlayingView.swift */; };
+		086A55ABAF5DE17D425995B9 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0B85EA62D40D41267CBB54 /* L10n.swift */; };
+		090BD50C78F3E7FE6CE8416F /* AppShellMusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CB4FD9395B47BD7960B2750 /* AppShellMusicLibrary.swift */; };
+		0DC787BB5F33DD9538668327 /* AppShellSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA2055DF862A4E0ADC7DCBD /* AppShellSearch.swift */; };
+		137DD4F90E2346CEB90B35E7 /* PlayerQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F5A76F08F2815EFEE6DD54 /* PlayerQueueUITests.swift */; };
+		168DD8C14A7922465A5D2449 /* TuneAVUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C8EFAAAB814490A058DEB7D /* TuneAVUITestCase.swift */; };
+		1A6AB07E24F6803435778E49 /* TuneAVAppDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD6F0F6DDF35546167E58B9 /* TuneAVAppDataService.swift */; };
+		2165C77583B5BBD2780B4905 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779F7A2063EB424C911BF2FD /* ShellChromeViews.swift */; };
+		245A1F6F6288CB0C07EABCC3 /* TuneAVText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8723E2A67616950EBD1C02C2 /* TuneAVText.swift */; };
+		27ABE24E88390E9961E7BAD0 /* AppShellTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9AC6286B334D52FD3415E8C /* AppShellTab.swift */; };
+		28C4AD768F7D00E9D84EAE86 /* TuneAVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFA99BAC0C142D7FF935302 /* TuneAVApp.swift */; };
+		2C650F3E911ECBC2D4752D6F /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A894E32B94F181EC30F7559 /* TuneAVStationService.swift */; };
+		31DE7FBFBE3D4BFEF59F6447 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73A1E793162BCE56B6C409C7 /* AudioPlayerService.swift */; };
+		33719ADE286F0F73203FE022 /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331A106EDD588A3547FD4D47 /* TuneAVEighties80sNowPlaying.swift */; };
+		35D05F360A5EB99ACB5BE390 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5298A3ACA120D0B7E4EF72D5 /* ClerkKit */; };
+		3D5CF180E7377D13D20ABB92 /* NowPlayingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDAC5333ECF5661513AA9B3 /* NowPlayingService.swift */; };
+		3D871336C2B33919165338FF /* LaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 447C69AEDC9FE61FCAE4DDD0 /* LaunchContext.swift */; };
+		3DF8705529E02C0A6DE89C99 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA5BDE8951BB88D33F6CD8CE /* ClerkKitUI */; };
+		40C936459980AE43C8C369E1 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CCBE23B267597C3C457189E /* AppShellView.swift */; };
+		532E403F7E9A67C116223700 /* StationArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48187D669301762B7AC60794 /* StationArtworkView.swift */; };
+		53A5D7D0CE066746B3996E39 /* TrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22146887C4D6C8D6B715E51D /* TrackArtworkService.swift */; };
+		5841561270C347B5DEF4EC37 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA054FF1A17D996945E75079 /* AppShellNowPlayingPreviews.swift */; };
+		67EB64A8F1FC06D79DAA16F0 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4856832CB2E14B1B0E61BDB1 /* LibraryStoreTests.swift */; };
+		6810E4DB87FAA719BA14C462 /* AccessMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDED0DCE3EFEB4D974BD7731 /* AccessMode.swift */; };
+		6E4E7C8B4EC7F235146608B9 /* TuneAVExternalSearchURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6B091B4AF0F266D509C979 /* TuneAVExternalSearchURL.swift */; };
+		78759994C610D42A738E8E97 /* StationDetailQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9579F148971B0163A2CCEC10 /* StationDetailQueueUITests.swift */; };
+		7A3FC15CCBFDD501D39DC183 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F81F84C5200BEBDC76B9B2 /* SharedAppleSupportTests.swift */; };
+		7D7776F60BF8FC74AFDE51D9 /* DiscoveriesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E08CBB60406E07BDCF52F9 /* DiscoveriesUITests.swift */; };
+		7DBA187348DE06F3E55D4D9B /* HomeRefreshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2364D53A209CAF582A3740B1 /* HomeRefreshUITests.swift */; };
+		81EAFB723B83F59571429034 /* TuneAVDateCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BC3812FECBB0B0D9D1DC88 /* TuneAVDateCoding.swift */; };
+		8272EAAC0F7E1EFEAF230131 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC8C781615DFD4149F8D3CD /* EntitlementService.swift */; };
+		884166027CE1A8EF08BFE3FD /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61118E636B9CBEDA7FC36C7A /* TuneAVCountry.swift */; };
+		8A47BBF9E9862DABC1DA5C98 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CAA61B455D72E74676166E /* AppConfig.swift */; };
+		8D42DD4C74228FFC9CABD696 /* AccessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3453FC7E2B748912B718E268 /* AccessController.swift */; };
+		8D7C8BBC5ACA062A3AF9D1D8 /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82E90AB476D5D744E56CF1F2 /* ProfileScreen.swift */; };
+		9C66C43C28B3013D16D34132 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE7DABC77E2B6CF40A1D5F6 /* SearchQueueUITests.swift */; };
+		9F812531E84A064F6C65D463 /* AuthOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A8185BC74C68F6A1733B81B /* AuthOnboardingView.swift */; };
+		A2761260E3945C25FEAB92AE /* AppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55AF463E5C47240561AEA913 /* AppShellHomeFeed.swift */; };
+		A2B9D9B78F2FBAF507C8955F /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169DF8787DCFA9289CFE370A /* TuneAVCollectionRules.swift */; };
+		A3B93B8C8AFD0935522DB2BC /* MusicDiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4FFC3089F239AF79E239C9 /* MusicDiscoveryViews.swift */; };
+		B2C96E8F8DDC75D413CB3A34 /* TuneAVTrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567736D83DCF6AA8FED9CDF1 /* TuneAVTrackArtworkService.swift */; };
+		B3BD72F10E641F7B444BCE54 /* AVAccountAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BBDA8EAFACF54DACEC23D75 /* AVAccountAPIClient.swift */; };
+		B576A2C9F1912147878C2A5D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A3B05D4824A10F79BD439866 /* Localizable.strings */; };
+		BBAFF87316EA347ED48AE46E /* TuneAVAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD5B13442D130A6F54D225A /* TuneAVAccessPolicy.swift */; };
+		BFB95C218433A28BE04A8388 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7ED681B27A4E083C03898CF /* TuneAVTrackMetadata.swift */; };
+		C01D2C98F224AA40C1510F2B /* HomeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42BC8853D598BB41271F264 /* HomeUITests.swift */; };
+		C0CFC53C917A41E7FBFBE0B4 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A6EBC68CA38B12AC6E73D8 /* MiniPlayerView.swift */; };
+		C3BB6CECE43A82081701E61F /* TuneAVTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C899698EE95C942C7DF10255 /* TuneAVTheme.swift */; };
+		C6E79DC84AE8A6BF4C86484C /* AccessLimitsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBC5E890F176FB0D1B23638 /* AccessLimitsTests.swift */; };
+		D074C7FC876D536A5A16D940 /* TuneAVLibrarySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81377CBA9BCC6896EDA21E5E /* TuneAVLibrarySync.swift */; };
+		D60B07FDF5C31538BF64F00E /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E6995F6E4C4B03BB409F269 /* LibraryStore.swift */; };
+		DBC55D25241F8E5F27D63B5C /* TuneAVSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C148C98CF7F2E3A0B0F07F96 /* TuneAVSplashView.swift */; };
+		DC5585D1AE2F5D58E0ACC68D /* ProfileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D5C0A67D919E7C56A87070 /* ProfileUITests.swift */; };
+		DED8FB6DABE537CE78BE6EA1 /* AVAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E469AF744504EED3F776E9 /* AVAccountService.swift */; };
+		E0D19922798A73F700548B00 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA19950CA1506AED128D690 /* PersistenceController.swift */; };
+		E1A6A9F7CCDF15A2EFC253D0 /* Station.swift in Sources */ = {isa = PBXBuildFile; fileRef = F79C6B0EAD811CB1D8D97FA5 /* Station.swift */; };
+		E29CFD623C802DA722BD6305 /* TuneAVDiscoveredTrackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9BB27B371901F22E9DB14E /* TuneAVDiscoveredTrackSupport.swift */; };
+		E4E9F175606F2C16F5D8B6DE /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0900759E92539B11129AB4C9 /* TuneAVStation.swift */; };
+		EAA5B1C46EE333A0DF3B7384 /* StationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6142BE282862BFA78AF618FE /* StationService.swift */; };
+		EE59E0FDCFF7E6B76DE527FD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EF3138EE2D727522770F9AAD /* Assets.xcassets */; };
+		F4AA6CA8AE965C0CB9E7B7BB /* HomeEmptyStateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B907F65D87D5C1118CE07C4C /* HomeEmptyStateUITests.swift */; };
+		FD8D85D5C3180423A0F4EEE8 /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9E6113751798CA72269347 /* LimitsUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		15A7C69ACF89A375CBA37167 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2938BAF65E2072919B35AC91 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6D25BBF40A8A65CBA54E1974;
+			remoteInfo = TuneAV;
+		};
+		BC303A484EC5BC51D31D4FC2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2938BAF65E2072919B35AC91 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6D25BBF40A8A65CBA54E1974;
+			remoteInfo = TuneAV;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0900759E92539B11129AB4C9 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
+		0CCBE23B267597C3C457189E /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
+		1521BBD1C6F45E45F34048D4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		169DF8787DCFA9289CFE370A /* TuneAVCollectionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCollectionRules.swift; sourceTree = "<group>"; };
+		1B9BB27B371901F22E9DB14E /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
+		1C140C371C3560865D9863D4 /* LocalSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = LocalSubscriptions.storekit; sourceTree = "<group>"; };
+		22146887C4D6C8D6B715E51D /* TrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackArtworkService.swift; sourceTree = "<group>"; };
+		2364D53A209CAF582A3740B1 /* HomeRefreshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRefreshUITests.swift; sourceTree = "<group>"; };
+		331A106EDD588A3547FD4D47 /* TuneAVEighties80sNowPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVEighties80sNowPlaying.swift; sourceTree = "<group>"; };
+		3453FC7E2B748912B718E268 /* AccessController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessController.swift; sourceTree = "<group>"; };
+		36F5A76F08F2815EFEE6DD54 /* PlayerQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerQueueUITests.swift; sourceTree = "<group>"; };
+		3BBC5E890F176FB0D1B23638 /* AccessLimitsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessLimitsTests.swift; sourceTree = "<group>"; };
+		40689828679610D27727BE04 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		447C69AEDC9FE61FCAE4DDD0 /* LaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchContext.swift; sourceTree = "<group>"; };
+		46AC4532922BA21AABB10A9A /* InAppBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppBrowserView.swift; sourceTree = "<group>"; };
+		48187D669301762B7AC60794 /* StationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationArtworkView.swift; sourceTree = "<group>"; };
+		4856832CB2E14B1B0E61BDB1 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
+		4C0B85EA62D40D41267CBB54 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
+		5015E5C5E5FB0FE623A9CC59 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		55AF463E5C47240561AEA913 /* AppShellHomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellHomeFeed.swift; sourceTree = "<group>"; };
+		567736D83DCF6AA8FED9CDF1 /* TuneAVTrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackArtworkService.swift; sourceTree = "<group>"; };
+		5A8185BC74C68F6A1733B81B /* AuthOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthOnboardingView.swift; sourceTree = "<group>"; };
+		5CB4FD9395B47BD7960B2750 /* AppShellMusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellMusicLibrary.swift; sourceTree = "<group>"; };
+		5FD6F0F6DDF35546167E58B9 /* TuneAVAppDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataService.swift; sourceTree = "<group>"; };
+		61118E636B9CBEDA7FC36C7A /* TuneAVCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCountry.swift; sourceTree = "<group>"; };
+		6142BE282862BFA78AF618FE /* StationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationService.swift; sourceTree = "<group>"; };
+		6A894E32B94F181EC30F7559 /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
+		6D9E6113751798CA72269347 /* LimitsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LimitsUITests.swift; sourceTree = "<group>"; };
+		6DDAC5333ECF5661513AA9B3 /* NowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingService.swift; sourceTree = "<group>"; };
+		6FF79E4E5640B34BCF9F7A58 /* TuneAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		731DA8E58D9ED5E9AD3336DB /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		73A1E793162BCE56B6C409C7 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
+		779F7A2063EB424C911BF2FD /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
+		7AC8C781615DFD4149F8D3CD /* EntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementService.swift; sourceTree = "<group>"; };
+		7CA19950CA1506AED128D690 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		7E48FB8DF95D372200C29614 /* TuneAVTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = file; name = TuneAVTests.xctest; path = TuneAV.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E6995F6E4C4B03BB409F269 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		81377CBA9BCC6896EDA21E5E /* TuneAVLibrarySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibrarySync.swift; sourceTree = "<group>"; };
+		82CAA61B455D72E74676166E /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		82E90AB476D5D744E56CF1F2 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
+		8723E2A67616950EBD1C02C2 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
+		88D5C0A67D919E7C56A87070 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
+		8C8EFAAAB814490A058DEB7D /* TuneAVUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestCase.swift; sourceTree = "<group>"; };
+		930C7590408396DCFD2FA3D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9579F148971B0163A2CCEC10 /* StationDetailQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDetailQueueUITests.swift; sourceTree = "<group>"; };
+		97A903876531684C11D7C831 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = file; name = TuneAVUITests.xctest; path = TuneAV.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BBDA8EAFACF54DACEC23D75 /* AVAccountAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAccountAPIClient.swift; sourceTree = "<group>"; };
+		9DA2055DF862A4E0ADC7DCBD /* AppShellSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellSearch.swift; sourceTree = "<group>"; };
+		A5650EC1EB4E639BE5BDF10A /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		AC6B091B4AF0F266D509C979 /* TuneAVExternalSearchURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVExternalSearchURL.swift; sourceTree = "<group>"; };
+		AD4FFC3089F239AF79E239C9 /* MusicDiscoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDiscoveryViews.swift; sourceTree = "<group>"; };
+		ADD5B13442D130A6F54D225A /* TuneAVAccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessPolicy.swift; sourceTree = "<group>"; };
+		B1BC3812FECBB0B0D9D1DC88 /* TuneAVDateCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDateCoding.swift; sourceTree = "<group>"; };
+		B42BC8853D598BB41271F264 /* HomeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeUITests.swift; sourceTree = "<group>"; };
+		B5A6EBC68CA38B12AC6E73D8 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		B7ED681B27A4E083C03898CF /* TuneAVTrackMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackMetadata.swift; sourceTree = "<group>"; };
+		B907F65D87D5C1118CE07C4C /* HomeEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEmptyStateUITests.swift; sourceTree = "<group>"; };
+		BFE7DABC77E2B6CF40A1D5F6 /* SearchQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueueUITests.swift; sourceTree = "<group>"; };
+		C148C98CF7F2E3A0B0F07F96 /* TuneAVSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSplashView.swift; sourceTree = "<group>"; };
+		C899698EE95C942C7DF10255 /* TuneAVTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTheme.swift; sourceTree = "<group>"; };
+		C8E08CBB60406E07BDCF52F9 /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
+		C8F81F84C5200BEBDC76B9B2 /* SharedAppleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppleSupportTests.swift; sourceTree = "<group>"; };
+		CDED0DCE3EFEB4D974BD7731 /* AccessMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessMode.swift; sourceTree = "<group>"; };
+		DE05F9AC24E1DEE437CC0E5F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		DF50CE6FF9EE1B7849BBCE7A /* TuneAV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuneAV.entitlements; sourceTree = "<group>"; };
+		E1EA6C5F9425526964DEE766 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
+		E4E469AF744504EED3F776E9 /* AVAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAccountService.swift; sourceTree = "<group>"; };
+		EA054FF1A17D996945E75079 /* AppShellNowPlayingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellNowPlayingPreviews.swift; sourceTree = "<group>"; };
+		EA97D17525DF23D77C2E1E50 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
+		EF3138EE2D727522770F9AAD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F79C6B0EAD811CB1D8D97FA5 /* Station.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Station.swift; sourceTree = "<group>"; };
+		F89E1F19B0E1CF6571A98450 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F9AC6286B334D52FD3415E8C /* AppShellTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellTab.swift; sourceTree = "<group>"; };
+		FFFA99BAC0C142D7FF935302 /* TuneAVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CBA6D11B12CE284C06B97647 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35D05F360A5EB99ACB5BE390 /* ClerkKit in Frameworks */,
+				3DF8705529E02C0A6DE89C99 /* ClerkKitUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		12DB0AEDD925EC57013328E1 /* StoreKit */ = {
+			isa = PBXGroup;
+			children = (
+				1C140C371C3560865D9863D4 /* LocalSubscriptions.storekit */,
+			);
+			name = StoreKit;
+			path = Config/StoreKit;
+			sourceTree = "<group>";
+		};
+		20F4F4282400127919BC82AC /* TuneAV */ = {
+			isa = PBXGroup;
+			children = (
+				386180B289A2B54120AF253A /* App */,
+				FCE3393F546C6820D7BB8547 /* Core */,
+				E86DDDDB1F460C4796B400C6 /* Features */,
+				EA59D42A7801E9DFCC83D000 /* Models */,
+				CFFF5E831B6D38979261DE12 /* Resources */,
+				B4AE658B3255BFD7AC421B13 /* UI */,
+			);
+			path = TuneAV;
+			sourceTree = "<group>";
+		};
+		386180B289A2B54120AF253A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3453FC7E2B748912B718E268 /* AccessController.swift */,
+				CDED0DCE3EFEB4D974BD7731 /* AccessMode.swift */,
+				82CAA61B455D72E74676166E /* AppConfig.swift */,
+				EF3138EE2D727522770F9AAD /* Assets.xcassets */,
+				9BBDA8EAFACF54DACEC23D75 /* AVAccountAPIClient.swift */,
+				E4E469AF744504EED3F776E9 /* AVAccountService.swift */,
+				DF50CE6FF9EE1B7849BBCE7A /* TuneAV.entitlements */,
+				FFFA99BAC0C142D7FF935302 /* TuneAVApp.swift */,
+				5FD6F0F6DDF35546167E58B9 /* TuneAVAppDataService.swift */,
+				C148C98CF7F2E3A0B0F07F96 /* TuneAVSplashView.swift */,
+				7AC8C781615DFD4149F8D3CD /* EntitlementService.swift */,
+				930C7590408396DCFD2FA3D3 /* Info.plist */,
+				4C0B85EA62D40D41267CBB54 /* L10n.swift */,
+				447C69AEDC9FE61FCAE4DDD0 /* LaunchContext.swift */,
+				DE05F9AC24E1DEE437CC0E5F /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		39F93BF220F248F11CFF25B9 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				7E6995F6E4C4B03BB409F269 /* LibraryStore.swift */,
+				7CA19950CA1506AED128D690 /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		49FCF3F59188D7D5493DE355 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				73A1E793162BCE56B6C409C7 /* AudioPlayerService.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		4E3FE41339802382193EF2C0 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				5A8185BC74C68F6A1733B81B /* AuthOnboardingView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A50C6078C6B6D7F2AA911D53 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				E1EA6C5F9425526964DEE766 /* NowPlayingView.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		A63F6383965A04EB14A637C9 /* TuneAVUITests */ = {
+			isa = PBXGroup;
+			children = (
+				8C8EFAAAB814490A058DEB7D /* TuneAVUITestCase.swift */,
+				C8E08CBB60406E07BDCF52F9 /* DiscoveriesUITests.swift */,
+				B907F65D87D5C1118CE07C4C /* HomeEmptyStateUITests.swift */,
+				2364D53A209CAF582A3740B1 /* HomeRefreshUITests.swift */,
+				B42BC8853D598BB41271F264 /* HomeUITests.swift */,
+				6D9E6113751798CA72269347 /* LimitsUITests.swift */,
+				36F5A76F08F2815EFEE6DD54 /* PlayerQueueUITests.swift */,
+				88D5C0A67D919E7C56A87070 /* ProfileUITests.swift */,
+				BFE7DABC77E2B6CF40A1D5F6 /* SearchQueueUITests.swift */,
+				9579F148971B0163A2CCEC10 /* StationDetailQueueUITests.swift */,
+			);
+			path = TuneAVUITests;
+			sourceTree = "<group>";
+		};
+		ABF3FC594D4722FEDBDC72F4 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				6DDAC5333ECF5661513AA9B3 /* NowPlayingService.swift */,
+				6142BE282862BFA78AF618FE /* StationService.swift */,
+				22146887C4D6C8D6B715E51D /* TrackArtworkService.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		B47576B10CFCC913AFC7D8BB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6FF79E4E5640B34BCF9F7A58 /* TuneAV.app */,
+				7E48FB8DF95D372200C29614 /* TuneAVTests.xctest */,
+				97A903876531684C11D7C831 /* TuneAVUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B4AE658B3255BFD7AC421B13 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				C899698EE95C942C7DF10255 /* TuneAVTheme.swift */,
+				46AC4532922BA21AABB10A9A /* InAppBrowserView.swift */,
+				48187D669301762B7AC60794 /* StationArtworkView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		CFFF5E831B6D38979261DE12 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A3B05D4824A10F79BD439866 /* Localizable.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		DC3E11C2C7987F4917D5AD8D /* Shell */ = {
+			isa = PBXGroup;
+			children = (
+				55AF463E5C47240561AEA913 /* AppShellHomeFeed.swift */,
+				5CB4FD9395B47BD7960B2750 /* AppShellMusicLibrary.swift */,
+				EA054FF1A17D996945E75079 /* AppShellNowPlayingPreviews.swift */,
+				9DA2055DF862A4E0ADC7DCBD /* AppShellSearch.swift */,
+				F9AC6286B334D52FD3415E8C /* AppShellTab.swift */,
+				0CCBE23B267597C3C457189E /* AppShellView.swift */,
+				B5A6EBC68CA38B12AC6E73D8 /* MiniPlayerView.swift */,
+				AD4FFC3089F239AF79E239C9 /* MusicDiscoveryViews.swift */,
+				779F7A2063EB424C911BF2FD /* ShellChromeViews.swift */,
+			);
+			path = Shell;
+			sourceTree = "<group>";
+		};
+		E061E5DC08B4E336E6745046 /* apple */ = {
+			isa = PBXGroup;
+			children = (
+				ADD5B13442D130A6F54D225A /* TuneAVAccessPolicy.swift */,
+				169DF8787DCFA9289CFE370A /* TuneAVCollectionRules.swift */,
+				61118E636B9CBEDA7FC36C7A /* TuneAVCountry.swift */,
+				B1BC3812FECBB0B0D9D1DC88 /* TuneAVDateCoding.swift */,
+				1B9BB27B371901F22E9DB14E /* TuneAVDiscoveredTrackSupport.swift */,
+				331A106EDD588A3547FD4D47 /* TuneAVEighties80sNowPlaying.swift */,
+				AC6B091B4AF0F266D509C979 /* TuneAVExternalSearchURL.swift */,
+				81377CBA9BCC6896EDA21E5E /* TuneAVLibrarySync.swift */,
+				0900759E92539B11129AB4C9 /* TuneAVStation.swift */,
+				6A894E32B94F181EC30F7559 /* TuneAVStationService.swift */,
+				8723E2A67616950EBD1C02C2 /* TuneAVText.swift */,
+				567736D83DCF6AA8FED9CDF1 /* TuneAVTrackArtworkService.swift */,
+				B7ED681B27A4E083C03898CF /* TuneAVTrackMetadata.swift */,
+			);
+			name = apple;
+			path = ../../shared/apple;
+			sourceTree = "<group>";
+		};
+		E4BDF5B6BBD7A82076F6F314 = {
+			isa = PBXGroup;
+			children = (
+				E061E5DC08B4E336E6745046 /* apple */,
+				20F4F4282400127919BC82AC /* TuneAV */,
+				F5447587D52577DD95C7BFDD /* TuneAVTests */,
+				A63F6383965A04EB14A637C9 /* TuneAVUITests */,
+				ED6C2BE072E768F36D655C8A /* Config */,
+				12DB0AEDD925EC57013328E1 /* StoreKit */,
+				B47576B10CFCC913AFC7D8BB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E86DDDDB1F460C4796B400C6 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				4E3FE41339802382193EF2C0 /* Auth */,
+				A50C6078C6B6D7F2AA911D53 /* Player */,
+				EB8BAED5D4839D4AC0390C37 /* Profile */,
+				DC3E11C2C7987F4917D5AD8D /* Shell */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		EA59D42A7801E9DFCC83D000 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F79C6B0EAD811CB1D8D97FA5 /* Station.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		EB8BAED5D4839D4AC0390C37 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				82E90AB476D5D744E56CF1F2 /* ProfileScreen.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		ED6C2BE072E768F36D655C8A /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				40689828679610D27727BE04 /* Debug.xcconfig */,
+				731DA8E58D9ED5E9AD3336DB /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		F5447587D52577DD95C7BFDD /* TuneAVTests */ = {
+			isa = PBXGroup;
+			children = (
+				3BBC5E890F176FB0D1B23638 /* AccessLimitsTests.swift */,
+				4856832CB2E14B1B0E61BDB1 /* LibraryStoreTests.swift */,
+				C8F81F84C5200BEBDC76B9B2 /* SharedAppleSupportTests.swift */,
+			);
+			path = TuneAVTests;
+			sourceTree = "<group>";
+		};
+		FCE3393F546C6820D7BB8547 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				49FCF3F59188D7D5493DE355 /* Audio */,
+				ABF3FC594D4722FEDBDC72F4 /* Networking */,
+				39F93BF220F248F11CFF25B9 /* Persistence */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6D25BBF40A8A65CBA54E1974 /* TuneAV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11909A89E876816BD18871B /* Build configuration list for PBXNativeTarget "TuneAV" */;
+			buildPhases = (
+				E8D0CF13EFDF1E490E1613BA /* Sources */,
+				44D1CC3105765CAC5ECE1929 /* Resources */,
+				CBA6D11B12CE284C06B97647 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TuneAV;
+			packageProductDependencies = (
+				5298A3ACA120D0B7E4EF72D5 /* ClerkKit */,
+				AA5BDE8951BB88D33F6CD8CE /* ClerkKitUI */,
+			);
+			productName = TuneAV;
+			productReference = 6FF79E4E5640B34BCF9F7A58 /* TuneAV.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7617C98E325A080EADE1A251 /* TuneAVTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 809ACBB3CC7B7F0A7C883CAC /* Build configuration list for PBXNativeTarget "TuneAVTests" */;
+			buildPhases = (
+				DE7B9B14D6D6B7C9B9F17CBE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4448BF021665788154061473 /* PBXTargetDependency */,
+			);
+			name = TuneAVTests;
+			packageProductDependencies = (
+			);
+			productName = TuneAVTests;
+			productReference = 7E48FB8DF95D372200C29614 /* TuneAVTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D659B18DE236A62BF89FE1EE /* TuneAVUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8201F6124AFDC00CF888A19F /* Build configuration list for PBXNativeTarget "TuneAVUITests" */;
+			buildPhases = (
+				9BEED0F5EE8F291E7A90D502 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7F970E23BF1D10747DA38D0B /* PBXTargetDependency */,
+			);
+			name = TuneAVUITests;
+			packageProductDependencies = (
+			);
+			productName = TuneAVUITests;
+			productReference = 97A903876531684C11D7C831 /* TuneAVUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2938BAF65E2072919B35AC91 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					6D25BBF40A8A65CBA54E1974 = {
+						ProvisioningStyle = Automatic;
+					};
+					D659B18DE236A62BF89FE1EE = {
+						TestTargetID = 6D25BBF40A8A65CBA54E1974;
+					};
+				};
+			};
+			buildConfigurationList = 74A3696BE981068A81FC121B /* Build configuration list for PBXProject "TuneAV" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				ca,
+				de,
+				en,
+				es,
+				fr,
+			);
+			mainGroup = E4BDF5B6BBD7A82076F6F314;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0BE2F37A4A9CCF864233B7DC /* XCRemoteSwiftPackageReference "clerk-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B47576B10CFCC913AFC7D8BB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6D25BBF40A8A65CBA54E1974 /* TuneAV */,
+				7617C98E325A080EADE1A251 /* TuneAVTests */,
+				D659B18DE236A62BF89FE1EE /* TuneAVUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		44D1CC3105765CAC5ECE1929 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE59E0FDCFF7E6B76DE527FD /* Assets.xcassets in Resources */,
+				B576A2C9F1912147878C2A5D /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9BEED0F5EE8F291E7A90D502 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				168DD8C14A7922465A5D2449 /* TuneAVUITestCase.swift in Sources */,
+				7D7776F60BF8FC74AFDE51D9 /* DiscoveriesUITests.swift in Sources */,
+				F4AA6CA8AE965C0CB9E7B7BB /* HomeEmptyStateUITests.swift in Sources */,
+				7DBA187348DE06F3E55D4D9B /* HomeRefreshUITests.swift in Sources */,
+				C01D2C98F224AA40C1510F2B /* HomeUITests.swift in Sources */,
+				FD8D85D5C3180423A0F4EEE8 /* LimitsUITests.swift in Sources */,
+				137DD4F90E2346CEB90B35E7 /* PlayerQueueUITests.swift in Sources */,
+				DC5585D1AE2F5D58E0ACC68D /* ProfileUITests.swift in Sources */,
+				9C66C43C28B3013D16D34132 /* SearchQueueUITests.swift in Sources */,
+				78759994C610D42A738E8E97 /* StationDetailQueueUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE7B9B14D6D6B7C9B9F17CBE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6E79DC84AE8A6BF4C86484C /* AccessLimitsTests.swift in Sources */,
+				67EB64A8F1FC06D79DAA16F0 /* LibraryStoreTests.swift in Sources */,
+				7A3FC15CCBFDD501D39DC183 /* SharedAppleSupportTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8D0CF13EFDF1E490E1613BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B3BD72F10E641F7B444BCE54 /* AVAccountAPIClient.swift in Sources */,
+				DED8FB6DABE537CE78BE6EA1 /* AVAccountService.swift in Sources */,
+				BBAFF87316EA347ED48AE46E /* TuneAVAccessPolicy.swift in Sources */,
+				1A6AB07E24F6803435778E49 /* TuneAVAppDataService.swift in Sources */,
+				A2B9D9B78F2FBAF507C8955F /* TuneAVCollectionRules.swift in Sources */,
+				884166027CE1A8EF08BFE3FD /* TuneAVCountry.swift in Sources */,
+				81EAFB723B83F59571429034 /* TuneAVDateCoding.swift in Sources */,
+				E29CFD623C802DA722BD6305 /* TuneAVDiscoveredTrackSupport.swift in Sources */,
+				33719ADE286F0F73203FE022 /* TuneAVEighties80sNowPlaying.swift in Sources */,
+				6E4E7C8B4EC7F235146608B9 /* TuneAVExternalSearchURL.swift in Sources */,
+				D074C7FC876D536A5A16D940 /* TuneAVLibrarySync.swift in Sources */,
+				E4E9F175606F2C16F5D8B6DE /* TuneAVStation.swift in Sources */,
+				2C650F3E911ECBC2D4752D6F /* TuneAVStationService.swift in Sources */,
+				245A1F6F6288CB0C07EABCC3 /* TuneAVText.swift in Sources */,
+				B2C96E8F8DDC75D413CB3A34 /* TuneAVTrackArtworkService.swift in Sources */,
+				BFB95C218433A28BE04A8388 /* TuneAVTrackMetadata.swift in Sources */,
+				8D42DD4C74228FFC9CABD696 /* AccessController.swift in Sources */,
+				6810E4DB87FAA719BA14C462 /* AccessMode.swift in Sources */,
+				8A47BBF9E9862DABC1DA5C98 /* AppConfig.swift in Sources */,
+				A2761260E3945C25FEAB92AE /* AppShellHomeFeed.swift in Sources */,
+				090BD50C78F3E7FE6CE8416F /* AppShellMusicLibrary.swift in Sources */,
+				5841561270C347B5DEF4EC37 /* AppShellNowPlayingPreviews.swift in Sources */,
+				0DC787BB5F33DD9538668327 /* AppShellSearch.swift in Sources */,
+				27ABE24E88390E9961E7BAD0 /* AppShellTab.swift in Sources */,
+				40C936459980AE43C8C369E1 /* AppShellView.swift in Sources */,
+				31DE7FBFBE3D4BFEF59F6447 /* AudioPlayerService.swift in Sources */,
+				9F812531E84A064F6C65D463 /* AuthOnboardingView.swift in Sources */,
+				28C4AD768F7D00E9D84EAE86 /* TuneAVApp.swift in Sources */,
+				DBC55D25241F8E5F27D63B5C /* TuneAVSplashView.swift in Sources */,
+				C3BB6CECE43A82081701E61F /* TuneAVTheme.swift in Sources */,
+				8272EAAC0F7E1EFEAF230131 /* EntitlementService.swift in Sources */,
+				02843437F1D7870140001E06 /* InAppBrowserView.swift in Sources */,
+				086A55ABAF5DE17D425995B9 /* L10n.swift in Sources */,
+				3D871336C2B33919165338FF /* LaunchContext.swift in Sources */,
+				D60B07FDF5C31538BF64F00E /* LibraryStore.swift in Sources */,
+				C0CFC53C917A41E7FBFBE0B4 /* MiniPlayerView.swift in Sources */,
+				A3B93B8C8AFD0935522DB2BC /* MusicDiscoveryViews.swift in Sources */,
+				3D5CF180E7377D13D20ABB92 /* NowPlayingService.swift in Sources */,
+				07A31821D48A961A761B329F /* NowPlayingView.swift in Sources */,
+				E0D19922798A73F700548B00 /* PersistenceController.swift in Sources */,
+				8D7C8BBC5ACA062A3AF9D1D8 /* ProfileScreen.swift in Sources */,
+				0379E044D17FF3BD0ED4A5F7 /* RootView.swift in Sources */,
+				2165C77583B5BBD2780B4905 /* ShellChromeViews.swift in Sources */,
+				E1A6A9F7CCDF15A2EFC253D0 /* Station.swift in Sources */,
+				532E403F7E9A67C116223700 /* StationArtworkView.swift in Sources */,
+				EAA5B1C46EE333A0DF3B7384 /* StationService.swift in Sources */,
+				53A5D7D0CE066746B3996E39 /* TrackArtworkService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4448BF021665788154061473 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6D25BBF40A8A65CBA54E1974 /* TuneAV */;
+			targetProxy = 15A7C69ACF89A375CBA37167 /* PBXContainerItemProxy */;
+		};
+		7F970E23BF1D10747DA38D0B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6D25BBF40A8A65CBA54E1974 /* TuneAV */;
+			targetProxy = BC303A484EC5BC51D31D4FC2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		A3B05D4824A10F79BD439866 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				EA97D17525DF23D77C2E1E50 /* ca */,
+				F89E1F19B0E1CF6571A98450 /* de */,
+				5015E5C5E5FB0FE623A9CC59 /* en */,
+				1521BBD1C6F45E45F34048D4 /* es */,
+				A5650EC1EB4E639BE5BDF10A /* fr */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		2C3989D20DD28CA37815F66F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = TuneAV;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		600D30C1938C09ADC11772B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_MODULE_NAME = TuneAVTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuneAV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuneAV";
+			};
+			name = Debug;
+		};
+		6B15F8D3B55A905C671BBD73 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 731DA8E58D9ED5E9AD3336DB /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuneAV/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7EEE9F978705FD6AF858FA1B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = TuneAV;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		808BEBFB8BA684CF163E3B12 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_MODULE_NAME = TuneAVUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TuneAV;
+			};
+			name = Release;
+		};
+		BF3578308BBB0CF58E0BF2D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_MODULE_NAME = TuneAVUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TuneAV;
+			};
+			name = Debug;
+		};
+		D0BF82AD04C95E3EDFAA46F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_MODULE_NAME = TuneAVTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuneAV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuneAV";
+			};
+			name = Release;
+		};
+		EB6C086348C5BEC3D56C153F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 40689828679610D27727BE04 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuneAV/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		74A3696BE981068A81FC121B /* Build configuration list for PBXProject "TuneAV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7EEE9F978705FD6AF858FA1B /* Debug */,
+				2C3989D20DD28CA37815F66F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		809ACBB3CC7B7F0A7C883CAC /* Build configuration list for PBXNativeTarget "TuneAVTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				600D30C1938C09ADC11772B6 /* Debug */,
+				D0BF82AD04C95E3EDFAA46F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8201F6124AFDC00CF888A19F /* Build configuration list for PBXNativeTarget "TuneAVUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF3578308BBB0CF58E0BF2D0 /* Debug */,
+				808BEBFB8BA684CF163E3B12 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A11909A89E876816BD18871B /* Build configuration list for PBXNativeTarget "TuneAV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EB6C086348C5BEC3D56C153F /* Debug */,
+				6B15F8D3B55A905C671BBD73 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0BE2F37A4A9CCF864233B7DC /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/clerk/clerk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5298A3ACA120D0B7E4EF72D5 /* ClerkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BE2F37A4A9CCF864233B7DC /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			productName = ClerkKit;
+		};
+		AA5BDE8951BB88D33F6CD8CE /* ClerkKitUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BE2F37A4A9CCF864233B7DC /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			productName = ClerkKitUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 2938BAF65E2072919B35AC91 /* Project object */;
+}
