@@ -2,9 +2,9 @@
 
 Open-source native product repo for Tune AV.
 
-This repository contains the Tune AV clients for iOS and macOS, together with local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
+This repository contains the active Tune AV iOS client together with shared Apple-domain code, local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
 
-The current main product target is `iOS`. `macOS` exists as a native companion target, but it is secondary for now.
+The current product target is `iOS`.
 
 When configured, the iOS client can resolve signed-in access from the shared Account AV backend while remaining local-first by default.
 
@@ -17,13 +17,12 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 ```text
 apps/
   ios/      SwiftUI iOS app
-  macos/    SwiftUI macOS app
 docs/
   install-ios.md
   private-config-and-infisical.md
   release-checklist.md
 shared/
-  apple/     Swift Modules shared by iOS and macOS
+  apple/     Swift Modules and Apple-domain shared code
   contracts/ Platform-neutral contracts reserved for backend/client parity
 ```
 
@@ -33,17 +32,16 @@ shared/
 - favorites, recents, and on-device settings
 - account and premium UI surfaces
 - iOS project and Xcode configuration
-- macOS target with native SwiftUI shell
 
 ## Current state
 
 - `apps/ios` is still the most complete product client
 - `apps/ios` is the current primary execution target
-- `apps/macos` exists as a native companion target
-- `shared/apple` is the single shared Swift implementation root for iOS/macOS behavior
+- checked-in non-iOS artifacts should be treated as inactive or exploratory unless explicitly reactivated
+- `shared/apple` is the shared Swift implementation root for Apple-domain behavior
 - `shared/contracts` is reserved for platform-neutral backend/client contracts when a non-Apple consumer exists
 - the repo remains local-first overall, and platform/backend adoption is intentionally narrow
-- current product focus is `tune-av iOS`; macOS should be treated as a lower-priority follow-up unless explicitly promoted
+- current product focus is `tune-av iOS`
 
 ## Local Setup
 
@@ -55,10 +53,6 @@ shared/
    `bun run ios:config`
 3. This writes `apps/ios/Config/Local.xcconfig` with the client-side values needed for your build.
 4. Open `apps/ios/TuneAV.xcodeproj` in Xcode and run the `TuneAV` scheme.
-
-### macOS
-
-- The repo contains `apps/macos/TuneAVMac` as a native SwiftUI target for local Xcode work.
 
 For local signed builds, keep the real values out of git and regenerate local config through Varlock + Infisical when needed.
 
@@ -100,10 +94,9 @@ See [docs/install-ios.md](docs/install-ios.md) for setup details.
 
 1. Keep store/provider reconciliation owned in private Account AV infrastructure before enabling paid Pro surfaces.
 2. Continue expanding product-specific cloud sync UX and conflict/merge handling across devices.
-3. Keep active Tune AV work focused on `iOS`, using macOS mainly as a secondary reference until priorities change.
+3. Keep active Tune AV work focused on `iOS`.
 4. Keep Apple-client access behavior aligned on backend-owned capabilities.
-5. Decide later whether macOS becomes a maintained first-class target or stays a companion/experimental app.
-6. Keep store disclosures aligned with the shipped account/deletion flow as production distribution expands.
+5. Keep store disclosures aligned with the shipped account/deletion flow as production distribution expands.
 
 ## Contributing And Security
 

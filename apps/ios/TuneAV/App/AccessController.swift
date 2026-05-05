@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 @MainActor
 final class AccessController: ObservableObject {
@@ -16,6 +17,7 @@ final class AccessController: ObservableObject {
     private let userDefaults: UserDefaults
     private let guestOnboardingPolicy: GuestOnboardingPolicy
     private let now: () -> Date
+    private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
     private let dailyUsagePrefix = "tuneav.featureUsage."
 
@@ -69,6 +71,14 @@ final class AccessController: ObservableObject {
 
     func syncFromAccountProvider() async {
         accountUser = accountService.currentUser
+        if accountUser == nil {
+            do {
+                _ = try await accountService.getToken()
+                accountUser = accountService.currentUser
+            } catch {
+                authLogger.error("Unable to hydrate Account AV session before access refresh: \(String(reflecting: error), privacy: .public)")
+            }
+        }
         resolveAccessState()
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
         applyResolvedAccess(refreshedAccess)

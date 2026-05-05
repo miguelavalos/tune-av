@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 @MainActor
 protocol EntitlementService {
@@ -49,6 +50,7 @@ struct LocalEntitlementService: EntitlementService {
 final class PlatformBackedEntitlementService: EntitlementService {
     private let fallback: EntitlementService
     private let apiClient: AVAccountAPIClient
+    private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
 
     init(
         fallback: EntitlementService = LocalEntitlementService(),
@@ -70,15 +72,19 @@ final class PlatformBackedEntitlementService: EntitlementService {
             return fallbackAccess
         }
         guard apiClient.isConfigured() else {
+            authLogger.error("Unable to refresh Account AV access: missing API base URL")
             return fallbackAccess
         }
 
         do {
+            authLogger.info("Refreshing Account AV access")
             let payload = try await apiClient.fetchMeAccess()
             guard let tuneAVAccess = payload.apps.first(where: { $0.appId == "tuneav" }) else {
+                authLogger.error("Unable to refresh Account AV access: tuneav entry missing")
                 return fallbackAccess
             }
 
+            authLogger.info("Resolved Tune AV access mode \(tuneAVAccess.accessMode.rawValue, privacy: .public)")
             return ResolvedAccess(
                 planTier: tuneAVAccess.planTier,
                 accessMode: tuneAVAccess.accessMode,
@@ -86,6 +92,7 @@ final class PlatformBackedEntitlementService: EntitlementService {
                 limits: tuneAVAccess.limits
             )
         } catch {
+            authLogger.error("Unable to refresh Account AV access: \(String(reflecting: error), privacy: .public)")
             return fallbackAccess
         }
     }

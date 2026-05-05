@@ -4,7 +4,7 @@ This directory is the single root for code and contracts shared across Tune AV c
 
 ## Layout
 
-- `apple/`: Swift Modules shared by the iOS and macOS apps. Code here may use Apple toolchains, Swift, and Foundation APIs.
+- `apple/`: Swift Modules and Apple-domain shared code. Code here may use Apple toolchains, Swift, and Foundation APIs.
 - `contracts/`: Platform-neutral contracts, fixtures, schemas, or generated inputs that Apple clients, backend, future clients, or tooling can consume.
 - `windows/`: Windows-specific shared code when Windows exists and needs shared implementation.
 
@@ -18,7 +18,7 @@ Use `shared/apple` for Swift implementation shared only by Apple targets. Move b
 
 Start from the iOS app unless there is already a stronger source of truth. Promote code only when it passes one of these checks:
 
-- **Two-adapter check**: the behavior is used by at least two concrete Adapters, such as iOS and macOS, or iOS and backend contract generation.
+- **Two-adapter check**: the behavior is used by at least two concrete Adapters, such as two Apple callers or an app plus backend contract generation.
 - **Contract check**: the data shape or rule must stay identical across runtimes, releases, or generated clients.
 - **Deletion test**: deleting the shared Module would make the same behavior reappear in multiple callers.
 
@@ -26,11 +26,11 @@ Do not promote code just because it may be useful later. One Adapter is usually 
 
 ## What Belongs In `shared/apple`
 
-Use `shared/apple` for Apple-only Modules whose Interface is stable enough to be consumed by both iOS and macOS:
+Use `shared/apple` for Apple-only Modules whose Interface is stable enough to be consumed by more than one Apple-domain caller:
 
 - station domain shape and station service parsing
 - access policy limits and collection rules
-- library snapshots, library resource records, and sync planning shared by iOS and macOS Adapters
+- library snapshots, library resource records, and sync planning shared across Apple-domain callers
 - date/text/country normalization
 - now-playing metadata parsing
 - artwork and external-search URL construction
@@ -52,10 +52,9 @@ Contracts should not import Apple or backend runtime libraries. Keep them readab
 
 When changing `shared/apple`:
 
-1. Regenerate Xcode projects if files were added or removed:
+1. Regenerate the iOS Xcode project if files were added or removed:
    - `cd apps/ios && xcodegen generate`
-   - `cd apps/macos/TuneAVMac && xcodegen generate`
 2. Run the focused iOS shared support tests.
-3. Build the macOS target.
+3. Only add non-iOS validation steps if those targets are explicitly active again.
 
 When changing `shared/contracts`, validate at least one consuming Adapter or generator in the same change. If no consumer exists yet, keep the contract as documentation or fixtures only.
