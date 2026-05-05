@@ -12,6 +12,8 @@ docs/app-store/screenshots/
 DerivedData/
 .DerivedData*/
 .derived-data/
+.derived-data-device/
+.derived-data-verify/
 build/
 *.xcresult
 *.xcworkspace/xcuserdata/

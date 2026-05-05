@@ -20,6 +20,7 @@ struct NowPlayingView: View {
     private let playerLandscapeHorizontalPadding: CGFloat = 12
     private let playerMaxContentWidth: CGFloat = 360
     private let playerMaxLandscapeContentWidth: CGFloat = 860
+    private let playerControlsBottomLift: CGFloat = 28
 
     init(startSignInFlow: @escaping (Bool) -> Void = { _ in }) {
         self.startSignInFlow = startSignInFlow
@@ -240,6 +241,7 @@ struct NowPlayingView: View {
             Spacer(minLength: spacerMinLength)
 
             playerControls(contentWidth: contentWidth, compact: compact)
+                .padding(.bottom, playerControlsBottomLift)
         }
         .frame(height: contentHeight, alignment: .top)
     }
@@ -1603,7 +1605,7 @@ private struct LandscapeNowPlayingRowLayout: Layout {
     let artworkSize: CGFloat
     let spacing: CGFloat
     let summaryHeight: CGFloat
-    let controlsBottomNudge: CGFloat = 44
+    let controlsBottomNudge: CGFloat = 16
 
     func sizeThatFits(
         proposal: ProposedViewSize,

@@ -5,10 +5,11 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
+    @AppStorage("tuneav.splash.hasShown") private var hasShownSplash = false
     @State private var authOptionsArePresented = false
     @State private var automaticGuestOnboardingIsPresented = false
     @State private var isShowingAccountOnboarding = false
-    @State private var isShowingSplash = !LaunchContext.current.shouldDisableSplash
+    @State private var isShowingSplash = false
 
     private let launchContext = LaunchContext.current
 
@@ -39,20 +40,9 @@ struct RootView: View {
                                 .zIndex(1)
                         }
                     }
-                    .task(id: accessController.accessMode) {
-                        guard !launchContext.shouldDisableSplash else {
-                            isShowingSplash = false
-                            return
-                        }
-                        isShowingSplash = true
-                        try? await Task.sleep(for: .milliseconds(1150))
-
-                        await MainActor.run {
-                            withAnimation(.easeOut(duration: 0.35)) {
-                                isShowingSplash = false
-                            }
-                        }
-                }
+                    .task {
+                        await showInitialSplashIfNeeded()
+                    }
             }
         }
         .tint(TuneAVTheme.highlight)
@@ -148,6 +138,23 @@ struct RootView: View {
 
     private func updateIdleTimer(for phase: ScenePhase) {
         UIApplication.shared.isIdleTimerDisabled = phase == .active
+    }
+
+    private func showInitialSplashIfNeeded() async {
+        guard !launchContext.shouldDisableSplash, !hasShownSplash else {
+            isShowingSplash = false
+            return
+        }
+
+        hasShownSplash = true
+        isShowingSplash = true
+        try? await Task.sleep(for: .milliseconds(1150))
+
+        await MainActor.run {
+            withAnimation(.easeOut(duration: 0.35)) {
+                isShowingSplash = false
+            }
+        }
     }
 }
 
