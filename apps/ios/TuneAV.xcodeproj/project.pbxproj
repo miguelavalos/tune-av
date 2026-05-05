@@ -742,7 +742,7 @@
 				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = "$(SDKROOT)/Developer/Library/Frameworks";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TuneAV/App/Info.plist;
@@ -783,7 +783,7 @@
 				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = "$(SDKROOT)/Developer/Library/Frameworks";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TuneAV/App/Info.plist;
