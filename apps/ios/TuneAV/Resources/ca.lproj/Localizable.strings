@@ -203,8 +203,8 @@
 "profile.premium.title.inactive" = "Fes-te Pro";
 "profile.premium.toggle.disable" = "Tornar a la vista prèvia gratuïta";
 "profile.premium.toggle.enable" = "Activar vista prèvia Pro";
-"profile.safety.delete.detail" = "Obre el portal del compte per gestionar o eliminar el compte.";
-"profile.safety.delete.title" = "Eliminar Account AV";
+"profile.safety.delete.detail" = "Obre la pàgina d'eliminació del compte i completa-hi la sol·licitud.";
+"profile.safety.delete.title" = "Eliminar el compte";
 "profile.safety.subtitle" = "Les accions sensibles a nivell de compte es gestionen al portal del compte AV.";
 "profile.safety.title" = "Seguretat del compte";
 "profile.status.free" = "Compte connectat";

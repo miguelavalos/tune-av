@@ -70,7 +70,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(menuButton.waitForExistence(timeout: 5))
         menuButton.tap()
 
-        let hideButton = app.buttons["No me interesa"].firstMatch
+        let hideButton = app.descendants(matching: .any)["discoveryTrack.hide.\(discoveryID)"].firstMatch
         XCTAssertTrue(hideButton.waitForExistence(timeout: 5))
         hideButton.tap()
 
@@ -100,8 +100,8 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         let discovery = app.otherElements.matching(identifier: "discoveryTrack.m83-midnight-city-groove-salad").firstMatch
         XCTAssertTrue(discovery.exists)
-        discovery.buttons["Más"].tap()
-        app.buttons["Eliminar descubrimiento"].tap()
+        discovery.buttons["discoveryTrack.menu.m83-midnight-city-groove-salad"].tap()
+        app.descendants(matching: .any)["discoveryTrack.remove.m83-midnight-city-groove-salad"].tap()
 
         XCTAssertFalse(app.staticTexts["Midnight City"].exists)
     }

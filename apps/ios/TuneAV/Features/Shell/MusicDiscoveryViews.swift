@@ -104,12 +104,18 @@ struct DiscoveryTrackCard: View {
     private var discoveryMenu: some View {
         Menu {
             Button(L10n.string("player.discovery.youtube"), action: openYouTube)
+                .accessibilityIdentifier("discoveryTrack.youtube.\(discovery.discoveryID)")
             Button(L10n.string("player.discovery.lyrics"), action: openLyrics)
+                .accessibilityIdentifier("discoveryTrack.lyrics.\(discovery.discoveryID)")
             Button(L10n.string("player.discovery.appleMusic"), action: openAppleMusic)
+                .accessibilityIdentifier("discoveryTrack.appleMusic.\(discovery.discoveryID)")
             Button(L10n.string("player.discovery.spotify"), action: openSpotify)
+                .accessibilityIdentifier("discoveryTrack.spotify.\(discovery.discoveryID)")
 
             Button(L10n.string("player.discovery.hide"), role: .destructive, action: hideAction)
+                .accessibilityIdentifier("discoveryTrack.hide.\(discovery.discoveryID)")
             Button(L10n.string("player.discovery.remove"), role: .destructive, action: removeAction)
+                .accessibilityIdentifier("discoveryTrack.remove.\(discovery.discoveryID)")
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 18, weight: .bold))

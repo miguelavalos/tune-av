@@ -1,4 +1,4 @@
-import ClerkKit
+import AccountAV
 import Foundation
 
 @MainActor
@@ -24,10 +24,16 @@ enum AVAccountServiceError: LocalizedError {
 }
 
 struct DefaultAVAccountService: AVAccountService {
+    private let accountService = ClerkAccountAVService(
+        publishableKeyProvider: { AppConfig.avAccountKey },
+        fallbackDisplayName: L10n.string("account.displayName.listener"),
+        loggerSubsystem: "com.avalsys.tuneav"
+    )
+
     var isAvailable: Bool {
         guard !Self.shouldForceGuestForUITests else { return false }
         if Self.uiTestAccountUser != nil { return true }
-        return AppConfig.isAVAccountAvailable
+        return accountService.isAvailable
     }
 
     var currentUser: AccountUser? {
@@ -35,52 +41,35 @@ struct DefaultAVAccountService: AVAccountService {
         if let uiTestAccountUser = Self.uiTestAccountUser {
             return uiTestAccountUser
         }
-        guard isAvailable, let user = Clerk.shared.user else {
-            return nil
-        }
-
-        let displayName =
-            [user.firstName, user.lastName]
-            .compactMap { value in
-                guard let value, !value.isEmpty else { return nil }
-                return value
-            }
-            .joined(separator: " ")
-
+        guard let user = accountService.currentUser else { return nil }
         return AccountUser(
             id: user.id,
-            displayName: displayName.isEmpty ? L10n.string("account.displayName.listener") : displayName,
-            emailAddress: user.primaryEmailAddress?.emailAddress
+            displayName: user.displayName,
+            emailAddress: user.emailAddress
         )
     }
 
     func getToken() async throws -> String? {
-        guard isAvailable, let session = Clerk.shared.session else {
-            return nil
-        }
-
-        return try await session.getToken()
+        try await accountService.getToken()
     }
 
     func signInWithApple() async throws {
         guard isAvailable else {
             throw AVAccountServiceError.unavailable
         }
-
-        _ = try await Clerk.shared.auth.signInWithApple()
+        try await accountService.signInWithApple()
     }
 
     func signInWithGoogle() async throws {
         guard isAvailable else {
             throw AVAccountServiceError.unavailable
         }
-
-        _ = try await Clerk.shared.auth.signInWithOAuth(provider: .google)
+        try await accountService.signInWithGoogle()
     }
 
     func signOut() async throws {
         guard isAvailable else { return }
-        try await Clerk.shared.auth.signOut()
+        try await accountService.signOut()
     }
 
     private static var shouldForceGuestForUITests: Bool {

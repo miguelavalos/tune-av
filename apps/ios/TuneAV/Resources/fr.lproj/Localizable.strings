@@ -203,8 +203,8 @@
 "profile.premium.title.inactive" = "Passer à Pro";
 "profile.premium.toggle.disable" = "Revenir à l'aperçu gratuit";
 "profile.premium.toggle.enable" = "Activer l'aperçu Pro";
-"profile.safety.delete.detail" = "Ouvrez le portail du compte pour gérer ou supprimer le compte.";
-"profile.safety.delete.title" = "Supprimer Account AV";
+"profile.safety.delete.detail" = "Ouvrez la page de suppression du compte et terminez la demande là-bas.";
+"profile.safety.delete.title" = "Supprimer le compte";
 "profile.safety.subtitle" = "Les actions sensibles à l'échelle du compte sont gérées dans le portail de compte AV.";
 "profile.safety.title" = "Sécurité du compte";
 "profile.status.free" = "Compte connecté";

@@ -364,12 +364,12 @@ struct ProfileScreen: View {
                 subtitle: L10n.string("profile.safety.subtitle")
             )
 
-            if let accountManagementURL = AppConfig.accountManagementURL {
+            if let deleteAccountURL = AppConfig.deleteAccountURL {
                 ProfileActionRow(
                     systemImage: "exclamationmark.shield",
                     title: L10n.string("profile.safety.delete.title"),
                     detail: L10n.string("profile.safety.delete.detail"),
-                    action: { open(accountManagementURL) }
+                    action: { open(deleteAccountURL) }
                 )
             }
         }

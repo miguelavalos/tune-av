@@ -204,8 +204,8 @@
 "profile.premium.title.inactive" = "Acceso Pro";
 "profile.premium.toggle.disable" = "Volver a la vista previa gratuita";
 "profile.premium.toggle.enable" = "Activar vista previa Pro";
-"profile.safety.delete.detail" = "Abre el portal para cambiar datos o eliminar la cuenta.";
-"profile.safety.delete.title" = "Gestionar o eliminar cuenta";
+"profile.safety.delete.detail" = "Abre la página de eliminación de cuenta y completa allí la solicitud.";
+"profile.safety.delete.title" = "Eliminar cuenta";
 "profile.safety.subtitle" = "Las acciones sensibles de la cuenta se gestionan en el portal.";
 "profile.safety.title" = "Seguridad de la cuenta";
 "profile.status.free" = "Cuenta conectada";

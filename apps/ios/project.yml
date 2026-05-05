@@ -12,6 +12,8 @@ settings:
     SWIFT_VERSION: "6.0"
 
 packages:
+  AccountAV:
+    path: ../../../account-av
   Clerk:
     url: https://github.com/clerk/clerk-ios
     from: 1.0.0
@@ -49,6 +51,8 @@ targets:
       - path: TuneAV
       - path: ../../shared/apple
     dependencies:
+      - package: AccountAV
+        product: AccountAV
       - package: Clerk
         product: ClerkKit
       - package: Clerk

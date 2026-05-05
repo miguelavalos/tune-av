@@ -204,8 +204,8 @@
 "profile.premium.title.inactive" = "Pro access";
 "profile.premium.toggle.disable" = "Return to free preview";
 "profile.premium.toggle.enable" = "Turn on Pro preview";
-"profile.safety.delete.detail" = "Open the account portal to change details or delete the account.";
-"profile.safety.delete.title" = "Manage or delete account";
+"profile.safety.delete.detail" = "Open the account deletion page and complete the request there.";
+"profile.safety.delete.title" = "Delete account";
 "profile.safety.subtitle" = "Sensitive account actions are handled in the account portal.";
 "profile.safety.title" = "Account safety";
 "profile.status.free" = "Connected account";

@@ -1,4 +1,4 @@
-import ClerkKit
+import AccountAV
 import Foundation
 
 @MainActor
@@ -17,6 +17,23 @@ enum AppConfig {
 
     static var accountManagementURL: URL? {
         urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
+    }
+
+    static var deleteAccountURL: URL? {
+        if let explicitURL = urlValue(for: "TUNEAV_DELETE_ACCOUNT_URL") {
+            return explicitURL
+        }
+
+        guard let accountManagementURL else { return nil }
+        guard let host = accountManagementURL.host, let scheme = accountManagementURL.scheme else {
+            return accountManagementURL
+        }
+
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.path = "/danger-zone"
+        return components.url
     }
 
     static var termsURL: URL? {
@@ -42,11 +59,7 @@ enum AppConfig {
     }
 
     static func configureAVAccountIfPossible() {
-        guard isAVAccountAvailable else {
-            return
-        }
-
-        Clerk.configure(publishableKey: avAccountKey)
+        AccountAVClerk.configureIfPossible(publishableKey: avAccountKey)
     }
 
     private static func stringValue(for key: String) -> String {

@@ -203,8 +203,8 @@
 "profile.premium.title.inactive" = "Hol dir Pro";
 "profile.premium.toggle.disable" = "Zur kostenlosen Vorschau zurückkehren";
 "profile.premium.toggle.enable" = "Pro-Vorschau aktivieren";
-"profile.safety.delete.detail" = "Öffne das Kontoportal, um das Konto zu verwalten oder zu löschen.";
-"profile.safety.delete.title" = "Account AV löschen";
+"profile.safety.delete.detail" = "Öffne die Seite zur Kontolöschung und schließe die Anfrage dort ab.";
+"profile.safety.delete.title" = "Konto löschen";
 "profile.safety.subtitle" = "Sensible kontoweite Aktionen werden im AV-Kontoportal verwaltet.";
 "profile.safety.title" = "Kontosicherheit";
 "profile.status.free" = "Verbundenes Konto";
