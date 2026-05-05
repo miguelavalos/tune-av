@@ -13,6 +13,7 @@ struct HomeFeedResult {
 }
 
 enum HomeFeedContext: Equatable {
+    /// Stores the region code so the visible country name can be localized at render time.
     case popularInCountry(String)
     case popularWorldwide
 }
@@ -43,7 +44,7 @@ struct AppShellHomeFeed {
         )
         let context: HomeFeedContext
         if let regionCode, !regionalStations.isEmpty {
-            context = .popularInCountry(localizedCountryName(regionCode))
+            context = .popularInCountry(regionCode)
         } else {
             context = .popularWorldwide
         }

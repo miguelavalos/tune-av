@@ -11,20 +11,11 @@ SwiftUI iOS app for Tune AV.
 
 The public repository ships with neutral defaults. Local builds can override `TUNEAV_BUNDLE_IDENTIFIER`, `AVALSYS_APPLE_DEVELOPMENT_TEAM`, and the other client-facing values in the local, non-versioned `Config/Local.xcconfig`.
 
-Optional local subscription config:
-
-- set `TUNEAV_PREMIUM_PRODUCT_IDS` in `Config/Local.xcconfig`
-- use a comma-separated list of App Store subscription product IDs, with the first ID treated as the default purchase option in the current UI
-- the repo ships with `Config/StoreKit/LocalSubscriptions.storekit` for local StoreKit testing in Xcode
-- keep `TUNEAV_PREMIUM_PRODUCT_IDS` aligned with the product IDs defined in that `.storekit` file
-- the shared `TuneAV` scheme is configured to use the local StoreKit file on Run
-
 Optional shared-platform access config:
 
 - set `ACCOUNTAV_API_BASE_URL` in `Config/Local.xcconfig` to enable backend-owned access resolution through Account AV
 - when both `ACCOUNTAV_PUBLISHABLE_KEY` and `ACCOUNTAV_API_BASE_URL` are configured, signed-in access refreshes from `GET /v1/me/access`
-- before StoreKit purchase or restore, the app registers the Apple `appAccountToken` with Account AV so Apple server notifications can be reconciled to the signed-in platform user
-- StoreKit remains a local fallback for client access while Account AV remains the backend source of truth for production Pro entitlements
+- Account AV is the source of truth for Pro entitlements in this release
 
 ## Current app shape
 

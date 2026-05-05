@@ -64,24 +64,16 @@ Use this checklist before creating the first public GitHub release and before ea
 3. Confirm the macOS App IDs are only used if the macOS target is part of the release.
 4. Confirm required capabilities are enabled before archiving:
    - Sign in with Apple, when native login is shipped.
-   - In-App Purchase, when subscriptions are shipped.
    - Associated Domains, Push Notifications, or iCloud only if the shipped target uses them.
 5. Keep the Apple team value in private configuration as `AVALSYS_APPLE_DEVELOPMENT_TEAM`; do not commit a literal Team ID.
 
-## App Store Subscriptions
+## Pro And Store Purchases
 
-1. Confirm the production subscription group and every product ID in `TUNEAV_PREMIUM_PRODUCT_IDS` exist in App Store Connect.
-2. Confirm the product IDs match the backend Apple product map used by Account AV.
-3. Confirm the App Store Server Notifications URL targets:
-
-   ```text
-   /v1/apps/tuneav/subscriptions/apple-notifications
-   ```
-
-4. Confirm Account AV production has Apple notification certificate root pins configured before accepting production notifications.
-5. Confirm a signed-in production build can register its Apple `appAccountToken` with Account AV before purchase.
-6. Confirm a sandbox purchase grants Pro only after Account AV receives and reconciles the Apple notification.
-7. Confirm restore purchases refreshes Account AV-backed access and does not rely only on local StoreKit cache.
+1. First App Store release does not sell subscriptions from the iOS client.
+2. Confirm there are no visible App Store purchase, restore purchase, or manage subscription actions in the shipping build.
+3. Confirm Pro copy is framed as access state resolved by Account AV, not as an in-app purchasable offer.
+4. Enable the In-App Purchase capability only when a future build ships client-side purchase or restore flows.
+5. Before paid Pro is enabled later, confirm Account AV owns product mapping, server notification handling, reconciliation, and restore semantics.
 
 ## Clerk And Account AV
 
@@ -100,7 +92,6 @@ Use this checklist before creating the first public GitHub release and before ea
    - `ACCOUNTAV_API_BASE_URL`
    - `ACCOUNTAV_MANAGEMENT_URL`
 3. Required Tune AV values:
-   - `TUNEAV_PREMIUM_PRODUCT_IDS`
    - `TUNEAV_SUPPORT_EMAIL`
    - `TUNEAV_TERMS_URL`
    - `TUNEAV_PRIVACY_URL`

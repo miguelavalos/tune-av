@@ -12,15 +12,6 @@ struct AppAccess: Decodable {
     let limits: AccessLimits
 }
 
-private struct RegisterSubscriptionAccountTokenRequest: Encodable {
-    let provider: String
-    let appAccountToken: String
-}
-
-private struct RegisterSubscriptionAccountTokenResponse: Decodable {
-    let generatedAt: String
-}
-
 enum AVAccountAPIClientError: LocalizedError {
     case missingToken
     case missingBaseURL
@@ -60,20 +51,6 @@ final class AVAccountAPIClient {
 
     func fetchMeAccess() async throws -> MeAccessResponse {
         try await request(path: "/v1/me/access")
-    }
-
-    func registerAppleSubscriptionAccountToken(_ appAccountToken: UUID, appId: String = "tuneav") async throws {
-        let body = try JSONEncoder().encode(
-            RegisterSubscriptionAccountTokenRequest(
-                provider: "apple",
-                appAccountToken: appAccountToken.uuidString.lowercased()
-            )
-        )
-        let _: RegisterSubscriptionAccountTokenResponse = try await request(
-            path: "/v1/apps/\(appId)/subscriptions/account-token",
-            method: "PUT",
-            body: body
-        )
     }
 
     func request<T: Decodable>(

@@ -266,6 +266,8 @@ private struct FeatureCallout: View {
 }
 
 private struct BrandHeaderBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack {
             Image("OnboardingWordmark")
@@ -279,10 +281,10 @@ private struct BrandHeaderBadge: View {
         .padding(.vertical, 9)
         .background {
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.88))
+                .fill(colorScheme == .dark ? TuneAVTheme.brandBlack.opacity(0.78) : Color.white.opacity(0.88))
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.46), lineWidth: 1)
+                        .stroke(colorScheme == .dark ? Color.white.opacity(0.12) : Color.white.opacity(0.46), lineWidth: 1)
                 }
         }
         .shadow(color: .black.opacity(0.18), radius: 18, y: 10)

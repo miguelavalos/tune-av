@@ -5,6 +5,9 @@
 .codex/
 node_modules/
 
+# App Store working media
+docs/app-store/screenshots/
+
 # Xcode
 DerivedData/
 .DerivedData*/

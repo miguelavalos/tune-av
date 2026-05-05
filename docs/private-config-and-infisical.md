@@ -6,7 +6,7 @@ This repository is public and open source. Anything committed here can become pu
 
 1. Do not commit `apps/ios/Config/Local.xcconfig` or `apps/macos/TuneAVMac/Config/Local.xcconfig`.
 2. Do not commit `.env`, `.env.*`, `.infisical/bootstrap.env`, signing files, provisioning profiles, keystores, or generated build output.
-3. Do not commit real Clerk keys, StoreKit or Play billing secrets, backend tokens, subscription sync tokens, or private service credentials.
+3. Do not commit real Clerk keys, store billing secrets, backend tokens, subscription sync tokens, or private service credentials.
 4. Do not add production backend URLs as fallback constants in source or scripts. Production values must come from Infisical.
 5. Do not add public example secret files either. Keep bootstrap examples and generated config examples in private Avalsys infrastructure, not here.
 

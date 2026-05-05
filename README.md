@@ -32,7 +32,6 @@ shared/
 - local-first listening experience
 - favorites, recents, and on-device settings
 - account and premium UI surfaces
-- local StoreKit configuration for development
 - iOS project and Xcode configuration
 - macOS target with native SwiftUI shell
 
@@ -89,7 +88,7 @@ See [docs/install-ios.md](docs/install-ios.md) for setup details.
 - Artwork resolution may use Apple `iTunes Search`.
 - Favicon fallback resolution may use Google's favicon endpoint when station metadata does not provide a usable icon.
 - Signed-in account and entitlement flows depend on the private Account AV backend and related identity infrastructure.
-- Profile surfaces now expose an in-product data-source reference for `Radio Browser`.
+- Public docs disclose the external station, stream, artwork, and account dependencies used by the app.
 
 ## Account Deletion Support
 
@@ -99,7 +98,7 @@ See [docs/install-ios.md](docs/install-ios.md) for setup details.
 
 ## Pending work
 
-1. Keep App Store and Google Play production reconciliation owned in private Account AV infrastructure.
+1. Keep store/provider reconciliation owned in private Account AV infrastructure before enabling paid Pro surfaces.
 2. Continue expanding product-specific cloud sync UX and conflict/merge handling across devices.
 3. Keep active Tune AV work focused on `iOS`, using macOS mainly as a secondary reference until priorities change.
 4. Keep Apple-client access behavior aligned on backend-owned capabilities.

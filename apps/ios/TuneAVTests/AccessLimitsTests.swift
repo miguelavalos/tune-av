@@ -758,26 +758,12 @@ private struct StubAccountService: AVAccountService {
 private struct StubEntitlementService: EntitlementService {
     let access: ResolvedAccess
 
-    var isSubscriptionConfigured: Bool { true }
-
-    func loadSubscriptionProducts() async throws -> [SubscriptionProduct] {
-        []
-    }
-
     func resolveAccess(for user: AccountUser?) -> ResolvedAccess {
         user == nil ? .guest : access
     }
 
     func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
         resolveAccess(for: user)
-    }
-
-    func purchasePro(for user: AccountUser, productID: String) async throws -> SubscriptionPurchaseOutcome {
-        .purchased
-    }
-
-    func restorePurchases(for user: AccountUser) async throws -> RestorePurchasesOutcome {
-        .restored
     }
 }
 

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1600"
-   version = "1.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6D25BBF40A8A65CBA54E1974"
+               BlueprintIdentifier = "BF42636FB07B96618ECE9E1B"
                BuildableName = "TuneAV.app"
                BlueprintName = "TuneAV"
                ReferencedContainer = "container:TuneAV.xcodeproj">
@@ -26,11 +27,12 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6D25BBF40A8A65CBA54E1974"
+            BlueprintIdentifier = "BF42636FB07B96618ECE9E1B"
             BuildableName = "TuneAV.app"
             BlueprintName = "TuneAV"
             ReferencedContainer = "container:TuneAV.xcodeproj">
@@ -42,23 +44,26 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7617C98E325A080EADE1A251"
-               BuildableName = "TuneAV.xctest"
+               BlueprintIdentifier = "0F8C9984E9E0658CC334CE6C"
+               BuildableName = "TuneAVTests.xctest"
                BlueprintName = "TuneAVTests"
                ReferencedContainer = "container:TuneAV.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "D659B18DE236A62BF89FE1EE"
-               BuildableName = "TuneAV.xctest"
+               BlueprintIdentifier = "316183D806635298B7A4759D"
+               BuildableName = "TuneAVUITests.xctest"
                BlueprintName = "TuneAVUITests"
                ReferencedContainer = "container:TuneAV.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -74,15 +79,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6D25BBF40A8A65CBA54E1974"
+            BlueprintIdentifier = "BF42636FB07B96618ECE9E1B"
             BuildableName = "TuneAV.app"
             BlueprintName = "TuneAV"
             ReferencedContainer = "container:TuneAV.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "../../Config/StoreKit/LocalSubscriptions.storekit">
-      </StoreKitConfigurationFileReference>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -94,12 +98,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6D25BBF40A8A65CBA54E1974"
+            BlueprintIdentifier = "BF42636FB07B96618ECE9E1B"
             BuildableName = "TuneAV.app"
             BlueprintName = "TuneAV"
             ReferencedContainer = "container:TuneAV.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

@@ -7,8 +7,6 @@ final class AccessController: ObservableObject {
     @Published private(set) var capabilities: AccessCapabilities
     @Published private(set) var accountUser: AccountUser?
     @Published private(set) var accountSession: AccountSession?
-    @Published private(set) var subscriptionProducts: [SubscriptionProduct]
-    @Published private(set) var subscriptionProductsAreLoading: Bool
     @Published private(set) var limits: AccessLimits
     @Published var upgradePrompt: UpgradePrompt?
 
@@ -29,12 +27,11 @@ final class AccessController: ObservableObject {
         now: @escaping () -> Date = Date.init
     ) {
         let currentUser = accountService.currentUser
-        let fallbackEntitlementService = StoreKitEntitlementService(userDefaults: userDefaults)
 
         self.accountService = accountService
         self.entitlementService = entitlementService
             ?? PlatformBackedEntitlementService(
-                fallback: fallbackEntitlementService,
+                fallback: LocalEntitlementService(),
                 apiClient: AVAccountAPIClient(getToken: { try await accountService.getToken() })
             )
         self.userDefaults = userDefaults
@@ -44,8 +41,6 @@ final class AccessController: ObservableObject {
         self.planTier = .free
         self.capabilities = AccessCapabilities.forMode(.guest)
         self.accountSession = nil
-        self.subscriptionProducts = []
-        self.subscriptionProductsAreLoading = false
         self.limits = AccessLimits.forMode(.guest)
         self.upgradePrompt = nil
         self.accessMode = .guest
@@ -64,10 +59,6 @@ final class AccessController: ObservableObject {
         accountService.isAvailable
     }
 
-    var subscriptionIsAvailable: Bool {
-        entitlementService.isSubscriptionConfigured
-    }
-
     var shouldAutoShowGuestOnboarding: Bool {
         guard accessMode == .guest else { return false }
         return guestOnboardingPolicy.shouldShowAutomatically(
@@ -81,33 +72,10 @@ final class AccessController: ObservableObject {
         resolveAccessState()
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
         applyResolvedAccess(refreshedAccess)
-        await refreshSubscriptionProducts()
     }
 
     func skipForNow() {
         markGuestOnboardingPromptShown()
-    }
-
-    func purchasePro(productID: String) async throws -> SubscriptionPurchaseOutcome {
-        guard let accountUser else {
-            throw EntitlementServiceError.accountRequired
-        }
-
-        let outcome = try await entitlementService.purchasePro(for: accountUser, productID: productID)
-        let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
-        applyResolvedAccess(refreshedAccess)
-        return outcome
-    }
-
-    func restorePurchases() async throws -> RestorePurchasesOutcome {
-        guard let accountUser else {
-            throw EntitlementServiceError.accountRequired
-        }
-
-        let outcome = try await entitlementService.restorePurchases(for: accountUser)
-        let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
-        applyResolvedAccess(refreshedAccess)
-        return outcome
     }
 
     func signOut() async throws {
@@ -118,23 +86,6 @@ final class AccessController: ObservableObject {
 
     func markGuestOnboardingPromptShown() {
         userDefaults.set(now(), forKey: guestOnboardingLastPromptAtKey)
-    }
-
-    func refreshSubscriptionProducts() async {
-        guard subscriptionIsAvailable else {
-            subscriptionProducts = []
-            subscriptionProductsAreLoading = false
-            return
-        }
-
-        subscriptionProductsAreLoading = true
-        defer { subscriptionProductsAreLoading = false }
-
-        do {
-            subscriptionProducts = try await entitlementService.loadSubscriptionProducts()
-        } catch {
-            subscriptionProducts = []
-        }
     }
 
     func limitState(for feature: LimitedFeature, currentUsage: Int) -> FeatureLimitState {

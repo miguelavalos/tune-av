@@ -48,34 +48,20 @@ struct TuneAVSplashView: View {
                                 .stroke(TuneAVTheme.highlight.opacity(0.16), lineWidth: 1)
                         }
 
-                    Image("OnboardingWordmark")
+                    Image("BrandMark")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 246)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 12)
-                        .background {
-                            Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.9))
-                                .overlay {
-                                    Capsule(style: .continuous)
-                                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                }
-                        }
-                        .shadow(color: .black.opacity(0.22), radius: 22, y: 12)
-                        .scaleEffect(contentVisible ? 1 : 0.88)
+                        .frame(width: 118, height: 118)
+                        .shadow(color: .black.opacity(0.24), radius: 22, y: 12)
                 }
                 .scaleEffect(contentVisible ? 1 : 0.92)
                 .opacity(contentVisible ? 1 : 0.72)
 
-                VStack(spacing: 10) {
-
-                    Text(L10n.string("splash.tagline"))
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.74))
-                }
-                .opacity(contentVisible ? 1 : 0)
-                .offset(y: contentVisible ? 0 : 12)
+                Text(L10n.string("splash.tagline"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.74))
+                    .opacity(contentVisible ? 1 : 0)
+                    .offset(y: contentVisible ? 0 : 12)
 
                 HStack(spacing: 8) {
                     Circle()

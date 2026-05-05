@@ -16,9 +16,6 @@ packages:
     url: https://github.com/clerk/clerk-ios
     from: 1.0.0
 
-fileGroups:
-  - Config/StoreKit/LocalSubscriptions.storekit
-
 schemes:
   TuneAV:
     build:
@@ -27,7 +24,6 @@ schemes:
     run:
       config: Debug
       executable: TuneAV
-      storeKitConfiguration: Config/StoreKit/LocalSubscriptions.storekit
     test:
       config: Debug
       targets:
@@ -63,6 +59,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: TuneAV/App/TuneAV.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)"
+        FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]: "$(SDKROOT)/Developer/Library/Frameworks"
         INFOPLIST_FILE: TuneAV/App/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         PRODUCT_BUNDLE_IDENTIFIER: "$(PRODUCT_BUNDLE_IDENTIFIER)"

@@ -33,7 +33,6 @@ struct ProfileScreen: View {
                 }
 
                 profileSummaryCard
-                accountManagementCard
                 appPreferencesCard
                 localDataCard
                 if accessController.capabilities.canUseCloudSync {
@@ -74,24 +73,11 @@ struct ProfileScreen: View {
     }
 
     private var profileSummaryCard: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 16) {
-                ProfileAvatar(initials: accessController.accountUser?.initials ?? "AV", size: 50)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(displayName)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(subtitle)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            sectionHeader(
+                title: L10n.string("profile.account.title"),
+                subtitle: accountIdentityDetail
+            )
 
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
@@ -102,12 +88,21 @@ struct ProfileScreen: View {
                     title: L10n.string("profile.summary.account.title"),
                     detail: accountSummaryDetail
                 )
+                if let emailAddress = accessController.accountUser?.emailAddress {
+                    ShellRow(
+                        systemImage: "envelope",
+                        title: L10n.string("profile.account.email.title"),
+                        detail: emailAddress
+                    )
+                }
                 ShellRow(
                     systemImage: "sparkles.rectangle.stack",
                     title: L10n.string("profile.summary.plan.title"),
                     detail: planSummaryDetail
                 )
             }
+
+            accountActionButton
         }
         .padding(22)
         .background(profileCardBackground)
@@ -157,59 +152,28 @@ struct ProfileScreen: View {
         .accessibilityIdentifier("profile.sync.card")
     }
 
-    private var accountManagementCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            sectionHeader(
-                title: L10n.string("profile.account.title"),
-                subtitle: accountCardSubtitle
+    @ViewBuilder
+    private var accountActionButton: some View {
+        if accessController.accessMode == .guest {
+            ProfilePrimaryButton(
+                title: accessController.accountIsAvailable
+                    ? L10n.string("profile.account.connect")
+                    : L10n.string("profile.account.connectUnavailable"),
+                action: { startSignInFlow(true) }
             )
-
-            VStack(alignment: .leading, spacing: 12) {
-                ShellRow(
-                    systemImage: "person.badge.key",
-                    title: L10n.string("profile.account.status.title"),
-                    detail: accountStatusDetail
-                )
-
-                if let emailAddress = accessController.accountUser?.emailAddress {
-                    ShellRow(
-                        systemImage: "envelope",
-                        title: L10n.string("profile.account.email.title"),
-                        detail: emailAddress
-                    )
+            .disabled(!accessController.accountIsAvailable)
+        } else {
+            ProfileSecondaryButton(
+                title: isSigningOut
+                    ? L10n.string("profile.actions.signingOut")
+                    : L10n.string("profile.actions.signOut"),
+                isLoading: isSigningOut,
+                action: {
+                    Task { await signOut() }
                 }
-            }
-
-            if accessController.accessMode == .guest {
-                ProfilePrimaryButton(
-                    title: accessController.accountIsAvailable
-                        ? L10n.string("profile.account.connect")
-                        : L10n.string("profile.account.connectUnavailable"),
-                    action: { startSignInFlow(true) }
-                )
-                .disabled(!accessController.accountIsAvailable)
-            } else {
-                if let accountManagementURL = AppConfig.accountManagementURL {
-                    ProfilePrimaryButton(
-                        title: L10n.string("profile.account.manage"),
-                        action: { open(accountManagementURL) }
-                    )
-                }
-
-                ProfileSecondaryButton(
-                    title: isSigningOut
-                        ? L10n.string("profile.actions.signingOut")
-                        : L10n.string("profile.actions.signOut"),
-                    isLoading: isSigningOut,
-                    action: {
-                        Task { await signOut() }
-                    }
-                )
-                .disabled(isSigningOut)
-            }
+            )
+            .disabled(isSigningOut)
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private var appPreferencesCard: some View {
@@ -363,15 +327,6 @@ struct ProfileScreen: View {
                     )
                 }
 
-                if let radioBrowserURL = AppConfig.radioBrowserURL {
-                    ProfileActionRow(
-                        systemImage: "dot.radiowaves.left.and.right",
-                        title: L10n.string("profile.help.dataSources.title"),
-                        detail: L10n.string("profile.help.dataSources.detail"),
-                        action: { open(radioBrowserURL) }
-                    )
-                }
-
                 if let supportURL = AppConfig.supportURL {
                     ProfileActionRow(
                         systemImage: "questionmark.bubble",
@@ -459,6 +414,15 @@ struct ProfileScreen: View {
         }
     }
 
+    private var accountIdentityDetail: String {
+        switch accessController.accessMode {
+        case .guest:
+            L10n.string("profile.account.identity.guest")
+        case .signedInFree, .signedInPro:
+            displayName
+        }
+    }
+
     private var shouldClearSyncedLibrary: Bool {
         accessController.capabilities.canUseCloudSync
     }
@@ -510,24 +474,6 @@ struct ProfileScreen: View {
             L10n.string("profile.summary.plan.detail.free")
         case .signedInPro:
             L10n.string("profile.summary.plan.detail.pro")
-        }
-    }
-
-    private var accountCardSubtitle: String {
-        switch accessController.accessMode {
-        case .guest:
-            L10n.string("profile.account.subtitle.guest")
-        case .signedInFree, .signedInPro:
-            L10n.string("profile.account.subtitle.signedIn")
-        }
-    }
-
-    private var accountStatusDetail: String {
-        switch accessController.accessMode {
-        case .guest:
-            L10n.string("profile.account.status.guest")
-        case .signedInFree, .signedInPro:
-            L10n.string("profile.account.status.signedIn")
         }
     }
 
@@ -698,32 +644,6 @@ struct ProfileScreen: View {
         }
 
         isSigningOut = false
-    }
-}
-
-private struct ProfileAvatar: View {
-    let initials: String
-    let size: CGFloat
-
-    init(initials: String, size: CGFloat = 56) {
-        self.initials = initials
-        self.size = size
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(TuneAVTheme.highlight.opacity(0.14))
-                .frame(width: size, height: size)
-
-            Text(initials)
-                .font(.system(size: size > 52 ? 18 : 16, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-        }
-        .overlay {
-            Circle()
-                .stroke(TuneAVTheme.highlight.opacity(0.16), lineWidth: 1)
-        }
     }
 }
 

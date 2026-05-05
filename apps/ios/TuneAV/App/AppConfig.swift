@@ -31,25 +31,10 @@ enum AppConfig {
         urlValue(for: "TUNEAV_OPEN_SOURCE_URL")
     }
 
-    static var radioBrowserURL: URL? {
-        URL(string: "https://www.radio-browser.info/")
-    }
-
     static var supportURL: URL? {
         guard let supportEmail else { return nil }
         let encodedSubject = "Tune AV Support".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Tune%20AV%20Support"
         return URL(string: "mailto:\(supportEmail)?subject=\(encodedSubject)")
-    }
-
-    static var premiumProductIDs: [String] {
-        stringValue(for: "TUNEAV_PREMIUM_PRODUCT_IDS")
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-    }
-
-    static var isPremiumSubscriptionAvailable: Bool {
-        !premiumProductIDs.isEmpty
     }
 
     static var isAVAccountAvailable: Bool {

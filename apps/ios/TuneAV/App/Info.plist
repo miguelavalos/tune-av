@@ -31,8 +31,6 @@
 	<string>1</string>
 	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
 	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
-	<key>TUNEAV_PREMIUM_PRODUCT_IDS</key>
-	<string>$(TUNEAV_PREMIUM_PRODUCT_IDS)</string>
 	<key>TUNEAV_SUPPORT_EMAIL</key>
 	<string>$(TUNEAV_SUPPORT_EMAIL)</string>
 	<key>ACCOUNTAV_API_BASE_URL</key>
@@ -56,6 +54,8 @@
 		<dict>
 			<key>UIColorName</key>
 			<string>LaunchBackground</string>
+			<key>UIImageName</key>
+			<string>LaunchIcon</string>
 		</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

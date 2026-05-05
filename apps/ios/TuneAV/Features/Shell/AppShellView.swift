@@ -935,7 +935,7 @@ private struct HomeScreen: View {
 
     private func stationDeck(for station: Station) -> String {
         let language = cleanedFeaturedDetail(station.language)
-        let country = cleanedFeaturedDetail(station.country)
+        let country = localizedCountryName(for: station)
 
         switch feedContext {
         case .popularInCountry:
@@ -971,6 +971,14 @@ private struct HomeScreen: View {
 
     private func cleanedFeaturedDetail(_ value: String?) -> String? {
         TuneAVText.normalizedValue(value, excluding: Station.unknownDetailValues, locale: L10n.locale)
+    }
+
+    private func localizedCountryName(for station: Station) -> String? {
+        if let countryCode = TuneAVCountry.sanitizedCode(station.countryCode) {
+            return L10n.countryName(for: countryCode)
+        }
+
+        return cleanedFeaturedDetail(station.country)
     }
 
     private var hasPersonalActivity: Bool {
@@ -1090,7 +1098,8 @@ private struct HomeScreen: View {
         }
 
         switch feedContext {
-        case .popularInCountry(let countryName):
+        case .popularInCountry(let countryCode):
+            let countryName = L10n.countryName(for: countryCode)
             return countryName.uppercased(with: .current)
         case .popularWorldwide:
             return L10n.string("shell.home.featured.popular").uppercased(with: .current)
@@ -1099,7 +1108,8 @@ private struct HomeScreen: View {
 
     private var sectionTitle: String {
         switch feedContext {
-        case .popularInCountry(let countryName):
+        case .popularInCountry(let countryCode):
+            let countryName = L10n.countryName(for: countryCode)
             return L10n.string("shell.home.section.popularCountry.title", countryName)
         case .popularWorldwide:
             return L10n.string("shell.home.section.popularWorldwide.title")
@@ -1108,7 +1118,8 @@ private struct HomeScreen: View {
 
     private var sectionSubtitle: String {
         switch feedContext {
-        case .popularInCountry(let countryName):
+        case .popularInCountry(let countryCode):
+            let countryName = L10n.countryName(for: countryCode)
             return L10n.string("shell.home.section.popularCountry.subtitle", countryName)
         case .popularWorldwide:
             return L10n.string("shell.home.section.popularWorldwide.subtitle")
@@ -2892,7 +2903,7 @@ struct ShellStatusPill: View {
     let title: String
 
     var body: some View {
-        Text(title)
+        Text(title.uppercased())
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(TuneAVTheme.highlight)
             .padding(.horizontal, 12)
