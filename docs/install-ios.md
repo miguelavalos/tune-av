@@ -23,16 +23,54 @@ Generate the local config:
 ```bash
 bun install
 bun run ios:config
+bun run ios:preflight
 ```
 
 For production/App Store preparation:
 
 ```bash
 bun run ios:config:production
+bun run ios:preflight:production
 ```
 
 `Local.xcconfig` is gitignored and should be regenerated locally instead of hand-maintained.
 Do not copy production values, example secret files, or bootstrap examples into tracked files. See `docs/private-config-and-infisical.md`.
+
+## Switching Dev And Production
+
+Always regenerate and preflight the native config after switching between dev and production. Do this before opening Xcode, running the simulator, archiving, or testing Clerk/Account AV sign-in.
+
+For local development and simulator auth smoke tests:
+
+```bash
+bun run ios:config
+bun run ios:preflight
+```
+
+The dev preflight must resolve:
+
+- bundle identifier: `com.avalsys.tuneav.dev`
+- Clerk key prefix: `pk_test_`
+- Account AV API: `http://127.0.0.1:8788`
+- Account AV management URL host: `account-av-preview.avalsys.com`
+- a concrete Apple development team
+- `TuneAV/App/TuneAV.entitlements` with Keychain access groups
+
+For production/App Store builds:
+
+```bash
+bun run ios:config:production
+bun run ios:preflight:production
+```
+
+The production preflight must resolve:
+
+- bundle identifier: `com.avalsys.tuneav`
+- Clerk key prefix: `pk_live_`
+- Account AV API: `https://api-account-av.avalsys.com`
+- Account AV management URL host: `account-av.avalsys.com`
+
+If any value is different, regenerate config from the right profile before building. Do not hand-edit `Local.xcconfig`.
 
 ## Run on simulator
 
@@ -91,4 +129,5 @@ If iOS refuses to open the app after install, trust the developer profile once o
 ## Known local-dev constraints
 
 - Sign in with Apple is enabled in entitlements. Device provisioning must support that capability for the bundle identifier you use.
+- Do not use unsigned compile-only builds to validate Google or Apple sign-in. Clerk native auth stores client and device tokens in Keychain, so auth smoke tests need a signed app with Keychain and Apple Sign In entitlements active.
 - If the build hangs in `Resolve Package Graph`, restart Xcode and retry from a clean terminal.

@@ -5,11 +5,11 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
-    @AppStorage("tuneav.splash.hasShown") private var hasShownSplash = false
     @State private var authOptionsArePresented = false
     @State private var automaticGuestOnboardingIsPresented = false
     @State private var isShowingAccountOnboarding = false
     @State private var isShowingSplash = false
+    @State private var hasShownSplashThisLaunch = false
 
     private let launchContext = LaunchContext.current
 
@@ -141,12 +141,12 @@ struct RootView: View {
     }
 
     private func showInitialSplashIfNeeded() async {
-        guard !launchContext.shouldDisableSplash, !hasShownSplash else {
+        guard !launchContext.shouldDisableSplash, !hasShownSplashThisLaunch else {
             isShowingSplash = false
             return
         }
 
-        hasShownSplash = true
+        hasShownSplashThisLaunch = true
         isShowingSplash = true
         try? await Task.sleep(for: .milliseconds(1150))
 

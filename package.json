@@ -8,7 +8,9 @@
     "config:hygiene": "./scripts/check-public-config-hygiene.sh",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
     "ios:config": "./scripts/generate-local-xcconfig.sh local",
-    "ios:config:production": "./scripts/generate-local-xcconfig.sh production"
+    "ios:config:production": "./scripts/generate-local-xcconfig.sh production",
+    "ios:preflight": "./scripts/verify-ios-runtime-config.sh local",
+    "ios:preflight:production": "./scripts/verify-ios-runtime-config.sh production"
   },
   "devDependencies": {
     "@varlock/infisical-plugin": "0.0.6",

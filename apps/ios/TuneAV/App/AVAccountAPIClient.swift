@@ -74,6 +74,28 @@ struct LinkedAccountApp: Decodable, Equatable, Identifiable {
 
 struct AccountBillingSummary: Decodable, Equatable {
     let subscriptions: [AccountBillingSubscription]
+
+    enum CodingKeys: String, CodingKey {
+        case subscriptions
+    }
+
+    init(subscriptions: [AccountBillingSubscription] = []) {
+        self.subscriptions = subscriptions
+    }
+
+    init(from decoder: Decoder) throws {
+        if var unkeyedContainer = try? decoder.unkeyedContainer() {
+            var decodedSubscriptions: [AccountBillingSubscription] = []
+            while !unkeyedContainer.isAtEnd {
+                decodedSubscriptions.append(try unkeyedContainer.decode(AccountBillingSubscription.self))
+            }
+            subscriptions = decodedSubscriptions
+            return
+        }
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        subscriptions = try container.decodeIfPresent([AccountBillingSubscription].self, forKey: .subscriptions) ?? []
+    }
 }
 
 struct AccountBillingSubscription: Decodable, Equatable, Identifiable {
@@ -128,13 +150,61 @@ struct AccountDeletionJob: Decodable, Equatable, Identifiable {
 struct DeleteAccountRequestResponse: Decodable, Equatable {
     let status: String?
     let job: AccountDeletionJob?
+    let deletionJob: AccountDeletionJob?
     let deleteAccountEligibility: AccountDeletionEligibility?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case job
+        case deletionJob
+        case deleteAccountEligibility
+    }
+
+    init(status: String? = nil, job: AccountDeletionJob? = nil, deletionJob: AccountDeletionJob? = nil, deleteAccountEligibility: AccountDeletionEligibility? = nil) {
+        self.status = status
+        self.deletionJob = deletionJob ?? job
+        self.job = job ?? deletionJob
+        self.deleteAccountEligibility = deleteAccountEligibility
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        let canonicalJob = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .deletionJob)
+        deletionJob = canonicalJob
+        job = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .job) ?? canonicalJob
+        deleteAccountEligibility = try container.decodeIfPresent(AccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
+    }
 }
 
 struct DeleteAccountFinalizeResponse: Decodable, Equatable {
     let status: String?
     let job: AccountDeletionJob?
+    let deletionJob: AccountDeletionJob?
     let deleteAccountEligibility: AccountDeletionEligibility?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case job
+        case deletionJob
+        case deleteAccountEligibility
+    }
+
+    init(status: String? = nil, job: AccountDeletionJob? = nil, deletionJob: AccountDeletionJob? = nil, deleteAccountEligibility: AccountDeletionEligibility? = nil) {
+        self.status = status
+        self.deletionJob = deletionJob ?? job
+        self.job = job ?? deletionJob
+        self.deleteAccountEligibility = deleteAccountEligibility
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        let canonicalJob = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .deletionJob)
+        deletionJob = canonicalJob
+        job = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .job) ?? canonicalJob
+        deleteAccountEligibility = try container.decodeIfPresent(AccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
+    }
 }
 
 struct UnlinkAppResponse: Decodable, Equatable {
@@ -242,6 +312,7 @@ final class AVAccountAPIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
         for (field, value) in headers {
             request.setValue(value, forHTTPHeaderField: field)
         }
