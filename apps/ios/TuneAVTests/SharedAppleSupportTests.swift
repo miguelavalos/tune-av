@@ -78,6 +78,72 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVNowPlayingMetadata.metadataInterval(from: response!), 16000)
     }
 
+    func testAlternateMetadataStreamResolverPrefersDirectEquivalentStream() {
+        let station = Station(
+            id: "station-hls",
+            name: "Example Radio",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "pop",
+            streamURL: "https://example-radio.test/live/chunks.m3u8",
+            homepageURL: "https://www.example-radio.test/",
+            isHLS: true
+        )
+        let candidates = [
+            RadioBrowserMetadataCandidate(
+                name: "Example Radio",
+                url: "https://example-radio.test/live/chunks.m3u8",
+                url_resolved: "https://example-radio.test/live/chunks.m3u8",
+                homepage: "https://www.example-radio.test/",
+                codec: "UNKNOWN",
+                hls: 1,
+                lastcheckok: 1
+            ),
+            RadioBrowserMetadataCandidate(
+                name: "Example Radio",
+                url: "http://stream.example-radio.test/live.mp3",
+                url_resolved: "http://stream.example-radio.test/live.mp3",
+                homepage: "https://example-radio.test/",
+                codec: "MP3",
+                hls: 0,
+                lastcheckok: 1
+            )
+        ]
+
+        XCTAssertEqual(
+            TuneAVAlternateMetadataStreamResolver.bestAlternateStreamURL(for: station, candidates: candidates)?.absoluteString,
+            "http://stream.example-radio.test/live.mp3"
+        )
+    }
+
+    func testAlternateMetadataStreamResolverRejectsUnrelatedDirectStream() {
+        let station = Station(
+            id: "station-hls",
+            name: "Example Radio",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "pop",
+            streamURL: "https://example-radio.test/live/chunks.m3u8",
+            homepageURL: "https://www.example-radio.test/",
+            isHLS: true
+        )
+        let candidates = [
+            RadioBrowserMetadataCandidate(
+                name: "Other Radio",
+                url: "http://stream.other-radio.test/live.mp3",
+                url_resolved: "http://stream.other-radio.test/live.mp3",
+                homepage: "https://other-radio.test/",
+                codec: "MP3",
+                hls: 0,
+                lastcheckok: 1
+            )
+        ]
+
+        XCTAssertNil(TuneAVAlternateMetadataStreamResolver.bestAlternateStreamURL(for: station, candidates: candidates))
+    }
+
     func testEighties80sNowPlayingMatchesStationByHomepageSlug() {
         let station = Station(
             id: "80s80s-dm",
