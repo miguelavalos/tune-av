@@ -87,22 +87,31 @@ struct AccountDeletionScreen: View {
             .accessibilityIdentifier("accountDeletion.status.error")
         }
 
-        switch viewModel.resolvedEligibility?.status {
-        case .eligible:
-            eligibleContent
-        case .blocked:
-            blockedContent(title: L10n.string("accountDeletion.blocked.title"))
-        case .inProgress:
-            inProgressContent
-        case .completed:
+        if viewModel.didUnlinkCurrentApp {
             statusCard(
-                systemImage: "checkmark.circle",
-                title: L10n.string("accountDeletion.completed.title"),
-                detail: L10n.string("accountDeletion.completed.detail")
+                systemImage: "link.badge.minus",
+                title: L10n.string("accountDeletion.unlinked.title"),
+                detail: viewModel.unlinkMessage ?? L10n.string("accountDeletion.unlinked.detail")
             )
-            .accessibilityIdentifier("accountDeletion.status.completed")
-        case .unavailable, .none:
-            blockedContent(title: L10n.string("accountDeletion.unavailable.title"))
+            .accessibilityIdentifier("accountDeletion.status.unlinked")
+        } else {
+            switch viewModel.resolvedEligibility?.status {
+            case .eligible:
+                eligibleContent
+            case .blocked:
+                blockedContent(title: L10n.string("accountDeletion.blocked.title"))
+            case .inProgress:
+                inProgressContent
+            case .completed:
+                statusCard(
+                    systemImage: "checkmark.circle",
+                    title: L10n.string("accountDeletion.completed.title"),
+                    detail: L10n.string("accountDeletion.completed.detail")
+                )
+                .accessibilityIdentifier("accountDeletion.status.completed")
+            case .unavailable, .none:
+                blockedContent(title: L10n.string("accountDeletion.unavailable.title"))
+            }
         }
     }
 
@@ -191,6 +200,49 @@ struct AccountDeletionScreen: View {
             )
             .accessibilityIdentifier("accountDeletion.status.blocked")
             blockerList
+
+            if viewModel.canUnlinkCurrentApp {
+                Button {
+                    Task { await viewModel.unlinkCurrentApp() }
+                } label: {
+                    HStack {
+                        Text(viewModel.isSubmitting ? L10n.string("accountDeletion.unlinking") : L10n.string("accountDeletion.unlinkButton"))
+                            .font(.system(size: 15, weight: .bold))
+                        Spacer()
+                        if viewModel.isSubmitting {
+                            ProgressView()
+                                .tint(TuneAVTheme.textPrimary)
+                        }
+                    }
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .frame(height: 48)
+                    .padding(.horizontal, 18)
+                    .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(!viewModel.canUnlinkCurrentApp)
+                .accessibilityIdentifier("accountDeletion.unlinkButton")
+            }
+
+            if let accountURL = AppConfig.deleteAccountURL {
+                Link(destination: accountURL) {
+                    Label(L10n.string("accountDeletion.accountWebsiteLink"), systemImage: "safari")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                        }
+                }
+                .accessibilityIdentifier("accountDeletion.accountWebsiteLink")
+            }
         }
     }
 

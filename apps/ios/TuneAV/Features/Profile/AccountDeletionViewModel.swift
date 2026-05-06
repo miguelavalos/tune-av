@@ -8,6 +8,8 @@ final class AccountDeletionViewModel: ObservableObject {
     @Published private(set) var isSubmitting = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var didCompleteDeletion = false
+    @Published private(set) var didUnlinkCurrentApp = false
+    @Published private(set) var unlinkMessage: String?
     @Published var confirmationText = ""
 
     private let api: AccountDeletionAPI
@@ -32,6 +34,11 @@ final class AccountDeletionViewModel: ObservableObject {
 
     var blockers: [AccountDeletionBlocker] {
         resolvedEligibility?.blockers ?? []
+    }
+
+    var canUnlinkCurrentApp: Bool {
+        guard let summary, !isSubmitting else { return false }
+        return Self.canUnlinkCurrentApp(from: summary)
     }
 
     func load() async {
@@ -96,6 +103,22 @@ final class AccountDeletionViewModel: ObservableObject {
         }
     }
 
+    func unlinkCurrentApp() async {
+        guard canUnlinkCurrentApp, !isSubmitting else { return }
+        isSubmitting = true
+        errorMessage = nil
+        defer { isSubmitting = false }
+
+        do {
+            let response = try await api.unlinkCurrentApp()
+            unlinkMessage = response.message ?? L10n.string("accountDeletion.unlinked.detail")
+            try await signOut()
+            didUnlinkCurrentApp = true
+        } catch {
+            errorMessage = L10n.string("accountDeletion.error.unlink")
+        }
+    }
+
     private func apply(summary: AccountSummary) {
         self.summary = summary
         resolvedEligibility = summary.deleteAccountEligibility ?? Self.conservativeEligibility(from: summary)
@@ -109,12 +132,12 @@ final class AccountDeletionViewModel: ObservableObject {
     static func conservativeEligibility(from summary: AccountSummary) -> AccountDeletionEligibility {
         var blockers: [AccountDeletionBlocker] = []
 
-        for linkedApp in summary.linkedApps where linkedApp.appId != "tuneav" {
+        for linkedApp in summary.linkedApps where linkedApp.appId != "tuneav" && linkedApp.appId != "avapps" {
             blockers.append(
                 AccountDeletionBlocker(
                     type: .linkedApp,
                     appId: linkedApp.appId,
-                    label: linkedApp.label ?? appLabel(for: linkedApp.appId),
+                    label: L10n.string("accountDeletion.blocker.linkedApp.title"),
                     detail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
                     managementUrl: nil
                 )
@@ -126,7 +149,7 @@ final class AccountDeletionViewModel: ObservableObject {
                 AccountDeletionBlocker(
                     type: .activeProAccess,
                     appId: appAccess.appId,
-                    label: appLabel(for: appAccess.appId),
+                    label: L10n.string("accountDeletion.blocker.pro.title"),
                     detail: L10n.string("accountDeletion.blocker.pro.detail"),
                     managementUrl: nil
                 )
@@ -175,19 +198,15 @@ final class AccountDeletionViewModel: ObservableObject {
 
     private static let activeBillingStatuses = Set(["active", "trialing", "pastDue", "past_due"])
 
-    private static func appLabel(for appId: String) -> String {
-        switch appId {
-        case "tuneav":
-            "Tune AV"
-        case "seriesav":
-            "Series AV"
-        case "avphotos":
-            "Photo AV"
-        case "avapps":
-            "Apps AV"
-        default:
-            appId
-        }
+    private static func canUnlinkCurrentApp(from summary: AccountSummary) -> Bool {
+        let currentAppId = "tuneav"
+        let linkedApps = summary.linkedApps.filter { $0.appId != "avapps" }
+        let isCurrentAppLinked = linkedApps.contains { $0.appId == currentAppId }
+        let hasOtherLinkedApps = linkedApps.contains { $0.appId != currentAppId }
+        let currentAppAccess = summary.access.first { $0.appId == currentAppId }
+        let currentAppIsPro = currentAppAccess?.planTier == .pro || currentAppAccess?.accessMode == .signedInPro
+
+        return isCurrentAppLinked && hasOtherLinkedApps && !currentAppIsPro
     }
 }
 

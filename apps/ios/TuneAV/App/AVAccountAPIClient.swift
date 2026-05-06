@@ -137,6 +137,17 @@ struct DeleteAccountFinalizeResponse: Decodable, Equatable {
     let deleteAccountEligibility: AccountDeletionEligibility?
 }
 
+struct UnlinkAppResponse: Decodable, Equatable {
+    let link: UnlinkAppResult
+    let message: String?
+}
+
+struct UnlinkAppResult: Decodable, Equatable {
+    let appId: String
+    let remainingLinkedApps: Int
+    let unlinked: Bool
+}
+
 struct AppAccess: Decodable {
     let appId: String
     let accessMode: AccessMode
@@ -152,6 +163,7 @@ protocol AccountDeletionAPI {
     func fetchAccountSummary() async throws -> AccountSummary
     func requestAccountDeletion() async throws -> DeleteAccountRequestResponse
     func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse
+    func unlinkCurrentApp() async throws -> UnlinkAppResponse
 }
 
 enum AVAccountAPIClientError: LocalizedError {
@@ -162,11 +174,11 @@ enum AVAccountAPIClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingToken:
-            "Missing Account AV token."
+            "Missing Apps AV account token."
         case .missingBaseURL:
-            "Missing Account AV API base URL."
+            "Missing Apps AV API base URL."
         case .requestFailed(let statusCode):
-            "Account AV API request failed with status \(statusCode)."
+            "Apps AV API request failed with status \(statusCode)."
         }
     }
 }
@@ -205,6 +217,10 @@ final class AVAccountAPIClient {
 
     func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse {
         try await request(path: "/v1/me/delete-account-finalize", method: "POST")
+    }
+
+    func unlinkCurrentApp() async throws -> UnlinkAppResponse {
+        try await request(path: "/v1/apps/tuneav/link", method: "DELETE")
     }
 
     func request<T: Decodable>(

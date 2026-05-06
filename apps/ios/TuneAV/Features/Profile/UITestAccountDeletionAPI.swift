@@ -22,8 +22,8 @@ struct UITestAccountDeletionAPI: AccountDeletionAPI {
                 emailAddress: "ui-test@example.test",
                 displayName: "UI Test User",
                 linkedApps: [
-                    LinkedAccountApp(appId: "tuneav", label: "Tune AV"),
-                    LinkedAccountApp(appId: "seriesav", label: "Series AV")
+                    LinkedAccountApp(appId: "tuneav", label: "Apps AV"),
+                    LinkedAccountApp(appId: "seriesav", label: "Apps AV")
                 ],
                 deleteAccountEligibility: AccountDeletionEligibility(
                     status: .blocked,
@@ -31,7 +31,7 @@ struct UITestAccountDeletionAPI: AccountDeletionAPI {
                         AccountDeletionBlocker(
                             type: .linkedApp,
                             appId: "seriesav",
-                            label: "Series AV",
+                            label: L10n.string("accountDeletion.blocker.linkedApp.title"),
                             detail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
                             managementUrl: nil
                         )
@@ -59,7 +59,7 @@ struct UITestAccountDeletionAPI: AccountDeletionAPI {
                         AccountDeletionBlocker(
                             type: .activeProAccess,
                             appId: "tuneav",
-                            label: "Tune AV Pro",
+                            label: L10n.string("accountDeletion.blocker.pro.title"),
                             detail: L10n.string("accountDeletion.blocker.pro.detail"),
                             managementUrl: nil
                         )
@@ -79,7 +79,7 @@ struct UITestAccountDeletionAPI: AccountDeletionAPI {
                 id: "ui-test-user",
                 emailAddress: "ui-test@example.test",
                 displayName: "UI Test User",
-                linkedApps: [LinkedAccountApp(appId: "tuneav", label: "Tune AV")],
+                linkedApps: [LinkedAccountApp(appId: "tuneav", label: "Apps AV")],
                 access: [
                     AppAccess(
                         appId: "tuneav",
@@ -107,6 +107,13 @@ struct UITestAccountDeletionAPI: AccountDeletionAPI {
             status: "completed",
             job: AccountDeletionJob(id: "ui-test-job", status: "completed", detail: nil),
             deleteAccountEligibility: AccountDeletionEligibility(status: .completed, blockers: [], currentJob: nil)
+        )
+    }
+
+    func unlinkCurrentApp() async throws -> UnlinkAppResponse {
+        UnlinkAppResponse(
+            link: UnlinkAppResult(appId: "tuneav", remainingLinkedApps: 1, unlinked: true),
+            message: L10n.string("accountDeletion.unlinked.detail")
         )
     }
 }
