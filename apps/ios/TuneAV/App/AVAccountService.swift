@@ -50,7 +50,10 @@ struct DefaultAVAccountService: AVAccountService {
     }
 
     func getToken() async throws -> String? {
-        try await accountService.getToken()
+        if Self.uiTestAccountUser != nil {
+            return "ui-test-token"
+        }
+        return try await accountService.getToken()
     }
 
     func signInWithApple() async throws {
@@ -68,6 +71,9 @@ struct DefaultAVAccountService: AVAccountService {
     }
 
     func signOut() async throws {
+        if Self.uiTestAccountUser != nil {
+            return
+        }
         guard isAvailable else { return }
         try await accountService.signOut()
     }

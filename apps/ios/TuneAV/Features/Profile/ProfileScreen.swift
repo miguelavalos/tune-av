@@ -15,6 +15,7 @@ struct ProfileScreen: View {
     @State private var signOutErrorMessage = ""
     @State private var isShowingSignOutError = false
     @State private var browserDestination: BrowserDestination?
+    @State private var isShowingAccountDeletion = false
     private let genreTags = ["rock", "pop", "jazz", "news", "electronic", "ambient"]
 
     var body: some View {
@@ -69,6 +70,9 @@ struct ProfileScreen: View {
         }
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
+        }
+        .sheet(isPresented: $isShowingAccountDeletion) {
+            AccountDeletionScreen(viewModel: accountDeletionViewModel)
         }
     }
 
@@ -162,6 +166,7 @@ struct ProfileScreen: View {
                 action: { startSignInFlow(true) }
             )
             .disabled(!accessController.accountIsAvailable)
+            .accessibilityIdentifier("profile.account.connect")
         } else {
             ProfileSecondaryButton(
                 title: isSigningOut
@@ -173,6 +178,7 @@ struct ProfileScreen: View {
                 }
             )
             .disabled(isSigningOut)
+            .accessibilityIdentifier("profile.account.signOut")
         }
     }
 
@@ -364,14 +370,13 @@ struct ProfileScreen: View {
                 subtitle: L10n.string("profile.safety.subtitle")
             )
 
-            if let deleteAccountURL = AppConfig.deleteAccountURL {
-                ProfileActionRow(
-                    systemImage: "exclamationmark.shield",
-                    title: L10n.string("profile.safety.delete.title"),
-                    detail: L10n.string("profile.safety.delete.detail"),
-                    action: { open(deleteAccountURL) }
-                )
-            }
+            ProfileActionRow(
+                systemImage: "exclamationmark.shield",
+                title: L10n.string("profile.safety.delete.title"),
+                detail: L10n.string("profile.safety.delete.detail"),
+                action: { isShowingAccountDeletion = true }
+            )
+            .accessibilityIdentifier("profile.safety.delete")
         }
         .padding(22)
         .background(profileCardBackground)
@@ -630,6 +635,20 @@ struct ProfileScreen: View {
     private func open(_ url: URL?) {
         guard let url else { return }
         browserDestination = BrowserDestination(url: url)
+    }
+
+    private var accountDeletionViewModel: AccountDeletionViewModel {
+        AccountDeletionViewModel(
+            api: accountDeletionAPI,
+            signOut: { try await accessController.signOut() }
+        )
+    }
+
+    private var accountDeletionAPI: AccountDeletionAPI {
+        if let uiTestAPI = UITestAccountDeletionAPI.fromEnvironment() {
+            return uiTestAPI
+        }
+        return AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
     }
 
     private func signOut() async {

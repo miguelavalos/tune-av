@@ -4,12 +4,154 @@ struct MeAccessResponse: Decodable {
     let apps: [AppAccess]
 }
 
+struct AccountSummary: Decodable, Equatable {
+    let id: String?
+    let emailAddress: String?
+    let displayName: String?
+    let linkedApps: [LinkedAccountApp]
+    let access: [AppAccess]
+    let billing: AccountBillingSummary?
+    let currentDeletionJob: AccountDeletionJob?
+    let deleteAccountEligibility: AccountDeletionEligibility?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case emailAddress
+        case email
+        case displayName
+        case name
+        case linkedApps
+        case apps
+        case access
+        case billing
+        case currentDeletionJob
+        case deleteAccountEligibility
+    }
+
+    init(
+        id: String? = nil,
+        emailAddress: String? = nil,
+        displayName: String? = nil,
+        linkedApps: [LinkedAccountApp] = [],
+        access: [AppAccess] = [],
+        billing: AccountBillingSummary? = nil,
+        currentDeletionJob: AccountDeletionJob? = nil,
+        deleteAccountEligibility: AccountDeletionEligibility? = nil
+    ) {
+        self.id = id
+        self.emailAddress = emailAddress
+        self.displayName = displayName
+        self.linkedApps = linkedApps
+        self.access = access
+        self.billing = billing
+        self.currentDeletionJob = currentDeletionJob
+        self.deleteAccountEligibility = deleteAccountEligibility
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        emailAddress = try container.decodeIfPresent(String.self, forKey: .emailAddress)
+            ?? container.decodeIfPresent(String.self, forKey: .email)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+            ?? container.decodeIfPresent(String.self, forKey: .name)
+        linkedApps = try container.decodeIfPresent([LinkedAccountApp].self, forKey: .linkedApps) ?? []
+        access = try container.decodeIfPresent([AppAccess].self, forKey: .access)
+            ?? container.decodeIfPresent([AppAccess].self, forKey: .apps)
+            ?? []
+        billing = try container.decodeIfPresent(AccountBillingSummary.self, forKey: .billing)
+        currentDeletionJob = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .currentDeletionJob)
+        deleteAccountEligibility = try container.decodeIfPresent(AccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
+    }
+}
+
+struct LinkedAccountApp: Decodable, Equatable, Identifiable {
+    let appId: String
+    let label: String?
+
+    var id: String { appId }
+}
+
+struct AccountBillingSummary: Decodable, Equatable {
+    let subscriptions: [AccountBillingSubscription]
+}
+
+struct AccountBillingSubscription: Decodable, Equatable, Identifiable {
+    let id: String
+    let appId: String?
+    let provider: String?
+    let status: String
+    let managementUrl: URL?
+}
+
+struct AccountDeletionEligibility: Decodable, Equatable {
+    let status: Status
+    let blockers: [AccountDeletionBlocker]
+    let currentJob: AccountDeletionJob?
+
+    enum Status: String, Decodable {
+        case eligible
+        case blocked
+        case inProgress
+        case completed
+        case unavailable
+    }
+}
+
+struct AccountDeletionBlocker: Decodable, Equatable, Identifiable {
+    let type: BlockerType
+    let appId: String?
+    let label: String
+    let detail: String?
+    let managementUrl: URL?
+
+    var id: String {
+        [type.rawValue, appId, label, detail].compactMap { $0 }.joined(separator: "|")
+    }
+
+    enum BlockerType: String, Decodable {
+        case linkedApp
+        case activeProAccess
+        case activeBillingSubscription
+        case identityProvider
+        case deletionInProgress
+        case eligibilityUnavailable
+    }
+}
+
+struct AccountDeletionJob: Decodable, Equatable, Identifiable {
+    let id: String
+    let status: String
+    let detail: String?
+}
+
+struct DeleteAccountRequestResponse: Decodable, Equatable {
+    let status: String?
+    let job: AccountDeletionJob?
+    let deleteAccountEligibility: AccountDeletionEligibility?
+}
+
+struct DeleteAccountFinalizeResponse: Decodable, Equatable {
+    let status: String?
+    let job: AccountDeletionJob?
+    let deleteAccountEligibility: AccountDeletionEligibility?
+}
+
 struct AppAccess: Decodable {
     let appId: String
     let accessMode: AccessMode
     let planTier: PlanTier
     let capabilities: AccessCapabilities
     let limits: AccessLimits
+}
+
+extension AppAccess: Equatable {}
+
+@MainActor
+protocol AccountDeletionAPI {
+    func fetchAccountSummary() async throws -> AccountSummary
+    func requestAccountDeletion() async throws -> DeleteAccountRequestResponse
+    func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse
 }
 
 enum AVAccountAPIClientError: LocalizedError {
@@ -53,6 +195,18 @@ final class AVAccountAPIClient {
         try await request(path: "/v1/me/access")
     }
 
+    func fetchAccountSummary() async throws -> AccountSummary {
+        try await request(path: "/v1/me")
+    }
+
+    func requestAccountDeletion() async throws -> DeleteAccountRequestResponse {
+        try await request(path: "/v1/me/delete-account-request", method: "POST")
+    }
+
+    func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse {
+        try await request(path: "/v1/me/delete-account-finalize", method: "POST")
+    }
+
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
@@ -92,3 +246,5 @@ final class AVAccountAPIClient {
         return try decoder.decode(T.self, from: data)
     }
 }
+
+extension AVAccountAPIClient: AccountDeletionAPI {}

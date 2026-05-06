@@ -1100,8 +1100,6 @@ private struct FlippingPlayerArtwork: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("player.artwork.flipToFront.accessibility.label"))
-            .accessibilityHint("\(station.name), \(radioContextLine)")
             .accessibilityIdentifier("player.artwork.options.radioInfo")
 
             HStack(spacing: 12) {
@@ -1159,8 +1157,6 @@ private struct FlippingPlayerArtwork: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("player.artwork.flipToFront.accessibility.label"))
-            .accessibilityHint("\(songPrimaryLine), \(songSecondaryLine)")
             .accessibilityIdentifier("player.artwork.options.songInfo")
 
             if isDiscoverableTrack {
@@ -1238,8 +1234,6 @@ private struct FlippingPlayerArtwork: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("player.artwork.flipToFront.accessibility.label"))
-            .accessibilityHint("\(backSubtitle), \(artistContextLine)")
             .accessibilityIdentifier("player.artwork.options.artistInfo")
 
             HStack(spacing: 8) {

@@ -10,6 +10,10 @@
 		0BEFD1AF0CCEFF38FA4AED12 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */; };
 		0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */; };
 		0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD95C0068EC297AAD27DFCAD /* AppConfig.swift */; };
+		0E58D0A37F72C5E27D3AC2A1 /* AccountDeletionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A17F72C5E27D3AC2A1 /* AccountDeletionScreen.swift */; };
+		0E58D0A47F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A27F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift */; };
+		0E58D0A87F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A77F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift */; };
+		0E58D0A67F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A57F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift */; };
 		1135792ADAF1DD6490EB73F0 /* AccountAV in Frameworks */ = {isa = PBXBuildFile; productRef = 4AB3D9EBECC62D9E2BF5A81D /* AccountAV */; };
 		11A84ACA51047FFDFAF57E69 /* NowPlayingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360428A6BDD712BF45C72C87 /* NowPlayingService.swift */; };
 		184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */; };
@@ -96,6 +100,10 @@
 		06624915894913972B482E00 /* LaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchContext.swift; sourceTree = "<group>"; };
 		09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
 		0A2443197B44A3463AFABCB5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		0E58D0A17F72C5E27D3AC2A1 /* AccountDeletionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionScreen.swift; sourceTree = "<group>"; };
+		0E58D0A27F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionViewModel.swift; sourceTree = "<group>"; };
+		0E58D0A57F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestAccountDeletionAPI.swift; sourceTree = "<group>"; };
+		0E58D0A77F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionViewModelTests.swift; sourceTree = "<group>"; };
 		118C9F171532825AF79FE763 /* TrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackArtworkService.swift; sourceTree = "<group>"; };
 		12A3B12BBA94111AA7B04163 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
 		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -201,6 +209,7 @@
 		3A0A110F6FAD80CB2BF06594 /* TuneAVTests */ = {
 			isa = PBXGroup;
 			children = (
+				0E58D0A77F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift */,
 				9123677EFD411D6E6506AB24 /* AccessLimitsTests.swift */,
 				09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */,
 				B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */,
@@ -313,7 +322,10 @@
 		AA012379CF977AC043A1EF00 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				0E58D0A17F72C5E27D3AC2A1 /* AccountDeletionScreen.swift */,
+				0E58D0A27F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift */,
 				A20097A1515219B62D4EC2C9 /* ProfileScreen.swift */,
+				0E58D0A57F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -543,6 +555,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E58D0A87F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift in Sources */,
 				3999ACCE46F815BC19A27F16 /* AccessLimitsTests.swift in Sources */,
 				570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */,
 				E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */,
@@ -554,6 +567,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8173B6F9E09CBB364BA4A5AF /* AVAccountAPIClient.swift in Sources */,
+				0E58D0A37F72C5E27D3AC2A1 /* AccountDeletionScreen.swift in Sources */,
+				0E58D0A47F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift in Sources */,
 				8C31A7EA2DC805FDBA7029FE /* AVAccountService.swift in Sources */,
 				2F65C8472D88CA7FBAFE52BF /* AccessController.swift in Sources */,
 				B24295FC5A46733DD99B28FC /* AccessMode.swift in Sources */,
@@ -600,6 +615,7 @@
 				88A43482BB58486E8AE21072 /* TuneAVTheme.swift in Sources */,
 				8F263B120926F737D7EDD17F /* TuneAVTrackArtworkService.swift in Sources */,
 				45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */,
+				0E58D0A67F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -741,7 +757,7 @@
 				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = "$(SDKROOT)/Developer/Library/Frameworks";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TuneAV/App/Info.plist;
@@ -782,7 +798,7 @@
 				CODE_SIGN_ENTITLEMENTS = TuneAV/App/TuneAV.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "$$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = "$(SDKROOT)/Developer/Library/Frameworks";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TuneAV/App/Info.plist;

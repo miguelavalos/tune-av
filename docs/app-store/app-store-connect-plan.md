@@ -132,12 +132,13 @@ Required URLs:
 - Support URL: preferably a public support page, not only `mailto:`.
 - Terms URL: production public URL from `TUNEAV_TERMS_URL`.
 - Account deletion URL: https://tune-av.avalsys.com/delete-account
+- In-app deletion path: Profile > Account safety > Delete Apps AV account opens the native Account AV deletion flow. The public URL remains the support/store-console entry point.
 
 ## App Review Notes Draft
 
 Tune AV is a live radio player. It discovers public radio stations through external station metadata providers and plays streams hosted by third-party radio stations.
 
-The app works in local mode without account creation. Account AV sign-in is optional and is used only for compatible account/access states. This first release does not sell subscriptions or include App Store purchase/restore flows in the iOS client.
+The app works in local mode without account creation. Account AV sign-in is optional and is used only for compatible account/access states. Account deletion starts in-app from Profile > Account safety > Delete Apps AV account. Account AV is shared across Apps AV products, so deletion may be blocked until linked Apps AV products, active Pro access, or active provider subscription state are resolved. This first release does not sell subscriptions or include App Store purchase/restore flows in the iOS client.
 
 If App Review needs a test account, provide a non-personal review account here:
 

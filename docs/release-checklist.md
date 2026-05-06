@@ -103,7 +103,9 @@ Use this checklist before creating the first public GitHub release and before ea
 1. Confirm `ACCOUNTAV_API_BASE_URL` points at the intended Account AV API environment for the build.
 2. Confirm `GET /v1/me/access` is available when signed-in access is enabled.
 3. Confirm Account AV production or preview smokes pass from the private infrastructure before releasing a client that depends on those routes.
-4. Confirm public support, terms, privacy, open-source, and account-management URLs are reachable.
+4. Confirm `GET /v1/me`, `POST /v1/me/delete-account-request`, and `POST /v1/me/delete-account-finalize` are available before shipping the native account-deletion flow.
+5. Confirm Tune AV renders `deleteAccountEligibility` from Account AV and blocks deletion when eligibility is unavailable, linked apps exist, Pro is active, or provider subscriptions are active/trialing/past due.
+6. Confirm public support, terms, privacy, open-source, and account-management URLs are reachable. Keep `https://tune-av.avalsys.com/delete-account` as the public support/store URL, not the primary signed-in iOS deletion flow.
 5. Keep Worker names, D1/R2 names, API tokens, and Cloudflare account details in private infrastructure only.
 
 ## GitHub Release
