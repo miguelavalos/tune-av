@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/apps/macos/TuneAVMac"
+APP_DIR="$ROOT_DIR/apps/macos"
 PROJECT="$APP_DIR/TuneAVMac.xcodeproj"
 SCHEME="TuneAVMac"
 CONFIGURATION="Debug"

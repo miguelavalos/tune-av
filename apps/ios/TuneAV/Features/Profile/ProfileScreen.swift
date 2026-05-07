@@ -54,7 +54,7 @@ struct ProfileScreen: View {
             Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {}
             Button(clearLibraryConfirmTitle, role: .destructive) {
                 isClearingLocalData = true
-                libraryStore.clearLocalData()
+                libraryStore.clearLocalData(propagatesToCloud: shouldClearSyncedLibrary)
                 if accessController.accessMode == .guest {
                     startSignInFlow(false)
                 }
@@ -213,19 +213,7 @@ struct ProfileScreen: View {
                     )
                 )
 
-                Picker(
-                    L10n.string("profile.preferences.preferredGenre.title"),
-                    selection: preferredGenreSelection
-                ) {
-                    Text(L10n.string("profile.preferences.preferredGenre.none"))
-                        .tag("")
-
-                    ForEach(genreTags, id: \.self) { tag in
-                        Text(L10n.genreLabel(for: tag))
-                            .tag(tag)
-                    }
-                }
-                .pickerStyle(.menu)
+                preferredGenreSelector
             }
 
             ShellRow(
@@ -588,6 +576,73 @@ struct ProfileScreen: View {
         }
     }
 
+    private var preferredGenreSelector: some View {
+        Menu {
+            Button {
+                preferredGenreSelection.wrappedValue = ""
+            } label: {
+                if libraryStore.settings.preferredTag.isEmpty {
+                    Label {
+                        Text(L10n.string("profile.preferences.preferredGenre.none"))
+                    } icon: {
+                        Image(systemName: "checkmark")
+                    }
+                } else {
+                    Text(L10n.string("profile.preferences.preferredGenre.none"))
+                }
+            }
+
+            ForEach(genreTags, id: \.self) { tag in
+                Button {
+                    preferredGenreSelection.wrappedValue = tag
+                } label: {
+                    if libraryStore.settings.preferredTag == tag {
+                        Label {
+                            Text(L10n.genreLabel(for: tag))
+                        } icon: {
+                            Image(systemName: "checkmark")
+                        }
+                    } else {
+                        Text(L10n.genreLabel(for: tag))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: preferredGenreIcon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 22)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(preferredGenreLabel)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    Text(L10n.string("profile.preferences.preferredGenre.title"))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(TuneAVTheme.mutedSurface)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+        }
+    }
+
     private var themeSelector: some View {
         HStack(spacing: 10) {
             ForEach(AppTheme.allCases) { theme in
@@ -608,6 +663,29 @@ struct ProfileScreen: View {
         }
 
         return L10n.genreLabel(for: preferredTag)
+    }
+
+    private var preferredGenreIcon: String {
+        genreSymbol(for: libraryStore.settings.preferredTag)
+    }
+
+    private func genreSymbol(for tag: String) -> String {
+        switch tag {
+        case "rock":
+            "guitars"
+        case "pop":
+            "music.note"
+        case "jazz":
+            "music.mic"
+        case "news":
+            "newspaper"
+        case "electronic":
+            "waveform"
+        case "ambient":
+            "sparkles"
+        default:
+            "music.note.list"
+        }
     }
 
     private func themeLabel(for theme: AppTheme) -> String {

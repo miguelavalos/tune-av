@@ -67,6 +67,8 @@ struct RootView: View {
             if accessController.accessMode != .guest {
                 automaticGuestOnboardingIsPresented = false
                 isShowingAccountOnboarding = false
+            } else {
+                libraryStore.setAppDataService(nil)
             }
         }
     }

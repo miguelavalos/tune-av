@@ -12,8 +12,8 @@
 		0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD95C0068EC297AAD27DFCAD /* AppConfig.swift */; };
 		0E58D0A37F72C5E27D3AC2A1 /* AccountDeletionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A17F72C5E27D3AC2A1 /* AccountDeletionScreen.swift */; };
 		0E58D0A47F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A27F72C5E27D3AC2A1 /* AccountDeletionViewModel.swift */; };
-		0E58D0A87F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A77F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift */; };
 		0E58D0A67F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A57F72C5E27D3AC2A1 /* UITestAccountDeletionAPI.swift */; };
+		0E58D0A87F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58D0A77F72C5E27D3AC2A1 /* AccountDeletionViewModelTests.swift */; };
 		1135792ADAF1DD6490EB73F0 /* AccountAV in Frameworks */ = {isa = PBXBuildFile; productRef = 4AB3D9EBECC62D9E2BF5A81D /* AccountAV */; };
 		11A84ACA51047FFDFAF57E69 /* NowPlayingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 360428A6BDD712BF45C72C87 /* NowPlayingService.swift */; };
 		184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */; };

@@ -420,3 +420,6 @@
 "profile.sync.status.title" = "Estat del núvol";
 "profile.sync.subtitle" = "Pro manté favorits, recents, descobriments musicals i ajustos preparats entre dispositius.";
 "profile.sync.title" = "Sincronització al núvol";
+"profile.account.identity.guest" = "Mode local en aquest dispositiu";
+"station.status.sslIssue" = "Problema SSL";
+"station.status.checked" = "Comprovada";

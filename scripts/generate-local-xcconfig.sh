@@ -157,7 +157,7 @@ ios_rendered_config="$(render_config "$bundle_identifier")"
 macos_rendered_config="$(render_config "$mac_bundle_identifier")"
 
 ios_target_file="$repo_root/apps/ios/Config/Local.xcconfig"
-macos_target_file="$repo_root/apps/macos/TuneAVMac/Config/Local.xcconfig"
+macos_target_file="$repo_root/apps/macos/Config/Local.xcconfig"
 
 case "$output_mode" in
   write)

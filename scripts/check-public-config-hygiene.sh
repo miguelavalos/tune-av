@@ -26,8 +26,8 @@ forbidden_local_paths=(
   ".env.example" \
   "apps/ios/Config/Local.xcconfig" \
   "apps/ios/Config/Local.xcconfig.example" \
-  "apps/macos/TuneAVMac/Config/Local.xcconfig" \
-  "apps/macos/TuneAVMac/Config/Local.xcconfig.example"
+  "apps/macos/Config/Local.xcconfig" \
+  "apps/macos/Config/Local.xcconfig.example"
 )
 
 for forbidden_path in "${forbidden_local_paths[@]}"; do

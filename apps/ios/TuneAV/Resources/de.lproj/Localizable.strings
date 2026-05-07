@@ -420,3 +420,6 @@
 "profile.sync.status.title" = "Cloud-Status";
 "profile.sync.subtitle" = "Pro hält Favoriten, zuletzt gehörte Sender, Musikentdeckungen und Einstellungen geräteübergreifend bereit.";
 "profile.sync.title" = "Cloud-Sync";
+"profile.account.identity.guest" = "Lokaler Modus auf diesem Gerät";
+"station.status.sslIssue" = "SSL-Problem";
+"station.status.checked" = "Geprüft";

@@ -166,6 +166,10 @@ struct TuneAVLibrarySnapshot: Codable, Equatable {
         !favorites.isEmpty || !recents.isEmpty || !discoveries.isEmpty || settings.hasMeaningfulContent
     }
 
+    var hasLibraryCollections: Bool {
+        !favorites.isEmpty || !recents.isEmpty || !discoveries.isEmpty
+    }
+
     init(
         favorites: [FavoriteStationRecord],
         recents: [RecentStationRecord],

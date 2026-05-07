@@ -9,8 +9,12 @@
     "brand:assets": "node scripts/generate-brand-assets.mjs",
     "ios:config": "./scripts/generate-local-xcconfig.sh local",
     "ios:config:production": "./scripts/generate-local-xcconfig.sh production",
+    "macos:config": "./scripts/generate-local-xcconfig.sh local",
+    "macos:config:production": "./scripts/generate-local-xcconfig.sh production",
     "ios:preflight": "./scripts/verify-ios-runtime-config.sh local",
-    "ios:preflight:production": "./scripts/verify-ios-runtime-config.sh production"
+    "ios:preflight:production": "./scripts/verify-ios-runtime-config.sh production",
+    "macos:preflight": "./scripts/verify-macos-runtime-config.sh local",
+    "macos:preflight:production": "./scripts/verify-macos-runtime-config.sh production"
   },
   "devDependencies": {
     "@varlock/infisical-plugin": "0.0.6",

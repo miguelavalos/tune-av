@@ -68,8 +68,8 @@ extension Station {
 
     var statusBadges: [String] {
         var badges: [String] = []
-        if hasSSLError == true { badges.append("SSL issue") }
-        if let lastCheckOKAt, !lastCheckOKAt.isEmpty { badges.append("Checked") }
+        if hasSSLError == true { badges.append(L10n.string("station.status.sslIssue")) }
+        if let lastCheckOKAt, !lastCheckOKAt.isEmpty { badges.append(L10n.string("station.status.checked")) }
         return badges
     }
 

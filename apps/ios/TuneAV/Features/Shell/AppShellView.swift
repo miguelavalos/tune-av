@@ -136,6 +136,9 @@ struct AppShellView: View {
         .task {
             await refreshHomeFeed()
         }
+        .task(id: libraryStore.settings.preferredTag) {
+            await refreshHomeFeed()
+        }
         .task(id: searchRequestKey) {
             await loadSearchResults()
         }
@@ -495,7 +498,7 @@ struct AppShellView: View {
         }
 
         do {
-            let feed = try await homeFeed.load()
+            let feed = try await homeFeed.load(preferredTag: libraryStore.settings.preferredTag)
             homeStations = feed.stations
             homeFeedContext = feed.context
             refreshHomePresentation()
@@ -938,7 +941,7 @@ private struct HomeScreen: View {
         let country = localizedCountryName(for: station)
 
         switch feedContext {
-        case .popularInCountry:
+        case .preferredGenre, .popularInCountry:
             if let language, let flag = station.flagEmoji {
                 return "\(flag) \(language)"
             }
@@ -1098,6 +1101,8 @@ private struct HomeScreen: View {
         }
 
         switch feedContext {
+        case .preferredGenre:
+            return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
         case .popularInCountry(let countryCode):
             let countryName = L10n.countryName(for: countryCode)
             return countryName.uppercased(with: .current)
@@ -1108,6 +1113,8 @@ private struct HomeScreen: View {
 
     private var sectionTitle: String {
         switch feedContext {
+        case .preferredGenre(let tag):
+            return L10n.string("shell.home.section.topGenre.title", L10n.genreLabel(for: tag))
         case .popularInCountry(let countryCode):
             let countryName = L10n.countryName(for: countryCode)
             return L10n.string("shell.home.section.popularCountry.title", countryName)
@@ -1118,6 +1125,8 @@ private struct HomeScreen: View {
 
     private var sectionSubtitle: String {
         switch feedContext {
+        case .preferredGenre:
+            return L10n.string("shell.home.section.topGenre.subtitle")
         case .popularInCountry(let countryCode):
             let countryName = L10n.countryName(for: countryCode)
             return L10n.string("shell.home.section.popularCountry.subtitle", countryName)

@@ -34,4 +34,9 @@ apps/ios/Config/Local.xcconfig
 !/apps/macos/**
 
 # macOS local config is generated from private Infisical/Varlock values.
-apps/macos/TuneAVMac/Config/Local.xcconfig
+apps/macos/Config/Local.xcconfig
+apps/macos/Provisioning/
+apps/macos/**/*.xcworkspace/xcuserdata/
+apps/macos/**/*.xcodeproj/xcuserdata/
+apps/macos/**/*.xcuserdatad/
+apps/macos/**/*.xcuserstate

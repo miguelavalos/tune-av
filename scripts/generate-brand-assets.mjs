@@ -14,7 +14,7 @@ const palette = {
 
 const iosBrandingDir = path.join(rootDir, "apps/ios/branding");
 const iosAssetsDir = path.join(rootDir, "apps/ios/TuneAV/App/Assets.xcassets");
-const macAssetsDir = path.join(rootDir, "apps/macos/TuneAVMac/Assets.xcassets");
+const macAssetsDir = path.join(rootDir, "apps/macos/Assets.xcassets");
 
 function svgDocument(width, height, content, label) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}">

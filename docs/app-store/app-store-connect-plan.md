@@ -1,6 +1,6 @@
 # Tune AV App Store Connect Plan
 
-Working plan for the first Tune AV iOS App Store release.
+Working plan for Tune AV App Store releases across iOS and macOS.
 
 App Store Connect app:
 Use the existing Tune AV App Store Connect record in the private Apple developer account.
@@ -10,18 +10,26 @@ Apple references:
 - Screenshot specifications: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications
 - App privacy details: https://developer.apple.com/app-store/app-privacy-details/
 - App privacy reference: https://developer.apple.com/help/app-store-connect/reference/app-privacy/
+- Radio Browser API docs and usage statement: https://api.radio-browser.info/
 
 ## Release Positioning
 
 Tune AV is a local-first live radio player focused on fast discovery, clean playback, favorites, recents, and optional Account AV access.
 
-First release scope:
+First iOS release scope:
 
 - Live radio discovery and playback.
 - Local favorites, recents, and app preferences.
 - Optional Account AV sign-in.
 - Backend-owned Pro/access state display.
 - No in-app subscription purchase, restore purchase, or manage subscription flow in the iOS client.
+
+macOS release direction:
+
+- Mac App Store distribution.
+- Native macOS UI with one-to-one product parity against the iOS app.
+- Same Account AV entitlement source as iOS.
+- No in-app subscription purchase, restore purchase, or manage subscription flow until the later StoreKit subscription release.
 
 Recommended category:
 
@@ -138,6 +146,10 @@ Required URLs:
 
 Tune AV is a live radio player. It discovers public radio stations through external station metadata providers and plays streams hosted by third-party radio stations.
 
+For Guideline 5.2.3 / third-party audio review, attach or paste:
+
+- `docs/app-store/app-review-5.2.3-response.md`
+
 The app works in local mode without account creation. Account AV sign-in is optional and is used only for compatible account/access states. Account deletion starts in-app from Profile > Account safety > Delete Apps AV account. Account AV is shared across Apps AV products, so deletion may be blocked until linked Apps AV products, active Pro access, or active provider subscription state are resolved. This first release does not sell subscriptions or include App Store purchase/restore flows in the iOS client.
 
 If App Review needs a test account, provide a non-personal review account here:
@@ -193,6 +205,21 @@ Build:
 - Upload TestFlight build from production bundle identifier.
 - Confirm signing/capabilities match shipped features.
 - Confirm no client IAP capability unless a future purchase flow ships.
+
+macOS-specific build posture:
+
+- Production bundle identifier: `com.avalsys.tuneav.mac`.
+- Category: Music.
+- App Sandbox enabled.
+- Outbound network client entitlement enabled for station streams, artwork, and Account AV.
+- Mac App Store screenshots and metadata must be captured from the macOS app.
+- App Review notes should mention that the app plays third-party radio streams and may require broad ATS compatibility for non-HTTPS streams.
+
+## Future Subscriptions
+
+When paid Pro moves into scope, use StoreKit auto-renewable subscriptions for both iOS and macOS App Store builds. The clients should provide purchase, restore, and manage-subscription UI, while Account AV remains the entitlement authority after App Store Server Notification and server-side reconciliation.
+
+Do not use Apple Pay or web billing for digital Pro subscription purchase inside the Mac App Store build.
 
 ## Production Readiness Tasks
 

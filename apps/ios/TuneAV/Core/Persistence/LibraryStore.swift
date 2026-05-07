@@ -327,20 +327,32 @@ final class LibraryStore: ObservableObject {
         saveAndRefresh()
     }
 
-    func clearLocalData() {
+    func clearLocalData(propagatesToCloud: Bool = false) {
         for favorite in favorites {
-            rememberFavoriteDeletion(for: Station(favorite: favorite))
+            if propagatesToCloud {
+                rememberFavoriteDeletion(for: Station(favorite: favorite))
+            }
             context.delete(favorite)
         }
 
         for recent in recents {
-            rememberRecentDeletion(for: Station(recent: recent))
+            if propagatesToCloud {
+                rememberRecentDeletion(for: Station(recent: recent))
+            }
             context.delete(recent)
         }
 
         for discovery in discoveries {
-            rememberDiscoveryDeletion(for: discovery)
+            if propagatesToCloud {
+                rememberDiscoveryDeletion(for: discovery)
+            }
             context.delete(discovery)
+        }
+
+        if !propagatesToCloud {
+            for tombstone in tombstones() {
+                context.delete(tombstone)
+            }
         }
 
         settings.preferredCountry = ""
@@ -383,7 +395,20 @@ final class LibraryStore: ObservableObject {
                     try await appDataService.pushLibrary(mergedSnapshot)
                 }
             case .pushLocal:
-                try await appDataService.pushLibrary(localSnapshot)
+                let snapshotToPush: TuneAVLibrarySnapshot
+                if let remoteSnapshot = remoteDocument.snapshot {
+                    snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
+                        local: localSnapshot,
+                        remote: remoteSnapshot
+                    )
+                } else {
+                    snapshotToPush = localSnapshot
+                }
+
+                try await appDataService.pushLibrary(snapshotToPush)
+                if snapshotToPush != localSnapshot {
+                    applyRemoteSnapshot(snapshotToPush)
+                }
             case .noContent, .alreadyCurrent:
                 break
             }

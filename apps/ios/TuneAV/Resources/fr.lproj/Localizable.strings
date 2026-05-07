@@ -420,3 +420,6 @@
 "profile.sync.status.title" = "État du cloud";
 "profile.sync.subtitle" = "Pro garde favoris, écoutes récentes, découvertes musicales et réglages prêts sur tous vos appareils.";
 "profile.sync.title" = "Synchronisation cloud";
+"profile.account.identity.guest" = "Mode local sur cet appareil";
+"station.status.sslIssue" = "Problème SSL";
+"station.status.checked" = "Vérifiée";

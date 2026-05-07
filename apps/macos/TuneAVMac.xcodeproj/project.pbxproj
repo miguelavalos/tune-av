@@ -1,0 +1,703 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		007A86366863DAE1E80F6A2D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9F70EEBD2ED0934A00C217E9 /* Assets.xcassets */; };
+		013A11111111111111111111 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 013A22222222222222222222 /* Localizable.strings */; };
+		013A33333333333333333333 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013A44444444444444444444 /* L10n.swift */; };
+		1ACC6052B1279928A6EA2971 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */; };
+		1B81902D1E2D965BB76EBD68 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E4BAA8C73CF18CEDB81908 /* SettingsView.swift */; };
+		31F27E7BABE171ED67FB67F3 /* TuneAVDiscoveredTrackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED33F71C5D0D6F973B532EAC /* TuneAVDiscoveredTrackSupport.swift */; };
+		342DFF3910A6ACD839D0A09A /* PlaybackAndDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5426DA5CC1BFF2CBA041145F /* PlaybackAndDetailViews.swift */; };
+		4EDE37F89A542B28CD0C9DA7 /* DiscoveredTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D262B08786CC6124854245 /* DiscoveredTrack.swift */; };
+		4FBFE1A8D244B3978F2966D1 /* AccountAV in Frameworks */ = {isa = PBXBuildFile; productRef = 3FBCA1692EF65BC3F2E0F236 /* AccountAV */; };
+		6716515508AEB7968EF1966E /* TuneAVText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891985721D6B47B10DA4E6F8 /* TuneAVText.swift */; };
+		6D04968C92A2E22913A52C46 /* TuneAVTrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B5B98CF5933EAE1A87E50A0 /* TuneAVTrackArtworkService.swift */; };
+		6F0F172580DE9090F00B6ADA /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAABB5857A8F9E4E6A2C1000 /* HomeView.swift */; };
+		71630D10676BA9894D5C9BDD /* TuneAVTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA9F4922182092D3CBF1AFB /* TuneAVTheme.swift */; };
+		755B50D75DD9898A7DFE44E1 /* TuneAVLibrarySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B4987CBF8EC41105DBEEB4 /* TuneAVLibrarySync.swift */; };
+		7B3C7947551825FF0AE654D0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E56728EA06D88A837EE8FE5 /* ContentView.swift */; };
+		7D04E09AD5DD321B60222524 /* TuneAVMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */; };
+		7D347CE6D3090EAFF5C062F0 /* LibraryStoreSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523342939400295C1FAA9AA5 /* LibraryStoreSnapshotTests.swift */; };
+		827F8514DC8421492C47D3B3 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4537B691EE854ABAFCEBBE2C /* LibraryStore.swift */; };
+		8C65BACDD84A5286CDD20F9B /* AccessSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17DBC0C49445CF29D626F06 /* AccessSupport.swift */; };
+		8DDB5C535CA7A6D5E498FF04 /* SidebarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADFA89222139276C9C6EAA8 /* SidebarSection.swift */; };
+		915ABEFD89C1E63ED855CE45 /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B5FFF1029C0AAF57A57692 /* TuneAVCountry.swift */; };
+		9648E5EE93E72B9F52F2B5F6 /* MacAccountDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7207C59B6E7F7C52C1809550 /* MacAccountDeletionService.swift */; };
+		96567052E3E2CD7DA259D341 /* DiscoveryShareTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED595C225B06B0B6FB822481 /* DiscoveryShareTextFormatter.swift */; };
+		9A3C7D290816A3EA423C367E /* NowPlayingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD9C00874D6050184FA6F98 /* NowPlayingService.swift */; };
+		9DD3DCC634DFB5F60BBECE0C /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25043C9B00B0BE381CA0C859 /* TuneAVEighties80sNowPlaying.swift */; };
+		9EAB8AF229AB2864DFABC8EF /* MacAccountController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD99B1E9426E791D1FCAF7 /* MacAccountController.swift */; };
+		A83FD4EE6719DB922AC39D41 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15C4641955072DA72A4FD21 /* AudioPlayerService.swift */; };
+		A894C166BCA011B111A33124 /* TuneAVExternalSearchURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982EBF907088952B44522371 /* TuneAVExternalSearchURL.swift */; };
+		B4D856BD037E3F7C33A50F82 /* MusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E19848A43899E35B90F726 /* MusicView.swift */; };
+		BA86E91D05DFDD718B6AA3A8 /* TuneAVDateCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */; };
+		BB0D1FCCF0805DAC15795AE2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF37747A6C6A023D96501531 /* SearchView.swift */; };
+		C11E80DE5CF0F91C08416A98 /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */; };
+		C9FB6E1197D2B565D145E875 /* LibraryProfileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C323E3661A32EB4B95616F /* LibraryProfileViews.swift */; };
+		D0BBE9EAF9B7715031293905 /* StationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE33A6EF2120C433EF2025CD /* StationService.swift */; };
+		D4D9B62442A5DDABFE250C33 /* MacAccountDeletionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6FDCD446AC8F40EEE7E2C3 /* MacAccountDeletionSheet.swift */; };
+		D7EBE44D6BDC2AB4527F2807 /* StationArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E39968D9E8666AFEF4D0069 /* StationArtworkView.swift */; };
+		DF3DAEFA08480F519F222794 /* SharedSupportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F95699B7FCAD5744EB6E1C /* SharedSupportViews.swift */; };
+		EB189C173446D39E95DA3BE2 /* TrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CD561FB5307984746AA81C /* TrackArtworkService.swift */; };
+		F4A88D4BF9BB0925F2EAECF0 /* StationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D6E4B689C83233A9698802 /* StationComponents.swift */; };
+		F6F9DF373E5663A8F0139766 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F80E10DFA603B97291D332 /* TuneAVCollectionRules.swift */; };
+		F7D4B4F97C6747AA4C872DDD /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */; };
+		FF6AE46B9E0EA1DDF83626DB /* TuneAVAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AC2203F920B40346E2A823 /* TuneAVAccessPolicy.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9CCDC930A9FCC263185283C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D00C4819EBF87C8897F84A29 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EBE22FA1202AF7A8388ADDA4;
+			remoteInfo = TuneAVMac;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMacApp.swift; sourceTree = "<group>"; };
+		00C323E3661A32EB4B95616F /* LibraryProfileViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryProfileViews.swift; sourceTree = "<group>"; };
+		013A44444444444444444444 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
+		013A55555555555555555555 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		013A66666666666666666666 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		013A77777777777777777777 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		013A88888888888888888888 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		013A99999999999999999999 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
+		0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
+		0E97EC2159E8FB931BC135DB /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		25043C9B00B0BE381CA0C859 /* TuneAVEighties80sNowPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVEighties80sNowPlaying.swift; sourceTree = "<group>"; };
+		4537B691EE854ABAFCEBBE2C /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		48E19848A43899E35B90F726 /* MusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicView.swift; sourceTree = "<group>"; };
+		4F7D3468222B7241B3A1EE7A /* Tune AV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tune AV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
+		523342939400295C1FAA9AA5 /* LibraryStoreSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreSnapshotTests.swift; sourceTree = "<group>"; };
+		5426DA5CC1BFF2CBA041145F /* PlaybackAndDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackAndDetailViews.swift; sourceTree = "<group>"; };
+		54D262B08786CC6124854245 /* DiscoveredTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredTrack.swift; sourceTree = "<group>"; };
+		555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDateCoding.swift; sourceTree = "<group>"; };
+		5B5B98CF5933EAE1A87E50A0 /* TuneAVTrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackArtworkService.swift; sourceTree = "<group>"; };
+		65CD561FB5307984746AA81C /* TrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackArtworkService.swift; sourceTree = "<group>"; };
+		6E39968D9E8666AFEF4D0069 /* StationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationArtworkView.swift; sourceTree = "<group>"; };
+		7207C59B6E7F7C52C1809550 /* MacAccountDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAccountDeletionService.swift; sourceTree = "<group>"; };
+		73B5FFF1029C0AAF57A57692 /* TuneAVCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCountry.swift; sourceTree = "<group>"; };
+		891985721D6B47B10DA4E6F8 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
+		9597B7E83173DB8C28C137D0 /* account-av */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "account-av"; path = "../../../account-av"; sourceTree = SOURCE_ROOT; };
+		982EBF907088952B44522371 /* TuneAVExternalSearchURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVExternalSearchURL.swift; sourceTree = "<group>"; };
+		9E56728EA06D88A837EE8FE5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9F70EEBD2ED0934A00C217E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A15C4641955072DA72A4FD21 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
+		ABCD99B1E9426E791D1FCAF7 /* MacAccountController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAccountController.swift; sourceTree = "<group>"; };
+		B1F95699B7FCAD5744EB6E1C /* SharedSupportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSupportViews.swift; sourceTree = "<group>"; };
+		B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackMetadata.swift; sourceTree = "<group>"; };
+		C4B4987CBF8EC41105DBEEB4 /* TuneAVLibrarySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibrarySync.swift; sourceTree = "<group>"; };
+		CADFA89222139276C9C6EAA8 /* SidebarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSection.swift; sourceTree = "<group>"; };
+		CDD9C00874D6050184FA6F98 /* NowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingService.swift; sourceTree = "<group>"; };
+		D5AC2203F920B40346E2A823 /* TuneAVAccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessPolicy.swift; sourceTree = "<group>"; };
+		E1D6E4B689C83233A9698802 /* StationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationComponents.swift; sourceTree = "<group>"; };
+		E4F80E10DFA603B97291D332 /* TuneAVCollectionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCollectionRules.swift; sourceTree = "<group>"; };
+		E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		EAABB5857A8F9E4E6A2C1000 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		EB6FDCD446AC8F40EEE7E2C3 /* MacAccountDeletionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAccountDeletionSheet.swift; sourceTree = "<group>"; };
+		ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuneAVMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED33F71C5D0D6F973B532EAC /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
+		ED595C225B06B0B6FB822481 /* DiscoveryShareTextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryShareTextFormatter.swift; sourceTree = "<group>"; };
+		EE33A6EF2120C433EF2025CD /* StationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationService.swift; sourceTree = "<group>"; };
+		F17DBC0C49445CF29D626F06 /* AccessSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessSupport.swift; sourceTree = "<group>"; };
+		F6E4BAA8C73CF18CEDB81908 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		FBA9F4922182092D3CBF1AFB /* TuneAVTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTheme.swift; sourceTree = "<group>"; };
+		FF37747A6C6A023D96501531 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AE23E47D54D17EDC97BBB5F2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4FBFE1A8D244B3978F2966D1 /* AccountAV in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		136D76E4AA0D7D097C00BC2A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4F7D3468222B7241B3A1EE7A /* Tune AV.app */,
+				ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		22D56CF7BDDBFCFD83B6EFB9 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				FD8B469E070EFCF08BD3621C /* App */,
+				38AA25A558200D548ED1A982 /* Models */,
+				388DBDD719E25824193BFBE9 /* Services */,
+				F90101A9EE7DEE152A17A478 /* Stores */,
+				6503C14054AB632358022BAA /* UI */,
+				36F4540D1E5D6E420057A3AF /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		36F4540D1E5D6E420057A3AF /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9E56728EA06D88A837EE8FE5 /* ContentView.swift */,
+				EAABB5857A8F9E4E6A2C1000 /* HomeView.swift */,
+				00C323E3661A32EB4B95616F /* LibraryProfileViews.swift */,
+				EB6FDCD446AC8F40EEE7E2C3 /* MacAccountDeletionSheet.swift */,
+				48E19848A43899E35B90F726 /* MusicView.swift */,
+				5426DA5CC1BFF2CBA041145F /* PlaybackAndDetailViews.swift */,
+				FF37747A6C6A023D96501531 /* SearchView.swift */,
+				F6E4BAA8C73CF18CEDB81908 /* SettingsView.swift */,
+				B1F95699B7FCAD5744EB6E1C /* SharedSupportViews.swift */,
+				E1D6E4B689C83233A9698802 /* StationComponents.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		388DBDD719E25824193BFBE9 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A15C4641955072DA72A4FD21 /* AudioPlayerService.swift */,
+				ABCD99B1E9426E791D1FCAF7 /* MacAccountController.swift */,
+				7207C59B6E7F7C52C1809550 /* MacAccountDeletionService.swift */,
+				CDD9C00874D6050184FA6F98 /* NowPlayingService.swift */,
+				EE33A6EF2120C433EF2025CD /* StationService.swift */,
+				65CD561FB5307984746AA81C /* TrackArtworkService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		38AA25A558200D548ED1A982 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F17DBC0C49445CF29D626F06 /* AccessSupport.swift */,
+				54D262B08786CC6124854245 /* DiscoveredTrack.swift */,
+				ED595C225B06B0B6FB822481 /* DiscoveryShareTextFormatter.swift */,
+				CADFA89222139276C9C6EAA8 /* SidebarSection.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		48D1002BFBFE5C308F05B35E = {
+			isa = PBXGroup;
+			children = (
+				9F70EEBD2ED0934A00C217E9 /* Assets.xcassets */,
+				013A22222222222222222222 /* Localizable.strings */,
+				D88D0490AAD7F096979E95FF /* apple */,
+				E223045CA86047410F7A2490 /* Config */,
+				D62DC2BE8EF76B5FE6C81CAF /* Packages */,
+				22D56CF7BDDBFCFD83B6EFB9 /* Sources */,
+				F799F66CAAB9180D830B782A /* Tests */,
+				136D76E4AA0D7D097C00BC2A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6503C14054AB632358022BAA /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				6E39968D9E8666AFEF4D0069 /* StationArtworkView.swift */,
+				FBA9F4922182092D3CBF1AFB /* TuneAVTheme.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		D62DC2BE8EF76B5FE6C81CAF /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				9597B7E83173DB8C28C137D0 /* account-av */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		D88D0490AAD7F096979E95FF /* apple */ = {
+			isa = PBXGroup;
+			children = (
+				D5AC2203F920B40346E2A823 /* TuneAVAccessPolicy.swift */,
+				E4F80E10DFA603B97291D332 /* TuneAVCollectionRules.swift */,
+				73B5FFF1029C0AAF57A57692 /* TuneAVCountry.swift */,
+				555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */,
+				ED33F71C5D0D6F973B532EAC /* TuneAVDiscoveredTrackSupport.swift */,
+				25043C9B00B0BE381CA0C859 /* TuneAVEighties80sNowPlaying.swift */,
+				982EBF907088952B44522371 /* TuneAVExternalSearchURL.swift */,
+				C4B4987CBF8EC41105DBEEB4 /* TuneAVLibrarySync.swift */,
+				0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */,
+				5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */,
+				891985721D6B47B10DA4E6F8 /* TuneAVText.swift */,
+				5B5B98CF5933EAE1A87E50A0 /* TuneAVTrackArtworkService.swift */,
+				B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */,
+			);
+			name = apple;
+			path = ../../shared/apple;
+			sourceTree = "<group>";
+		};
+		E223045CA86047410F7A2490 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */,
+				0E97EC2159E8FB931BC135DB /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		F799F66CAAB9180D830B782A /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				523342939400295C1FAA9AA5 /* LibraryStoreSnapshotTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		F90101A9EE7DEE152A17A478 /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				4537B691EE854ABAFCEBBE2C /* LibraryStore.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		FD8B469E070EFCF08BD3621C /* App */ = {
+			isa = PBXGroup;
+			children = (
+				013A44444444444444444444 /* L10n.swift */,
+				008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B9752E2B6FBEB98CD63C9995 /* TuneAVMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A6C39A093E81067365531AF /* Build configuration list for PBXNativeTarget "TuneAVMacTests" */;
+			buildPhases = (
+				F71CD887F2FE6D7A2E972228 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D73551E8CA039C4D36AFF839 /* PBXTargetDependency */,
+			);
+			name = TuneAVMacTests;
+			packageProductDependencies = (
+			);
+			productName = TuneAVMacTests;
+			productReference = ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		EBE22FA1202AF7A8388ADDA4 /* TuneAVMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A8D7771DD49C437AB9AAC2A7 /* Build configuration list for PBXNativeTarget "TuneAVMac" */;
+			buildPhases = (
+				23D9C3D76D27C4388BBEE6FF /* Sources */,
+				AEAC1486B59908AB4B3D7083 /* Resources */,
+				AE23E47D54D17EDC97BBB5F2 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TuneAVMac;
+			packageProductDependencies = (
+				3FBCA1692EF65BC3F2E0F236 /* AccountAV */,
+			);
+			productName = TuneAVMac;
+			productReference = 4F7D3468222B7241B3A1EE7A /* Tune AV.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D00C4819EBF87C8897F84A29 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					EBE22FA1202AF7A8388ADDA4 = {
+						DevelopmentTeam = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 38555D51036CECCC8C9AAAD7 /* Build configuration list for PBXProject "TuneAVMac" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+				es,
+				fr,
+				de,
+				ca,
+			);
+			mainGroup = 48D1002BFBFE5C308F05B35E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7A540D353E9A718D67C18FE8 /* XCLocalSwiftPackageReference "../../../account-av" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 136D76E4AA0D7D097C00BC2A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EBE22FA1202AF7A8388ADDA4 /* TuneAVMac */,
+				B9752E2B6FBEB98CD63C9995 /* TuneAVMacTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AEAC1486B59908AB4B3D7083 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				007A86366863DAE1E80F6A2D /* Assets.xcassets in Resources */,
+				013A11111111111111111111 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		23D9C3D76D27C4388BBEE6FF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C65BACDD84A5286CDD20F9B /* AccessSupport.swift in Sources */,
+				A83FD4EE6719DB922AC39D41 /* AudioPlayerService.swift in Sources */,
+				7B3C7947551825FF0AE654D0 /* ContentView.swift in Sources */,
+				4EDE37F89A542B28CD0C9DA7 /* DiscoveredTrack.swift in Sources */,
+				96567052E3E2CD7DA259D341 /* DiscoveryShareTextFormatter.swift in Sources */,
+				6F0F172580DE9090F00B6ADA /* HomeView.swift in Sources */,
+				C9FB6E1197D2B565D145E875 /* LibraryProfileViews.swift in Sources */,
+				827F8514DC8421492C47D3B3 /* LibraryStore.swift in Sources */,
+				013A33333333333333333333 /* L10n.swift in Sources */,
+				9EAB8AF229AB2864DFABC8EF /* MacAccountController.swift in Sources */,
+				9648E5EE93E72B9F52F2B5F6 /* MacAccountDeletionService.swift in Sources */,
+				D4D9B62442A5DDABFE250C33 /* MacAccountDeletionSheet.swift in Sources */,
+				B4D856BD037E3F7C33A50F82 /* MusicView.swift in Sources */,
+				9A3C7D290816A3EA423C367E /* NowPlayingService.swift in Sources */,
+				342DFF3910A6ACD839D0A09A /* PlaybackAndDetailViews.swift in Sources */,
+				BB0D1FCCF0805DAC15795AE2 /* SearchView.swift in Sources */,
+				1B81902D1E2D965BB76EBD68 /* SettingsView.swift in Sources */,
+				DF3DAEFA08480F519F222794 /* SharedSupportViews.swift in Sources */,
+				8DDB5C535CA7A6D5E498FF04 /* SidebarSection.swift in Sources */,
+				D7EBE44D6BDC2AB4527F2807 /* StationArtworkView.swift in Sources */,
+				F4A88D4BF9BB0925F2EAECF0 /* StationComponents.swift in Sources */,
+				D0BBE9EAF9B7715031293905 /* StationService.swift in Sources */,
+				EB189C173446D39E95DA3BE2 /* TrackArtworkService.swift in Sources */,
+				FF6AE46B9E0EA1DDF83626DB /* TuneAVAccessPolicy.swift in Sources */,
+				F6F9DF373E5663A8F0139766 /* TuneAVCollectionRules.swift in Sources */,
+				915ABEFD89C1E63ED855CE45 /* TuneAVCountry.swift in Sources */,
+				BA86E91D05DFDD718B6AA3A8 /* TuneAVDateCoding.swift in Sources */,
+				31F27E7BABE171ED67FB67F3 /* TuneAVDiscoveredTrackSupport.swift in Sources */,
+				9DD3DCC634DFB5F60BBECE0C /* TuneAVEighties80sNowPlaying.swift in Sources */,
+				A894C166BCA011B111A33124 /* TuneAVExternalSearchURL.swift in Sources */,
+				755B50D75DD9898A7DFE44E1 /* TuneAVLibrarySync.swift in Sources */,
+				7D04E09AD5DD321B60222524 /* TuneAVMacApp.swift in Sources */,
+				C11E80DE5CF0F91C08416A98 /* TuneAVStation.swift in Sources */,
+				F7D4B4F97C6747AA4C872DDD /* TuneAVStationService.swift in Sources */,
+				6716515508AEB7968EF1966E /* TuneAVText.swift in Sources */,
+				71630D10676BA9894D5C9BDD /* TuneAVTheme.swift in Sources */,
+				6D04968C92A2E22913A52C46 /* TuneAVTrackArtworkService.swift in Sources */,
+				1ACC6052B1279928A6EA2971 /* TuneAVTrackMetadata.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F71CD887F2FE6D7A2E972228 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D347CE6D3090EAFF5C062F0 /* LibraryStoreSnapshotTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D73551E8CA039C4D36AFF839 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EBE22FA1202AF7A8388ADDA4 /* TuneAVMac */;
+			targetProxy = 9CCDC930A9FCC263185283C3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		013A22222222222222222222 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				013A55555555555555555555 /* en */,
+				013A66666666666666666666 /* es */,
+				013A77777777777777777777 /* fr */,
+				013A88888888888888888888 /* de */,
+				013A99999999999999999999 /* ca */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		30086D61D9063FCBD7AEF379 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0E97EC2159E8FB931BC135DB /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Supporting/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = TuneAVMac;
+				PRODUCT_NAME = "Tune AV";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.1;
+			};
+			name = Release;
+		};
+		540B1B2C09E3F03CD42F0317 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
+				PRODUCT_MODULE_NAME = TuneAVMacTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
+			};
+			name = Debug;
+		};
+		5FF9371F4FC33875EDC875A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Supporting/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = TuneAVMac;
+				PRODUCT_NAME = "Tune AV";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.1;
+			};
+			name = Debug;
+		};
+		676885F326117244DB9A1EE3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A65EE1042B14603339FAB21D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		EF53A3FCEE84F5E0EBD4266F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
+				PRODUCT_MODULE_NAME = TuneAVMacTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38555D51036CECCC8C9AAAD7 /* Build configuration list for PBXProject "TuneAVMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				676885F326117244DB9A1EE3 /* Debug */,
+				A65EE1042B14603339FAB21D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9A6C39A093E81067365531AF /* Build configuration list for PBXNativeTarget "TuneAVMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				540B1B2C09E3F03CD42F0317 /* Debug */,
+				EF53A3FCEE84F5E0EBD4266F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A8D7771DD49C437AB9AAC2A7 /* Build configuration list for PBXNativeTarget "TuneAVMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FF9371F4FC33875EDC875A6 /* Debug */,
+				30086D61D9063FCBD7AEF379 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		7A540D353E9A718D67C18FE8 /* XCLocalSwiftPackageReference "../../../account-av" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../account-av";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3FBCA1692EF65BC3F2E0F236 /* AccountAV */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AccountAV;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D00C4819EBF87C8897F84A29 /* Project object */;
+}

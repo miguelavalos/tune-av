@@ -20,7 +20,7 @@ Use this checklist before creating the first public GitHub release and before ea
    The default check validates tracked files and keeps development usable. Strict mode verifies the public release workspace is clean.
 4. Confirm no generated config files are present in the strict release workspace:
    - `apps/ios/Config/Local.xcconfig`
-   - `apps/macos/TuneAVMac/Config/Local.xcconfig`
+   - `apps/macos/Config/Local.xcconfig`
    - `.env`
    - `.env.*`
    - `.infisical/bootstrap.env`
@@ -33,6 +33,7 @@ Use this checklist before creating the first public GitHub release and before ea
 
    ```bash
    bun run ios:config
+   bun run macos:config
    ```
 
 2. Build iOS for simulator:
@@ -57,23 +58,36 @@ Use this checklist before creating the first public GitHub release and before ea
 
 4. Remove generated local config again before publishing the repository state.
 
+5. For macOS changes, run:
+
+   ```bash
+   bun run macos:preflight
+   xcodebuild -project apps/macos/TuneAVMac.xcodeproj \
+     -scheme TuneAVMac \
+     -configuration Debug \
+     -destination 'platform=macOS' \
+     test
+   ```
+
 ## Apple Developer
 
 1. Confirm the production App ID exists for `com.avalsys.tuneav`.
 2. Confirm the development App ID exists for `com.avalsys.tuneav.dev`.
-3. Confirm the macOS App IDs are only used if the macOS target is part of the release.
+3. Confirm the macOS App IDs exist for `com.avalsys.tuneav.mac` and `com.avalsys.tuneav.mac.dev` when preparing Mac App Store distribution.
 4. Confirm required capabilities are enabled before archiving:
    - Sign in with Apple, when native login is shipped.
    - Associated Domains, Push Notifications, or iCloud only if the shipped target uses them.
+   - App Sandbox and outbound network client entitlement for the macOS App Store target.
 5. Keep the Apple team value in private configuration as `AVALSYS_APPLE_DEVELOPMENT_TEAM`; do not commit a literal Team ID.
 
 ## Pro And Store Purchases
 
-1. First App Store release does not sell subscriptions from the iOS client.
+1. First App Store release does not sell subscriptions from the iOS or macOS client.
 2. Confirm there are no visible App Store purchase, restore purchase, or manage subscription actions in the shipping build.
 3. Confirm Pro copy is framed as access state resolved by Account AV, not as an in-app purchasable offer.
 4. Enable the In-App Purchase capability only when a future build ships client-side purchase or restore flows.
 5. Before paid Pro is enabled later, confirm Account AV owns product mapping, server notification handling, reconciliation, and restore semantics.
+6. For App Store macOS distribution, use StoreKit subscriptions shared with iOS; do not route digital subscription purchase through Apple Pay or web billing inside the Mac App Store build.
 
 ## Clerk And Account AV
 

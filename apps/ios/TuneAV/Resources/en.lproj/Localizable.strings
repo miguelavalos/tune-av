@@ -421,3 +421,5 @@
 "profile.sync.status.title" = "Cloud status";
 "profile.sync.subtitle" = "Pro keeps favorites, recents, music discoveries, and settings ready across devices.";
 "profile.sync.title" = "Cloud sync";
+"station.status.sslIssue" = "SSL issue";
+"station.status.checked" = "Checked";

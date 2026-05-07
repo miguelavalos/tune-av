@@ -16,6 +16,7 @@ enum HomeFeedContext: Equatable {
     /// Stores the region code so the visible country name can be localized at render time.
     case popularInCountry(String)
     case popularWorldwide
+    case preferredGenre(String)
 }
 
 struct AppShellHomeFeed {
@@ -24,7 +25,20 @@ struct AppShellHomeFeed {
     let resolvedDeviceCountryCode: () -> String?
 
     @MainActor
-    func load(limit: Int = 8) async throws -> HomeFeedResult {
+    func load(preferredTag: String = "", limit: Int = 8) async throws -> HomeFeedResult {
+        let normalizedPreferredTag = preferredTag.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !normalizedPreferredTag.isEmpty {
+            let genreStations = try await stationService.searchStations(
+                filters: .init(
+                    query: "",
+                    tag: normalizedPreferredTag,
+                    limit: limit,
+                    allowsEmptySearch: true
+                )
+            )
+            return HomeFeedResult(stations: genreStations, context: .preferredGenre(normalizedPreferredTag))
+        }
+
         let regionCode = resolvedDeviceCountryCode()
         let regionalStations = try await stationService.searchStations(
             filters: .init(

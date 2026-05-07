@@ -421,3 +421,5 @@
 "profile.sync.status.title" = "Estado de la nube";
 "profile.sync.subtitle" = "Pro mantiene favoritos, recientes, descubrimientos musicales y ajustes listos entre dispositivos.";
 "profile.sync.title" = "Sincronización en la nube";
+"station.status.sslIssue" = "Problema SSL";
+"station.status.checked" = "Comprobada";

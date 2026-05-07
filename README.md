@@ -2,9 +2,9 @@
 
 Open-source native product repo for Tune AV.
 
-This repository contains the active Tune AV iOS client together with shared Apple-domain code, local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
+This repository contains the active Tune AV iOS and macOS clients together with shared Apple-domain code, local playback and persistence flows, account-facing UI, and development-time premium/access configuration. Premium value, shared entitlement authority, and account platform logic live outside this repository.
 
-The current product target is `iOS`.
+The current product targets are `iOS` and `macOS`.
 
 When configured, the iOS client can resolve signed-in access from the shared Account AV backend while remaining local-first by default.
 
@@ -17,8 +17,11 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 ```text
 apps/
   ios/      SwiftUI iOS app
+  macos/    SwiftUI macOS app for Mac App Store distribution
 docs/
   install-ios.md
+  install-macos.md
+  macos-ios-parity.md
   private-config-and-infisical.md
   release-checklist.md
 shared/
@@ -31,17 +34,16 @@ shared/
 - local-first listening experience
 - favorites, recents, and on-device settings
 - account and premium UI surfaces
-- iOS project and Xcode configuration
+- iOS and macOS projects and Xcode configuration
 
 ## Current state
 
-- `apps/ios` is still the most complete product client
-- `apps/ios` is the current primary execution target
-- checked-in non-iOS artifacts should be treated as inactive or exploratory unless explicitly reactivated
+- `apps/ios` is the submitted first App Store client
+- `apps/macos` is active again and targets Mac App Store parity with iOS
 - `shared/apple` is the shared Swift implementation root for Apple-domain behavior
 - `shared/contracts` is reserved for platform-neutral backend/client contracts when a non-Apple consumer exists
 - the repo remains local-first overall, and platform/backend adoption is intentionally narrow
-- current product focus is `tune-av iOS`
+- current product focus is App Store distribution for `tune-av iOS` and `tune-av macOS`
 
 ## Local Setup
 
@@ -56,6 +58,15 @@ shared/
 
 For local signed builds, keep the real values out of git and regenerate local config through Varlock + Infisical when needed.
 
+### macOS
+
+1. Install repo tooling:
+   `bun install`
+2. Resolve local macOS config:
+   `bun run macos:config`
+3. This writes `apps/macos/Config/Local.xcconfig`.
+4. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode and run the `TuneAVMac` scheme.
+
 ## Local Secrets
 
 This public repo does not carry Infisical bootstrap examples or generated local config.
@@ -67,7 +78,7 @@ This public repo does not carry Infisical bootstrap examples or generated local 
 
 Run `bun run config:hygiene` before pushing config-related changes.
 
-See [docs/install-ios.md](docs/install-ios.md) for setup details.
+See [docs/install-ios.md](docs/install-ios.md) and [docs/install-macos.md](docs/install-macos.md) for setup details.
 
 ## Platform integration
 
@@ -88,13 +99,13 @@ See [docs/install-ios.md](docs/install-ios.md) for setup details.
 
 - Public deletion support URL: `https://tune-av.avalsys.com/delete-account`
 - Local-only users can remove on-device data from inside the app or by deleting the app.
-- If an Account AV was used, the public deletion page documents the out-of-app request path and the provider-subscription caveats.
+- If an Account AV was used, iOS and macOS provide native account safety flows that respect Account AV deletion eligibility, linked app, Pro access, and provider-subscription blockers. The public deletion page remains the support fallback.
 
 ## Pending work
 
 1. Keep store/provider reconciliation owned in private Account AV infrastructure before enabling paid Pro surfaces.
 2. Continue expanding product-specific cloud sync UX and conflict/merge handling across devices.
-3. Keep active Tune AV work focused on `iOS`.
+3. Run signed macOS QA for Account AV provider redirects and account deletion/app unlink against the intended backend environment.
 4. Keep Apple-client access behavior aligned on backend-owned capabilities.
 5. Keep store disclosures aligned with the shipped account/deletion flow as production distribution expands.
 
