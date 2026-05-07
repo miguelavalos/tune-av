@@ -235,22 +235,26 @@ struct RadioBrowserMetadataCandidate: Decodable {
 
     func matchScore(for station: Station) -> Int {
         var score = 0
+        var matchedIdentity = false
 
         if name.normalizedMetadataIdentityValue == station.name.normalizedMetadataIdentityValue {
             score += 80
+            matchedIdentity = true
         } else if name.normalizedMetadataIdentityValue.contains(station.name.normalizedMetadataIdentityValue) ||
                     station.name.normalizedMetadataIdentityValue.contains(name.normalizedMetadataIdentityValue) {
             score += 40
+            matchedIdentity = true
         }
 
         if let homepageHost = URL(string: homepage ?? "")?.host?.normalizedMetadataIdentityValue,
            let stationHomepageHost = station.resolvedHomepageURL?.host?.normalizedMetadataIdentityValue,
            homepageHost == stationHomepageHost {
             score += 60
+            matchedIdentity = true
         }
 
         let normalizedCodec = codec?.normalizedMetadataIdentityValue ?? ""
-        if ["mp3", "mpeg", "aac", "aacp"].contains(normalizedCodec) {
+        if matchedIdentity && ["mp3", "mpeg", "aac", "aacp"].contains(normalizedCodec) {
             score += 20
         }
 

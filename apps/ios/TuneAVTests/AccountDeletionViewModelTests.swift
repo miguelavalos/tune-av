@@ -103,6 +103,10 @@ private struct MockAccountDeletionAPI: AccountDeletionAPI {
     let summary: AccountSummary
     var requestResponse = DeleteAccountRequestResponse(status: nil, job: nil, deleteAccountEligibility: nil)
     var finalizeResponse = DeleteAccountFinalizeResponse(status: nil, job: nil, deleteAccountEligibility: nil)
+    var unlinkResponse = UnlinkAppResponse(
+        link: UnlinkAppResult(appId: "tuneav", remainingLinkedApps: 1, unlinked: true),
+        message: nil
+    )
 
     func fetchAccountSummary() async throws -> AccountSummary {
         summary
@@ -114,5 +118,9 @@ private struct MockAccountDeletionAPI: AccountDeletionAPI {
 
     func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse {
         finalizeResponse
+    }
+
+    func unlinkCurrentApp() async throws -> UnlinkAppResponse {
+        unlinkResponse
     }
 }

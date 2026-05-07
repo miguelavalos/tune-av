@@ -93,7 +93,7 @@ final class ProfileUITests: TuneAVUITestCase {
         openAccountDeletion(in: app)
 
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.blocked"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Tune AV Pro"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.blocker.activeProAccess"].exists)
         XCTAssertFalse(app.buttons["accountDeletion.deleteButton"].exists)
     }
 
