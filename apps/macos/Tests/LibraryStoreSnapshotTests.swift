@@ -1,4 +1,5 @@
 import XCTest
+import AccountAV
 @testable import TuneAVMac
 
 @MainActor
@@ -46,12 +47,143 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(TuneAVUpgradePromptContent.featureName(for: .savedTracks), L10n.string("mac.limits.feature.savedTracks"))
     }
 
+    func testLaunchContextParsesSharedNavigationAndUITestFlags() {
+        let context = TuneAVLaunchContext(environment: [
+            "TUNEAV_UI_TESTS": "1",
+            "TUNEAV_OPEN_TAB": "music",
+            "TUNEAV_SEARCH_QUERY": " ambient radio ",
+            "TUNEAV_DEMO_MODE": "1",
+            "TUNEAV_SEED_FAVORITE": "1",
+            "TUNEAV_UI_TEST_UPGRADE_PROMPT_FEATURE": "spotifySearch",
+            "TUNEAV_UI_TEST_CLOUD_SYNC_STATUS": " conflict "
+        ])
+
+        XCTAssertEqual(context.preferredTab, .music)
+        XCTAssertEqual(context.preferredSearchQuery, "ambient radio")
+        XCTAssertEqual(context.demoStation?.id, "demo-groove-salad")
+        XCTAssertTrue(context.seedFavorite)
+        XCTAssertTrue(context.shouldDisableSplash)
+        XCTAssertTrue(context.shouldDisableOnboarding)
+        XCTAssertEqual(context.uiTestUpgradePromptFeature, .spotifySearch)
+        XCTAssertEqual(context.uiTestCloudSyncStatus, "conflict")
+    }
+
+    func testExternalDiscoverySearchActionsResolveSharedDestinationsAndFeatures() {
+        let youtube = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Nina Simone Feeling Good",
+            destination: .youtube,
+            feature: .youtubeSearch
+        )
+        let lyrics = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Nina Simone Feeling Good",
+            destination: .web,
+            feature: .lyricsSearch,
+            suffix: "lyrics"
+        )
+        let appleMusic = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Nina Simone Feeling Good",
+            destination: .appleMusic,
+            feature: .appleMusicSearch
+        )
+        let spotify = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Nina Simone Feeling Good",
+            destination: .spotify,
+            feature: .spotifySearch
+        )
+
+        XCTAssertEqual(youtube?.feature, .youtubeSearch)
+        XCTAssertEqual(youtube?.url.host, "www.youtube.com")
+        XCTAssertEqual(queryValue("search_query", in: youtube?.url), "Nina Simone Feeling Good")
+        XCTAssertEqual(lyrics?.feature, .lyricsSearch)
+        XCTAssertEqual(lyrics?.url.host, "www.google.com")
+        XCTAssertEqual(queryValue("q", in: lyrics?.url), "Nina Simone Feeling Good lyrics")
+        XCTAssertEqual(appleMusic?.feature, .appleMusicSearch)
+        XCTAssertEqual(appleMusic?.url.host, "music.apple.com")
+        XCTAssertEqual(queryValue("term", in: appleMusic?.url), "Nina Simone Feeling Good")
+        XCTAssertEqual(spotify?.feature, .spotifySearch)
+        XCTAssertEqual(spotify?.url.host, "open.spotify.com")
+    }
+
+    func testMusicLibraryFiltersDiscoveriesBySavedHistoryArtistAndStation() {
+        let firstStation = station(id: "first")
+        let secondStation = station(id: "second")
+        let savedFirst = DiscoveredTrack(title: "Blue Train", artist: "John Coltrane", station: firstStation, artworkURL: nil, markedInterestedAt: .now)
+        let savedSecond = DiscoveredTrack(title: "Naima", artist: "John Coltrane", station: secondStation, artworkURL: nil, markedInterestedAt: .now)
+        let historyOnly = DiscoveredTrack(title: "So What", artist: "Miles Davis", station: firstStation, artworkURL: nil)
+        let hidden = DiscoveredTrack(title: "Hidden", artist: "Miles Davis", station: firstStation, artworkURL: nil, hiddenAt: .now)
+
+        let discoveries = [savedFirst, savedSecond, historyOnly, hidden]
+
+        XCTAssertEqual(
+            TuneAVMusicLibraryLogic.filteredDiscoveries(discoveries, mode: .songs, query: "", selectedArtistName: nil).map(\.title),
+            ["Blue Train", "Naima"]
+        )
+        XCTAssertEqual(
+            TuneAVMusicLibraryLogic.filteredDiscoveries(discoveries, mode: .history, query: "", selectedArtistName: nil, historyStationID: firstStation.id).map(\.title),
+            ["Blue Train", "So What"]
+        )
+        XCTAssertEqual(
+            TuneAVMusicLibraryLogic.filteredDiscoveries(discoveries, mode: .artists, query: "", selectedArtistName: "John Coltrane").map(\.title),
+            ["Blue Train", "Naima"]
+        )
+        XCTAssertEqual(
+            TuneAVMusicLibraryLogic.filteredArtistSummaries(discoveries, mode: .songs, query: "", locale: Locale(identifier: "en_US")).map(\.name),
+            ["John Coltrane"]
+        )
+    }
+
+    func testPlaybackQueueLogicCyclesNextPreviousAndDeduplicatesCurrentQueue() {
+        let first = station(id: "first")
+        let second = station(id: "second")
+        let third = station(id: "third")
+        let sanitized = TuneAVPlaybackQueueLogic.sanitizedStations(
+            [first, second, second, third],
+            currentStation: first,
+            currentStationID: first.id
+        )
+        let resolved = try! XCTUnwrap(TuneAVPlaybackQueueLogic.resolvedQueue(stations: sanitized, currentStation: second))
+
+        XCTAssertEqual(sanitized.map(\.id), ["first", "second", "third"])
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.nextStation(in: resolved).id, "third")
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: resolved).id, "first")
+
+        let end = try! XCTUnwrap(TuneAVPlaybackQueueLogic.resolvedQueue(stations: sanitized, currentStation: third))
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.nextStation(in: end).id, "first")
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: end).id, "second")
+    }
+
     func testDefaultMacAccountTokenProviderKeepsStartupLocalFirst() async throws {
         let provider = KeychainMacAccountTokenProvider(keychain: MockMacKeychainReader(data: nil))
 
         let token = try await provider.currentToken()
 
         XCTAssertNil(token)
+    }
+
+    func testGuestOnboardingPolicyUsesSharedCooldown() {
+        let policy = GuestOnboardingPolicy(cooldown: 100)
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        XCTAssertTrue(policy.shouldShowAutomatically(lastPromptAt: nil, now: now))
+        XCTAssertFalse(policy.shouldShowAutomatically(lastPromptAt: Date(timeIntervalSince1970: 950), now: now))
+        XCTAssertTrue(policy.shouldShowAutomatically(lastPromptAt: Date(timeIntervalSince1970: 899), now: now))
+    }
+
+    func testMacAccountControllerTracksGuestOnboardingPromptCooldown() {
+        let defaults = isolatedUserDefaults()
+        let now = Date(timeIntervalSince1970: 1_000)
+        let controller = MacAccountController(
+            accountService: MockAccountAVService(isAvailable: true),
+            defaults: defaults,
+            guestOnboardingPolicy: GuestOnboardingPolicy(cooldown: 100),
+            now: { now }
+        )
+
+        XCTAssertTrue(controller.shouldAutoShowGuestOnboarding)
+
+        controller.markGuestOnboardingPromptShown()
+
+        XCTAssertFalse(controller.shouldAutoShowGuestOnboarding)
     }
 
     func testKeychainMacAccountTokenProviderReturnsTrimmedToken() async throws {
@@ -83,6 +215,76 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(URL(string: "http://localhost:3000")!.isSupportedAVAccountBaseURL)
         XCTAssertFalse(URL(string: "api.example.com")!.isSupportedAVAccountBaseURL)
         XCTAssertFalse(URL(fileURLWithPath: "/tmp/avaccount").isSupportedAVAccountBaseURL)
+    }
+
+    func testSearchRequestNormalizesKeyAndModeLikeIOS() {
+        let direct = AppShellSearchRequest(query: "  nova  ", tag: " jazz ", countryCode: " es ")
+        let worldwide = AppShellSearchRequest(query: "   ", tag: nil, countryCode: nil)
+
+        XCTAssertEqual(direct.key, "nova|jazz|ES")
+        XCTAssertFalse(direct.usesWorldwideDiscovery)
+        XCTAssertEqual(direct.searchLimit, 24)
+        XCTAssertEqual(worldwide.key, "||")
+        XCTAssertTrue(worldwide.usesWorldwideDiscovery)
+        XCTAssertEqual(worldwide.searchLimit, 12)
+    }
+
+    func testSearchFiltersLocalUITestSamplesLikeIOS() {
+        let jazz = Station(
+            id: "jazz-es",
+            name: "Jazz FM",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "jazz,live",
+            streamURL: "https://example.com/jazz"
+        )
+        let news = Station(
+            id: "news-us",
+            name: "News Radio",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "news",
+            streamURL: "https://example.com/news"
+        )
+        let request = AppShellSearchRequest(query: "jazz", tag: "live", countryCode: "ES")
+
+        XCTAssertEqual(
+            AppShellSearch.localUITestSearchResults(samples: [jazz, news], request: request).map(\.id),
+            ["jazz-es"]
+        )
+    }
+
+    func testSearchBuildsOrderedDiscoveryCountryCodesLikeIOS() {
+        let recent = Station(
+            id: "recent",
+            name: "Recent",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "live",
+            streamURL: "https://example.com/recent"
+        )
+        let favorite = Station(
+            id: "favorite",
+            name: "Favorite",
+            country: "France",
+            countryCode: "FR",
+            language: "French",
+            tags: "live",
+            streamURL: "https://example.com/favorite"
+        )
+
+        XCTAssertEqual(
+            AppShellSearch.orderedDiscoveryCountryCodes(
+                deviceCountryCode: "es",
+                recentStations: [recent],
+                favoriteStations: [favorite],
+                fallbackCountryCodes: ["US", "ES", "EU"]
+            ),
+            ["ES", "FR", "US"]
+        )
     }
 
     func testMacAccountAPIClientSendsDeletionRequestWithAccountTokenAndAppHeader() async throws {
@@ -253,6 +455,18 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         )
 
         XCTAssertEqual(DiscoveryShareTextFormatter.text(for: [hidden]), "")
+    }
+
+    func testAudioStopKeepsCurrentStationAndExposesIOSStatusAlias() {
+        let player = AudioPlayerService()
+        let station = station(id: "audio-stop")
+
+        player.play(station: station)
+        player.stop()
+
+        XCTAssertEqual(player.currentStation?.id, "audio-stop")
+        XCTAssertEqual(player.playbackState, .idle)
+        XCTAssertEqual(player.status, .idle)
     }
 
     func testBackendBootstrapAcceptsInjectedMacAccountTokenProvider() async {
@@ -572,6 +786,33 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(store.cloudSyncStatus, .idle)
     }
 
+    func testAccountSignOutReturnsAccessToGuestWithoutClearingLibrary() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+        store.updateAccessMode(.signedInPro)
+        let favorite = station(id: "favorite")
+        store.toggleFavorite(favorite)
+        store.recordPlayback(of: station(id: "recent"))
+        store.setAppDataClient(
+            MockMacLibrarySyncClient(
+                remoteDocument: TuneAVLibraryDocument(
+                    snapshot: nil,
+                    updatedAt: .now,
+                    revision: 1,
+                    etag: nil
+                )
+            )
+        )
+
+        store.handleAccountSignedOut()
+
+        XCTAssertEqual(store.accessMode, .guest)
+        XCTAssertFalse(store.canRunCloudSync)
+        XCTAssertFalse(store.isCloudSyncConfigured)
+        XCTAssertEqual(store.cloudSyncStatus, .idle)
+        XCTAssertEqual(store.favorites.map(\.id), ["favorite"])
+        XCTAssertEqual(store.recents.map(\.id), ["recent"])
+    }
+
     func testCloudSyncAppliesRemoteSnapshotForProAccess() async {
         let defaults = isolatedUserDefaults()
         let store = LibraryStore(defaults: defaults)
@@ -732,7 +973,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(store.recents.isEmpty)
         XCTAssertTrue(store.discoveries.isEmpty)
         XCTAssertNil(store.preferredCountryCode)
-        XCTAssertEqual(store.preferredTag, "ambient")
+        XCTAssertEqual(store.preferredTag, "")
     }
 
     func testCloudAppliedSnapshotUsesStableUpdatedAtForGeneratedRecordDates() async {
@@ -775,10 +1016,68 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let firstSnapshot = store.librarySnapshot()
         let secondSnapshot = store.librarySnapshot()
 
-        XCTAssertEqual(firstSnapshot.favorites.first?.createdAt, "2026-05-01T10:00:00.000Z")
-        XCTAssertEqual(firstSnapshot.recents.first?.lastPlayedAt, "2026-05-01T10:00:00.000Z")
+        XCTAssertEqual(firstSnapshot.favorites.first?.createdAt, "2026-04-30T10:00:00.000Z")
+        XCTAssertEqual(firstSnapshot.recents.first?.lastPlayedAt, "2026-04-30T11:00:00.000Z")
         XCTAssertEqual(firstSnapshot.settings.updatedAt, "2026-05-01T10:00:00.000Z")
         XCTAssertEqual(secondSnapshot, firstSnapshot)
+    }
+
+    func testRecordPlaybackPersistsLastPlayedStationIDInSnapshot() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+
+        store.recordPlayback(of: station(id: "first"))
+        store.recordPlayback(of: station(id: "second"))
+
+        XCTAssertEqual(store.lastPlayedStationID, "second")
+        XCTAssertEqual(store.librarySnapshot().settings.lastPlayedStationID, "second")
+        XCTAssertEqual(store.recentStations().map(\.id), ["second", "first"])
+    }
+
+    func testSetPreferredTagAndCountryMatchIOSNormalization() {
+        let defaults = isolatedUserDefaults()
+        let store = LibraryStore(defaults: defaults)
+
+        store.setPreferredTag("  jazz  ")
+        store.setPreferredCountry("  ES  ")
+
+        XCTAssertEqual(store.librarySnapshot().settings.preferredTag, "jazz")
+        XCTAssertEqual(store.librarySnapshot().settings.preferredCountry, "ES")
+
+        store.setPreferredTag(nil)
+        store.setPreferredCountry("   ")
+
+        XCTAssertEqual(store.librarySnapshot().settings.preferredTag, "")
+        XCTAssertEqual(store.librarySnapshot().settings.preferredCountry, "")
+        XCTAssertEqual(LibraryStore(defaults: defaults).preferredTag, "")
+        XCTAssertNil(LibraryStore(defaults: defaults).preferredCountryCode)
+    }
+
+    func testClearLocalDataKeepsAccessModeAndPropagatesTombstonesOnlyWhenRequested() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+        store.updateAccessMode(.signedInFree)
+        let favorite = station(id: "favorite")
+        let recent = station(id: "recent")
+        store.toggleFavorite(favorite)
+        store.recordPlayback(of: recent)
+        store.recordDiscoveredTrack(title: "Track", artist: "Artist", station: recent, artworkURL: nil)
+
+        store.clearLocalData(propagatesToCloud: true)
+
+        let propagatedSnapshot = store.librarySnapshot()
+        XCTAssertEqual(store.accessMode, .signedInFree)
+        XCTAssertTrue(store.favorites.isEmpty)
+        XCTAssertEqual(propagatedSnapshot.favorites.first?.deletedAt?.isEmpty, false)
+        XCTAssertEqual(propagatedSnapshot.recents.first?.deletedAt?.isEmpty, false)
+        XCTAssertEqual(propagatedSnapshot.discoveries.first?.deletedAt?.isEmpty, false)
+        XCTAssertEqual(propagatedSnapshot.settings.preferredTag, "")
+        XCTAssertNil(propagatedSnapshot.settings.lastPlayedStationID)
+
+        store.clearLocalData(propagatesToCloud: false)
+
+        let localOnlySnapshot = store.librarySnapshot()
+        XCTAssertTrue(localOnlySnapshot.favorites.isEmpty)
+        XCTAssertTrue(localOnlySnapshot.recents.isEmpty)
+        XCTAssertTrue(localOnlySnapshot.discoveries.isEmpty)
     }
 
     func testPreferenceChangesAdvanceLocalSnapshotTimestampForSyncPlanning() async {
@@ -2037,7 +2336,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let reloadedStore = LibraryStore(defaults: defaults)
 
         XCTAssertNil(reloadedStore.preferredCountryCode)
-        XCTAssertEqual(reloadedStore.preferredTag, "ambient")
+        XCTAssertEqual(reloadedStore.preferredTag, "")
     }
 
     func testDailyFeatureUsageKeysOnlyCountUniqueUses() {
@@ -2427,6 +2726,14 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         )
     }
 
+    private func queryValue(_ name: String, in url: URL?) -> String? {
+        guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        return components.queryItems?.first { $0.name == name }?.value
+    }
+
     private func testSnapshot(settingsUpdatedAt: String = "2026-04-30T12:00:00.000Z") -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: [
@@ -2634,4 +2941,31 @@ private final class MockURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+@MainActor
+private final class MockAccountAVService: AccountAVService {
+    let isAvailable: Bool
+    private(set) var currentUser: AccountAVUser?
+
+    init(isAvailable: Bool, currentUser: AccountAVUser? = nil) {
+        self.isAvailable = isAvailable
+        self.currentUser = currentUser
+    }
+
+    func getToken() async throws -> String? {
+        currentUser == nil ? nil : "token"
+    }
+
+    func signInWithApple() async throws {
+        currentUser = AccountAVUser(id: "apple", displayName: "Apple User", emailAddress: "apple@example.com")
+    }
+
+    func signInWithGoogle() async throws {
+        currentUser = AccountAVUser(id: "google", displayName: "Google User", emailAddress: "google@example.com")
+    }
+
+    func signOut() async throws {
+        currentUser = nil
+    }
 }

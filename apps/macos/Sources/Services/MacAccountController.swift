@@ -9,21 +9,38 @@ final class MacAccountController: ObservableObject {
     @Published var errorMessage: String?
 
     private let accountService: AccountAVService
+    private let defaults: UserDefaults
+    private let guestOnboardingPolicy: GuestOnboardingPolicy
+    private let now: () -> Date
     private let logger = Logger(subsystem: "com.avalsys.tuneav.mac", category: "auth")
+    private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
 
-    init() {
+    init(
+        defaults: UserDefaults = .standard,
+        guestOnboardingPolicy: GuestOnboardingPolicy = GuestOnboardingPolicy(),
+        now: @escaping () -> Date = Date.init
+    ) {
         self.accountService = ClerkAccountAVService(
             publishableKeyProvider: { MacAppConfig.avAccountKey },
             fallbackDisplayName: L10n.string("account.displayName.listener"),
             loggerSubsystem: "com.avalsys.tuneav.mac"
         )
+        self.defaults = defaults
+        self.guestOnboardingPolicy = guestOnboardingPolicy
+        self.now = now
         self.currentUser = Self.uiTestAccountUser ?? accountService.currentUser
     }
 
     init(
-        accountService: AccountAVService
+        accountService: AccountAVService,
+        defaults: UserDefaults = .standard,
+        guestOnboardingPolicy: GuestOnboardingPolicy = GuestOnboardingPolicy(),
+        now: @escaping () -> Date = Date.init
     ) {
         self.accountService = accountService
+        self.defaults = defaults
+        self.guestOnboardingPolicy = guestOnboardingPolicy
+        self.now = now
         self.currentUser = Self.uiTestAccountUser ?? accountService.currentUser
     }
 
@@ -35,6 +52,22 @@ final class MacAccountController: ObservableObject {
 
     var isSignedIn: Bool {
         currentUser != nil
+    }
+
+    var shouldAutoShowGuestOnboarding: Bool {
+        guard !isSignedIn else { return false }
+        return guestOnboardingPolicy.shouldShowAutomatically(
+            lastPromptAt: defaults.object(forKey: guestOnboardingLastPromptAtKey) as? Date,
+            now: now()
+        )
+    }
+
+    func skipForNow() {
+        markGuestOnboardingPromptShown()
+    }
+
+    func markGuestOnboardingPromptShown() {
+        defaults.set(now(), forKey: guestOnboardingLastPromptAtKey)
     }
 
     func currentToken() async throws -> String? {

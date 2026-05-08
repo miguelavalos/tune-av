@@ -520,12 +520,6 @@ struct UpgradePromptSheet: View {
     }
 }
 
-enum HomeFeedContext {
-    case popularWorldwide
-    case popularInCountry(String)
-    case preferredGenre(String)
-}
-
 typealias CountryOption = TuneAVCountry
 
 extension TuneAVCountry {

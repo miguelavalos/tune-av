@@ -226,6 +226,8 @@ struct ProfileView: View {
     let accountIsAuthenticating: Bool
     let accountErrorMessage: String?
     let accountManagementURL: URL?
+    let isClearingLocalData: Bool
+    let clearActionTitle: String
     let clearAction: () -> Void
     let signInWithAppleAction: () -> Void
     let signInWithGoogleAction: () -> Void
@@ -421,11 +423,12 @@ struct ProfileView: View {
             SettingsStatsRow(title: L10n.string("profile.local.storagePolicy.title"), value: capabilities.isLocalOnly ? L10n.string("profile.local.storagePolicy.local") : L10n.string("profile.local.storagePolicy.remote"))
 
             SettingsActionButton(
-                title: capabilities.canUseCloudSync ? L10n.string("profile.actions.clearSyncedLibrary") : L10n.string("profile.actions.clearData"),
+                title: clearActionTitle,
                 systemImage: "trash",
                 style: .destructive,
                 action: clearAction
             )
+                .disabled(isClearingLocalData)
         }
     }
 

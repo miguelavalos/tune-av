@@ -65,9 +65,12 @@ final class LibraryStore: ObservableObject {
     private let recentsKey = "tuneav.mac.recents"
     private let discoveriesKey = "tuneav.mac.discoveries"
     private let tombstonesKey = "tuneav.mac.syncTombstones"
+    private let favoriteCreatedAtKey = "tuneav.mac.favoriteCreatedAt"
+    private let recentLastPlayedAtKey = "tuneav.mac.recentLastPlayedAt"
     private let preferredTagKey = "tuneav.mac.preferredTag"
     private let preferredCountryKey = "tuneav.mac.preferredCountry"
     private let sleepTimerMinutesKey = "tuneav.mac.sleepTimerMinutes"
+    private let lastPlayedStationIDKey = "tuneav.mac.lastPlayedStationID"
     private let accessModeKey = "tuneav.mac.accessMode"
     private let lastLocalUpdatedAtKey = "tuneav.mac.lastLocalUpdatedAt"
     private let accessController: MacAccessController
@@ -92,7 +95,7 @@ final class LibraryStore: ObservableObject {
         self.favorites = Self.loadStations(forKey: favoritesKey, defaults: defaults)
         self.recents = Self.loadStations(forKey: recentsKey, defaults: defaults)
         self.discoveries = Self.loadDiscoveries(forKey: discoveriesKey, defaults: defaults)
-        self.preferredTag = defaults.string(forKey: preferredTagKey) ?? "ambient"
+        self.preferredTag = defaults.string(forKey: preferredTagKey) ?? ""
         self.preferredCountryCode = defaults.string(forKey: preferredCountryKey)
         self.sleepTimerMinutes = Self.optionalInt(forKey: sleepTimerMinutesKey, defaults: defaults)
         self.accessMode = accessController.accessMode
@@ -112,6 +115,10 @@ final class LibraryStore: ObservableObject {
 
     var limits: AccessLimits {
         accessController.limits
+    }
+
+    var lastPlayedStationID: String? {
+        defaults.string(forKey: lastPlayedStationIDKey)
     }
 
     var isCloudSyncConfigured: Bool {
@@ -299,6 +306,7 @@ final class LibraryStore: ObservableObject {
         let identityKey = Self.stationIdentityKey(for: station)
         if let index = favorites.firstIndex(where: { $0.id == station.id || Self.stationIdentityKey(for: $0) == identityKey }) {
             rememberFavoriteDeletion(for: favorites[index])
+            removeTimestamp(identityKey: Self.stationIdentityKey(for: favorites[index]), key: favoriteCreatedAtKey)
             favorites.remove(at: index)
         } else {
             if let limit = limits.favoriteStations, favorites.count >= limit {
@@ -307,6 +315,7 @@ final class LibraryStore: ObservableObject {
             }
 
             removeTombstone(resource: "favorites", identityKey: identityKey)
+            setTimestamp(.now, identityKey: identityKey, key: favoriteCreatedAtKey)
             favorites.insert(station, at: 0)
         }
 
@@ -322,6 +331,8 @@ final class LibraryStore: ObservableObject {
         let previousRecents = recents
         recents = TuneAVCollectionRules.movingToFront(station, in: recents, limit: recentLimit ?? limits.recentStations)
         rememberRecentDeletions(forRemovedFrom: previousRecents, keeping: recents)
+        setTimestamp(.now, identityKey: Self.stationIdentityKey(for: station), key: recentLastPlayedAtKey)
+        defaults.set(station.id, forKey: lastPlayedStationIDKey)
         persist(stations: recents, key: recentsKey)
     }
 
@@ -446,16 +457,19 @@ final class LibraryStore: ObservableObject {
         let identityKey = Self.stationIdentityKey(for: station)
         if favorite, !isFavorite(station) {
             removeTombstone(resource: "favorites", identityKey: identityKey)
+            setTimestamp(.now, identityKey: identityKey, key: favoriteCreatedAtKey)
             favorites.insert(station, at: 0)
             persist(stations: favorites, key: favoritesKey)
         }
 
         if recents.contains(where: { $0.id == station.id || Self.stationIdentityKey(for: $0) == identityKey }) == false {
             removeTombstone(resource: "recents", identityKey: identityKey)
+            setTimestamp(.now, identityKey: identityKey, key: recentLastPlayedAtKey)
             recents.insert(station, at: 0)
             persist(stations: recents, key: recentsKey)
         }
 
+        defaults.set(station.id, forKey: lastPlayedStationIDKey)
         markLocalUpdated()
     }
 
@@ -519,33 +533,58 @@ final class LibraryStore: ObservableObject {
         applyCurrentAccessLimits()
     }
 
+    func handleAccountSignedOut() {
+        accessController.updateAccessMode(.guest)
+        accessMode = accessController.accessMode
+        setAppDataClient(nil)
+        backendConnectionStatus = .notConfigured
+        backendConnectionFailureTitle = nil
+        clearBackendConnectionContext()
+        cloudSyncStatus = .idle
+        cloudSyncConflictSummary = nil
+        cloudSyncFailureTitle = nil
+        upgradePrompt = nil
+        applyCurrentAccessLimits()
+    }
+
     private func applyCurrentAccessLimits() {
+        let previousFavorites = favorites
+        let previousRecents = recents
         favorites = TuneAVCollectionRules.trimmed(favorites, limit: limits.favoriteStations)
         recents = TuneAVCollectionRules.trimmed(recents, limit: limits.recentStations)
         discoveries = TuneAVCollectionRules.trimmed(discoveries, limit: limits.discoveredTracks)
         discoveries = Self.trimmedSavedDiscoveries(discoveries, limit: limits.savedTracks)
+        for removed in previousFavorites where !favorites.contains(where: { Self.stationIdentityKey(for: $0) == Self.stationIdentityKey(for: removed) }) {
+            removeTimestamp(identityKey: Self.stationIdentityKey(for: removed), key: favoriteCreatedAtKey)
+        }
+        for removed in previousRecents where !recents.contains(where: { Self.stationIdentityKey(for: $0) == Self.stationIdentityKey(for: removed) }) {
+            removeTimestamp(identityKey: Self.stationIdentityKey(for: removed), key: recentLastPlayedAtKey)
+        }
         persist(stations: favorites, key: favoritesKey)
         persist(stations: recents, key: recentsKey)
         persist(discoveries: discoveries)
     }
 
     func updatePreferredTag(_ tag: String) {
-        guard preferredTag != tag else { return }
-        preferredTag = tag
-        defaults.set(tag, forKey: preferredTagKey)
+        let trimmedTag = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard preferredTag != trimmedTag else { return }
+        preferredTag = trimmedTag
+        defaults.set(trimmedTag, forKey: preferredTagKey)
         markLocalUpdated()
     }
 
     func setPreferredTag(_ tag: String?) {
-        updatePreferredTag(tag ?? "ambient")
+        updatePreferredTag(tag?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "")
     }
 
     func updatePreferredCountryCode(_ code: String?) {
-        guard preferredCountryCode != code else { return }
-        preferredCountryCode = code
-        if let code {
-            defaults.set(code, forKey: preferredCountryKey)
+        let trimmedCode = code?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard preferredCountryCode != trimmedCode else { return }
+        preferredCountryCode = trimmedCode
+        if let trimmedCode, !trimmedCode.isEmpty {
+            defaults.set(trimmedCode, forKey: preferredCountryKey)
         } else {
+            preferredCountryCode = nil
             defaults.removeObject(forKey: preferredCountryKey)
         }
         markLocalUpdated()
@@ -571,7 +610,7 @@ final class LibraryStore: ObservableObject {
         recents = []
         discoveries = []
         clearTombstones()
-        preferredTag = "ambient"
+        preferredTag = ""
         upgradePrompt = nil
         accessController.updateAccessMode(.guest)
         accessMode = accessController.accessMode
@@ -585,9 +624,12 @@ final class LibraryStore: ObservableObject {
         defaults.removeObject(forKey: favoritesKey)
         defaults.removeObject(forKey: recentsKey)
         defaults.removeObject(forKey: discoveriesKey)
+        defaults.removeObject(forKey: favoriteCreatedAtKey)
+        defaults.removeObject(forKey: recentLastPlayedAtKey)
         defaults.set(preferredTag, forKey: preferredTagKey)
         defaults.removeObject(forKey: preferredCountryKey)
         defaults.removeObject(forKey: sleepTimerMinutesKey)
+        defaults.removeObject(forKey: lastPlayedStationIDKey)
         defaults.set(accessMode.rawValue, forKey: accessModeKey)
         clearCurrentDailyUsage()
         preferredCountryCode = nil
@@ -596,7 +638,39 @@ final class LibraryStore: ObservableObject {
     }
 
     func clearLocalData(propagatesToCloud: Bool = false) {
-        clearLocalState()
+        if propagatesToCloud {
+            for favorite in favorites {
+                rememberFavoriteDeletion(for: favorite)
+            }
+            for recent in recents {
+                rememberRecentDeletion(for: recent)
+            }
+            for discovery in discoveries {
+                rememberDiscoveryDeletion(for: discovery)
+            }
+        }
+
+        favorites = []
+        recents = []
+        discoveries = []
+        if !propagatesToCloud {
+            clearTombstones()
+        }
+        preferredTag = ""
+        preferredCountryCode = nil
+        sleepTimerMinutes = nil
+        upgradePrompt = nil
+        defaults.removeObject(forKey: favoritesKey)
+        defaults.removeObject(forKey: recentsKey)
+        defaults.removeObject(forKey: discoveriesKey)
+        defaults.removeObject(forKey: favoriteCreatedAtKey)
+        defaults.removeObject(forKey: recentLastPlayedAtKey)
+        defaults.set(preferredTag, forKey: preferredTagKey)
+        defaults.removeObject(forKey: preferredCountryKey)
+        defaults.removeObject(forKey: sleepTimerMinutesKey)
+        defaults.removeObject(forKey: lastPlayedStationIDKey)
+        clearCurrentDailyUsage()
+        markLocalUpdated()
     }
 
     func librarySnapshot() -> TuneAVLibrarySnapshot {
@@ -605,13 +679,15 @@ final class LibraryStore: ObservableObject {
             favorites: favorites.map {
                 FavoriteStationRecord(
                     station: $0.appDataRecord,
-                    createdAt: snapshotTimestamp
+                    createdAt: timestamp(identityKey: Self.stationIdentityKey(for: $0), key: favoriteCreatedAtKey)
+                        .map(TuneAVDateCoding.string(from:)) ?? snapshotTimestamp
                 )
             } + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
             recents: recents.map {
                 RecentStationRecord(
                     station: $0.appDataRecord,
-                    lastPlayedAt: snapshotTimestamp
+                    lastPlayedAt: timestamp(identityKey: Self.stationIdentityKey(for: $0), key: recentLastPlayedAtKey)
+                        .map(TuneAVDateCoding.string(from:)) ?? snapshotTimestamp
                 )
             } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
             discoveries: discoveries.map(\.appDataRecord) + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
@@ -619,7 +695,7 @@ final class LibraryStore: ObservableObject {
                 preferredCountry: preferredCountryCode ?? "",
                 preferredLanguage: "",
                 preferredTag: preferredTag,
-                lastPlayedStationID: recents.first?.id,
+                lastPlayedStationID: lastPlayedStationID,
                 sleepTimerMinutes: sleepTimerMinutes,
                 updatedAt: snapshotTimestamp
             )
@@ -687,13 +763,34 @@ final class LibraryStore: ObservableObject {
         discoveries = nextDiscoveries
         persist(tombstones: nextTombstones)
         preferredCountryCode = snapshot.settings.preferredCountry.isEmpty ? nil : snapshot.settings.preferredCountry
-        preferredTag = snapshot.settings.preferredTag.isEmpty ? "ambient" : snapshot.settings.preferredTag
+        preferredTag = snapshot.settings.preferredTag
         sleepTimerMinutes = snapshot.settings.sleepTimerMinutes
+        persistTimestamps(
+            snapshot.favorites.reduce(into: [String: String]()) { result, favorite in
+                if let createdAt = favorite.createdAt {
+                    result[TuneAVLibrarySnapshotMerger.stationIdentityKey(favorite.station)] = createdAt
+                }
+            },
+            key: favoriteCreatedAtKey
+        )
+        persistTimestamps(
+            snapshot.recents.reduce(into: [String: String]()) { result, recent in
+                if let lastPlayedAt = recent.lastPlayedAt {
+                    result[TuneAVLibrarySnapshotMerger.stationIdentityKey(recent.station)] = lastPlayedAt
+                }
+            },
+            key: recentLastPlayedAtKey
+        )
 
         persist(stations: favorites, key: favoritesKey)
         persist(stations: recents, key: recentsKey)
         persist(discoveries: discoveries)
         defaults.set(preferredTag, forKey: preferredTagKey)
+        if let lastPlayedStationID = snapshot.settings.lastPlayedStationID {
+            defaults.set(lastPlayedStationID, forKey: lastPlayedStationIDKey)
+        } else {
+            defaults.removeObject(forKey: lastPlayedStationIDKey)
+        }
         if let preferredCountryCode {
             defaults.set(preferredCountryCode, forKey: preferredCountryKey)
         } else {
@@ -1103,6 +1200,35 @@ final class LibraryStore: ObservableObject {
     private func persist(tombstones: [TuneAVLibraryTombstone]) {
         guard let data = try? JSONEncoder().encode(tombstones) else { return }
         defaults.set(data, forKey: tombstonesKey)
+    }
+
+    private func timestamp(identityKey: String, key: String) -> Date? {
+        guard let value = timestampStrings(key: key)[identityKey] else {
+            return nil
+        }
+        return TuneAVDateCoding.date(from: value)
+    }
+
+    private func setTimestamp(_ date: Date, identityKey: String, key: String) {
+        var timestamps = timestampStrings(key: key)
+        timestamps[identityKey] = TuneAVDateCoding.string(from: date)
+        persistTimestamps(timestamps, key: key)
+    }
+
+    private func removeTimestamp(identityKey: String, key: String) {
+        var timestamps = timestampStrings(key: key)
+        timestamps.removeValue(forKey: identityKey)
+        persistTimestamps(timestamps, key: key)
+    }
+
+    private func timestampStrings(key: String) -> [String: String] {
+        guard let data = defaults.data(forKey: key) else { return [:] }
+        return (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+    }
+
+    private func persistTimestamps(_ timestamps: [String: String], key: String) {
+        guard let data = try? JSONEncoder().encode(timestamps) else { return }
+        defaults.set(data, forKey: key)
     }
 
     private static func stationIdentityKey(for station: Station) -> String {

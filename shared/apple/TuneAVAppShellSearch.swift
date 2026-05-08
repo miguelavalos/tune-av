@@ -79,7 +79,7 @@ struct AppShellSearch {
                     allowsEmptySearch: true
                 )
             )
-            merged = AppShellHomeFeed.mergeUniqueStations(
+            merged = Self.mergeUniqueStations(
                 primary: merged,
                 secondary: stations.filter(hasResolvedCountry),
                 limit: limit
@@ -135,5 +135,20 @@ struct AppShellSearch {
         }
 
         return orderedCodes
+    }
+
+    private static func mergeUniqueStations(primary: [Station], secondary: [Station], limit: Int) -> [Station] {
+        var seen = Set<String>()
+        var merged: [Station] = []
+
+        for station in primary + secondary {
+            guard seen.insert(station.id).inserted else { continue }
+            merged.append(station)
+            if merged.count == limit {
+                break
+            }
+        }
+
+        return merged
     }
 }

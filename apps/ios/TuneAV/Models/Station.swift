@@ -73,16 +73,6 @@ extension Station {
         return badges
     }
 
-    static var unknownCountryValues: [String] {
-        [
-            L10n.string("stationService.fallback.unknownCountry"),
-            "Unknown country",
-            "País desconocido",
-            "País desconegut",
-            "Pays inconnu",
-            "Unbekanntes Land"
-        ]
-    }
 }
 
 @Model

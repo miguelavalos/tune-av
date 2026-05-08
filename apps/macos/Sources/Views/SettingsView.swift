@@ -43,20 +43,8 @@ struct SettingsView: View {
             }
 
             Section(L10n.string("mac.settings.access.title")) {
-                if libraryStore.accessModeIsBackendManaged {
-                    LabeledContent(L10n.string("mac.settings.mode.title"), value: libraryStore.accessMode.title)
-                    LabeledContent(L10n.string("mac.settings.source.title"), value: libraryStore.accessModeSourceTitle)
-                } else {
-                    Picker(L10n.string("mac.settings.localFallbackMode"), selection: Binding(
-                        get: { libraryStore.accessMode },
-                        set: { libraryStore.updateAccessMode($0) }
-                    )) {
-                        ForEach(AccessMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+                LabeledContent(L10n.string("mac.settings.mode.title"), value: libraryStore.accessMode.title)
+                LabeledContent(L10n.string("mac.settings.source.title"), value: libraryStore.accessModeSourceTitle)
 
                 LabeledContent(L10n.string("profile.sync.title"), value: libraryStore.cloudSyncReadinessTitle)
                 LabeledContent(L10n.string("mac.settings.backendAccess"), value: libraryStore.backendConnectionStatus.title)
@@ -140,7 +128,7 @@ struct SettingsView: View {
                 LabeledContent(L10n.string("mac.settings.shares"), value: libraryStore.dailyUsage(for: .discoveryShare).title)
 
                 Button(L10n.string("mac.settings.clearLocalLibrary"), role: .destructive) {
-                    libraryStore.clearLocalState()
+                    libraryStore.clearLocalData(propagatesToCloud: libraryStore.capabilities.canUseCloudSync)
                 }
             }
         }

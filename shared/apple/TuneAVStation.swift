@@ -74,6 +74,17 @@ struct Station: Identifiable, Hashable, Codable {
 }
 
 extension Station {
+    static var unknownCountryValues: [String] {
+        [
+            L10n.string("stationService.fallback.unknownCountry"),
+            "Unknown country",
+            "País desconocido",
+            "País desconegut",
+            "Pays inconnu",
+            "Unbekanntes Land"
+        ]
+    }
+
     static var unknownDetailValues: [String] {
         [
             L10n.string("stationService.fallback.unknownCountry"),

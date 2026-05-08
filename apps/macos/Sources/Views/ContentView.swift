@@ -13,6 +13,9 @@ struct ContentView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [Station] = []
     @State private var homeFeedContext: HomeFeedContext = .popularWorldwide
+    @State private var isClearingLocalData = false
+    @State private var isShowingClearLocalDataAlert = false
+    @State private var isShowingGuestOnboarding = false
     @State private var searchIsLoading = false
     @State private var searchErrorMessage: String?
     @State private var activeSearchTag: String?
@@ -25,6 +28,22 @@ struct ContentView: View {
     private let stationService = StationService()
     private let genreTags = ["ambient", "rock", "pop", "jazz", "news", "electronic"]
     private let launchContext = MacLaunchContext.current
+
+    private var appSearch: AppShellSearch {
+        AppShellSearch(
+            stationService: stationService,
+            resolvedDeviceCountryCode: resolvedDeviceCountryCode,
+            hasResolvedCountry: hasResolvedCountry(_:)
+        )
+    }
+
+    private var homeFeed: AppShellHomeFeed {
+        AppShellHomeFeed(
+            stationService: stationService,
+            localizedCountryName: L10n.countryName(for:),
+            resolvedDeviceCountryCode: resolvedDeviceCountryCode
+        )
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -102,6 +121,31 @@ struct ContentView: View {
         .sheet(isPresented: $isShowingAccountDeletion) {
             MacAccountDeletionSheet(viewModel: accountDeletionViewModel)
         }
+        .sheet(isPresented: $isShowingGuestOnboarding) {
+            MacAuthOnboardingSheet(
+                accountIsAvailable: accountController.isAvailable,
+                isAuthenticating: accountController.isAuthenticating,
+                errorMessage: accountController.errorMessage,
+                onContinueWithApple: {
+                    Task { await signInWithAppleFromOnboarding() }
+                },
+                onContinueWithGoogle: {
+                    Task { await signInWithGoogleFromOnboarding() }
+                },
+                onSkip: {
+                    accountController.skipForNow()
+                    isShowingGuestOnboarding = false
+                }
+            )
+        }
+        .alert(clearLibraryAlertTitle, isPresented: $isShowingClearLocalDataAlert) {
+            Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {}
+            Button(clearLibraryConfirmTitle, role: .destructive) {
+                clearLibraryDataFromProfile()
+            }
+        } message: {
+            Text(clearLibraryAlertMessage)
+        }
         .task {
             selectedStation = libraryStore.recents.first ?? Station.samples.first
             selectedCountryCode = libraryStore.preferredCountryCode
@@ -125,6 +169,7 @@ struct ContentView: View {
             if launchContext.isUITesting, let feature = launchContext.uiTestUpgradePromptFeature {
                 libraryStore.presentUpgradePrompt(for: feature)
             }
+            presentAutomaticGuestOnboardingIfNeeded()
             await loadHomeFeedIfNeeded()
         }
         .onChange(of: libraryStore.sleepTimerMinutes) { _, minutes in
@@ -138,6 +183,9 @@ struct ContentView: View {
         }
         .onChange(of: accountController.currentUser) { _, _ in
             Task {
+                if accountController.isSignedIn {
+                    isShowingGuestOnboarding = false
+                }
                 await libraryStore.configureBackendClients(
                     tokenProvider: accountController.currentToken,
                     refreshCloudLibrary: true
@@ -299,34 +347,25 @@ struct ContentView: View {
                 accountIsAuthenticating: accountController.isAuthenticating,
                 accountErrorMessage: accountController.errorMessage,
                 accountManagementURL: MacAppConfig.accountManagementURL,
-                clearAction: libraryStore.clearLocalState,
+                isClearingLocalData: isClearingLocalData,
+                clearActionTitle: clearLibraryActionTitle,
+                clearAction: {
+                    isShowingClearLocalDataAlert = true
+                },
                 signInWithAppleAction: {
                     Task {
-                        if await accountController.signInWithApple() {
-                            await libraryStore.configureBackendClients(
-                                tokenProvider: accountController.currentToken,
-                                refreshCloudLibrary: true
-                            )
-                        }
+                        await signInWithAppleFromOnboarding()
                     }
                 },
                 signInWithGoogleAction: {
                     Task {
-                        if await accountController.signInWithGoogle() {
-                            await libraryStore.configureBackendClients(
-                                tokenProvider: accountController.currentToken,
-                                refreshCloudLibrary: true
-                            )
-                        }
+                        await signInWithGoogleFromOnboarding()
                     }
                 },
                 signOutAction: {
                     Task {
                         if await accountController.signOut() {
-                            await libraryStore.configureBackendClients(
-                                tokenProvider: accountController.currentToken,
-                                refreshCloudLibrary: true
-                            )
+                            libraryStore.handleAccountSignedOut()
                         }
                     }
                 },
@@ -363,13 +402,83 @@ struct ContentView: View {
             api: accountDeletionAPI,
             signOut: {
                 let didSignOut = await accountController.signOut()
-                await libraryStore.configureBackendClients(
-                    tokenProvider: accountController.currentToken,
-                    refreshCloudLibrary: true
-                )
+                if didSignOut {
+                    libraryStore.handleAccountSignedOut()
+                }
                 return didSignOut
             }
         )
+    }
+
+    private func presentAutomaticGuestOnboardingIfNeeded() {
+        guard !launchContext.shouldDisableOnboarding else { return }
+        guard accountController.shouldAutoShowGuestOnboarding else { return }
+
+        isShowingGuestOnboarding = true
+        accountController.markGuestOnboardingPromptShown()
+    }
+
+    private func signInWithAppleFromOnboarding() async {
+        if await accountController.signInWithApple() {
+            isShowingGuestOnboarding = false
+            await libraryStore.configureBackendClients(
+                tokenProvider: accountController.currentToken,
+                refreshCloudLibrary: true
+            )
+        }
+    }
+
+    private func signInWithGoogleFromOnboarding() async {
+        if await accountController.signInWithGoogle() {
+            isShowingGuestOnboarding = false
+            await libraryStore.configureBackendClients(
+                tokenProvider: accountController.currentToken,
+                refreshCloudLibrary: true
+            )
+        }
+    }
+
+    private var shouldClearSyncedLibrary: Bool {
+        libraryStore.capabilities.canUseCloudSync
+    }
+
+    private var clearLibraryActionTitle: String {
+        if isClearingLocalData {
+            return shouldClearSyncedLibrary
+                ? L10n.string("profile.actions.clearingSyncedLibrary")
+                : L10n.string("profile.actions.clearingData")
+        }
+        return shouldClearSyncedLibrary
+            ? L10n.string("profile.actions.clearSyncedLibrary")
+            : L10n.string("profile.actions.clearData")
+    }
+
+    private var clearLibraryAlertTitle: String {
+        shouldClearSyncedLibrary
+            ? L10n.string("profile.alert.clearSyncedLibrary.title")
+            : L10n.string("profile.alert.clearData.title")
+    }
+
+    private var clearLibraryAlertMessage: String {
+        shouldClearSyncedLibrary
+            ? L10n.string("profile.alert.clearSyncedLibrary.message")
+            : L10n.string("profile.alert.clearData.message")
+    }
+
+    private var clearLibraryConfirmTitle: String {
+        shouldClearSyncedLibrary
+            ? L10n.string("profile.alert.clearSyncedLibrary.confirm")
+            : L10n.string("profile.alert.clearData.confirm")
+    }
+
+    private func clearLibraryDataFromProfile() {
+        guard isClearingLocalData == false else { return }
+        isClearingLocalData = true
+        libraryStore.clearLocalData(propagatesToCloud: shouldClearSyncedLibrary)
+        if libraryStore.accessMode == .guest {
+            selectedSection = .profile
+        }
+        isClearingLocalData = false
     }
 
     private var accountDeletionAPI: MacAccountDeletionAPI {
@@ -479,7 +588,35 @@ struct ContentView: View {
 
     private func loadHomeFeedIfNeeded() async {
         guard searchResults.isEmpty else { return }
-        await performSearch(initial: true)
+
+        searchIsLoading = true
+        searchErrorMessage = nil
+
+        if launchContext.isUITesting && launchContext.shouldUseLocalUITestDiscovery {
+            searchResults = Array(Station.samples.prefix(8))
+            homeFeedContext = .popularWorldwide
+            searchIsLoading = false
+            return
+        }
+
+        do {
+            let feed = try await homeFeed.load(preferredTag: libraryStore.preferredTag)
+            searchResults = feed.stations
+            homeFeedContext = feed.context
+            searchIsLoading = false
+        } catch is CancellationError {
+            searchIsLoading = false
+        } catch {
+            let editorialStations = AppShellHomeFeed.defaultEditorialStations(
+                currentStation: audioPlayer.currentStation,
+                recentStations: libraryStore.recentStations(),
+                favoriteStations: libraryStore.favoriteStations()
+            )
+            searchResults = editorialStations
+            homeFeedContext = .popularWorldwide
+            searchErrorMessage = editorialStations.isEmpty ? L10n.string("shell.error.home") : nil
+            searchIsLoading = false
+        }
     }
 
     private func applyPreferredLaunchTab(_ tab: MacLaunchContext.Tab) {
@@ -493,7 +630,7 @@ struct ContentView: View {
         case .settings:
             selectedSection = .profile
         case .player:
-            if let lastStation = libraryStore.recents.first ?? selectedStation {
+            if let lastStation = libraryStore.station(for: libraryStore.lastPlayedStationID) ?? selectedStation {
                 play(lastStation)
             }
         }
@@ -513,6 +650,21 @@ struct ContentView: View {
 
         for station in samples {
             libraryStore.recordPlayback(of: station)
+        }
+
+        if launchContext.shouldUseLocalUITestDiscovery {
+            libraryStore.recordDiscoveredTrack(
+                title: "Midnight City",
+                artist: "M83",
+                station: samples[0],
+                artworkURL: nil
+            )
+            libraryStore.markTrackInteresting(
+                title: "Sweet Disposition",
+                artist: "The Temper Trap",
+                station: samples[1],
+                artworkURL: nil
+            )
         }
     }
 
@@ -585,11 +737,10 @@ struct ContentView: View {
     }
 
     private func performSearch(initial: Bool = false, force: Bool = false) async {
-        let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        let tag = activeSearchTag ?? (trimmedQuery.isEmpty ? libraryStore.preferredTag : "")
-        let countryCode = selectedCountryCode ?? ""
+        let request = searchRequest()
+        let requestKey = request.key
 
-        if !force, !initial, trimmedQuery.isEmpty, selectedSection != .home, tag.isEmpty, countryCode.isEmpty {
+        if !force, !initial, request.query.isEmpty, selectedSection != .home, request.tag == nil, request.countryCode == nil {
             searchResults = []
             return
         }
@@ -597,25 +748,30 @@ struct ContentView: View {
         searchIsLoading = true
         searchErrorMessage = nil
 
+        if launchContext.isUITesting && launchContext.shouldUseLocalUITestSearch {
+            searchResults = AppShellSearch.localUITestSearchResults(request: request)
+            searchErrorMessage = nil
+            searchIsLoading = false
+            return
+        }
+
         do {
-            let results = try await stationService.searchStations(
-                filters: .init(
-                    query: trimmedQuery,
-                    countryCode: countryCode,
-                    tag: tag,
-                    limit: 32,
-                    allowsEmptySearch: initial || force || !tag.isEmpty || !countryCode.isEmpty
-                )
+            let results = try await appSearch.load(
+                request: request,
+                recentStations: libraryStore.recentStations(),
+                favoriteStations: libraryStore.favoriteStations()
             )
+            guard requestKey == searchRequest().key else { return }
             searchResults = results.isEmpty ? Station.samples : results
-            if initial, trimmedQuery.isEmpty, !tag.isEmpty {
+            if initial, request.query.isEmpty, let tag = request.tag, !tag.isEmpty {
                 homeFeedContext = .preferredGenre(tag)
             } else if initial {
-                homeFeedContext = countryCode.isEmpty ? .popularWorldwide : .popularInCountry(countryCode)
+                homeFeedContext = request.countryCode.map(HomeFeedContext.popularInCountry) ?? .popularWorldwide
             }
         } catch {
+            guard requestKey == searchRequest().key else { return }
             searchResults = Station.samples
-            if initial, trimmedQuery.isEmpty, !tag.isEmpty {
+            if initial, request.query.isEmpty, let tag = request.tag, !tag.isEmpty {
                 homeFeedContext = .preferredGenre(tag)
             } else if initial {
                 homeFeedContext = .popularWorldwide
@@ -624,6 +780,23 @@ struct ContentView: View {
         }
 
         searchIsLoading = false
+    }
+
+    private func searchRequest() -> AppShellSearchRequest {
+        let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let tag = activeSearchTag ?? (trimmedQuery.isEmpty ? libraryStore.preferredTag : nil)
+        return AppShellSearchRequest(query: trimmedQuery, tag: tag, countryCode: selectedCountryCode)
+    }
+
+    private func resolvedDeviceCountryCode() -> String? {
+        AppShellHomeFeed.resolvedDeviceCountryCode()
+    }
+
+    private func hasResolvedCountry(_ station: Station) -> Bool {
+        station.hasResolvedCountry(
+            unknownCountryValues: Station.unknownCountryValues,
+            locale: L10n.locale
+        )
     }
 
     private var currentTrackDiscoveryKey: String {

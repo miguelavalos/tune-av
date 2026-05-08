@@ -91,6 +91,7 @@ struct SearchView: View {
         }
         .onChange(of: selectedCountryCode) { _, newValue in
             libraryStore.updatePreferredCountryCode(newValue)
+            searchAction()
         }
     }
 
