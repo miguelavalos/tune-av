@@ -21,7 +21,7 @@ Please avoid proposing changes that assume access to private backend systems or 
 2. Make sure the app still builds locally.
 3. Update docs if the setup or behavior changes.
 4. Do not commit local config, secrets, or generated files.
-5. Follow [Private Config And Infisical](docs/private-config-and-infisical.md) for all login, Pro, backend, signing, and release config.
+5. Keep login, Pro, backend, signing, and release config outside this repository.
 
 ## Pull Requests
 

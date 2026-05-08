@@ -15,62 +15,14 @@ This guide is for local simulator runs and for installing `Tune AV` on a connect
 2. An Apple account available in `Xcode > Settings > Accounts`
 3. Command line tools selected from that Xcode
 4. `bun` 1.3.13 or later
-5. Private Varlock/Infisical bootstrap available locally
-6. `apps/ios/Config/Local.xcconfig` generated through Varlock
-
-Generate the local config:
-
-```bash
-bun install
-bun run ios:config
-bun run ios:preflight
-```
-
-For production/App Store preparation:
-
-```bash
-bun run ios:config:production
-bun run ios:preflight:production
-```
+5. Optional `apps/ios/Config/Local.xcconfig` generated outside git if you need signing or account-platform values
 
 `Local.xcconfig` is gitignored and should be regenerated locally instead of hand-maintained.
-Do not copy production values, example secret files, or bootstrap examples into tracked files. See `docs/private-config-and-infisical.md`.
+Do not copy production values, example secret files, or bootstrap examples into tracked files.
 
 ## Switching Dev And Production
 
-Always regenerate and preflight the native config after switching between dev and production. Do this before opening Xcode, running the simulator, archiving, or testing Clerk/Account AV sign-in.
-
-For local development and simulator auth smoke tests:
-
-```bash
-bun run ios:config
-bun run ios:preflight
-```
-
-The dev preflight must resolve:
-
-- bundle identifier: `com.avalsys.tuneav.dev`
-- Clerk key prefix: `pk_test_`
-- Account AV API: `http://127.0.0.1:8788`
-- Account AV management URL host: `account-av-preview.avalsys.com`
-- a concrete Apple development team
-- `TuneAV/App/TuneAV.entitlements` with Keychain access groups
-
-For production/App Store builds:
-
-```bash
-bun run ios:config:production
-bun run ios:preflight:production
-```
-
-The production preflight must resolve:
-
-- bundle identifier: `com.avalsys.tuneav`
-- Clerk key prefix: `pk_live_`
-- Account AV API: `https://api-account-av.avalsys.com`
-- Account AV management URL host: `account-av.avalsys.com`
-
-If any value is different, regenerate config from the right profile before building. Do not hand-edit `Local.xcconfig`.
+Always regenerate the native config outside this repository after switching between development and release operator profiles. Do this before opening Xcode, running the simulator, archiving, or testing signed Account AV flows.
 
 ## Run on simulator
 
@@ -78,7 +30,7 @@ If any value is different, regenerate config from the right profile before build
 xcodebuild -project apps/ios/TuneAV.xcodeproj \
   -scheme TuneAV \
   -configuration Debug \
-  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
   build
 ```
 

@@ -1,7 +1,6 @@
 .DS_Store
 .idea/
 .vscode/
-.infisical/*
 .codex/
 node_modules/
 
@@ -33,7 +32,7 @@ apps/ios/Config/Local.xcconfig
 !/apps/macos/
 !/apps/macos/**
 
-# macOS local config is generated from private Infisical/Varlock values.
+# macOS local config is generated outside this public repository.
 apps/macos/Config/Local.xcconfig
 apps/macos/Provisioning/
 apps/macos/**/*.xcworkspace/xcuserdata/

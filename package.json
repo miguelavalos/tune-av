@@ -3,22 +3,12 @@
   "private": true,
   "packageManager": "bun@1.3.13",
   "scripts": {
-    "varlock:load": "zsh -lc 'eval \"$(./scripts/resolve-infisical-bootstrap-env.sh local)\" && ./node_modules/.bin/varlock load'",
-    "varlock:load:production": "zsh -lc 'eval \"$(./scripts/resolve-infisical-bootstrap-env.sh production)\" && ./node_modules/.bin/varlock load'",
     "config:hygiene": "./scripts/check-public-config-hygiene.sh",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
-    "ios:config": "./scripts/generate-local-xcconfig.sh local",
-    "ios:config:production": "./scripts/generate-local-xcconfig.sh production",
-    "macos:config": "./scripts/generate-local-xcconfig.sh local",
-    "macos:config:production": "./scripts/generate-local-xcconfig.sh production",
-    "ios:preflight": "./scripts/verify-ios-runtime-config.sh local",
-    "ios:preflight:production": "./scripts/verify-ios-runtime-config.sh production",
-    "macos:preflight": "./scripts/verify-macos-runtime-config.sh local",
-    "macos:preflight:production": "./scripts/verify-macos-runtime-config.sh production"
+    "ios:tests": "cd apps/ios && xcodebuild test -project TuneAV.xcodeproj -scheme TuneAV -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -only-testing:TuneAVTests CODE_SIGNING_ALLOWED=NO",
+    "macos:tests": "cd apps/macos && xcodebuild test -project TuneAVMac.xcodeproj -scheme TuneAVMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO"
   },
   "devDependencies": {
-    "@varlock/infisical-plugin": "0.0.6",
-    "sharp": "^0.34.5",
-    "varlock": "^0.9.1"
+    "sharp": "^0.34.5"
   }
 }

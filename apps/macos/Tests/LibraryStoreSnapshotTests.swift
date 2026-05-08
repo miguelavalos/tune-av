@@ -4,8 +4,14 @@ import AccountAV
 
 @MainActor
 final class LibraryStoreSnapshotTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.set(AppLanguage.english.rawValue, forKey: "tuneav.appLanguage")
+    }
+
     override func tearDown() {
         MockURLProtocol.requestHandler = nil
+        UserDefaults.standard.removeObject(forKey: "tuneav.appLanguage")
         super.tearDown()
     }
 

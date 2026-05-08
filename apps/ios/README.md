@@ -5,8 +5,7 @@ SwiftUI iOS app for Tune AV.
 ## Local Config
 
 1. From the repo root, run `bun install`.
-2. Make sure the private Varlock/Infisical bootstrap is available.
-3. Generate `Config/Local.xcconfig` from the repo root with `bun run ios:config`.
+2. Create `Config/Local.xcconfig` outside git only if your build needs signing or account-platform values.
 4. Open `TuneAV.xcodeproj` in Xcode.
 
 The public repository ships with neutral defaults. Local builds can override `TUNEAV_BUNDLE_IDENTIFIER`, `AVALSYS_APPLE_DEVELOPMENT_TEAM`, and the other client-facing values in the local, non-versioned `Config/Local.xcconfig`.

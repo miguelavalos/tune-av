@@ -24,4 +24,4 @@ After public releases begin, supported versions will be documented in this file.
 
 This is a public open-source repository. Do not commit production keys, local config, signing material, private backend URLs, provisioning profiles, generated local config, or provider credentials.
 
-Login, Pro, hosted backend, and release values must come from local private configuration. See [`docs/private-config-and-infisical.md`](docs/private-config-and-infisical.md).
+Login, Pro, hosted backend, and release values must come from local private operator configuration outside this repository.

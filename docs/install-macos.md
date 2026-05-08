@@ -6,29 +6,13 @@ Tune AV macOS is an active Mac App Store target. The product direction is one-to
 
 - Xcode with macOS 14 SDK support or newer.
 - `bun install` from the repository root.
-- Private Infisical/Varlock bootstrap configured outside this public repository.
-- Apple Developer App IDs:
-  - development: `com.avalsys.tuneav.mac.dev`
-  - production: `com.avalsys.tuneav.mac`
+- Optional `apps/macos/Config/Local.xcconfig` generated outside git if you need signing or account-platform values.
 
 ## Local Config
 
-Generate local config from the repository root:
-
-```bash
-bun run macos:config
-```
-
-For production/App Store preparation:
-
-```bash
-bun run macos:config:production
-bun run macos:preflight:production
-```
-
 The generated file is `apps/macos/Config/Local.xcconfig`. It is gitignored and must be regenerated locally instead of hand-maintained.
 
-Account AV sign-in uses the shared `AccountAV` package and Clerk. The macOS bundle registers its bundle identifier as a URL scheme for the auth callback, so the matching Clerk redirect/callback configuration must exist for both development and production bundle IDs before signed manual QA.
+Account AV sign-in uses the shared `AccountAV` package. The macOS bundle registers its bundle identifier as a URL scheme for the auth callback, so matching redirect/callback configuration must exist in the operator account platform before signed manual QA.
 
 ## Build And Test
 
