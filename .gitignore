@@ -11,6 +11,7 @@ docs/app-store/screenshots/
 DerivedData/
 .DerivedData*/
 .derived-data/
+.derived-data-appstore-screens/
 .derived-data-device/
 .derived-data-verify/
 build/
