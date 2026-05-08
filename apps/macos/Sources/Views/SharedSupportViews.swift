@@ -24,7 +24,7 @@ struct ProfileSummaryRow: View {
     private var summaryCards: some View {
         LibraryMetricCard(
             title: L10n.string("shell.library.discoveries.title"),
-            value: preferredTag.isEmpty ? L10n.string("mac.common.default") : L10n.genreLabel(for: preferredTag),
+            value: preferredTag.isEmpty ? L10n.string("mac.profile.genre.none") : L10n.genreLabel(for: preferredTag),
             detail: L10n.string("mac.profile.summary.launchGenre")
         )
         LibraryMetricCard(

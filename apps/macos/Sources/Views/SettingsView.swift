@@ -9,13 +9,18 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section(L10n.string("mac.settings.discovery.title")) {
-                TextField(
+                Picker(
                     L10n.string("profile.preferences.preferredGenre.title"),
-                    text: Binding(
+                    selection: Binding(
                         get: { libraryStore.preferredTag },
                         set: { libraryStore.updatePreferredTag($0) }
                     )
-                )
+                ) {
+                    Text(L10n.string("mac.profile.genre.none")).tag("")
+                    ForEach(["rock", "pop", "jazz", "news", "electronic", "ambient"], id: \.self) { tag in
+                        Text(L10n.genreLabel(for: tag)).tag(tag)
+                    }
+                }
 
                 Toggle(L10n.string("mac.settings.launchToSearch"), isOn: $launchToSearch)
             }
