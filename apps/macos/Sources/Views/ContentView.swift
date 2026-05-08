@@ -216,35 +216,51 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
-        List(selection: $selectedSection) {
-            Section(L10n.string("mac.sidebar.browse")) {
-                ForEach([SidebarSection.home, .search, .library, .music]) { section in
-                    SidebarSectionRow(section: section, detail: sidebarDetail(for: section))
-                        .tag(section)
-                }
-            }
-
-            Section(L10n.string("profile.account.title")) {
-                SidebarSectionRow(section: .profile, detail: libraryStore.accountConnectionState.title)
-                    .tag(SidebarSection.profile)
-            }
-
-            if let currentStation = audioPlayer.currentStation {
-                Section(L10n.string("player.header.nowPlaying")) {
-                    Button {
-                        selectedStation = currentStation
-                    } label: {
-                        SidebarNowPlayingRow(station: currentStation)
+        VStack(spacing: 0) {
+            List(selection: $selectedSection) {
+                Section(L10n.string("mac.sidebar.browse")) {
+                    ForEach([SidebarSection.home, .search, .library, .music]) { section in
+                        SidebarSectionRow(section: section, detail: sidebarDetail(for: section))
+                            .tag(section)
                     }
-                    .buttonStyle(.plain)
+                }
+
+                Section(L10n.string("profile.account.title")) {
+                    SidebarSectionRow(section: .profile, detail: libraryStore.accountConnectionState.title)
+                        .tag(SidebarSection.profile)
                 }
             }
-        }
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) {
+            .listStyle(.sidebar)
+
+            sidebarNowPlaying
             sidebarFooter
         }
         .id(languageController.currentLanguage)
+    }
+
+    @ViewBuilder
+    private var sidebarNowPlaying: some View {
+        if let currentStation = audioPlayer.currentStation {
+            Divider()
+
+            Button {
+                selectedStation = currentStation
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.string("player.header.nowPlaying"))
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    SidebarNowPlayingRow(station: currentStation)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
     }
 
     @ViewBuilder
