@@ -17,9 +17,9 @@ final class AccessController: ObservableObject {
     private let userDefaults: UserDefaults
     private let guestOnboardingPolicy: GuestOnboardingPolicy
     private let now: () -> Date
+    private let dailyUsageLimiter: TuneAVDailyUsageLimiter
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
-    private let dailyUsagePrefix = "tuneav.featureUsage."
 
     init(
         accountService: AVAccountService = DefaultAVAccountService(),
@@ -39,6 +39,12 @@ final class AccessController: ObservableObject {
         self.userDefaults = userDefaults
         self.guestOnboardingPolicy = guestOnboardingPolicy
         self.now = now
+        self.dailyUsageLimiter = TuneAVDailyUsageLimiter(
+            defaults: userDefaults,
+            keyStyle: .dayBucket(prefix: "tuneav.featureUsage."),
+            limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures,
+            now: now
+        )
         self.accountUser = currentUser
         self.planTier = .free
         self.capabilities = AccessCapabilities.forMode(.guest)
@@ -103,49 +109,29 @@ final class AccessController: ObservableObject {
     }
 
     func dailyLimitState(for feature: LimitedFeature) -> FeatureLimitState {
-        limitState(for: feature, currentUsage: dailyUsageCount(for: feature))
+        dailyUsageLimiter.limitState(for: feature, limit: limits.limit(for: feature))
     }
 
     func canUseDailyFeature(_ feature: LimitedFeature) -> Bool {
-        return dailyLimitState(for: feature).isAllowed
+        dailyUsageLimiter.canUse(feature, limit: limits.limit(for: feature))
     }
 
     func canUseDailyFeature(_ feature: LimitedFeature, usageKey: String) -> Bool {
-        let bucket = dailyUsageBucket(for: feature)
-        if bucket.usageKeys.contains(Self.normalizedUsageKey(usageKey)) {
-            return true
-        }
-
-        return limitState(for: feature, currentUsage: bucket.count).isAllowed
+        dailyUsageLimiter.canUse(feature, limit: limits.limit(for: feature), usageKey: usageKey)
     }
 
     func recordDailyFeatureUse(_ feature: LimitedFeature) {
-        let bucket = dailyUsageBucket(for: feature)
-        userDefaults.set(bucket.dayIdentifier, forKey: dailyUsageDayKey(for: feature))
-        userDefaults.set(bucket.count + 1, forKey: dailyUsageCountKey(for: feature))
+        dailyUsageLimiter.recordUse(feature)
     }
 
     func recordDailyFeatureUse(_ feature: LimitedFeature, usageKey: String) {
-        let normalizedUsageKey = Self.normalizedUsageKey(usageKey)
-        guard !normalizedUsageKey.isEmpty else {
-            recordDailyFeatureUse(feature)
-            return
-        }
-
-        var bucket = dailyUsageBucket(for: feature)
-        userDefaults.set(bucket.dayIdentifier, forKey: dailyUsageDayKey(for: feature))
-        guard !bucket.usageKeys.contains(normalizedUsageKey) else { return }
-
-        bucket.usageKeys.insert(normalizedUsageKey)
-        let sortedUsageKeys = bucket.usageKeys.sorted()
-        userDefaults.set(sortedUsageKeys, forKey: dailyUsageKeysKey(for: feature))
-        userDefaults.set(max(bucket.count + 1, sortedUsageKeys.count), forKey: dailyUsageCountKey(for: feature))
+        dailyUsageLimiter.recordUse(feature, usageKey: usageKey)
     }
 
     func presentUpgradePrompt(for feature: LimitedFeature, currentUsage: Int? = nil) {
         let state = FeatureLimitState(
             feature: feature,
-            currentUsage: currentUsage ?? dailyUsageCount(for: feature),
+            currentUsage: currentUsage ?? dailyUsageLimiter.usageCount(for: feature),
             limit: limits.limit(for: feature)
         )
 
@@ -161,7 +147,7 @@ final class AccessController: ObservableObject {
             planTier = .free
             accessMode = .guest
             capabilities = AccessCapabilities.forMode(.guest)
-            limits = limitsWithUITestOverrides(.forMode(.guest))
+            limits = TuneAVAccessLimitPolicy.resolvedLimits(.forMode(.guest), accessMode: .guest)
             accountSession = nil
             return
         }
@@ -169,119 +155,13 @@ final class AccessController: ObservableObject {
         planTier = resolvedAccess.planTier
         accessMode = resolvedAccess.accessMode
         capabilities = resolvedAccess.capabilities
-        limits = limitsWithUITestOverrides(
-            dailyActionsUnlimitedForPro(resolvedAccess.limits, accessMode: resolvedAccess.accessMode)
-        )
+        limits = TuneAVAccessLimitPolicy.resolvedLimits(resolvedAccess.limits, accessMode: resolvedAccess.accessMode)
         accountSession = AccountSession(
             user: accountUser,
             planTier: planTier,
             accessMode: accessMode,
             capabilities: capabilities
         )
-    }
-
-    private func limitsWithUITestOverrides(_ resolvedLimits: AccessLimits) -> AccessLimits {
-        let environment = ProcessInfo.processInfo.environment
-        guard environment["TUNEAV_UI_TESTS"] == "1" else {
-            return resolvedLimits
-        }
-
-        let favoriteStations = environment["TUNEAV_UI_TEST_FAVORITE_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.favoriteStations
-        let lyricsSearchesPerDay = environment["TUNEAV_UI_TEST_LYRICS_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.lyricsSearchesPerDay
-        let webSearchesPerDay = environment["TUNEAV_UI_TEST_WEB_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.webSearchesPerDay
-        let youtubeSearchesPerDay = environment["TUNEAV_UI_TEST_YOUTUBE_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.youtubeSearchesPerDay
-        let appleMusicSearchesPerDay = environment["TUNEAV_UI_TEST_APPLE_MUSIC_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.appleMusicSearchesPerDay
-        let spotifySearchesPerDay = environment["TUNEAV_UI_TEST_SPOTIFY_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.spotifySearchesPerDay
-        let discoverySharesPerDay = environment["TUNEAV_UI_TEST_DISCOVERY_SHARE_LIMIT"]
-            .flatMap(Int.init)
-            ?? resolvedLimits.discoverySharesPerDay
-
-        return AccessLimits(
-            favoriteStations: favoriteStations,
-            recentStations: resolvedLimits.recentStations,
-            discoveredTracks: resolvedLimits.discoveredTracks,
-            savedTracks: resolvedLimits.savedTracks,
-            lyricsSearchesPerDay: lyricsSearchesPerDay,
-            webSearchesPerDay: webSearchesPerDay,
-            youtubeSearchesPerDay: youtubeSearchesPerDay,
-            appleMusicSearchesPerDay: appleMusicSearchesPerDay,
-            spotifySearchesPerDay: spotifySearchesPerDay,
-            discoverySharesPerDay: discoverySharesPerDay
-        )
-    }
-
-    private func dailyActionsUnlimitedForPro(_ resolvedLimits: AccessLimits, accessMode: AccessMode) -> AccessLimits {
-        guard accessMode == .signedInPro else { return resolvedLimits }
-
-        return AccessLimits(
-            favoriteStations: resolvedLimits.favoriteStations,
-            recentStations: resolvedLimits.recentStations,
-            discoveredTracks: resolvedLimits.discoveredTracks,
-            savedTracks: resolvedLimits.savedTracks,
-            lyricsSearchesPerDay: nil,
-            webSearchesPerDay: nil,
-            youtubeSearchesPerDay: nil,
-            appleMusicSearchesPerDay: nil,
-            spotifySearchesPerDay: nil,
-            discoverySharesPerDay: nil
-        )
-    }
-
-    private func dailyUsageCount(for feature: LimitedFeature) -> Int {
-        let bucket = dailyUsageBucket(for: feature)
-        return bucket.count
-    }
-
-    private func dailyUsageBucket(for feature: LimitedFeature) -> (dayIdentifier: String, count: Int, usageKeys: Set<String>) {
-        let dayIdentifier = Self.dayIdentifier(for: now())
-        let storedDay = userDefaults.string(forKey: dailyUsageDayKey(for: feature))
-        guard storedDay == dayIdentifier else {
-            return (dayIdentifier, 0, [])
-        }
-
-        let usageKeys = Set(
-            userDefaults.stringArray(forKey: dailyUsageKeysKey(for: feature))?
-                .map(Self.normalizedUsageKey)
-                .filter { !$0.isEmpty } ?? []
-        )
-        return (dayIdentifier, max(userDefaults.integer(forKey: dailyUsageCountKey(for: feature)), usageKeys.count), usageKeys)
-    }
-
-    private func dailyUsageDayKey(for feature: LimitedFeature) -> String {
-        "\(dailyUsagePrefix)\(feature.rawValue).day"
-    }
-
-    private func dailyUsageCountKey(for feature: LimitedFeature) -> String {
-        "\(dailyUsagePrefix)\(feature.rawValue).count"
-    }
-
-    private func dailyUsageKeysKey(for feature: LimitedFeature) -> String {
-        "\(dailyUsagePrefix)\(feature.rawValue).keys"
-    }
-
-    private static func normalizedUsageKey(_ usageKey: String) -> String {
-        usageKey.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    }
-
-    private static func dayIdentifier(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
     }
 
 }

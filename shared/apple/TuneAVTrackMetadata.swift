@@ -5,6 +5,128 @@ struct TuneAVNowPlayingTrack: Equatable, Sendable {
     let artist: String?
 }
 
+struct TuneAVStationDisplayLines: Equatable, Sendable {
+    let artistLine: String
+    let titleLine: String
+
+    static func resolve(
+        station: Station,
+        isCurrent: Bool,
+        currentArtist: String?,
+        currentTitle: String?,
+        currentAlbumTitle: String?,
+        nowPlayingTrack: TuneAVNowPlayingTrack?,
+        detailText: String,
+        liveFallback: String
+    ) -> TuneAVStationDisplayLines {
+        let artistLine: String
+        if isCurrent, let artist = TuneAVDisplayMetadata.normalized(currentArtist) {
+            artistLine = artist
+        } else if let artist = TuneAVDisplayMetadata.normalized(nowPlayingTrack?.artist) {
+            artistLine = artist
+        } else {
+            artistLine = detailText
+        }
+
+        let titleLine: String
+        if isCurrent, let title = TuneAVDisplayMetadata.normalized(currentTitle) {
+            titleLine = title
+        } else if let title = TuneAVDisplayMetadata.normalized(nowPlayingTrack?.title) {
+            titleLine = title
+        } else if isCurrent, let albumTitle = TuneAVDisplayMetadata.normalized(currentAlbumTitle) {
+            titleLine = albumTitle
+        } else if let primaryTag = station.normalizedTags.first {
+            titleLine = primaryTag
+        } else {
+            titleLine = TuneAVDisplayMetadata.normalized(station.language) ?? liveFallback
+        }
+
+        return TuneAVStationDisplayLines(artistLine: artistLine, titleLine: titleLine)
+    }
+}
+
+struct TuneAVNowPlayingDisplayLines: Equatable, Sendable {
+    let stationMetaLine: String
+    let trackTitleLine: String
+    let trackSupportingLine: String
+    let hasDiscoverableTrack: Bool
+
+    static func resolve(
+        station: Station,
+        currentTitle: String?,
+        currentArtist: String?,
+        currentAlbumTitle: String?,
+        liveNowFallback: String,
+        liveStreamFallback: String
+    ) -> TuneAVNowPlayingDisplayLines {
+        let title = TuneAVDisplayMetadata.plausibleTitle(currentTitle, stationName: station.name)
+        let artist = TuneAVDisplayMetadata.plausibleArtist(currentArtist, stationName: station.name)
+
+        let stationMetaLine: String
+        if title != nil {
+            stationMetaLine = station.name
+        } else {
+            let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
+            stationMetaLine = meta.isEmpty ? liveNowFallback : meta
+        }
+
+        let trackSupportingLine: String
+        if let artist {
+            trackSupportingLine = artist
+        } else if let albumTitle = TuneAVDisplayMetadata.normalized(currentAlbumTitle) {
+            trackSupportingLine = albumTitle
+        } else {
+            let tags = station.normalizedTags.prefix(2).joined(separator: " · ")
+            trackSupportingLine = tags.isEmpty ? liveStreamFallback : tags
+        }
+
+        return TuneAVNowPlayingDisplayLines(
+            stationMetaLine: stationMetaLine,
+            trackTitleLine: title ?? station.name,
+            trackSupportingLine: trackSupportingLine,
+            hasDiscoverableTrack: title != nil && artist != nil
+        )
+    }
+}
+
+struct TuneAVCurrentDiscovery: Equatable, Sendable {
+    let title: String
+    let artist: String
+    let stationName: String
+
+    var searchQuery: String {
+        "\(artist) \(title)"
+    }
+
+    var shareText: String {
+        TuneAVDiscoveryShareTextFormatter.currentTrackText(
+            title: title,
+            artist: artist,
+            stationName: stationName
+        )
+    }
+
+    var localizedShareText: String {
+        L10n.string("player.discovery.shareText", title, artist, stationName)
+    }
+
+    static func resolve(title: String?, artist: String?, station: Station?) -> TuneAVCurrentDiscovery? {
+        guard let station else { return nil }
+        guard
+            let resolvedTitle = TuneAVDisplayMetadata.plausibleTitle(title, stationName: station.name),
+            let resolvedArtist = TuneAVDisplayMetadata.plausibleArtist(artist, stationName: station.name)
+        else {
+            return nil
+        }
+
+        return TuneAVCurrentDiscovery(
+            title: resolvedTitle,
+            artist: resolvedArtist,
+            stationName: station.name
+        )
+    }
+}
+
 enum TuneAVNowPlayingMetadata {
     static func metadataInterval(from response: HTTPURLResponse) -> Int? {
         for (key, value) in response.allHeaderFields {
@@ -50,6 +172,28 @@ enum TuneAVNowPlayingMetadata {
 struct TuneAVTrackMetadata: Equatable, Sendable {
     var title: String?
     var artist: String?
+}
+
+enum TuneAVDisplayMetadata {
+    static func normalized(_ value: String?) -> String? {
+        TuneAVText.normalizedValue(value)
+    }
+
+    static func plausibleTitle(_ value: String?, stationName: String?) -> String? {
+        guard let title = normalized(value) else { return nil }
+        guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(title, stationName: stationName) else {
+            return nil
+        }
+        return title
+    }
+
+    static func plausibleArtist(_ value: String?, stationName: String?) -> String? {
+        guard let artist = normalized(value) else { return nil }
+        guard !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(artist, stationName: stationName) else {
+            return nil
+        }
+        return artist
+    }
 }
 
 enum TuneAVTrackMetadataParser {
@@ -217,6 +361,13 @@ enum TuneAVTrackMetadataParser {
             return false
         }
 
+        if let artistComparable = sanitizedComparableValue(artist),
+           let stationComparable = sanitizedComparableValue(stationName),
+           artistComparable.compact == stationComparable.compact,
+           !containsBroadcastContextToken(artistComparable.tokens) {
+            return false
+        }
+
         if valueLooksLikeBroadcastMetadata(artist, stationName: stationName) {
             return true
         }
@@ -237,6 +388,23 @@ enum TuneAVTrackMetadataParser {
         }
 
         return false
+    }
+
+    private static func containsBroadcastContextToken(_ tokens: [String]) -> Bool {
+        let stationContextTokens: Set<String> = [
+            "radio",
+            "fm",
+            "am",
+            "dab",
+            "live",
+            "online",
+            "stream",
+            "station",
+            "emisora",
+            "broadcast"
+        ]
+
+        return !Set(tokens).intersection(stationContextTokens).isEmpty
     }
 
     private static func sanitizeMetadataField(_ rawValue: String?) -> String? {

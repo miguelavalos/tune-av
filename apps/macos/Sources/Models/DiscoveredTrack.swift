@@ -59,14 +59,11 @@ struct DiscoveredTrack: Identifiable, Hashable, Codable {
     }
 
     var artistDisplayText: String {
-        artistNormalized ?? L10n.string("player.track.liveNow")
+        TuneAVDiscoveredTrackSupport.artistDisplayText(artist, liveFallback: L10n.string("player.track.liveNow"))
     }
 
     var searchQuery: String {
-        if let artistNormalized {
-            return "\(artistNormalized) \(title)"
-        }
-        return title
+        TuneAVDiscoveredTrackSupport.searchQuery(title: title, artist: artist)
     }
 
     var resolvedArtworkURL: URL? {
@@ -91,12 +88,9 @@ struct DiscoveredTrack: Identifiable, Hashable, Codable {
             hiddenAt: hiddenAt.map(TuneAVDateCoding.string(from:))
         )
     }
-
-    private var artistNormalized: String? {
-        TuneAVDiscoveredTrackSupport.normalizedValue(artist)
-    }
-
     static func makeID(title: String, artist: String?, stationID: String) -> String {
-        TuneAVDiscoveredTrackSupport.makeID(title: title, artist: artist, stationID: stationID)
+        TuneAVDiscoveredTrackSupport.makeID(title: title, artist: artist, stationID: stationID, locale: L10n.locale)
     }
 }
+
+extension DiscoveredTrack: TuneAVMusicLibraryDiscovery {}

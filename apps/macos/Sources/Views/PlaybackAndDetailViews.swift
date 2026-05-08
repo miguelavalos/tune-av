@@ -40,35 +40,23 @@ struct MiniPlayerBar: View {
     }
 
     private var nowPlayingTitle: String {
-        if hasPlausibleTrackTitle,
-           let title = TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) {
+        if let title = TuneAVDisplayMetadata.plausibleTitle(
+            audioPlayer.currentTrackTitle,
+            stationName: station.name
+        ) {
             return title
         }
         return station.name
     }
 
     private var nowPlayingSubtitle: String {
-        if hasPlausibleTrackArtist,
-           let artist = TuneAVText.normalizedValue(audioPlayer.currentTrackArtist) {
+        if let artist = TuneAVDisplayMetadata.plausibleArtist(
+            audioPlayer.currentTrackArtist,
+            stationName: station.name
+        ) {
             return artist
         }
         return statusLine
-    }
-
-    private var hasPlausibleTrackTitle: Bool {
-        guard TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) != nil else { return false }
-        return !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackTitle,
-            stationName: station.name
-        )
-    }
-
-    private var hasPlausibleTrackArtist: Bool {
-        guard TuneAVText.normalizedValue(audioPlayer.currentTrackArtist) != nil else { return false }
-        return !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackArtist,
-            stationName: station.name
-        )
     }
 
     private var statusLine: String {
@@ -80,7 +68,7 @@ struct MiniPlayerBar: View {
         case .playing:
             return "\(L10n.string("shell.status.live")) · \(station.shortMeta)"
         case .paused:
-            return "\(L10n.string("audio.status.paused")) · \(station.shortMeta)"
+            return "\(audioPlayer.playbackState.label) · \(station.shortMeta)"
         case .failed(let message):
             return "\(L10n.string("mac.player.status.error")) · \(message)"
         }
@@ -298,6 +286,9 @@ struct MacNowPlayingView: View {
             PlayerSection(title: L10n.string("mac.player.detail.playback")) {
                 VStack(alignment: .leading, spacing: 12) {
                     StatusBadge(text: playbackLabel)
+                    if let sleepTimerDescription = audioPlayer.sleepTimerDescription {
+                        StatusBadge(text: sleepTimerDescription)
+                    }
                 }
             }
 
@@ -342,7 +333,7 @@ struct MacNowPlayingView: View {
         case .playing:
             return L10n.string("shell.status.live")
         case .paused:
-            return L10n.string("audio.status.paused")
+            return audioPlayer.playbackState.label
         case .failed:
             return L10n.string("mac.player.status.error")
         }
@@ -350,69 +341,51 @@ struct MacNowPlayingView: View {
 
     private var hasDiscoverableTrack: Bool {
         guard let station = audioPlayer.currentStation else { return false }
-        return hasPlausibleTrackTitle(for: station) && hasPlausibleTrackArtist(for: station)
+        return nowPlayingDisplayLines(for: station).hasDiscoverableTrack
     }
 
     private var isCurrentTrackSaved: Bool {
         guard let station = audioPlayer.currentStation else { return false }
-        return libraryStore.discoveries.contains {
-            $0.discoveryID == DiscoveredTrack.makeID(
-                title: normalized(audioPlayer.currentTrackTitle) ?? "",
-                artist: normalized(audioPlayer.currentTrackArtist),
-                stationID: station.id
-            ) && $0.isMarkedInteresting
-        }
-    }
-
-    private func stationMetaLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station) {
-            return station.name
-        }
-
-        let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
-        return meta.isEmpty ? L10n.string("player.track.liveNow") : meta
-    }
-
-    private func trackTitleLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station),
-           let title = normalized(audioPlayer.currentTrackTitle) {
-            return title
-        }
-        return station.name
-    }
-
-    private func trackSupportingLine(for station: Station) -> String {
-        if hasPlausibleTrackArtist(for: station),
-           let artist = normalized(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        let tags = station.normalizedTags.prefix(2).joined(separator: " · ")
-        if !tags.isEmpty {
-            return tags
-        }
-
-        return L10n.string("player.track.liveStreamActive")
-    }
-
-    private func hasPlausibleTrackTitle(for station: Station) -> Bool {
-        guard normalized(audioPlayer.currentTrackTitle) != nil else { return false }
-        return !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackTitle,
-            stationName: station.name
+        return libraryStore.isSavedDiscoveredTrack(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist,
+            station: station
         )
     }
 
+    private func stationMetaLine(for station: Station) -> String {
+        nowPlayingDisplayLines(for: station).stationMetaLine
+    }
+
+    private func trackTitleLine(for station: Station) -> String {
+        nowPlayingDisplayLines(for: station).trackTitleLine
+    }
+
+    private func trackSupportingLine(for station: Station) -> String {
+        nowPlayingDisplayLines(for: station).trackSupportingLine
+    }
+
+    private func hasPlausibleTrackTitle(for station: Station) -> Bool {
+        TuneAVDisplayMetadata.plausibleTitle(audioPlayer.currentTrackTitle, stationName: station.name) != nil
+    }
+
     private func hasPlausibleTrackArtist(for station: Station) -> Bool {
-        guard normalized(audioPlayer.currentTrackArtist) != nil else { return false }
-        return !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackArtist,
-            stationName: station.name
+        TuneAVDisplayMetadata.plausibleArtist(audioPlayer.currentTrackArtist, stationName: station.name) != nil
+    }
+
+    private func nowPlayingDisplayLines(for station: Station) -> TuneAVNowPlayingDisplayLines {
+        TuneAVNowPlayingDisplayLines.resolve(
+            station: station,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            liveNowFallback: L10n.string("player.track.liveNow"),
+            liveStreamFallback: L10n.string("player.track.liveStreamActive")
         )
     }
 
     private func saveCurrentDiscovery(for station: Station) {
-        libraryStore.markTrackInteresting(
+        libraryStore.toggleDiscoveredTrackSaved(
             title: audioPlayer.currentTrackTitle,
             artist: audioPlayer.currentTrackArtist,
             station: station,
@@ -425,34 +398,36 @@ struct MacNowPlayingView: View {
         destination: TuneAVExternalSearchURL.Destination,
         suffix: String? = nil
     ) {
-        guard var query = discoverySearchQuery else { return }
-        if let suffix {
-            query += " \(suffix)"
-        }
-
-        if let url = TuneAVExternalSearchURL.url(for: destination, query: query) {
-            guard libraryStore.useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-            openURL(url)
+        if let query = discoverySearchQuery,
+           let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: query,
+            destination: destination,
+            feature: feature,
+            suffix: suffix
+           ) {
+            guard libraryStore.useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+            openURL(search.url)
         }
     }
 
     private func openArtistSearch(destination: TuneAVExternalSearchURL.Destination, feature: LimitedFeature) {
-        guard let artist = normalized(audioPlayer.currentTrackArtist),
-              let url = TuneAVExternalSearchURL.url(for: destination, query: artist)
+        guard
+            let discovery = currentDiscovery,
+            let search = TuneAVExternalSearchURL.artistSearch(
+                artist: discovery.artist,
+                destination: destination,
+                feature: feature
+            )
         else {
             return
         }
 
-        guard libraryStore.useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        openURL(url)
+        guard libraryStore.useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        openURL(search.url)
     }
 
     private func shareCurrentDiscovery(for station: Station) {
-        let shareText = DiscoveryShareTextFormatter.text(
-            title: audioPlayer.currentTrackTitle,
-            artist: audioPlayer.currentTrackArtist,
-            stationName: station.name
-        )
+        let shareText = currentDiscovery?.localizedShareText ?? station.shareText
         guard libraryStore.useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
         let picker = NSSharingServicePicker(items: [shareText])
         guard let contentView = NSApp.keyWindow?.contentView else {
@@ -464,21 +439,19 @@ struct MacNowPlayingView: View {
     }
 
     private var discoverySearchQuery: String? {
-        guard
-            let station = audioPlayer.currentStation,
-            hasPlausibleTrackTitle(for: station),
-            hasPlausibleTrackArtist(for: station),
-            let title = normalized(audioPlayer.currentTrackTitle),
-            let artist = normalized(audioPlayer.currentTrackArtist)
-        else {
-            return nil
-        }
+        currentDiscovery?.searchQuery
+    }
 
-        return "\(artist) \(title)"
+    private var currentDiscovery: TuneAVCurrentDiscovery? {
+        TuneAVCurrentDiscovery.resolve(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist,
+            station: audioPlayer.currentStation
+        )
     }
 
     private func normalized(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+        TuneAVDisplayMetadata.normalized(value)
     }
 }
 
@@ -491,6 +464,7 @@ struct StationDetailSheet: View {
     let isPlaying: Bool
     let playAction: () -> Void
     let toggleFavorite: () -> Void
+    let stationHistoryAction: () -> Void
 
     var body: some View {
         ScrollView {
@@ -555,6 +529,18 @@ struct StationDetailSheet: View {
                         }
                         .buttonStyle(.plain)
                     }
+
+                    Button {
+                        stationHistoryAction()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+                            .frame(width: 50, height: 50)
+                            .avRoundedControl(cornerRadius: 18)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 DetailBlock(title: L10n.string("shell.stationDetail.section.about")) {
@@ -591,11 +577,11 @@ private struct PlayerArtworkTile: View {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     default:
-                        StationArtworkView(station: station, size: size)
+                        StationThumbnailView(station: station, size: size)
                     }
                 }
             } else {
-                StationArtworkView(station: station, size: size)
+                StationThumbnailView(station: station, size: size)
             }
         }
         .frame(width: size, height: size)

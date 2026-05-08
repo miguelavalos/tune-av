@@ -9,6 +9,7 @@ struct TuneAVMacApp: App {
     @StateObject private var audioPlayer = AudioPlayerService()
     @StateObject private var accountController = MacAccountController()
     @StateObject private var languageController = AppLanguageController()
+    private let launchContext = MacLaunchContext.current
 
     init() {
         AccountAVClerk.configureIfPossible(
@@ -29,6 +30,19 @@ struct TuneAVMacApp: App {
                 .frame(minWidth: AppWindowDefaults.minimumWidth, minHeight: AppWindowDefaults.minimumHeight)
                 .task {
                     await accountController.refreshSession()
+                    if launchContext.isUITesting, let status = launchContext.uiTestCloudSyncStatus {
+                        switch status {
+                        case "conflict":
+                            libraryStore.setCloudSyncStatusForUITests(.conflict)
+                        case "failed":
+                            libraryStore.setCloudSyncStatusForUITests(.failed)
+                        case "synced":
+                            libraryStore.setCloudSyncStatusForUITests(.synced(.now))
+                        default:
+                            libraryStore.setCloudSyncStatusForUITests(.idle)
+                        }
+                        return
+                    }
                     await libraryStore.configureBackendClients(
                         tokenProvider: accountController.currentToken,
                         refreshCloudLibrary: true
@@ -82,3 +96,5 @@ private enum AppWindowDefaults {
     static let defaultWidth: CGFloat = 1440
     static let defaultHeight: CGFloat = 820
 }
+
+typealias MacLaunchContext = TuneAVLaunchContext

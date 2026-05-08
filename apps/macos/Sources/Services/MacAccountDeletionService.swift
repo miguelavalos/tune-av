@@ -1,205 +1,5 @@
 import Foundation
 
-struct MacAccountSummary: Decodable, Equatable {
-    let id: String?
-    let emailAddress: String?
-    let displayName: String?
-    let linkedApps: [MacLinkedAccountApp]
-    let access: [MacAppAccess]
-    let billing: MacAccountBillingSummary?
-    let currentDeletionJob: MacAccountDeletionJob?
-    let deleteAccountEligibility: MacAccountDeletionEligibility?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case emailAddress
-        case email
-        case displayName
-        case name
-        case linkedApps
-        case apps
-        case access
-        case billing
-        case currentDeletionJob
-        case deleteAccountEligibility
-    }
-
-    init(
-        id: String? = nil,
-        emailAddress: String? = nil,
-        displayName: String? = nil,
-        linkedApps: [MacLinkedAccountApp] = [],
-        access: [MacAppAccess] = [],
-        billing: MacAccountBillingSummary? = nil,
-        currentDeletionJob: MacAccountDeletionJob? = nil,
-        deleteAccountEligibility: MacAccountDeletionEligibility? = nil
-    ) {
-        self.id = id
-        self.emailAddress = emailAddress
-        self.displayName = displayName
-        self.linkedApps = linkedApps
-        self.access = access
-        self.billing = billing
-        self.currentDeletionJob = currentDeletionJob
-        self.deleteAccountEligibility = deleteAccountEligibility
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(String.self, forKey: .id)
-        emailAddress = try container.decodeIfPresent(String.self, forKey: .emailAddress)
-            ?? container.decodeIfPresent(String.self, forKey: .email)
-        displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
-            ?? container.decodeIfPresent(String.self, forKey: .name)
-        linkedApps = try container.decodeIfPresent([MacLinkedAccountApp].self, forKey: .linkedApps) ?? []
-        access = try container.decodeIfPresent([MacAppAccess].self, forKey: .access)
-            ?? container.decodeIfPresent([MacAppAccess].self, forKey: .apps)
-            ?? []
-        billing = try container.decodeIfPresent(MacAccountBillingSummary.self, forKey: .billing)
-        currentDeletionJob = try container.decodeIfPresent(MacAccountDeletionJob.self, forKey: .currentDeletionJob)
-        deleteAccountEligibility = try container.decodeIfPresent(MacAccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
-    }
-}
-
-struct MacLinkedAccountApp: Decodable, Equatable, Identifiable {
-    let appId: String
-    let label: String?
-
-    var id: String { appId }
-}
-
-struct MacAccountBillingSummary: Decodable, Equatable {
-    let subscriptions: [MacAccountBillingSubscription]
-
-    enum CodingKeys: String, CodingKey {
-        case subscriptions
-    }
-
-    init(subscriptions: [MacAccountBillingSubscription] = []) {
-        self.subscriptions = subscriptions
-    }
-
-    init(from decoder: Decoder) throws {
-        if var unkeyedContainer = try? decoder.unkeyedContainer() {
-            var decodedSubscriptions: [MacAccountBillingSubscription] = []
-            while !unkeyedContainer.isAtEnd {
-                decodedSubscriptions.append(try unkeyedContainer.decode(MacAccountBillingSubscription.self))
-            }
-            subscriptions = decodedSubscriptions
-            return
-        }
-
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        subscriptions = try container.decodeIfPresent([MacAccountBillingSubscription].self, forKey: .subscriptions) ?? []
-    }
-}
-
-struct MacAccountBillingSubscription: Decodable, Equatable, Identifiable {
-    let id: String
-    let appId: String?
-    let provider: String?
-    let status: String
-    let managementUrl: URL?
-}
-
-struct MacAccountDeletionEligibility: Decodable, Equatable {
-    let status: Status
-    let blockers: [MacAccountDeletionBlocker]
-    let currentJob: MacAccountDeletionJob?
-
-    enum Status: String, Decodable {
-        case eligible
-        case blocked
-        case inProgress
-        case completed
-        case unavailable
-    }
-}
-
-struct MacAccountDeletionBlocker: Decodable, Equatable, Identifiable {
-    let type: BlockerType
-    let appId: String?
-    let label: String
-    let detail: String?
-    let managementUrl: URL?
-
-    var id: String {
-        [type.rawValue, appId, label, detail].compactMap { $0 }.joined(separator: "|")
-    }
-
-    enum BlockerType: String, Decodable {
-        case linkedApp
-        case activeProAccess
-        case activeBillingSubscription
-        case identityProvider
-        case deletionInProgress
-        case eligibilityUnavailable
-    }
-}
-
-struct MacAccountDeletionJob: Decodable, Equatable, Identifiable {
-    let id: String
-    let status: String
-    let detail: String?
-}
-
-struct MacDeleteAccountRequestResponse: Decodable, Equatable {
-    let status: String?
-    let job: MacAccountDeletionJob?
-    let deletionJob: MacAccountDeletionJob?
-    let deleteAccountEligibility: MacAccountDeletionEligibility?
-
-    enum CodingKeys: String, CodingKey {
-        case status
-        case job
-        case deletionJob
-        case deleteAccountEligibility
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        status = try container.decodeIfPresent(String.self, forKey: .status)
-        let canonicalJob = try container.decodeIfPresent(MacAccountDeletionJob.self, forKey: .deletionJob)
-        deletionJob = canonicalJob
-        job = try container.decodeIfPresent(MacAccountDeletionJob.self, forKey: .job) ?? canonicalJob
-        deleteAccountEligibility = try container.decodeIfPresent(MacAccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
-    }
-}
-
-struct MacDeleteAccountFinalizeResponse: Decodable, Equatable {
-    let status: String?
-    let job: MacAccountDeletionJob?
-    let deletionJob: MacAccountDeletionJob?
-    let deleteAccountEligibility: MacAccountDeletionEligibility?
-
-    enum CodingKeys: String, CodingKey {
-        case status
-        case job
-        case deletionJob
-        case deleteAccountEligibility
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        status = try container.decodeIfPresent(String.self, forKey: .status)
-        let canonicalJob = try container.decodeIfPresent(MacAccountDeletionJob.self, forKey: .deletionJob)
-        deletionJob = canonicalJob
-        job = try container.decodeIfPresent(MacAccountDeletionJob.self, forKey: .job) ?? canonicalJob
-        deleteAccountEligibility = try container.decodeIfPresent(MacAccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
-    }
-}
-
-struct MacUnlinkAppResponse: Decodable, Equatable {
-    let link: MacUnlinkAppResult
-    let message: String?
-}
-
-struct MacUnlinkAppResult: Decodable, Equatable {
-    let appId: String
-    let remainingLinkedApps: Int
-    let unlinked: Bool
-}
-
 @MainActor
 protocol MacAccountDeletionAPI {
     func fetchAccountSummary() async throws -> MacAccountSummary
@@ -270,6 +70,34 @@ final class MacAccountAPIClient: MacAccountDeletionAPI {
 }
 
 @MainActor
+struct MacUITestAccountDeletionAPI: MacAccountDeletionAPI {
+    private let scenario: String
+
+    static func fromEnvironment() -> MacUITestAccountDeletionAPI? {
+        guard let scenario = TuneAVUITestEnvironment.current.accountDeletionScenario else {
+            return nil
+        }
+        return MacUITestAccountDeletionAPI(scenario: scenario)
+    }
+
+    func fetchAccountSummary() async throws -> MacAccountSummary {
+        TuneAVUITestAccountDeletionScenarios.summary(for: scenario)
+    }
+
+    func requestAccountDeletion() async throws -> MacDeleteAccountRequestResponse {
+        TuneAVUITestAccountDeletionScenarios.completedRequestResponse()
+    }
+
+    func finalizeAccountDeletion() async throws -> MacDeleteAccountFinalizeResponse {
+        TuneAVUITestAccountDeletionScenarios.completedFinalizeResponse()
+    }
+
+    func unlinkCurrentApp() async throws -> MacUnlinkAppResponse {
+        TuneAVUITestAccountDeletionScenarios.unlinkResponse()
+    }
+}
+
+@MainActor
 final class MacAccountDeletionViewModel: ObservableObject {
     @Published private(set) var summary: MacAccountSummary?
     @Published private(set) var resolvedEligibility: MacAccountDeletionEligibility?
@@ -290,12 +118,11 @@ final class MacAccountDeletionViewModel: ObservableObject {
     }
 
     var canRequestDeletion: Bool {
-        resolvedEligibility?.status == .eligible && confirmationText == "DELETE"
+        TuneAVAccountDeletionPolicy.canRequestDeletion(eligibility: resolvedEligibility, confirmationText: confirmationText)
     }
 
     var canFinalizeDeletion: Bool {
-        let status = resolvedEligibility?.currentJob?.status ?? summary?.currentDeletionJob?.status
-        return ["awaitingIdentityDeletion", "readyToFinalize"].contains(status)
+        TuneAVAccountDeletionPolicy.canFinalizeDeletion(eligibility: resolvedEligibility, summary: summary)
     }
 
     var blockers: [MacAccountDeletionBlocker] {
@@ -304,7 +131,7 @@ final class MacAccountDeletionViewModel: ObservableObject {
 
     var canUnlinkCurrentApp: Bool {
         guard let summary, !isSubmitting else { return false }
-        return Self.canUnlinkCurrentApp(from: summary)
+        return TuneAVAccountDeletionPolicy.canUnlinkCurrentApp(from: summary)
     }
 
     func load() async {
@@ -322,7 +149,7 @@ final class MacAccountDeletionViewModel: ObservableObject {
             }
         } catch {
             errorMessage = L10n.string("accountDeletion.error.load")
-            resolvedEligibility = Self.unavailableEligibility()
+            resolvedEligibility = TuneAVAccountDeletionPolicy.unavailableEligibility(copy: Self.deletionCopy)
         }
     }
 
@@ -334,13 +161,17 @@ final class MacAccountDeletionViewModel: ObservableObject {
 
         do {
             let response = try await api.requestAccountDeletion()
-            if response.deleteAccountEligibility?.status == .completed || response.job?.status == "completed" {
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
                 _ = await signOut()
                 didCompleteDeletion = true
                 return
             }
             let refreshed = try await api.fetchAccountSummary()
             apply(summary: refreshed)
+            if resolvedEligibility?.status == .completed {
+                _ = await signOut()
+                didCompleteDeletion = true
+            }
         } catch {
             errorMessage = L10n.string("accountDeletion.error.request")
         }
@@ -354,13 +185,17 @@ final class MacAccountDeletionViewModel: ObservableObject {
 
         do {
             let response = try await api.finalizeAccountDeletion()
-            if response.deleteAccountEligibility?.status == .completed || response.job?.status == "completed" {
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
                 _ = await signOut()
                 didCompleteDeletion = true
                 return
             }
             let refreshed = try await api.fetchAccountSummary()
             apply(summary: refreshed)
+            if resolvedEligibility?.status == .completed {
+                _ = await signOut()
+                didCompleteDeletion = true
+            }
         } catch {
             errorMessage = L10n.string("accountDeletion.error.finalize")
         }
@@ -384,93 +219,24 @@ final class MacAccountDeletionViewModel: ObservableObject {
 
     private func apply(summary: MacAccountSummary) {
         self.summary = summary
-        resolvedEligibility = summary.deleteAccountEligibility ?? Self.conservativeEligibility(from: summary)
+        resolvedEligibility = TuneAVAccountDeletionPolicy.resolvedEligibility(from: summary, copy: Self.deletionCopy)
     }
 
     static func conservativeEligibility(from summary: MacAccountSummary) -> MacAccountDeletionEligibility {
-        var blockers: [MacAccountDeletionBlocker] = []
-
-        for linkedApp in summary.linkedApps where linkedApp.appId != "tuneav" && linkedApp.appId != "avapps" {
-            blockers.append(
-                MacAccountDeletionBlocker(
-                    type: .linkedApp,
-                    appId: linkedApp.appId,
-                    label: L10n.string("accountDeletion.blocker.linkedApp.title"),
-                    detail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
-                    managementUrl: nil
-                )
-            )
-        }
-
-        for appAccess in summary.access where appAccess.planTier == .pro || appAccess.accessMode == .signedInPro {
-            blockers.append(
-                MacAccountDeletionBlocker(
-                    type: .activeProAccess,
-                    appId: appAccess.appId,
-                    label: L10n.string("accountDeletion.blocker.pro.title"),
-                    detail: L10n.string("accountDeletion.blocker.pro.detail"),
-                    managementUrl: nil
-                )
-            )
-        }
-
-        for subscription in summary.billing?.subscriptions ?? [] where activeBillingStatuses.contains(subscription.status) {
-            blockers.append(
-                MacAccountDeletionBlocker(
-                    type: .activeBillingSubscription,
-                    appId: subscription.appId,
-                    label: subscription.provider ?? L10n.string("accountDeletion.blocker.subscription.title"),
-                    detail: L10n.string("accountDeletion.blocker.subscription.detail"),
-                    managementUrl: subscription.managementUrl
-                )
-            )
-        }
-
-        if let currentDeletionJob = summary.currentDeletionJob,
-           !["completed", "cancelled", "failed"].contains(currentDeletionJob.status) {
-            blockers.append(
-                MacAccountDeletionBlocker(
-                    type: .deletionInProgress,
-                    appId: nil,
-                    label: L10n.string("accountDeletion.blocker.job.title"),
-                    detail: currentDeletionJob.detail,
-                    managementUrl: nil
-                )
-            )
-        }
-
-        if blockers.isEmpty {
-            return unavailableEligibility()
-        }
-
-        return MacAccountDeletionEligibility(status: .unavailable, blockers: blockers, currentJob: summary.currentDeletionJob)
+        TuneAVAccountDeletionPolicy.conservativeEligibility(from: summary, copy: deletionCopy)
     }
 
-    private static func unavailableEligibility() -> MacAccountDeletionEligibility {
-        MacAccountDeletionEligibility(
-            status: .unavailable,
-            blockers: [
-                MacAccountDeletionBlocker(
-                    type: .eligibilityUnavailable,
-                    appId: nil,
-                    label: L10n.string("accountDeletion.blocker.eligibility.title"),
-                    detail: L10n.string("accountDeletion.blocker.eligibility.detail"),
-                    managementUrl: nil
-                )
-            ],
-            currentJob: nil
+    private static var deletionCopy: TuneAVAccountDeletionPolicy.Copy {
+        TuneAVAccountDeletionPolicy.Copy(
+            linkedAppTitle: L10n.string("accountDeletion.blocker.linkedApp.title"),
+            linkedAppDetail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
+            proTitle: L10n.string("accountDeletion.blocker.pro.title"),
+            proDetail: L10n.string("accountDeletion.blocker.pro.detail"),
+            subscriptionTitle: L10n.string("accountDeletion.blocker.subscription.title"),
+            subscriptionDetail: L10n.string("accountDeletion.blocker.subscription.detail"),
+            jobTitle: L10n.string("accountDeletion.blocker.job.title"),
+            unavailableTitle: L10n.string("accountDeletion.unavailable.title"),
+            unavailableDetail: L10n.string("accountDeletion.unavailable.detail")
         )
-    }
-
-    private static let activeBillingStatuses = Set(["active", "trialing", "pastDue", "past_due"])
-
-    private static func canUnlinkCurrentApp(from summary: MacAccountSummary) -> Bool {
-        let linkedApps = summary.linkedApps.filter { $0.appId != "avapps" }
-        let isCurrentAppLinked = linkedApps.contains { $0.appId == "tuneav" }
-        let hasOtherLinkedApps = linkedApps.contains { $0.appId != "tuneav" }
-        let currentAppAccess = summary.access.first { $0.appId == "tuneav" }
-        let currentAppIsPro = currentAppAccess?.planTier == .pro || currentAppAccess?.accessMode == .signedInPro
-
-        return isCurrentAppLinked && hasOtherLinkedApps && !currentAppIsPro
     }
 }

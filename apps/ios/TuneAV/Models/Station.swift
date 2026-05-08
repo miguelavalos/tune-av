@@ -73,23 +73,6 @@ extension Station {
         return badges
     }
 
-    static var unknownDetailValues: [String] {
-        [
-            L10n.string("stationService.fallback.unknownCountry"),
-            L10n.string("stationService.fallback.unknownLanguage"),
-            "Unknown country",
-            "Unknown language",
-            "País desconocido",
-            "Idioma desconocido",
-            "País desconegut",
-            "Idioma desconegut",
-            "Pays inconnu",
-            "Langue inconnue",
-            "Unbekanntes Land",
-            "Unbekannte Sprache"
-        ]
-    }
-
     static var unknownCountryValues: [String] {
         [
             L10n.string("stationService.fallback.unknownCountry"),
@@ -164,7 +147,7 @@ final class LibrarySyncTombstone {
     var deletedAt: Date
 
     init(resource: String, identityKey: String, payloadJSON: String, deletedAt: Date = .now) {
-        self.resourceKey = "\(resource):\(identityKey)"
+        self.resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
         self.resource = resource
         self.identityKey = identityKey
         self.payloadJSON = payloadJSON
@@ -284,7 +267,7 @@ final class DiscoveredTrack {
     }
 }
 
-extension DiscoveredTrack {
+extension DiscoveredTrack: TuneAVMusicLibraryDiscovery {
     var isMarkedInteresting: Bool {
         markedInterestedAt != nil
     }
@@ -294,15 +277,11 @@ extension DiscoveredTrack {
     }
 
     var artistDisplayText: String {
-        normalizedArtist ?? L10n.string("player.track.liveNow")
+        TuneAVDiscoveredTrackSupport.artistDisplayText(artist, liveFallback: L10n.string("player.track.liveNow"))
     }
 
     var searchQuery: String {
-        if let artist = normalizedArtist {
-            return "\(artist) \(title)"
-        }
-
-        return title
+        TuneAVDiscoveredTrackSupport.searchQuery(title: title, artist: artist)
     }
 
     var resolvedArtworkURL: URL? {
@@ -327,11 +306,6 @@ extension DiscoveredTrack {
             hiddenAt: hiddenAt.map(Self.isoString(from:))
         )
     }
-
-    private var normalizedArtist: String? {
-        TuneAVDiscoveredTrackSupport.normalizedValue(artist)
-    }
-
     private static func isoString(from date: Date) -> String {
         TuneAVDateCoding.string(from: date)
     }

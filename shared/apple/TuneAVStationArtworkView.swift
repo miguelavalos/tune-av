@@ -6,13 +6,56 @@ struct StationArtworkView: View {
         case dark
     }
 
-    let station: Station
-    let size: CGFloat
-    var surfaceStyle: SurfaceStyle = .light
-    var contentInsetRatio: CGFloat = 0.16
+    let artworkURL: URL?
+    var size: CGFloat = 84
     var cornerRadiusRatio: CGFloat = 0.24
-    var stageWidthRatio: CGFloat = 0.76
-    var stageHeightRatio: CGFloat = 0.62
+    var contentInsetRatio: CGFloat = 0.18
+    var surfaceStyle: SurfaceStyle = .light
+    var stageWidthRatio: CGFloat = 0.64
+    var stageHeightRatio: CGFloat = 0.48
+    var basePlateShadowColor: Color = Color.black.opacity(0.12)
+
+    init(
+        artworkURL: URL?,
+        size: CGFloat = 84,
+        cornerRadiusRatio: CGFloat = 0.24,
+        contentInsetRatio: CGFloat = 0.18,
+        surfaceStyle: SurfaceStyle = .light,
+        stageWidthRatio: CGFloat = 0.64,
+        stageHeightRatio: CGFloat = 0.48,
+        basePlateShadowColor: Color = Color.black.opacity(0.12)
+    ) {
+        self.artworkURL = artworkURL
+        self.size = size
+        self.cornerRadiusRatio = cornerRadiusRatio
+        self.contentInsetRatio = contentInsetRatio
+        self.surfaceStyle = surfaceStyle
+        self.stageWidthRatio = stageWidthRatio
+        self.stageHeightRatio = stageHeightRatio
+        self.basePlateShadowColor = basePlateShadowColor
+    }
+
+    init(
+        station: Station,
+        size: CGFloat = 84,
+        surfaceStyle: SurfaceStyle = .light,
+        contentInsetRatio: CGFloat = 0.18,
+        cornerRadiusRatio: CGFloat = 0.24,
+        stageWidthRatio: CGFloat = 0.64,
+        stageHeightRatio: CGFloat = 0.48,
+        basePlateShadowColor: Color = Color.black.opacity(0.12)
+    ) {
+        self.init(
+            artworkURL: station.faviconURL.flatMap(URL.init(string:)),
+            size: size,
+            cornerRadiusRatio: cornerRadiusRatio,
+            contentInsetRatio: contentInsetRatio,
+            surfaceStyle: surfaceStyle,
+            stageWidthRatio: stageWidthRatio,
+            stageHeightRatio: stageHeightRatio,
+            basePlateShadowColor: basePlateShadowColor
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -36,7 +79,7 @@ struct StationArtworkView: View {
 
     private var artworkContent: some View {
         Group {
-            if let artworkURL = station.displayArtworkURL {
+            if let artworkURL {
                 AsyncImage(url: artworkURL) { phase in
                     switch phase {
                     case .success(let image):
@@ -51,24 +94,21 @@ struct StationArtworkView: View {
                 fallback
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(true)
     }
 
     private var fallback: some View {
         ZStack {
             Circle()
-                .fill(TuneAVTheme.highlight.opacity(0.18))
-                .frame(width: size * 0.62, height: size * 0.62)
+                .fill(TuneAVTheme.highlight.opacity(surfaceStyle == .dark ? 0.24 : 0.18))
+                .frame(width: size * 0.42, height: size * 0.42)
 
-            VStack(spacing: size * 0.08) {
-                Image(systemName: "dot.radiowaves.left.and.right")
-                    .font(.system(size: size * 0.22, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.highlight)
-
-                Text(station.initials)
-                    .font(.system(size: size * 0.16, weight: .bold))
-                    .foregroundStyle(fallbackTextColor)
-            }
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: size * 0.24, weight: .bold))
+                .foregroundStyle(TuneAVTheme.highlight)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var artworkBackground: some View {
@@ -78,7 +118,12 @@ struct StationArtworkView: View {
             Circle()
                 .fill(TuneAVTheme.highlight.opacity(0.08))
                 .frame(width: size * 0.7, height: size * 0.7)
-                .offset(x: size * 0.14, y: size * 0.12)
+                .offset(x: -size * 0.16, y: -size * 0.18)
+
+            Circle()
+                .fill(Color.white.opacity(surfaceStyle == .dark ? 0.06 : 0.34))
+                .frame(width: size * 0.44, height: size * 0.44)
+                .offset(x: size * 0.22, y: size * 0.2)
         }
     }
 
@@ -94,12 +139,12 @@ struct StationArtworkView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .frame(width: artworkStageWidth, height: artworkStageHeight)
-            .opacity(station.displayArtworkURL == nil ? 0 : 1)
-            .shadow(color: basePlateShadowColor, radius: size * 0.05, y: size * 0.02)
+            .frame(width: size * 0.72, height: size * 0.58)
+            .rotationEffect(.degrees(-7))
+            .shadow(color: basePlateShadowColor, radius: size * 0.08, y: size * 0.04)
     }
 
-    private var artworkShape: RoundedRectangle {
+    private var artworkShape: some Shape {
         RoundedRectangle(cornerRadius: size * cornerRadiusRatio, style: .continuous)
     }
 
@@ -149,24 +194,6 @@ struct StationArtworkView: View {
             return TuneAVTheme.softShadow.opacity(0.08)
         case .dark:
             return TuneAVTheme.softShadow.opacity(0.18)
-        }
-    }
-
-    private var basePlateShadowColor: Color {
-        switch surfaceStyle {
-        case .light:
-            return Color.black.opacity(0.03)
-        case .dark:
-            return Color.black.opacity(0.05)
-        }
-    }
-
-    private var fallbackTextColor: Color {
-        switch surfaceStyle {
-        case .light:
-            return TuneAVTheme.textPrimary.opacity(0.92)
-        case .dark:
-            return TuneAVTheme.textInverse.opacity(0.9)
         }
     }
 }

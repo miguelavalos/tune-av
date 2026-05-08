@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject private var languageController: AppLanguageController
 
     @State private var selectedSection: SidebarSection = .home
+    @State private var musicHistoryStationFilter: Station?
     @State private var selectedStation: Station?
     @State private var searchQuery = ""
     @State private var searchResults: [Station] = []
@@ -23,6 +24,7 @@ struct ContentView: View {
 
     private let stationService = StationService()
     private let genreTags = ["ambient", "rock", "pop", "jazz", "news", "electronic"]
+    private let launchContext = MacLaunchContext.current
 
     var body: some View {
         NavigationSplitView {
@@ -38,9 +40,10 @@ struct ContentView: View {
                 playAction: play,
                 playPreviousAction: playPreviousStation,
                 playNextAction: playNextStation,
-                canCycleStations: currentStationQueue.count > 1,
-                toggleFavorite: libraryStore.toggleFavorite,
-                isFavorite: libraryStore.isFavorite
+                canCycleStations: audioPlayer.canCyclePlaybackQueue,
+                toggleFavorite: { station in libraryStore.toggleFavorite(station) },
+                isFavorite: libraryStore.isFavorite,
+                stationHistoryAction: openStationHistory
             )
             .environmentObject(audioPlayer)
             .environmentObject(libraryStore)
@@ -73,7 +76,8 @@ struct ContentView: View {
                 isFavorite: libraryStore.isFavorite(station),
                 isPlaying: audioPlayer.isCurrent(station) && audioPlayer.isPlaying,
                 playAction: { play(station) },
-                toggleFavorite: { libraryStore.toggleFavorite(station) }
+                toggleFavorite: { libraryStore.toggleFavorite(station) },
+                stationHistoryAction: { openStationHistory(station) }
             )
             .frame(minWidth: 520, minHeight: 520)
         }
@@ -101,11 +105,30 @@ struct ContentView: View {
         .task {
             selectedStation = libraryStore.recents.first ?? Station.samples.first
             selectedCountryCode = libraryStore.preferredCountryCode
-            if launchToSearch {
+            audioPlayer.setSleepTimer(minutes: libraryStore.sleepTimerMinutes)
+            seedUITestDataIfNeeded()
+            if let preferredSearchQuery = launchContext.preferredSearchQuery {
+                searchQuery = preferredSearchQuery
+                selectedSection = .search
+                activeSearchTag = nil
+            } else if let preferredTab = launchContext.preferredTab {
+                applyPreferredLaunchTab(preferredTab)
+            } else if launchToSearch {
                 selectedSection = .search
                 activeSearchTag = libraryStore.preferredTag
             }
+            if let demoStation = launchContext.demoStation {
+                libraryStore.ensureSeededStation(demoStation, favorite: launchContext.seedFavorite)
+                play(demoStation)
+                applyUITestTrackMetadataIfNeeded()
+            }
+            if launchContext.isUITesting, let feature = launchContext.uiTestUpgradePromptFeature {
+                libraryStore.presentUpgradePrompt(for: feature)
+            }
             await loadHomeFeedIfNeeded()
+        }
+        .onChange(of: libraryStore.sleepTimerMinutes) { _, minutes in
+            audioPlayer.setSleepTimer(minutes: minutes)
         }
         .onChange(of: libraryStore.preferredTag) { _, _ in
             Task {
@@ -188,7 +211,7 @@ struct ContentView: View {
                 recents: libraryStore.recents,
                 feedContext: homeFeedContext,
                 playAction: play,
-                toggleFavorite: libraryStore.toggleFavorite,
+                toggleFavorite: { station in libraryStore.toggleFavorite(station) },
                 showDetails: showStationDetails
             )
         case .search:
@@ -201,7 +224,7 @@ struct ContentView: View {
                 errorMessage: searchErrorMessage,
                 genreTags: genreTags,
                 playAction: play,
-                toggleFavorite: libraryStore.toggleFavorite,
+                toggleFavorite: { station in libraryStore.toggleFavorite(station) },
                 isFavorite: libraryStore.isFavorite,
                 showDetails: showStationDetails,
                 searchAction: { Task { await performSearch(force: true) } }
@@ -212,15 +235,18 @@ struct ContentView: View {
                 recents: libraryStore.recents,
                 limits: libraryStore.limits,
                 playAction: play,
-                toggleFavorite: libraryStore.toggleFavorite,
+                toggleFavorite: { station in libraryStore.toggleFavorite(station) },
                 showDetails: showStationDetails
             )
         case .music:
             MusicView(
                 discoveries: libraryStore.discoveries,
+                historyStationFilter: $musicHistoryStationFilter,
                 limits: libraryStore.limits,
                 openStation: openDiscoveryStation,
-                toggleSaved: libraryStore.toggleDiscoverySaved,
+                toggleSaved: { discovery in
+                    libraryStore.toggleDiscoverySaved(discovery)
+                },
                 hideDiscovery: libraryStore.hideDiscovery,
                 restoreDiscovery: libraryStore.restoreDiscovery,
                 removeDiscovery: libraryStore.removeDiscovery,
@@ -334,7 +360,7 @@ struct ContentView: View {
 
     private var accountDeletionViewModel: MacAccountDeletionViewModel {
         MacAccountDeletionViewModel(
-            api: MacAccountAPIClient(getToken: accountController.currentToken),
+            api: accountDeletionAPI,
             signOut: {
                 let didSignOut = await accountController.signOut()
                 await libraryStore.configureBackendClients(
@@ -344,6 +370,13 @@ struct ContentView: View {
                 return didSignOut
             }
         )
+    }
+
+    private var accountDeletionAPI: MacAccountDeletionAPI {
+        if let uiTestAPI = MacUITestAccountDeletionAPI.fromEnvironment() {
+            return uiTestAPI
+        }
+        return MacAccountAPIClient(getToken: accountController.currentToken)
     }
 
     private var sidebarFooter: some View {
@@ -419,11 +452,14 @@ struct ContentView: View {
                 libraryStore.favorites.count
             )
         case .music:
+            let savedTrackCount = libraryStore.discoveries.filter { discovery in
+                discovery.isMarkedInteresting && !discovery.isHidden
+            }.count
             return L10n.plural(
-                singular: "mac.sidebar.tracks.one",
-                plural: "mac.sidebar.tracks.other",
-                count: libraryStore.discoveries.count,
-                libraryStore.discoveries.count
+                singular: "mac.sidebar.savedTrack.one",
+                plural: "mac.sidebar.savedTrack.other",
+                count: savedTrackCount,
+                savedTrackCount
             )
         case .profile:
             return libraryStore.accessMode.title
@@ -435,15 +471,70 @@ struct ContentView: View {
         detailStation = station
     }
 
+    private func openStationHistory(_ station: Station) {
+        detailStation = nil
+        musicHistoryStationFilter = station
+        selectedSection = .music
+    }
+
     private func loadHomeFeedIfNeeded() async {
         guard searchResults.isEmpty else { return }
         await performSearch(initial: true)
     }
 
+    private func applyPreferredLaunchTab(_ tab: MacLaunchContext.Tab) {
+        switch tab {
+        case .search:
+            selectedSection = .search
+        case .library:
+            selectedSection = .library
+        case .music:
+            selectedSection = .music
+        case .settings:
+            selectedSection = .profile
+        case .player:
+            if let lastStation = libraryStore.recents.first ?? selectedStation {
+                play(lastStation)
+            }
+        }
+    }
+
+    private func seedUITestDataIfNeeded() {
+        guard launchContext.isUITesting else { return }
+        guard launchContext.shouldSeedUITestLibrary else { return }
+        guard libraryStore.favorites.isEmpty, libraryStore.recents.isEmpty else { return }
+
+        let samples = Array(Station.samples.prefix(3))
+        guard !samples.isEmpty else { return }
+
+        for station in samples.prefix(2) {
+            libraryStore.toggleFavorite(for: station)
+        }
+
+        for station in samples {
+            libraryStore.recordPlayback(of: station)
+        }
+    }
+
+    private func applyUITestTrackMetadataIfNeeded() {
+        guard launchContext.isUITesting else { return }
+        guard launchContext.uiTestTrackTitle != nil || launchContext.uiTestTrackArtist != nil else { return }
+        audioPlayer.applyUITestTrackMetadata(
+            title: launchContext.uiTestTrackTitle,
+            artist: launchContext.uiTestTrackArtist
+        )
+    }
+
     private func play(_ station: Station) {
         selectedStation = station
         libraryStore.recordPlayback(of: station)
-        audioPlayer.play(station)
+        audioPlayer.play(
+            station: station,
+            queue: AudioPlayerService.PlaybackQueue(
+                source: searchResults.isEmpty ? .libraryRecents : .searchResults,
+                stations: currentStationQueue
+            )
+        )
     }
 
     private var currentStationQueue: [Station] {
@@ -457,20 +548,21 @@ struct ContentView: View {
     }
 
     private func playPreviousStation() {
-        playStationAtOffset(-1)
+        guard audioPlayer.canCyclePlaybackQueue else { return }
+        audioPlayer.playPreviousInQueue()
+        recordCurrentPlayback()
     }
 
     private func playNextStation() {
-        playStationAtOffset(1)
+        guard audioPlayer.canCyclePlaybackQueue else { return }
+        audioPlayer.playNextInQueue()
+        recordCurrentPlayback()
     }
 
-    private func playStationAtOffset(_ offset: Int) {
-        let stations = currentStationQueue
-        guard stations.count > 1 else { return }
-        let currentID = (audioPlayer.currentStation ?? selectedStation)?.id
-        let currentIndex = stations.firstIndex { $0.id == currentID } ?? 0
-        let nextIndex = (currentIndex + offset + stations.count) % stations.count
-        play(stations[nextIndex])
+    private func recordCurrentPlayback() {
+        guard let station = audioPlayer.currentStation else { return }
+        selectedStation = station
+        libraryStore.recordPlayback(of: station)
     }
 
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
@@ -512,7 +604,7 @@ struct ContentView: View {
                     countryCode: countryCode,
                     tag: tag,
                     limit: 32,
-                    allowsEmptySearch: initial || !tag.isEmpty || !countryCode.isEmpty
+                    allowsEmptySearch: initial || force || !tag.isEmpty || !countryCode.isEmpty
                 )
             )
             searchResults = results.isEmpty ? Station.samples : results
@@ -544,14 +636,7 @@ struct ContentView: View {
     }
 
     private var preferredColorScheme: ColorScheme? {
-        switch appearanceMode {
-        case "light":
-            return .light
-        case "dark":
-            return .dark
-        default:
-            return nil
-        }
+        (AppTheme(rawValue: appearanceMode) ?? .system).preferredColorScheme
     }
 }
 
@@ -586,7 +671,7 @@ private struct SidebarNowPlayingRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            StationArtworkView(station: station, size: 34)
+            StationThumbnailView(station: station, size: 34)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(station.name)
@@ -613,6 +698,7 @@ private struct DesktopPlayerInspector: View {
     let canCycleStations: Bool
     let toggleFavorite: (Station) -> Void
     let isFavorite: (Station) -> Bool
+    let stationHistoryAction: (Station) -> Void
 
     private var displayStation: Station? {
         audioPlayer.currentStation ?? selectedStation
@@ -782,6 +868,12 @@ private struct DesktopPlayerInspector: View {
                     }
 
                     Button {
+                        stationHistoryAction(station)
+                    } label: {
+                        Label(L10n.string("player.menu.stationHistory"), systemImage: "clock.arrow.circlepath")
+                    }
+
+                    Button {
                         shareStation(for: station)
                     } label: {
                         Label(L10n.string("player.menu.shareStation"), systemImage: "square.and.arrow.up")
@@ -823,38 +915,15 @@ private struct DesktopPlayerInspector: View {
     }
 
     private func primaryLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station),
-           let title = normalized(audioPlayer.currentTrackTitle) {
-            return title
-        }
-        return station.name
+        nowPlayingDisplayLines(for: station).trackTitleLine
     }
 
     private func secondaryLine(for station: Station) -> String {
-        if hasPlausibleTrackArtist(for: station),
-           let artist = normalized(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        let tags = station.normalizedTags.prefix(2).joined(separator: " · ")
-        if !tags.isEmpty {
-            return tags
-        }
-
-        return L10n.string("player.track.liveStreamActive")
+        nowPlayingDisplayLines(for: station).trackSupportingLine
     }
 
     private func stationMetaLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station) {
-            return station.name
-        }
-
-        let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !meta.isEmpty {
-            return meta
-        }
-
-        return L10n.string("player.track.liveNow")
+        nowPlayingDisplayLines(for: station).stationMetaLine
     }
 
     private var playbackLabel: String {
@@ -894,37 +963,38 @@ private struct DesktopPlayerInspector: View {
 
     private var hasDiscoverableTrack: Bool {
         guard let station = audioPlayer.currentStation ?? selectedStation else { return false }
-        return hasPlausibleTrackTitle(for: station) && hasPlausibleTrackArtist(for: station)
+        return nowPlayingDisplayLines(for: station).hasDiscoverableTrack
     }
 
     private func hasPlausibleTrackTitle(for station: Station) -> Bool {
-        guard normalized(audioPlayer.currentTrackTitle) != nil else { return false }
-        return !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackTitle,
-            stationName: station.name
-        )
+        TuneAVDisplayMetadata.plausibleTitle(audioPlayer.currentTrackTitle, stationName: station.name) != nil
     }
 
     private func hasPlausibleTrackArtist(for station: Station) -> Bool {
-        guard normalized(audioPlayer.currentTrackArtist) != nil else { return false }
-        return !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackArtist,
-            stationName: station.name
+        TuneAVDisplayMetadata.plausibleArtist(audioPlayer.currentTrackArtist, stationName: station.name) != nil
+    }
+
+    private func nowPlayingDisplayLines(for station: Station) -> TuneAVNowPlayingDisplayLines {
+        TuneAVNowPlayingDisplayLines.resolve(
+            station: station,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            liveNowFallback: L10n.string("player.track.liveNow"),
+            liveStreamFallback: L10n.string("player.track.liveStreamActive")
         )
     }
 
     private func isCurrentTrackSaved(_ station: Station) -> Bool {
-        libraryStore.discoveries.contains {
-            $0.discoveryID == DiscoveredTrack.makeID(
-                title: normalized(audioPlayer.currentTrackTitle) ?? "",
-                artist: normalized(audioPlayer.currentTrackArtist),
-                stationID: station.id
-            ) && $0.isMarkedInteresting
-        }
+        libraryStore.isSavedDiscoveredTrack(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist,
+            station: station
+        )
     }
 
     private func saveCurrentDiscovery(for station: Station) {
-        libraryStore.markTrackInteresting(
+        libraryStore.toggleDiscoveredTrackSaved(
             title: audioPlayer.currentTrackTitle,
             artist: audioPlayer.currentTrackArtist,
             station: station,
@@ -933,11 +1003,7 @@ private struct DesktopPlayerInspector: View {
     }
 
     private func shareCurrentDiscovery(for station: Station) {
-        let shareText = DiscoveryShareTextFormatter.text(
-            title: audioPlayer.currentTrackTitle,
-            artist: audioPlayer.currentTrackArtist,
-            stationName: station.name
-        )
+        let shareText = currentDiscovery?.localizedShareText ?? station.shareText
         guard libraryStore.useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
         let picker = NSSharingServicePicker(items: [shareText])
         guard let contentView = NSApp.keyWindow?.contentView else {
@@ -955,14 +1021,19 @@ private struct DesktopPlayerInspector: View {
     }
 
     private func openArtistSearch(destination: TuneAVExternalSearchURL.Destination, feature: LimitedFeature) {
-        guard let artist = normalized(audioPlayer.currentTrackArtist),
-              let url = TuneAVExternalSearchURL.url(for: destination, query: artist)
+        guard
+            let discovery = currentDiscovery,
+            let search = TuneAVExternalSearchURL.artistSearch(
+                artist: discovery.artist,
+                destination: destination,
+                feature: feature
+            )
         else {
             return
         }
 
-        guard libraryStore.useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        openURL(url)
+        guard libraryStore.useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        openURL(search.url)
     }
 
     private func shareStation(for station: Station) {
@@ -987,33 +1058,32 @@ private struct DesktopPlayerInspector: View {
         destination: TuneAVExternalSearchURL.Destination,
         suffix: String? = nil
     ) {
-        guard var query = discoverySearchQuery else { return }
-        if let suffix {
-            query += " \(suffix)"
-        }
-
-        if let url = TuneAVExternalSearchURL.url(for: destination, query: query) {
-            guard libraryStore.useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-            openURL(url)
+        if let query = discoverySearchQuery,
+           let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: query,
+            destination: destination,
+            feature: feature,
+            suffix: suffix
+           ) {
+            guard libraryStore.useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+            openURL(search.url)
         }
     }
 
     private var discoverySearchQuery: String? {
-        guard
-            let station = audioPlayer.currentStation ?? selectedStation,
-            hasPlausibleTrackTitle(for: station),
-            hasPlausibleTrackArtist(for: station),
-            let title = normalized(audioPlayer.currentTrackTitle),
-            let artist = normalized(audioPlayer.currentTrackArtist)
-        else {
-            return nil
-        }
+        currentDiscovery?.searchQuery
+    }
 
-        return "\(artist) \(title)"
+    private var currentDiscovery: TuneAVCurrentDiscovery? {
+        TuneAVCurrentDiscovery.resolve(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist,
+            station: audioPlayer.currentStation ?? selectedStation
+        )
     }
 
     private func normalized(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+        TuneAVDisplayMetadata.normalized(value)
     }
 }
 
@@ -1060,6 +1130,9 @@ struct DesktopPlayerArtwork: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .id(languageController.currentLanguage)
+        }
+        .onChange(of: station.id) { _, _ in
+            isShowingOptions = false
         }
     }
 
@@ -1351,12 +1424,10 @@ struct DesktopPlayerArtwork: View {
     }
 
     private func stationBadge(size: CGFloat) -> some View {
-        StationArtworkView(
+        StationThumbnailView(
             station: station,
             size: size,
-            surfaceStyle: .light,
-            contentInsetRatio: 0.08,
-            cornerRadiusRatio: 0.26
+            surfaceStyle: .light
         )
         .padding(3)
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
@@ -1370,11 +1441,11 @@ struct DesktopPlayerArtwork: View {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     default:
-                        StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+                        StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
                     }
                 }
             } else {
-                StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+                StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
             }
         }
         .frame(width: size, height: size)
@@ -1389,11 +1460,11 @@ struct DesktopPlayerArtwork: View {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     default:
-                        StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+                        StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
                     }
                 }
             } else {
-                StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+                StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
             }
         }
         .frame(width: size, height: size)

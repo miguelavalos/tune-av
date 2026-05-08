@@ -9,6 +9,7 @@ struct NowPlayingView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
 
     let startSignInFlow: (Bool) -> Void
+    let stationHistoryAction: (Station) -> Void
 
     @State private var horizontalDragOffset: CGFloat = 0
     @State private var verticalDragOffset: CGFloat = 0
@@ -22,8 +23,12 @@ struct NowPlayingView: View {
     private let playerMaxLandscapeContentWidth: CGFloat = 860
     private let playerControlsBottomLift: CGFloat = 28
 
-    init(startSignInFlow: @escaping (Bool) -> Void = { _ in }) {
+    init(
+        startSignInFlow: @escaping (Bool) -> Void = { _ in },
+        stationHistoryAction: @escaping (Station) -> Void = { _ in }
+    ) {
         self.startSignInFlow = startSignInFlow
+        self.stationHistoryAction = stationHistoryAction
     }
 
     var body: some View {
@@ -455,6 +460,11 @@ struct NowPlayingView: View {
                 openStationSearch(for: station)
             }
 
+            Button(L10n.string("player.menu.stationHistory")) {
+                stationHistoryAction(station)
+                dismiss()
+            }
+
             ShareLink(item: station.shareText) {
                 Text(L10n.string("player.menu.shareStation"))
             }
@@ -648,43 +658,20 @@ struct NowPlayingView: View {
     }
 
     private func stationMetaLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station) {
-            return station.name
-        }
-
-        let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
-        return meta.isEmpty ? L10n.string("player.track.liveNow") : meta
+        nowPlayingDisplayLines(for: station).stationMetaLine
     }
 
     private func trackTitleLine(for station: Station) -> String {
-        if hasPlausibleTrackTitle(for: station),
-           let title = TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) {
-            return title
-        }
-
-        return station.name
+        nowPlayingDisplayLines(for: station).trackTitleLine
     }
 
     private func trackSupportingLine(for station: Station) -> String {
-        if hasPlausibleTrackArtist(for: station),
-           let artist = TuneAVText.normalizedValue(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        if let albumTitle = TuneAVText.normalizedValue(audioPlayer.currentTrackAlbumTitle) {
-            return albumTitle
-        }
-
-        let tags = station.normalizedTags.prefix(2).joined(separator: " · ")
-        if !tags.isEmpty {
-            return tags
-        }
-
-        return L10n.string("player.track.liveStreamActive")
+        nowPlayingDisplayLines(for: station).trackSupportingLine
     }
 
     private var hasDiscoverableTrack: Bool {
-        hasPlausibleCurrentTrack && hasPlausibleCurrentArtist
+        guard let station = audioPlayer.currentStation else { return false }
+        return nowPlayingDisplayLines(for: station).hasDiscoverableTrack
     }
 
     private var hasPlausibleCurrentTrack: Bool {
@@ -693,11 +680,7 @@ struct NowPlayingView: View {
     }
 
     private func hasPlausibleTrackTitle(for station: Station) -> Bool {
-        guard TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) != nil else { return false }
-        return !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackTitle,
-            stationName: station.name
-        )
+        TuneAVDisplayMetadata.plausibleTitle(audioPlayer.currentTrackTitle, stationName: station.name) != nil
     }
 
     private var hasPlausibleCurrentArtist: Bool {
@@ -706,10 +689,17 @@ struct NowPlayingView: View {
     }
 
     private func hasPlausibleTrackArtist(for station: Station) -> Bool {
-        guard TuneAVText.normalizedValue(audioPlayer.currentTrackArtist) != nil else { return false }
-        return !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(
-            audioPlayer.currentTrackArtist,
-            stationName: station.name
+        TuneAVDisplayMetadata.plausibleArtist(audioPlayer.currentTrackArtist, stationName: station.name) != nil
+    }
+
+    private func nowPlayingDisplayLines(for station: Station) -> TuneAVNowPlayingDisplayLines {
+        TuneAVNowPlayingDisplayLines.resolve(
+            station: station,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            liveNowFallback: L10n.string("player.track.liveNow"),
+            liveStreamFallback: L10n.string("player.track.liveStreamActive")
         )
     }
 
@@ -765,14 +755,17 @@ struct NowPlayingView: View {
         destination: TuneAVExternalSearchURL.Destination,
         suffix: String? = nil
     ) {
-        guard var query = discoverySearchQuery else { return }
-        if let suffix {
-            query += " \(suffix)"
-        }
-
-        guard let url = TuneAVExternalSearchURL.url(for: destination, query: query) else { return }
-        guard useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard
+            let query = discoverySearchQuery,
+            let search = TuneAVExternalSearchURL.discoverySearch(
+                searchQuery: query,
+                destination: destination,
+                feature: feature,
+                suffix: suffix
+            )
+        else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func toggleFavorite(_ station: Station) {
@@ -809,35 +802,36 @@ struct NowPlayingView: View {
     }
 
     private func openArtistSearch(destination: TuneAVExternalSearchURL.Destination, feature: LimitedFeature) {
-        guard hasPlausibleCurrentArtist else { return }
-        guard let artist = TuneAVText.normalizedValue(audioPlayer.currentTrackArtist) else { return }
-        guard let url = TuneAVExternalSearchURL.url(for: destination, query: artist) else { return }
-        guard useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard
+            let discovery = currentDiscovery,
+            let search = TuneAVExternalSearchURL.artistSearch(
+                artist: discovery.artist,
+                destination: destination,
+                feature: feature
+            )
+        else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func discoveryShareText(for station: Station) -> String {
-        guard
-            let title = TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
-            let artist = TuneAVText.normalizedValue(audioPlayer.currentTrackArtist),
-            hasDiscoverableTrack
-        else {
+        guard let discovery = currentDiscovery else {
             return station.shareText
         }
 
-        return L10n.string("player.discovery.shareText", title, artist, station.name)
+        return discovery.localizedShareText
     }
 
     private var discoverySearchQuery: String? {
-        guard
-            let title = TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
-            let artist = TuneAVText.normalizedValue(audioPlayer.currentTrackArtist),
-            hasDiscoverableTrack
-        else {
-            return nil
-        }
+        currentDiscovery?.searchQuery
+    }
 
-        return "\(artist) \(title)"
+    private var currentDiscovery: TuneAVCurrentDiscovery? {
+        TuneAVCurrentDiscovery.resolve(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist,
+            station: audioPlayer.currentStation
+        )
     }
 
     private func stationArtworkURL(for station: Station) -> URL? {
@@ -1395,12 +1389,10 @@ private struct FlippingPlayerArtwork: View {
     }
 
     private func stationBadgeFallback(size: CGFloat, badgeCornerRadius: CGFloat) -> some View {
-        StationArtworkView(
+        StationThumbnailView(
             station: station,
             size: size,
-            surfaceStyle: .light,
-            contentInsetRatio: 0.04,
-            cornerRadiusRatio: badgeCornerRadius / size
+            surfaceStyle: .light
         )
     }
 

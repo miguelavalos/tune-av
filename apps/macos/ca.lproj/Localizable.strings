@@ -14,6 +14,7 @@
 "audio.error.streamTimeout" = "La transmissió en directe està trigant massa a respondre";
 "audio.sleep.ended" = "El temporitzador de repòs ha acabat";
 "audio.sleep.inMinutes" = "Dormir en %d min";
+"audio.sleep.timer" = "Temporitzador de repòs";
 "audio.status.loading" = "Carregant transmissió";
 "audio.status.paused" = "En pausa";
 "audio.status.playing" = "Reproduint";
@@ -111,6 +112,7 @@
 "player.menu.openWebsite" = "Obrir el web de l'emissora";
 "player.menu.removeFavorite" = "Treure dels favorits";
 "player.menu.searchStation" = "Cercar emissora";
+"player.menu.stationHistory" = "Historial de l'emissora";
 "player.menu.shareStation" = "Compartir emissora";
 "player.retry" = "Tornar a provar la transmissió";
 "player.track.liveNow" = "En directe";
@@ -334,6 +336,7 @@
 "shell.music.discovery.openStation.hint" = "Obre l'emissora on va sonar aquesta cançó.";
 "shell.music.mode.artists" = "Artistes";
 "shell.music.mode.history" = "Historial";
+"shell.music.history.all" = "Tot l'historial";
 "shell.music.mode.songs" = "Cançons";
 "shell.music.searchPrompt" = "Cerca cançons, artistes o emissores";
 "shell.music.signal.history" = "Historial";
@@ -557,10 +560,5 @@
 "mac.profile.conflict.local" = "Aquest Mac: %d favorites, %d recents, %d descobriments.";
 "mac.profile.conflict.noCloudSnapshot" = "La instantània del núvol no estava disponible després del conflicte.";
 "mac.profile.conflict.cloud" = "Núvol: %d favorites, %d recents, %d descobriments.";
-"mac.audio.invalidStreamURL" = "URL de stream no vàlida.";
-"mac.audio.unknownPlaybackState" = "El stream ha entrat en un estat de reproducció desconegut.";
-"mac.audio.startTimeout" = "L'emissora no ha començat a temps. Torna-ho a provar o tria un altre stream.";
-"mac.audio.insecureStream" = "Aquesta emissora usa un stream insegur. Tune AV ara permet aquests streams; torna-ho a provar.";
-"mac.audio.startFailed" = "No s'ha pogut iniciar el stream.";
 "accountDeletion.blocker.eligibility.title" = "Elegibilitat no disponible";
 "accountDeletion.blocker.eligibility.detail" = "Account AV no ha proporcionat prou dades d'elegibilitat. Tune AV no eliminarà el compte fins que Account AV confirmi que és segur.";

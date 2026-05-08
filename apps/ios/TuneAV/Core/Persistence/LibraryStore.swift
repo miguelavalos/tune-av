@@ -1,14 +1,6 @@
 import SwiftData
 import SwiftUI
 
-enum CloudSyncStatus: Equatable {
-    case idle
-    case syncing
-    case synced(Date)
-    case conflict
-    case failed
-}
-
 @MainActor
 final class LibraryStore: ObservableObject {
     @Published private(set) var favorites: [FavoriteStation] = []
@@ -80,6 +72,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func recordPlayback(of station: Station, recentLimit: Int? = nil) {
+        removeTombstone(resource: "recents", identityKey: Self.stationIdentityKey(for: station))
         if let existing = recents.first(where: { $0.stationID == station.id }) {
             existing.name = station.name
             existing.country = station.country
@@ -142,12 +135,11 @@ final class LibraryStore: ObservableObject {
     }
 
     func canMarkTrackInteresting(title: String?, artist: String?, station: Station?, limit: Int?) -> Bool {
-        guard let limit else { return true }
-        if isSavedDiscoveredTrack(title: title, artist: artist, station: station) {
-            return true
-        }
-
-        return savedDiscoveriesCount < limit
+        TuneAVSavedDiscoveryPolicy.canSaveDiscovery(
+            isAlreadySaved: isSavedDiscoveredTrack(title: title, artist: artist, station: station),
+            savedCount: savedDiscoveriesCount,
+            limit: limit
+        )
     }
 
     func markTrackInteresting(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -241,6 +233,7 @@ final class LibraryStore: ObservableObject {
         )
 
         if let existing = discoveries.first(where: { $0.discoveryID == discoveryID }) {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             existing.playedAt = .now
             if markInteresting {
                 existing.markedInterestedAt = existing.markedInterestedAt ?? .now
@@ -249,6 +242,7 @@ final class LibraryStore: ObservableObject {
             existing.artworkURL = artworkURL?.absoluteString ?? existing.artworkURL
             existing.stationArtworkURL = station.displayArtworkURL?.absoluteString ?? existing.stationArtworkURL
         } else {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             context.insert(
                 DiscoveredTrack(
                     title: normalizedTitle,
@@ -295,10 +289,12 @@ final class LibraryStore: ObservableObject {
 
     func ensureSeededStation(_ station: Station, favorite: Bool) {
         if favorite, !isFavorite(station) {
+            removeTombstone(resource: "favorites", identityKey: Self.stationIdentityKey(for: station))
             context.insert(FavoriteStation(station: station))
         }
 
         if recents.contains(where: { $0.stationID == station.id }) == false {
+            removeTombstone(resource: "recents", identityKey: Self.stationIdentityKey(for: station))
             context.insert(RecentStation(station: station))
         }
 
@@ -444,7 +440,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func setCloudSyncStatusForUITests(_ status: CloudSyncStatus) {
-        guard ProcessInfo.processInfo.environment["TUNEAV_UI_TESTS"] == "1" else {
+        guard TuneAVUITestEnvironment.current.isEnabled else {
             return
         }
 
@@ -692,11 +688,11 @@ final class LibraryStore: ObservableObject {
         payload: Payload,
         deletedAt: Date
     ) {
-        guard let payloadJSON = try? String(data: tombstoneEncoder.encode(payload), encoding: .utf8) else {
+        guard let payloadJSON = TuneAVLibraryTombstoneCoding.payloadJSON(for: payload, encoder: tombstoneEncoder) else {
             return
         }
 
-        let resourceKey = "\(resource):\(identityKey)"
+        let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
         if let existing = tombstones().first(where: { $0.resourceKey == resourceKey }) {
             existing.payloadJSON = payloadJSON
             existing.deletedAt = deletedAt
@@ -713,22 +709,14 @@ final class LibraryStore: ObservableObject {
     }
 
     private func removeTombstone(resource: String, identityKey: String) {
-        let resourceKey = "\(resource):\(identityKey)"
+        let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
         for tombstone in tombstones() where tombstone.resourceKey == resourceKey {
             context.delete(tombstone)
         }
     }
 
     private func tombstoneRecords<Record: Decodable>(resource: String, type: Record.Type) -> [Record] {
-        tombstones()
-            .filter { $0.resource == resource }
-            .compactMap { tombstone in
-                guard let data = tombstone.payloadJSON.data(using: .utf8) else {
-                    return nil
-                }
-
-                return try? tombstoneDecoder.decode(Record.self, from: data)
-            }
+        TuneAVLibraryTombstoneCoding.records(for: resource, in: tombstones().map(\.sharedTombstone), as: type, decoder: tombstoneDecoder)
     }
 
     private func tombstones() -> [LibrarySyncTombstone] {
@@ -737,5 +725,16 @@ final class LibraryStore: ObservableObject {
 
     private static func stationIdentityKey(for station: Station) -> String {
         TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
+    }
+}
+
+private extension LibrarySyncTombstone {
+    var sharedTombstone: TuneAVLibraryTombstone {
+        TuneAVLibraryTombstone(
+            resource: resource,
+            identityKey: identityKey,
+            payloadJSON: payloadJSON,
+            deletedAt: deletedAt
+        )
     }
 }

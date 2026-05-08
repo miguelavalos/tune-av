@@ -202,6 +202,89 @@ struct StationSection<Content: View>: View {
     }
 }
 
+struct StationThumbnailView: View {
+    let station: Station
+    let size: CGFloat
+    var surfaceStyle: StationArtworkView.SurfaceStyle = .light
+
+    private var cornerRadius: CGFloat {
+        size * 0.24
+    }
+
+    var body: some View {
+        Group {
+            if let artworkURL = station.displayArtworkURL {
+                AsyncImage(url: artworkURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        if station.displayArtworkUsesFaviconProxy {
+                            StationArtworkView(
+                                station: station,
+                                size: size,
+                                surfaceStyle: surfaceStyle
+                            )
+                        } else {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        }
+                    default:
+                        StationArtworkView(
+                            station: station,
+                            size: size,
+                            surfaceStyle: surfaceStyle
+                        )
+                    }
+                }
+            } else {
+                StationArtworkView(
+                    station: station,
+                    size: size,
+                    surfaceStyle: surfaceStyle
+                )
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .background(
+            thumbnailBackground,
+            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(thumbnailBorder, lineWidth: 1)
+        }
+        .shadow(color: thumbnailShadow, radius: size * 0.08, y: size * 0.03)
+    }
+
+    private var thumbnailBackground: Color {
+        switch surfaceStyle {
+        case .light:
+            return TuneAVTheme.cardSurface
+        case .dark:
+            return TuneAVTheme.darkSurface
+        }
+    }
+
+    private var thumbnailBorder: Color {
+        switch surfaceStyle {
+        case .light:
+            return TuneAVTheme.borderSubtle
+        case .dark:
+            return Color.white.opacity(0.08)
+        }
+    }
+
+    private var thumbnailShadow: Color {
+        switch surfaceStyle {
+        case .light:
+            return TuneAVTheme.softShadow.opacity(0.08)
+        case .dark:
+            return TuneAVTheme.softShadow.opacity(0.18)
+        }
+    }
+}
+
 struct StationRowCard: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
 
@@ -226,7 +309,7 @@ struct StationRowCard: View {
                             playAction()
                         }
                     } label: {
-                        StationArtworkView(station: station, size: artworkSize)
+                        StationThumbnailView(station: station, size: artworkSize)
                             .overlay {
                                 RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous)
                                     .fill(isPlayingCurrentStation ? TuneAVTheme.highlight.opacity(0.16) : .clear)
@@ -294,39 +377,35 @@ struct StationRowCard: View {
             .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .onTapGesture(perform: detailsAction)
         }
-        .frame(height: 232)
+        .frame(height: 204)
     }
 
     private var artistLine: String {
-        if audioPlayer.isCurrent(station), let artist = normalized(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        if let flag = station.flagEmoji {
-            return "\(flag) \(station.country)"
-        }
-
-        let detail = station.detailLine.trimmingCharacters(in: .whitespacesAndNewlines)
-        return detail.isEmpty ? station.shortMeta : detail
+        stationDisplayLines.artistLine
     }
 
     private var titleLine: String {
-        if audioPlayer.isCurrent(station), let title = normalized(audioPlayer.currentTrackTitle) {
-            return title
-        }
-
-        if let primaryTag = station.tagsList.first {
-            return primaryTag
-        }
-
-        return normalized(station.language) ?? "Live"
+        stationDisplayLines.titleLine
     }
 
-    private func normalized(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+    private var stationDisplayLines: TuneAVStationDisplayLines {
+        TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: audioPlayer.isCurrent(station),
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            nowPlayingTrack: nil,
+            detailText: station.cardDetailText(
+                preferCountryName: station.flagEmoji == nil,
+                unknownValues: Station.unknownDetailValues,
+                locale: L10n.locale
+            ) ?? L10n.string("shell.station.row.defaultDetail"),
+            liveFallback: L10n.string("shell.station.codec.live")
+        )
     }
+
 }
-
 struct EmptyStateCard: View {
     let title: String
     let detail: String

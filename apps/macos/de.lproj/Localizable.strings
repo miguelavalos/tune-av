@@ -14,6 +14,7 @@
 "audio.error.streamTimeout" = "Der Live-Stream braucht zu lange zum Antworten";
 "audio.sleep.ended" = "Der Sleep-Timer ist beendet";
 "audio.sleep.inMinutes" = "Schlafen in %d Min";
+"audio.sleep.timer" = "Sleep-Timer";
 "audio.status.loading" = "Stream wird geladen";
 "audio.status.paused" = "Pausiert";
 "audio.status.playing" = "Wiedergabe";
@@ -111,6 +112,7 @@
 "player.menu.openWebsite" = "Website des Senders öffnen";
 "player.menu.removeFavorite" = "Aus Favoriten entfernen";
 "player.menu.searchStation" = "Sender suchen";
+"player.menu.stationHistory" = "Senderverlauf";
 "player.menu.shareStation" = "Sender teilen";
 "player.retry" = "Stream erneut versuchen";
 "player.track.liveNow" = "Live";
@@ -334,6 +336,7 @@
 "shell.music.discovery.openStation.hint" = "Öffnet den Sender, auf dem dieser Song lief.";
 "shell.music.mode.artists" = "Künstler";
 "shell.music.mode.history" = "Verlauf";
+"shell.music.history.all" = "Gesamter Verlauf";
 "shell.music.mode.songs" = "Songs";
 "shell.music.searchPrompt" = "Songs, Künstler oder Sender suchen";
 "shell.music.signal.history" = "Verlauf";
@@ -557,10 +560,5 @@
 "mac.profile.conflict.local" = "Dieser Mac: %d Favoriten, %d Zuletzt gehört, %d Entdeckungen.";
 "mac.profile.conflict.noCloudSnapshot" = "Nach dem Konflikt war kein Cloud-Snapshot verfügbar.";
 "mac.profile.conflict.cloud" = "Cloud: %d Favoriten, %d Zuletzt gehört, %d Entdeckungen.";
-"mac.audio.invalidStreamURL" = "Ungültige Stream-URL.";
-"mac.audio.unknownPlaybackState" = "Der Stream wechselte in einen unbekannten Wiedergabestatus.";
-"mac.audio.startTimeout" = "Der Sender startete nicht rechtzeitig. Versuche es erneut oder wähle einen anderen Stream.";
-"mac.audio.insecureStream" = "Dieser Sender nutzt einen unsicheren Stream. Tune AV erlaubt diese Streams jetzt; versuche es erneut.";
-"mac.audio.startFailed" = "Der Stream konnte nicht gestartet werden.";
 "accountDeletion.blocker.eligibility.title" = "Berechtigung nicht verfügbar";
 "accountDeletion.blocker.eligibility.detail" = "Account AV hat nicht genug Berechtigungsdaten geliefert. Tune AV löscht das Konto nicht, bis Account AV bestätigt, dass es sicher ist.";

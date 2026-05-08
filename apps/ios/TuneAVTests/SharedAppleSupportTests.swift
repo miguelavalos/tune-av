@@ -2,6 +2,111 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testUITestAccountDeletionScenariosResolveSharedBlockedProSummary() {
+        let summary = TuneAVUITestAccountDeletionScenarios.summary(for: "blocked_pro")
+
+        XCTAssertEqual(summary.id, "ui-test-user")
+        XCTAssertEqual(summary.access.first?.appId, "tuneav")
+        XCTAssertEqual(summary.access.first?.accessMode, .signedInPro)
+        XCTAssertEqual(summary.deleteAccountEligibility?.status, .blocked)
+        XCTAssertEqual(summary.deleteAccountEligibility?.blockers.first?.type, .activeProAccess)
+    }
+
+    func testAccountDeletionPolicyPrefersBackendEligibilityOverConservativeFallback() {
+        let backendEligibility = AccountDeletionEligibility(status: .eligible, blockers: [], currentJob: nil)
+        let summary = AccountSummary(
+            linkedApps: [
+                LinkedAccountApp(appId: "tuneav", label: "Tune AV"),
+                LinkedAccountApp(appId: "other", label: "Other")
+            ],
+            deleteAccountEligibility: backendEligibility
+        )
+
+        XCTAssertEqual(
+            TuneAVAccountDeletionPolicy.resolvedEligibility(from: summary, copy: accountDeletionCopy),
+            backendEligibility
+        )
+    }
+
+    func testAccountDeletionPolicyFallsBackToConservativeEligibilityWhenBackendOmitsIt() {
+        let summary = AccountSummary(
+            linkedApps: [
+                LinkedAccountApp(appId: "tuneav", label: "Tune AV"),
+                LinkedAccountApp(appId: "other", label: "Other")
+            ]
+        )
+
+        let eligibility = TuneAVAccountDeletionPolicy.resolvedEligibility(from: summary, copy: accountDeletionCopy)
+
+        XCTAssertEqual(eligibility.status, .unavailable)
+        XCTAssertEqual(eligibility.blockers.first?.type, .linkedApp)
+    }
+
+    func testAccessLimitPolicyMakesDailyProFeaturesUnlimitedAndAppliesUITestOverrides() {
+        let limits = TuneAVAccessLimitPolicy.resolvedLimits(
+            .forMode(.signedInFree),
+            accessMode: .signedInPro,
+            environment: [
+                "TUNEAV_UI_TESTS": "1",
+                "TUNEAV_UI_TEST_FAVORITE_LIMIT": "3",
+                "TUNEAV_UI_TEST_LYRICS_LIMIT": "2"
+            ]
+        )
+
+        XCTAssertEqual(limits.favoriteStations, 3)
+        XCTAssertEqual(limits.lyricsSearchesPerDay, 2)
+        XCTAssertNil(limits.webSearchesPerDay)
+        XCTAssertNil(limits.discoverySharesPerDay)
+    }
+
+    func testUpgradePromptContentUsesSharedLimitCopy() {
+        let content = TuneAVUpgradePromptContent.forLimitState(
+            FeatureLimitState(feature: .youtubeSearch, currentUsage: 3, limit: 3)
+        )
+
+        XCTAssertEqual(content.feature, .youtubeSearch)
+        XCTAssertEqual(content.title, L10n.string("limits.upgrade.youtube.title"))
+        XCTAssertEqual(content.message, L10n.string("limits.upgrade.youtube.message", 3))
+    }
+
+    func testUpgradePromptContextUsesSharedLimitCopyAndProgress() {
+        let favorites = TuneAVUpgradePromptContext.favorites(current: 5, limit: 5)
+        XCTAssertEqual(favorites.title, L10n.string("limits.upgrade.favoriteStations.title"))
+        XCTAssertEqual(favorites.message, L10n.string("limits.upgrade.favoriteStations.message", 5))
+        XCTAssertEqual(favorites.benefit, L10n.string("limits.upgrade.default.message"))
+        XCTAssertEqual(favorites.progressText, L10n.string("mac.limits.progress.favorites", 5, 5))
+
+        let daily = TuneAVUpgradePromptContext.dailyFeature(.youtubeSearch, current: 3, limit: 3)
+        XCTAssertEqual(daily.title, L10n.string("mac.limits.daily.title", TuneAVUpgradePromptContent.featureName(for: .youtubeSearch)))
+        XCTAssertEqual(daily.progressText, L10n.string("mac.limits.progress.today", 3, 3))
+    }
+
+    @MainActor
+    func testSleepTimerControllerSetsAndClearsSharedDescription() {
+        let controller = TuneAVSleepTimerController()
+        var description: String?
+        var didFire = false
+
+        controller.setTimer(
+            minutes: 5,
+            setDescription: { description = $0 },
+            onFire: { didFire = true }
+        )
+
+        XCTAssertEqual(description, L10n.string("audio.sleep.inMinutes", 5))
+        XCTAssertFalse(didFire)
+
+        controller.clearNoticeIfIdle(isIdle: false, setDescription: { description = $0 })
+        XCTAssertEqual(description, L10n.string("audio.sleep.inMinutes", 5))
+
+        controller.clearNoticeIfIdle(isIdle: true, setDescription: { description = $0 })
+        XCTAssertNil(description)
+
+        controller.setTimer(minutes: nil, setDescription: { description = $0 }, onFire: { didFire = true })
+        XCTAssertNil(description)
+        XCTAssertFalse(didFire)
+    }
+
     func testTrackMetadataParserSplitsArtistAndTitleWithCommonSeparators() {
         let hyphen = TuneAVTrackMetadataParser.parse("Massive Attack - Teardrop")
         let enDash = TuneAVTrackMetadataParser.parse("Rosalia – Malamente")
@@ -51,12 +156,164 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata("Radio Song", stationName: "Rock FM"))
     }
 
+    func testDisplayMetadataNormalizesAndRejectsBroadcastPlaceholders() {
+        XCTAssertEqual(TuneAVDisplayMetadata.normalized("  Teardrop  "), "Teardrop")
+        XCTAssertEqual(TuneAVDisplayMetadata.plausibleTitle("Teardrop", stationName: "Radio Nova"), "Teardrop")
+        XCTAssertNil(TuneAVDisplayMetadata.plausibleTitle("Now Playing", stationName: "Radio Nova"))
+        XCTAssertEqual(TuneAVDisplayMetadata.plausibleArtist("Massive Attack", stationName: "Radio Nova"), "Massive Attack")
+        XCTAssertNil(TuneAVDisplayMetadata.plausibleArtist("Radio Nova", stationName: "Radio Nova"))
+    }
+
+    func testStationDisplayLinesResolveSharedCurrentCachedAndFallbackMetadata() {
+        let station = Station(
+            id: "nova",
+            name: "Radio Nova",
+            country: "France",
+            language: "French",
+            tags: "jazz, eclectic",
+            streamURL: "https://example.com/nova"
+        )
+
+        let current = TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: true,
+            currentArtist: "  Massive Attack  ",
+            currentTitle: " Teardrop ",
+            currentAlbumTitle: "Mezzanine",
+            nowPlayingTrack: TuneAVNowPlayingTrack(title: "Cached title", artist: "Cached artist"),
+            detailText: "France",
+            liveFallback: "Live"
+        )
+        XCTAssertEqual(current.artistLine, "Massive Attack")
+        XCTAssertEqual(current.titleLine, "Teardrop")
+
+        let cached = TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: false,
+            currentArtist: "Ignored artist",
+            currentTitle: "Ignored title",
+            currentAlbumTitle: "Ignored album",
+            nowPlayingTrack: TuneAVNowPlayingTrack(title: "Cached title", artist: "Cached artist"),
+            detailText: "France",
+            liveFallback: "Live"
+        )
+        XCTAssertEqual(cached.artistLine, "Cached artist")
+        XCTAssertEqual(cached.titleLine, "Cached title")
+
+        let fallback = TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: false,
+            currentArtist: nil,
+            currentTitle: nil,
+            currentAlbumTitle: nil,
+            nowPlayingTrack: nil,
+            detailText: "France",
+            liveFallback: "Live"
+        )
+        XCTAssertEqual(fallback.artistLine, "France")
+        XCTAssertEqual(fallback.titleLine, "jazz")
+    }
+
+    func testStationCardDetailIgnoresSharedUnknownLocalizedValues() {
+        let station = Station(
+            id: "unknown",
+            name: "Unknown Detail Radio",
+            country: "Unknown country",
+            state: "País desconocido",
+            language: "Unknown language",
+            tags: "radio",
+            streamURL: "https://example.com/unknown"
+        )
+
+        XCTAssertNil(
+            station.cardDetailText(
+                preferCountryName: true,
+                unknownValues: Station.unknownDetailValues,
+                locale: L10n.locale
+            )
+        )
+    }
+
+    func testNowPlayingDisplayLinesPreferAlbumFallbackBeforeStationTags() {
+        let station = Station(
+            id: "album-fallback",
+            name: "Album Fallback Radio",
+            country: "United States",
+            language: "English",
+            tags: "jazz, live",
+            streamURL: "https://example.com/album"
+        )
+
+        let display = TuneAVNowPlayingDisplayLines.resolve(
+            station: station,
+            currentTitle: "Now Playing",
+            currentArtist: "Live Stream",
+            currentAlbumTitle: "Blue Note Sessions",
+            liveNowFallback: "Live now",
+            liveStreamFallback: "Live stream"
+        )
+
+        XCTAssertEqual(display.stationMetaLine, station.shortMeta)
+        XCTAssertEqual(display.trackTitleLine, station.name)
+        XCTAssertEqual(display.trackSupportingLine, "Blue Note Sessions")
+        XCTAssertFalse(display.hasDiscoverableTrack)
+    }
+
+    func testCurrentDiscoveryResolvesSearchAndLocalizedShareText() throws {
+        let station = Station(
+            id: "nova",
+            name: "Radio Nova",
+            country: "France",
+            language: "French",
+            tags: "radio",
+            streamURL: "https://example.com/nova"
+        )
+
+        let discovery = try XCTUnwrap(
+            TuneAVCurrentDiscovery.resolve(
+                title: " Teardrop ",
+                artist: " Massive Attack ",
+                station: station
+            )
+        )
+
+        XCTAssertEqual(discovery.title, "Teardrop")
+        XCTAssertEqual(discovery.artist, "Massive Attack")
+        XCTAssertEqual(discovery.searchQuery, "Massive Attack Teardrop")
+        XCTAssertEqual(
+            discovery.localizedShareText,
+            L10n.string("player.discovery.shareText", "Teardrop", "Massive Attack", "Radio Nova")
+        )
+        XCTAssertNil(TuneAVCurrentDiscovery.resolve(title: "Now Playing", artist: "Live Stream", station: station))
+    }
+
+    func testDiscoveredTrackSupportBuildsSharedDisplayAndSearchValues() {
+        XCTAssertEqual(
+            TuneAVDiscoveredTrackSupport.artistDisplayText(" Massive Attack ", liveFallback: "Live now"),
+            "Massive Attack"
+        )
+        XCTAssertEqual(
+            TuneAVDiscoveredTrackSupport.artistDisplayText("  ", liveFallback: "Live now"),
+            "Live now"
+        )
+        XCTAssertEqual(
+            TuneAVDiscoveredTrackSupport.searchQuery(title: "Teardrop", artist: " Massive Attack "),
+            "Massive Attack Teardrop"
+        )
+        XCTAssertEqual(
+            TuneAVDiscoveredTrackSupport.searchQuery(title: "Teardrop", artist: nil),
+            "Teardrop"
+        )
+    }
+
     func testTrackMetadataParserIdentifiesStationLikeArtistsAsNotArtists() {
         XCTAssertTrue(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("ROCK FM", stationName: "Rock FM"))
         XCTAssertTrue(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("Radio Nova", stationName: "Radio Nova"))
         XCTAssertTrue(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("Live Stream", stationName: "KEXP"))
         XCTAssertFalse(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("Radiohead", stationName: "KEXP"))
         XCTAssertFalse(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("R.E.M.", stationName: "Rock FM"))
+        XCTAssertFalse(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("Linkin Park", stationName: "Linkin Park"))
+        XCTAssertFalse(TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata("Five Finger Death Punch", stationName: "Five Finger Death Punch"))
     }
 
     func testNowPlayingMetadataParsesICYStreamTitle() {
@@ -206,6 +463,31 @@ final class SharedAppleSupportTests: XCTestCase {
         )
 
         XCTAssertEqual(query, "artist title lyrics")
+    }
+
+    func testExternalSearchFeatureRequestsResolveURLAndLimitFeature() {
+        let lyrics = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Boards of Canada Dayvan Cowboy",
+            suffix: "lyrics",
+            youtube: false
+        )
+        let youtube = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: "Boards of Canada Dayvan Cowboy",
+            suffix: nil,
+            youtube: true
+        )
+        let spotify = TuneAVExternalSearchURL.artistSearch(
+            artist: "Nina Simone",
+            destination: .spotify,
+            feature: .spotifySearch
+        )
+
+        XCTAssertEqual(lyrics?.feature, .lyricsSearch)
+        XCTAssertEqual(queryValue("q", in: lyrics?.url), "Boards of Canada Dayvan Cowboy lyrics")
+        XCTAssertEqual(youtube?.feature, .youtubeSearch)
+        XCTAssertEqual(queryValue("search_query", in: youtube?.url), "Boards of Canada Dayvan Cowboy")
+        XCTAssertEqual(spotify?.feature, .spotifySearch)
+        XCTAssertEqual(spotify?.url.host, "open.spotify.com")
     }
 
     func testTextNormalizesValuesAndBuildsJoinedQueries() {
@@ -508,6 +790,104 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testLibraryStationLogicFiltersByNameCountryAndTags() {
+        let rock = Station(
+            id: "rock",
+            name: "Rock Central",
+            country: "United Kingdom",
+            language: "English",
+            tags: "guitar,classic",
+            streamURL: "https://example.com/rock"
+        )
+        let jazz = Station(
+            id: "jazz",
+            name: "Blue Night",
+            country: "France",
+            language: "French",
+            tags: "jazz,late night",
+            streamURL: "https://example.com/jazz"
+        )
+        let news = Station(
+            id: "news",
+            name: "Morning Brief",
+            country: "Spain",
+            language: "Spanish",
+            tags: "news,talk",
+            streamURL: "https://example.com/news"
+        )
+        let stations = [rock, jazz, news]
+
+        XCTAssertEqual(TuneAVLibraryStationLogic.filteredStations(stations, query: " rock "), [rock])
+        XCTAssertEqual(TuneAVLibraryStationLogic.filteredStations(stations, query: "france"), [jazz])
+        XCTAssertEqual(TuneAVLibraryStationLogic.filteredStations(stations, query: "talk"), [news])
+        XCTAssertEqual(TuneAVLibraryStationLogic.filteredStations(stations, query: "   "), stations)
+    }
+
+    func testPlaybackQueueLogicDeduplicatesAndCyclesStations() throws {
+        XCTAssertEqual(TuneAVPlaybackQueueSource.homeRecents, AudioPlayerService.PlaybackQueue.Source.homeRecents)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.homeFavorites, AudioPlayerService.PlaybackQueue.Source.homeFavorites)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.homeDiscovery, AudioPlayerService.PlaybackQueue.Source.homeDiscovery)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.searchResults, AudioPlayerService.PlaybackQueue.Source.searchResults)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.libraryRecents, AudioPlayerService.PlaybackQueue.Source.libraryRecents)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.libraryFavorites, AudioPlayerService.PlaybackQueue.Source.libraryFavorites)
+        XCTAssertEqual(TuneAVPlaybackQueueSource.singleStation, AudioPlayerService.PlaybackQueue.Source.singleStation)
+
+        let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
+        let first = Station(id: "first", name: "First", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/first")
+        let second = Station(id: "second", name: "Second", country: "Germany", language: "German", tags: "rock", streamURL: "https://example.com/second")
+
+        let sanitized = TuneAVPlaybackQueueLogic.sanitizedStations(
+            [first, second, first],
+            currentStation: current,
+            currentStationID: current.id
+        )
+
+        XCTAssertEqual(sanitized.map(\.id), ["current", "first", "second"])
+
+        let resolved = try XCTUnwrap(TuneAVPlaybackQueueLogic.resolvedQueue(stations: sanitized, currentStation: current))
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.nextStation(in: resolved).id, "first")
+        XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: resolved).id, "second")
+    }
+
+    func testAudioPlaybackPolicyRetriesOnlyAfterRequestedNetworkRecovery() {
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.loadingTimeoutSeconds, .seconds(12))
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackInitialDelay, .seconds(4))
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackPollingInterval, .seconds(25))
+
+        XCTAssertTrue(
+            TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(
+                isNetworkSatisfied: true,
+                hadPreviousNetworkStatus: true,
+                wasPreviouslyUnsatisfied: true,
+                userRequestedPlayback: true,
+                hasCurrentStation: true,
+                isRecoverablePlaybackState: true
+            )
+        )
+
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(
+                isNetworkSatisfied: true,
+                hadPreviousNetworkStatus: true,
+                wasPreviouslyUnsatisfied: true,
+                userRequestedPlayback: false,
+                hasCurrentStation: true,
+                isRecoverablePlaybackState: true
+            )
+        )
+
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(
+                isNetworkSatisfied: true,
+                hadPreviousNetworkStatus: true,
+                wasPreviouslyUnsatisfied: false,
+                userRequestedPlayback: true,
+                hasCurrentStation: true,
+                isRecoverablePlaybackState: true
+            )
+        )
+    }
+
     func testStationResolvesHomepageAndBuildsShareText() {
         let station = Station(
             id: "nova",
@@ -521,6 +901,28 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(station.resolvedHomepageURL?.host, "www.nova.fr")
         XCTAssertEqual(station.shareText, "Radio Nova\nhttps://www.nova.fr")
+    }
+
+    func testStationArtworkProxiesIcoFavicons() {
+        let station = Station(
+            id: "australian-digital-radio",
+            name: "Australian Digital Radio Network",
+            country: "Australia",
+            countryCode: "AU",
+            language: "English",
+            tags: "radio",
+            streamURL: "https://example.com/stream",
+            faviconURL: "http://www.australiandigitalradio.com/favicon.ico",
+            homepageURL: "http://www.australiandigitalradio.com/"
+        )
+
+        XCTAssertEqual(station.displayArtworkURL?.host, "www.google.com")
+        XCTAssertEqual(station.displayArtworkURL?.path, "/s2/favicons")
+        XCTAssertEqual(
+            queryValue("domain_url", in: station.displayArtworkURL),
+            "http://www.australiandigitalradio.com/"
+        )
+        XCTAssertTrue(station.displayArtworkUsesFaviconProxy)
     }
 
     func testStationShareTextFallsBackToStreamURL() {
@@ -640,6 +1042,45 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertNil(TuneAVDiscoveredTrackSupport.resolvedURL(nil))
     }
 
+    func testResolvedAccessLocalFallbackMatchesAccessPolicy() {
+        let guest = TuneAVResolvedAccess.localFallback(for: .guest)
+        XCTAssertEqual(guest.planTier, .free)
+        XCTAssertEqual(guest.accessMode, .guest)
+        XCTAssertEqual(guest.capabilities, .forMode(.guest))
+        XCTAssertEqual(
+            guest.limits,
+            TuneAVAccessLimitPolicy.resolvedLimits(.forMode(.guest), accessMode: .guest)
+        )
+
+        let pro = TuneAVResolvedAccess.localFallback(for: .signedInPro)
+        XCTAssertEqual(pro.planTier, .pro)
+        XCTAssertEqual(pro.accessMode, .signedInPro)
+        XCTAssertEqual(pro.capabilities, .forMode(.signedInPro))
+        XCTAssertEqual(
+            pro.limits,
+            TuneAVAccessLimitPolicy.resolvedLimits(.forMode(.signedInPro), accessMode: .signedInPro)
+        )
+    }
+
+    func testInitialsUseSharedTwoWordFallbackRule() {
+        XCTAssertEqual(TuneAVInitials.make(from: "Massive Attack"), "MA")
+        XCTAssertEqual(TuneAVInitials.make(from: "  Rosalia  "), "R")
+        XCTAssertEqual(TuneAVInitials.make(from: "   "), "AV")
+
+        let accountUser = AccountUser(id: "user", displayName: "Boards of Canada", emailAddress: nil)
+        XCTAssertEqual(accountUser.initials, "BO")
+
+        let station = Station(
+            id: "station",
+            name: "Radio Nova",
+            country: "France",
+            language: "French",
+            tags: "radio",
+            streamURL: "https://example.com/stream"
+        )
+        XCTAssertEqual(station.initials, "RN")
+    }
+
     private func queryValue(_ name: String, in url: URL?) -> String? {
         guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
@@ -656,6 +1097,20 @@ final class SharedAppleSupportTests: XCTestCase {
             language: "English",
             tags: "live",
             streamURL: "https://example.com/\(id)"
+        )
+    }
+
+    private var accountDeletionCopy: TuneAVAccountDeletionPolicy.Copy {
+        TuneAVAccountDeletionPolicy.Copy(
+            linkedAppTitle: "Linked app",
+            linkedAppDetail: "Linked app detail",
+            proTitle: "Pro",
+            proDetail: "Pro detail",
+            subscriptionTitle: "Subscription",
+            subscriptionDetail: "Subscription detail",
+            jobTitle: "Job",
+            unavailableTitle: "Unavailable",
+            unavailableDetail: "Unavailable detail"
         )
     }
 }

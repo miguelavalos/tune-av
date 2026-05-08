@@ -8,6 +8,44 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         super.tearDown()
     }
 
+    func testUITestAccountDeletionScenariosResolveSharedBlockedProSummary() {
+        let summary = TuneAVUITestAccountDeletionScenarios.summary(for: "blocked_pro")
+
+        XCTAssertEqual(summary.id, "ui-test-user")
+        XCTAssertEqual(summary.access.first?.appId, "tuneav")
+        XCTAssertEqual(summary.access.first?.accessMode, .signedInPro)
+        XCTAssertEqual(summary.deleteAccountEligibility?.status, .blocked)
+        XCTAssertEqual(summary.deleteAccountEligibility?.blockers.first?.type, .activeProAccess)
+    }
+
+    func testAccessLimitPolicyMakesDailyProFeaturesUnlimitedAndAppliesUITestOverrides() {
+        let limits = TuneAVAccessLimitPolicy.resolvedLimits(
+            .forMode(.signedInFree),
+            accessMode: .signedInPro,
+            environment: [
+                "TUNEAV_UI_TESTS": "1",
+                "TUNEAV_UI_TEST_FAVORITE_LIMIT": "3",
+                "TUNEAV_UI_TEST_LYRICS_LIMIT": "2"
+            ]
+        )
+
+        XCTAssertEqual(limits.favoriteStations, 3)
+        XCTAssertEqual(limits.lyricsSearchesPerDay, 2)
+        XCTAssertNil(limits.webSearchesPerDay)
+        XCTAssertNil(limits.discoverySharesPerDay)
+    }
+
+    func testUpgradePromptContentUsesSharedLimitCopy() {
+        let content = TuneAVUpgradePromptContent.forLimitState(
+            FeatureLimitState(feature: .savedTracks, currentUsage: 10, limit: 10)
+        )
+
+        XCTAssertEqual(content.feature, .savedTracks)
+        XCTAssertEqual(content.title, L10n.string("limits.upgrade.savedTracks.title"))
+        XCTAssertEqual(content.message, L10n.string("limits.upgrade.savedTracks.message", 10))
+        XCTAssertEqual(TuneAVUpgradePromptContent.featureName(for: .savedTracks), L10n.string("mac.limits.feature.savedTracks"))
+    }
+
     func testDefaultMacAccountTokenProviderKeepsStartupLocalFirst() async throws {
         let provider = KeychainMacAccountTokenProvider(keychain: MockMacKeychainReader(data: nil))
 
@@ -179,8 +217,8 @@ final class LibraryStoreSnapshotTests: XCTestCase {
 
         XCTAssertEqual(lines.first, "Tune AV discoveries")
         XCTAssertEqual(lines.count, 26)
-        XCTAssertEqual(lines[1], "Artist 1 - Song 1")
-        XCTAssertEqual(lines[2], "Song 2")
+        XCTAssertEqual(lines[1], "Artist 1 - Song 1 - Station share")
+        XCTAssertEqual(lines[2], "Song 2 - Station share")
         XCTAssertFalse(shareText.contains("Hidden Track"))
         XCTAssertFalse(shareText.contains("Song 26"))
     }
@@ -263,7 +301,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertFalse(store.accessModeIsBackendManaged)
         XCTAssertEqual(store.accessModeSourceTitle, "Local fallback")
         XCTAssertEqual(store.accountConnectionState, .localOnly)
-        XCTAssertEqual(store.accountConnectionState.title, "Local")
+        XCTAssertEqual(store.accountConnectionState.title, "Local mode")
 
         await store.configureBackendClients(
             baseURL: URL(string: "https://api.example.com")!,
@@ -274,7 +312,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(store.accessModeIsBackendManaged)
         XCTAssertEqual(store.accessModeSourceTitle, "Backend access")
         XCTAssertEqual(store.accountConnectionState, .connectedPro)
-        XCTAssertEqual(store.accountConnectionState.title, "Connected Pro")
+        XCTAssertEqual(store.accountConnectionState.title, "Pro")
     }
 
     func testAccessControllerResolvesBackendReadyStateByMode() {
@@ -776,6 +814,40 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let updatedSnapshot = store.librarySnapshot()
         XCTAssertEqual(updatedSnapshot.settings.preferredTag, "jazz")
         XCTAssertNotEqual(updatedSnapshot.settings.updatedAt, remoteUpdatedAtString)
+    }
+
+    func testSleepTimerSettingRoundTripsThroughSnapshotAndDefaults() {
+        let defaults = isolatedUserDefaults()
+        let store = LibraryStore(defaults: defaults)
+
+        store.updateSleepTimerMinutes(30)
+
+        XCTAssertEqual(store.librarySnapshot().settings.sleepTimerMinutes, 30)
+        XCTAssertEqual(LibraryStore(defaults: defaults).sleepTimerMinutes, 30)
+
+        let remoteSnapshot = TuneAVLibrarySnapshot(
+            favorites: [],
+            recents: [],
+            discoveries: [],
+            settings: AppSettingsRecord(
+                preferredCountry: "",
+                preferredLanguage: "",
+                preferredTag: "ambient",
+                lastPlayedStationID: nil,
+                sleepTimerMinutes: 45,
+                updatedAt: "2026-04-30T12:00:00.000Z"
+            )
+        )
+
+        store.applyLibrarySnapshot(remoteSnapshot)
+
+        XCTAssertEqual(store.sleepTimerMinutes, 45)
+        XCTAssertEqual(LibraryStore(defaults: defaults).sleepTimerMinutes, 45)
+
+        store.updateSleepTimerMinutes(nil)
+
+        XCTAssertNil(store.librarySnapshot().settings.sleepTimerMinutes)
+        XCTAssertNil(LibraryStore(defaults: defaults).sleepTimerMinutes)
     }
 
     func testReplaceLocalLibraryWithCloudDataWithoutBackendClearsStaleConflictSummary() async {
@@ -1519,6 +1591,107 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertFalse(store.canRunCloudSync)
     }
 
+    func testRecordingDiscoveriesHonorsExplicitDiscoveryLimit() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+
+        for index in 0..<5 {
+            store.recordDiscoveredTrack(
+                title: "Limited Track \(index)",
+                artist: "Artist",
+                station: station(id: "station-\(index)"),
+                artworkURL: nil,
+                discoveryLimit: 3
+            )
+        }
+
+        XCTAssertEqual(store.discoveries.count, 3)
+    }
+
+    func testSavingDiscoveryHonorsExplicitDiscoveryLimit() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+
+        for index in 0..<4 {
+            store.markTrackInteresting(
+                title: "Saved Limited Track \(index)",
+                artist: "Artist",
+                station: station(id: "station-\(index)"),
+                artworkURL: nil,
+                discoveryLimit: 2
+            )
+        }
+
+        XCTAssertEqual(store.discoveries.count, 2)
+        XCTAssertEqual(store.discoveries.filter(\.isMarkedInteresting).count, 2)
+    }
+
+    func testTogglingExistingDiscoverySavedHonorsExplicitSavedLimit() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+        let firstStation = station(id: "saved-limit-1")
+        let secondStation = station(id: "saved-limit-2")
+
+        XCTAssertTrue(
+            store.toggleDiscoveredTrackSaved(
+                title: "Saved Track 1",
+                artist: "Artist",
+                station: firstStation,
+                artworkURL: nil,
+                savedLimit: 1,
+                discoveryLimit: 10
+            )
+        )
+        store.recordDiscoveredTrack(
+            title: "Saved Track 2",
+            artist: "Artist",
+            station: secondStation,
+            artworkURL: nil,
+            discoveryLimit: 10
+        )
+
+        XCTAssertFalse(
+            store.toggleDiscoveredTrackSaved(
+                title: "Saved Track 2",
+                artist: "Artist",
+                station: secondStation,
+                artworkURL: nil,
+                savedLimit: 1,
+                discoveryLimit: 10
+            )
+        )
+        XCTAssertFalse(store.isSavedDiscoveredTrack(title: "Saved Track 2", artist: "Artist", station: secondStation))
+        XCTAssertEqual(store.savedDiscoveriesCount, 1)
+    }
+
+    func testToggleDiscoveredTrackSavedSavesAndUnsavesCurrentTrack() {
+        let store = LibraryStore(defaults: isolatedUserDefaults())
+        let station = station(id: "toggle-saved-track")
+
+        let didSave = store.toggleDiscoveredTrackSaved(
+            title: "Sweet Song",
+            artist: "The Tests",
+            station: station,
+            artworkURL: nil,
+            savedLimit: 10,
+            discoveryLimit: 25
+        )
+
+        XCTAssertTrue(didSave)
+        XCTAssertTrue(store.isSavedDiscoveredTrack(title: "Sweet Song", artist: "The Tests", station: station))
+        XCTAssertEqual(store.savedDiscoveriesCount, 1)
+
+        let didUnsave = store.toggleDiscoveredTrackSaved(
+            title: "Sweet Song",
+            artist: "The Tests",
+            station: station,
+            artworkURL: nil,
+            savedLimit: 10,
+            discoveryLimit: 25
+        )
+
+        XCTAssertTrue(didUnsave)
+        XCTAssertFalse(store.isSavedDiscoveredTrack(title: "Sweet Song", artist: "The Tests", station: station))
+        XCTAssertEqual(store.savedDiscoveriesCount, 0)
+    }
+
     func testLoadingGuestStateTrimsPersistedSavedTracksToLimit() {
         let defaults = isolatedUserDefaults()
         let proStore = LibraryStore(defaults: defaults)
@@ -1645,7 +1818,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         store.toggleFavorite(station(id: "favorite-over-limit"))
 
         XCTAssertEqual(store.favorites.count, 5)
-        XCTAssertEqual(store.upgradePrompt?.title, "Favorite station limit reached")
+        XCTAssertEqual(store.upgradePrompt?.title, "Favorites limit reached")
         XCTAssertEqual(store.upgradePrompt?.progressText, "5 of 5 favorites used")
     }
 
@@ -1669,7 +1842,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         )
 
         XCTAssertEqual(store.savedTracksUsage, LimitUsageSummary(used: 5, limit: 5))
-        XCTAssertEqual(store.upgradePrompt?.title, "Saved track limit reached")
+        XCTAssertEqual(store.upgradePrompt?.title, "Saved songs limit reached")
         XCTAssertEqual(store.upgradePrompt?.progressText, "5 of 5 saved tracks used")
     }
 
@@ -1727,6 +1900,120 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(reloadedSnapshot.settings.preferredCountry, "ES")
         XCTAssertEqual(reloadedSnapshot.settings.preferredTag, "ambient")
         XCTAssertEqual(reloadedSnapshot.settings.lastPlayedStationID, "recent")
+    }
+
+    func testRemovedDiscoveryPersistsTombstoneAndWinsOverOlderRemoteSavedTrack() {
+        let defaults = isolatedUserDefaults()
+        let store = LibraryStore(defaults: defaults)
+        let station = station(id: "music-station")
+
+        store.markTrackInteresting(
+            title: "Sweet Song",
+            artist: "The Tests",
+            station: station,
+            artworkURL: nil
+        )
+
+        let existingRecord = try! XCTUnwrap(store.discoveries.first?.appDataRecord)
+        let existingDiscovery = try! XCTUnwrap(store.discoveries.first)
+        store.removeDiscovery(existingDiscovery)
+
+        let localSnapshot = store.librarySnapshot()
+        let deletionRecord = try! XCTUnwrap(localSnapshot.discoveries.first)
+        let remoteSnapshot = TuneAVLibrarySnapshot(
+            favorites: [],
+            recents: [],
+            discoveries: [
+                DiscoveredTrackRecord(
+                    discoveryID: existingRecord.discoveryID,
+                    title: existingRecord.title,
+                    artist: existingRecord.artist,
+                    stationID: existingRecord.stationID,
+                    stationName: existingRecord.stationName,
+                    artworkURL: existingRecord.artworkURL,
+                    stationArtworkURL: existingRecord.stationArtworkURL,
+                    playedAt: "2026-04-30T10:00:00.000Z",
+                    markedInterestedAt: "2026-04-30T10:05:00.000Z"
+                )
+            ],
+            settings: .empty
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: localSnapshot, remote: remoteSnapshot)
+        store.applyLibrarySnapshot(merged)
+        let reloadedSnapshot = LibraryStore(defaults: defaults).librarySnapshot()
+
+        XCTAssertTrue(store.discoveries.isEmpty)
+        XCTAssertNotNil(deletionRecord.deletedAt)
+        XCTAssertEqual(merged.discoveries.first?.deletedAt, deletionRecord.deletedAt)
+        XCTAssertTrue(LibraryStore(defaults: defaults).discoveries.isEmpty)
+        XCTAssertEqual(reloadedSnapshot.discoveries.first?.deletedAt, deletionRecord.deletedAt)
+    }
+
+    func testRemovedFavoritePersistsTombstoneAndWinsOverOlderRemoteFavorite() {
+        let defaults = isolatedUserDefaults()
+        let store = LibraryStore(defaults: defaults)
+        let favoriteStation = station(id: "favorite-radio")
+
+        store.toggleFavorite(favoriteStation)
+        store.toggleFavorite(favoriteStation)
+
+        let localSnapshot = store.librarySnapshot()
+        let deletionRecord = try! XCTUnwrap(localSnapshot.favorites.first)
+        let remoteSnapshot = TuneAVLibrarySnapshot(
+            favorites: [
+                FavoriteStationRecord(
+                    station: favoriteStation.appDataRecord,
+                    createdAt: "2026-04-30T10:00:00.000Z"
+                )
+            ],
+            recents: [],
+            discoveries: [],
+            settings: .empty
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: localSnapshot, remote: remoteSnapshot)
+        store.applyLibrarySnapshot(merged)
+        let reloadedSnapshot = LibraryStore(defaults: defaults).librarySnapshot()
+
+        XCTAssertTrue(store.favorites.isEmpty)
+        XCTAssertNotNil(deletionRecord.deletedAt)
+        XCTAssertEqual(merged.favorites.first?.deletedAt, deletionRecord.deletedAt)
+        XCTAssertTrue(LibraryStore(defaults: defaults).favorites.isEmpty)
+        XCTAssertEqual(reloadedSnapshot.favorites.first?.deletedAt, deletionRecord.deletedAt)
+    }
+
+    func testTrimmedRecentPersistsTombstoneAndWinsOverOlderRemoteRecent() {
+        let defaults = isolatedUserDefaults()
+        let store = LibraryStore(defaults: defaults)
+
+        for index in 0..<11 {
+            store.recordPlayback(of: station(id: "recent-\(index)"))
+        }
+
+        let localSnapshot = store.librarySnapshot()
+        let deletionRecord = try! XCTUnwrap(localSnapshot.recents.first { $0.station.id == "recent-0" })
+        let remoteSnapshot = TuneAVLibrarySnapshot(
+            favorites: [],
+            recents: [
+                RecentStationRecord(
+                    station: stationRecord(id: "recent-0"),
+                    lastPlayedAt: "2026-04-30T10:00:00.000Z"
+                )
+            ],
+            discoveries: [],
+            settings: .empty
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: localSnapshot, remote: remoteSnapshot)
+        store.applyLibrarySnapshot(merged)
+        let reloadedSnapshot = LibraryStore(defaults: defaults).librarySnapshot()
+
+        XCTAssertFalse(store.recents.contains { $0.id == "recent-0" })
+        XCTAssertNotNil(deletionRecord.deletedAt)
+        XCTAssertEqual(merged.recents.first { $0.station.id == "recent-0" }?.deletedAt, deletionRecord.deletedAt)
+        XCTAssertFalse(LibraryStore(defaults: defaults).recents.contains { $0.id == "recent-0" })
+        XCTAssertEqual(reloadedSnapshot.recents.first { $0.station.id == "recent-0" }?.deletedAt, deletionRecord.deletedAt)
     }
 
     func testApplyLibrarySnapshotClearsEmptyCountryAndDefaultsEmptyTag() {

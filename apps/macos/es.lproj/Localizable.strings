@@ -14,6 +14,7 @@
 "audio.error.streamTimeout" = "La transmisión en directo está tardando demasiado en responder";
 "audio.sleep.ended" = "El temporizador de sueño ha terminado";
 "audio.sleep.inMinutes" = "Dormir en %d min";
+"audio.sleep.timer" = "Temporizador de sueño";
 "audio.status.loading" = "Cargando transmisión";
 "audio.status.paused" = "En pausa";
 "audio.status.playing" = "Reproduciendo";
@@ -111,6 +112,7 @@
 "player.menu.openWebsite" = "Abrir web de la emisora";
 "player.menu.removeFavorite" = "Quitar de favoritos";
 "player.menu.searchStation" = "Buscar emisora";
+"player.menu.stationHistory" = "Historial de la emisora";
 "player.menu.shareStation" = "Compartir emisora";
 "player.retry" = "Reintentar transmisión";
 "player.track.liveNow" = "En directo";
@@ -335,6 +337,7 @@
 "shell.music.discovery.openStation.hint" = "Abre la emisora donde sonó esta canción.";
 "shell.music.mode.artists" = "Artistas";
 "shell.music.mode.history" = "Historial";
+"shell.music.history.all" = "Todo el historial";
 "shell.music.mode.songs" = "Canciones";
 "shell.music.searchPrompt" = "Buscar canciones, artistas o emisoras";
 "shell.music.signal.history" = "Historial";
@@ -557,10 +560,5 @@
 "mac.profile.conflict.local" = "Este Mac: %d favoritas, %d recientes, %d descubrimientos.";
 "mac.profile.conflict.noCloudSnapshot" = "La instantánea de la nube no estaba disponible tras el conflicto.";
 "mac.profile.conflict.cloud" = "Nube: %d favoritas, %d recientes, %d descubrimientos.";
-"mac.audio.invalidStreamURL" = "URL de stream no válida.";
-"mac.audio.unknownPlaybackState" = "El stream entró en un estado de reproducción desconocido.";
-"mac.audio.startTimeout" = "La emisora no empezó a tiempo. Inténtalo de nuevo o elige otro stream.";
-"mac.audio.insecureStream" = "Esta emisora usa un stream inseguro. Tune AV ahora permite estos streams; inténtalo de nuevo.";
-"mac.audio.startFailed" = "No se pudo iniciar el stream.";
 "accountDeletion.blocker.eligibility.title" = "Elegibilidad no disponible";
 "accountDeletion.blocker.eligibility.detail" = "Account AV no proporcionó suficientes datos de elegibilidad. Tune AV no eliminará la cuenta hasta que Account AV confirme que es seguro.";

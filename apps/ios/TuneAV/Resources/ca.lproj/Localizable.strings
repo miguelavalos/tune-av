@@ -111,6 +111,7 @@
 "player.menu.openWebsite" = "Obrir el web de l'emissora";
 "player.menu.removeFavorite" = "Treure dels favorits";
 "player.menu.searchStation" = "Cercar emissora";
+"player.menu.stationHistory" = "Historial de l'emissora";
 "player.menu.shareStation" = "Compartir emissora";
 "player.retry" = "Tornar a provar la transmissió";
 "player.track.liveNow" = "En directe";
@@ -334,6 +335,7 @@
 "shell.music.discovery.openStation.hint" = "Obre l'emissora on va sonar aquesta cançó.";
 "shell.music.mode.artists" = "Artistes";
 "shell.music.mode.history" = "Historial";
+"shell.music.history.all" = "Tot l'historial";
 "shell.music.mode.songs" = "Cançons";
 "shell.music.searchPrompt" = "Cerca cançons, artistes o emissores";
 "shell.music.signal.history" = "Historial";

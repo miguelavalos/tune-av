@@ -100,7 +100,7 @@ struct SearchView: View {
 
     private var stationGridColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 132, maximum: 170), spacing: 12)
+            GridItem(.adaptive(minimum: 124, maximum: 150), spacing: 12)
         ]
     }
 
@@ -152,18 +152,18 @@ struct SearchView: View {
 
     private var searchBar: some View {
         HStack(spacing: 12) {
-            TextField(L10n.string("shell.search.field.defaultPrompt"), text: $query)
-                .textFieldStyle(.plain)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .avCardSurface(cornerRadius: 18)
-                .onSubmit(searchAction)
+            MacSearchField(
+                prompt: L10n.string("shell.search.field.defaultPrompt"),
+                text: $query,
+                submitAction: searchAction
+            )
 
-            Button(action: searchAction) {
-                Label(L10n.string("shell.search.status.search"), systemImage: "magnifyingglass")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(TuneAVTheme.highlight)
+            MacIconButton(
+                systemImage: "arrow.right",
+                title: L10n.string("shell.search.status.search"),
+                isProminent: true,
+                action: searchAction
+            )
         }
     }
 
@@ -181,15 +181,13 @@ struct SearchView: View {
                 HStack(spacing: 10) {
                     ForEach(genreTags, id: \.self) { tag in
                         Button {
-                            activeTag = tag
-                            query = tag
-                            searchAction()
+                            toggleGenre(tag)
                         } label: {
                             Text(L10n.genreLabel(for: tag))
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(activeTag == tag ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 12)
+                                .frame(height: 34)
                                 .background(
                                     Capsule(style: .continuous)
                                         .fill(activeTag == tag ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface)
@@ -204,5 +202,10 @@ struct SearchView: View {
                 }
             }
         }
+    }
+
+    private func toggleGenre(_ tag: String) {
+        activeTag = activeTag == tag ? nil : tag
+        searchAction()
     }
 }

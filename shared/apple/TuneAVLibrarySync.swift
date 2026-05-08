@@ -1,5 +1,40 @@
 import Foundation
 
+enum CloudSyncStatus: Equatable {
+    case idle
+    case syncing
+    case synced(Date)
+    case conflict
+    case failed
+}
+
+struct CloudSyncConflictSummary: Equatable {
+    let localFavoritesCount: Int
+    let localRecentsCount: Int
+    let localDiscoveriesCount: Int
+    let localUpdatedAt: Date
+    let cloudFavoritesCount: Int?
+    let cloudRecentsCount: Int?
+    let cloudDiscoveriesCount: Int?
+    let cloudUpdatedAt: Date?
+
+    var hasCloudSnapshot: Bool {
+        cloudFavoritesCount != nil || cloudRecentsCount != nil || cloudDiscoveriesCount != nil
+    }
+}
+
+struct LimitUsageSummary: Equatable {
+    let used: Int
+    let limit: Int?
+
+    var title: String {
+        guard let limit else {
+            return L10n.string("mac.usage.used", used)
+        }
+        return "\(used) of \(limit)"
+    }
+}
+
 struct TuneAVLibraryDocument {
     let snapshot: TuneAVLibrarySnapshot?
     let updatedAt: Date

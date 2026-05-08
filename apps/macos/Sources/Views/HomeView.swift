@@ -103,12 +103,8 @@ struct HomeView: View {
         switch audioPlayer.playbackState {
         case .idle:
             return L10n.string("shell.status.live")
-        case .loading:
-            return L10n.string("audio.status.loading")
-        case .playing:
-            return L10n.string("audio.status.playing")
-        case .paused:
-            return L10n.string("audio.status.paused")
+        case .loading, .playing, .paused:
+            return audioPlayer.playbackState.label
         case .failed:
             return L10n.string("mac.player.status.error")
         }
@@ -127,7 +123,7 @@ struct HomeView: View {
 
     private var stationGridColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 132, maximum: 170), spacing: 12)
+            GridItem(.adaptive(minimum: 124, maximum: 150), spacing: 12)
         ]
     }
 

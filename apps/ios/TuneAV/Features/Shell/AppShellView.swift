@@ -23,6 +23,7 @@ struct AppShellView: View {
     @State private var homeFeedContext: HomeFeedContext = .popularWorldwide
     @State private var homeSnapshot = HomeFeedSnapshot()
     @State private var selectedStationDetail: SelectedStationDetail?
+    @State private var musicHistoryStationFilter: Station?
     @State private var stationNowPlayingTracks: [String: NowPlayingTrack] = [:]
     @State private var stationNowPlayingCache: [String: CachedStationNowPlaying] = [:]
     @State private var didBootstrap = false
@@ -82,7 +83,12 @@ struct AppShellView: View {
             }
         )
         .sheet(isPresented: $isShowingNowPlaying) {
-            NowPlayingView(startSignInFlow: startSignInFlow)
+            NowPlayingView(
+                startSignInFlow: startSignInFlow,
+                stationHistoryAction: { station in
+                    openStationHistory(station)
+                }
+            )
                 .environmentObject(accessController)
                 .environmentObject(audioPlayer)
                 .environmentObject(libraryStore)
@@ -101,7 +107,10 @@ struct AppShellView: View {
                         queue: detail.queueStations
                     )
                 },
-                toggleFavorite: { toggleFavorite(detail.station) }
+                toggleFavorite: { toggleFavorite(detail.station) },
+                stationHistoryAction: {
+                    openStationHistory(detail.station)
+                }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -209,6 +218,7 @@ struct AppShellView: View {
         case .music:
             MusicScreen(
                 discoveries: libraryStore.discoveries,
+                historyStationFilter: $musicHistoryStationFilter,
                 bottomContentPadding: shellScrollBottomPadding,
                 openDiscoveryStation: openDiscoveryStation(_:),
                 stationArtworkURL: { discovery in libraryStore.station(for: discovery.stationID)?.displayArtworkURL },
@@ -341,7 +351,7 @@ struct AppShellView: View {
     }
 
     private func normalizedTrackValue(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+        TuneAVDisplayMetadata.normalized(value)
     }
 
     private func bootstrapIfNeeded() async {
@@ -477,6 +487,13 @@ struct AppShellView: View {
             queueSource: queueSource,
             queueStations: queue ?? [station]
         )
+    }
+
+    private func openStationHistory(_ station: Station) {
+        selectedStationDetail = nil
+        isShowingNowPlaying = false
+        musicHistoryStationFilter = station
+        selectedTab = .music
     }
 
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
@@ -1415,13 +1432,7 @@ private struct LibraryScreen: View {
     }
 
     private func filterStations(_ stations: [Station]) -> [Station] {
-        guard !trimmedQuery.isEmpty else { return stations }
-
-        return stations.filter { station in
-            station.name.localizedCaseInsensitiveContains(trimmedQuery) ||
-            station.country.localizedCaseInsensitiveContains(trimmedQuery) ||
-            station.tags.localizedCaseInsensitiveContains(trimmedQuery)
-        }
+        TuneAVLibraryStationLogic.filteredStations(stations, query: trimmedQuery)
     }
 }
 
@@ -1436,6 +1447,7 @@ private struct MusicScreen: View {
     @State private var selectedArtistName: String?
 
     let discoveries: [DiscoveredTrack]
+    @Binding var historyStationFilter: Station?
     let bottomContentPadding: CGFloat
     let openDiscoveryStation: (DiscoveredTrack) -> Void
     let stationArtworkURL: (DiscoveredTrack) -> URL?
@@ -1471,6 +1483,9 @@ private struct MusicScreen: View {
                         selectedMode: musicMode,
                         selectMode: { mode in
                             selectedArtistName = nil
+                            if mode != .history {
+                                historyStationFilter = nil
+                            }
                             musicMode = mode
                         }
                     )
@@ -1507,6 +1522,11 @@ private struct MusicScreen: View {
         .onAppear(perform: normalizeInitialDiscoveryFilter)
         .onChange(of: query) { _, _ in
             selectedArtistName = nil
+        }
+        .onChange(of: historyStationFilter?.id) { _, stationID in
+            guard stationID != nil else { return }
+            selectedArtistName = nil
+            musicMode = .history
         }
     }
 
@@ -1586,33 +1606,66 @@ private struct MusicScreen: View {
     }
 
     private func openArtistSearch(_ artistName: String, youtube: Bool) {
+        let destination: TuneAVExternalSearchURL.Destination = youtube ? .youtube : .web
         let feature: LimitedFeature = youtube ? .youtubeSearch : .webSearch
-        guard let url = TuneAVExternalSearchURL.web(query: artistName, youtube: youtube) else { return }
-        guard useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.artistSearch(
+            artist: artistName,
+            destination: destination,
+            feature: feature
+        ) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func openAppleMusicArtistSearch(_ artistName: String) {
-        guard let url = TuneAVExternalSearchURL.appleMusic(query: artistName) else { return }
-        guard useDailyFeatureIfAllowed(.appleMusicSearch, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.artistSearch(
+            artist: artistName,
+            destination: .appleMusic,
+            feature: .appleMusicSearch
+        ) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func openSpotifyArtistSearch(_ artistName: String) {
-        guard let url = TuneAVExternalSearchURL.spotify(query: artistName) else { return }
-        guard useDailyFeatureIfAllowed(.spotifySearch, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.artistSearch(
+            artist: artistName,
+            destination: .spotify,
+            feature: .spotifySearch
+        ) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private var discoverySongsHeader: some View {
         HStack(spacing: 10) {
-            Text(musicMode.songsTitle)
+            Text(historyStationFilterTitle ?? musicMode.songsTitle)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            if musicMode == .history, historyStationFilter != nil {
+                Button {
+                    historyStationFilter = nil
+                } label: {
+                    Text(L10n.string("shell.music.history.all"))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(TuneAVTheme.highlight.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("music.history.all")
+            }
+
             discoveryActions
         }
+    }
+
+    private var historyStationFilterTitle: String? {
+        guard musicMode == .history, let historyStationFilter else { return nil }
+        return "\(MusicLibraryMode.history.title) · \(historyStationFilter.name)"
     }
 
     private var discoveryActions: some View {
@@ -1732,7 +1785,8 @@ private struct MusicScreen: View {
             discoveries,
             mode: musicMode,
             query: query,
-            selectedArtistName: selectedArtistName
+            selectedArtistName: selectedArtistName,
+            historyStationID: historyStationFilter?.id
         )
     }
 
@@ -1794,7 +1848,11 @@ private struct MusicScreen: View {
     }
 
     private func normalizeInitialDiscoveryFilter() {
-        musicMode = AppShellMusicLibrary.normalizedInitialMode(musicMode, discoveries: discoveries)
+        musicMode = AppShellMusicLibrary.normalizedInitialMode(
+            musicMode,
+            discoveries: discoveries,
+            historyStationID: historyStationFilter?.id
+        )
     }
 
     private func hideDiscoveryWithUndo(_ discovery: DiscoveredTrack) {
@@ -1805,23 +1863,29 @@ private struct MusicScreen: View {
     }
 
     private func openDiscoverySearch(_ discovery: DiscoveredTrack, suffix: String?, youtube: Bool) {
-        let feature: LimitedFeature = youtube ? .youtubeSearch : (suffix == nil ? .webSearch : .lyricsSearch)
-        let query = TuneAVExternalSearchURL.query(parts: [discovery.searchQuery], suffix: suffix)
-        guard let url = TuneAVExternalSearchURL.web(query: query, youtube: youtube) else { return }
-        guard useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.discoverySearch(searchQuery: discovery.searchQuery, suffix: suffix, youtube: youtube) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func openAppleMusicSearch(_ discovery: DiscoveredTrack) {
-        guard let url = TuneAVExternalSearchURL.appleMusic(query: discovery.searchQuery) else { return }
-        guard useDailyFeatureIfAllowed(.appleMusicSearch, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: discovery.searchQuery,
+            destination: .appleMusic,
+            feature: .appleMusicSearch
+        ) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func openSpotifySearch(_ discovery: DiscoveredTrack) {
-        guard let url = TuneAVExternalSearchURL.spotify(query: discovery.searchQuery) else { return }
-        guard useDailyFeatureIfAllowed(.spotifySearch, usageKey: url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: url)
+        guard let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: discovery.searchQuery,
+            destination: .spotify,
+            feature: .spotifySearch
+        ) else { return }
+        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+        browserDestination = BrowserDestination(url: search.url)
     }
 
     private func useDailyFeatureIfAllowed(_ feature: LimitedFeature, usageKey: String) -> Bool {
@@ -2312,35 +2376,24 @@ private struct StationCompactCard: View {
     }
 
     private var artistLine: String {
-        if audioPlayer.isCurrent(station), let artist = normalizedMetadata(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        if let artist = normalizedMetadata(nowPlayingTrack?.artist) {
-            return artist
-        }
-
-        return detailText
+        stationDisplayLines.artistLine
     }
 
     private var titleLine: String {
-        if audioPlayer.isCurrent(station), let title = normalizedMetadata(audioPlayer.currentTrackTitle) {
-            return title
-        }
+        stationDisplayLines.titleLine
+    }
 
-        if let title = normalizedMetadata(nowPlayingTrack?.title) {
-            return title
-        }
-
-        if audioPlayer.isCurrent(station), let albumTitle = normalizedMetadata(audioPlayer.currentTrackAlbumTitle) {
-            return albumTitle
-        }
-
-        if let primaryTag = station.normalizedTags.first {
-            return primaryTag
-        }
-
-        return normalizedMetadata(station.language) ?? L10n.string("shell.station.codec.live")
+    private var stationDisplayLines: TuneAVStationDisplayLines {
+        TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: audioPlayer.isCurrent(station),
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            nowPlayingTrack: nowPlayingTrack,
+            detailText: detailText,
+            liveFallback: L10n.string("shell.station.codec.live")
+        )
     }
 
     var body: some View {
@@ -2432,7 +2485,7 @@ private struct StationCompactCard: View {
     }
 
     private func normalizedMetadata(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+        TuneAVDisplayMetadata.normalized(value)
     }
 }
 
@@ -2445,6 +2498,7 @@ private struct StationDetailSheet: View {
     let isPlaying: Bool
     let playAction: () -> Void
     let toggleFavorite: () -> Void
+    let stationHistoryAction: () -> Void
 
     var body: some View {
         ScrollView {
@@ -2520,6 +2574,23 @@ private struct StationDetailSheet: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(L10n.string("player.menu.openWebsite"))
                         }
+
+                        Button {
+                            stationHistoryAction()
+                            dismiss()
+                        } label: {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .frame(width: 50, height: 50)
+                                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.string("player.menu.stationHistory"))
                     }
                 }
                 .padding(18)

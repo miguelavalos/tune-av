@@ -32,11 +32,10 @@ struct LocalEntitlementService: EntitlementService {
     }
 
     private static func uiTestResolvedAccess() -> ResolvedAccess? {
-        let environment = ProcessInfo.processInfo.environment
-        let isUITesting = environment["TUNEAV_UI_TESTS"] == "1"
-        guard isUITesting, let mode = environment["TUNEAV_UI_TESTS_ACCOUNT_MODE"] else { return nil }
+        let uiTestEnvironment = TuneAVUITestEnvironment.current
+        guard uiTestEnvironment.hasAccountOverride else { return nil }
 
-        let accessMode: AccessMode = mode == "pro" ? .signedInPro : .signedInFree
+        let accessMode: AccessMode = uiTestEnvironment.isProAccount ? .signedInPro : .signedInFree
         return ResolvedAccess(
             planTier: accessMode == .signedInPro ? .pro : .free,
             accessMode: accessMode,
@@ -98,8 +97,6 @@ final class PlatformBackedEntitlementService: EntitlementService {
     }
 
     private static var shouldUseUITestAccessOverride: Bool {
-        let environment = ProcessInfo.processInfo.environment
-        return environment["TUNEAV_UI_TESTS"] == "1" &&
-            environment["TUNEAV_UI_TESTS_ACCOUNT_MODE"] != nil
+        TuneAVUITestEnvironment.current.hasAccountOverride
     }
 }

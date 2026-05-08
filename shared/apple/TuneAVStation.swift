@@ -74,6 +74,23 @@ struct Station: Identifiable, Hashable, Codable {
 }
 
 extension Station {
+    static var unknownDetailValues: [String] {
+        [
+            L10n.string("stationService.fallback.unknownCountry"),
+            L10n.string("stationService.fallback.unknownLanguage"),
+            "Unknown country",
+            "Unknown language",
+            "País desconocido",
+            "Idioma desconocido",
+            "País desconegut",
+            "Idioma desconegut",
+            "Pays inconnu",
+            "Langue inconnue",
+            "Unbekanntes Land",
+            "Unbekannte Sprache"
+        ]
+    }
+
     static let samples: [Station] = [
         Station(
             id: "groove-salad",
@@ -179,17 +196,14 @@ extension Station {
     }
 
     var initials: String {
-        let parts = name
-            .split(separator: " ")
-            .prefix(2)
-            .map { String($0.prefix(1)).uppercased() }
-            .joined()
-
-        return parts.isEmpty ? "AV" : parts
+        TuneAVInitials.make(from: name)
     }
 
     var displayArtworkURL: URL? {
         if let faviconURL, !faviconURL.isEmpty, let url = URL(string: faviconURL) {
+            if url.pathExtension.caseInsensitiveCompare("ico") == .orderedSame {
+                return faviconProxyURL(for: resolvedHomepageURL ?? url)
+            }
             return url
         }
 
@@ -197,6 +211,15 @@ extension Station {
             return nil
         }
 
+        return faviconProxyURL(for: url)
+    }
+
+    var displayArtworkUsesFaviconProxy: Bool {
+        guard let url = displayArtworkURL else { return false }
+        return url.host == "www.google.com" && url.path == "/s2/favicons"
+    }
+
+    private func faviconProxyURL(for url: URL) -> URL? {
         var components = URLComponents(string: "https://www.google.com/s2/favicons")
         components?.queryItems = [
             URLQueryItem(name: "sz", value: "256"),

@@ -111,6 +111,7 @@
 "player.menu.openWebsite" = "Website des Senders öffnen";
 "player.menu.removeFavorite" = "Aus Favoriten entfernen";
 "player.menu.searchStation" = "Sender suchen";
+"player.menu.stationHistory" = "Senderverlauf";
 "player.menu.shareStation" = "Sender teilen";
 "player.retry" = "Stream erneut versuchen";
 "player.track.liveNow" = "Live";
@@ -334,6 +335,7 @@
 "shell.music.discovery.openStation.hint" = "Öffnet den Sender, auf dem dieser Song lief.";
 "shell.music.mode.artists" = "Künstler";
 "shell.music.mode.history" = "Verlauf";
+"shell.music.history.all" = "Gesamter Verlauf";
 "shell.music.mode.songs" = "Songs";
 "shell.music.searchPrompt" = "Songs, Künstler oder Sender suchen";
 "shell.music.signal.history" = "Verlauf";

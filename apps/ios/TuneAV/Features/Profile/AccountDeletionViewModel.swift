@@ -24,12 +24,11 @@ final class AccountDeletionViewModel: ObservableObject {
     }
 
     var canRequestDeletion: Bool {
-        resolvedEligibility?.status == .eligible && confirmationText == "DELETE"
+        TuneAVAccountDeletionPolicy.canRequestDeletion(eligibility: resolvedEligibility, confirmationText: confirmationText)
     }
 
     var canFinalizeDeletion: Bool {
-        let status = resolvedEligibility?.currentJob?.status ?? summary?.currentDeletionJob?.status
-        return ["awaitingIdentityDeletion", "readyToFinalize"].contains(status)
+        TuneAVAccountDeletionPolicy.canFinalizeDeletion(eligibility: resolvedEligibility, summary: summary)
     }
 
     var blockers: [AccountDeletionBlocker] {
@@ -38,7 +37,7 @@ final class AccountDeletionViewModel: ObservableObject {
 
     var canUnlinkCurrentApp: Bool {
         guard let summary, !isSubmitting else { return false }
-        return Self.canUnlinkCurrentApp(from: summary)
+        return TuneAVAccountDeletionPolicy.canUnlinkCurrentApp(from: summary)
     }
 
     func load() async {
@@ -55,7 +54,7 @@ final class AccountDeletionViewModel: ObservableObject {
             }
         } catch {
             errorMessage = L10n.string("accountDeletion.error.load")
-            resolvedEligibility = .unavailable()
+            resolvedEligibility = TuneAVAccountDeletionPolicy.unavailableEligibility(copy: Self.deletionCopy)
         }
     }
 
@@ -67,7 +66,7 @@ final class AccountDeletionViewModel: ObservableObject {
 
         do {
             let response = try await api.requestAccountDeletion()
-            if response.deleteAccountEligibility?.status == .completed || response.job?.status == "completed" {
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
                 try await completeLocalSignOut()
                 return
             }
@@ -89,7 +88,7 @@ final class AccountDeletionViewModel: ObservableObject {
 
         do {
             let response = try await api.finalizeAccountDeletion()
-            if response.deleteAccountEligibility?.status == .completed || response.job?.status == "completed" {
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
                 try await completeLocalSignOut()
                 return
             }
@@ -121,7 +120,7 @@ final class AccountDeletionViewModel: ObservableObject {
 
     private func apply(summary: AccountSummary) {
         self.summary = summary
-        resolvedEligibility = summary.deleteAccountEligibility ?? Self.conservativeEligibility(from: summary)
+        resolvedEligibility = TuneAVAccountDeletionPolicy.resolvedEligibility(from: summary, copy: Self.deletionCopy)
     }
 
     private func completeLocalSignOut() async throws {
@@ -130,100 +129,20 @@ final class AccountDeletionViewModel: ObservableObject {
     }
 
     static func conservativeEligibility(from summary: AccountSummary) -> AccountDeletionEligibility {
-        var blockers: [AccountDeletionBlocker] = []
-
-        for linkedApp in summary.linkedApps where linkedApp.appId != "tuneav" && linkedApp.appId != "avapps" {
-            blockers.append(
-                AccountDeletionBlocker(
-                    type: .linkedApp,
-                    appId: linkedApp.appId,
-                    label: L10n.string("accountDeletion.blocker.linkedApp.title"),
-                    detail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
-                    managementUrl: nil
-                )
-            )
-        }
-
-        for appAccess in summary.access where appAccess.planTier == .pro || appAccess.accessMode == .signedInPro {
-            blockers.append(
-                AccountDeletionBlocker(
-                    type: .activeProAccess,
-                    appId: appAccess.appId,
-                    label: L10n.string("accountDeletion.blocker.pro.title"),
-                    detail: L10n.string("accountDeletion.blocker.pro.detail"),
-                    managementUrl: nil
-                )
-            )
-        }
-
-        for subscription in summary.billing?.subscriptions ?? [] where activeBillingStatuses.contains(subscription.status) {
-            blockers.append(
-                AccountDeletionBlocker(
-                    type: .activeBillingSubscription,
-                    appId: subscription.appId,
-                    label: subscription.provider ?? L10n.string("accountDeletion.blocker.subscription.title"),
-                    detail: L10n.string("accountDeletion.blocker.subscription.detail"),
-                    managementUrl: subscription.managementUrl
-                )
-            )
-        }
-
-        if let currentDeletionJob = summary.currentDeletionJob,
-           !["completed", "cancelled", "failed"].contains(currentDeletionJob.status) {
-            blockers.append(
-                AccountDeletionBlocker(
-                    type: .deletionInProgress,
-                    appId: nil,
-                    label: L10n.string("accountDeletion.blocker.job.title"),
-                    detail: currentDeletionJob.detail,
-                    managementUrl: nil
-                )
-            )
-        }
-
-        if blockers.isEmpty {
-            blockers.append(
-                AccountDeletionBlocker(
-                    type: .eligibilityUnavailable,
-                    appId: nil,
-                    label: L10n.string("accountDeletion.unavailable.title"),
-                    detail: L10n.string("accountDeletion.unavailable.detail"),
-                    managementUrl: nil
-                )
-            )
-        }
-
-        return AccountDeletionEligibility(status: .unavailable, blockers: blockers, currentJob: summary.currentDeletionJob)
+        TuneAVAccountDeletionPolicy.conservativeEligibility(from: summary, copy: deletionCopy)
     }
 
-    private static let activeBillingStatuses = Set(["active", "trialing", "pastDue", "past_due"])
-
-    private static func canUnlinkCurrentApp(from summary: AccountSummary) -> Bool {
-        let currentAppId = "tuneav"
-        let linkedApps = summary.linkedApps.filter { $0.appId != "avapps" }
-        let isCurrentAppLinked = linkedApps.contains { $0.appId == currentAppId }
-        let hasOtherLinkedApps = linkedApps.contains { $0.appId != currentAppId }
-        let currentAppAccess = summary.access.first { $0.appId == currentAppId }
-        let currentAppIsPro = currentAppAccess?.planTier == .pro || currentAppAccess?.accessMode == .signedInPro
-
-        return isCurrentAppLinked && hasOtherLinkedApps && !currentAppIsPro
-    }
-}
-
-private extension AccountDeletionEligibility {
-    static func unavailable() -> AccountDeletionEligibility {
-        AccountDeletionEligibility(
-            status: .unavailable,
-            blockers: [
-                AccountDeletionBlocker(
-                    type: .eligibilityUnavailable,
-                    appId: nil,
-                    label: L10n.string("accountDeletion.unavailable.title"),
-                    detail: L10n.string("accountDeletion.unavailable.detail"),
-                    managementUrl: nil
-                )
-            ],
-            currentJob: nil
+    private static var deletionCopy: TuneAVAccountDeletionPolicy.Copy {
+        TuneAVAccountDeletionPolicy.Copy(
+            linkedAppTitle: L10n.string("accountDeletion.blocker.linkedApp.title"),
+            linkedAppDetail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
+            proTitle: L10n.string("accountDeletion.blocker.pro.title"),
+            proDetail: L10n.string("accountDeletion.blocker.pro.detail"),
+            subscriptionTitle: L10n.string("accountDeletion.blocker.subscription.title"),
+            subscriptionDetail: L10n.string("accountDeletion.blocker.subscription.detail"),
+            jobTitle: L10n.string("accountDeletion.blocker.job.title"),
+            unavailableTitle: L10n.string("accountDeletion.unavailable.title"),
+            unavailableDetail: L10n.string("accountDeletion.unavailable.detail")
         )
     }
 }

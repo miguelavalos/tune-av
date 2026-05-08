@@ -111,6 +111,7 @@
 "player.menu.openWebsite" = "Ouvrir le site de la station";
 "player.menu.removeFavorite" = "Retirer des favoris";
 "player.menu.searchStation" = "Rechercher la station";
+"player.menu.stationHistory" = "Historique de la station";
 "player.menu.shareStation" = "Partager la station";
 "player.retry" = "Réessayer le flux";
 "player.track.liveNow" = "En direct";
@@ -334,6 +335,7 @@
 "shell.music.discovery.openStation.hint" = "Ouvre la station sur laquelle ce titre a été diffusé.";
 "shell.music.mode.artists" = "Artistes";
 "shell.music.mode.history" = "Historique";
+"shell.music.history.all" = "Tout l'historique";
 "shell.music.mode.songs" = "Titres";
 "shell.music.searchPrompt" = "Rechercher des titres, artistes ou stations";
 "shell.music.signal.history" = "Historique";

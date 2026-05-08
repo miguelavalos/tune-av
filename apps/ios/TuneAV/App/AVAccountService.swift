@@ -51,7 +51,7 @@ struct DefaultAVAccountService: AVAccountService {
 
     func getToken() async throws -> String? {
         if Self.uiTestAccountUser != nil {
-            return "ui-test-token"
+            return TuneAVUITestEnvironment.accountToken
         }
         return try await accountService.getToken()
     }
@@ -79,21 +79,16 @@ struct DefaultAVAccountService: AVAccountService {
     }
 
     private static var shouldForceGuestForUITests: Bool {
-        let environment = ProcessInfo.processInfo.environment
-        let isUITesting = environment["TUNEAV_UI_TESTS"] == "1"
-        return isUITesting && environment["TUNEAV_UI_TESTS_FORCE_GUEST"] == "1"
+        TuneAVUITestEnvironment.current.shouldForceGuest
     }
 
     private static var uiTestAccountUser: AccountUser? {
-        let environment = ProcessInfo.processInfo.environment
-        let isUITesting = environment["TUNEAV_UI_TESTS"] == "1"
-        guard isUITesting else { return nil }
-        guard environment["TUNEAV_UI_TESTS_ACCOUNT_MODE"] != nil else { return nil }
+        guard TuneAVUITestEnvironment.current.hasAccountOverride else { return nil }
 
         return AccountUser(
-            id: "ui-test-user",
-            displayName: "UI Test User",
-            emailAddress: "ui-test@example.test"
+            id: TuneAVUITestEnvironment.accountUserId,
+            displayName: TuneAVUITestEnvironment.accountUserDisplayName,
+            emailAddress: TuneAVUITestEnvironment.accountUserEmailAddress
         )
     }
 }

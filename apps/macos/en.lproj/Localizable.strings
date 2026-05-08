@@ -14,6 +14,7 @@
 "audio.error.streamTimeout" = "The live stream is taking too long to respond";
 "audio.sleep.ended" = "Sleep timer ended";
 "audio.sleep.inMinutes" = "Sleep in %d min";
+"audio.sleep.timer" = "Sleep timer";
 "audio.status.loading" = "Loading stream";
 "audio.status.paused" = "Paused";
 "audio.status.playing" = "Playing";
@@ -111,6 +112,7 @@
 "player.menu.openWebsite" = "Open station website";
 "player.menu.removeFavorite" = "Remove from favorites";
 "player.menu.searchStation" = "Search station";
+"player.menu.stationHistory" = "Station history";
 "player.menu.shareStation" = "Share station";
 "player.retry" = "Retry stream";
 "player.track.liveNow" = "Live now";
@@ -335,6 +337,7 @@
 "shell.music.discovery.openStation.hint" = "Opens the station where this song played.";
 "shell.music.mode.artists" = "Artists";
 "shell.music.mode.history" = "History";
+"shell.music.history.all" = "All history";
 "shell.music.mode.songs" = "Songs";
 "shell.music.searchPrompt" = "Search songs, artists, or stations";
 "shell.music.signal.history" = "History";
@@ -557,10 +560,5 @@
 "mac.profile.conflict.local" = "This Mac: %d favorites, %d recents, %d discoveries.";
 "mac.profile.conflict.noCloudSnapshot" = "Cloud snapshot was not available after the conflict.";
 "mac.profile.conflict.cloud" = "Cloud: %d favorites, %d recents, %d discoveries.";
-"mac.audio.invalidStreamURL" = "Invalid stream URL.";
-"mac.audio.unknownPlaybackState" = "The stream entered an unknown playback state.";
-"mac.audio.startTimeout" = "The station did not start in time. Try again or choose another stream.";
-"mac.audio.insecureStream" = "This station uses an insecure stream. Tune AV now allows these streams; try again.";
-"mac.audio.startFailed" = "The stream failed to start.";
 "accountDeletion.blocker.eligibility.title" = "Eligibility unavailable";
 "accountDeletion.blocker.eligibility.detail" = "Account AV did not provide enough deletion eligibility data. Tune AV will not delete the account until Account AV confirms it is safe.";

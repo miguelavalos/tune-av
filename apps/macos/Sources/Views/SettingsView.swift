@@ -20,11 +20,24 @@ struct SettingsView: View {
                 Toggle(L10n.string("mac.settings.launchToSearch"), isOn: $launchToSearch)
             }
 
+            Section(L10n.string("audio.sleep.timer")) {
+                Picker(L10n.string("audio.sleep.timer"), selection: Binding(
+                    get: { libraryStore.sleepTimerMinutes },
+                    set: { libraryStore.updateSleepTimerMinutes($0) }
+                )) {
+                    Text(L10n.string("mac.profile.genre.none")).tag(Int?.none)
+                    ForEach([15, 30, 45, 60], id: \.self) { minutes in
+                        Text(L10n.string("audio.sleep.inMinutes", minutes)).tag(Optional(minutes))
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section(L10n.string("profile.preferences.theme.title")) {
                 Picker(L10n.string("profile.preferences.theme.title"), selection: $appearanceMode) {
-                    Text(L10n.string("profile.preferences.theme.system")).tag("system")
-                    Text(L10n.string("profile.preferences.theme.light")).tag("light")
-                    Text(L10n.string("profile.preferences.theme.dark")).tag("dark")
+                    Text(L10n.string("profile.preferences.theme.system")).tag(AppTheme.system.rawValue)
+                    Text(L10n.string("profile.preferences.theme.light")).tag(AppTheme.light.rawValue)
+                    Text(L10n.string("profile.preferences.theme.dark")).tag(AppTheme.dark.rawValue)
                 }
                 .pickerStyle(.segmented)
             }

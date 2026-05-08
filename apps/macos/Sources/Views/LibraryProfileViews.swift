@@ -118,7 +118,7 @@ struct LibraryView: View {
 
     private var stationGridColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 132, maximum: 170), spacing: 12)
+            GridItem(.adaptive(minimum: 124, maximum: 150), spacing: 12)
         ]
     }
 
@@ -127,13 +127,7 @@ struct LibraryView: View {
     }
 
     private func filterStations(_ stations: [Station]) -> [Station] {
-        guard !trimmedQuery.isEmpty else { return stations }
-
-        return stations.filter { station in
-            station.name.localizedCaseInsensitiveContains(trimmedQuery) ||
-            station.country.localizedCaseInsensitiveContains(trimmedQuery) ||
-            station.tags.localizedCaseInsensitiveContains(trimmedQuery)
-        }
+        TuneAVLibraryStationLogic.filteredStations(stations, query: trimmedQuery)
     }
 
     private func sortStations(_ stations: [Station], preserveOrder: Bool) -> [Station] {
@@ -179,11 +173,7 @@ struct LibraryView: View {
     }
 
     private var librarySearchField: some View {
-        TextField(L10n.string("shell.library.searchPrompt"), text: $query)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .avCardSurface(cornerRadius: 18)
+        MacSearchField(prompt: L10n.string("shell.library.searchPrompt"), text: $query)
     }
 
     private var sortPicker: some View {
@@ -400,23 +390,23 @@ struct ProfileView: View {
                     SettingsOptionButton(
                         title: L10n.string("profile.preferences.theme.system"),
                         systemImage: "circle.lefthalf.filled",
-                        isSelected: appearanceMode == "system"
+                        isSelected: appearanceMode == AppTheme.system.rawValue
                     ) {
-                        appearanceMode = "system"
+                        appearanceMode = AppTheme.system.rawValue
                     }
                     SettingsOptionButton(
                         title: L10n.string("profile.preferences.theme.light"),
                         systemImage: "sun.max",
-                        isSelected: appearanceMode == "light"
+                        isSelected: appearanceMode == AppTheme.light.rawValue
                     ) {
-                        appearanceMode = "light"
+                        appearanceMode = AppTheme.light.rawValue
                     }
                     SettingsOptionButton(
                         title: L10n.string("profile.preferences.theme.dark"),
                         systemImage: "moon.fill",
-                        isSelected: appearanceMode == "dark"
+                        isSelected: appearanceMode == AppTheme.dark.rawValue
                     ) {
-                        appearanceMode = "dark"
+                        appearanceMode = AppTheme.dark.rawValue
                     }
                 }
             }

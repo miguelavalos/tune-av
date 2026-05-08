@@ -8,6 +8,11 @@ enum TuneAVExternalSearchURL {
         case spotify
     }
 
+    struct FeatureSearch {
+        let feature: LimitedFeature
+        let url: URL
+    }
+
     static func url(for destination: Destination, query: String) -> URL? {
         switch destination {
         case .web:
@@ -23,6 +28,33 @@ enum TuneAVExternalSearchURL {
 
     static func stationSearch(stationName: String) -> URL? {
         web(query: query(parts: [stationName], suffix: "radio"), youtube: false)
+    }
+
+    static func discoverySearch(searchQuery: String, suffix: String?, youtube: Bool) -> FeatureSearch? {
+        let feature: LimitedFeature = youtube ? .youtubeSearch : (suffix == nil ? .webSearch : .lyricsSearch)
+        let query = query(parts: [searchQuery], suffix: suffix)
+        guard let url = web(query: query, youtube: youtube) else { return nil }
+        return FeatureSearch(feature: feature, url: url)
+    }
+
+    static func discoverySearch(
+        searchQuery: String,
+        destination: Destination,
+        feature: LimitedFeature,
+        suffix: String? = nil
+    ) -> FeatureSearch? {
+        let query = query(parts: [searchQuery], suffix: suffix)
+        guard let url = url(for: destination, query: query) else { return nil }
+        return FeatureSearch(feature: feature, url: url)
+    }
+
+    static func artistSearch(
+        artist: String,
+        destination: Destination,
+        feature: LimitedFeature
+    ) -> FeatureSearch? {
+        guard let url = url(for: destination, query: artist) else { return nil }
+        return FeatureSearch(feature: feature, url: url)
     }
 
     static func web(query: String, youtube: Bool) -> URL? {

@@ -14,6 +14,7 @@
 "audio.error.streamTimeout" = "Le flux en direct met trop de temps à répondre";
 "audio.sleep.ended" = "Le minuteur de veille est terminé";
 "audio.sleep.inMinutes" = "Veille dans %d min";
+"audio.sleep.timer" = "Minuteur de veille";
 "audio.status.loading" = "Chargement du flux";
 "audio.status.paused" = "En pause";
 "audio.status.playing" = "Lecture";
@@ -111,6 +112,7 @@
 "player.menu.openWebsite" = "Ouvrir le site de la station";
 "player.menu.removeFavorite" = "Retirer des favoris";
 "player.menu.searchStation" = "Rechercher la station";
+"player.menu.stationHistory" = "Historique de la station";
 "player.menu.shareStation" = "Partager la station";
 "player.retry" = "Réessayer le flux";
 "player.track.liveNow" = "En direct";
@@ -334,6 +336,7 @@
 "shell.music.discovery.openStation.hint" = "Ouvre la station sur laquelle ce titre a été diffusé.";
 "shell.music.mode.artists" = "Artistes";
 "shell.music.mode.history" = "Historique";
+"shell.music.history.all" = "Tout l'historique";
 "shell.music.mode.songs" = "Titres";
 "shell.music.searchPrompt" = "Rechercher des titres, artistes ou stations";
 "shell.music.signal.history" = "Historique";
@@ -557,10 +560,5 @@
 "mac.profile.conflict.local" = "Ce Mac : %d favorites, %d récentes, %d découvertes.";
 "mac.profile.conflict.noCloudSnapshot" = "L'instantané cloud n'était pas disponible après le conflit.";
 "mac.profile.conflict.cloud" = "Cloud : %d favorites, %d récentes, %d découvertes.";
-"mac.audio.invalidStreamURL" = "URL de flux invalide.";
-"mac.audio.unknownPlaybackState" = "Le flux est entré dans un état de lecture inconnu.";
-"mac.audio.startTimeout" = "La station n'a pas démarré à temps. Réessayez ou choisissez un autre flux.";
-"mac.audio.insecureStream" = "Cette station utilise un flux non sécurisé. Tune AV autorise maintenant ces flux ; réessayez.";
-"mac.audio.startFailed" = "Le flux n'a pas pu démarrer.";
 "accountDeletion.blocker.eligibility.title" = "Éligibilité indisponible";
 "accountDeletion.blocker.eligibility.detail" = "Account AV n'a pas fourni assez de données d'éligibilité. Tune AV ne supprimera pas le compte tant qu'Account AV ne confirmera pas que c'est sûr.";

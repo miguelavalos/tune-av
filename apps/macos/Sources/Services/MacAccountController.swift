@@ -14,21 +14,23 @@ final class MacAccountController: ObservableObject {
     init() {
         self.accountService = ClerkAccountAVService(
             publishableKeyProvider: { MacAppConfig.avAccountKey },
-            fallbackDisplayName: "Tune AV Listener",
+            fallbackDisplayName: L10n.string("account.displayName.listener"),
             loggerSubsystem: "com.avalsys.tuneav.mac"
         )
-        self.currentUser = accountService.currentUser
+        self.currentUser = Self.uiTestAccountUser ?? accountService.currentUser
     }
 
     init(
         accountService: AccountAVService
     ) {
         self.accountService = accountService
-        self.currentUser = accountService.currentUser
+        self.currentUser = Self.uiTestAccountUser ?? accountService.currentUser
     }
 
     var isAvailable: Bool {
-        accountService.isAvailable
+        guard !Self.shouldForceGuestForUITests else { return false }
+        if Self.uiTestAccountUser != nil { return true }
+        return accountService.isAvailable
     }
 
     var isSignedIn: Bool {
@@ -36,10 +38,19 @@ final class MacAccountController: ObservableObject {
     }
 
     func currentToken() async throws -> String? {
-        try await accountService.getToken()
+        if Self.uiTestAccountUser != nil {
+            return TuneAVUITestEnvironment.accountToken
+        }
+        return try await accountService.getToken()
     }
 
     func refreshSession() async {
+        if let uiTestAccountUser = Self.uiTestAccountUser {
+            currentUser = uiTestAccountUser
+            errorMessage = nil
+            return
+        }
+
         guard isAvailable else {
             currentUser = nil
             return
@@ -80,6 +91,12 @@ final class MacAccountController: ObservableObject {
         }
         guard !isAuthenticating else { return false }
 
+        if let uiTestAccountUser = Self.uiTestAccountUser {
+            currentUser = uiTestAccountUser
+            errorMessage = nil
+            return true
+        }
+
         isAuthenticating = true
         defer { isAuthenticating = false }
 
@@ -94,5 +111,19 @@ final class MacAccountController: ObservableObject {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    private static var shouldForceGuestForUITests: Bool {
+        TuneAVUITestEnvironment.current.shouldForceGuest
+    }
+
+    private static var uiTestAccountUser: AccountAVUser? {
+        guard TuneAVUITestEnvironment.current.hasAccountOverride else { return nil }
+
+        return AccountAVUser(
+            id: TuneAVUITestEnvironment.accountUserId,
+            displayName: TuneAVUITestEnvironment.accountUserDisplayName,
+            emailAddress: TuneAVUITestEnvironment.accountUserEmailAddress
+        )
     }
 }

@@ -87,8 +87,6 @@ final class AppLanguageController: ObservableObject {
         )
         currentLanguage = resolvedLanguage
 
-        // Persist the first resolved language so L10n.bundle uses the same locale
-        // from the app's first launch onward.
         if storedLanguage == nil {
             userDefaults.set(resolvedLanguage.rawValue, forKey: userDefaultsKey)
         }

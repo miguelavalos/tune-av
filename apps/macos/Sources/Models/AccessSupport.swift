@@ -1,64 +1,7 @@
 import Foundation
 import Security
 
-extension AccessMode {
-    var title: String {
-        switch self {
-        case .guest:
-            return L10n.string("profile.status.guest")
-        case .signedInFree:
-            return L10n.string("profile.status.free")
-        case .signedInPro:
-            return L10n.string("profile.status.pro")
-        }
-    }
-}
-
-struct MacAccessState: Equatable {
-    let accessMode: AccessMode
-    let planTier: PlanTier
-    let capabilities: AccessCapabilities
-    let limits: AccessLimits
-
-    static func localFallback(for accessMode: AccessMode) -> MacAccessState {
-        MacAccessState(
-            accessMode: accessMode,
-            planTier: accessMode == .signedInPro ? .pro : .free,
-            capabilities: AccessCapabilities.forMode(accessMode),
-            limits: AccessLimits.forMode(accessMode)
-        )
-    }
-}
-
-struct MacMeAccessResponse: Decodable {
-    let apps: [MacAppAccess]
-}
-
-struct MacAppAccess: Decodable {
-    let appId: String
-    let accessMode: AccessMode
-    let planTier: PlanTier
-    let capabilities: AccessCapabilities
-    let limits: AccessLimits
-
-    var state: MacAccessState {
-        MacAccessState(
-            accessMode: accessMode,
-            planTier: planTier,
-            capabilities: capabilities,
-            limits: limits
-        )
-    }
-}
-
-extension MacAppAccess: Equatable {}
-
-enum MacAccessRefreshError: Error, Equatable {
-    case missingToken
-    case missingBaseURL
-    case requestFailed(statusCode: Int)
-    case avTunesysAccessMissing
-}
+typealias MacAccessState = TuneAVResolvedAccess
 
 @MainActor
 protocol MacAccessProviding {
@@ -123,10 +66,7 @@ struct SystemMacKeychainReader: MacKeychainReading {
 }
 
 final class AVAccountMacAccessClient: MacAccessProviding {
-    private let baseURL: URL?
-    private let tokenProvider: () async throws -> String?
-    private let urlSession: URLSession
-    private let decoder: JSONDecoder
+    private let accessClient: TuneAVAccessClient
 
     init(
         baseURL: URL? = MacAppConfig.avAccountAPIBaseURL,
@@ -134,38 +74,28 @@ final class AVAccountMacAccessClient: MacAccessProviding {
         urlSession: URLSession = .shared,
         decoder: JSONDecoder = JSONDecoder()
     ) {
-        self.baseURL = baseURL
-        self.tokenProvider = tokenProvider
-        self.urlSession = urlSession
-        self.decoder = decoder
+        let supportedBaseURL = baseURL?.isSupportedAVAccountBaseURL == true ? baseURL : nil
+        self.accessClient = TuneAVAccessClient(
+            baseURL: supportedBaseURL,
+            tokenProvider: tokenProvider,
+            urlSession: urlSession,
+            decoder: decoder
+        )
     }
 
     func fetchAccessState() async throws -> MacAccessState {
-        guard let token = try await tokenProvider(), !token.isEmpty else {
-            throw MacAccessRefreshError.missingToken
-        }
-        guard let baseURL, baseURL.isSupportedAVAccountBaseURL else {
-            throw MacAccessRefreshError.missingBaseURL
-        }
+        MacAccessState(access: try await accessClient.fetchTuneAVAccess())
+    }
+}
 
-        let url = baseURL.appending(path: "v1/me/access")
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            throw MacAccessRefreshError.requestFailed(statusCode: httpResponse.statusCode)
-        }
-
-        let payload = try decoder.decode(MacMeAccessResponse.self, from: data)
-        guard let avTunesysAccess = payload.apps.first(where: { $0.appId == "tuneav" }) else {
-            throw MacAccessRefreshError.avTunesysAccessMissing
-        }
-
-        return avTunesysAccess.state
+private extension MacAccessState {
+    init(access: AppAccess) {
+        self.init(
+            planTier: access.planTier,
+            accessMode: access.accessMode,
+            capabilities: access.capabilities,
+            limits: TuneAVAccessLimitPolicy.resolvedLimits(access.limits, accessMode: access.accessMode)
+        )
     }
 }
 
@@ -175,14 +105,14 @@ enum MacAppConfig {
     }
 
     static var keychainAccessGroup: String? {
-        guard let appIdentifierPrefix = nonEmptyStringValue(for: "TUNEAV_APP_IDENTIFIER_PREFIX") else {
+        guard let appIdentifierPrefix = TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_APP_IDENTIFIER_PREFIX") else {
             return nil
         }
         return "\(appIdentifierPrefix)\(bundleIdentifier)"
     }
 
     static var avAccountKey: String {
-        stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY")
+        TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY")
     }
 
     static var avAccountAPIBaseURL: URL? {
@@ -194,26 +124,16 @@ enum MacAppConfig {
     }
 
     static var deleteAccountURL: URL? {
-        if let explicitURL = urlValue(for: "TUNEAV_DELETE_ACCOUNT_URL") {
-            return explicitURL
-        }
-
-        guard let accountManagementURL else { return nil }
-        guard let host = accountManagementURL.host, let scheme = accountManagementURL.scheme else {
-            return accountManagementURL
-        }
-
-        var components = URLComponents()
-        components.scheme = scheme
-        components.host = host
-        components.path = "/danger-zone"
-        return components.url
+        TuneAVBundleConfig.deleteAccountURL(
+            explicitURL: urlValue(for: "TUNEAV_DELETE_ACCOUNT_URL"),
+            accountManagementURL: accountManagementURL
+        )
     }
 
     static var supportURL: URL? {
-        guard let supportEmail = nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL") else { return nil }
-        let encodedSubject = "Tune AV Support".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Tune%20AV%20Support"
-        return URL(string: "mailto:\(supportEmail)?subject=\(encodedSubject)")
+        TuneAVBundleConfig.supportURL(
+            email: TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL")
+        )
     }
 
     static var termsURL: URL? {
@@ -236,84 +156,13 @@ enum MacAppConfig {
         !avAccountKey.isEmpty
     }
 
-    private static func stringValue(for key: String) -> String {
-        nonEmptyStringValue(for: key) ?? ""
-    }
-
-    private static func nonEmptyStringValue(for key: String) -> String? {
-        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
-            return nil
-        }
-        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
-
     private static func urlValue(for key: String) -> URL? {
-        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
-            return nil
-        }
-        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        guard let url = URL(string: trimmed), url.isSupportedAVAccountBaseURL else {
-            return nil
-        }
-        return url
+        TuneAVBundleConfig.urlValue(for: key, requireSupportedAVAccountBaseURL: true)
     }
 
     private static func urlValue(for key: String, fallbackKey: String) -> URL? {
         urlValue(for: key) ?? urlValue(for: fallbackKey)
     }
-}
-
-extension URL {
-    var isSupportedAVAccountBaseURL: Bool {
-        guard let scheme = scheme?.lowercased(),
-              scheme == "http" || scheme == "https",
-              host?.isEmpty == false else {
-            return false
-        }
-        return true
-    }
-}
-
-private enum MacAppDataConstants {
-    static let appId = "tuneav"
-    static let deviceId = "tuneav-macos"
-}
-
-private enum MacAppDataResource: String, CaseIterable {
-    case favorites
-    case recents
-    case discoveries
-    case settings
-}
-
-private struct MacAppDataResponsePayload<Entry: Codable>: Decodable {
-    let data: MacAppDataEnvelopePayload<Entry>
-    let updatedAt: String
-    let revision: Int?
-    let etag: String?
-}
-
-private struct MacAppDataEnvelopePayload<Entry: Codable>: Codable {
-    let appId: String
-    let resource: String
-    let deviceId: String
-    let sentAt: String
-    let entries: [Entry]
-}
-
-private struct MacAppDataResourceDocument<Entry: Codable> {
-    let entries: [Entry]
-    let updatedAt: Date
-    let revision: Int
-    let etag: String?
-}
-
-enum MacAppDataClientError: Error, Equatable {
-    case missingToken
-    case missingBaseURL
-    case requestFailed(statusCode: Int)
 }
 
 @MainActor
@@ -328,10 +177,7 @@ final class MacTuneAVAppDataClient: MacTuneAVLibrarySyncing {
     private let baseURL: URL?
     private let tokenProvider: () async throws -> String?
     private let urlSession: URLSession
-    private let decoder: JSONDecoder
-    private let encoder: JSONEncoder
-    private var lastKnownRevisions: [String: Int] = [:]
-    private var lastKnownEtags: [String: String] = [:]
+    private let syncClient: TuneAVAppDataSyncClient
 
     init(
         baseURL: URL? = MacAppConfig.avAccountAPIBaseURL,
@@ -343,168 +189,59 @@ final class MacTuneAVAppDataClient: MacTuneAVLibrarySyncing {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.urlSession = urlSession
-        self.decoder = decoder
-        self.encoder = encoder
+        self.syncClient = TuneAVAppDataSyncClient(
+            deviceId: "tuneav-macos",
+            isConfigured: { baseURL?.isSupportedAVAccountBaseURL == true },
+            request: { path, method, body, headers in
+                guard let token = try await tokenProvider(), !token.isEmpty else {
+                    throw MacAppDataClientError.missingToken
+                }
+                guard let baseURL, baseURL.isSupportedAVAccountBaseURL else {
+                    throw MacAppDataClientError.missingBaseURL
+                }
+
+                let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+                let url = baseURL.appending(path: sanitizedPath)
+                var request = URLRequest(url: url)
+                request.httpMethod = method
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                for (field, value) in headers {
+                    request.setValue(value, forHTTPHeaderField: field)
+                }
+                if let body {
+                    request.httpBody = body
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                }
+
+                let (data, response) = try await urlSession.data(for: request)
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw URLError(.badServerResponse)
+                }
+                guard (200..<300).contains(httpResponse.statusCode) else {
+                    throw MacAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
+                }
+
+                return data
+            },
+            decoder: decoder,
+            encoder: encoder
+        )
     }
 
     func isConfigured() -> Bool {
-        baseURL?.isSupportedAVAccountBaseURL == true
+        syncClient.isConfigured()
     }
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {
-        let favorites = try await pullResource(.favorites, entryType: FavoriteStationRecord.self)
-        let recents = try await pullResource(.recents, entryType: RecentStationRecord.self)
-        let discoveries = try await pullResource(.discoveries, entryType: DiscoveredTrackRecord.self)
-        let settings = try await pullResource(.settings, entryType: AppSettingsRecord.self)
-
-        let snapshot = TuneAVLibrarySnapshot(
-            favorites: favorites.entries,
-            recents: recents.entries,
-            discoveries: discoveries.entries,
-            settings: settings.entries.first ?? .empty
-        )
-        let updatedAt = [
-            favorites.updatedAt,
-            recents.updatedAt,
-            discoveries.updatedAt,
-            settings.updatedAt
-        ].max() ?? .distantPast
-
-        return TuneAVLibraryDocument(
-            snapshot: snapshot.hasMeaningfulContent ? snapshot : nil,
-            updatedAt: updatedAt,
-            revision: [
-                favorites.revision,
-                recents.revision,
-                discoveries.revision,
-                settings.revision
-            ].max() ?? 0,
-            etag: nil
-        )
+        try await syncClient.pullLibrary()
     }
 
     func pushLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
-        try await pushResource(.favorites, entries: snapshot.favorites)
-        try await pushResource(.recents, entries: snapshot.recents)
-        try await pushResource(.discoveries, entries: snapshot.discoveries)
-        try await pushResource(.settings, entries: [snapshot.settings])
+        try await syncClient.pushLibrary(snapshot)
     }
 
     func overwriteLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
-        for resource in MacAppDataResource.allCases {
-            forgetSyncVersion(for: resource)
-        }
-        try await pushLibrary(snapshot)
-    }
-
-    private func pullResource<Entry: Codable>(
-        _ resource: MacAppDataResource,
-        entryType: Entry.Type
-    ) async throws -> MacAppDataResourceDocument<Entry> {
-        let payload: MacAppDataResponsePayload<Entry> = try await request(path: dataPath(for: resource))
-        rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
-
-        return MacAppDataResourceDocument(
-            entries: payload.data.entries,
-            updatedAt: TuneAVDateCoding.date(from: payload.updatedAt),
-            revision: payload.revision ?? 0,
-            etag: payload.etag
-        )
-    }
-
-    private func pushResource<Entry: Codable>(_ resource: MacAppDataResource, entries: [Entry]) async throws {
-        try await pushResource(resource, entries: entries, allowsConflictRetry: true)
-    }
-
-    private func pushResource<Entry: Codable>(
-        _ resource: MacAppDataResource,
-        entries: [Entry],
-        allowsConflictRetry: Bool
-    ) async throws {
-        let envelope = MacAppDataEnvelopePayload(
-            appId: MacAppDataConstants.appId,
-            resource: resource.rawValue,
-            deviceId: MacAppDataConstants.deviceId,
-            sentAt: TuneAVDateCoding.string(from: .now),
-            entries: entries
-        )
-
-        var headers: [String: String] = [:]
-        if let lastKnownEtag = lastKnownEtags[resource.rawValue] {
-            headers["If-Match"] = lastKnownEtag
-        } else if let lastKnownRevision = lastKnownRevisions[resource.rawValue] {
-            headers["If-Match"] = "\"revision-\(lastKnownRevision)\""
-        }
-
-        let response: MacAppDataResponsePayload<Entry>
-        do {
-            response = try await request(
-                path: dataPath(for: resource),
-                method: "PUT",
-                body: try encoder.encode(envelope),
-                headers: headers
-            )
-        } catch MacAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
-            guard allowsConflictRetry else {
-                throw TuneAVAppDataError.conflict
-            }
-
-            _ = try await pullResource(resource, entryType: Entry.self)
-            try await pushResource(resource, entries: entries, allowsConflictRetry: false)
-            return
-        }
-        rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
-    }
-
-    private func request<T: Decodable>(
-        path: String,
-        method: String = "GET",
-        body: Data? = nil,
-        headers: [String: String] = [:]
-    ) async throws -> T {
-        guard let token = try await tokenProvider(), !token.isEmpty else {
-            throw MacAppDataClientError.missingToken
-        }
-        guard let baseURL, baseURL.isSupportedAVAccountBaseURL else {
-            throw MacAppDataClientError.missingBaseURL
-        }
-
-        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let url = baseURL.appending(path: sanitizedPath)
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        for (field, value) in headers {
-            request.setValue(value, forHTTPHeaderField: field)
-        }
-        if let body {
-            request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            throw MacAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
-        }
-
-        return try decoder.decode(T.self, from: data)
-    }
-
-    private func rememberSyncVersion(for resource: MacAppDataResource, revision: Int?, etag: String?) {
-        lastKnownRevisions[resource.rawValue] = revision
-        lastKnownEtags[resource.rawValue] = etag
-    }
-
-    private func forgetSyncVersion(for resource: MacAppDataResource) {
-        lastKnownRevisions[resource.rawValue] = nil
-        lastKnownEtags[resource.rawValue] = nil
-    }
-
-    private func dataPath(for resource: MacAppDataResource) -> String {
-        "/v1/apps/\(MacAppDataConstants.appId)/data/\(resource.rawValue)"
+        try await syncClient.overwriteLibrary(snapshot)
     }
 }
 
@@ -519,8 +256,8 @@ final class MacAccessController: ObservableObject {
     init(defaults: UserDefaults = .standard, accessModeKey: String = "tuneav.mac.accessMode") {
         self.defaults = defaults
         self.accessModeKey = accessModeKey
-        let storedMode = AccessMode(rawValue: defaults.string(forKey: accessModeKey) ?? "") ?? .guest
-        self.state = .localFallback(for: storedMode)
+        self.state = Self.uiTestAccessState()
+            ?? .localFallback(for: AccessMode(rawValue: defaults.string(forKey: accessModeKey) ?? "") ?? .guest)
     }
 
     var accessMode: AccessMode { state.accessMode }
@@ -535,6 +272,13 @@ final class MacAccessController: ObservableObject {
 
     @discardableResult
     func refresh(using provider: MacAccessProviding) async -> Bool {
+        if let uiTestAccessState = Self.uiTestAccessState() {
+            state = uiTestAccessState
+            defaults.set(uiTestAccessState.accessMode.rawValue, forKey: accessModeKey)
+            lastRefreshError = nil
+            return true
+        }
+
         do {
             let refreshedState = try await provider.fetchAccessState()
             state = refreshedState
@@ -546,61 +290,17 @@ final class MacAccessController: ObservableObject {
             return false
         }
     }
-}
 
-struct UpgradePromptContext: Identifiable, Equatable {
-    let id = UUID()
-    let title: String
-    let message: String
-    let benefit: String
-    let progressText: String?
-
-    static func favorites(current: Int, limit: Int) -> UpgradePromptContext {
-        UpgradePromptContext(
-            title: L10n.string("limits.upgrade.favoriteStations.title"),
-            message: L10n.string("limits.upgrade.favoriteStations.message", limit),
-            benefit: L10n.string("limits.upgrade.default.message"),
-            progressText: L10n.string("mac.limits.progress.favorites", current, limit)
-        )
-    }
-
-    static func savedTracks(current: Int, limit: Int) -> UpgradePromptContext {
-        UpgradePromptContext(
-            title: L10n.string("limits.upgrade.savedTracks.title"),
-            message: L10n.string("limits.upgrade.savedTracks.message", limit),
-            benefit: L10n.string("limits.upgrade.default.message"),
-            progressText: L10n.string("mac.limits.progress.savedTracks", current, limit)
-        )
-    }
-
-    static func dailyFeature(_ feature: LimitedFeature, current: Int, limit: Int) -> UpgradePromptContext {
-        let featureName: String
-        switch feature {
-        case .favoriteStations:
-            featureName = L10n.string("mac.limits.feature.favoriteStations")
-        case .savedTracks:
-            featureName = L10n.string("mac.limits.feature.savedTracks")
-        case .discoveredTracks:
-            featureName = L10n.string("mac.limits.feature.discoveredTracks")
-        case .lyricsSearch:
-            featureName = L10n.string("mac.limits.feature.lyrics")
-        case .webSearch:
-            featureName = L10n.string("mac.limits.feature.web")
-        case .youtubeSearch:
-            featureName = L10n.string("mac.limits.feature.youtube")
-        case .appleMusicSearch:
-            featureName = L10n.string("mac.limits.feature.appleMusic")
-        case .spotifySearch:
-            featureName = L10n.string("mac.limits.feature.spotify")
-        case .discoveryShare:
-            featureName = L10n.string("mac.limits.feature.discoveryShare")
+    private static func uiTestAccessState(environment: [String: String] = ProcessInfo.processInfo.environment) -> MacAccessState? {
+        let uiTestEnvironment = TuneAVUITestEnvironment(environment: environment)
+        guard uiTestEnvironment.isEnabled else { return nil }
+        guard !uiTestEnvironment.shouldForceGuest else {
+            return .localFallback(for: .guest)
         }
+        guard uiTestEnvironment.hasAccountOverride else { return nil }
 
-        return UpgradePromptContext(
-            title: L10n.string("mac.limits.daily.title", featureName),
-            message: L10n.string("mac.limits.daily.message", current, limit, featureName),
-            benefit: L10n.string("limits.upgrade.default.message"),
-            progressText: L10n.string("mac.limits.progress.today", current, limit)
-        )
+        return .localFallback(for: uiTestEnvironment.isProAccount ? .signedInPro : .signedInFree)
     }
 }
+
+typealias UpgradePromptContext = TuneAVUpgradePromptContext

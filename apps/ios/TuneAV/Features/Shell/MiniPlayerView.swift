@@ -120,24 +120,25 @@ struct MiniPlayerView: View {
     }
 
     private var artistLine: String {
-        if let artist = normalizedMetadata(audioPlayer.currentTrackArtist) {
-            return artist
-        }
-
-        return station.cardDetailText(preferCountryName: station.flagEmoji == nil)
-            ?? L10n.string("shell.station.row.defaultDetail")
+        stationDisplayLines.artistLine
     }
 
     private var titleLine: String {
-        if let title = normalizedMetadata(audioPlayer.currentTrackTitle) {
-            return title
-        }
+        stationDisplayLines.titleLine
+    }
 
-        if let albumTitle = normalizedMetadata(audioPlayer.currentTrackAlbumTitle) {
-            return albumTitle
-        }
-
-        return L10n.string("player.track.liveStreamActive")
+    private var stationDisplayLines: TuneAVStationDisplayLines {
+        TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: audioPlayer.isCurrent(station),
+            currentArtist: audioPlayer.currentTrackArtist,
+            currentTitle: audioPlayer.currentTrackTitle,
+            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
+            nowPlayingTrack: nil,
+            detailText: station.cardDetailText(preferCountryName: station.flagEmoji == nil)
+                ?? L10n.string("shell.station.row.defaultDetail"),
+            liveFallback: L10n.string("player.track.liveStreamActive")
+        )
     }
 
     private var trackArtworkExists: Bool {
@@ -160,6 +161,6 @@ struct MiniPlayerView: View {
     }
 
     private func normalizedMetadata(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value)
+        TuneAVDisplayMetadata.normalized(value)
     }
 }

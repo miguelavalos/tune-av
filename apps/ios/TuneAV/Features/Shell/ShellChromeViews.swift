@@ -149,9 +149,17 @@ struct StationThumbnailView: View {
                 AsyncImage(url: artworkURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
+                        if station.displayArtworkUsesFaviconProxy {
+                            StationArtworkView(
+                                station: station,
+                                size: size,
+                                surfaceStyle: surfaceStyle
+                            )
+                        } else {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        }
                     default:
                         StationArtworkView(
                             station: station,

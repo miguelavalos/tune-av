@@ -20,6 +20,17 @@ enum TuneAVDiscoveredTrackSupport {
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
+    static func artistDisplayText(_ artist: String?, liveFallback: String) -> String {
+        normalizedValue(artist) ?? liveFallback
+    }
+
+    static func searchQuery(title: String, artist: String?) -> String {
+        guard let artist = normalizedValue(artist) else {
+            return title
+        }
+        return "\(artist) \(title)"
+    }
+
     static func resolvedURL(_ value: String?) -> URL? {
         guard let value else { return nil }
         return URL(string: value)

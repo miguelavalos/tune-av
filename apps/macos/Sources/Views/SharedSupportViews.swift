@@ -83,21 +83,121 @@ struct LibraryMetricCard: View {
     let detail: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 7) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(TuneAVTheme.highlight)
             Text(value)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .lineLimit(1)
             Text(detail)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textSecondary)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .avCardSurface(cornerRadius: 18)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(TuneAVTheme.cardSurface)
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(TuneAVTheme.highlight.opacity(0.08))
+                        .frame(width: 58, height: 58)
+                        .offset(x: 18, y: -22)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle.opacity(0.8), lineWidth: 1)
+                }
+        )
+    }
+}
+
+struct MacSearchField: View {
+    let prompt: String
+    @Binding var text: String
+    var submitAction: (() -> Void)?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+
+            TextField(prompt, text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .onSubmit {
+                    submitAction?()
+                }
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                    submitAction?()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.86), lineWidth: 1)
+        }
+    }
+}
+
+struct MacIconButton: View {
+    let systemImage: String
+    var title: String? = nil
+    var isProminent = false
+    var role: ButtonRole? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .bold))
+                if let title {
+                    Text(title)
+                        .font(.system(size: 13, weight: .bold))
+                }
+            }
+            .foregroundStyle(foreground)
+            .padding(.horizontal, title == nil ? 0 : 13)
+            .frame(width: title == nil ? 44 : nil, height: 44)
+            .background(background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(border, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var foreground: Color {
+        if role == .destructive { return Color(red: 0.88, green: 0.08, blue: 0.22) }
+        return isProminent ? .white : TuneAVTheme.textPrimary
+    }
+
+    private var background: Color {
+        if role == .destructive { return Color(red: 1, green: 0.17, blue: 0.38).opacity(0.09) }
+        return isProminent ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface
+    }
+
+    private var border: Color {
+        if role == .destructive { return Color(red: 1, green: 0.17, blue: 0.38).opacity(0.2) }
+        return isProminent ? TuneAVTheme.highlight.opacity(0.35) : TuneAVTheme.borderSubtle
     }
 }
 

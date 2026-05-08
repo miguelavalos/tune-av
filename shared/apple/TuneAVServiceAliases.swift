@@ -1,5 +1,8 @@
 import Foundation
 
+typealias TrackArtwork = TuneAVTrackArtwork
+typealias TrackArtworkService = TuneAVTrackArtworkService
+
 struct StationService {
     typealias SearchFilters = TuneAVStationSearchFilters
 

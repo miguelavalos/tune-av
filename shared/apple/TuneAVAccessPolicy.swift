@@ -6,11 +6,45 @@ enum AccessMode: String, CaseIterable, Codable, Identifiable {
     case signedInPro
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .guest:
+            return L10n.string("profile.status.guest")
+        case .signedInFree:
+            return L10n.string("profile.status.free")
+        case .signedInPro:
+            return L10n.string("profile.status.pro")
+        }
+    }
 }
 
 enum PlanTier: String, Codable {
     case free
     case pro
+}
+
+struct TuneAVResolvedAccess: Equatable {
+    let planTier: PlanTier
+    let accessMode: AccessMode
+    let capabilities: AccessCapabilities
+    let limits: AccessLimits
+
+    static let guest = TuneAVResolvedAccess(
+        planTier: .free,
+        accessMode: .guest,
+        capabilities: .forMode(.guest),
+        limits: .forMode(.guest)
+    )
+
+    static func localFallback(for accessMode: AccessMode) -> TuneAVResolvedAccess {
+        TuneAVResolvedAccess(
+            planTier: accessMode == .signedInPro ? .pro : .free,
+            accessMode: accessMode,
+            capabilities: .forMode(accessMode),
+            limits: TuneAVAccessLimitPolicy.resolvedLimits(.forMode(accessMode), accessMode: accessMode)
+        )
+    }
 }
 
 enum LimitedFeature: String, CaseIterable, Codable {
@@ -23,6 +57,15 @@ enum LimitedFeature: String, CaseIterable, Codable {
     case appleMusicSearch
     case spotifySearch
     case discoveryShare
+
+    static let dailyUsageLimitedFeatures: Set<LimitedFeature> = [
+        .lyricsSearch,
+        .webSearch,
+        .youtubeSearch,
+        .appleMusicSearch,
+        .spotifySearch,
+        .discoveryShare
+    ]
 }
 
 struct TuneAVAccessLimitValues: Equatable {

@@ -37,6 +37,16 @@ targets:
       - path: Sources
       - path: ../../shared/apple
       - path: Assets.xcassets
+      - path: en.lproj/Localizable.strings
+        buildPhase: resources
+      - path: es.lproj/Localizable.strings
+        buildPhase: resources
+      - path: fr.lproj/Localizable.strings
+        buildPhase: resources
+      - path: de.lproj/Localizable.strings
+        buildPhase: resources
+      - path: ca.lproj/Localizable.strings
+        buildPhase: resources
     dependencies:
       - package: AccountAV
         product: AccountAV
