@@ -212,38 +212,11 @@ struct StationThumbnailView: View {
     }
 
     var body: some View {
-        Group {
-            if let artworkURL = station.displayArtworkURL {
-                AsyncImage(url: artworkURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        if station.displayArtworkUsesFaviconProxy {
-                            StationArtworkView(
-                                station: station,
-                                size: size,
-                                surfaceStyle: surfaceStyle
-                            )
-                        } else {
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        }
-                    default:
-                        StationArtworkView(
-                            station: station,
-                            size: size,
-                            surfaceStyle: surfaceStyle
-                        )
-                    }
-                }
-            } else {
-                StationArtworkView(
-                    station: station,
-                    size: size,
-                    surfaceStyle: surfaceStyle
-                )
-            }
-        }
+        StationArtworkView(
+            station: station,
+            size: size,
+            surfaceStyle: surfaceStyle
+        )
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .background(

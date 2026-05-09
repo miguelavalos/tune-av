@@ -36,6 +36,10 @@
 "genre.electronic" = "Elektronisch";
 "genre.frontPage" = "Für dich";
 "genre.jazz" = "Jazz";
+"genre.latin" = "Latin / Welt";
+"genre.oldies" = "Oldies";
+"genre.classical" = "Klassik";
+"genre.country" = "Country / Folk";
 "genre.news" = "Nachrichten";
 "genre.pop" = "Pop";
 "genre.rock" = "Rock";
@@ -77,6 +81,7 @@
 "player.artwork.flipToFront.accessibility.label" = "Zum Cover zurückkehren";
 "player.discovery.lyrics" = "Songtext suchen";
 "player.discovery.appleMusic" = "Auf Apple Music suchen";
+"player.discovery.itunesShort" = "iTunes";
 "player.discovery.remove" = "Entdeckung entfernen";
 "player.discovery.hide" = "Kein Interesse";
 "shell.music.discovery.hidden" = "Aus dem Verlauf ausgeblendet";
@@ -109,11 +114,12 @@
 "player.artist.youtubeShort" = "YouTube";
 "player.menu.addFavorite" = "Zu Favoriten hinzufügen";
 "player.menu.copyStreamURL" = "Stream-URL kopieren";
-"player.menu.openWebsite" = "Website des Senders öffnen";
+"player.menu.openWebsite" = "Sender-Website";
+"player.station.websiteShort" = "Sender";
 "player.menu.removeFavorite" = "Aus Favoriten entfernen";
-"player.menu.searchStation" = "Sender suchen";
-"player.menu.stationHistory" = "Senderverlauf";
-"player.menu.shareStation" = "Sender teilen";
+"player.menu.searchStation" = "Im Web suchen";
+"player.menu.stationHistory" = "Mein Verlauf bei diesem Sender";
+"player.menu.shareStation" = "Teilen";
 "player.retry" = "Stream erneut versuchen";
 "player.track.liveNow" = "Live";
 "player.track.liveStreamActive" = "Live-Stream aktiv";

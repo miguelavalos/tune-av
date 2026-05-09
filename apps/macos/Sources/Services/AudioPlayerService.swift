@@ -30,6 +30,7 @@ final class AudioPlayerService: ObservableObject {
     @Published private(set) var currentTrackArtist: String?
     @Published private(set) var currentTrackAlbumTitle: String?
     @Published private(set) var currentTrackArtworkURL: URL?
+    @Published private(set) var currentTrackArtistURL: URL?
     @Published private(set) var playbackQueue: PlaybackQueue = .init(source: .singleStation, stations: [])
 
     private var player: AVPlayer?
@@ -88,6 +89,8 @@ final class AudioPlayerService: ObservableObject {
         currentTrackTitle = title
         currentTrackArtist = artist
         currentTrackAlbumTitle = nil
+        currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
         currentTrackSource = title == nil && artist == nil ? nil : .fallback
         persistCurrentNowPlayingState()
         updateSystemNowPlayingInfo()
@@ -548,6 +551,7 @@ final class AudioPlayerService: ObservableObject {
         currentTrackTitle = title
         currentTrackArtist = artist
         currentTrackAlbumTitle = nil
+        currentTrackArtistURL = nil
         persistCurrentNowPlayingState()
         resolveArtworkForCurrentTrack()
         updateSystemNowPlayingInfo()
@@ -559,11 +563,13 @@ final class AudioPlayerService: ObservableObject {
         guard let artist = currentTrackArtist, let title = currentTrackTitle else {
             currentTrackAlbumTitle = nil
             currentTrackArtworkURL = nil
+            currentTrackArtistURL = nil
             return
         }
 
         currentTrackAlbumTitle = nil
         currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
         artworkResolutionTask = Task { [weak self] in
             guard let self else { return }
             let resolved = await trackArtworkService.resolveArtwork(artist: artist, title: title)
@@ -572,6 +578,7 @@ final class AudioPlayerService: ObservableObject {
                 guard self.currentTrackArtist == artist, self.currentTrackTitle == title else { return }
                 self.currentTrackAlbumTitle = resolved?.albumTitle
                 self.currentTrackArtworkURL = resolved?.artworkURL
+                self.currentTrackArtistURL = resolved?.artistURL
                 self.persistCurrentNowPlayingState()
                 self.updateSystemNowPlayingInfo()
             }
@@ -586,6 +593,7 @@ final class AudioPlayerService: ObservableObject {
         currentTrackArtist = nil
         currentTrackAlbumTitle = nil
         currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
     }
@@ -621,7 +629,7 @@ final class AudioPlayerService: ObservableObject {
     }
 
     private func refreshSystemNowPlayingArtworkIfNeeded(for station: Station) {
-        let artworkURL = currentTrackArtworkURL ?? station.displayArtworkURL
+        let artworkURL = currentTrackArtworkURL
 
         if artworkURL == nowPlayingArtworkSourceURL, nowPlayingArtworkImage != nil {
             return
@@ -690,7 +698,8 @@ final class AudioPlayerService: ObservableObject {
             currentTrackTitle != nil ||
             currentTrackArtist != nil ||
             currentTrackAlbumTitle != nil ||
-            currentTrackArtworkURL != nil
+            currentTrackArtworkURL != nil ||
+            currentTrackArtistURL != nil
 
         guard hasVisibleMetadata else { return }
 
@@ -698,7 +707,8 @@ final class AudioPlayerService: ObservableObject {
             title: currentTrackTitle,
             artist: currentTrackArtist,
             albumTitle: currentTrackAlbumTitle,
-            artworkURL: currentTrackArtworkURL
+            artworkURL: currentTrackArtworkURL,
+            artistURL: currentTrackArtistURL
         )
     }
 
@@ -711,6 +721,7 @@ final class AudioPlayerService: ObservableObject {
         currentTrackArtist = sanitizedArtist
         currentTrackAlbumTitle = cachedState.albumTitle
         currentTrackArtworkURL = cachedState.artworkURL
+        currentTrackArtistURL = cachedState.artistURL
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
     }
 

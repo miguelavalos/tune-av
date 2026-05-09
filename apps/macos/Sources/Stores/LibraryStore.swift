@@ -1045,7 +1045,7 @@ final class LibraryStore: ObservableObject {
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveries[index].playedAt = .now
             discoveries[index].artworkURL = artworkURL?.absoluteString ?? discoveries[index].artworkURL
-            discoveries[index].stationArtworkURL = station.displayArtworkURL?.absoluteString ?? discoveries[index].stationArtworkURL
+            discoveries[index].stationArtworkURL = nil
             if markInteresting {
                 discoveries[index].markedInterestedAt = discoveries[index].markedInterestedAt ?? .now
                 discoveries[index].hiddenAt = nil

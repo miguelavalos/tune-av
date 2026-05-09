@@ -228,7 +228,7 @@ final class DiscoveredTrack {
         self.stationID = station.id
         self.stationName = station.name
         self.artworkURL = artworkURL?.absoluteString
-        self.stationArtworkURL = station.displayArtworkURL?.absoluteString
+        self.stationArtworkURL = nil
         self.playedAt = playedAt
         self.markedInterestedAt = markedInterestedAt
         self.hiddenAt = hiddenAt

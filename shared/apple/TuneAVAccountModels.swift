@@ -2,10 +2,17 @@ import Foundation
 
 enum TuneAVInitials {
     static func make(from value: String, fallback: String = "AV") -> String {
-        let letters = value
-            .split(separator: " ")
+        let tokens = value
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .compactMap { token -> String? in
+                let folded = token.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                let letters = folded.unicodeScalars.filter { CharacterSet.letters.contains($0) }
+                guard let firstLetter = letters.first else { return nil }
+                return String(Character(firstLetter)).uppercased()
+            }
+
+        let letters = tokens
             .prefix(2)
-            .map { String($0.prefix(1)).uppercased() }
             .joined()
 
         return letters.isEmpty ? fallback : letters

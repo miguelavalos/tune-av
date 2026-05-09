@@ -172,6 +172,14 @@ struct HomeView: View {
             return L10n.string("genre.electronic")
         case "ambient":
             return L10n.string("genre.ambient")
+        case "latin":
+            return L10n.string("genre.latin")
+        case "oldies":
+            return L10n.string("genre.oldies")
+        case "classical":
+            return L10n.string("genre.classical")
+        case "country":
+            return L10n.string("genre.country")
         default:
             return tag.capitalized
         }

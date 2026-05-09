@@ -115,7 +115,12 @@ struct MiniPlayerView: View {
                     .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
             }
         } else {
-            StationArtworkView(station: station, size: 46)
+            StationArtworkView(
+                station: station,
+                size: 46,
+                animationOverlay: .equalizerBars,
+                isAnimationActive: audioPlayer.isCurrent(station) && audioPlayer.isPlaying
+            )
         }
     }
 

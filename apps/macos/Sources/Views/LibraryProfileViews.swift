@@ -239,7 +239,7 @@ struct ProfileView: View {
     let overwriteCloudAction: () -> Void
     let clearSyncStatusAction: () -> Void
     @AppStorage("tuneav.mac.appearance") private var appearanceMode = "system"
-    private let genreTags = ["rock", "pop", "jazz", "news", "electronic", "ambient"]
+    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
 
     var body: some View {
         GeometryReader { proxy in
@@ -659,12 +659,18 @@ struct ProfileView: View {
             return "music.note"
         case "jazz":
             return "music.mic"
-        case "news":
-            return "newspaper"
         case "electronic":
             return "waveform"
         case "ambient":
             return "sparkles"
+        case "latin":
+            return "globe.americas"
+        case "oldies":
+            return "clock.arrow.circlepath"
+        case "classical":
+            return "pianokeys"
+        case "country":
+            return "guitars"
         default:
             return "music.note.list"
         }

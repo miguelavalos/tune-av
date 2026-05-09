@@ -26,7 +26,7 @@ struct ContentView: View {
     @AppStorage("tuneav.mac.launchToSearch") private var launchToSearch = false
 
     private let stationService = StationService()
-    private let genreTags = ["ambient", "rock", "pop", "jazz", "news", "electronic"]
+    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
     private let launchContext = MacLaunchContext.current
 
     private var appSearch: AppShellSearch {
@@ -933,6 +933,7 @@ private struct DesktopPlayerInspector: View {
             DesktopPlayerArtwork(
                 station: station,
                 trackArtworkURL: audioPlayer.currentTrackArtworkURL,
+                trackArtistURL: audioPlayer.currentTrackArtistURL,
                 trackTitle: normalized(audioPlayer.currentTrackTitle),
                 trackArtist: normalized(audioPlayer.currentTrackArtist),
                 isDiscoverableTrack: hasDiscoverableTrack,
@@ -940,7 +941,9 @@ private struct DesktopPlayerInspector: View {
                 isLoading: audioPlayer.isCurrent(station) && audioPlayer.playbackState == .loading,
                 isFavorite: isFavorite(station),
                 onSaveDiscovery: { saveCurrentDiscovery(for: station) },
-                onShareDiscovery: { shareCurrentDiscovery(for: station) },
+                onOpenAppleMusic: {
+                    openExternalSearch(.appleMusicSearch, destination: .appleMusic)
+                },
                 onOpenYouTube: {
                     openExternalSearch(.youtubeSearch, destination: .youtube)
                 },
@@ -949,9 +952,6 @@ private struct DesktopPlayerInspector: View {
                 },
                 onOpenArtist: {
                     openArtistSearch(destination: .web, feature: .webSearch)
-                },
-                onOpenArtistYouTube: {
-                    openArtistSearch(destination: .youtube, feature: .youtubeSearch)
                 },
                 onTogglePlayback: {
                     if audioPlayer.isCurrent(station) {
@@ -1277,10 +1277,12 @@ private struct DesktopPlayerInspector: View {
 }
 
 struct DesktopPlayerArtwork: View {
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var languageController: AppLanguageController
 
     let station: Station
     let trackArtworkURL: URL?
+    let trackArtistURL: URL?
     let trackTitle: String?
     let trackArtist: String?
     let isDiscoverableTrack: Bool
@@ -1288,11 +1290,10 @@ struct DesktopPlayerArtwork: View {
     let isLoading: Bool
     let isFavorite: Bool
     let onSaveDiscovery: () -> Void
-    let onShareDiscovery: () -> Void
+    let onOpenAppleMusic: () -> Void
     let onOpenYouTube: () -> Void
     let onOpenLyrics: () -> Void
     let onOpenArtist: () -> Void
-    let onOpenArtistYouTube: () -> Void
     let onTogglePlayback: () -> Void
     let onToggleFavorite: () -> Void
     let onOpenWebsite: () -> Void
@@ -1420,12 +1421,12 @@ struct DesktopPlayerArtwork: View {
                         action: onSaveDiscovery
                     )
 
-                    artworkActionButton(systemImage: "square.and.arrow.up", title: L10n.string("player.discovery.shareShort"), action: onShareDiscovery)
+                    artworkActionButton(systemImage: "music.note", title: L10n.string("player.discovery.itunesShort"), action: onOpenAppleMusic)
                 }
 
                 HStack(spacing: 10) {
-                    artworkActionButton(systemImage: "play.rectangle.fill", title: L10n.string("player.discovery.videoShort"), action: onOpenYouTube)
                     artworkActionButton(systemImage: "text.quote", title: L10n.string("player.discovery.lyricsShort"), action: onOpenLyrics)
+                    artworkActionButton(systemImage: "play.rectangle.fill", title: L10n.string("player.discovery.videoShort"), action: onOpenYouTube)
                 }
             }
         } else {
@@ -1454,7 +1455,7 @@ struct DesktopPlayerArtwork: View {
         VStack(spacing: size < 260 ? 12 : 16) {
             Button(action: flipToFront) {
                 VStack(spacing: size < 260 ? 9 : 12) {
-                    stationFallbackArtwork(size: size < 260 ? 76 : 94)
+                    stationFallbackArtwork(size: size < 260 ? 76 : 94, heroSize: size)
 
                     VStack(spacing: 4) {
                         Text(station.name)
@@ -1493,16 +1494,16 @@ struct DesktopPlayerArtwork: View {
         VStack(spacing: size < 260 ? 8 : 10) {
             Button(action: flipToFront) {
                 HStack(spacing: 12) {
-                    compactArtwork(size: size < 260 ? 38 : 48)
+                    compactArtwork(size: size < 260 ? 38 : 48, heroSize: size)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(songPrimaryLine)
-                            .font(.system(size: size < 260 ? 13 : 15, weight: .bold))
+                            .font(.system(size: size < 260 ? 15 : 17, weight: .bold))
                             .foregroundStyle(TuneAVTheme.textInverse)
                             .lineLimit(1)
 
                         Text(songSecondaryLine)
-                            .font(.system(size: size < 260 ? 11 : 13, weight: .semibold))
+                            .font(.system(size: size < 260 ? 13 : 15, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textInverse.opacity(0.72))
                             .lineLimit(1)
                     }
@@ -1521,7 +1522,7 @@ struct DesktopPlayerArtwork: View {
                         action: onSaveDiscovery
                     )
 
-                    artworkActionButton(systemImage: "square.and.arrow.up", title: L10n.string("player.discovery.shareShort"), action: onShareDiscovery)
+                    artworkActionButton(systemImage: "music.note", title: L10n.string("player.discovery.itunesShort"), action: onOpenAppleMusic)
                 }
 
                 HStack(spacing: 8) {
@@ -1540,16 +1541,16 @@ struct DesktopPlayerArtwork: View {
         VStack(spacing: size < 260 ? 8 : 10) {
             Button(action: flipToFront) {
                 HStack(spacing: 12) {
-                    stationFallbackArtwork(size: size < 260 ? 40 : 50)
+                    stationFallbackArtwork(size: size < 260 ? 40 : 50, heroSize: size)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(backSubtitle)
-                            .font(.system(size: size < 260 ? 13 : 15, weight: .bold))
+                            .font(.system(size: size < 260 ? 15 : 17, weight: .bold))
                             .foregroundStyle(TuneAVTheme.textInverse)
                             .lineLimit(1)
 
                         Text(L10n.string("player.artist.stationContext", station.name))
-                            .font(.system(size: size < 260 ? 11 : 13, weight: .semibold))
+                            .font(.system(size: size < 260 ? 13 : 15, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textInverse.opacity(0.66))
                             .lineLimit(1)
                     }
@@ -1560,8 +1561,10 @@ struct DesktopPlayerArtwork: View {
             .buttonStyle(.plain)
 
             HStack(spacing: 8) {
-                artworkActionButton(systemImage: "music.mic", title: L10n.string("player.artist.searchShort"), action: onOpenArtist)
-                artworkActionButton(systemImage: "play.rectangle.fill", title: L10n.string("player.artist.youtubeShort"), action: onOpenArtistYouTube)
+                artworkActionButton(systemImage: "music.mic", title: L10n.string("player.artist.viewShort"), action: openArtist)
+                if station.resolvedHomepageURL != nil {
+                    artworkActionButton(systemImage: "radio", title: L10n.string("player.station.websiteShort"), action: onOpenWebsite)
+                }
             }
         }
         .padding(.horizontal, size < 260 ? 10 : 12)
@@ -1570,9 +1573,17 @@ struct DesktopPlayerArtwork: View {
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
+    private func openArtist() {
+        if let trackArtistURL {
+            openURL(trackArtistURL)
+        } else {
+            onOpenArtist()
+        }
+    }
+
     private func heroArtwork(size: CGFloat, cornerRadius: CGFloat) -> some View {
         ZStack {
-            if let artworkURL = trackArtworkURL ?? station.displayArtworkURL {
+            if let artworkURL = trackArtworkURL {
                 AsyncImage(url: artworkURL) { phase in
                     switch phase {
                     case .success(let image):
@@ -1608,7 +1619,11 @@ struct DesktopPlayerArtwork: View {
             size: size,
             surfaceStyle: .dark,
             contentInsetRatio: 0.04,
-            cornerRadiusRatio: cornerRadius / size
+            cornerRadiusRatio: cornerRadius / size,
+            textMode: .stationName,
+            animationOverlay: .automatic,
+            isAnimationActive: trackArtworkURL == nil,
+            animationDuration: 10
         )
     }
 
@@ -1622,47 +1637,53 @@ struct DesktopPlayerArtwork: View {
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
     }
 
-    private func compactArtwork(size: CGFloat) -> some View {
+    private func compactArtwork(size: CGFloat, heroSize: CGFloat) -> some View {
         Group {
-            if let artworkURL = trackArtworkURL ?? station.displayArtworkURL {
+            if let artworkURL = trackArtworkURL {
                 AsyncImage(url: artworkURL) { phase in
                     switch phase {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     default:
-                        StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
+                        stationFallbackArtwork(size: size, heroSize: heroSize)
                     }
                 }
             } else {
-                StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
+                stationFallbackArtwork(size: size, heroSize: heroSize)
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .clipShape(playerArtworkShape(for: size, heroSize: heroSize))
+        .overlay {
+            playerArtworkShape(for: size, heroSize: heroSize)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+        }
     }
 
-    private func stationFallbackArtwork(size: CGFloat) -> some View {
-        Group {
-            if let artworkURL = station.displayArtworkURL {
-                AsyncImage(url: artworkURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
-                    }
-                }
-            } else {
-                StationThumbnailView(station: station, size: size, surfaceStyle: .dark)
-            }
-        }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+    private func stationFallbackArtwork(size: CGFloat, heroSize: CGFloat) -> some View {
+        StationArtworkView(
+            station: station,
+            size: size,
+            surfaceStyle: .dark,
+            contentInsetRatio: 0.04,
+            cornerRadiusRatio: heroCornerRadiusRatio(for: heroSize),
+            textMode: .stationName,
+            animationOverlay: .automatic,
+            isAnimationActive: false
+        )
+    }
+
+    private func playerArtworkShape(for size: CGFloat, heroSize: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: size * heroCornerRadiusRatio(for: heroSize), style: .continuous)
+    }
+
+    private func heroCornerRadiusRatio(for size: CGFloat) -> CGFloat {
+        max(size * 0.105, 24) / size
     }
 
     private func blurredBackdrop(size: CGFloat) -> some View {
         Group {
-            if let artworkURL = trackArtworkURL ?? station.displayArtworkURL {
+            if let artworkURL = trackArtworkURL {
                 AsyncImage(url: artworkURL) { phase in
                     if case .success(let image) = phase {
                         image

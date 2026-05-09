@@ -903,7 +903,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(station.shareText, "Radio Nova\nhttps://www.nova.fr")
     }
 
-    func testStationArtworkProxiesIcoFavicons() {
+    func testStationDisplayArtworkURLDoesNotReturnFaviconOrProxyURL() {
         let station = Station(
             id: "australian-digital-radio",
             name: "Australian Digital Radio Network",
@@ -916,13 +916,57 @@ final class SharedAppleSupportTests: XCTestCase {
             homepageURL: "http://www.australiandigitalradio.com/"
         )
 
-        XCTAssertEqual(station.displayArtworkURL?.host, "www.google.com")
-        XCTAssertEqual(station.displayArtworkURL?.path, "/s2/favicons")
-        XCTAssertEqual(
-            queryValue("domain_url", in: station.displayArtworkURL),
-            "http://www.australiandigitalradio.com/"
+        XCTAssertNil(station.displayArtworkURL)
+        XCTAssertFalse(station.displayArtworkUsesFaviconProxy)
+    }
+
+    func testStationFallbackArtworkSelectionIsDeterministic() {
+        let station = Station(
+            id: "stable-station-id",
+            name: "Stable Station",
+            country: "United States",
+            language: "English",
+            tags: "radio",
+            streamURL: "https://example.com/stream"
         )
-        XCTAssertTrue(station.displayArtworkUsesFaviconProxy)
+
+        XCTAssertEqual(TuneAVFallbackArtwork.select(for: station), TuneAVFallbackArtwork.select(for: station))
+        XCTAssertEqual(TuneAVFallbackArtwork.stableHash(station.id), TuneAVFallbackArtwork.stableHash(station.id))
+    }
+
+    func testStationFallbackInitialsGeneration() {
+        let station = Station(
+            id: "radio-nova",
+            name: "Radio Nova",
+            country: "France",
+            language: "French",
+            tags: "eclectic",
+            streamURL: "https://example.com/stream"
+        )
+
+        XCTAssertEqual(station.initials, "RN")
+    }
+
+    func testFallbackArtworkMapsRockAndJazzTags() {
+        let rockStation = Station(
+            id: "rock",
+            name: "Rock Station",
+            country: "United States",
+            language: "English",
+            tags: "classic rock,alternative",
+            streamURL: "https://example.com/rock"
+        )
+        let jazzStation = Station(
+            id: "jazz",
+            name: "Jazz Station",
+            country: "United States",
+            language: "English",
+            tags: "jazz,chill,blues",
+            streamURL: "https://example.com/jazz"
+        )
+
+        XCTAssertEqual(rockStation.fallbackArtwork, .rockPop)
+        XCTAssertEqual(jazzStation.fallbackArtwork, .jazzChill)
     }
 
     func testStationShareTextFallsBackToStreamURL() {
@@ -1065,6 +1109,9 @@ final class SharedAppleSupportTests: XCTestCase {
     func testInitialsUseSharedTwoWordFallbackRule() {
         XCTAssertEqual(TuneAVInitials.make(from: "Massive Attack"), "MA")
         XCTAssertEqual(TuneAVInitials.make(from: "  Rosalia  "), "R")
+        XCTAssertEqual(TuneAVInitials.make(from: "Exclusively - Bon Jovi Hits"), "EB")
+        XCTAssertEqual(TuneAVInitials.make(from: "0-9 Radio"), "R")
+        XCTAssertEqual(TuneAVInitials.make(from: "--- 101"), "AV")
         XCTAssertEqual(TuneAVInitials.make(from: "   "), "AV")
 
         let accountUser = AccountUser(id: "user", displayName: "Boards of Canada", emailAddress: nil)

@@ -240,7 +240,7 @@ final class LibraryStore: ObservableObject {
                 existing.hiddenAt = nil
             }
             existing.artworkURL = artworkURL?.absoluteString ?? existing.artworkURL
-            existing.stationArtworkURL = station.displayArtworkURL?.absoluteString ?? existing.stationArtworkURL
+            existing.stationArtworkURL = nil
         } else {
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
             context.insert(

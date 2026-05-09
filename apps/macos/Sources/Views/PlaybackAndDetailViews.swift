@@ -174,6 +174,7 @@ struct MacNowPlayingView: View {
             DesktopPlayerArtwork(
                 station: station,
                 trackArtworkURL: audioPlayer.currentTrackArtworkURL,
+                trackArtistURL: audioPlayer.currentTrackArtistURL,
                 trackTitle: normalized(audioPlayer.currentTrackTitle),
                 trackArtist: normalized(audioPlayer.currentTrackArtist),
                 isDiscoverableTrack: hasDiscoverableTrack,
@@ -181,11 +182,10 @@ struct MacNowPlayingView: View {
                 isLoading: audioPlayer.playbackState == .loading,
                 isFavorite: libraryStore.isFavorite(station),
                 onSaveDiscovery: { saveCurrentDiscovery(for: station) },
-                onShareDiscovery: { shareCurrentDiscovery(for: station) },
+                onOpenAppleMusic: { openExternalSearch(.appleMusicSearch, destination: .appleMusic) },
                 onOpenYouTube: { openExternalSearch(.youtubeSearch, destination: .youtube) },
                 onOpenLyrics: { openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics") },
                 onOpenArtist: { openArtistSearch(destination: .web, feature: .webSearch) },
-                onOpenArtistYouTube: { openArtistSearch(destination: .youtube, feature: .youtubeSearch) },
                 onTogglePlayback: audioPlayer.togglePlayback,
                 onToggleFavorite: { libraryStore.toggleFavorite(station) },
                 onOpenWebsite: {

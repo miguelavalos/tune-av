@@ -3,6 +3,7 @@ import Foundation
 struct TuneAVTrackArtwork: Equatable, Sendable {
     let albumTitle: String?
     let artworkURL: URL?
+    let artistURL: URL?
     let source: String
 }
 
@@ -55,6 +56,7 @@ actor TuneAVTrackArtworkService {
             return TuneAVTrackArtwork(
                 albumTitle: bestMatch.collectionName,
                 artworkURL: upgradedArtworkURL(from: bestMatch.artworkUrl100),
+                artistURL: bestMatch.artistViewUrl.flatMap(URL.init(string:)),
                 source: "itunes"
             )
         } catch {
@@ -109,4 +111,5 @@ private struct TuneAVITunesTrack: Decodable {
     let trackName: String
     let collectionName: String?
     let artworkUrl100: String?
+    let artistViewUrl: String?
 }

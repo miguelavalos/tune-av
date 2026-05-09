@@ -16,7 +16,7 @@ struct ProfileScreen: View {
     @State private var isShowingSignOutError = false
     @State private var browserDestination: BrowserDestination?
     @State private var isShowingAccountDeletion = false
-    private let genreTags = ["rock", "pop", "jazz", "news", "electronic", "ambient"]
+    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
 
     var body: some View {
         ScrollView {
@@ -677,12 +677,18 @@ struct ProfileScreen: View {
             "music.note"
         case "jazz":
             "music.mic"
-        case "news":
-            "newspaper"
         case "electronic":
             "waveform"
         case "ambient":
             "sparkles"
+        case "latin":
+            "globe.americas"
+        case "oldies":
+            "clock.arrow.circlepath"
+        case "classical":
+            "pianokeys"
+        case "country":
+            "guitars"
         default:
             "music.note.list"
         }

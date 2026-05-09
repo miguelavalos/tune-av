@@ -211,32 +211,15 @@ extension Station {
     }
 
     var displayArtworkURL: URL? {
-        if let faviconURL, !faviconURL.isEmpty, let url = URL(string: faviconURL) {
-            if url.pathExtension.caseInsensitiveCompare("ico") == .orderedSame {
-                return faviconProxyURL(for: resolvedHomepageURL ?? url)
-            }
-            return url
-        }
-
-        guard let homepageURL, !homepageURL.isEmpty, let url = URL(string: homepageURL) else {
-            return nil
-        }
-
-        return faviconProxyURL(for: url)
+        nil
     }
 
     var displayArtworkUsesFaviconProxy: Bool {
-        guard let url = displayArtworkURL else { return false }
-        return url.host == "www.google.com" && url.path == "/s2/favicons"
+        false
     }
 
-    private func faviconProxyURL(for url: URL) -> URL? {
-        var components = URLComponents(string: "https://www.google.com/s2/favicons")
-        components?.queryItems = [
-            URLQueryItem(name: "sz", value: "256"),
-            URLQueryItem(name: "domain_url", value: url.absoluteString)
-        ]
-        return components?.url
+    var fallbackArtwork: TuneAVFallbackArtwork {
+        TuneAVFallbackArtwork.select(for: self)
     }
 
     var resolvedHomepageURL: URL? {

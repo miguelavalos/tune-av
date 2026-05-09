@@ -163,19 +163,19 @@ struct NowPlayingView: View {
             trackArtist: audioPlayer.currentTrackArtist,
             trackAlbumTitle: audioPlayer.currentTrackAlbumTitle,
             trackArtworkURL: audioPlayer.currentTrackArtworkURL,
+            trackArtistURL: audioPlayer.currentTrackArtistURL,
             isDiscoverableTrack: hasDiscoverableTrack,
             isCurrentTrackDiscovered: isCurrentTrackSaved,
             isPlaying: audioPlayer.isPlaying,
             isLoading: audioPlayer.isLoading,
             isFavorite: libraryStore.isFavorite(station),
             homepageURL: homepageURL,
-            discoveryShareText: discoveryShareText(for: station),
             onSaveDiscovery: { saveCurrentDiscovery(for: station) },
-            onShareDiscovery: { useDailyFeatureIfAllowed(.discoveryShare, usageKey: discoveryShareText(for: station)) },
+            onOpenAppleMusic: { openExternalSearch(.appleMusicSearch, destination: .appleMusic) },
             onOpenYouTube: { openExternalSearch(.youtubeSearch, destination: .youtube) },
             onOpenLyrics: { openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics") },
             onOpenArtist: { openArtistSearch(destination: .web, feature: .webSearch) },
-            onOpenArtistYouTube: { openArtistSearch(destination: .youtube, feature: .youtubeSearch) },
+            onOpenStationSearch: { openStationSearch(for: station) },
             onTogglePlayback: audioPlayer.togglePlayback,
             onToggleFavorite: { toggleFavorite(station) },
             onOpenWebsite: { url in browserDestination = BrowserDestination(url: url) }
@@ -450,14 +450,12 @@ struct NowPlayingView: View {
 
     private func optionsMenu(for station: Station) -> some View {
         Menu {
-            if let homepageURL {
-                Button(L10n.string("player.menu.openWebsite")) {
-                    browserDestination = BrowserDestination(url: homepageURL)
-                }
+            Button(L10n.string("player.menu.copyStreamURL")) {
+                UIPasteboard.general.string = station.streamURL
             }
 
-            Button(L10n.string("player.menu.searchStation")) {
-                openStationSearch(for: station)
+            ShareLink(item: station.shareText) {
+                Text(L10n.string("player.menu.shareStation"))
             }
 
             Button(L10n.string("player.menu.stationHistory")) {
@@ -465,12 +463,14 @@ struct NowPlayingView: View {
                 dismiss()
             }
 
-            ShareLink(item: station.shareText) {
-                Text(L10n.string("player.menu.shareStation"))
+            Button(L10n.string("player.menu.searchStation")) {
+                openStationSearch(for: station)
             }
 
-            Button(L10n.string("player.menu.copyStreamURL")) {
-                UIPasteboard.general.string = station.streamURL
+            if let homepageURL {
+                Button(L10n.string("player.menu.openWebsite")) {
+                    browserDestination = BrowserDestination(url: homepageURL)
+                }
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -491,14 +491,17 @@ struct NowPlayingView: View {
         Button {
             toggleFavorite(station)
         } label: {
-            Image(systemName: libraryStore.isFavorite(station) ? "heart.fill" : "heart")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(libraryStore.isFavorite(station) ? Color.pink : TuneAVTheme.textInverse.opacity(0.78))
+            TuneAVSavedStationIcon(
+                isSaved: libraryStore.isFavorite(station),
+                size: 18,
+                inactiveColor: TuneAVTheme.textInverse,
+                activeColor: TuneAVTheme.highlight
+            )
                 .frame(width: 36, height: 36)
-                .background(Color.white.opacity(0.08), in: Circle())
+                .background(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.08), in: Circle())
                 .overlay {
                     Circle()
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.36) : Color.white.opacity(0.12), lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
@@ -814,14 +817,6 @@ struct NowPlayingView: View {
         browserDestination = BrowserDestination(url: search.url)
     }
 
-    private func discoveryShareText(for station: Station) -> String {
-        guard let discovery = currentDiscovery else {
-            return station.shareText
-        }
-
-        return discovery.localizedShareText
-    }
-
     private var discoverySearchQuery: String? {
         currentDiscovery?.searchQuery
     }
@@ -835,8 +830,7 @@ struct NowPlayingView: View {
     }
 
     private func stationArtworkURL(for station: Station) -> URL? {
-        guard let artwork = station.displayArtworkURL else { return nil }
-        return artwork
+        nil
     }
 
     private var canCycleStations: Bool {
@@ -884,25 +878,24 @@ private struct FlippingPlayerArtwork: View {
     let trackArtist: String?
     let trackAlbumTitle: String?
     let trackArtworkURL: URL?
+    let trackArtistURL: URL?
     let isDiscoverableTrack: Bool
     let isCurrentTrackDiscovered: Bool
     let isPlaying: Bool
     let isLoading: Bool
     let isFavorite: Bool
     let homepageURL: URL?
-    let discoveryShareText: String
     let onSaveDiscovery: () -> Bool
-    let onShareDiscovery: () -> Bool
+    let onOpenAppleMusic: () -> Void
     let onOpenYouTube: () -> Void
     let onOpenLyrics: () -> Void
     let onOpenArtist: () -> Void
-    let onOpenArtistYouTube: () -> Void
+    let onOpenStationSearch: () -> Void
     let onTogglePlayback: () -> Void
     let onToggleFavorite: () -> Void
     let onOpenWebsite: (URL) -> Void
 
     @State private var isShowingOptions = false
-    @State private var isShowingDiscoveryShare = false
     @State private var discoveryFeedback: DiscoveryFeedback?
 
     var body: some View {
@@ -937,9 +930,6 @@ private struct FlippingPlayerArtwork: View {
         }
         .frame(width: size, height: size)
         .contentShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-        .sheet(isPresented: $isShowingDiscoveryShare) {
-            ShareSheetView(items: [discoveryShareText])
-        }
     }
 
     private var artworkFront: some View {
@@ -1004,7 +994,7 @@ private struct FlippingPlayerArtwork: View {
             .accessibilityIdentifier("player.artwork.options.backgroundClose")
             .accessibilityHidden(true)
 
-            VStack(spacing: size < 260 ? 10 : 14) {
+            VStack(spacing: optionsBlockSpacing) {
                 if isDiscoverableTrack {
                     songInfoBlock
                     artistInfoBlock
@@ -1104,8 +1094,8 @@ private struct FlippingPlayerArtwork: View {
                     action: onTogglePlayback
                 )
 
-                artworkActionButton(
-                    systemImage: isFavorite ? "heart.fill" : "heart",
+                savedStationArtworkActionButton(
+                    isSaved: isFavorite,
                     accessibilityLabel: isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"),
                     accessibilityIdentifier: "player.artwork.options.favorite",
                     action: onToggleFavorite
@@ -1129,23 +1119,24 @@ private struct FlippingPlayerArtwork: View {
     }
 
     private var songInfoBlock: some View {
-        VStack(spacing: size < 260 ? 8 : 10) {
+        VStack(spacing: optionContentSpacing) {
             Button(action: flipToFront) {
-                HStack(spacing: 12) {
-                    compactArtwork(size: size < 260 ? 38 : 48)
+                HStack(alignment: .center, spacing: optionArtworkTextSpacing) {
+                    compactArtwork(size: optionArtworkSize)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(songPrimaryLine)
-                            .font(.system(size: size < 260 ? 13 : 15, weight: .bold))
+                            .font(.system(size: size < 260 ? 15 : 17, weight: .bold))
                             .foregroundStyle(TuneAVTheme.textInverse)
                             .lineLimit(1)
 
                         Text(songSecondaryLine)
-                            .font(.system(size: size < 260 ? 11 : 13, weight: .semibold))
+                            .font(.system(size: size < 260 ? 13 : 15, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textInverse.opacity(0.72))
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: optionArtworkSize, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -1169,14 +1160,12 @@ private struct FlippingPlayerArtwork: View {
                         .accessibilityValue(discoveryFeedbackAccessibilityValue)
 
                         artworkFlexibleActionButton(
-                            systemImage: "square.and.arrow.up",
-                            title: L10n.string("player.discovery.shareShort"),
-                            accessibilityLabel: L10n.string("player.discovery.share"),
-                            accessibilityIdentifier: "player.artwork.options.share"
-                        ) {
-                            guard onShareDiscovery() else { return }
-                            isShowingDiscoveryShare = true
-                        }
+                            systemImage: "music.note",
+                            title: L10n.string("player.discovery.itunesShort"),
+                            accessibilityLabel: L10n.string("player.discovery.appleMusic"),
+                            accessibilityIdentifier: "player.artwork.options.appleMusic",
+                            action: onOpenAppleMusic
+                        )
                     }
 
                     HStack(spacing: 8) {
@@ -1199,30 +1188,31 @@ private struct FlippingPlayerArtwork: View {
                 }
             }
         }
-        .padding(.horizontal, size < 260 ? 10 : 12)
-        .padding(.vertical, size < 260 ? 9 : 12)
+        .padding(.horizontal, optionBlockHorizontalPadding)
+        .padding(.vertical, optionBlockVerticalPadding)
         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var artistInfoBlock: some View {
-        VStack(spacing: size < 260 ? 8 : 10) {
+        VStack(spacing: optionContentSpacing) {
             Button(action: flipToFront) {
-                HStack(spacing: 12) {
-                    artistArtwork(size: size < 260 ? 40 : 50)
+                HStack(alignment: .center, spacing: optionArtworkTextSpacing) {
+                    artistArtwork(size: optionArtworkSize)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(backSubtitle)
-                            .font(.system(size: size < 260 ? 13 : 15, weight: .bold))
+                            .font(.system(size: size < 260 ? 15 : 17, weight: .bold))
                             .foregroundStyle(TuneAVTheme.textInverse)
                             .lineLimit(1)
 
                         Text(artistContextLine)
-                            .font(.system(size: size < 260 ? 11 : 13, weight: .semibold))
+                            .font(.system(size: size < 260 ? 13 : 15, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textInverse.opacity(0.66))
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: optionArtworkSize, alignment: .center)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -1233,23 +1223,33 @@ private struct FlippingPlayerArtwork: View {
             HStack(spacing: 8) {
                 artworkFlexibleActionButton(
                     systemImage: "music.mic",
-                    title: L10n.string("player.artist.searchShort"),
-                    accessibilityLabel: L10n.string("player.artist.search"),
+                    title: L10n.string("player.artist.viewShort"),
+                    accessibilityLabel: trackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view"),
                     accessibilityIdentifier: "player.artwork.options.artist",
-                    action: onOpenArtist
+                    action: openArtist
                 )
 
-                artworkFlexibleActionButton(
-                    systemImage: "play.rectangle.fill",
-                    title: L10n.string("player.artist.youtubeShort"),
-                    accessibilityLabel: L10n.string("player.artist.youtube"),
-                    accessibilityIdentifier: "player.artwork.options.artistYouTube",
-                    action: onOpenArtistYouTube
-                )
+                if let homepageURL {
+                    artworkFlexibleActionButton(
+                        systemImage: "radio",
+                        title: L10n.string("player.station.websiteShort"),
+                        accessibilityLabel: L10n.string("player.menu.openWebsite"),
+                        accessibilityIdentifier: "player.artwork.options.station",
+                        action: { onOpenWebsite(homepageURL) }
+                    )
+                } else {
+                    artworkFlexibleActionButton(
+                        systemImage: "radio",
+                        title: L10n.string("player.station.websiteShort"),
+                        accessibilityLabel: L10n.string("player.menu.searchStation"),
+                        accessibilityIdentifier: "player.artwork.options.station",
+                        action: onOpenStationSearch
+                    )
+                }
             }
         }
-        .padding(.horizontal, size < 260 ? 10 : 12)
-        .padding(.vertical, size < 260 ? 9 : 12)
+        .padding(.horizontal, optionBlockHorizontalPadding)
+        .padding(.vertical, optionBlockVerticalPadding)
         .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
@@ -1265,6 +1265,14 @@ private struct FlippingPlayerArtwork: View {
         }
 
         return isCurrentTrackDiscovered ? "bookmark.fill" : "bookmark"
+    }
+
+    private func openArtist() {
+        if let trackArtistURL {
+            onOpenWebsite(trackArtistURL)
+        } else {
+            onOpenArtist()
+        }
     }
 
     private var discoveryButtonTitle: String {
@@ -1324,13 +1332,17 @@ private struct FlippingPlayerArtwork: View {
                 case .success(let image):
                     image.resizable().scaledToFill()
                 default:
-                    StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+                    stationFallbackArtwork(size: size)
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .clipShape(playerArtworkShape(for: size))
+            .overlay {
+                playerArtworkShape(for: size)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            }
         } else {
-            StationArtworkView(station: station, size: size, surfaceStyle: .dark)
+            stationFallbackArtwork(size: size)
         }
     }
 
@@ -1341,20 +1353,20 @@ private struct FlippingPlayerArtwork: View {
 
     @ViewBuilder
     private func stationFallbackArtwork(size: CGFloat) -> some View {
-        if let artworkURL = station.displayArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    StationArtworkView(station: station, size: size, surfaceStyle: .dark)
-                }
-            }
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-        } else {
-            StationArtworkView(station: station, size: size, surfaceStyle: .dark)
-        }
+        StationArtworkView(
+            station: station,
+            size: size,
+            surfaceStyle: .dark,
+            contentInsetRatio: 0.04,
+            cornerRadiusRatio: heroCornerRadiusRatio,
+            textMode: .stationName,
+            animationOverlay: .automatic,
+            isAnimationActive: false
+        )
+    }
+
+    private func playerArtworkShape(for size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: size * heroCornerRadiusRatio, style: .continuous)
     }
 
     @ViewBuilder
@@ -1362,20 +1374,7 @@ private struct FlippingPlayerArtwork: View {
         let badgeCornerRadius: CGFloat = 16
 
         Group {
-            if let artworkURL = station.displayArtworkURL {
-                AsyncImage(url: artworkURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        stationBadgeFallback(size: size, badgeCornerRadius: badgeCornerRadius)
-                    }
-                }
-            } else {
-                stationBadgeFallback(size: size, badgeCornerRadius: badgeCornerRadius)
-            }
+            stationBadgeFallback(size: size, badgeCornerRadius: badgeCornerRadius)
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: badgeCornerRadius, style: .continuous))
@@ -1440,12 +1439,38 @@ private struct FlippingPlayerArtwork: View {
         .accessibilityIdentifier(accessibilityIdentifier)
     }
 
+    private func savedStationArtworkActionButton(
+        isSaved: Bool,
+        accessibilityLabel: String,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            TuneAVSavedStationIcon(
+                isSaved: isSaved,
+                size: 22,
+                inactiveColor: TuneAVTheme.textInverse,
+                activeColor: TuneAVTheme.highlight
+            )
+            .frame(width: 56, height: 56)
+            .background(isSaved ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.13), in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(isSaved ? TuneAVTheme.highlight.opacity(0.34) : Color.white.opacity(0.0), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
     private func artworkFlexibleActionButton(
         systemImage: String,
         title: String,
         accessibilityLabel: String,
         accessibilityIdentifier: String,
         style: ArtworkActionStyle = .secondary,
+        isEnabled: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -1464,6 +1489,7 @@ private struct FlippingPlayerArtwork: View {
             .background(style.background, in: Capsule())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(accessibilityIdentifier)
     }
@@ -1481,7 +1507,6 @@ private struct FlippingPlayerArtwork: View {
                             .resizable()
                             .scaledToFill()
                             .frame(width: size, height: size)
-                            .scaleEffect(1.06)
                             .clipped()
                     default:
                         fallbackArtwork(cornerRadius: cornerRadius)
@@ -1510,12 +1535,20 @@ private struct FlippingPlayerArtwork: View {
             size: size,
             surfaceStyle: .dark,
             contentInsetRatio: 0.04,
-            cornerRadiusRatio: cornerRadius / size
+            cornerRadiusRatio: cornerRadius / size,
+            textMode: .stationName,
+            animationOverlay: .automatic,
+            isAnimationActive: trackArtworkURL == nil && isPlaying,
+            animationDuration: 10
         )
     }
 
     private var heroArtworkURL: URL? {
-        trackArtworkURL ?? station.displayArtworkURL
+        trackArtworkURL
+    }
+
+    private var heroCornerRadiusRatio: CGFloat {
+        32 / size
     }
 
     private var flipControlSize: CGFloat {
@@ -1524,6 +1557,30 @@ private struct FlippingPlayerArtwork: View {
 
     private var flipControlPadding: CGFloat {
         size < 260 ? 12 : 14
+    }
+
+    private var optionsBlockSpacing: CGFloat {
+        size < 260 ? 10 : 14
+    }
+
+    private var optionContentSpacing: CGFloat {
+        size < 260 ? 8 : 10
+    }
+
+    private var optionArtworkSize: CGFloat {
+        size < 260 ? 40 : 50
+    }
+
+    private var optionArtworkTextSpacing: CGFloat {
+        size < 260 ? 10 : 12
+    }
+
+    private var optionBlockHorizontalPadding: CGFloat {
+        size < 260 ? 10 : 12
+    }
+
+    private var optionBlockVerticalPadding: CGFloat {
+        size < 260 ? 9 : 12
     }
 
     private var backTitle: String {
@@ -1560,6 +1617,7 @@ private enum ArtworkActionStyle {
     case prominent
     case saved
     case secondary
+    case disabled
 
     var foreground: Color {
         switch self {
@@ -1567,6 +1625,8 @@ private enum ArtworkActionStyle {
             return .white
         case .secondary:
             return TuneAVTheme.textInverse.opacity(0.92)
+        case .disabled:
+            return TuneAVTheme.textInverse.opacity(0.42)
         }
     }
 
@@ -1578,6 +1638,8 @@ private enum ArtworkActionStyle {
             return Color.white.opacity(0.18)
         case .secondary:
             return Color.white.opacity(0.10)
+        case .disabled:
+            return Color.white.opacity(0.06)
         }
     }
 }

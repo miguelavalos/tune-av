@@ -5,6 +5,7 @@ struct TuneAVCachedNowPlayingState: Equatable {
     let artist: String?
     let albumTitle: String?
     let artworkURL: URL?
+    let artistURL: URL?
 }
 
 enum TuneAVPlaybackState: Equatable {

@@ -23,6 +23,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     @Published private(set) var currentTrackArtist: String?
     @Published private(set) var currentTrackAlbumTitle: String?
     @Published private(set) var currentTrackArtworkURL: URL?
+    @Published private(set) var currentTrackArtistURL: URL?
     @Published private(set) var playbackQueue: PlaybackQueue = .init(source: .singleStation, stations: [])
 
     var isPlaying: Bool {
@@ -204,6 +205,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         currentTrackArtist = nil
         currentTrackAlbumTitle = nil
         currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
         playbackQueue = .init(source: .singleStation, stations: [])
@@ -450,6 +452,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         currentTrackArtist = nil
         currentTrackAlbumTitle = nil
         currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
         currentTrackSource = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
@@ -607,11 +610,13 @@ final class AudioPlayerService: NSObject, ObservableObject {
         guard let artist = currentTrackArtist, let title = currentTrackTitle else {
             currentTrackAlbumTitle = nil
             currentTrackArtworkURL = nil
+            currentTrackArtistURL = nil
             return
         }
 
         currentTrackAlbumTitle = nil
         currentTrackArtworkURL = nil
+        currentTrackArtistURL = nil
 
         artworkResolutionTask = Task { [weak self] in
             guard let self else { return }
@@ -621,6 +626,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
             self.currentTrackAlbumTitle = resolved?.albumTitle
             self.currentTrackArtworkURL = resolved?.artworkURL
+            self.currentTrackArtistURL = resolved?.artistURL
             self.persistCurrentNowPlayingState()
             self.updateNowPlayingInfo()
         }
@@ -635,7 +641,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     private func refreshNowPlayingArtworkIfNeeded(for station: Station) {
-        let artworkURL = currentTrackArtworkURL ?? station.displayArtworkURL
+        let artworkURL = currentTrackArtworkURL
 
         if artworkURL == nowPlayingArtworkSourceURL, nowPlayingArtworkImage != nil {
             return
@@ -677,7 +683,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
             currentTrackTitle != nil ||
             currentTrackArtist != nil ||
             currentTrackAlbumTitle != nil ||
-            currentTrackArtworkURL != nil
+            currentTrackArtworkURL != nil ||
+            currentTrackArtistURL != nil
 
         guard hasVisibleMetadata else { return }
 
@@ -685,7 +692,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
             title: currentTrackTitle,
             artist: currentTrackArtist,
             albumTitle: currentTrackAlbumTitle,
-            artworkURL: currentTrackArtworkURL
+            artworkURL: currentTrackArtworkURL,
+            artistURL: currentTrackArtistURL
         )
     }
 
@@ -699,6 +707,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         currentTrackArtist = sanitizedArtist
         currentTrackAlbumTitle = cachedState.albumTitle
         currentTrackArtworkURL = cachedState.artworkURL
+        currentTrackArtistURL = cachedState.artistURL
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
     }
 

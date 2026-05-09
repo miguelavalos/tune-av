@@ -30,7 +30,7 @@ struct AppShellView: View {
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
-    private let genreTags = ["rock", "pop", "jazz", "news", "electronic", "ambient"]
+    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
 
     private var homeFeed: AppShellHomeFeed {
         AppShellHomeFeed(
@@ -221,7 +221,7 @@ struct AppShellView: View {
                 historyStationFilter: $musicHistoryStationFilter,
                 bottomContentPadding: shellScrollBottomPadding,
                 openDiscoveryStation: openDiscoveryStation(_:),
-                stationArtworkURL: { discovery in libraryStore.station(for: discovery.stationID)?.displayArtworkURL },
+                stationArtworkURL: { _ in nil },
                 toggleDiscoverySaved: toggleDiscoverySaved(_:),
                 hideDiscovery: libraryStore.hideDiscovery(_:),
                 restoreDiscovery: libraryStore.restoreDiscovery(_:),
@@ -677,7 +677,7 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
 
                         AppShellFooterTabButton(
                             title: L10n.string("tab.library"),
-                            systemImage: "heart.fill",
+                            systemImage: "dot.radiowaves.left.and.right",
                             isSelected: selectedTab == .library,
                             selectionNamespace: footerSelectionAnimation,
                             accessibilityIdentifier: "tab.library"
@@ -2243,14 +2243,15 @@ private struct FeaturedStationCard: View {
                 .buttonStyle(.plain)
 
                 Button(action: favoriteAction) {
-                    Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(isFavorite ? Color(red: 1, green: 0.17, blue: 0.38) : TuneAVTheme.textPrimary)
+                    TuneAVSavedStationIcon(isSaved: isFavorite, size: 18)
                         .frame(width: 48, height: 48)
-                        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(
+                            isFavorite ? TuneAVTheme.highlight.opacity(0.12) : TuneAVTheme.elevatedSurface,
+                            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        )
                         .overlay {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                                .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.22) : TuneAVTheme.borderSubtle, lineWidth: 1)
                         }
                 }
                 .buttonStyle(.plain)
@@ -2370,6 +2371,10 @@ private struct StationCompactCard: View {
         audioPlayer.isCurrent(station) && audioPlayer.isPlaying
     }
 
+    private var isCurrentStationActive: Bool {
+        audioPlayer.isCurrent(station) && (audioPlayer.isPlaying || audioPlayer.isLoading)
+    }
+
     private var detailText: String {
         station.cardDetailText(preferCountryName: station.flagEmoji == nil)
             ?? L10n.string("shell.station.row.defaultDetail")
@@ -2406,10 +2411,15 @@ private struct StationCompactCard: View {
                         playAction()
                     }
                 } label: {
-                    StationThumbnailView(station: station, size: StationCompactMetrics.cardWidth)
+                    StationThumbnailView(
+                        station: station,
+                        size: StationCompactMetrics.cardWidth,
+                        animationOverlay: .equalizerBars,
+                        isAnimationActive: isCurrentStationActive
+                    )
                         .overlay {
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(isPlayingCurrentStation ? TuneAVTheme.highlight.opacity(0.16) : .clear)
+                                .fill(isCurrentStationActive ? TuneAVTheme.highlight.opacity(0.16) : .clear)
                         }
                         .overlay {
                             if audioPlayer.isCurrent(station) {
@@ -2427,7 +2437,7 @@ private struct StationCompactCard: View {
                         }
                         .overlay {
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(isPlayingCurrentStation ? TuneAVTheme.highlight : TuneAVTheme.borderSubtle, lineWidth: isPlayingCurrentStation ? 2 : 1)
+                                .stroke(isCurrentStationActive ? TuneAVTheme.highlight : TuneAVTheme.borderSubtle, lineWidth: isCurrentStationActive ? 2 : 1)
                         }
                 }
                 .buttonStyle(.plain)
@@ -2470,17 +2480,16 @@ private struct StationCompactCard: View {
 
     private var favoriteButton: some View {
         Button(action: toggleFavorite) {
-            Image(systemName: isFavorite ? "heart.fill" : "heart")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(isFavorite ? Color(red: 1, green: 0.17, blue: 0.38) : TuneAVTheme.textPrimary)
+            TuneAVSavedStationIcon(isSaved: isFavorite, size: 16)
                 .frame(width: StationCompactMetrics.favoriteButtonSize, height: StationCompactMetrics.favoriteButtonSize)
-                .background(.ultraThinMaterial, in: Circle())
+                .background(isFavorite ? TuneAVTheme.highlight.opacity(0.14) : Color.white.opacity(0.72), in: Circle())
                 .overlay {
                     Circle()
-                        .stroke(TuneAVTheme.borderSubtle.opacity(0.65), lineWidth: 1)
+                        .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.28) : TuneAVTheme.borderSubtle.opacity(0.65), lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"))
         .accessibilityIdentifier("stationRow.favorite.\(station.id)")
     }
 
@@ -2505,7 +2514,12 @@ private struct StationDetailSheet: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 18) {
                     HStack(alignment: .top, spacing: 16) {
-                        StationThumbnailView(station: station, size: 104)
+                        StationThumbnailView(
+                            station: station,
+                            size: 104,
+                            animationOverlay: .equalizerBars,
+                            isAnimationActive: isPlaying
+                        )
                             .overlay {
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
                                     .stroke(isPlaying ? TuneAVTheme.highlight : TuneAVTheme.borderSubtle, lineWidth: isPlaying ? 2 : 1)
@@ -2544,14 +2558,15 @@ private struct StationDetailSheet: View {
                         .accessibilityIdentifier("stationDetail.play")
 
                         Button(action: toggleFavorite) {
-                            Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(isFavorite ? Color(red: 1, green: 0.17, blue: 0.38) : TuneAVTheme.textPrimary)
+                            TuneAVSavedStationIcon(isSaved: isFavorite, size: 20)
                                 .frame(width: 50, height: 50)
-                                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(
+                                    isFavorite ? TuneAVTheme.highlight.opacity(0.12) : TuneAVTheme.elevatedSurface,
+                                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                )
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                                        .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.22) : TuneAVTheme.borderSubtle, lineWidth: 1)
                                 }
                         }
                         .buttonStyle(.plain)

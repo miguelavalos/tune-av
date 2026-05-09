@@ -17,7 +17,7 @@ struct SettingsView: View {
                     )
                 ) {
                     Text(L10n.string("mac.profile.genre.none")).tag("")
-                    ForEach(["rock", "pop", "jazz", "news", "electronic", "ambient"], id: \.self) { tag in
+                    ForEach(TuneAVFallbackArtworkCategory.visibleSearchTags, id: \.self) { tag in
                         Text(L10n.genreLabel(for: tag)).tag(tag)
                     }
                 }

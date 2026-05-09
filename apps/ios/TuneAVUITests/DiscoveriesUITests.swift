@@ -206,7 +206,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(app.staticTexts["Queens of the Stone Age"].exists)
         XCTAssertTrue(app.buttons["player.artwork.options.discovery"].exists)
         XCTAssertTrue(app.buttons["player.artwork.options.artist"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.artistYouTube"].exists)
+        XCTAssertFalse(app.buttons["player.artwork.options.artistYouTube"].exists)
 
         app.buttons["player.artwork.options.songInfo"].tap()
 

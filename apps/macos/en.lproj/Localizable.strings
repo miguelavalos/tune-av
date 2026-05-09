@@ -36,6 +36,10 @@
 "genre.electronic" = "Electronic";
 "genre.frontPage" = "For You";
 "genre.jazz" = "Jazz";
+"genre.latin" = "Latin / World";
+"genre.oldies" = "Oldies";
+"genre.classical" = "Classical";
+"genre.country" = "Country / Folk";
 "genre.news" = "News";
 "genre.pop" = "Pop";
 "genre.rock" = "Rock";
@@ -77,6 +81,7 @@
 "player.artwork.flipToFront.accessibility.label" = "Return to artwork";
 "player.discovery.lyrics" = "Search lyrics";
 "player.discovery.appleMusic" = "Search on Apple Music";
+"player.discovery.itunesShort" = "iTunes";
 "player.discovery.remove" = "Remove discovery";
 "player.discovery.hide" = "Not interested";
 "shell.music.discovery.hidden" = "Hidden from history";
@@ -109,11 +114,12 @@
 "player.artist.youtubeShort" = "YouTube";
 "player.menu.addFavorite" = "Add to favorites";
 "player.menu.copyStreamURL" = "Copy stream URL";
-"player.menu.openWebsite" = "Open station website";
+"player.menu.openWebsite" = "Station website";
+"player.station.websiteShort" = "Station";
 "player.menu.removeFavorite" = "Remove from favorites";
-"player.menu.searchStation" = "Search station";
-"player.menu.stationHistory" = "Station history";
-"player.menu.shareStation" = "Share station";
+"player.menu.searchStation" = "Search on web";
+"player.menu.stationHistory" = "My history on this station";
+"player.menu.shareStation" = "Share";
 "player.retry" = "Retry stream";
 "player.track.liveNow" = "Live now";
 "player.track.liveStreamActive" = "Live stream active";

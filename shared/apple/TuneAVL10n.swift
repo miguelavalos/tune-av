@@ -140,6 +140,14 @@ enum L10n {
             return string("genre.electronic")
         case "ambient":
             return string("genre.ambient")
+        case "latin":
+            return string("genre.latin")
+        case "oldies":
+            return string("genre.oldies")
+        case "classical":
+            return string("genre.classical")
+        case "country":
+            return string("genre.country")
         default:
             return tag.capitalized(with: locale)
         }

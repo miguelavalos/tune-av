@@ -39,7 +39,13 @@ struct LiveNowPanel: View {
             HStack(spacing: 12) {
                 Group {
                     if let currentStation {
-                        StationThumbnailView(station: currentStation, size: 64, surfaceStyle: .dark)
+                        StationThumbnailView(
+                            station: currentStation,
+                            size: 64,
+                            surfaceStyle: .dark,
+                            animationOverlay: .equalizerBars,
+                            isAnimationActive: audioPlayer.isPlaying
+                        )
                     } else {
                         EmptyLiveArtwork(size: 64)
                     }
@@ -138,44 +144,21 @@ struct StationThumbnailView: View {
     let station: Station
     let size: CGFloat
     var surfaceStyle: StationArtworkView.SurfaceStyle = .light
+    var animationOverlay: StationArtworkView.AnimationOverlay = .none
+    var isAnimationActive: Bool = false
 
     private var cornerRadius: CGFloat {
         size * 0.24
     }
 
     var body: some View {
-        Group {
-            if let artworkURL = station.displayArtworkURL {
-                AsyncImage(url: artworkURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        if station.displayArtworkUsesFaviconProxy {
-                            StationArtworkView(
-                                station: station,
-                                size: size,
-                                surfaceStyle: surfaceStyle
-                            )
-                        } else {
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        }
-                    default:
-                        StationArtworkView(
-                            station: station,
-                            size: size,
-                            surfaceStyle: surfaceStyle
-                        )
-                    }
-                }
-            } else {
-                StationArtworkView(
-                    station: station,
-                    size: size,
-                    surfaceStyle: surfaceStyle
-                )
-            }
-        }
+        StationArtworkView(
+            station: station,
+            size: size,
+            surfaceStyle: surfaceStyle,
+            animationOverlay: animationOverlay,
+            isAnimationActive: isAnimationActive
+        )
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .background(
