@@ -6,6 +6,7 @@ struct AppShellView: View {
 
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var audioPlayer: AudioPlayerService
+    @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var libraryStore: LibraryStore
 
     @State private var selectedTab: AppShellTab
@@ -151,6 +152,10 @@ struct AppShellView: View {
         .task(id: libraryStore.settings.preferredTag) {
             await refreshHomeFeed()
         }
+        .task(id: languageController.currentLanguage.id) {
+            await refreshHomeFeed()
+            await refreshLibraryStationEnrichment()
+        }
         .task(id: searchRequestKey) {
             await loadSearchResults()
         }
@@ -260,7 +265,7 @@ struct AppShellView: View {
     }
 
     private var searchRequestKey: String {
-        searchRequest.key
+        "\(searchRequest.key)|\(languageController.currentLanguage.id)"
     }
 
     private var searchRequest: AppShellSearchRequest {
@@ -542,6 +547,51 @@ struct AppShellView: View {
         libraryStore.rememberStationSnapshots(stations)
     }
 
+    private func refreshLibraryStationEnrichment() async {
+        guard !launchContext.isUITesting else { return }
+
+        let candidates = libraryEnrichmentCandidates()
+        guard !candidates.isEmpty else { return }
+
+        for station in candidates {
+            if Task.isCancelled { return }
+
+            do {
+                let results = try await stationService.searchStations(
+                    filters: .init(
+                        query: station.name,
+                        country: station.country,
+                        countryCode: station.countryCode ?? "",
+                        language: station.language,
+                        limit: 5
+                    )
+                )
+                guard let enrichedMatch = results.bestBackendMatch(for: station) else { continue }
+                rememberBackendStations([enrichedMatch])
+            } catch is CancellationError {
+                return
+            } catch {
+                continue
+            }
+        }
+    }
+
+    private func libraryEnrichmentCandidates() -> [Station] {
+        var seenIDs = Set<String>()
+        let stations = [audioPlayer.currentStation].compactMap { $0 } + favoriteStations + recentStations
+
+        return stations.reduce(into: [Station]()) { result, station in
+            guard !seenIDs.contains(station.id) else { return }
+            seenIDs.insert(station.id)
+
+            let resolvedStation = enrichedStation(station)
+            guard resolvedStation.enrichmentRank < 12 else { return }
+            result.append(resolvedStation)
+        }
+        .prefix(12)
+        .map { $0 }
+    }
+
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
         guard let station = libraryStore.station(for: discovery.stationID) else { return }
 
@@ -687,6 +737,24 @@ private extension Station {
         }
 
         return rank
+    }
+}
+
+private extension Array where Element == Station {
+    func bestBackendMatch(for station: Station) -> Station? {
+        first { candidate in
+            candidate.id == station.id
+        } ?? first { candidate in
+            guard
+                let candidateCanonicalID = candidate.canonicalStationId,
+                let stationCanonicalID = station.canonicalStationId
+            else {
+                return false
+            }
+            return candidateCanonicalID == stationCanonicalID
+        } ?? first { candidate in
+            candidate.streamURL == station.streamURL
+        }
     }
 }
 
