@@ -24,6 +24,7 @@ struct AppShellView: View {
     @State private var homeSnapshot = HomeFeedSnapshot()
     @State private var selectedStationDetail: SelectedStationDetail?
     @State private var musicHistoryStationFilter: Station?
+    @State private var enrichedStationsByID: [String: Station] = [:]
     @State private var stationNowPlayingTracks: [String: NowPlayingTrack] = [:]
     @State private var stationNowPlayingCache: [String: CachedStationNowPlaying] = [:]
     @State private var didBootstrap = false
@@ -97,21 +98,23 @@ struct AppShellView: View {
         }
         .sheet(item: $selectedStationDetail) { detail in
             let currentDetail = selectedStationDetail ?? detail
+            let station = enrichedStation(currentDetail.station)
+            let queueStations = enrichedStations(currentDetail.queueStations)
             StationDetailSheet(
-                station: currentDetail.station,
-                stationDiscoveries: stationDiscoveries(for: currentDetail.station),
-                isFavorite: favoriteStationIDs.contains(currentDetail.station.id),
-                isPlaying: audioPlayer.isCurrent(currentDetail.station) && audioPlayer.isPlaying,
+                station: station,
+                stationDiscoveries: stationDiscoveries(for: station),
+                isFavorite: favoriteStationIDs.contains(station.id),
+                isPlaying: audioPlayer.isCurrent(station) && audioPlayer.isPlaying,
                 playAction: {
                     playStation(
-                        currentDetail.station,
+                        station,
                         queueSource: currentDetail.queueSource,
-                        queue: currentDetail.queueStations
+                        queue: queueStations
                     )
                 },
-                toggleFavorite: { toggleFavorite(currentDetail.station) }
+                toggleFavorite: { toggleFavorite(station) }
             )
-            .id(currentDetail.station.id)
+            .id(station.id)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
@@ -172,11 +175,11 @@ struct AppShellView: View {
         switch selectedTab {
         case .home:
             HomeScreen(
-                stations: homeSnapshot.stations,
+                stations: enrichedStations(homeSnapshot.stations),
                 isLoading: homeIsLoading,
                 errorMessage: homeErrorMessage,
-                recentStations: homeSnapshot.recentStations,
-                favoriteStations: homeSnapshot.favoriteStations,
+                recentStations: enrichedStations(homeSnapshot.recentStations),
+                favoriteStations: enrichedStations(homeSnapshot.favoriteStations),
                 discoveries: libraryStore.discoveries,
                 feedContext: homeSnapshot.feedContext,
                 bottomContentPadding: shellScrollBottomPadding,
@@ -192,7 +195,7 @@ struct AppShellView: View {
                 query: $searchQuery,
                 activeTag: $searchTag,
                 selectedCountryCode: $searchCountryCode,
-                results: searchResults,
+                results: enrichedStations(searchResults),
                 isLoading: searchIsLoading,
                 errorMessage: searchErrorMessage,
                 tags: genreTags,
@@ -206,8 +209,8 @@ struct AppShellView: View {
             )
         case .library:
             LibraryScreen(
-                favorites: favoriteStations,
-                recents: recentStations,
+                favorites: enrichedStations(favoriteStations),
+                recents: enrichedStations(recentStations),
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
@@ -248,6 +251,14 @@ struct AppShellView: View {
         Set(libraryStore.favorites.map(\.stationID))
     }
 
+    private var enrichedFavoriteStations: [Station] {
+        enrichedStations(favoriteStations)
+    }
+
+    private var enrichedRecentStations: [Station] {
+        enrichedStations(recentStations)
+    }
+
     private var searchRequestKey: String {
         searchRequest.key
     }
@@ -280,9 +291,9 @@ struct AppShellView: View {
         AppShellNowPlayingPreviews.candidateStations(
             selectedTab: selectedTab,
             homeSnapshot: homeSnapshot,
-            searchResults: searchResults,
-            favoriteStations: favoriteStations,
-            recentStations: recentStations,
+            searchResults: enrichedStations(searchResults),
+            favoriteStations: enrichedFavoriteStations,
+            recentStations: enrichedRecentStations,
             isEnabled: isProNowPlayingEnabled
         )
     }
@@ -433,17 +444,21 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
+        let resolvedStation = enrichedStation(station)
+        let resolvedQueue = enrichedStations(queue ?? [resolvedStation])
         let playbackQueue = AudioPlayerService.PlaybackQueue(
             source: queueSource,
-            stations: queue ?? [station]
+            stations: resolvedQueue
         )
-        audioPlayer.play(station: station, queue: playbackQueue)
-        libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
+        audioPlayer.play(station: resolvedStation, queue: playbackQueue)
+        libraryStore.recordPlayback(of: resolvedStation, recentLimit: accessController.limits.recentStations)
     }
 
     private func toggleFavorite(_ station: Station) {
-        if libraryStore.isFavorite(station) {
-            libraryStore.toggleFavorite(for: station)
+        let resolvedStation = enrichedStation(station)
+
+        if libraryStore.isFavorite(resolvedStation) {
+            libraryStore.toggleFavorite(for: resolvedStation)
             return
         }
 
@@ -456,7 +471,7 @@ struct AppShellView: View {
             return
         }
 
-        libraryStore.toggleFavorite(for: station)
+        libraryStore.toggleFavorite(for: resolvedStation)
     }
 
     private func toggleDiscoverySaved(_ discovery: DiscoveredTrack) {
@@ -482,9 +497,10 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
-        let queueStations = queue ?? [station]
+        let resolvedStation = enrichedStation(station)
+        let queueStations = enrichedStations(queue ?? [resolvedStation])
         selectedStationDetail = SelectedStationDetail(
-            station: station,
+            station: resolvedStation,
             queueSource: queueSource,
             queueStations: queueStations
         )
@@ -503,10 +519,31 @@ struct AppShellView: View {
             .sorted { $0.playedAt > $1.playedAt }
     }
 
+    private func enrichedStation(_ station: Station) -> Station {
+        guard let cachedStation = enrichedStationsByID[station.id] else { return station }
+        guard cachedStation.hasBackendEnrichment else { return station }
+        guard !station.hasBackendEnrichment || cachedStation.enrichmentRank >= station.enrichmentRank else { return station }
+        return cachedStation
+    }
+
+    private func enrichedStations(_ stations: [Station]) -> [Station] {
+        stations.map(enrichedStation)
+    }
+
+    private func rememberBackendStations(_ stations: [Station]) {
+        guard !stations.isEmpty else { return }
+
+        for station in stations where station.hasBackendEnrichment {
+            let current = enrichedStationsByID[station.id]
+            guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
+            enrichedStationsByID[station.id] = station
+        }
+    }
+
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
         guard let station = libraryStore.station(for: discovery.stationID) else { return }
 
-        playStation(station, queueSource: .libraryRecents, queue: recentStations)
+        playStation(station, queueSource: .libraryRecents, queue: enrichedRecentStations)
     }
 
     private func refreshHomeFeed() async {
@@ -523,6 +560,7 @@ struct AppShellView: View {
 
         do {
             let feed = try await homeFeed.load(preferredTag: libraryStore.settings.preferredTag)
+            rememberBackendStations(feed.stations)
             homeStations = feed.stations
             homeFeedContext = feed.context
             refreshHomePresentation()
@@ -578,6 +616,7 @@ struct AppShellView: View {
             )
             guard requestKey == searchRequestKey else { return }
 
+            rememberBackendStations(results)
             searchResults = results
             searchErrorMessage = nil
             searchIsLoading = false
@@ -594,9 +633,9 @@ struct AppShellView: View {
 
     private var defaultEditorialStations: [Station] {
         AppShellHomeFeed.defaultEditorialStations(
-            currentStation: audioPlayer.currentStation,
-            recentStations: recentStations,
-            favoriteStations: favoriteStations
+            currentStation: audioPlayer.currentStation.map(enrichedStation),
+            recentStations: enrichedRecentStations,
+            favoriteStations: enrichedFavoriteStations
         )
     }
 
@@ -609,6 +648,43 @@ struct AppShellView: View {
             unknownCountryValues: Station.unknownCountryValues,
             locale: L10n.locale
         )
+    }
+}
+
+private extension Station {
+    var hasBackendEnrichment: Bool {
+        canonicalStationId != nil ||
+            category != nil ||
+            visibility != nil ||
+            qualityScore != nil ||
+            enrichmentStatus != nil ||
+            artwork != nil ||
+            editorial != nil
+    }
+
+    var enrichmentRank: Int {
+        var rank = 0
+
+        if canonicalStationId != nil { rank += 1 }
+        if category != nil { rank += 1 }
+        if visibility != nil { rank += 1 }
+        if qualityScore != nil { rank += 1 }
+        if enrichmentStatus == "enriched" { rank += 4 }
+        else if enrichmentStatus != nil { rank += 1 }
+
+        if let artwork, artwork.status != "none" || artwork.url != nil {
+            rank += 2
+        }
+
+        if let editorial {
+            rank += 6
+            if editorial.discoveryProfile != nil { rank += 4 }
+            rank += min(editorial.programming.count, 3)
+            rank += min(editorial.audience.count, 2)
+            rank += min(editorial.secondaryFormats.count, 2)
+        }
+
+        return rank
     }
 }
 
