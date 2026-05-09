@@ -482,11 +482,50 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
+        let queueStations = queue ?? [station]
         selectedStationDetail = SelectedStationDetail(
             station: station,
             queueSource: queueSource,
-            queueStations: queue ?? [station]
+            queueStations: queueStations
         )
+
+        if station.editorial == nil {
+            Task {
+                await refreshSelectedStationDetailEnrichment(
+                    station,
+                    queueSource: queueSource,
+                    queueStations: queueStations
+                )
+            }
+        }
+    }
+
+    @MainActor
+    private func refreshSelectedStationDetailEnrichment(
+        _ station: Station,
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        queueStations: [Station]
+    ) async {
+        do {
+            let enrichedStations = try await stationService.searchStations(
+                filters: .init(query: station.name, limit: 5)
+            )
+            guard
+                selectedStationDetail?.station.id == station.id,
+                let enrichedStation = enrichedStations.first(where: { $0.id == station.id }),
+                enrichedStation.editorial != nil
+            else {
+                return
+            }
+
+            selectedStationDetail = SelectedStationDetail(
+                station: enrichedStation,
+                queueSource: queueSource,
+                queueStations: queueStations.map { $0.id == station.id ? enrichedStation : $0 }
+            )
+        } catch {
+            return
+        }
     }
 
     private func openStationHistory(_ station: Station) {
@@ -620,7 +659,7 @@ private struct SelectedStationDetail: Identifiable {
     let queueStations: [Station]
 
     var id: String {
-        station.id
+        [station.id, station.editorial?.updatedAt].compactMap { $0 }.joined(separator: "|")
     }
 }
 
@@ -2949,24 +2988,6 @@ private struct StationDetailSheet: View {
                 )
                 .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 12, y: 4)
 
-                if !station.normalizedTags.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.tags")) {
-                        WrapTagsRow(tags: station.normalizedTags)
-                    }
-                }
-
-                if !station.technicalBadges.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.technical")) {
-                        WrapTagsRow(tags: station.technicalBadges, highlighted: true)
-                    }
-                }
-
-                if !station.popularityBadges.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.signals")) {
-                        WrapTagsRow(tags: station.popularityBadges)
-                    }
-                }
-
                 if let editorial = station.editorial {
                     DetailSection(title: L10n.string("shell.stationDetail.section.editorial")) {
                         VStack(alignment: .leading, spacing: 12) {
@@ -2985,6 +3006,24 @@ private struct StationDetailSheet: View {
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(TuneAVTheme.textSecondary)
                         }
+                    }
+                }
+
+                if !station.normalizedTags.isEmpty {
+                    DetailSection(title: L10n.string("shell.stationDetail.section.tags")) {
+                        WrapTagsRow(tags: station.normalizedTags)
+                    }
+                }
+
+                if !station.technicalBadges.isEmpty {
+                    DetailSection(title: L10n.string("shell.stationDetail.section.technical")) {
+                        WrapTagsRow(tags: station.technicalBadges, highlighted: true)
+                    }
+                }
+
+                if !station.popularityBadges.isEmpty {
+                    DetailSection(title: L10n.string("shell.stationDetail.section.signals")) {
+                        WrapTagsRow(tags: station.popularityBadges)
                     }
                 }
 

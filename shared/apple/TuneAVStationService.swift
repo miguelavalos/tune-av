@@ -6,6 +6,7 @@ struct TuneAVStationSearchFilters {
     var countryCode: String = ""
     var language: String = ""
     var tag: String = ""
+    var locale: String = ""
     var limit: Int = 30
     var allowsEmptySearch: Bool = false
 }
@@ -62,6 +63,7 @@ struct TuneAVStationService {
         let trimmedCountryCode = filters.countryCode.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLanguage = filters.language.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedTag = filters.tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLocale = filters.locale.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard filters.allowsEmptySearch || !trimmedQuery.isEmpty || !trimmedCountry.isEmpty || !trimmedCountryCode.isEmpty || !trimmedLanguage.isEmpty || !trimmedTag.isEmpty else {
             return []
@@ -73,6 +75,7 @@ struct TuneAVStationService {
             countryCode: trimmedCountryCode,
             language: trimmedLanguage,
             tag: trimmedTag,
+            locale: trimmedLocale,
             limit: filters.limit
         )
 
@@ -95,6 +98,7 @@ struct TuneAVStationService {
             filters.countryCode.isEmpty ? nil : URLQueryItem(name: "countryCode", value: filters.countryCode),
             filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
             filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
+            filters.locale.isEmpty ? nil : URLQueryItem(name: "locale", value: filters.locale),
             URLQueryItem(name: "limit", value: String(filters.limit))
         ]
         .compactMap { $0 }
@@ -104,7 +108,7 @@ struct TuneAVStationService {
         }
 
         let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url)
-        return applyExactTagFilterIfNeeded(response.stations, tag: filters.tag, limit: filters.limit)
+        return applyExactTagFilterIfNeeded(response.resolvedStations, tag: filters.tag, limit: filters.limit)
     }
 
     private func searchRadioBrowser(filters: NormalizedStationSearchFilters) async throws -> [Station] {
@@ -168,11 +172,174 @@ private struct NormalizedStationSearchFilters {
     let countryCode: String
     let language: String
     let tag: String
+    let locale: String
     let limit: Int
 }
 
 private struct TuneAVStationSearchResponseDTO: Decodable {
-    let stations: [Station]
+    let stations: [TuneAVStationDTO]
+
+    var resolvedStations: [Station] {
+        stations.compactMap(\.station)
+    }
+}
+
+private struct TuneAVStationDTO: Decodable {
+    let id: String
+    let name: String
+    let country: String
+    let countryCode: String?
+    let state: String?
+    let language: String
+    let languageCodes: String?
+    let tags: String
+    let streamURL: String
+    let faviconURL: String?
+    let bitrate: Int?
+    let codec: String?
+    let homepageURL: String?
+    let votes: Int?
+    let clickCount: Int?
+    let clickTrend: Int?
+    let isHLS: Bool?
+    let hasExtendedInfo: Bool?
+    let hasSSLError: Bool?
+    let lastCheckOKAt: String?
+    let geoLatitude: Double?
+    let geoLongitude: Double?
+    let canonicalStationId: String?
+    let category: String?
+    let visibility: String?
+    let qualityScore: Int?
+    let enrichmentStatus: String?
+    let artwork: StationArtwork?
+    let editorial: StationEditorial?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case country
+        case countryCode
+        case state
+        case language
+        case languageCodes
+        case tags
+        case streamURL
+        case faviconURL
+        case bitrate
+        case codec
+        case homepageURL
+        case votes
+        case clickCount
+        case clickTrend
+        case isHLS
+        case hasExtendedInfo
+        case hasSSLError
+        case lastCheckOKAt
+        case geoLatitude
+        case geoLongitude
+        case canonicalStationId
+        case category
+        case visibility
+        case qualityScore
+        case enrichmentStatus
+        case artwork
+        case editorial
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        country = try container.decode(String.self, forKey: .country)
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+        state = try container.decodeIfPresent(String.self, forKey: .state)
+        language = try container.decode(String.self, forKey: .language)
+        languageCodes = TuneAVStationDTO.decodeStringOrArray(container, forKey: .languageCodes)
+        tags = try container.decode(String.self, forKey: .tags)
+        streamURL = try container.decode(String.self, forKey: .streamURL)
+        faviconURL = try container.decodeIfPresent(String.self, forKey: .faviconURL)
+        bitrate = try container.decodeIfPresent(Int.self, forKey: .bitrate)
+        codec = try container.decodeIfPresent(String.self, forKey: .codec)
+        homepageURL = try container.decodeIfPresent(String.self, forKey: .homepageURL)
+        votes = try container.decodeIfPresent(Int.self, forKey: .votes)
+        clickCount = try container.decodeIfPresent(Int.self, forKey: .clickCount)
+        clickTrend = try container.decodeIfPresent(Int.self, forKey: .clickTrend)
+        isHLS = try container.decodeIfPresent(Bool.self, forKey: .isHLS)
+        hasExtendedInfo = try container.decodeIfPresent(Bool.self, forKey: .hasExtendedInfo)
+        hasSSLError = try container.decodeIfPresent(Bool.self, forKey: .hasSSLError)
+        lastCheckOKAt = try container.decodeIfPresent(String.self, forKey: .lastCheckOKAt)
+        geoLatitude = try container.decodeIfPresent(Double.self, forKey: .geoLatitude)
+        geoLongitude = try container.decodeIfPresent(Double.self, forKey: .geoLongitude)
+        canonicalStationId = try container.decodeIfPresent(String.self, forKey: .canonicalStationId)
+        category = try container.decodeIfPresent(String.self, forKey: .category)
+        visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
+        qualityScore = try container.decodeIfPresent(Int.self, forKey: .qualityScore)
+        enrichmentStatus = try container.decodeIfPresent(String.self, forKey: .enrichmentStatus)
+        artwork = try container.decodeIfPresent(StationArtwork.self, forKey: .artwork)
+        editorial = try container.decodeIfPresent(StationEditorial.self, forKey: .editorial)
+    }
+
+    var station: Station? {
+        let trimmedStreamURL = streamURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedStreamURL.isEmpty else { return nil }
+
+        return Station(
+            id: id,
+            name: name,
+            country: country,
+            countryCode: countryCode,
+            state: state,
+            language: language,
+            languageCodes: languageCodes,
+            tags: tags,
+            streamURL: trimmedStreamURL,
+            faviconURL: faviconURL,
+            bitrate: bitrate,
+            codec: codec,
+            homepageURL: homepageURL,
+            votes: votes,
+            clickCount: clickCount,
+            clickTrend: clickTrend,
+            isHLS: isHLS,
+            hasExtendedInfo: hasExtendedInfo,
+            hasSSLError: hasSSLError,
+            lastCheckOKAt: lastCheckOKAt,
+            geoLatitude: geoLatitude,
+            geoLongitude: geoLongitude,
+            canonicalStationId: canonicalStationId,
+            category: category,
+            visibility: visibility,
+            qualityScore: qualityScore,
+            enrichmentStatus: enrichmentStatus,
+            artwork: artwork,
+            editorial: editorial
+        )
+    }
+
+    private static func decodeStringOrArray(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> String? {
+        if let string = try? container.decodeIfPresent(String.self, forKey: key) {
+            return normalizedOptional(string)
+        }
+
+        if let values = try? container.decodeIfPresent([String].self, forKey: key) {
+            let joined = values
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: ",")
+            return normalizedOptional(joined)
+        }
+
+        return nil
+    }
+
+    private static func normalizedOptional(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 private extension Station {

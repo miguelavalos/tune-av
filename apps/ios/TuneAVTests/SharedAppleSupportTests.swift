@@ -302,6 +302,7 @@ final class SharedAppleSupportTests: XCTestCase {
             XCTAssertEqual(request.url?.host, "api.test")
             XCTAssertEqual(self.queryValue("q", in: request.url), "Cadena SER")
             XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
+            XCTAssertNil(self.queryValue("locale", in: request.url))
 
             let body = #"""
             {
@@ -370,6 +371,104 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(stations.map(\.id), ["ser"])
         XCTAssertEqual(stations.first?.editorial?.summary, "Spanish-language news and talk radio from Spain.")
+    }
+
+    func testStationServiceDecodesAVALSYSLanguageCodesArray() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+
+            let body = #"""
+            {
+              "stations": [
+                {
+                  "id": "ser",
+                  "name": "Cadena SER España",
+                  "country": "Spain",
+                  "countryCode": "ES",
+                  "state": null,
+                  "language": "Spanish",
+                  "languageCodes": ["es"],
+                  "tags": "news,talk",
+                  "streamURL": "https://example.com/ser.mp3",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": "https://cadenaser.com/",
+                  "votes": 10,
+                  "clickCount": 20,
+                  "clickTrend": 1,
+                  "isHLS": false,
+                  "hasExtendedInfo": false,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st_rb_ser",
+                  "category": "news",
+                  "visibility": "public",
+                  "qualityScore": 84,
+                  "enrichmentStatus": "enriched",
+                  "artwork": { "status": "none", "url": null, "version": null },
+                  "editorial": {
+                    "summary": "Radio española de noticias y conversación.",
+                    "primaryFormat": "newsTalk",
+                    "secondaryFormats": [],
+                    "musicIntensity": "low",
+                    "speechIntensity": "high",
+                    "languages": ["Español"],
+                    "audience": ["España"],
+                    "programming": ["noticias"],
+                    "sourceUrls": ["https://cadenaser.com/"],
+                    "confidence": "medium",
+                    "reviewStatus": "seeded",
+                    "updatedAt": "2026-05-09T10:00:00Z"
+                  }
+                }
+              ],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+        )
+
+        let stations = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "Cadena SER", limit: 5)
+        )
+
+        XCTAssertEqual(stations.first?.languageCodes, "es")
+        XCTAssertEqual(stations.first?.editorial?.summary, "Radio española de noticias y conversación.")
+    }
+
+    func testStationServiceSendsLocaleToAVALSYS() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(self.queryValue("locale", in: request.url), "es")
+
+            let body = #"""
+            {
+              "stations": [],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+        )
+
+        _ = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "Cadena SER", locale: "es", limit: 5)
+        )
     }
 
     func testStationServiceFallsBackToRadioBrowserWhenAVALSYSFails() async throws {

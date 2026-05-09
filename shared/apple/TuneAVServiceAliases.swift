@@ -22,6 +22,8 @@ struct StationService {
     }
 
     func searchStations(filters: SearchFilters) async throws -> [Station] {
-        try await service.searchStations(filters: filters)
+        var localizedFilters = filters
+        localizedFilters.locale = L10n.locale.identifier
+        return try await service.searchStations(filters: localizedFilters)
     }
 }
