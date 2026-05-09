@@ -36,17 +36,22 @@ struct TuneAVStationService {
         }
     }
 
-    private let baseURL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!
+    private let avalsysBaseURL: URL?
+    private let radioBrowserBaseURL: URL
     private let session: URLSession
     private let fallbacks: TuneAVStationFallbacks
     private let invalidResponseMessage: String
 
     init(
         session: URLSession = .shared,
+        avalsysBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/search")!,
+        radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
         fallbacks: TuneAVStationFallbacks = .english,
         invalidResponseMessage: String = "The station service returned an invalid response."
     ) {
         self.session = session
+        self.avalsysBaseURL = avalsysBaseURL
+        self.radioBrowserBaseURL = radioBrowserBaseURL
         self.fallbacks = fallbacks
         self.invalidResponseMessage = invalidResponseMessage
     }
@@ -62,13 +67,54 @@ struct TuneAVStationService {
             return []
         }
 
+        let normalizedFilters = NormalizedStationSearchFilters(
+            query: trimmedQuery,
+            country: trimmedCountry,
+            countryCode: trimmedCountryCode,
+            language: trimmedLanguage,
+            tag: trimmedTag,
+            limit: filters.limit
+        )
+
+        if let avalsysBaseURL {
+            do {
+                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysBaseURL)
+            } catch {
+                // Radio Browser remains the app's emergency catalog fallback.
+            }
+        }
+
+        return try await searchRadioBrowser(filters: normalizedFilters)
+    }
+
+    private func searchAVALSYS(filters: NormalizedStationSearchFilters, baseURL: URL) async throws -> [Station] {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         components?.queryItems = [
-            trimmedQuery.isEmpty ? nil : URLQueryItem(name: "name", value: trimmedQuery),
-            trimmedCountry.isEmpty ? nil : URLQueryItem(name: "country", value: trimmedCountry),
-            trimmedCountryCode.isEmpty ? nil : URLQueryItem(name: "countrycode", value: trimmedCountryCode),
-            trimmedLanguage.isEmpty ? nil : URLQueryItem(name: "language", value: trimmedLanguage),
-            trimmedTag.isEmpty ? nil : URLQueryItem(name: "tag", value: trimmedTag),
+            filters.query.isEmpty ? nil : URLQueryItem(name: "q", value: filters.query),
+            filters.country.isEmpty ? nil : URLQueryItem(name: "country", value: filters.country),
+            filters.countryCode.isEmpty ? nil : URLQueryItem(name: "countryCode", value: filters.countryCode),
+            filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
+            filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
+            URLQueryItem(name: "limit", value: String(filters.limit))
+        ]
+        .compactMap { $0 }
+
+        guard let url = components?.url else {
+            throw URLError(.badURL)
+        }
+
+        let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url)
+        return applyExactTagFilterIfNeeded(response.stations, tag: filters.tag, limit: filters.limit)
+    }
+
+    private func searchRadioBrowser(filters: NormalizedStationSearchFilters) async throws -> [Station] {
+        var components = URLComponents(url: radioBrowserBaseURL, resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            filters.query.isEmpty ? nil : URLQueryItem(name: "name", value: filters.query),
+            filters.country.isEmpty ? nil : URLQueryItem(name: "country", value: filters.country),
+            filters.countryCode.isEmpty ? nil : URLQueryItem(name: "countrycode", value: filters.countryCode),
+            filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
+            filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
             URLQueryItem(name: "hidebroken", value: "true"),
             URLQueryItem(name: "order", value: "clickcount"),
             URLQueryItem(name: "reverse", value: "true"),
@@ -80,6 +126,13 @@ struct TuneAVStationService {
             throw URLError(.badURL)
         }
 
+        let stations = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
+        let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
+
+        return applyExactTagFilterIfNeeded(resolvedStations, tag: filters.tag, limit: filters.limit)
+    }
+
+    private func decodedResponse<T: Decodable>(_ type: T.Type, url: URL) async throws -> T {
         var request = URLRequest(url: url)
         request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
@@ -89,23 +142,37 @@ struct TuneAVStationService {
             throw ServiceError.invalidResponse(invalidResponseMessage)
         }
 
-        let stations = try JSONDecoder().decode([RadioBrowserStationDTO].self, from: data)
-        let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
+        return try JSONDecoder().decode(type, from: data)
+    }
 
-        guard !trimmedTag.isEmpty else {
+    private func applyExactTagFilterIfNeeded(_ resolvedStations: [Station], tag: String, limit: Int) -> [Station] {
+        guard !tag.isEmpty else {
             return resolvedStations
         }
 
         let exactTagMatches = resolvedStations.filter { station in
-            station.matchesTag(trimmedTag)
+            station.matchesTag(tag)
         }
 
         if !exactTagMatches.isEmpty {
-            return Array(exactTagMatches.prefix(filters.limit))
+            return Array(exactTagMatches.prefix(limit))
         }
 
         return resolvedStations
     }
+}
+
+private struct NormalizedStationSearchFilters {
+    let query: String
+    let country: String
+    let countryCode: String
+    let language: String
+    let tag: String
+    let limit: Int
+}
+
+private struct TuneAVStationSearchResponseDTO: Decodable {
+    let stations: [Station]
 }
 
 private extension Station {

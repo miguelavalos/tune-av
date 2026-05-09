@@ -1,5 +1,26 @@
 import Foundation
 
+struct StationArtwork: Hashable, Codable {
+    let status: String
+    let url: String?
+    let version: String?
+}
+
+struct StationEditorial: Hashable, Codable {
+    let summary: String
+    let primaryFormat: String
+    let secondaryFormats: [String]
+    let musicIntensity: String
+    let speechIntensity: String
+    let languages: [String]
+    let audience: [String]
+    let programming: [String]
+    let sourceUrls: [String]
+    let confidence: String
+    let reviewStatus: String
+    let updatedAt: String
+}
+
 struct Station: Identifiable, Hashable, Codable {
     let id: String
     let name: String
@@ -23,6 +44,13 @@ struct Station: Identifiable, Hashable, Codable {
     let lastCheckOKAt: String?
     let geoLatitude: Double?
     let geoLongitude: Double?
+    let canonicalStationId: String?
+    let category: String?
+    let visibility: String?
+    let qualityScore: Int?
+    let enrichmentStatus: String?
+    let artwork: StationArtwork?
+    let editorial: StationEditorial?
 
     init(
         id: String,
@@ -46,7 +74,14 @@ struct Station: Identifiable, Hashable, Codable {
         hasSSLError: Bool? = nil,
         lastCheckOKAt: String? = nil,
         geoLatitude: Double? = nil,
-        geoLongitude: Double? = nil
+        geoLongitude: Double? = nil,
+        canonicalStationId: String? = nil,
+        category: String? = nil,
+        visibility: String? = nil,
+        qualityScore: Int? = nil,
+        enrichmentStatus: String? = nil,
+        artwork: StationArtwork? = nil,
+        editorial: StationEditorial? = nil
     ) {
         self.id = id
         self.name = name
@@ -70,6 +105,13 @@ struct Station: Identifiable, Hashable, Codable {
         self.lastCheckOKAt = lastCheckOKAt
         self.geoLatitude = geoLatitude
         self.geoLongitude = geoLongitude
+        self.canonicalStationId = canonicalStationId
+        self.category = category
+        self.visibility = visibility
+        self.qualityScore = qualityScore
+        self.enrichmentStatus = enrichmentStatus
+        self.artwork = artwork
+        self.editorial = editorial
     }
 }
 

@@ -2967,6 +2967,27 @@ private struct StationDetailSheet: View {
                     }
                 }
 
+                if let editorial = station.editorial {
+                    DetailSection(title: L10n.string("shell.stationDetail.section.editorial")) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            WrapTagsRow(tags: editorialBadges(for: editorial), highlighted: true)
+
+                            Text(editorial.summary)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            if !editorial.programming.isEmpty {
+                                WrapTagsRow(tags: editorial.programming)
+                            }
+
+                            Text(L10n.string("shell.stationDetail.editorial.confidence", editorial.confidence.capitalized))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(TuneAVTheme.textSecondary)
+                        }
+                    }
+                }
+
                 DetailSection(title: L10n.string("shell.stationDetail.section.about")) {
                     VStack(spacing: 12) {
                         DetailInfoRow(title: L10n.string("shell.stationDetail.field.country"), value: station.country)
@@ -3007,6 +3028,39 @@ private struct StationDetailSheet: View {
         guard let lastCheckOKAt = station.lastCheckOKAt, !lastCheckOKAt.isEmpty else { return nil }
         guard let date = ISO8601DateFormatter().date(from: lastCheckOKAt) else { return lastCheckOKAt }
         return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func editorialBadges(for editorial: StationEditorial) -> [String] {
+        [
+            localizedPrimaryFormat(editorial.primaryFormat),
+            localizedIntensity("music", value: editorial.musicIntensity),
+            localizedIntensity("speech", value: editorial.speechIntensity)
+        ]
+        .compactMap { $0 }
+    }
+
+    private func localizedPrimaryFormat(_ format: String) -> String? {
+        switch format {
+        case "music": return L10n.string("shell.stationDetail.editorial.format.music")
+        case "newsTalk": return L10n.string("shell.stationDetail.editorial.format.newsTalk")
+        case "sports": return L10n.string("shell.stationDetail.editorial.format.sports")
+        case "mixed": return L10n.string("shell.stationDetail.editorial.format.mixed")
+        case "community": return L10n.string("shell.stationDetail.editorial.format.community")
+        case "religious": return L10n.string("shell.stationDetail.editorial.format.religious")
+        default: return nil
+        }
+    }
+
+    private func localizedIntensity(_ kind: String, value: String) -> String? {
+        switch (kind, value) {
+        case ("music", "low"): return L10n.string("shell.stationDetail.editorial.music.low")
+        case ("music", "medium"): return L10n.string("shell.stationDetail.editorial.music.medium")
+        case ("music", "high"): return L10n.string("shell.stationDetail.editorial.music.high")
+        case ("speech", "low"): return L10n.string("shell.stationDetail.editorial.speech.low")
+        case ("speech", "medium"): return L10n.string("shell.stationDetail.editorial.speech.medium")
+        case ("speech", "high"): return L10n.string("shell.stationDetail.editorial.speech.high")
+        default: return nil
+        }
     }
 }
 

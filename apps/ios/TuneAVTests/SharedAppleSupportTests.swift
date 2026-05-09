@@ -234,6 +234,202 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testStationDecodesAVALSYSEnrichmentFields() throws {
+        let json = #"""
+        {
+          "id": "692a3b69-0f68-11ea-a87e-52543be04c81",
+          "name": "Cadena SER España",
+          "country": "Spain",
+          "countryCode": "ES",
+          "state": null,
+          "language": "Spanish",
+          "languageCodes": "es",
+          "tags": "news,talk,sports",
+          "streamURL": "https://example.com/ser.mp3",
+          "faviconURL": null,
+          "bitrate": 128,
+          "codec": "MP3",
+          "homepageURL": "https://cadenaser.com/",
+          "votes": 10,
+          "clickCount": 20,
+          "clickTrend": 1,
+          "isHLS": false,
+          "hasExtendedInfo": false,
+          "hasSSLError": false,
+          "lastCheckOKAt": "2026-05-09T10:00:00Z",
+          "geoLatitude": 40.4168,
+          "geoLongitude": -3.7038,
+          "canonicalStationId": "st_rb_692a3b69_0f68_11ea_a87e_52543be04c81",
+          "category": "news",
+          "visibility": "public",
+          "qualityScore": 84,
+          "enrichmentStatus": "enriched",
+          "artwork": {
+            "status": "none",
+            "url": null,
+            "version": null
+          },
+          "editorial": {
+            "summary": "Spanish-language news and talk radio from Spain.",
+            "primaryFormat": "newsTalk",
+            "secondaryFormats": ["sports", "culture"],
+            "musicIntensity": "low",
+            "speechIntensity": "high",
+            "languages": ["Spanish"],
+            "audience": ["Spain"],
+            "programming": ["current affairs", "sports"],
+            "sourceUrls": ["https://cadenaser.com/"],
+            "confidence": "medium",
+            "reviewStatus": "seeded",
+            "updatedAt": "2026-05-09T10:00:00Z"
+          }
+        }
+        """#.data(using: .utf8)!
+
+        let station = try JSONDecoder().decode(Station.self, from: json)
+
+        XCTAssertEqual(station.id, "692a3b69-0f68-11ea-a87e-52543be04c81")
+        XCTAssertEqual(station.canonicalStationId, "st_rb_692a3b69_0f68_11ea_a87e_52543be04c81")
+        XCTAssertEqual(station.category, "news")
+        XCTAssertEqual(station.qualityScore, 84)
+        XCTAssertEqual(station.artwork?.status, "none")
+        XCTAssertEqual(station.editorial?.primaryFormat, "newsTalk")
+        XCTAssertEqual(station.editorial?.programming, ["current affairs", "sports"])
+    }
+
+    func testStationServiceUsesAVALSYSResponse() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+            XCTAssertEqual(self.queryValue("q", in: request.url), "Cadena SER")
+            XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
+
+            let body = #"""
+            {
+              "stations": [
+                {
+                  "id": "ser",
+                  "name": "Cadena SER España",
+                  "country": "Spain",
+                  "countryCode": "ES",
+                  "state": null,
+                  "language": "Spanish",
+                  "languageCodes": "es",
+                  "tags": "news,talk",
+                  "streamURL": "https://example.com/ser.mp3",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": "https://cadenaser.com/",
+                  "votes": 10,
+                  "clickCount": 20,
+                  "clickTrend": 1,
+                  "isHLS": false,
+                  "hasExtendedInfo": false,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st_rb_ser",
+                  "category": "news",
+                  "visibility": "public",
+                  "qualityScore": 84,
+                  "enrichmentStatus": "enriched",
+                  "artwork": { "status": "none", "url": null, "version": null },
+                  "editorial": {
+                    "summary": "Spanish-language news and talk radio from Spain.",
+                    "primaryFormat": "newsTalk",
+                    "secondaryFormats": [],
+                    "musicIntensity": "low",
+                    "speechIntensity": "high",
+                    "languages": ["Spanish"],
+                    "audience": ["Spain"],
+                    "programming": ["current affairs"],
+                    "sourceUrls": ["https://cadenaser.com/"],
+                    "confidence": "medium",
+                    "reviewStatus": "seeded",
+                    "updatedAt": "2026-05-09T10:00:00Z"
+                  }
+                }
+              ],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+        )
+
+        let stations = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "Cadena SER", countryCode: "ES", limit: 5)
+        )
+
+        XCTAssertEqual(stations.map(\.id), ["ser"])
+        XCTAssertEqual(stations.first?.editorial?.summary, "Spanish-language news and talk radio from Spain.")
+    }
+
+    func testStationServiceFallsBackToRadioBrowserWhenAVALSYSFails() async throws {
+        var requestedHosts: [String] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedHosts.append(request.url?.host ?? "")
+
+            if request.url?.host == "api.test" {
+                return (HTTPURLResponse(url: request.url!, statusCode: 503, httpVersion: nil, headerFields: nil)!, Data())
+            }
+
+            let body = #"""
+            [
+              {
+                "stationuuid": "fallback",
+                "name": "Fallback Radio",
+                "country": "Spain",
+                "countrycode": "ES",
+                "state": "",
+                "language": "Spanish",
+                "languagecodes": "es",
+                "tags": "news",
+                "url": "https://example.com/fallback.mp3",
+                "url_resolved": "https://example.com/fallback.mp3",
+                "favicon": "",
+                "bitrate": 128,
+                "codec": "MP3",
+                "homepage": "https://example.com/",
+                "votes": 1,
+                "clickcount": 2,
+                "clicktrend": 0,
+                "hls": 0,
+                "has_extended_info": false,
+                "ssl_error": 0,
+                "lastcheckoktime_iso8601": null,
+                "geo_lat": null,
+                "geo_long": null,
+                "lastcheckok": 1
+              }
+            ]
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!
+        )
+
+        let stations = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "Fallback", countryCode: "ES", limit: 5)
+        )
+
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test"])
+        XCTAssertEqual(stations.map(\.id), ["fallback"])
+        XCTAssertNil(stations.first?.editorial)
+    }
+
     func testNowPlayingDisplayLinesPreferAlbumFallbackBeforeStationTags() {
         let station = Station(
             id: "album-fallback",
@@ -1135,6 +1331,12 @@ final class SharedAppleSupportTests: XCTestCase {
         return components.queryItems?.first { $0.name == name }?.value
     }
 
+    private func testURLSession() -> URLSession {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [TuneAVTestURLProtocol.self]
+        return URLSession(configuration: configuration)
+    }
+
     private func station(id: String, countryCode: String) -> Station {
         Station(
             id: id,
@@ -1160,4 +1362,35 @@ final class SharedAppleSupportTests: XCTestCase {
             unavailableDetail: "Unavailable detail"
         )
     }
+}
+
+private final class TuneAVTestURLProtocol: URLProtocol {
+    nonisolated(unsafe)
+    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let handler = Self.requestHandler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        do {
+            let (response, data) = try handler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {}
 }
