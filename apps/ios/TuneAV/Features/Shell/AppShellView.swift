@@ -96,22 +96,22 @@ struct AppShellView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedStationDetail) { detail in
+            let currentDetail = selectedStationDetail ?? detail
             StationDetailSheet(
-                station: detail.station,
-                isFavorite: favoriteStationIDs.contains(detail.station.id),
-                isPlaying: audioPlayer.isCurrent(detail.station) && audioPlayer.isPlaying,
+                station: currentDetail.station,
+                stationDiscoveries: stationDiscoveries(for: currentDetail.station),
+                isFavorite: favoriteStationIDs.contains(currentDetail.station.id),
+                isPlaying: audioPlayer.isCurrent(currentDetail.station) && audioPlayer.isPlaying,
                 playAction: {
                     playStation(
-                        detail.station,
-                        queueSource: detail.queueSource,
-                        queue: detail.queueStations
+                        currentDetail.station,
+                        queueSource: currentDetail.queueSource,
+                        queue: currentDetail.queueStations
                     )
                 },
-                toggleFavorite: { toggleFavorite(detail.station) },
-                stationHistoryAction: {
-                    openStationHistory(detail.station)
-                }
+                toggleFavorite: { toggleFavorite(currentDetail.station) }
             )
+            .id(currentDetail.station.id)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
@@ -535,6 +535,12 @@ struct AppShellView: View {
         selectedTab = .music
     }
 
+    private func stationDiscoveries(for station: Station) -> [DiscoveredTrack] {
+        TuneAVMusicLibraryLogic.visibleDiscoveries(libraryStore.discoveries)
+            .filter { $0.stationID == station.id }
+            .sorted { $0.playedAt > $1.playedAt }
+    }
+
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
         guard let station = libraryStore.station(for: discovery.stationID) else { return }
 
@@ -659,7 +665,7 @@ private struct SelectedStationDetail: Identifiable {
     let queueStations: [Station]
 
     var id: String {
-        [station.id, station.editorial?.updatedAt].compactMap { $0 }.joined(separator: "|")
+        station.id
     }
 }
 
@@ -2895,11 +2901,11 @@ private struct StationDetailSheet: View {
     @State private var selectedTab: StationDetailTab = .profile
 
     let station: Station
+    let stationDiscoveries: [DiscoveredTrack]
     let isFavorite: Bool
     let isPlaying: Bool
     let playAction: () -> Void
     let toggleFavorite: () -> Void
-    let stationHistoryAction: () -> Void
 
     var body: some View {
         ScrollView {
@@ -2983,8 +2989,9 @@ private struct StationDetailSheet: View {
                         }
 
                         Button {
-                            stationHistoryAction()
-                            dismiss()
+                            withAnimation(.snappy(duration: 0.24)) {
+                                selectedTab = .history
+                            }
                         } label: {
                             Image(systemName: "clock.arrow.circlepath")
                                 .font(.system(size: 18, weight: .bold))
@@ -3101,24 +3108,22 @@ private struct StationDetailSheet: View {
 
     private var historyContent: some View {
         DetailSection(title: L10n.string("shell.stationDetail.tab.history")) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(L10n.string("shell.stationDetail.history.copy"))
+            if stationDiscoveries.isEmpty {
+                Text(L10n.string("shell.stationDetail.history.empty"))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(TuneAVTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(L10n.string("shell.stationDetail.history.copy"))
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Button {
-                    stationHistoryAction()
-                    dismiss()
-                } label: {
-                    Label(L10n.string("player.menu.stationHistory"), systemImage: "clock.arrow.circlepath")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    ForEach(stationDiscoveries.prefix(12)) { discovery in
+                        StationSheetDiscoveryRow(discovery: discovery)
+                    }
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -3331,6 +3336,52 @@ private struct DiscoveryMetricRow: View {
         case "high": return L10n.string("shell.stationDetail.discovery.level.high")
         default: return L10n.string("shell.stationDetail.discovery.level.unknown")
         }
+    }
+}
+
+private struct StationSheetDiscoveryRow: View {
+    let discovery: DiscoveredTrack
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: discovery.isMarkedInteresting ? "bookmark.fill" : "music.note")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(discovery.isMarkedInteresting ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                .frame(width: 36, height: 36)
+                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(discovery.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(1)
+
+                Text(discovery.artistDisplayText)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(discovery.playedAt.formatted(date: .abbreviated, time: .shortened))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 76, alignment: .trailing)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(TuneAVTheme.cardSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
     }
 }
 

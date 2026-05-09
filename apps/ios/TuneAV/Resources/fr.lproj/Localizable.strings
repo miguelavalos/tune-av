@@ -413,6 +413,7 @@
 "shell.stationDetail.tab.signal" = "Signal";
 "shell.stationDetail.tab.history" = "Historique";
 "shell.stationDetail.history.copy" = "Consultez ce que vous avez écouté sur cette station et les morceaux que vous y avez découverts.";
+"shell.stationDetail.history.empty" = "Lorsque Tune AV détectera des morceaux sur cette station, ils apparaîtront ici dans la fiche.";
 "shell.stationDetail.discovery.score" = "Découverte musicale";
 "shell.stationDetail.discovery.scoreHigh" = "Élevée";
 "shell.stationDetail.discovery.scoreMedium" = "Moyenne";

@@ -413,6 +413,7 @@
 "shell.stationDetail.tab.signal" = "Signal";
 "shell.stationDetail.tab.history" = "Verlauf";
 "shell.stationDetail.history.copy" = "Sieh dir an, was du auf diesem Sender gehört hast und welche Songs du dort entdeckt hast.";
+"shell.stationDetail.history.empty" = "Wenn Tune AV Songs auf diesem Sender erkennt, erscheinen sie hier im Sheet.";
 "shell.stationDetail.discovery.score" = "Musikentdeckung";
 "shell.stationDetail.discovery.scoreHigh" = "Hoch";
 "shell.stationDetail.discovery.scoreMedium" = "Mittel";

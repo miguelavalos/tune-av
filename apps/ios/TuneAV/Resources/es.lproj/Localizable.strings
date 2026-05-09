@@ -426,6 +426,7 @@
 "shell.stationDetail.tab.signal" = "Señal";
 "shell.stationDetail.tab.history" = "Historial";
 "shell.stationDetail.history.copy" = "Revisa lo que has escuchado en esta emisora y las canciones que has descubierto desde aquí.";
+"shell.stationDetail.history.empty" = "Cuando Tune AV detecte canciones en esta emisora, aparecerán aquí dentro del sheet.";
 "shell.stationDetail.discovery.score" = "Descubrimiento musical";
 "shell.stationDetail.discovery.scoreHigh" = "Alta";
 "shell.stationDetail.discovery.scoreMedium" = "Media";

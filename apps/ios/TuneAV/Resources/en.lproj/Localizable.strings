@@ -426,6 +426,7 @@
 "shell.stationDetail.tab.signal" = "Signal";
 "shell.stationDetail.tab.history" = "History";
 "shell.stationDetail.history.copy" = "Review what you have heard on this station and the songs you have discovered from it.";
+"shell.stationDetail.history.empty" = "When Tune AV detects songs on this station, they will appear here inside the sheet.";
 "shell.stationDetail.discovery.score" = "Music discovery";
 "shell.stationDetail.discovery.scoreHigh" = "High";
 "shell.stationDetail.discovery.scoreMedium" = "Medium";

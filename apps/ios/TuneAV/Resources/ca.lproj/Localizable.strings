@@ -413,6 +413,7 @@
 "shell.stationDetail.tab.signal" = "Senyal";
 "shell.stationDetail.tab.history" = "Historial";
 "shell.stationDetail.history.copy" = "Revisa què has escoltat en aquesta emissora i les cançons que hi has descobert.";
+"shell.stationDetail.history.empty" = "Quan Tune AV detecti cançons en aquesta emissora, apareixeran aquí dins del full.";
 "shell.stationDetail.discovery.score" = "Descobriment musical";
 "shell.stationDetail.discovery.scoreHigh" = "Alt";
 "shell.stationDetail.discovery.scoreMedium" = "Mitjà";
