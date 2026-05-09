@@ -488,44 +488,6 @@ struct AppShellView: View {
             queueSource: queueSource,
             queueStations: queueStations
         )
-
-        if station.editorial == nil {
-            Task {
-                await refreshSelectedStationDetailEnrichment(
-                    station,
-                    queueSource: queueSource,
-                    queueStations: queueStations
-                )
-            }
-        }
-    }
-
-    @MainActor
-    private func refreshSelectedStationDetailEnrichment(
-        _ station: Station,
-        queueSource: AudioPlayerService.PlaybackQueue.Source,
-        queueStations: [Station]
-    ) async {
-        do {
-            let enrichedStations = try await stationService.searchStations(
-                filters: .init(query: station.name, limit: 5)
-            )
-            guard
-                selectedStationDetail?.station.id == station.id,
-                let enrichedStation = enrichedStations.first(where: { $0.id == station.id }),
-                enrichedStation.editorial != nil
-            else {
-                return
-            }
-
-            selectedStationDetail = SelectedStationDetail(
-                station: enrichedStation,
-                queueSource: queueSource,
-                queueStations: queueStations.map { $0.id == station.id ? enrichedStation : $0 }
-            )
-        } catch {
-            return
-        }
     }
 
     private func openStationHistory(_ station: Station) {
