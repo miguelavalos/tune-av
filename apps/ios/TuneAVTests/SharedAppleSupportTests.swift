@@ -279,6 +279,24 @@ final class SharedAppleSupportTests: XCTestCase {
             "audience": ["Spain"],
             "programming": ["current affairs", "sports"],
             "sourceUrls": ["https://cadenaser.com/"],
+            "discoveryProfile": {
+              "musicDiscoveryScore": 18,
+              "musicLevel": "low",
+              "speechLevel": "high",
+              "newsLevel": "high",
+              "sportsLevel": "high",
+              "adLoad": "unknown",
+              "metadataQuality": "fair",
+              "attentionMode": "active",
+              "bestFor": ["Spanish current affairs", "sports coverage"],
+              "notIdealFor": ["discovering songs", "continuous music"],
+              "genres": [],
+              "moods": ["informative", "conversational"],
+              "reasons": [
+                "Spoken programming is the main listening experience.",
+                "Music appears secondary to news, interviews, and sports."
+              ]
+            },
             "confidence": "medium",
             "reviewStatus": "seeded",
             "updatedAt": "2026-05-09T10:00:00Z"
@@ -295,6 +313,8 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(station.artwork?.status, "none")
         XCTAssertEqual(station.editorial?.primaryFormat, "newsTalk")
         XCTAssertEqual(station.editorial?.programming, ["current affairs", "sports"])
+        XCTAssertEqual(station.editorial?.discoveryProfile?.musicDiscoveryScore, 18)
+        XCTAssertEqual(station.editorial?.discoveryProfile?.notIdealFor, ["discovering songs", "continuous music"])
     }
 
     func testStationServiceUsesAVALSYSResponse() async throws {
@@ -346,6 +366,21 @@ final class SharedAppleSupportTests: XCTestCase {
                     "audience": ["Spain"],
                     "programming": ["current affairs"],
                     "sourceUrls": ["https://cadenaser.com/"],
+                    "discoveryProfile": {
+                      "musicDiscoveryScore": 18,
+                      "musicLevel": "low",
+                      "speechLevel": "high",
+                      "newsLevel": "high",
+                      "sportsLevel": "high",
+                      "adLoad": "unknown",
+                      "metadataQuality": "fair",
+                      "attentionMode": "active",
+                      "bestFor": ["Spanish current affairs", "sports coverage"],
+                      "notIdealFor": ["discovering songs", "continuous music"],
+                      "genres": [],
+                      "moods": ["informative", "conversational"],
+                      "reasons": ["Spoken programming is the main listening experience."]
+                    },
                     "confidence": "medium",
                     "reviewStatus": "seeded",
                     "updatedAt": "2026-05-09T10:00:00Z"
@@ -371,6 +406,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(stations.map(\.id), ["ser"])
         XCTAssertEqual(stations.first?.editorial?.summary, "Spanish-language news and talk radio from Spain.")
+        XCTAssertEqual(stations.first?.editorial?.discoveryProfile?.musicDiscoveryScore, 18)
     }
 
     func testStationServiceDecodesAVALSYSLanguageCodesArray() async throws {
@@ -419,6 +455,21 @@ final class SharedAppleSupportTests: XCTestCase {
                     "audience": ["España"],
                     "programming": ["noticias"],
                     "sourceUrls": ["https://cadenaser.com/"],
+                    "discoveryProfile": {
+                      "musicDiscoveryScore": 18,
+                      "musicLevel": "low",
+                      "speechLevel": "high",
+                      "newsLevel": "high",
+                      "sportsLevel": "high",
+                      "adLoad": "unknown",
+                      "metadataQuality": "fair",
+                      "attentionMode": "active",
+                      "bestFor": ["actualidad española", "deportes"],
+                      "notIdealFor": ["descubrir canciones", "música continua"],
+                      "genres": [],
+                      "moods": ["informativa", "conversacional"],
+                      "reasons": ["Predomina la voz sobre la música."]
+                    },
                     "confidence": "medium",
                     "reviewStatus": "seeded",
                     "updatedAt": "2026-05-09T10:00:00Z"
@@ -444,6 +495,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(stations.first?.languageCodes, "es")
         XCTAssertEqual(stations.first?.editorial?.summary, "Radio española de noticias y conversación.")
+        XCTAssertEqual(stations.first?.editorial?.discoveryProfile?.notIdealFor, ["descubrir canciones", "música continua"])
     }
 
     func testStationServiceSendsLocaleToAVALSYS() async throws {

@@ -112,7 +112,7 @@ struct AppShellView: View {
                     openStationHistory(detail.station)
                 }
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .sheet(item: Binding(
@@ -2867,9 +2867,32 @@ private struct StationCompactCard: View {
     }
 }
 
+private enum StationDetailTab: String, CaseIterable {
+    case profile
+    case signal
+    case history
+
+    var title: String {
+        switch self {
+        case .profile: return L10n.string("shell.stationDetail.tab.profile")
+        case .signal: return L10n.string("shell.stationDetail.tab.signal")
+        case .history: return L10n.string("shell.stationDetail.tab.history")
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .profile: return "sparkles"
+        case .signal: return "dot.radiowaves.left.and.right"
+        case .history: return "clock.arrow.circlepath"
+        }
+    }
+}
+
 private struct StationDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var browserDestination: BrowserDestination?
+    @State private var selectedTab: StationDetailTab = .profile
 
     let station: Station
     let isFavorite: Bool
@@ -2988,62 +3011,15 @@ private struct StationDetailSheet: View {
                 )
                 .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 12, y: 4)
 
-                if let editorial = station.editorial {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.editorial")) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            WrapTagsRow(tags: editorialBadges(for: editorial), highlighted: true)
+                StationDetailTabBar(selectedTab: $selectedTab)
 
-                            Text(editorial.summary)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(TuneAVTheme.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            if !editorial.programming.isEmpty {
-                                WrapTagsRow(tags: editorial.programming)
-                            }
-
-                            Text(L10n.string("shell.stationDetail.editorial.confidence", editorial.confidence.capitalized))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(TuneAVTheme.textSecondary)
-                        }
-                    }
-                }
-
-                if !station.normalizedTags.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.tags")) {
-                        WrapTagsRow(tags: station.normalizedTags)
-                    }
-                }
-
-                if !station.technicalBadges.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.technical")) {
-                        WrapTagsRow(tags: station.technicalBadges, highlighted: true)
-                    }
-                }
-
-                if !station.popularityBadges.isEmpty {
-                    DetailSection(title: L10n.string("shell.stationDetail.section.signals")) {
-                        WrapTagsRow(tags: station.popularityBadges)
-                    }
-                }
-
-                DetailSection(title: L10n.string("shell.stationDetail.section.about")) {
-                    VStack(spacing: 12) {
-                        DetailInfoRow(title: L10n.string("shell.stationDetail.field.country"), value: station.country)
-                        DetailInfoRow(title: L10n.string("shell.stationDetail.field.language"), value: station.language)
-                        if let state = station.state, !state.isEmpty {
-                            DetailInfoRow(title: L10n.string("shell.stationDetail.field.state"), value: state)
-                        }
-                        if let countryCode = station.countryCode, !countryCode.isEmpty {
-                            DetailInfoRow(title: L10n.string("shell.stationDetail.field.code"), value: countryCode)
-                        }
-                        if let lastCheckOKAt = formattedLastCheck {
-                            DetailInfoRow(title: L10n.string("shell.stationDetail.field.lastCheck"), value: lastCheckOKAt)
-                        }
-                        if let homepageHost, !homepageHost.isEmpty {
-                            DetailInfoRow(title: L10n.string("shell.stationDetail.field.website"), value: homepageHost)
-                        }
-                    }
+                switch selectedTab {
+                case .profile:
+                    profileContent
+                case .signal:
+                    signalContent
+                case .history:
+                    historyContent
                 }
             }
             .padding(24)
@@ -3052,6 +3028,98 @@ private struct StationDetailSheet: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
+        }
+    }
+
+    @ViewBuilder
+    private var profileContent: some View {
+        if let editorial = station.editorial {
+            DetailSection(title: L10n.string("shell.stationDetail.section.editorial")) {
+                VStack(alignment: .leading, spacing: 16) {
+                    WrapTagsRow(tags: editorialBadges(for: editorial), highlighted: true)
+
+                    Text(editorial.summary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let profile = editorial.discoveryProfile {
+                        StationDiscoveryProfileView(profile: profile)
+                    }
+
+                    if !editorial.programming.isEmpty {
+                        WrapTagsRow(tags: editorial.programming)
+                    }
+
+                    Text(L10n.string("shell.stationDetail.editorial.confidence", editorial.confidence.capitalized))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                }
+            }
+        }
+
+        if !station.normalizedTags.isEmpty {
+            DetailSection(title: L10n.string("shell.stationDetail.section.tags")) {
+                WrapTagsRow(tags: station.normalizedTags)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var signalContent: some View {
+        if !station.technicalBadges.isEmpty {
+            DetailSection(title: L10n.string("shell.stationDetail.section.technical")) {
+                WrapTagsRow(tags: station.technicalBadges, highlighted: true)
+            }
+        }
+
+        if !station.popularityBadges.isEmpty {
+            DetailSection(title: L10n.string("shell.stationDetail.section.signals")) {
+                WrapTagsRow(tags: station.popularityBadges)
+            }
+        }
+
+        DetailSection(title: L10n.string("shell.stationDetail.section.about")) {
+            VStack(spacing: 12) {
+                DetailInfoRow(title: L10n.string("shell.stationDetail.field.country"), value: station.country)
+                DetailInfoRow(title: L10n.string("shell.stationDetail.field.language"), value: station.language)
+                if let state = station.state, !state.isEmpty {
+                    DetailInfoRow(title: L10n.string("shell.stationDetail.field.state"), value: state)
+                }
+                if let countryCode = station.countryCode, !countryCode.isEmpty {
+                    DetailInfoRow(title: L10n.string("shell.stationDetail.field.code"), value: countryCode)
+                }
+                if let lastCheckOKAt = formattedLastCheck {
+                    DetailInfoRow(title: L10n.string("shell.stationDetail.field.lastCheck"), value: lastCheckOKAt)
+                }
+                if let homepageHost, !homepageHost.isEmpty {
+                    DetailInfoRow(title: L10n.string("shell.stationDetail.field.website"), value: homepageHost)
+                }
+            }
+        }
+    }
+
+    private var historyContent: some View {
+        DetailSection(title: L10n.string("shell.stationDetail.tab.history")) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(L10n.string("shell.stationDetail.history.copy"))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    stationHistoryAction()
+                    dismiss()
+                } label: {
+                    Label(L10n.string("player.menu.stationHistory"), systemImage: "clock.arrow.circlepath")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -3099,6 +3167,169 @@ private struct StationDetailSheet: View {
         case ("speech", "medium"): return L10n.string("shell.stationDetail.editorial.speech.medium")
         case ("speech", "high"): return L10n.string("shell.stationDetail.editorial.speech.high")
         default: return nil
+        }
+    }
+}
+
+private struct StationDetailTabBar: View {
+    @Binding var selectedTab: StationDetailTab
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(StationDetailTab.allCases, id: \.self) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    Label(tab.title, systemImage: tab.icon)
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 13, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .foregroundStyle(selectedTab == tab ? .white : TuneAVTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(
+                            selectedTab == tab ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
+                            in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .stroke(selectedTab == tab ? TuneAVTheme.highlight.opacity(0.35) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+private struct StationDiscoveryProfileView: View {
+    let profile: StationDiscoveryProfile
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.string("shell.stationDetail.discovery.score"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                    Text(scoreLabel)
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                }
+
+                Spacer()
+
+                Text("\(profile.musicDiscoveryScore)")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .monospacedDigit()
+            }
+
+            VStack(spacing: 10) {
+                DiscoveryMetricRow(title: L10n.string("shell.stationDetail.discovery.music"), level: profile.musicLevel)
+                DiscoveryMetricRow(title: L10n.string("shell.stationDetail.discovery.speech"), level: profile.speechLevel)
+                DiscoveryMetricRow(title: L10n.string("shell.stationDetail.discovery.news"), level: profile.newsLevel)
+                DiscoveryMetricRow(title: L10n.string("shell.stationDetail.discovery.sports"), level: profile.sportsLevel)
+                DiscoveryMetricRow(title: L10n.string("shell.stationDetail.discovery.ads"), level: profile.adLoad)
+            }
+
+            if !profile.bestFor.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.string("shell.stationDetail.discovery.bestFor"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                    WrapTagsRow(tags: profile.bestFor, highlighted: true)
+                }
+            }
+
+            if !profile.notIdealFor.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.string("shell.stationDetail.discovery.notIdealFor"))
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                    WrapTagsRow(tags: profile.notIdealFor)
+                }
+            }
+
+            if !profile.reasons.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(profile.reasons.prefix(3), id: \.self) { reason in
+                        Label(reason, systemImage: "info.circle")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(TuneAVTheme.elevatedSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
+    }
+
+    private var scoreLabel: String {
+        switch profile.musicDiscoveryScore {
+        case 75...100:
+            return L10n.string("shell.stationDetail.discovery.scoreHigh")
+        case 40..<75:
+            return L10n.string("shell.stationDetail.discovery.scoreMedium")
+        default:
+            return L10n.string("shell.stationDetail.discovery.scoreLow")
+        }
+    }
+}
+
+private struct DiscoveryMetricRow: View {
+    let title: String
+    let level: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(width: 82, alignment: .leading)
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(TuneAVTheme.borderSubtle.opacity(0.5))
+                    Capsule()
+                        .fill(level == "unknown" ? TuneAVTheme.textSecondary.opacity(0.35) : TuneAVTheme.highlight.opacity(0.8))
+                        .frame(width: proxy.size.width * levelRatio)
+                }
+            }
+            .frame(height: 8)
+
+            Text(localizedLevel)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .frame(width: 70, alignment: .trailing)
+        }
+    }
+
+    private var levelRatio: CGFloat {
+        switch level {
+        case "low": return 0.25
+        case "medium": return 0.58
+        case "high": return 1
+        default: return 0.35
+        }
+    }
+
+    private var localizedLevel: String {
+        switch level {
+        case "low": return L10n.string("shell.stationDetail.discovery.level.low")
+        case "medium": return L10n.string("shell.stationDetail.discovery.level.medium")
+        case "high": return L10n.string("shell.stationDetail.discovery.level.high")
+        default: return L10n.string("shell.stationDetail.discovery.level.unknown")
         }
     }
 }

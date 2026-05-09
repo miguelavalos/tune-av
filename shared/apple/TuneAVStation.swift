@@ -6,6 +6,22 @@ struct StationArtwork: Hashable, Codable {
     let version: String?
 }
 
+struct StationDiscoveryProfile: Hashable, Codable {
+    let musicDiscoveryScore: Int
+    let musicLevel: String
+    let speechLevel: String
+    let newsLevel: String
+    let sportsLevel: String
+    let adLoad: String
+    let metadataQuality: String
+    let attentionMode: String
+    let bestFor: [String]
+    let notIdealFor: [String]
+    let genres: [String]
+    let moods: [String]
+    let reasons: [String]
+}
+
 struct StationEditorial: Hashable, Codable {
     let summary: String
     let primaryFormat: String
@@ -16,6 +32,7 @@ struct StationEditorial: Hashable, Codable {
     let audience: [String]
     let programming: [String]
     let sourceUrls: [String]
+    let discoveryProfile: StationDiscoveryProfile?
     let confidence: String
     let reviewStatus: String
     let updatedAt: String
