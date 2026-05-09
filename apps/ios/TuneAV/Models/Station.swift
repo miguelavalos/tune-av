@@ -3,6 +3,11 @@ import SwiftData
 
 extension Station {
     init(favorite: FavoriteStation) {
+        if let snapshot = favorite.stationSnapshot {
+            self = snapshot
+            return
+        }
+
         self.init(
             id: favorite.stationID,
             name: favorite.name,
@@ -30,6 +35,11 @@ extension Station {
     }
 
     init(recent: RecentStation) {
+        if let snapshot = recent.stationSnapshot {
+            self = snapshot
+            return
+        }
+
         self.init(
             id: recent.stationID,
             name: recent.name,
@@ -75,6 +85,24 @@ extension Station {
 
 }
 
+private extension Station {
+    var persistenceSnapshotJSON: String? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func persistenceSnapshot(from json: String?) -> Station? {
+        guard
+            let json,
+            let data = json.data(using: .utf8)
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(Station.self, from: data)
+    }
+}
+
 @Model
 final class FavoriteStation {
     @Attribute(.unique) var stationID: String
@@ -99,6 +127,7 @@ final class FavoriteStation {
     var lastCheckOKAt: String?
     var geoLatitude: Double?
     var geoLongitude: Double?
+    var stationSnapshotJSON: String?
     var createdAt: Date
 
     init(station: Station, createdAt: Date = .now) {
@@ -124,7 +153,16 @@ final class FavoriteStation {
         self.lastCheckOKAt = station.lastCheckOKAt
         self.geoLatitude = station.geoLatitude
         self.geoLongitude = station.geoLongitude
+        self.stationSnapshotJSON = station.persistenceSnapshotJSON
         self.createdAt = createdAt
+    }
+
+    var stationSnapshot: Station? {
+        Station.persistenceSnapshot(from: stationSnapshotJSON)
+    }
+
+    func updateStationSnapshot(_ station: Station) {
+        stationSnapshotJSON = station.persistenceSnapshotJSON
     }
 }
 
@@ -169,6 +207,7 @@ final class RecentStation {
     var lastCheckOKAt: String?
     var geoLatitude: Double?
     var geoLongitude: Double?
+    var stationSnapshotJSON: String?
     var lastPlayedAt: Date
 
     init(station: Station, lastPlayedAt: Date = .now) {
@@ -194,7 +233,16 @@ final class RecentStation {
         self.lastCheckOKAt = station.lastCheckOKAt
         self.geoLatitude = station.geoLatitude
         self.geoLongitude = station.geoLongitude
+        self.stationSnapshotJSON = station.persistenceSnapshotJSON
         self.lastPlayedAt = lastPlayedAt
+    }
+
+    var stationSnapshot: Station? {
+        Station.persistenceSnapshot(from: stationSnapshotJSON)
+    }
+
+    func updateStationSnapshot(_ station: Station) {
+        stationSnapshotJSON = station.persistenceSnapshotJSON
     }
 }
 

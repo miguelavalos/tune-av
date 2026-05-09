@@ -71,6 +71,26 @@ final class LibraryStore: ObservableObject {
         saveAndRefresh()
     }
 
+    func rememberStationSnapshots(_ stations: [Station]) {
+        guard !stations.isEmpty else { return }
+
+        var didUpdate = false
+        for station in stations {
+            if let favorite = favorites.first(where: { $0.stationID == station.id }) {
+                favorite.updateStationSnapshot(station)
+                didUpdate = true
+            }
+
+            if let recent = recents.first(where: { $0.stationID == station.id }) {
+                recent.updateStationSnapshot(station)
+                didUpdate = true
+            }
+        }
+
+        guard didUpdate else { return }
+        saveAndRefresh()
+    }
+
     func recordPlayback(of station: Station, recentLimit: Int? = nil) {
         removeTombstone(resource: "recents", identityKey: Self.stationIdentityKey(for: station))
         if let existing = recents.first(where: { $0.stationID == station.id }) {
@@ -95,6 +115,7 @@ final class LibraryStore: ObservableObject {
             existing.lastCheckOKAt = station.lastCheckOKAt
             existing.geoLatitude = station.geoLatitude
             existing.geoLongitude = station.geoLongitude
+            existing.updateStationSnapshot(station)
             existing.lastPlayedAt = .now
         } else {
             context.insert(RecentStation(station: station))

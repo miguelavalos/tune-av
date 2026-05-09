@@ -538,6 +538,8 @@ struct AppShellView: View {
             guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
             enrichedStationsByID[station.id] = station
         }
+
+        libraryStore.rememberStationSnapshots(stations)
     }
 
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
