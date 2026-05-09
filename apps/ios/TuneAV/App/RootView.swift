@@ -135,6 +135,7 @@ struct RootView: View {
         guard !launchContext.shouldDisableOnboarding else { return }
         guard accessController.shouldAutoShowGuestOnboarding else { return }
 
+        automaticGuestOnboardingIsPresented = true
         accessController.markGuestOnboardingPromptShown()
     }
 

@@ -43,8 +43,8 @@ struct LiveNowPanel: View {
                             station: currentStation,
                             size: 64,
                             surfaceStyle: .dark,
-                            animationOverlay: .equalizerBars,
-                            isAnimationActive: audioPlayer.isPlaying
+                            animationOverlay: .none,
+                            isAnimationActive: false
                         )
                     } else {
                         EmptyLiveArtwork(size: 64)

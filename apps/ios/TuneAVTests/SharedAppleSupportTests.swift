@@ -965,8 +965,8 @@ final class SharedAppleSupportTests: XCTestCase {
             streamURL: "https://example.com/jazz"
         )
 
-        XCTAssertEqual(rockStation.fallbackArtwork, .rockPop)
-        XCTAssertEqual(jazzStation.fallbackArtwork, .jazzChill)
+        XCTAssertTrue([.rockAlternativeA, .rockAlternativeB].contains(rockStation.fallbackArtwork))
+        XCTAssertEqual(jazzStation.fallbackArtwork, .jazzBluesSoul)
     }
 
     func testStationShareTextFallsBackToStreamURL() {

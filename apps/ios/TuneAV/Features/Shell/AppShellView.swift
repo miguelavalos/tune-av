@@ -827,6 +827,7 @@ private struct HomeScreen: View {
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
 
     private enum FeaturedSource {
+        case current
         case recent
         case favorite
         case popular
@@ -837,18 +838,45 @@ private struct HomeScreen: View {
             VStack(alignment: .leading, spacing: 24) {
                 ShellBrandHeader(statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label))
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(L10n.string("shell.home.title"))
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(L10n.string("shell.home.subtitle"))
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                }
+                Text(L10n.string("shell.home.title"))
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
 
                 if shouldShowLiveNowPanel {
                     LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
+                }
+
+                if isLoading && heroStation == nil && displayedPopularStations.isEmpty {
+                    StationCardSkeletonGroup()
+                } else if let errorMessage {
+                    EmptyLibraryState(
+                        title: L10n.string("shell.home.error.title"),
+                        detail: errorMessage
+                    )
+                } else if let heroStation {
+                    HomeTuningDeskHero(
+                        station: heroStation,
+                        presentation: homePresentation(for: heroStation),
+                        isFavorite: favoriteStationIDs.contains(heroStation.id),
+                        isCurrentStation: audioPlayer.isCurrent(heroStation),
+                        isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
+                        isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
+                        playAction: {
+                            if audioPlayer.isCurrent(heroStation) {
+                                audioPlayer.togglePlayback()
+                            } else {
+                                playStation(heroStation, featuredQueueSource, featuredQueueStations)
+                            }
+                        },
+                        favoriteAction: { toggleFavorite(heroStation) },
+                        detailsAction: { showStationDetails(heroStation, featuredQueueSource, featuredQueueStations) }
+                    )
+
+                } else {
+                    EmptyLibraryState(
+                        title: L10n.string("shell.home.empty.title"),
+                        detail: L10n.string("shell.home.empty.detail")
+                    )
                 }
 
                 if !displayedRecentStations.isEmpty {
@@ -881,111 +909,33 @@ private struct HomeScreen: View {
                     }
                 }
 
-                if isLoading && featuredStation == nil && displayedPopularStations.isEmpty {
-                    StationCardSkeletonGroup()
-                } else if let errorMessage {
-                    EmptyLibraryState(
-                        title: L10n.string("shell.home.error.title"),
-                        detail: errorMessage
-                    )
-                } else if let featuredStation {
-                    if usesCompactFeaturedSection {
-                        StationSection(
-                            title: L10n.string("shell.home.featured.frontPage"),
-                            subtitle: L10n.string("shell.home.featured.frontPage.subtitle"),
-                            accessibilityIdentifier: "home.section.featured"
-                        ) {
-                            StationCompactCarousel(
-                                stations: [featuredStation],
-                                favoriteStationIDs: favoriteStationIDs,
-                                nowPlayingTracks: nowPlayingTracks,
-                                queueSource: featuredQueueSource,
-                                queueStations: featuredQueueStations,
-                                playStation: playStation,
-                                toggleFavorite: toggleFavorite,
-                                showStationDetails: showStationDetails
-                            )
-                        }
-                    } else {
-                        FeaturedStationCard(
-                            station: featuredStation,
-                            label: featuredLabel,
-                            subtitle: stationDeck(for: featuredStation),
-                            isFavorite: favoriteStationIDs.contains(featuredStation.id),
-                            playAction: { playStation(featuredStation, featuredQueueSource, featuredQueueStations) },
-                            favoriteAction: { toggleFavorite(featuredStation) },
-                            detailsAction: { showStationDetails(featuredStation, featuredQueueSource, featuredQueueStations) }
+                if !displayedPopularStations.isEmpty {
+                    StationSection(
+                        title: sectionTitle,
+                        subtitle: sectionSubtitle,
+                        accessibilityIdentifier: "home.section.discovery"
+                    ) {
+                        StationCompactCarousel(
+                            stations: displayedPopularStations,
+                            favoriteStationIDs: favoriteStationIDs,
+                            nowPlayingTracks: nowPlayingTracks,
+                            queueSource: .homeDiscovery,
+                            queueStations: displayedPopularStations,
+                            playStation: playStation,
+                            toggleFavorite: toggleFavorite,
+                            showStationDetails: showStationDetails
                         )
                     }
-
-                    if !displayedPopularStations.isEmpty {
-                        StationSection(
-                            title: sectionTitle,
-                            subtitle: sectionSubtitle,
-                            accessibilityIdentifier: "home.section.discovery"
-                        ) {
-                            StationCompactCarousel(
-                                stations: displayedPopularStations,
-                                favoriteStationIDs: favoriteStationIDs,
-                                nowPlayingTracks: nowPlayingTracks,
-                                queueSource: .homeDiscovery,
-                                queueStations: displayedPopularStations,
-                                playStation: playStation,
-                                toggleFavorite: toggleFavorite,
-                                showStationDetails: showStationDetails
-                            )
-                        }
-                    }
-                } else {
-                    EmptyLibraryState(
-                        title: L10n.string("shell.home.empty.title"),
-                        detail: L10n.string("shell.home.empty.detail")
-                    )
                 }
             }
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
             .padding(.bottom, bottomContentPadding)
         }
         .scrollIndicators(.hidden)
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
-        }
-    }
-
-    private func stationDeck(for station: Station) -> String {
-        let language = cleanedFeaturedDetail(station.language)
-        let country = localizedCountryName(for: station)
-
-        switch feedContext {
-        case .preferredGenre, .popularInCountry:
-            if let language, let flag = station.flagEmoji {
-                return "\(flag) \(language)"
-            }
-            if let language {
-                return language
-            }
-            if let flag = station.flagEmoji, let country {
-                return "\(flag) \(country)"
-            }
-            if let country {
-                return country
-            }
-            return L10n.string("shell.station.codec.live")
-        case .popularWorldwide:
-            if let language, let flag = station.flagEmoji {
-                return "\(flag) \(language)"
-            }
-            if let language {
-                return language
-            }
-            if let flag = station.flagEmoji, let country {
-                return "\(flag) \(country)"
-            }
-            if let country {
-                return country
-            }
-            return L10n.string("shell.station.codec.live")
         }
     }
 
@@ -1001,16 +951,106 @@ private struct HomeScreen: View {
         return cleanedFeaturedDetail(station.country)
     }
 
+    private func homePresentation(for station: Station) -> HomeStationPresentation {
+        let source = heroSource
+        let currentTrack = currentTrackLine(for: station)
+        let context = stationContextLine(for: station)
+        let label = heroLabel(for: source, station: station)
+        let hasReliableProgramData = currentTrack != nil
+        let badges = hasReliableProgramData ? [stationCategoryLabel(for: station)].compactMap { $0 }.prefix(2).map { $0 } : []
+
+        return HomeStationPresentation(
+            tier: hasReliableProgramData ? .rich : .fallback,
+            label: label,
+            title: station.name,
+            primaryLine: currentTrack ?? context,
+            secondaryLine: currentTrack == nil ? nil : context,
+            badges: badges
+        )
+    }
+
+    private func currentTrackLine(for station: Station) -> String? {
+        guard audioPlayer.isCurrent(station) else { return nil }
+        guard let title = TuneAVDisplayMetadata.normalized(audioPlayer.currentTrackTitle) else { return nil }
+        guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(title, stationName: station.name) else { return nil }
+
+        if
+            let artist = TuneAVDisplayMetadata.normalized(audioPlayer.currentTrackArtist),
+            !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(artist, stationName: station.name)
+        {
+            return "\(artist) · \(title)"
+        }
+
+        return title
+    }
+
+    private func stationContextLine(for station: Station) -> String? {
+        let country = localizedCountryName(for: station).map { country in
+            if let flag = station.flagEmoji {
+                return "\(flag) \(country)"
+            }
+            return country
+        }
+        let language = cleanedFeaturedDetail(station.language)
+        let values = [country, language]
+            .compactMap { $0 }
+            .reduce(into: [String]()) { result, value in
+                guard !result.contains(where: { $0.localizedCaseInsensitiveCompare(value) == .orderedSame }) else { return }
+                result.append(value)
+            }
+
+        guard !values.isEmpty else { return nil }
+        return values.prefix(2).joined(separator: " · ")
+    }
+
+    private func stationCategoryLabel(for station: Station) -> String? {
+        let tags = station.tags
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let preferredTags = ["music", "pop", "rock", "jazz", "news", "talk", "sports", "classical", "electronic", "latin", "ambient", "country"]
+        if let tag = tags.first(where: { tag in preferredTags.contains { tag.localizedCaseInsensitiveContains($0) } }) {
+            return tag.capitalized(with: L10n.locale)
+        }
+
+        return nil
+    }
+
+    private func heroLabel(for source: FeaturedSource?, station: Station) -> String {
+        if audioPlayer.isCurrent(station) {
+            return L10n.string("shell.liveNow.title")
+        }
+
+        switch source {
+        case .favorite:
+            return L10n.string("shell.home.favorites.title")
+        case .recent:
+            return L10n.string("shell.home.recents.title")
+        case .current:
+            return L10n.string("shell.liveNow.title")
+        case .popular, .none:
+            return featuredLabel
+        }
+    }
+
     private var hasPersonalActivity: Bool {
         !recentStations.isEmpty || !favoriteStations.isEmpty
     }
 
     private var shouldShowLiveNowPanel: Bool {
-        audioPlayer.currentStation != nil || !hasPersonalActivity
+        audioPlayer.currentStation == nil && !hasPersonalActivity && heroStation == nil
     }
 
-    private var usesCompactFeaturedSection: Bool {
-        hasPersonalActivity
+    private var heroSource: FeaturedSource? {
+        if audioPlayer.currentStation != nil {
+            return .current
+        }
+        return featuredSource
+    }
+
+    private var heroStation: Station? {
+        audioPlayer.currentStation ?? featuredStation
     }
 
     private var featuredSource: FeaturedSource? {
@@ -1025,6 +1065,8 @@ private struct HomeScreen: View {
 
     private var featuredStation: Station? {
         switch featuredSource {
+        case .current:
+            return audioPlayer.currentStation
         case .recent:
             return nil
         case .favorite:
@@ -1037,11 +1079,11 @@ private struct HomeScreen: View {
     }
 
     private var featuredStationID: String? {
-        featuredStation?.id
+        heroStation?.id
     }
 
     private var displayedRecentStations: [Station] {
-        recentStations
+        Array(filteredStationsExcludingFeatured(from: recentStations).prefix(6))
     }
 
     private var displayedFavoriteStations: [Station] {
@@ -1065,7 +1107,9 @@ private struct HomeScreen: View {
     }
 
     private var featuredQueueSource: AudioPlayerService.PlaybackQueue.Source {
-        switch featuredSource {
+        switch heroSource {
+        case .current:
+            return .singleStation
         case .recent:
             return .homeRecents
         case .favorite:
@@ -1076,7 +1120,9 @@ private struct HomeScreen: View {
     }
 
     private var featuredQueueStations: [Station] {
-        switch featuredSource {
+        switch heroSource {
+        case .current:
+            return audioPlayer.currentStation.map { [$0] } ?? []
         case .recent:
             return recentStations
         case .favorite:
@@ -1113,6 +1159,8 @@ private struct HomeScreen: View {
             return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
         case .favorite:
             return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
+        case .current:
+            return L10n.string("shell.liveNow.title").uppercased(with: .current)
         case .popular, .none:
             break
         }
@@ -2196,78 +2244,323 @@ private extension TuneAVCountry {
     }
 }
 
-private struct FeaturedStationCard: View {
-    let station: Station
+private struct HomeStationPresentation {
+    enum Tier {
+        case rich
+        case fallback
+    }
+
+    let tier: Tier
     let label: String
-    let subtitle: String
+    let title: String
+    let primaryLine: String?
+    let secondaryLine: String?
+    let badges: [String]
+}
+
+private struct HomeTuningDeskHero: View {
+    let station: Station
+    let presentation: HomeStationPresentation
     let isFavorite: Bool
+    let isCurrentStation: Bool
+    let isPlaying: Bool
+    let isLoading: Bool
     let playAction: () -> Void
     let favoriteAction: () -> Void
     let detailsAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(label)
-                .font(.caption.weight(.bold))
-                .tracking(1.2)
-                .foregroundStyle(TuneAVTheme.highlight)
+        VStack(alignment: .leading, spacing: 20) {
+            heroHeader
 
-            HStack(alignment: .top, spacing: 16) {
-                StationThumbnailView(station: station, size: 106)
+            HStack(alignment: .bottom, spacing: 18) {
+                stationArtwork
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(station.name)
-                        .font(.system(size: 28, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(3)
-
-                    Text(subtitle)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 14) {
+                    stationText
+                        .layoutPriority(1)
+                    deskControls
                 }
-            }
-
-            HStack(spacing: 10) {
-                Button(action: playAction) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "play.fill")
-                        Text(L10n.string("shell.featured.play"))
-                    }
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                Button(action: favoriteAction) {
-                    TuneAVSavedStationIcon(isSaved: isFavorite, size: 18)
-                        .frame(width: 48, height: 48)
-                        .background(
-                            isFavorite ? TuneAVTheme.highlight.opacity(0.12) : TuneAVTheme.elevatedSurface,
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.22) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.plain)
             }
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(TuneAVTheme.cardSurface)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(heroBackground)
         .contentShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
         .onTapGesture(perform: detailsAction)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var heroHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            HomeDeskSignalPill(title: presentation.label)
+
+            if isCurrentStation {
+                HomeLiveStatePill(isPlaying: isPlaying, isLoading: isLoading)
+            }
+
+            Spacer(minLength: 8)
+
+            if presentation.tier == .rich {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .padding(9)
+                    .background(Color.white.opacity(0.62), in: Circle())
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private var stationArtwork: some View {
+        StationThumbnailView(
+            station: station,
+            size: 128,
+            animationOverlay: .none,
+            isAnimationActive: false
+        )
+        .rotationEffect(.degrees(-1.2))
+        .overlay(alignment: .bottomTrailing) {
+            Circle()
+                .fill(isPlaying ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite)
+                .frame(width: 36, height: 36)
+                .overlay {
+                    Image(systemName: isPlaying ? "waveform" : "dot.radiowaves.left.and.right")
+                        .font(.system(size: 14, weight: .black))
+                        .foregroundStyle(isPlaying ? TuneAVTheme.brandBlack : TuneAVTheme.highlight)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.72), lineWidth: 2)
+                }
+                .offset(x: 5, y: 6)
+        }
+    }
+
+    private var stationText: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(presentation.title)
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .lineLimit(3)
+                .minimumScaleFactor(0.72)
+
+            if let primaryLine = presentation.primaryLine {
+                Text(primaryLine)
+                    .font(.system(size: presentation.tier == .rich ? 15 : 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let secondaryLine = presentation.secondaryLine {
+                Text(secondaryLine)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.78))
+                    .lineLimit(1)
+            }
+
+            if !presentation.badges.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(presentation.badges, id: \.self) { badge in
+                        HomeDeskBadge(title: badge)
+                    }
+                }
+            }
+        }
+    }
+
+    private var deskControls: some View {
+        HStack(spacing: 10) {
+            Button(action: playAction) {
+                Image(systemName: playIconName)
+                    .font(.system(size: 19, weight: .black))
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .frame(width: 56, height: 56)
+                    .background(TuneAVTheme.highlight, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(playTitle)
+
+            Button(action: favoriteAction) {
+                TuneAVSavedStationIcon(isSaved: isFavorite, size: 18)
+                    .frame(width: 50, height: 50)
+                    .background(
+                        isFavorite ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.74),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.34) : TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isFavorite ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort"))
+
+            Button(action: detailsAction) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.brandGraphite)
+                    .frame(width: 50, height: 50)
+                    .background(Color.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("common.more"))
+        }
+    }
+
+    private var heroBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+
+        return ZStack(alignment: .bottomTrailing) {
+            shape
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.99, green: 0.97, blue: 0.91),
+                            Color(red: 0.96, green: 0.94, blue: 0.87)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            ZStack(alignment: .bottomTrailing) {
+                Image("AviOnboardingHero")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 300)
+                    .opacity(0.22)
+                    .offset(x: 50, y: 32)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+
+                HomeDeskSketchBackdrop()
+                    .foregroundStyle(TuneAVTheme.highlight.opacity(0.14))
+                    .padding(.bottom, 112)
+                    .padding(.trailing, 12)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipShape(shape)
+        }
+        .overlay {
+            shape
+                .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
+        }
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 18, y: 8)
+    }
+
+    private var playIconName: String {
+        isPlaying ? "pause.fill" : "play.fill"
+    }
+
+    private var playTitle: String {
+        if isPlaying {
+            return L10n.string("player.control.pause")
+        }
+        return L10n.string("shell.featured.play")
+    }
+}
+
+private struct HomeLiveStatePill: View {
+    let isPlaying: Bool
+    let isLoading: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(TuneAVTheme.highlight)
+                .frame(width: 6, height: 6)
+
+            Text(title)
+                .font(.system(size: 11, weight: .black))
+                .tracking(0.7)
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.78))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(TuneAVTheme.highlight.opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(TuneAVTheme.highlight.opacity(0.2), lineWidth: 1)
+        }
+    }
+
+    private var title: String {
+        if isLoading {
+            return L10n.string("audio.status.loading").uppercased(with: .current)
+        }
+        if isPlaying {
+            return L10n.string("audio.status.playing").uppercased(with: .current)
+        }
+        return L10n.string("shell.status.live").uppercased(with: .current)
+    }
+}
+
+private struct HomeDeskBadge: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.58), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
+            }
+    }
+}
+
+private struct HomeDeskSignalPill: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(TuneAVTheme.highlight)
+                .frame(width: 7, height: 7)
+
+            Text(title)
+                .font(.system(size: 12, weight: .black))
+                .tracking(0.9)
+                .foregroundStyle(TuneAVTheme.brandGraphite)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color.white.opacity(0.62), in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
+        }
+    }
+}
+
+private struct HomeDeskSketchBackdrop: View {
+    var body: some View {
+        ZStack {
+            ForEach([42.0, 72.0, 104.0], id: \.self) { size in
+                Circle()
+                    .stroke(lineWidth: 1.2)
+                    .frame(width: size, height: size)
+            }
+
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 28, weight: .light))
+                .offset(x: -36, y: 34)
+        }
+        .frame(width: 126, height: 126)
+        .accessibilityHidden(true)
     }
 }
 
@@ -2375,30 +2668,21 @@ private struct StationCompactCard: View {
         audioPlayer.isCurrent(station) && (audioPlayer.isPlaying || audioPlayer.isLoading)
     }
 
-    private var detailText: String {
-        station.cardDetailText(preferCountryName: station.flagEmoji == nil)
-            ?? L10n.string("shell.station.row.defaultDetail")
+    private var compactPrimaryLine: String {
+        if let reliableArtist {
+            return reliableArtist
+        }
+
+        if let reliableTitle {
+            return reliableTitle
+        }
+
+        return compactStationContext ?? L10n.string("shell.station.row.defaultDetail")
     }
 
-    private var artistLine: String {
-        stationDisplayLines.artistLine
-    }
-
-    private var titleLine: String {
-        stationDisplayLines.titleLine
-    }
-
-    private var stationDisplayLines: TuneAVStationDisplayLines {
-        TuneAVStationDisplayLines.resolve(
-            station: station,
-            isCurrent: audioPlayer.isCurrent(station),
-            currentArtist: audioPlayer.currentTrackArtist,
-            currentTitle: audioPlayer.currentTrackTitle,
-            currentAlbumTitle: audioPlayer.currentTrackAlbumTitle,
-            nowPlayingTrack: nowPlayingTrack,
-            detailText: detailText,
-            liveFallback: L10n.string("shell.station.codec.live")
-        )
+    private var compactSecondaryLine: String? {
+        guard reliableArtist != nil else { return nil }
+        return reliableTitle
     }
 
     var body: some View {
@@ -2414,8 +2698,8 @@ private struct StationCompactCard: View {
                     StationThumbnailView(
                         station: station,
                         size: StationCompactMetrics.cardWidth,
-                        animationOverlay: .equalizerBars,
-                        isAnimationActive: isCurrentStationActive
+                        animationOverlay: .none,
+                        isAnimationActive: false
                     )
                         .overlay {
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -2454,17 +2738,22 @@ private struct StationCompactCard: View {
                     .lineLimit(1)
                     .frame(height: 15, alignment: .leading)
 
-                Text(artistLine)
+                Text(compactPrimaryLine)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(audioPlayer.isCurrent(station) ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
+                    .foregroundStyle(reliableArtist != nil || reliableTitle != nil ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
                     .lineLimit(1)
                     .frame(height: 14, alignment: .leading)
 
-                Text(titleLine)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.74))
-                    .lineLimit(1)
-                    .frame(height: 13, alignment: .leading)
+                if let compactSecondaryLine {
+                    Text(compactSecondaryLine)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.74))
+                        .lineLimit(1)
+                        .frame(height: 13, alignment: .leading)
+                } else {
+                    Color.clear
+                        .frame(height: 13)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -2496,6 +2785,47 @@ private struct StationCompactCard: View {
     private func normalizedMetadata(_ value: String?) -> String? {
         TuneAVDisplayMetadata.normalized(value)
     }
+
+    private var reliableArtist: String? {
+        let candidate = audioPlayer.isCurrent(station) ? audioPlayer.currentTrackArtist : nowPlayingTrack?.artist
+        guard let artist = normalizedMetadata(candidate) else { return nil }
+        guard !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(artist, stationName: station.name) else { return nil }
+        return artist
+    }
+
+    private var reliableTitle: String? {
+        let candidate = audioPlayer.isCurrent(station) ? audioPlayer.currentTrackTitle : nowPlayingTrack?.title
+        guard let title = normalizedMetadata(candidate) else { return nil }
+        guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(title, stationName: station.name) else { return nil }
+        return title
+    }
+
+    private var compactStationContext: String? {
+        let country = compactCountryName.map { countryName in
+            if let flag = station.flagEmoji {
+                return "\(flag) \(countryName)"
+            }
+            return countryName
+        }
+        let language = TuneAVText.normalizedValue(station.language, excluding: Station.unknownDetailValues, locale: L10n.locale)
+        let values = [country, language]
+            .compactMap { $0 }
+            .reduce(into: [String]()) { result, value in
+                guard !result.contains(where: { $0.localizedCaseInsensitiveCompare(value) == .orderedSame }) else { return }
+                result.append(value)
+            }
+
+        guard !values.isEmpty else { return nil }
+        return values.prefix(2).joined(separator: " · ")
+    }
+
+    private var compactCountryName: String? {
+        if let countryCode = TuneAVCountry.sanitizedCode(station.countryCode) {
+            return L10n.countryName(for: countryCode)
+        }
+
+        return TuneAVText.normalizedValue(station.country, excluding: Station.unknownDetailValues, locale: L10n.locale)
+    }
 }
 
 private struct StationDetailSheet: View {
@@ -2517,8 +2847,8 @@ private struct StationDetailSheet: View {
                         StationThumbnailView(
                             station: station,
                             size: 104,
-                            animationOverlay: .equalizerBars,
-                            isAnimationActive: isPlaying
+                            animationOverlay: .none,
+                            isAnimationActive: false
                         )
                             .overlay {
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
@@ -2839,7 +3169,6 @@ private struct SearchLoadingCard: View {
 
 private struct StationRowSkeletonCard: View {
     let accentWidth: CGFloat
-    @State private var isAnimating = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -2877,11 +3206,7 @@ private struct StationRowSkeletonCard: View {
                         .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         )
-        .opacity(isAnimating ? 1 : 0.72)
-        .animation(.easeInOut(duration: 1.05).repeatForever(autoreverses: true), value: isAnimating)
-        .onAppear {
-            isAnimating = true
-        }
+        .opacity(0.86)
     }
 }
 

@@ -654,7 +654,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         nowPlayingArtworkTask?.cancel()
         nowPlayingArtworkTask = Task { [weak self] in
             guard let self else { return }
-            let resolvedImage = await self.loadNowPlayingArtworkImage(from: artworkURL)
+            let resolvedImage = await Self.loadNowPlayingArtworkImage(from: artworkURL)
             guard !Task.isCancelled else { return }
             guard self.currentStation?.id == station.id else { return }
 
@@ -664,13 +664,15 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
     }
 
-    private func loadNowPlayingArtworkImage(from url: URL?) async -> UIImage? {
+    private nonisolated static func loadNowPlayingArtworkImage(from url: URL?) async -> UIImage? {
         guard let url else { return UIImage(named: "BrandMark") }
 
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             guard !Task.isCancelled else { return nil }
-            return UIImage(data: data)
+            return await Task.detached(priority: .utility) {
+                UIImage(data: data)
+            }.value
         } catch {
             return UIImage(named: "BrandMark")
         }

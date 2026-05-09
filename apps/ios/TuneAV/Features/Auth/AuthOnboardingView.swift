@@ -25,9 +25,9 @@ struct AuthOnboardingView: View {
                     .overlay {
                         LinearGradient(
                             colors: [
-                                TuneAVTheme.brandBlack.opacity(0.04),
-                                TuneAVTheme.brandBlack.opacity(authOptionsArePresented ? 0.42 : 0.24),
-                                TuneAVTheme.brandBlack.opacity(0.92)
+                                TuneAVTheme.neutral50.opacity(0.16),
+                                TuneAVTheme.neutral50.opacity(authOptionsArePresented ? 0.54 : 0.28),
+                                TuneAVTheme.neutral50.opacity(authOptionsArePresented ? 0.94 : 0.86)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -37,11 +37,12 @@ struct AuthOnboardingView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: max(proxy.safeAreaInsets.top + 96, authOptionsArePresented ? 128 : 148))
+                    Color.clear
+                        .frame(height: max(proxy.safeAreaInsets.top + 44, authOptionsArePresented ? 62 : 68))
 
-                    FeatureCallout(compact: authOptionsArePresented)
+                    DiscoveryHero(compact: authOptionsArePresented)
 
-                    Spacer(minLength: authOptionsArePresented ? 24 : 94)
+                    Spacer(minLength: authOptionsArePresented ? 18 : 224)
 
                     if authOptionsArePresented {
                         AuthOptionsPanel(
@@ -53,14 +54,13 @@ struct AuthOnboardingView: View {
                             onSkip: onSkip
                         )
                         .padding(.horizontal, 14)
-                        .padding(.bottom, max(12, proxy.safeAreaInsets.bottom))
+                        .padding(.bottom, max(4, proxy.safeAreaInsets.bottom - 10))
                         .offset(y: authOptionsDragOffset)
                         .gesture(authOptionsDismissGesture)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         CallToActionSection(
                             accountIsAvailable: accountIsAvailable,
-                            listenAction: onSkip,
                             accountAction: {
                                 withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
                                     authOptionsArePresented = true
@@ -69,14 +69,15 @@ struct AuthOnboardingView: View {
                             skipAction: onSkip
                         )
                         .padding(.horizontal, 24)
-                        .padding(.bottom, max(24, proxy.safeAreaInsets.bottom + 12))
+                        .padding(.bottom, max(12, proxy.safeAreaInsets.bottom))
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .overlay(alignment: .top) {
-                    BrandHeaderBadge()
-                        .padding(.top, proxy.safeAreaInsets.top + 8)
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                BrandHeaderBadge()
+                    .padding(.top, proxy.safeAreaInsets.top - 30)
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .animation(.spring(response: 0.36, dampingFraction: 0.88), value: authOptionsArePresented)
@@ -227,155 +228,154 @@ private enum AuthProvider {
     case google
 }
 
-private struct FeatureCallout: View {
+private struct DiscoveryHero: View {
     let compact: Bool
 
     var body: some View {
-        VStack(spacing: compact ? 14 : 18) {
-            HeroBadge(size: compact ? 104 : 124)
+        VStack(spacing: compact ? 8 : 10) {
+            Text(L10n.string("auth.feature.title"))
+                .font(.system(size: compact ? 30 : 36, weight: .black))
+                .foregroundStyle(TuneAVTheme.brandGraphite)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.78)
 
-            VStack(spacing: compact ? 10 : 12) {
-                Text(L10n.string("auth.feature.title"))
-                    .font(.system(size: compact ? 26 : 30, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textInverse)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.string("auth.feature.subtitle"))
-                    .font(.system(size: compact ? 15 : 16, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, compact ? 18 : 14)
-                    .frame(maxWidth: 320)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, compact ? 16 : 18)
-            .frame(maxWidth: 350)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(TuneAVTheme.brandBlack.opacity(0.82))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    }
-            )
+            Text(L10n.string("auth.feature.subtitle"))
+                .font(.system(size: compact ? 15 : 16, weight: .medium))
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
+                .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 308)
         }
         .padding(.horizontal, 24)
+        .padding(.horizontal, 18)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct OnboardingPaperScene: View {
+    let compact: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Image("AviLoginSheetArtwork")
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: compact ? 246 : 292)
+                .frame(height: compact ? 214 : 252)
+                .clipped()
+                .padding(.horizontal, 6)
+                .padding(.top, 4)
+                .padding(.bottom, 2)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(Color.white.opacity(0.38))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
+                }
+        )
+        .shadow(color: TuneAVTheme.brandGraphite.opacity(0.08), radius: 18, y: 10)
+        .accessibilityLabel(L10n.string("auth.avi.accessibilityLabel"))
     }
 }
 
 private struct BrandHeaderBadge: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         HStack {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 174)
+                .frame(width: 146)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tune AV")
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background {
-            Capsule(style: .continuous)
-                .fill(colorScheme == .dark ? TuneAVTheme.brandBlack.opacity(0.78) : Color.white.opacity(0.88))
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(colorScheme == .dark ? Color.white.opacity(0.12) : Color.white.opacity(0.46), lineWidth: 1)
-                }
-        }
-        .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
     }
 }
 
-private struct HeroBadge: View {
-    let size: CGFloat
+private struct RadioNotebookGlyph: View {
+    let compact: Bool
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(TuneAVTheme.brandBlack.opacity(0.8))
-                .frame(width: size, height: size)
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
-                }
-                .shadow(color: .black.opacity(0.44), radius: 34, y: 22)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(TuneAVTheme.brandGraphite)
+                .frame(width: compact ? 110 : 126, height: compact ? 92 : 106)
+                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.24), radius: 12, y: 8)
 
-            Circle()
-                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
-                .frame(width: size + 18, height: size + 18)
+            VStack(spacing: 9) {
+                HStack(spacing: 8) {
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.system(size: compact ? 20 : 24, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.highlight)
 
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            TuneAVTheme.highlight.opacity(0.16),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: 6,
-                        endRadius: size / 1.5
-                    )
-                )
-                .frame(width: size * 0.86, height: size * 0.86)
-
-            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-                .frame(width: size * 0.58, height: size * 0.58)
-                .overlay {
-                    RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                }
-                .overlay {
-                    VStack(spacing: size * 0.035) {
-                        Image(systemName: "dot.radiowaves.left.and.right")
-                            .font(.system(size: size * 0.18, weight: .semibold))
-                            .foregroundStyle(TuneAVTheme.highlight)
-
-                        HStack(spacing: size * 0.04) {
-                            ForEach(Array([0.16, 0.34, 0.18].enumerated()), id: \.offset) { index, height in
-                                Capsule(style: .continuous)
-                                    .fill(index == 1 ? TuneAVTheme.highlight : Color.white.opacity(0.24))
-                                    .frame(width: size * 0.035, height: size * height)
-                            }
-                        }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Capsule().fill(Color.white.opacity(0.75)).frame(width: 36, height: 4)
+                        Capsule().fill(Color.white.opacity(0.36)).frame(width: 26, height: 4)
                     }
                 }
+
+                HStack(alignment: .bottom, spacing: 7) {
+                    ForEach(Array([18.0, 34.0, 24.0, 42.0].enumerated()), id: \.offset) { index, height in
+                        Capsule(style: .continuous)
+                            .fill(index == 3 ? TuneAVTheme.highlight : Color.white.opacity(0.32))
+                            .frame(width: 7, height: compact ? height * 0.78 : height)
+                    }
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .padding(8)
+        }
+    }
+}
+
+private struct AviGuideBadge: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(TuneAVTheme.highlight)
+                .frame(width: 68, height: 68)
+
+            Circle()
+                .fill(Color(red: 0.97, green: 0.94, blue: 0.84))
+                .frame(width: 52, height: 52)
+
+            HStack(spacing: 8) {
+                Circle().fill(TuneAVTheme.brandGraphite).frame(width: 6, height: 6)
+                Circle().fill(TuneAVTheme.brandGraphite).frame(width: 6, height: 6)
+            }
+            .offset(y: -4)
+
+            Capsule(style: .continuous)
+                .fill(TuneAVTheme.brandGraphite.opacity(0.72))
+                .frame(width: 22, height: 5)
+                .offset(y: 10)
         }
     }
 }
 
 private struct CallToActionSection: View {
     let accountIsAvailable: Bool
-    let listenAction: () -> Void
     let accountAction: () -> Void
     let skipAction: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            Button(action: listenAction) {
-                Text(L10n.string("auth.cta.localMode"))
+        VStack(spacing: 14) {
+            Button(action: accountIsAvailable ? accountAction : skipAction) {
+                Text(L10n.string("auth.cta.continue"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(TuneAVTheme.brandBlack)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
+                    .padding(.vertical, 16)
                     .background(TuneAVTheme.highlight, in: Capsule())
             }
 
-            Text(accountIsAvailable ? L10n.string("auth.cta.subtitle.available") : L10n.string("auth.cta.subtitle.unavailable"))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.76))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, 28)
-
-            Button(accountIsAvailable ? L10n.string("auth.cta.continue") : L10n.string("auth.cta.skip"), action: accountIsAvailable ? accountAction : skipAction)
+            Button(L10n.string("auth.cta.skip"), action: skipAction)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.88))
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.84))
         }
         .background(alignment: .top) {
             RadialGradient(
@@ -402,30 +402,44 @@ private struct AuthOptionsPanel: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 18) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(.white.opacity(0.18))
+                .fill(TuneAVTheme.brandGraphite.opacity(0.22))
                 .frame(width: 46, height: 4)
                 .padding(.top, 10)
 
-            Text(L10n.string("auth.options.title"))
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse)
+            VStack(spacing: 14) {
+                AuthPanelArtwork()
 
-            HStack(spacing: 18) {
+                VStack(spacing: 7) {
+                    Text(L10n.string("auth.options.title"))
+                        .font(.system(size: 22, weight: .black, design: .serif))
+                        .foregroundStyle(TuneAVTheme.brandGraphite)
+                        .multilineTextAlignment(.center)
+
+                    Text(L10n.string("auth.options.subtitle"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.neutral600)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            VStack(spacing: 10) {
                 AuthIconButton(
-                    title: "Apple",
+                    title: L10n.string("auth.provider.apple"),
                     isLoading: activeProvider == .apple,
+                    style: .dark,
                     action: onAppleTap
                 ) {
                     Image(systemName: "applelogo")
-                        .font(.system(size: 23, weight: .bold))
-                        .foregroundStyle(.black)
+                        .font(.system(size: 17, weight: .bold))
                 }
 
                 AuthIconButton(
-                    title: "Google",
+                    title: L10n.string("auth.provider.google"),
                     isLoading: activeProvider == .google,
+                    style: .light,
                     action: onGoogleTap
                 ) {
                     GoogleBadge()
@@ -436,63 +450,202 @@ private struct AuthOptionsPanel: View {
             if !accountIsAvailable {
                 Text(L10n.string("auth.options.unavailable"))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.7))
                     .multilineTextAlignment(.center)
             }
 
-            Text(legalConsentText)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.64))
-                .tint(.white.opacity(0.82))
-                .multilineTextAlignment(.center)
-
             Button(L10n.string("auth.options.skip"), action: onSkip)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white.opacity(0.88))
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.82))
+
+            Text(legalConsentText)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.66))
+                .tint(TuneAVTheme.brandGraphite.opacity(0.9))
+                .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 26)
+        .padding(.bottom, 24)
         .background(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(TuneAVTheme.darkSurfaceAlt.opacity(0.94))
+                .fill(Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.98))
                 .overlay {
                     RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                        .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
                 }
+                .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
         )
     }
 }
 
+private struct AuthPanelArtwork: View {
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Image("AviLoginSheetArtwork")
+                .resizable()
+                .scaledToFill()
+                .frame(height: 144)
+                .clipped()
+                .opacity(0.9)
+                .saturation(0.94)
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.0),
+                    Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.44)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 144)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(TuneAVTheme.brandGraphite.opacity(0.1), lineWidth: 1)
+        }
+        .accessibilityLabel(L10n.string("auth.avi.accessibilityLabel"))
+    }
+}
+
+private struct CompactNotebookHeader: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(TuneAVTheme.brandGraphite)
+                .frame(width: 62, height: 62)
+
+            Image(systemName: "book.closed.fill")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(TuneAVTheme.highlight)
+
+            AviGuideBadge()
+                .scaleEffect(0.46)
+                .offset(x: 30, y: -18)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private struct AuthBenefitsRow: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            AuthBenefit(icon: "star.circle", title: L10n.string("auth.benefit.stations"))
+            AuthBenefit(icon: "music.note", title: L10n.string("auth.benefit.songs"))
+            AuthBenefit(icon: "icloud", title: L10n.string("auth.benefit.sync"))
+        }
+    }
+}
+
+private struct AuthBenefit: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(TuneAVTheme.highlight)
+
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.78))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity)
+        .background(Color.white.opacity(0.58), in: Capsule())
+    }
+}
+
 private struct AuthIconButton<Content: View>: View {
+    enum Style {
+        case dark
+        case light
+    }
+
     let title: String
     let isLoading: Bool
+    let style: Style
     let action: () -> Void
     @ViewBuilder let content: Content
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            HStack(spacing: 10) {
                 ZStack {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 64, height: 64)
-
                     if isLoading {
                         ProgressView()
-                            .tint(.black)
+                            .tint(progressTint)
                     } else {
                         content
+                            .foregroundStyle(iconTint)
                     }
                 }
+                .frame(width: 24, height: 24)
 
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(titleTint)
             }
+            .frame(height: 46)
             .frame(maxWidth: .infinity)
+            .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(borderStyle, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
+    }
+
+    private var backgroundStyle: Color {
+        switch style {
+        case .dark:
+            TuneAVTheme.brandGraphite
+        case .light:
+            Color.white.opacity(0.72)
+        }
+    }
+
+    private var borderStyle: Color {
+        switch style {
+        case .dark:
+            TuneAVTheme.brandGraphite.opacity(0.2)
+        case .light:
+            TuneAVTheme.brandGraphite.opacity(0.18)
+        }
+    }
+
+    private var titleTint: Color {
+        switch style {
+        case .dark:
+            .white
+        case .light:
+            TuneAVTheme.brandGraphite
+        }
+    }
+
+    private var iconTint: Color {
+        switch style {
+        case .dark:
+            .white
+        case .light:
+            TuneAVTheme.brandGraphite
+        }
+    }
+
+    private var progressTint: Color {
+        switch style {
+        case .dark:
+            .white
+        case .light:
+            TuneAVTheme.brandGraphite
+        }
     }
 }
 
@@ -517,7 +670,7 @@ private struct GoogleBadge: View {
                     )
                 )
         }
-        .frame(width: 64, height: 64)
+        .frame(width: 20, height: 20)
     }
 }
 
@@ -527,45 +680,34 @@ private struct OnboardingBackdrop: View {
             ZStack {
                 LinearGradient(
                     colors: [
-                        TuneAVTheme.brandBlack,
-                        TuneAVTheme.darkSurfaceAlt,
-                        TuneAVTheme.brandBlack
+                        Color(red: 0.97, green: 0.94, blue: 0.86),
+                        TuneAVTheme.neutral50,
+                        Color(red: 0.9, green: 0.93, blue: 0.89)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
 
-                RadialGradient(
-                    colors: [
-                        TuneAVTheme.highlight.opacity(0.18),
-                        .clear
-                    ],
-                    center: .center,
-                    startRadius: 40,
-                    endRadius: proxy.size.width * 0.9
-                )
-
-                RoundedRectangle(cornerRadius: 42, style: .continuous)
-                    .fill(TuneAVTheme.brandBlack.opacity(0.18))
-                    .frame(width: min(proxy.size.width - 76, 300), height: 360)
-                    .blur(radius: 10)
-                    .offset(y: 12)
-
-                VStack(spacing: 32) {
-                    Spacer()
-
-                    SignalRings(size: min(proxy.size.width * 0.72, 280))
-                        .offset(y: -118)
-
-                    Spacer()
-                }
-
-                VStack {
-                    Spacer()
-                }
-
-                EqualizerRails()
-                    .opacity(0.18)
+                Image("AviOnboardingHero")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .offset(y: 96)
+                    .clipped()
+                    .mask {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black.opacity(0.18), location: 0.1),
+                                .init(color: .black, location: 0.23),
+                                .init(color: .black, location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                    .opacity(0.82)
+                    .saturation(0.92)
 
                 VStack {
                     Spacer()
@@ -671,6 +813,17 @@ private struct CurvedWave: Shape {
             control1: CGPoint(x: rect.width * 0.25, y: rect.height * 0.12 - offset),
             control2: CGPoint(x: rect.width * 0.75, y: rect.height * 0.18 - offset)
         )
+        return path
+    }
+}
+
+private struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
         return path
     }
 }

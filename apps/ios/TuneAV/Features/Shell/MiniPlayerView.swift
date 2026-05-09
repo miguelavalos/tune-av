@@ -118,8 +118,8 @@ struct MiniPlayerView: View {
             StationArtworkView(
                 station: station,
                 size: 46,
-                animationOverlay: .equalizerBars,
-                isAnimationActive: audioPlayer.isCurrent(station) && audioPlayer.isPlaying
+                animationOverlay: .none,
+                isAnimationActive: false
             )
         }
     }

@@ -19,6 +19,7 @@ apps/
   ios/      SwiftUI iOS app
   macos/    SwiftUI macOS app for Mac App Store distribution
 docs/
+  ios-animation-performance.md
   install-ios.md
   install-macos.md
   release-checklist.md
@@ -72,6 +73,8 @@ This public repo does not carry private bootstrap examples or generated local co
 Run `bun run config:hygiene` before pushing config-related changes.
 
 See [docs/install-ios.md](docs/install-ios.md) and [docs/install-macos.md](docs/install-macos.md) for setup details.
+
+For playback-adjacent UI work, follow [docs/ios-animation-performance.md](docs/ios-animation-performance.md).
 
 ## Platform integration
 
