@@ -434,8 +434,8 @@
 "shell.stationDetail.section.technical" = "Tècnic";
 "shell.status.live" = "Directe";
 "shell.status.refreshing" = "Actualitzant";
-"splash.status" = "Emetent emissores de tot el món";
-"splash.tagline" = "Ràdio en directe, més neta i més ràpida.";
+"splash.status" = "Preparant emissores en directe";
+"splash.tagline" = "Sintonitza el món";
 "stationService.error.invalidResponse" = "El directori d'emissores ha retornat una resposta no vàlida.";
 "stationService.fallback.noTags" = "Sense etiquetes";
 "stationService.fallback.unknownCountry" = "País desconegut";

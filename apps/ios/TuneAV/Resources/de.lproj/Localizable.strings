@@ -434,8 +434,8 @@
 "shell.stationDetail.section.technical" = "Technik";
 "shell.status.live" = "Live";
 "shell.status.refreshing" = "Aktualisierung";
-"splash.status" = "Streaming von Sendern aus aller Welt";
-"splash.tagline" = "Live-Radio, sauberer und schneller.";
+"splash.status" = "Live-Sender werden vorbereitet";
+"splash.tagline" = "Stimme die Welt ein";
 "stationService.error.invalidResponse" = "Das Senderverzeichnis hat eine ungültige Antwort zurückgegeben.";
 "stationService.fallback.noTags" = "Keine Tags";
 "stationService.fallback.unknownCountry" = "Unbekanntes Land";

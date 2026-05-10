@@ -42,7 +42,7 @@ struct AuthOnboardingView: View {
 
                     DiscoveryHero(compact: authOptionsArePresented)
 
-                    Spacer(minLength: authOptionsArePresented ? 18 : 224)
+                    Spacer(minLength: authOptionsArePresented ? 18 : 246)
 
                     if authOptionsArePresented {
                         AuthOptionsPanel(
@@ -69,7 +69,7 @@ struct AuthOnboardingView: View {
                             skipAction: onSkip
                         )
                         .padding(.horizontal, 24)
-                        .padding(.bottom, max(12, proxy.safeAreaInsets.bottom))
+                        .padding(.bottom, max(16, proxy.safeAreaInsets.bottom + 6))
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
@@ -257,17 +257,48 @@ private struct OnboardingPaperScene: View {
     let compact: Bool
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Image("AviLoginSheetArtwork")
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.58),
+                            Color(red: 0.96, green: 0.91, blue: 0.78).opacity(0.32)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            VStack(spacing: compact ? 8 : 10) {
+                Image("AviV2TuneHeadphones")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: compact ? 132 : 156, height: compact ? 132 : 156)
+                    .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 14, y: 8)
+
+                HStack(spacing: 7) {
+                    ForEach(Array([18.0, 30.0, 24.0, 38.0, 20.0].enumerated()), id: \.offset) { index, height in
+                        Capsule(style: .continuous)
+                            .fill(index == 3 ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.2))
+                            .frame(width: 7, height: compact ? height * 0.76 : height)
+                    }
+                }
+                .padding(.bottom, compact ? 12 : 16)
+            }
+            .padding(.top, compact ? 14 : 20)
+
+            Image("OnboardingWordmark")
                 .resizable()
-                .scaledToFill()
-                .frame(maxWidth: compact ? 246 : 292)
-                .frame(height: compact ? 214 : 252)
-                .clipped()
-                .padding(.horizontal, 6)
-                .padding(.top, 4)
-                .padding(.bottom, 2)
+                .scaledToFit()
+                .frame(width: compact ? 76 : 88)
+                .opacity(0.9)
+                .padding(.top, 18)
+                .padding(.leading, 18)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .frame(maxWidth: compact ? 246 : 292)
+        .frame(height: compact ? 214 : 252)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(Color.white.opacity(0.38))
@@ -363,7 +394,7 @@ private struct CallToActionSection: View {
     let skipAction: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 18) {
             Button(action: accountIsAvailable ? accountAction : skipAction) {
                 Text(L10n.string("auth.cta.continue"))
                     .font(.system(size: 17, weight: .bold))
@@ -371,6 +402,11 @@ private struct CallToActionSection: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(TuneAVTheme.highlight, in: Capsule())
+            }
+            .overlay(alignment: .topTrailing) {
+                AviOnboardingCompanion()
+                    .offset(x: -2, y: -96)
+                    .allowsHitTesting(false)
             }
 
             Button(L10n.string("auth.cta.skip"), action: skipAction)
@@ -393,6 +429,26 @@ private struct CallToActionSection: View {
     }
 }
 
+private struct AviOnboardingCompanion: View {
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Capsule(style: .continuous)
+                .fill(TuneAVTheme.brandGraphite.opacity(0.1))
+                .frame(width: 82, height: 11)
+                .blur(radius: 5)
+                .offset(x: 4, y: 2)
+
+            Image("AviV2OnboardingCTA")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 146, height: 146)
+                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 10, y: 7)
+        }
+        .frame(width: 146, height: 150)
+        .accessibilityHidden(true)
+    }
+}
+
 private struct AuthOptionsPanel: View {
     let accountIsAvailable: Bool
     let legalConsentText: AttributedString
@@ -402,28 +458,25 @@ private struct AuthOptionsPanel: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(TuneAVTheme.brandGraphite.opacity(0.22))
                 .frame(width: 46, height: 4)
-                .padding(.top, 10)
+                .padding(.top, 12)
 
-            VStack(spacing: 14) {
-                AuthPanelArtwork()
+            VStack(spacing: 7) {
+                Text(L10n.string("auth.options.title"))
+                    .font(.system(size: 22, weight: .black, design: .serif))
+                    .foregroundStyle(TuneAVTheme.brandGraphite)
+                    .multilineTextAlignment(.center)
 
-                VStack(spacing: 7) {
-                    Text(L10n.string("auth.options.title"))
-                        .font(.system(size: 22, weight: .black, design: .serif))
-                        .foregroundStyle(TuneAVTheme.brandGraphite)
-                        .multilineTextAlignment(.center)
-
-                    Text(L10n.string("auth.options.subtitle"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.neutral600)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(L10n.string("auth.options.subtitle"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.neutral600)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.top, 16)
 
             VStack(spacing: 10) {
                 AuthIconButton(
@@ -445,6 +498,7 @@ private struct AuthOptionsPanel: View {
                     GoogleBadge()
                 }
             }
+            .padding(.top, 20)
             .disabled(!accountIsAvailable)
 
             if !accountIsAvailable {
@@ -452,20 +506,23 @@ private struct AuthOptionsPanel: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.7))
                     .multilineTextAlignment(.center)
+                    .padding(.top, 12)
             }
 
             Button(L10n.string("auth.options.skip"), action: onSkip)
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.82))
+                .padding(.top, 16)
 
             Text(legalConsentText)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.66))
                 .tint(TuneAVTheme.brandGraphite.opacity(0.9))
                 .multilineTextAlignment(.center)
+                .padding(.top, 14)
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 24)
+        .padding(.bottom, 32)
         .background(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .fill(Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.98))
@@ -475,19 +532,46 @@ private struct AuthOptionsPanel: View {
                 }
                 .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
         )
+        .overlay(alignment: .topTrailing) {
+            AviSheetPeekCompanion()
+                .offset(x: -44, y: -91)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct AviSheetPeekCompanion: View {
+    var body: some View {
+        Image("AviV2LoginSheetPeek")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 126, height: 126)
+            .shadow(color: TuneAVTheme.brandGraphite.opacity(0.1), radius: 8, y: 5)
+            .offset(y: -5)
+        .frame(width: 140, height: 110)
+        .accessibilityHidden(true)
     }
 }
 
 private struct AuthPanelArtwork: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            Image("AviLoginSheetArtwork")
+            LinearGradient(
+                colors: [
+                    TuneAVTheme.highlight.opacity(0.24),
+                    Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.72)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Image("AviV2Thinking")
                 .resizable()
-                .scaledToFill()
-                .frame(height: 144)
-                .clipped()
-                .opacity(0.9)
-                .saturation(0.94)
+                .scaledToFit()
+                .frame(width: 132, height: 132)
+                .padding(.trailing, 18)
+                .padding(.bottom, 4)
+                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 10, y: 6)
 
             LinearGradient(
                 colors: [
@@ -525,39 +609,6 @@ private struct CompactNotebookHeader: View {
                 .offset(x: 30, y: -18)
         }
         .accessibilityHidden(true)
-    }
-}
-
-private struct AuthBenefitsRow: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            AuthBenefit(icon: "star.circle", title: L10n.string("auth.benefit.stations"))
-            AuthBenefit(icon: "music.note", title: L10n.string("auth.benefit.songs"))
-            AuthBenefit(icon: "icloud", title: L10n.string("auth.benefit.sync"))
-        }
-    }
-}
-
-private struct AuthBenefit: View {
-    let icon: String
-    let title: String
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(TuneAVTheme.highlight)
-
-            Text(title)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.78))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 7)
-        .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(0.58), in: Capsule())
     }
 }
 
@@ -688,11 +739,11 @@ private struct OnboardingBackdrop: View {
                     endPoint: .bottomTrailing
                 )
 
-                Image("AviOnboardingHero")
+                Image("AviOnboardingHeroStatic")
                     .resizable()
                     .scaledToFill()
                     .frame(width: proxy.size.width, height: proxy.size.height)
-                    .offset(y: 96)
+                    .offset(y: 50)
                     .clipped()
                     .mask {
                         LinearGradient(

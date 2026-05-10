@@ -151,7 +151,7 @@ struct RootView: View {
 
         hasShownSplashThisLaunch = true
         isShowingSplash = true
-        try? await Task.sleep(for: .milliseconds(1150))
+        try? await Task.sleep(for: .milliseconds(1650))
 
         await MainActor.run {
             withAnimation(.easeOut(duration: 0.35)) {

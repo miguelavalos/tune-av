@@ -447,8 +447,8 @@
 "shell.stationDetail.section.technical" = "Technical";
 "shell.status.live" = "Live";
 "shell.status.refreshing" = "Refreshing";
-"splash.status" = "Streaming stations from around the world";
-"splash.tagline" = "Live radio, cleaner and quicker.";
+"splash.status" = "Preparing live stations";
+"splash.tagline" = "Tune the world";
 "stationService.error.invalidResponse" = "The station directory returned an invalid response.";
 "stationService.fallback.noTags" = "No tags";
 "stationService.fallback.unknownCountry" = "Unknown country";

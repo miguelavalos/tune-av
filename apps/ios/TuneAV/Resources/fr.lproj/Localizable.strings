@@ -434,8 +434,8 @@
 "shell.stationDetail.section.technical" = "Technique";
 "shell.status.live" = "Direct";
 "shell.status.refreshing" = "Actualisation";
-"splash.status" = "Diffusion de stations du monde entier";
-"splash.tagline" = "La radio en direct, plus propre et plus rapide.";
+"splash.status" = "Préparation des stations en direct";
+"splash.tagline" = "Accordez le monde";
 "stationService.error.invalidResponse" = "L'annuaire des stations a renvoyé une réponse invalide.";
 "stationService.fallback.noTags" = "Aucun tag";
 "stationService.fallback.unknownCountry" = "Pays inconnu";

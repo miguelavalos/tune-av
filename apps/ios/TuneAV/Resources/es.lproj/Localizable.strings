@@ -447,8 +447,8 @@
 "shell.stationDetail.section.technical" = "Técnico";
 "shell.status.live" = "Directo";
 "shell.status.refreshing" = "Actualizando";
-"splash.status" = "Emitiendo emisoras de todo el mundo";
-"splash.tagline" = "Radio en directo, más limpia y más rápida.";
+"splash.status" = "Preparando emisoras en directo";
+"splash.tagline" = "Sintoniza el mundo";
 "stationService.error.invalidResponse" = "El directorio de emisoras devolvió una respuesta no válida.";
 "stationService.fallback.noTags" = "Sin etiquetas";
 "stationService.fallback.unknownCountry" = "País desconocido";
