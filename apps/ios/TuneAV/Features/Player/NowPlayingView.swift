@@ -287,12 +287,13 @@ struct NowPlayingView: View {
     ) -> some View {
         VStack(spacing: compact ? 10 : 14) {
             HStack(alignment: .center, spacing: compact ? 12 : 16) {
-                Image(playerAviAssetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: aviHeight)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .accessibilityLabel(L10n.string("shell.avi.title"))
+                PlayerAviBody(
+                    assetName: playerAviAssetName,
+                    size: aviHeight,
+                    offset: playerAviBodyOffset
+                )
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .accessibilityLabel(L10n.string("shell.avi.title"))
 
                 infoDeck(for: station, compact: compact)
                     .accessibilityIdentifier("player.avi.signalDeck")
@@ -840,7 +841,20 @@ struct NowPlayingView: View {
         if audioPlayer.isPlaying {
             return "AviV2TuneHeadphones"
         }
-        return "AviV2HeadNeutral"
+        return "AviV2NeutralFullbody"
+    }
+
+    private var playerAviBodyOffset: CGSize {
+        if audioPlayer.hasFailure {
+            return CGSize(width: -3, height: 0)
+        }
+        if audioPlayer.isLoading {
+            return CGSize(width: -4, height: 1)
+        }
+        if audioPlayer.isPlaying {
+            return CGSize(width: 4, height: -2)
+        }
+        return .zero
     }
 
     private var playerAviStateTitle: String {
@@ -1082,6 +1096,26 @@ private enum PlayerInfoMode: String, CaseIterable, Identifiable {
         case .song:
             return "Song"
         }
+    }
+}
+
+private struct PlayerAviBody: View {
+    let assetName: String
+    let size: CGFloat
+    let offset: CGSize
+
+    var body: some View {
+        ZStack {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .offset(offset)
+        }
+        .frame(width: size, height: size)
+        .clipped()
+        .animation(.snappy(duration: 0.24), value: assetName)
+        .animation(.snappy(duration: 0.24), value: offset)
     }
 }
 
