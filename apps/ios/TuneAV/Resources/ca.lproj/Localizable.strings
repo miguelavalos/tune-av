@@ -90,6 +90,8 @@
 "player.avi.detail.listening" = "Avi escolta %@ i vigila senyals de descobriment.";
 "player.avi.detail.neutral" = "Avi està a punt quan premis reproduir.";
 "player.avi.detail.thinking" = "Avi està sintonitzant %@.";
+"player.avi.signal.radio" = "Digues a Avi sobre aquesta ràdio";
+"player.avi.signal.song" = "Digues a Avi sobre aquesta cançó";
 "player.avi.state.error" = "Problema de senyal";
 "player.avi.state.listening" = "Escoltant";
 "player.avi.state.neutral" = "A punt";

@@ -90,6 +90,8 @@
 "player.avi.detail.listening" = "Avi écoute %@ et surveille les signaux de découverte.";
 "player.avi.detail.neutral" = "Avi est prêt quand vous lancez la lecture.";
 "player.avi.detail.thinking" = "Avi accorde %@.";
+"player.avi.signal.radio" = "Dites à Avi pour cette radio";
+"player.avi.signal.song" = "Dites à Avi pour ce morceau";
 "player.avi.state.error" = "Problème de signal";
 "player.avi.state.listening" = "À l'écoute";
 "player.avi.state.neutral" = "Prêt";

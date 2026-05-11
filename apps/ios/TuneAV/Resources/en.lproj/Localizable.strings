@@ -90,6 +90,8 @@
 "player.avi.detail.listening" = "Avi is listening with %@ and watching for discovery signals.";
 "player.avi.detail.neutral" = "Avi is ready when you press play.";
 "player.avi.detail.thinking" = "Avi is tuning %@.";
+"player.avi.signal.radio" = "Tell Avi about this radio";
+"player.avi.signal.song" = "Tell Avi about this song";
 "player.avi.state.error" = "Signal issue";
 "player.avi.state.listening" = "Listening";
 "player.avi.state.neutral" = "Ready";
