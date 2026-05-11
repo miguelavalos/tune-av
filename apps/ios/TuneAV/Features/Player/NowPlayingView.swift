@@ -1252,6 +1252,8 @@ private struct PlayerAviBody: View {
 }
 
 private struct PlayerSignalDeck: View {
+    @State private var isArtworkZoomed = false
+
     let station: Station
     let trackTitle: String?
     let trackArtist: String?
@@ -1298,6 +1300,9 @@ private struct PlayerSignalDeck: View {
         .shadow(color: TuneAVTheme.highlight.opacity(0.14), radius: 18, y: 10)
         .frame(height: 128, alignment: .top)
         .accessibilityElement(children: .contain)
+        .fullScreenCover(isPresented: $isArtworkZoomed) {
+            artworkZoomOverlay
+        }
     }
 
     private var stationHeaderLabel: some View {
@@ -1316,7 +1321,14 @@ private struct PlayerSignalDeck: View {
 
     private var nowPlayingSummary: some View {
         HStack(alignment: .center, spacing: 10) {
-            songArtwork(size: 54)
+            Button {
+                isArtworkZoomed = true
+            } label: {
+                songArtwork(size: 54)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(station.name)
+            .accessibilityIdentifier("player.signalDeck.artwork")
 
             nowPlayingLine
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1343,6 +1355,24 @@ private struct PlayerSignalDeck: View {
         } else {
             stationArtwork(size: size)
         }
+    }
+
+    private var artworkZoomOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.72)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isArtworkZoomed = false
+                }
+
+            songArtwork(size: 248)
+                .shadow(color: .black.opacity(0.45), radius: 28, y: 18)
+                .onTapGesture {
+                    isArtworkZoomed = false
+                }
+        }
+        .presentationBackground(.clear)
+        .accessibilityIdentifier("player.signalDeck.artworkZoom")
     }
 
     private var nowPlayingLine: some View {
