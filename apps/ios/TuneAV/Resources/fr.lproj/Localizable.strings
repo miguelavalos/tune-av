@@ -87,9 +87,11 @@
 "player.control.play" = "Lire";
 "player.empty" = "Choisissez une station depuis Accueil ou Recherche pour commencer la lecture.";
 "player.avi.detail.error" = "Avi a perdu le signal. Réessayez ou passez à une autre station.";
+"player.avi.detail.discoveryMemory" = "Avi mémorise %d découvertes de %@. Dernière : %@.";
 "player.avi.detail.listening" = "Avi écoute %@ et surveille les signaux de découverte.";
 "player.avi.detail.neutral" = "Avi est prêt quand vous lancez la lecture.";
 "player.avi.detail.thinking" = "Avi accorde %@.";
+"player.avi.context.discoveries" = "%d découvertes";
 "player.avi.signal.radio" = "Dites à Avi pour cette radio";
 "player.avi.signal.song" = "Dites à Avi pour ce morceau";
 "player.avi.state.error" = "Problème de signal";

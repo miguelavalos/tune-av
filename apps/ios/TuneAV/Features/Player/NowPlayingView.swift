@@ -1007,7 +1007,12 @@ struct NowPlayingView: View {
         }
         if audioPlayer.isPlaying {
             if let latestDiscovery = latestDiscovery(for: station) {
-                return "Avi remembers \(stationDiscoveryCount(for: station)) tracks from \(station.name). Latest: \(latestDiscovery.title)."
+                return L10n.string(
+                    "player.avi.detail.discoveryMemory",
+                    stationDiscoveryCount(for: station),
+                    station.name,
+                    latestDiscovery.title
+                )
             }
 
             return L10n.string("player.avi.detail.listening", station.name)
@@ -1034,7 +1039,7 @@ struct NowPlayingView: View {
 
         let stationDiscoveries = stationDiscoveryCount(for: station)
         if stationDiscoveries > 0 {
-            prompts.append("\(stationDiscoveries) discoveries")
+            prompts.append(L10n.string("player.avi.context.discoveries", stationDiscoveries))
         }
 
         if let tag = station.normalizedTags.first {

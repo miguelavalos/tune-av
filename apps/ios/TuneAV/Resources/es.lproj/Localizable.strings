@@ -87,9 +87,11 @@
 "player.control.play" = "Reproducir";
 "player.empty" = "Elige una emisora en Inicio o Buscar para empezar la reproducción.";
 "player.avi.detail.error" = "Avi ha perdido la señal. Inténtalo de nuevo o pasa a otra emisora.";
+"player.avi.detail.discoveryMemory" = "Avi recuerda %d descubrimientos de %@. Último: %@.";
 "player.avi.detail.listening" = "Avi está escuchando %@ y atento a señales de descubrimiento.";
 "player.avi.detail.neutral" = "Avi está listo cuando pulses reproducir.";
 "player.avi.detail.thinking" = "Avi está sintonizando %@.";
+"player.avi.context.discoveries" = "%d descubrimientos";
 "player.avi.signal.radio" = "Dile a Avi sobre esta radio";
 "player.avi.signal.song" = "Dile a Avi sobre esta canción";
 "player.avi.state.error" = "Problema de señal";
