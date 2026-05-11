@@ -2821,6 +2821,7 @@ private struct MusicScreen: View {
                     )
 
                     discoveryLibrarySection
+                    discoveryStationsSection
 
                     VStack(alignment: .leading, spacing: 12) {
                         SearchAccessRow(
@@ -2922,6 +2923,27 @@ private struct MusicScreen: View {
                     case .history:
                         discoverySongsHeader
                         discoveryTrackList
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var discoveryStationsSection: some View {
+        let stationSummaries = discoveryStationSummaries
+        if !stationSummaries.isEmpty {
+            StationSection(
+                title: "Stations behind discoveries",
+                subtitle: "The stations Avi keeps hearing music from.",
+                accessibilityIdentifier: "music.section.discoveryStations"
+            ) {
+                VStack(spacing: 10) {
+                    ForEach(stationSummaries) { summary in
+                        DiscoveryStationSourceRow(
+                            summary: summary,
+                            openStation: { openDiscoveryStation(summary.latestDiscovery) }
+                        )
                     }
                 }
             }
@@ -3115,6 +3137,30 @@ private struct MusicScreen: View {
 
     private var visibleDiscoveries: [DiscoveredTrack] {
         AppShellMusicLibrary.visibleDiscoveries(discoveries)
+    }
+
+    private var discoveryStationSummaries: [DiscoveryStationSourceSummary] {
+        Dictionary(grouping: visibleDiscoveries, by: \.stationID)
+            .compactMap { stationID, discoveries in
+                guard let latestDiscovery = discoveries.max(by: { $0.playedAt < $1.playedAt }) else {
+                    return nil
+                }
+
+                return DiscoveryStationSourceSummary(
+                    id: stationID,
+                    name: latestDiscovery.stationName,
+                    discoveryCount: discoveries.count,
+                    latestDiscovery: latestDiscovery,
+                    artworkURL: latestDiscovery.resolvedStationArtworkURL ?? latestDiscovery.resolvedArtworkURL
+                )
+            }
+            .sorted { first, second in
+                if first.discoveryCount == second.discoveryCount {
+                    return first.latestDiscovery.playedAt > second.latestDiscovery.playedAt
+                }
+
+                return first.discoveryCount > second.discoveryCount
+            }
     }
 
     private var musicStatusTitle: String {

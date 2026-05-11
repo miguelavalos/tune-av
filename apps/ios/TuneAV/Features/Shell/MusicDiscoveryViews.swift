@@ -1,5 +1,13 @@
 import SwiftUI
 
+struct DiscoveryStationSourceSummary: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let discoveryCount: Int
+    let latestDiscovery: DiscoveredTrack
+    let artworkURL: URL?
+}
+
 struct DiscoveryTrackCard: View {
     let discovery: DiscoveredTrack
     let stationArtworkURL: URL?
@@ -344,6 +352,98 @@ struct DiscoveryArtistCard: View {
             .frame(width: 42, height: 42)
             .overlay {
                 Image(systemName: "person.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+    }
+}
+
+struct DiscoveryStationSourceRow: View {
+    let summary: DiscoveryStationSourceSummary
+    let openStation: () -> Void
+
+    var body: some View {
+        Button(action: openStation) {
+            HStack(spacing: 12) {
+                artwork
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(summary.name)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(1)
+
+                    Text(L10n.plural(
+                        singular: "shell.music.status.history.one",
+                        plural: "shell.music.status.history.other",
+                        count: summary.discoveryCount,
+                        summary.discoveryCount
+                    ))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .lineLimit(1)
+
+                    Text("\(summary.latestDiscovery.title) · \(summary.latestDiscovery.artistDisplayText)")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.82))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(TuneAVTheme.mutedSurface.opacity(0.64))
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(TuneAVTheme.highlight)
+                        .frame(width: 3)
+                        .padding(.vertical, 12)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
+        .accessibilityLabel("\(summary.name), \(summary.discoveryCount) discoveries")
+        .accessibilityHint(L10n.string("shell.music.discovery.openStation.hint"))
+        .accessibilityIdentifier("discoveryStationSourceRow.\(summary.id)")
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        if let artworkURL = summary.artworkURL {
+            AsyncImage(url: artworkURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                default:
+                    fallbackArtwork
+                }
+            }
+            .frame(width: 42, height: 42)
+            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        } else {
+            fallbackArtwork
+        }
+    }
+
+    private var fallbackArtwork: some View {
+        RoundedRectangle(cornerRadius: 13, style: .continuous)
+            .fill(TuneAVTheme.mutedSurface)
+            .frame(width: 42, height: 42)
+            .overlay {
+                Image(systemName: "dot.radiowaves.left.and.right")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
