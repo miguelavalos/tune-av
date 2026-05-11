@@ -323,7 +323,7 @@ struct NowPlayingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, compact ? 14 : 18)
+        .padding(.horizontal, 16)
         .padding(.vertical, compact ? 12 : 18)
         .frame(width: width)
         .background(
@@ -372,7 +372,6 @@ struct NowPlayingView: View {
             .frame(height: 25, alignment: .leading)
             .accessibilityIdentifier("player.avi.context")
         }
-        .padding(10)
     }
 
     private func aviSignalButton(
@@ -1285,7 +1284,8 @@ private struct PlayerSignalDeck: View {
             stationHeaderLabel
             nowPlayingSummary
         }
-        .padding(12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.white.opacity(0.075))
@@ -1317,12 +1317,9 @@ private struct PlayerSignalDeck: View {
         HStack(alignment: .center, spacing: 10) {
             songArtwork(size: 54)
 
-            infoLine(
-                label: hasSongContext ? "Song" : "Radio",
+            nowPlayingLine(
                 title: hasSongContext ? (TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow")) : station.name,
-                detail: hasSongContext ? songSecondaryTitle : radioSecondaryTitle,
-                isPrimary: true,
-                isEnabled: true
+                detail: hasSongContext ? songSecondaryTitle : radioSecondaryTitle
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1349,25 +1346,23 @@ private struct PlayerSignalDeck: View {
         }
     }
 
-    private func infoLine(label: String, title: String, detail: String, isPrimary: Bool, isEnabled: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label)
-                .font(.system(size: 8, weight: .black))
-                .foregroundStyle(isPrimary ? TuneAVTheme.highlight : TuneAVTheme.textInverse.opacity(isEnabled ? 0.46 : 0.28))
-                .textCase(.uppercase)
-                .lineLimit(1)
-
+    private func nowPlayingLine(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: isPrimary ? 13 : 12, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(isEnabled ? 0.94 : 0.44))
+                .font(.system(size: 14, weight: .black, design: .rounded))
+                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.94))
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
 
             Text(detail)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(isEnabled ? 0.58 : 0.34))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.58))
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 32, alignment: .topLeading)
+        .frame(height: 54, alignment: .topLeading)
     }
 
     private func stationArtwork(size: CGFloat) -> some View {
