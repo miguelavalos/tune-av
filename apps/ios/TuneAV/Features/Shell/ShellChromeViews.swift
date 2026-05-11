@@ -1,19 +1,61 @@
 import SwiftUI
 
+final class AppShellChromeActions: ObservableObject {
+    var openSettings: () -> Void = {}
+    var openAccount: () -> Void = {}
+}
+
 struct ShellBrandHeader: View {
+    @EnvironmentObject private var chromeActions: AppShellChromeActions
+
     let statusTitle: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
+            Button(action: chromeActions.openSettings) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(TuneAVTheme.elevatedSurface, in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.header.settings"))
+            .accessibilityIdentifier("header.settings")
+
+            Spacer(minLength: 8)
+
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 160)
+                .frame(width: 132)
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            ShellStatusPill(title: statusTitle)
+            Button(action: chromeActions.openAccount) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(TuneAVTheme.elevatedSurface, in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.header.account"))
+            .accessibilityIdentifier("header.account")
         }
+        .overlay(alignment: .bottom) {
+            ShellStatusPill(title: statusTitle)
+                .offset(y: 34)
+        }
+        .padding(.bottom, 28)
     }
 }
 

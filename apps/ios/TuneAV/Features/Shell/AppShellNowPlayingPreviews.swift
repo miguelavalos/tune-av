@@ -22,7 +22,7 @@ enum AppShellNowPlayingPreviews {
             return uniqueStations(searchResults.prefix(9))
         case .library:
             return uniqueStations(favoriteStations.prefix(9) + recentStations.prefix(6))
-        case .music, .profile:
+        case .avi, .music, .profile:
             return []
         }
     }

@@ -235,7 +235,13 @@ struct NowPlayingView: View {
         let spacerMinLength: CGFloat = compact ? 18 : 24
 
         return VStack(spacing: 0) {
-            artworkShowcase(for: station, size: artworkSize)
+            aviPlayerStage(
+                for: station,
+                width: contentWidth,
+                artworkSize: compact ? min(artworkSize * 0.36, 124) : min(artworkSize * 0.42, 148),
+                aviHeight: compact ? 148 : 188,
+                compact: compact
+            )
                 .offset(x: horizontalDragOffset)
                 .gesture(stationSwipeGesture)
                 .padding(.top, 18)
@@ -269,7 +275,13 @@ struct NowPlayingView: View {
                 spacing: columnSpacing,
                 summaryHeight: summaryHeight
             ) {
-                artworkShowcase(for: station, size: artworkSize)
+                aviPlayerStage(
+                    for: station,
+                    width: artworkSize,
+                    artworkSize: min(artworkSize * 0.42, 116),
+                    aviHeight: min(artworkSize * 0.56, 150),
+                    compact: true
+                )
                     .frame(width: artworkSize)
                     .offset(x: horizontalDragOffset)
                     .gesture(stationSwipeGesture)
@@ -289,6 +301,58 @@ struct NowPlayingView: View {
             Spacer(minLength: 0)
         }
         .frame(height: contentHeight, alignment: .top)
+    }
+
+    private func aviPlayerStage(
+        for station: Station,
+        width: CGFloat,
+        artworkSize: CGFloat,
+        aviHeight: CGFloat,
+        compact: Bool
+    ) -> some View {
+        VStack(spacing: compact ? 10 : 14) {
+            HStack(alignment: .bottom, spacing: compact ? 10 : 14) {
+                Image(playerAviAssetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: aviHeight)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .accessibilityLabel(L10n.string("shell.avi.title"))
+
+                artworkShowcase(for: station, size: artworkSize)
+                    .frame(width: artworkSize, height: artworkSize)
+                    .accessibilityIdentifier("player.avi.stationSignal")
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 5) {
+                Text(playerAviStateTitle)
+                    .font(.system(size: compact ? 15 : 17, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textInverse)
+                    .lineLimit(1)
+
+                Text(playerAviDetail(for: station))
+                    .font(.system(size: compact ? 12 : 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.68))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(compact ? 2 : 3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, compact ? 14 : 18)
+        .padding(.vertical, compact ? 12 : 18)
+        .frame(width: width)
+        .background(
+            RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
+                .fill(Color.white.opacity(0.055))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
+                .stroke(Color.white.opacity(0.11), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player.avi.stage")
     }
 
     private func trackSummary(
@@ -724,6 +788,45 @@ struct NowPlayingView: View {
 
     private var shouldShowStatusRow: Bool {
         audioPlayer.sleepTimerDescription != nil
+    }
+
+    private var playerAviAssetName: String {
+        if audioPlayer.hasFailure {
+            return "AviV2Thinking"
+        }
+        if audioPlayer.isLoading {
+            return "AviV2Thinking"
+        }
+        if audioPlayer.isPlaying {
+            return "AviV2TuneHeadphones"
+        }
+        return "AviV2HeadNeutral"
+    }
+
+    private var playerAviStateTitle: String {
+        if audioPlayer.hasFailure {
+            return L10n.string("player.avi.state.error")
+        }
+        if audioPlayer.isLoading {
+            return L10n.string("player.avi.state.thinking")
+        }
+        if audioPlayer.isPlaying {
+            return L10n.string("player.avi.state.listening")
+        }
+        return L10n.string("player.avi.state.neutral")
+    }
+
+    private func playerAviDetail(for station: Station) -> String {
+        if audioPlayer.hasFailure {
+            return L10n.string("player.avi.detail.error")
+        }
+        if audioPlayer.isLoading {
+            return L10n.string("player.avi.detail.thinking", station.name)
+        }
+        if audioPlayer.isPlaying {
+            return L10n.string("player.avi.detail.listening", station.name)
+        }
+        return L10n.string("player.avi.detail.neutral")
     }
 
     private var homepageURL: URL? {

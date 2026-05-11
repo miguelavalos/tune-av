@@ -111,6 +111,20 @@ struct TuneAVLocalRecommendationScorer {
         return Rank(score: score, reasons: uniqueReasons(reasons))
     }
 
+    func rankedStations(_ stations: [Station]) -> [(station: Station, rank: Rank)] {
+        stations
+            .map { station in
+                (station: station, rank: rank(station))
+            }
+            .sorted { first, second in
+                if first.rank.score == second.rank.score {
+                    return first.station.name.localizedCaseInsensitiveCompare(second.station.name) == .orderedAscending
+                }
+
+                return first.rank.score > second.rank.score
+            }
+    }
+
     static func localizedSummary(for reason: Reason?) -> String? {
         guard let reason else { return nil }
 

@@ -1,13 +1,22 @@
 import SwiftData
 import SwiftUI
 
+enum TuneAVStationFeedback: String, Codable, CaseIterable {
+    case liked
+    case disliked
+    case notForMe
+}
+
 @MainActor
 final class LibraryStore: ObservableObject {
     @Published private(set) var favorites: [FavoriteStation] = []
     @Published private(set) var recents: [RecentStation] = []
     @Published private(set) var discoveries: [DiscoveredTrack] = []
+    @Published private(set) var stationFeedback: [String: TuneAVStationFeedback] = [:]
     @Published private(set) var settings: AppSettings
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
+
+    private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
 
     private let context: ModelContext
     private var appDataService: TuneAVAppDataService?
@@ -28,6 +37,7 @@ final class LibraryStore: ObservableObject {
             self.settings = settings
         }
 
+        stationFeedback = Self.loadStationFeedback()
         refresh()
     }
 
@@ -218,6 +228,20 @@ final class LibraryStore: ObservableObject {
     func restoreDiscovery(_ discovery: DiscoveredTrack) {
         discovery.hiddenAt = nil
         saveAndRefresh()
+    }
+
+    func feedback(for station: Station) -> TuneAVStationFeedback? {
+        stationFeedback[station.id]
+    }
+
+    func setFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
+        if let feedback {
+            stationFeedback[station.id] = feedback
+        } else {
+            stationFeedback.removeValue(forKey: station.id)
+        }
+
+        Self.saveStationFeedback(stationFeedback)
     }
 
     func recordDiscoveredTrack(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -484,6 +508,16 @@ final class LibraryStore: ObservableObject {
 
     private func normalizedTrackValue(_ value: String?) -> String? {
         TuneAVText.normalizedValue(value)
+    }
+
+    private static func loadStationFeedback() -> [String: TuneAVStationFeedback] {
+        guard let data = UserDefaults.standard.data(forKey: stationFeedbackStorageKey) else { return [:] }
+        return (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+    }
+
+    private static func saveStationFeedback(_ feedback: [String: TuneAVStationFeedback]) {
+        guard let data = try? JSONEncoder().encode(feedback) else { return }
+        UserDefaults.standard.set(data, forKey: stationFeedbackStorageKey)
     }
 
     private func saveAndRefresh() {

@@ -9,6 +9,7 @@ struct AppShellView: View {
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var libraryStore: LibraryStore
 
+    @StateObject private var chromeActions = AppShellChromeActions()
     @State private var selectedTab: AppShellTab
     @State private var isShowingNowPlaying = false
     @State private var searchQuery: String
@@ -68,6 +69,9 @@ struct AppShellView: View {
                 selectedTab = .search
                 searchFocusRequest += 1
             },
+            aviAction: {
+                selectedTab = .avi
+            },
             selectTab: { tab in
                 selectedTab = tab
             },
@@ -84,6 +88,15 @@ struct AppShellView: View {
                 }
             }
         )
+        .environmentObject(chromeActions)
+        .onAppear {
+            chromeActions.openSettings = {
+                selectedTab = .profile
+            }
+            chromeActions.openAccount = {
+                selectedTab = .profile
+            }
+        }
         .sheet(isPresented: $isShowingNowPlaying) {
             NowPlayingView(
                 startSignInFlow: startSignInFlow,
@@ -106,6 +119,7 @@ struct AppShellView: View {
                 stationDiscoveries: stationDiscoveries(for: station),
                 isFavorite: favoriteStationIDs.contains(station.id),
                 isPlaying: audioPlayer.isCurrent(station) && audioPlayer.isPlaying,
+                stationFeedback: libraryStore.feedback(for: station),
                 playAction: {
                     playStation(
                         station,
@@ -113,7 +127,10 @@ struct AppShellView: View {
                         queue: queueStations
                     )
                 },
-                toggleFavorite: { toggleFavorite(station) }
+                toggleFavorite: { toggleFavorite(station) },
+                setStationFeedback: { feedback in
+                    libraryStore.setFeedback(feedback, for: station)
+                }
             )
             .id(station.id)
             .presentationDetents([.large])
@@ -188,9 +205,13 @@ struct AppShellView: View {
                 discoveries: libraryStore.discoveries,
                 stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
+                preferredTag: libraryStore.settings.preferredTag,
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
+                openAvi: {
+                    selectedTab = .avi
+                },
                 refreshHome: refreshHomePresentationAndFeed,
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
@@ -212,6 +233,34 @@ struct AppShellView: View {
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
                 showStationDetails: showStationDetails
+            )
+        case .avi:
+            AviScreen(
+                currentStation: audioPlayer.currentStation,
+                stations: enrichedStations(homeSnapshot.stations),
+                recentStations: enrichedStations(recentStations),
+                favoriteStations: enrichedStations(favoriteStations),
+                discoveries: libraryStore.discoveries,
+                stationFeedback: libraryStore.stationFeedback,
+                feedContext: homeSnapshot.feedContext,
+                preferredTag: libraryStore.settings.preferredTag,
+                bottomContentPadding: shellScrollBottomPadding,
+                openSearch: {
+                    selectedTab = .search
+                    searchFocusRequest += 1
+                },
+                openLibrary: {
+                    selectedTab = .library
+                },
+                openPlayer: {
+                    isShowingNowPlaying = audioPlayer.currentStation != nil
+                },
+                playStation: { station, queue in
+                    playStation(station, queueSource: .homeDiscovery, queue: queue)
+                },
+                showStationDetails: { station, queue in
+                    showStationDetails(station, queueSource: .homeDiscovery, queue: queue)
+                }
             )
         case .library:
             LibraryScreen(
@@ -599,7 +648,7 @@ struct AppShellView: View {
         playStation(station, queueSource: .libraryRecents, queue: enrichedRecentStations)
     }
 
-    private func refreshHomeFeed() async {
+    private func refreshHomeFeed(forceRemote: Bool = false) async {
         homeIsLoading = true
         homeErrorMessage = nil
 
@@ -612,7 +661,9 @@ struct AppShellView: View {
         }
 
         do {
-            let feed = try await homeFeed.load(preferredTag: libraryStore.settings.preferredTag)
+            let feed = forceRemote
+                ? try await homeFeed.refresh(preferredTag: libraryStore.settings.preferredTag)
+                : try await homeFeed.load(preferredTag: libraryStore.settings.preferredTag)
             rememberBackendStations(feed.stations)
             homeStations = feed.stations
             homeFeedContext = feed.context
@@ -640,7 +691,7 @@ struct AppShellView: View {
 
     private func refreshHomePresentationAndFeed() async {
         refreshHomePresentation()
-        await refreshHomeFeed()
+        await refreshHomeFeed(forceRemote: true)
     }
 
     private func loadSearchResults() async {
@@ -782,6 +833,7 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
     let selectedTab: AppShellTab
     let hasFooterPlayer: Bool
     let searchAction: () -> Void
+    let aviAction: () -> Void
     let selectTab: (AppShellTab) -> Void
     @ViewBuilder let content: () -> Content
     @ViewBuilder let footerPlayer: () -> FooterPlayer
@@ -850,13 +902,13 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
                         }
 
                         AppShellFooterTabButton(
-                            title: L10n.string("tab.profile"),
-                            systemImage: "person.crop.circle.fill",
-                            isSelected: selectedTab == .profile,
+                            title: L10n.string("tab.search"),
+                            systemImage: "magnifyingglass",
+                            isSelected: selectedTab == .search,
                             selectionNamespace: footerSelectionAnimation,
-                            accessibilityIdentifier: "tab.profile"
+                            accessibilityIdentifier: "tab.search"
                         ) {
-                            selectTab(.profile)
+                            searchAction()
                         }
                     }
                     .padding(.leading, 10)
@@ -873,8 +925,8 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
                         }
                     .shadow(color: TuneAVTheme.glassShadow, radius: 18, y: 10)
 
-                    AppShellFooterSearchButton(isSelected: selectedTab == .search) {
-                        searchAction()
+                    AppShellFooterAviButton(isSelected: selectedTab == .avi) {
+                        aviAction()
                     }
                     .shadow(color: TuneAVTheme.glassShadow, radius: 18, y: 10)
                 }
@@ -928,7 +980,7 @@ private struct AppShellFooterTabButton: View {
     }
 }
 
-private struct AppShellFooterSearchButton: View {
+private struct AppShellFooterAviButton: View {
     let isSelected: Bool
     let action: () -> Void
 
@@ -949,16 +1001,476 @@ private struct AppShellFooterSearchButton: View {
                         .padding(4)
                 }
 
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                Image("AviV2HeadNeutral")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 38, height: 38)
+                    .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.24 : 0.08), radius: 6, y: 2)
             }
             .frame(width: 62, height: 62)
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("tab.search"))
-        .accessibilityIdentifier("tab.search")
+        .accessibilityLabel(L10n.string("shell.avi.title"))
+        .accessibilityIdentifier("tab.avi")
+    }
+}
+
+private struct AviScreen: View {
+    let currentStation: Station?
+    let stations: [Station]
+    let recentStations: [Station]
+    let favoriteStations: [Station]
+    let discoveries: [DiscoveredTrack]
+    let stationFeedback: [String: TuneAVStationFeedback]
+    let feedContext: HomeFeedContext
+    let preferredTag: String
+    let bottomContentPadding: CGFloat
+    let openSearch: () -> Void
+    let openLibrary: () -> Void
+    let openPlayer: () -> Void
+    let playStation: (Station, [Station]) -> Void
+    let showStationDetails: (Station, [Station]) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                ShellBrandHeader(statusTitle: aviStateTitle)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(L10n.string("shell.avi.title"))
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    Text(aviSubtitle)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                }
+
+                aviHero
+                recommendationPanel
+                quickActions
+                localSignals
+            }
+            .padding(24)
+            .padding(.bottom, bottomContentPadding)
+        }
+        .scrollIndicators(.hidden)
+        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .accessibilityIdentifier("avi.screen")
+    }
+
+    private var aviHero: some View {
+        VStack(spacing: 18) {
+            Image(aviAssetName)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 230)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
+                .accessibilityLabel(L10n.string("shell.avi.title"))
+
+            VStack(spacing: 8) {
+                Text(aviMoodLine)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .multilineTextAlignment(.center)
+
+                Text(aviDetailLine)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(22)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(TuneAVTheme.elevatedSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle.opacity(0.68), lineWidth: 1)
+                }
+        )
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.38), radius: 18, y: 10)
+    }
+
+    @ViewBuilder
+    private var recommendationPanel: some View {
+        if let recommendation = topRecommendation {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 12) {
+                    StationThumbnailView(
+                        station: recommendation.station,
+                        size: 62,
+                        animationOverlay: .none,
+                        isAnimationActive: false
+                    )
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.string("shell.avi.recommendation.title"))
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .textCase(.uppercase)
+
+                        Text(recommendation.station.name)
+                            .font(.system(size: 19, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+                            .lineLimit(1)
+
+                        Text(recommendation.reason)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        playStation(recommendation.station, recommendationQueue)
+                    } label: {
+                        Label(L10n.string("shell.avi.recommendation.play"), systemImage: "play.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 46)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityIdentifier("avi.recommendation.play")
+
+                    Button {
+                        showStationDetails(recommendation.station, recommendationQueue)
+                    } label: {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .frame(width: 48, height: 46)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .background(TuneAVTheme.highlight.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityLabel(L10n.string("shell.avi.recommendation.details"))
+                    .accessibilityIdentifier("avi.recommendation.details")
+                }
+
+                if !secondaryRecommendations.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(L10n.string("shell.avi.recommendation.nextTitle"))
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+
+                        ForEach(secondaryRecommendations, id: \.station.id) { recommendation in
+                            AviRecommendationRow(
+                                station: recommendation.station,
+                                reason: recommendation.reason,
+                                playAction: {
+                                    playStation(recommendation.station, recommendationQueue)
+                                },
+                                detailsAction: {
+                                    showStationDetails(recommendation.station, recommendationQueue)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+            .padding(18)
+            .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(TuneAVTheme.highlight.opacity(0.18), lineWidth: 1)
+            }
+            .accessibilityIdentifier("avi.recommendation.card")
+        }
+    }
+
+    private var quickActions: some View {
+        VStack(spacing: 12) {
+            Button(action: currentStation == nil ? openSearch : openPlayer) {
+                Label(currentStation == nil ? L10n.string("shell.avi.action.findStation") : L10n.string("shell.avi.action.openPlayer"), systemImage: currentStation == nil ? "sparkles" : "waveform")
+                    .font(.system(size: 15, weight: .bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .foregroundStyle(.white)
+                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("avi.primaryAction")
+
+            HStack(spacing: 12) {
+                AviActionButton(title: L10n.string("tab.search"), systemImage: "magnifyingglass", action: openSearch)
+                AviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "heart.fill", action: openLibrary)
+            }
+        }
+    }
+
+    private var localSignals: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(L10n.string("shell.avi.signals.title"))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+
+            AviSignalRow(
+                title: L10n.string("shell.avi.signals.recent.title"),
+                detail: recentStations.isEmpty ? L10n.string("shell.avi.signals.recent.empty") : L10n.string("shell.avi.signals.recent.count", recentStations.count),
+                systemImage: "clock.arrow.circlepath"
+            )
+
+            AviSignalRow(
+                title: L10n.string("shell.avi.signals.saved.title"),
+                detail: favoriteStations.isEmpty ? L10n.string("shell.avi.signals.saved.empty") : L10n.string("shell.avi.signals.saved.count", favoriteStations.count),
+                systemImage: "heart"
+            )
+
+            AviSignalRow(
+                title: L10n.string("shell.avi.signals.feedback.title"),
+                detail: feedbackSignalCount == 0 ? L10n.string("shell.avi.signals.feedback.empty") : L10n.string("shell.avi.signals.feedback.count", feedbackSignalCount),
+                systemImage: "hand.thumbsup"
+            )
+        }
+        .padding(18)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.6), lineWidth: 1)
+        }
+    }
+
+    private var aviStateTitle: String {
+        currentStation == nil ? L10n.string("shell.avi.state.curious") : L10n.string("shell.avi.state.listening")
+    }
+
+    private var aviSubtitle: String {
+        L10n.string("shell.avi.subtitle")
+    }
+
+    private var aviAssetName: String {
+        currentStation == nil ? "AviV2Thinking" : "AviV2TuneHeadphones"
+    }
+
+    private var aviMoodLine: String {
+        if let currentStation {
+            return L10n.string("shell.avi.mood.listening", currentStation.name)
+        }
+        return recentStations.isEmpty ? L10n.string("shell.avi.mood.ready") : L10n.string("shell.avi.mood.thinking")
+    }
+
+    private var aviDetailLine: String {
+        if currentStation != nil {
+            return L10n.string("shell.avi.detail.listening")
+        }
+        return L10n.string("shell.avi.detail.ready")
+    }
+
+    private var recommendationScorer: TuneAVLocalRecommendationScorer {
+        TuneAVLocalRecommendationScorer(
+            currentStation: currentStation,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            discoveries: discoveries,
+            stationFeedback: stationFeedback,
+            feedContext: feedContext,
+            preferredTag: preferredTag
+        )
+    }
+
+    private var rankedRecommendationCandidates: [(station: Station, rank: TuneAVLocalRecommendationScorer.Rank)] {
+        let excludedIDs = Set(([currentStation?.id].compactMap { $0 }))
+
+        return recommendationScorer
+            .rankedStations(stations.filter { !excludedIDs.contains($0.id) })
+            .filter { $0.rank.score > 0 }
+    }
+
+    private var topRecommendation: (station: Station, reason: String)? {
+        guard let top = rankedRecommendationCandidates.first else { return nil }
+        return recommendationViewModel(for: top)
+    }
+
+    private var secondaryRecommendations: [(station: Station, reason: String)] {
+        rankedRecommendationCandidates
+            .dropFirst()
+            .prefix(2)
+            .map(recommendationViewModel(for:))
+    }
+
+    private func recommendationViewModel(
+        for candidate: (station: Station, rank: TuneAVLocalRecommendationScorer.Rank)
+    ) -> (station: Station, reason: String) {
+        return (
+            station: candidate.station,
+            reason: TuneAVLocalRecommendationScorer.localizedSummary(for: candidate.rank.primaryReason) ?? L10n.string("shell.avi.recommendation.reasonFallback")
+        )
+    }
+
+    private var recommendationQueue: [Station] {
+        rankedRecommendationCandidates.map(\.station)
+    }
+
+    private var feedbackSignalCount: Int {
+        stationFeedback.values.filter { feedback in
+            switch feedback {
+            case .liked, .disliked, .notForMe:
+                return true
+            }
+        }.count
+    }
+}
+
+private struct AviRecommendationRow: View {
+    let station: Station
+    let reason: String
+    let playAction: () -> Void
+    let detailsAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button(action: playAction) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .frame(width: 32, height: 32)
+                    .background(TuneAVTheme.highlight, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.avi.recommendation.play"))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(station.name)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(1)
+
+                Text(reason)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: detailsAction) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .frame(width: 34, height: 34)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.avi.recommendation.details"))
+        }
+        .padding(10)
+        .background(TuneAVTheme.highlight.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityIdentifier("avi.recommendation.secondary")
+    }
+}
+
+private struct HomeAviBrief: View {
+    let currentStation: Station?
+    let recentCount: Int
+    let favoriteCount: Int
+    let openAvi: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image("AviV2HeadNeutral")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 58, height: 58)
+                .padding(6)
+                .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(L10n.string("shell.home.aviBrief.title"))
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(briefDetail)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(action: openAvi) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .frame(width: 42, height: 42)
+                    .background(TuneAVTheme.highlight, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.home.aviBrief.action"))
+            .accessibilityIdentifier("home.aviBrief.open")
+        }
+        .padding(16)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.64), lineWidth: 1)
+        }
+    }
+
+    private var briefDetail: String {
+        if let currentStation {
+            return L10n.string("shell.home.aviBrief.listening", currentStation.name)
+        }
+        if recentCount > 0 || favoriteCount > 0 {
+            return L10n.string("shell.home.aviBrief.localSignals", recentCount, favoriteCount)
+        }
+        return L10n.string("shell.home.aviBrief.empty")
+    }
+}
+
+private struct AviActionButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 14, weight: .bold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle.opacity(0.7), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct AviSignalRow: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .frame(width: 28, height: 28)
+                .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
@@ -973,9 +1485,11 @@ private struct HomeScreen: View {
     let discoveries: [DiscoveredTrack]
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
+    let preferredTag: String
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
+    let openAvi: () -> Void
     let refreshHome: () async -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
@@ -993,9 +1507,23 @@ private struct HomeScreen: View {
             VStack(alignment: .leading, spacing: 24) {
                 ShellBrandHeader(statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label))
 
-                Text(L10n.string("shell.home.title"))
-                    .font(.system(size: 24, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.string("shell.home.title"))
+                        .font(.system(size: 30, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    Text(L10n.string("shell.home.subtitle"))
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HomeAviBrief(
+                    currentStation: audioPlayer.currentStation,
+                    recentCount: recentStations.count,
+                    favoriteCount: favoriteStations.count,
+                    openAvi: openAvi
+                )
 
                 if shouldShowLiveNowPanel {
                     LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
@@ -1040,6 +1568,7 @@ private struct HomeScreen: View {
                             stations: displayedRecentStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
+                            stationInsight: { _ in nil },
                             queueSource: .homeRecents,
                             queueStations: recentStations,
                             playStation: playStation,
@@ -1055,6 +1584,7 @@ private struct HomeScreen: View {
                             stations: displayedFavoriteStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
+                            stationInsight: { _ in nil },
                             queueSource: .homeFavorites,
                             queueStations: favoriteStations,
                             playStation: playStation,
@@ -1074,6 +1604,7 @@ private struct HomeScreen: View {
                             stations: displayedPopularStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
+                            stationInsight: recommendationInsight,
                             queueSource: .homeDiscovery,
                             queueStations: displayedPopularStations,
                             playStation: playStation,
@@ -1247,18 +1778,29 @@ private struct HomeScreen: View {
 
     private var displayedPopularStations: [Station] {
         let excludedIDs = Set(displayedRecentStations.map(\.id) + displayedFavoriteStations.map(\.id))
-        return filteredStationsExcludingFeatured(from: stations)
+
+        let candidates = filteredStationsExcludingFeatured(from: stations)
             .filter { !excludedIDs.contains($0.id) }
-            .sorted { first, second in
-                let firstScore = discoverySignalScore(for: first)
-                let secondScore = discoverySignalScore(for: second)
 
-                if firstScore == secondScore {
-                    return first.name.localizedCaseInsensitiveCompare(second.name) == .orderedAscending
-                }
+        return recommendationScorer.rankedStations(candidates).map(\.station)
+    }
 
-                return firstScore > secondScore
-            }
+    private var recommendationScorer: TuneAVLocalRecommendationScorer {
+        TuneAVLocalRecommendationScorer(
+            currentStation: audioPlayer.currentStation,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            discoveries: discoveries,
+            stationFeedback: stationFeedback,
+            feedContext: feedContext,
+            preferredTag: preferredTag
+        )
+    }
+
+    private func recommendationInsight(for station: Station) -> String? {
+        TuneAVLocalRecommendationScorer.localizedSummary(
+            for: recommendationScorer.rank(station).primaryReason
+        )
     }
 
     private var featuredQueueSource: AudioPlayerService.PlaybackQueue.Source {
@@ -1292,22 +1834,6 @@ private struct HomeScreen: View {
         return stations.filter { $0.id != featuredStationID }
     }
 
-    private func discoverySignalScore(for station: Station) -> Int {
-        discoveries.reduce(0) { score, discovery in
-            guard discovery.stationID == station.id else { return score }
-
-            if discovery.isMarkedInteresting {
-                return score + 3
-            }
-
-            if discovery.isHidden {
-                return score - 2
-            }
-
-            return score
-        }
-    }
-
     private var featuredLabel: String {
         switch featuredSource {
         case .recent:
@@ -1332,6 +1858,10 @@ private struct HomeScreen: View {
     }
 
     private var sectionTitle: String {
+        if hasPersonalActivity {
+            return L10n.string("shell.home.section.freshPicks.title")
+        }
+
         switch feedContext {
         case .preferredGenre(let tag):
             return L10n.string("shell.home.section.topGenre.title", L10n.genreLabel(for: tag))
@@ -1344,6 +1874,10 @@ private struct HomeScreen: View {
     }
 
     private var sectionSubtitle: String {
+        if hasPersonalActivity {
+            return L10n.string("shell.home.section.freshPicks.subtitle")
+        }
+
         switch feedContext {
         case .preferredGenre:
             return L10n.string("shell.home.section.topGenre.subtitle")
@@ -1432,6 +1966,7 @@ private struct SearchScreen: View {
                                         station: station,
                                         isFavorite: favoriteStationIDs.contains(station.id),
                                         nowPlayingTrack: nowPlayingTracks[station.id],
+                                        recommendationInsight: nil,
                                         toggleFavorite: { toggleFavorite(station) },
                                         playAction: { playStation(station, .searchResults, results) },
                                         detailsAction: { showStationDetails(station, .searchResults, results) }
@@ -1443,6 +1978,7 @@ private struct SearchScreen: View {
                                 stations: results,
                                 favoriteStationIDs: favoriteStationIDs,
                                 nowPlayingTracks: nowPlayingTracks,
+                                stationInsight: { _ in nil },
                                 queueSource: .searchResults,
                                 queueStations: results,
                                 playStation: playStation,
@@ -1583,6 +2119,7 @@ private struct LibraryScreen: View {
                                     station: station,
                                     isFavorite: favoriteStationIDs.contains(station.id),
                                     nowPlayingTrack: nowPlayingTracks[station.id],
+                                    recommendationInsight: nil,
                                     toggleFavorite: { toggleFavorite(station) },
                                     playAction: { playStation(station, .libraryFavorites, favorites) },
                                     detailsAction: { showStationDetails(station, .libraryFavorites, favorites) }
@@ -1600,6 +2137,7 @@ private struct LibraryScreen: View {
                                     station: station,
                                     isFavorite: favoriteStationIDs.contains(station.id),
                                     nowPlayingTrack: nowPlayingTracks[station.id],
+                                    recommendationInsight: nil,
                                     toggleFavorite: { toggleFavorite(station) },
                                     playAction: { playStation(station, .libraryRecents, recents) },
                                     detailsAction: { showStationDetails(station, .libraryRecents, recents) }
@@ -2777,6 +3315,7 @@ private struct StationCompactCarousel: View {
     let stations: [Station]
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
+    let stationInsight: (Station) -> String?
     let queueSource: AudioPlayerService.PlaybackQueue.Source
     let queueStations: [Station]
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -2791,6 +3330,7 @@ private struct StationCompactCarousel: View {
                         station: station,
                         isFavorite: favoriteStationIDs.contains(station.id),
                         nowPlayingTrack: nowPlayingTracks[station.id],
+                        recommendationInsight: stationInsight(station),
                         toggleFavorite: { toggleFavorite(station) },
                         playAction: { playStation(station, queueSource, queueStations) },
                         detailsAction: { showStationDetails(station, queueSource, queueStations) }
@@ -2811,6 +3351,7 @@ private struct StationCompactCard: View {
     let station: Station
     let isFavorite: Bool
     let nowPlayingTrack: NowPlayingTrack?
+    let recommendationInsight: String?
     let toggleFavorite: () -> Void
     let playAction: () -> Void
     let detailsAction: () -> Void
@@ -2836,8 +3377,8 @@ private struct StationCompactCard: View {
     }
 
     private var compactSecondaryLine: String? {
-        guard reliableArtist != nil else { return nil }
-        return reliableTitle
+        guard reliableArtist != nil else { return recommendationInsight }
+        return reliableTitle ?? recommendationInsight
     }
 
     var body: some View {
@@ -3014,8 +3555,10 @@ private struct StationDetailSheet: View {
     let stationDiscoveries: [DiscoveredTrack]
     let isFavorite: Bool
     let isPlaying: Bool
+    let stationFeedback: TuneAVStationFeedback?
     let playAction: () -> Void
     let toggleFavorite: () -> Void
+    let setStationFeedback: (TuneAVStationFeedback?) -> Void
 
     var body: some View {
         ScrollView {
@@ -3116,6 +3659,13 @@ private struct StationDetailSheet: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.string("player.menu.stationHistory"))
                     }
+
+                    StationFeedbackControl(
+                        selectedFeedback: stationFeedback,
+                        selectFeedback: { feedback in
+                            setStationFeedback(stationFeedback == feedback ? nil : feedback)
+                        }
+                    )
                 }
                 .padding(18)
                 .background(
@@ -3315,6 +3865,72 @@ private struct StationDetailTabBar: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+private struct StationFeedbackControl: View {
+    let selectedFeedback: TuneAVStationFeedback?
+    let selectFeedback: (TuneAVStationFeedback) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.string("shell.stationFeedback.title"))
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+
+            HStack(spacing: 8) {
+                StationFeedbackButton(
+                    title: L10n.string("shell.stationFeedback.like"),
+                    systemImage: "hand.thumbsup.fill",
+                    isSelected: selectedFeedback == .liked,
+                    action: { selectFeedback(.liked) }
+                )
+
+                StationFeedbackButton(
+                    title: L10n.string("shell.stationFeedback.notForMe"),
+                    systemImage: "minus.circle.fill",
+                    isSelected: selectedFeedback == .notForMe,
+                    action: { selectFeedback(.notForMe) }
+                )
+
+                StationFeedbackButton(
+                    title: L10n.string("shell.stationFeedback.dislike"),
+                    systemImage: "hand.thumbsdown.fill",
+                    isSelected: selectedFeedback == .disliked,
+                    action: { selectFeedback(.disliked) }
+                )
+            }
+        }
+        .accessibilityIdentifier("stationFeedback.control")
+    }
+}
+
+private struct StationFeedbackButton: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 12, weight: .black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
+                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 38)
+                .background(
+                    isSelected ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.62) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
 

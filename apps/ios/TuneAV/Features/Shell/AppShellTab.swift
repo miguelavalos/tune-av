@@ -3,6 +3,7 @@ import Foundation
 enum AppShellTab: Equatable {
     case home
     case search
+    case avi
     case library
     case music
     case profile

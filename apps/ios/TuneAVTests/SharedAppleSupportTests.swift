@@ -1694,6 +1694,26 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testLocalRecommendationScorerReturnsRankedStations() {
+        let recent = recommendationStation(id: "recent", tags: "jazz")
+        let matching = recommendationStation(id: "matching", tags: "jazz")
+        let neutral = recommendationStation(id: "neutral", tags: "news")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let ranked = scorer.rankedStations([neutral, matching])
+
+        XCTAssertEqual(ranked.map(\.station.id), ["matching", "neutral"])
+        XCTAssertGreaterThan(ranked[0].rank.score, ranked[1].rank.score)
+    }
+
     private func queryValue(_ name: String, in url: URL?) -> String? {
         guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
