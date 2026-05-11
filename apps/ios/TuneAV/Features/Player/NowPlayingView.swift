@@ -1410,9 +1410,8 @@ private struct PlayerSignalDeck: View {
             contentInsetRatio: 0.04,
             cornerRadiusRatio: 0.18,
             textMode: .stationName,
-            animationOverlay: .automatic,
-            isAnimationActive: isPlaying,
-            animationDuration: 10
+            animationOverlay: .none,
+            isAnimationActive: false
         )
         .frame(width: size, height: size)
     }
@@ -2021,7 +2020,7 @@ private struct FlippingPlayerArtwork: View {
             contentInsetRatio: 0.04,
             cornerRadiusRatio: heroCornerRadiusRatio,
             textMode: .stationName,
-            animationOverlay: .automatic,
+            animationOverlay: .none,
             isAnimationActive: false
         )
     }
@@ -2198,9 +2197,8 @@ private struct FlippingPlayerArtwork: View {
             contentInsetRatio: 0.04,
             cornerRadiusRatio: cornerRadius / size,
             textMode: .stationName,
-            animationOverlay: .automatic,
-            isAnimationActive: trackArtworkURL == nil && isPlaying,
-            animationDuration: 10
+            animationOverlay: .none,
+            isAnimationActive: false
         )
     }
 
