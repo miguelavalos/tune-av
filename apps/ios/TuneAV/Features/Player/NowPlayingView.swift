@@ -14,7 +14,6 @@ struct NowPlayingView: View {
     @State private var horizontalDragOffset: CGFloat = 0
     @State private var verticalDragOffset: CGFloat = 0
     @State private var browserDestination: BrowserDestination?
-    @State private var selectedInfoMode: PlayerInfoMode = .radio
 
     private let swipeThreshold: CGFloat = 72
     private let dismissSwipeThreshold: CGFloat = 88
@@ -159,7 +158,6 @@ struct NowPlayingView: View {
     private func contextDeck(for station: Station, compact: Bool) -> some View {
         PlayerSignalDeck(
             station: station,
-            selectedMode: $selectedInfoMode,
             trackTitle: audioPlayer.currentTrackTitle,
             trackArtist: audioPlayer.currentTrackArtist,
             trackAlbumTitle: audioPlayer.currentTrackAlbumTitle,
@@ -167,10 +165,12 @@ struct NowPlayingView: View {
             trackArtistURL: audioPlayer.currentTrackArtistURL,
             isDiscoverableTrack: hasDiscoverableTrack,
             isCurrentTrackDiscovered: isCurrentTrackSaved,
+            stationFeedback: libraryStore.feedback(for: station),
             isPlaying: audioPlayer.isPlaying,
             isLoading: audioPlayer.isLoading,
             isFavorite: libraryStore.isFavorite(station),
             homepageURL: homepageURL,
+            onSetStationFeedback: { feedback in setFeedback(feedback, for: station) },
             onSaveDiscovery: { saveCurrentDiscovery(for: station) },
             onOpenAppleMusic: { openExternalSearch(.appleMusicSearch, destination: .appleMusic) },
             onOpenYouTube: { openExternalSearch(.youtubeSearch, destination: .youtube) },
@@ -436,6 +436,11 @@ struct NowPlayingView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityIdentifier("player.station.feedback")
+    }
+
+    private func setFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
+        libraryStore.setFeedback(feedback, for: station)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     private func playerControls(contentWidth: CGFloat, compact: Bool) -> some View {
@@ -1081,22 +1086,6 @@ struct NowPlayingView: View {
     }
 }
 
-private enum PlayerInfoMode: String, CaseIterable, Identifiable {
-    case radio
-    case song
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .radio:
-            return "Radio"
-        case .song:
-            return "Song"
-        }
-    }
-}
-
 private struct PlayerAviBody: View {
     let assetName: String
     let size: CGFloat
@@ -1119,7 +1108,6 @@ private struct PlayerAviBody: View {
 
 private struct PlayerSignalDeck: View {
     let station: Station
-    @Binding var selectedMode: PlayerInfoMode
     let trackTitle: String?
     let trackArtist: String?
     let trackAlbumTitle: String?
@@ -1127,10 +1115,12 @@ private struct PlayerSignalDeck: View {
     let trackArtistURL: URL?
     let isDiscoverableTrack: Bool
     let isCurrentTrackDiscovered: Bool
+    let stationFeedback: TuneAVStationFeedback?
     let isPlaying: Bool
     let isLoading: Bool
     let isFavorite: Bool
     let homepageURL: URL?
+    let onSetStationFeedback: (TuneAVStationFeedback?) -> Void
     let onSaveDiscovery: () -> Bool
     let onOpenAppleMusic: () -> Void
     let onOpenYouTube: () -> Void
@@ -1147,35 +1137,14 @@ private struct PlayerSignalDeck: View {
         isDiscoverableTrack || trackArtworkURL != nil || TuneAVText.normalizedValue(trackTitle) != nil
     }
 
-    private var activeMode: PlayerInfoMode {
-        hasSongContext ? selectedMode : .radio
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 9) {
             if hasSongContext {
-                modeSwitch
+                songNowPlaying
+                radioSourceRow
+            } else {
+                radioNowPlaying
             }
-
-            HStack(alignment: .center, spacing: 10) {
-                currentArtwork(size: 58)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(primaryTitle)
-                        .font(.system(size: 15, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textInverse)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-
-                    Text(secondaryTitle)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.64))
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            actionGrid
         }
         .padding(12)
         .background(
@@ -1187,40 +1156,43 @@ private struct PlayerSignalDeck: View {
                 }
         )
         .shadow(color: TuneAVTheme.highlight.opacity(0.14), radius: 18, y: 10)
-        .onChange(of: hasSongContext) { _, hasSong in
-            if !hasSong {
-                selectedMode = .radio
-            }
-        }
         .accessibilityElement(children: .contain)
     }
 
-    private var modeSwitch: some View {
-        HStack(spacing: 4) {
-            ForEach(PlayerInfoMode.allCases) { mode in
-                Button {
-                    withAnimation(.snappy(duration: 0.22)) {
-                        selectedMode = mode
-                    }
-                } label: {
-                    Text(mode.title)
-                        .font(.system(size: 10, weight: .black))
-                        .foregroundStyle(activeMode == mode ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse.opacity(0.72))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 26)
-                        .background(activeMode == mode ? TuneAVTheme.highlight : Color.clear, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("player.signalDeck.mode.\(mode.rawValue)")
+    private var songNowPlaying: some View {
+        HStack(alignment: .center, spacing: 10) {
+            songArtwork(size: 58)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow"))
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textInverse)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+
+                Text(songSecondaryTitle)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.64))
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Menu {
+                Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
+                Button(L10n.string("player.discovery.lyrics"), action: onOpenLyrics)
+                Button(L10n.string("player.discovery.youtube"), action: onOpenYouTube)
+                Button(trackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view"), action: openArtist)
+            } label: {
+                deckMoreIcon
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("player.signalDeck.songMore")
         }
-        .padding(3)
-        .background(Color.black.opacity(0.20), in: Capsule())
     }
 
     @ViewBuilder
-    private func currentArtwork(size: CGFloat) -> some View {
-        if activeMode == .song, let trackArtworkURL {
+    private func songArtwork(size: CGFloat) -> some View {
+        if let trackArtworkURL {
             AsyncImage(url: trackArtworkURL) { phase in
                 switch phase {
                 case .success(let image):
@@ -1236,6 +1208,65 @@ private struct PlayerSignalDeck: View {
         }
     }
 
+    private var radioSourceRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 9) {
+                stationArtwork(size: 38)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Listening on")
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight.opacity(0.9))
+                        .textCase(.uppercase)
+                        .lineLimit(1)
+
+                    Text(station.name)
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textInverse)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                stationMoreMenu
+            }
+
+            stationFeedbackControls
+            songPrimaryAction
+        }
+        .padding(9)
+        .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
+    }
+
+    private var radioNowPlaying: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .center, spacing: 10) {
+                stationArtwork(size: 58)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(station.name)
+                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textInverse)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
+
+                    Text(radioSecondaryTitle)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.64))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                stationMoreMenu
+            }
+
+            stationFeedbackControls
+        }
+    }
+
     private func stationArtwork(size: CGFloat) -> some View {
         StationArtworkView(
             station: station,
@@ -1245,72 +1276,67 @@ private struct PlayerSignalDeck: View {
             cornerRadiusRatio: 0.28,
             textMode: .stationName,
             animationOverlay: .automatic,
-            isAnimationActive: activeMode == .radio && isPlaying,
+            isAnimationActive: isPlaying,
             animationDuration: 10
         )
         .frame(width: size, height: size)
     }
 
-    private var actionGrid: some View {
-        VStack(spacing: 8) {
-            if activeMode == .song, hasSongContext {
-                HStack(spacing: 8) {
-                    deckActionButton(
-                        systemImage: discoveryButtonSystemImage,
-                        title: discoveryButtonTitle,
-                        style: isCurrentTrackDiscovered ? .saved : .prominent,
-                        accessibilityIdentifier: "player.signalDeck.discovery",
-                        action: toggleDiscovery
-                    )
-
-                    deckActionButton(
-                        systemImage: "music.note",
-                        title: L10n.string("player.discovery.itunesShort"),
-                        accessibilityIdentifier: "player.signalDeck.appleMusic",
-                        action: onOpenAppleMusic
-                    )
+    private var stationFeedbackControls: some View {
+        HStack(spacing: 7) {
+            ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+                Button {
+                    onSetStationFeedback(stationFeedback == feedback ? nil : feedback)
+                } label: {
+                    Image(systemName: feedback.systemImage)
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(stationFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse.opacity(0.80))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(stationFeedback == feedback ? TuneAVTheme.highlight : Color.white.opacity(0.10), in: Capsule())
                 }
-
-                HStack(spacing: 8) {
-                    deckActionButton(
-                        systemImage: "text.quote",
-                        title: L10n.string("player.discovery.lyricsShort"),
-                        accessibilityIdentifier: "player.signalDeck.lyrics",
-                        action: onOpenLyrics
-                    )
-
-                    deckActionButton(
-                        systemImage: "play.rectangle.fill",
-                        title: L10n.string("player.discovery.videoShort"),
-                        accessibilityIdentifier: "player.signalDeck.youtube",
-                        action: onOpenYouTube
-                    )
-                }
-            } else {
-                HStack(spacing: 8) {
-                    deckIconButton(
-                        systemImage: isLoading ? "hourglass" : (isPlaying ? "pause.fill" : "play.fill"),
-                        accessibilityLabel: isLoading ? L10n.string("audio.status.loading") : (isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play")),
-                        accessibilityIdentifier: "player.signalDeck.playPause",
-                        action: onTogglePlayback
-                    )
-
-                    savedStationButton
-
-                    deckIconButton(
-                        systemImage: homepageURL == nil ? "magnifyingglass" : "safari.fill",
-                        accessibilityLabel: homepageURL == nil ? L10n.string("player.menu.searchStation") : L10n.string("player.menu.openWebsite"),
-                        accessibilityIdentifier: "player.signalDeck.stationSearch"
-                    ) {
-                        if let homepageURL {
-                            onOpenWebsite(homepageURL)
-                        } else {
-                            onOpenStationSearch()
-                        }
-                    }
-                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(feedback.localizedState)
+                .accessibilityIdentifier("player.signalDeck.feedback.\(feedback.rawValue)")
             }
         }
+    }
+
+    private var songPrimaryAction: some View {
+        deckActionButton(
+            systemImage: discoveryButtonSystemImage,
+            title: discoveryButtonTitle,
+            style: isCurrentTrackDiscovered ? .saved : .prominent,
+            accessibilityIdentifier: "player.signalDeck.discovery",
+            action: toggleDiscovery
+        )
+    }
+
+    private var stationMoreMenu: some View {
+        Menu {
+            Button(isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"), action: onToggleFavorite)
+
+            if let homepageURL {
+                Button(L10n.string("player.menu.openWebsite")) {
+                    onOpenWebsite(homepageURL)
+                }
+            } else {
+                Button(L10n.string("player.menu.searchStation"), action: onOpenStationSearch)
+            }
+        } label: {
+            deckMoreIcon
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("player.signalDeck.stationMore")
+    }
+
+    private var deckMoreIcon: some View {
+        Image(systemName: "ellipsis")
+            .font(.system(size: 15, weight: .black))
+            .foregroundStyle(TuneAVTheme.textInverse.opacity(0.82))
+            .rotationEffect(.degrees(90))
+            .frame(width: 32, height: 32)
+            .background(Color.white.opacity(0.10), in: Circle())
     }
 
     private func deckActionButton(
@@ -1339,63 +1365,27 @@ private struct PlayerSignalDeck: View {
         .accessibilityIdentifier(accessibilityIdentifier)
     }
 
-    private func deckIconButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.92))
-                .frame(maxWidth: .infinity)
-                .frame(height: 38)
-                .background(Color.white.opacity(0.10), in: Capsule())
+    private var songSecondaryTitle: String {
+        if let artist = TuneAVText.normalizedValue(trackArtist) {
+            return artist
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        if let album = TuneAVText.normalizedValue(trackAlbumTitle) {
+            return album
+        }
+        return L10n.string("player.track.liveNow")
     }
 
-    private var savedStationButton: some View {
-        Button(action: onToggleFavorite) {
-            TuneAVSavedStationIcon(
-                isSaved: isFavorite,
-                size: 17,
-                inactiveColor: TuneAVTheme.textInverse.opacity(0.92),
-                activeColor: TuneAVTheme.highlight
-            )
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(isFavorite ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.10), in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"))
-        .accessibilityIdentifier("player.signalDeck.favorite")
-    }
-
-    private var primaryTitle: String {
-        if activeMode == .song {
-            return TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow")
-        }
-
-        return station.name
-    }
-
-    private var secondaryTitle: String {
-        if activeMode == .song {
-            if let artist = TuneAVText.normalizedValue(trackArtist) {
-                return artist
-            }
-            if let album = TuneAVText.normalizedValue(trackAlbumTitle) {
-                return album
-            }
-            return station.name
-        }
-
+    private var radioSecondaryTitle: String {
         let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
         return meta.isEmpty ? L10n.string("player.track.liveStreamActive") : meta
+    }
+
+    private func openArtist() {
+        if let trackArtistURL {
+            onOpenWebsite(trackArtistURL)
+        } else {
+            onOpenArtist()
+        }
     }
 
     private var discoveryButtonSystemImage: String {
