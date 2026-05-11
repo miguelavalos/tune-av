@@ -102,7 +102,7 @@ struct MiniPlayerView: View {
 
     @ViewBuilder
     private var feedbackBadge: some View {
-        if let feedback = libraryStore.feedback(for: station) {
+        if let feedback = currentTrackFeedback {
             Image(systemName: feedback.systemImage)
                 .font(.system(size: 9, weight: .black))
                 .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
@@ -113,7 +113,7 @@ struct MiniPlayerView: View {
                         .stroke(Color.white.opacity(0.78), lineWidth: 1)
                 }
                 .accessibilityLabel(feedback.localizedState)
-                .accessibilityIdentifier("miniPlayer.feedback")
+                .accessibilityIdentifier("miniPlayer.trackFeedback")
         }
     }
 
@@ -170,6 +170,13 @@ struct MiniPlayerView: View {
 
     private var trackArtworkExists: Bool {
         audioPlayer.currentTrackArtworkURL != nil
+    }
+
+    private var currentTrackFeedback: TuneAVStationFeedback? {
+        libraryStore.feedbackForDiscoveredTrack(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist
+        )
     }
 
     private var isCurrentStationLoading: Bool {
