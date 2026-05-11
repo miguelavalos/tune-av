@@ -305,6 +305,7 @@ struct NowPlayingView: View {
                     offset: playerAviBodyOffset
                 )
                 .frame(width: compact ? 118 : 132, alignment: .trailing)
+                .offset(x: compact ? 5 : 8)
                 .accessibilityLabel(L10n.string("shell.avi.title"))
             }
 
