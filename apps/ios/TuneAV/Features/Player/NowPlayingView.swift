@@ -1280,8 +1280,7 @@ private struct PlayerSignalDeck: View {
     }
 
     var body: some View {
-        VStack(alignment: .center, spacing: 10) {
-            stationHeaderLabel
+        VStack(alignment: .center, spacing: 0) {
             nowPlayingSummary
         }
         .padding(.horizontal, 16)
@@ -1299,28 +1298,11 @@ private struct PlayerSignalDeck: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var stationHeaderLabel: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 10, weight: .black))
-
-            Text(station.name)
-                .font(.system(size: 11, weight: .black))
-                .lineLimit(1)
-        }
-        .foregroundStyle(TuneAVTheme.highlight.opacity(0.92))
-        .frame(maxWidth: .infinity, alignment: .center)
-        .accessibilityIdentifier("player.signalDeck.stationHeader")
-    }
-
     private var nowPlayingSummary: some View {
         HStack(alignment: .center, spacing: 10) {
             songArtwork(size: 54)
 
-            nowPlayingLine(
-                title: hasSongContext ? (TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow")) : station.name,
-                detail: hasSongContext ? songSecondaryTitle : radioSecondaryTitle
-            )
+            nowPlayingLine
             .frame(maxWidth: .infinity, alignment: .leading)
 
             actionMenu
@@ -1346,19 +1328,27 @@ private struct PlayerSignalDeck: View {
         }
     }
 
-    private func nowPlayingLine(title: String, detail: String) -> some View {
+    private var nowPlayingLine: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title)
-                .font(.system(size: 14, weight: .black, design: .rounded))
+            Text(station.name)
+                .font(.system(size: 13, weight: .black, design: .rounded))
                 .foregroundStyle(TuneAVTheme.textInverse.opacity(0.94))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 
-            Text(detail)
+            Text(stationDisplayLines.artistLine)
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(TuneAVTheme.textInverse.opacity(0.58))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            Text(stationDisplayLines.titleLine)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.72))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1421,19 +1411,18 @@ private struct PlayerSignalDeck: View {
             .background(Color.white.opacity(0.10), in: Circle())
     }
 
-    private var songSecondaryTitle: String {
-        if let artist = TuneAVText.normalizedValue(trackArtist) {
-            return artist
-        }
-        if let album = TuneAVText.normalizedValue(trackAlbumTitle) {
-            return album
-        }
-        return L10n.string("player.track.liveNow")
-    }
-
-    private var radioSecondaryTitle: String {
-        let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
-        return meta.isEmpty ? L10n.string("player.track.liveStreamActive") : meta
+    private var stationDisplayLines: TuneAVStationDisplayLines {
+        TuneAVStationDisplayLines.resolve(
+            station: station,
+            isCurrent: true,
+            currentArtist: trackArtist,
+            currentTitle: trackTitle,
+            currentAlbumTitle: trackAlbumTitle,
+            nowPlayingTrack: nil,
+            detailText: station.cardDetailText(preferCountryName: station.flagEmoji == nil)
+                ?? L10n.string("shell.station.row.defaultDetail"),
+            liveFallback: L10n.string("player.track.liveStreamActive")
+        )
     }
 
     private func openArtist() {
