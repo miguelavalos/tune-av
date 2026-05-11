@@ -305,7 +305,7 @@ struct NowPlayingView: View {
                     offset: playerAviBodyOffset
                 )
                 .frame(width: compact ? 118 : 132, alignment: .trailing)
-                .offset(x: compact ? 5 : 8)
+                .offset(x: compact ? 10 : 14)
                 .accessibilityLabel(L10n.string("shell.avi.title"))
             }
 
@@ -1322,6 +1322,7 @@ private struct PlayerSignalDeck: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             actionMenu
+                .offset(x: 4)
         }
         .frame(height: 72)
     }
