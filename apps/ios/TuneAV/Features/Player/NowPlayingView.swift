@@ -156,7 +156,7 @@ struct NowPlayingView: View {
         .frame(height: 26)
     }
 
-    private func infoDeck(for station: Station, compact: Bool) -> some View {
+    private func contextDeck(for station: Station, compact: Bool) -> some View {
         PlayerSignalDeck(
             station: station,
             selectedMode: $selectedInfoMode,
@@ -182,7 +182,7 @@ struct NowPlayingView: View {
             onOpenWebsite: { url in browserDestination = BrowserDestination(url: url) }
         )
         .id(station.id)
-        .frame(maxWidth: compact ? 168 : 186)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -225,20 +225,24 @@ struct NowPlayingView: View {
         contentHeight: CGFloat,
         compact: Bool
     ) -> some View {
-        let spacerMinLength: CGFloat = compact ? 16 : 22
+        let verticalSpacing: CGFloat = compact ? 10 : 14
+        let aviHeight = playerAviHeight(in: contentHeight, compact: compact)
 
-        return VStack(spacing: 0) {
+        return VStack(spacing: verticalSpacing) {
+            contextDeck(for: station, compact: compact)
+                .offset(x: horizontalDragOffset)
+                .gesture(stationSwipeGesture)
+
             aviPlayerStage(
                 for: station,
                 width: contentWidth,
-                aviHeight: compact ? 148 : 188,
+                aviHeight: aviHeight,
                 compact: compact
             )
                 .offset(x: horizontalDragOffset)
                 .gesture(stationSwipeGesture)
-                .padding(.top, 18)
 
-            Spacer(minLength: spacerMinLength)
+            Spacer(minLength: 0)
 
             playerControls(contentWidth: contentWidth, compact: compact)
                 .padding(.bottom, playerControlsBottomLift)
@@ -253,23 +257,27 @@ struct NowPlayingView: View {
         contentHeight: CGFloat,
         compact: Bool
     ) -> some View {
-        let columnSpacing: CGFloat = compact ? 22 : 28
-        let stageWidth = max(contentWidth * 0.55, 360)
-        let controlsWidth = max(contentWidth - stageWidth - columnSpacing, 260)
+        let columnSpacing: CGFloat = compact ? 14 : 18
+        let columnWidth = max((contentWidth - (columnSpacing * 2)) / 3, 220)
 
         return VStack(spacing: 0) {
             HStack(alignment: .center, spacing: columnSpacing) {
-                aviPlayerStage(
-                    for: station,
-                    width: stageWidth,
-                    aviHeight: compact ? 136 : 150,
-                    compact: true
-                )
-                    .frame(width: stageWidth)
+                contextDeck(for: station, compact: true)
+                    .frame(width: columnWidth)
                     .offset(x: horizontalDragOffset)
                     .gesture(stationSwipeGesture)
 
-                playerControls(contentWidth: controlsWidth, compact: compact)
+                aviPlayerStage(
+                    for: station,
+                    width: columnWidth,
+                    aviHeight: compact ? 126 : 136,
+                    compact: true
+                )
+                    .frame(width: columnWidth)
+                    .offset(x: horizontalDragOffset)
+                    .gesture(stationSwipeGesture)
+
+                playerControls(contentWidth: columnWidth, compact: true)
             }
             .frame(width: contentWidth)
             .padding(.top, compact ? 8 : 12)
@@ -286,19 +294,13 @@ struct NowPlayingView: View {
         compact: Bool
     ) -> some View {
         VStack(spacing: compact ? 10 : 14) {
-            HStack(alignment: .center, spacing: compact ? 12 : 16) {
-                PlayerAviBody(
-                    assetName: playerAviAssetName,
-                    size: aviHeight,
-                    offset: playerAviBodyOffset
-                )
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .accessibilityLabel(L10n.string("shell.avi.title"))
-
-                infoDeck(for: station, compact: compact)
-                    .accessibilityIdentifier("player.avi.signalDeck")
-            }
-            .frame(maxWidth: .infinity)
+            PlayerAviBody(
+                assetName: playerAviAssetName,
+                size: aviHeight,
+                offset: playerAviBodyOffset
+            )
+            .frame(maxWidth: .infinity, alignment: .center)
+            .accessibilityLabel(L10n.string("shell.avi.title"))
 
             VStack(spacing: 5) {
                 Text(playerAviStateTitle)
@@ -688,17 +690,13 @@ struct NowPlayingView: View {
     }
 
     private func isCompactPlayer(in proxy: GeometryProxy, isLandscape: Bool) -> Bool {
-        isLandscape || proxy.size.height < 780
+        isLandscape || proxy.size.height < 840
     }
 
-    private func portraitArtworkSize(in proxy: GeometryProxy, contentWidth: CGFloat, compact: Bool) -> CGFloat {
-        return contentWidth
-    }
-
-    private func landscapeArtworkSize(in proxy: GeometryProxy, contentWidth: CGFloat) -> CGFloat {
-        let maxHeight = max(proxy.size.height - playerTopInset(in: proxy, isLandscape: true) - 150, 190)
-        let preferredWidth = contentWidth * 0.34
-        return min(maxHeight, min(preferredWidth, 280))
+    private func playerAviHeight(in contentHeight: CGFloat, compact: Bool) -> CGFloat {
+        let preferredHeight: CGFloat = compact ? 122 : 152
+        let availableHeight = max(contentHeight - 360, 104)
+        return min(preferredHeight, availableHeight)
     }
 
     private var emptyState: some View {
