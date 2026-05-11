@@ -1039,6 +1039,57 @@ private struct AppShellFooterAviButton: View {
     }
 }
 
+private let shellScrollCoordinateSpace = "shellScrollCoordinateSpace"
+
+private struct ShellScrollOffsetPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct ShellScrollOffsetReader: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(
+                key: ShellScrollOffsetPreferenceKey.self,
+                value: proxy.frame(in: .named(shellScrollCoordinateSpace)).minY
+            )
+        }
+        .frame(height: 0)
+    }
+}
+
+private struct ShellScrollAwareHeader: View {
+    let statusTitle: String
+    let isVisible: Bool
+
+    var body: some View {
+        if isVisible {
+            ShellBrandHeader(statusTitle: statusTitle)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+private func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
+    defer { previousOffset = currentOffset }
+
+    if currentOffset > -18 {
+        return true
+    }
+
+    let delta = currentOffset - previousOffset
+    if delta < -10 {
+        return false
+    }
+    if delta > 8 {
+        return true
+    }
+    return currentVisibility
+}
+
 private struct AviScreen: View {
     let currentStation: Station?
     let stations: [Station]
@@ -1056,11 +1107,14 @@ private struct AviScreen: View {
     let playStation: (Station, [Station]) -> Void
     let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
     let showStationDetails: (Station, [Station]) -> Void
+    @State private var isHeaderVisible = true
+    @State private var previousScrollOffset: CGFloat = 0
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(statusTitle: aviStateTitle)
+                ShellScrollOffsetReader()
+                ShellScrollAwareHeader(statusTitle: aviStateTitle, isVisible: isHeaderVisible)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(L10n.string("shell.avi.title"))
@@ -1080,8 +1134,18 @@ private struct AviScreen: View {
             .padding(24)
             .padding(.bottom, bottomContentPadding)
         }
+        .coordinateSpace(name: shellScrollCoordinateSpace)
         .scrollIndicators(.hidden)
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .onPreferenceChange(ShellScrollOffsetPreferenceKey.self) { offset in
+            withAnimation(.snappy(duration: 0.22)) {
+                isHeaderVisible = nextShellHeaderVisibility(
+                    currentOffset: offset,
+                    previousOffset: &previousScrollOffset,
+                    currentVisibility: isHeaderVisible
+                )
+            }
+        }
         .accessibilityIdentifier("avi.screen")
     }
 
@@ -1751,6 +1815,8 @@ private struct HomeScreen: View {
     let toggleFavorite: (Station) -> Void
     let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
+    @State private var isHeaderVisible = true
+    @State private var previousScrollOffset: CGFloat = 0
 
     private enum FeaturedSource {
         case current
@@ -1762,7 +1828,11 @@ private struct HomeScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label))
+                ShellScrollOffsetReader()
+                ShellScrollAwareHeader(
+                    statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label),
+                    isVisible: isHeaderVisible
+                )
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L10n.string("shell.home.title"))
@@ -2252,11 +2322,17 @@ private struct SearchScreen: View {
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @State private var isShowingCountryPicker = false
+    @State private var isHeaderVisible = true
+    @State private var previousScrollOffset: CGFloat = 0
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                ShellBrandHeader(statusTitle: isLoading ? L10n.string("shell.search.status.searching") : L10n.string("shell.search.status.search"))
+                ShellScrollOffsetReader()
+                ShellScrollAwareHeader(
+                    statusTitle: isLoading ? L10n.string("shell.search.status.searching") : L10n.string("shell.search.status.search"),
+                    isVisible: isHeaderVisible
+                )
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(L10n.string("shell.search.title"))
@@ -2366,8 +2442,18 @@ private struct SearchScreen: View {
             .padding(24)
             .padding(.bottom, bottomContentPadding)
         }
+        .coordinateSpace(name: shellScrollCoordinateSpace)
         .scrollIndicators(.hidden)
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .onPreferenceChange(ShellScrollOffsetPreferenceKey.self) { offset in
+            withAnimation(.snappy(duration: 0.22)) {
+                isHeaderVisible = nextShellHeaderVisibility(
+                    currentOffset: offset,
+                    previousOffset: &previousScrollOffset,
+                    currentVisibility: isHeaderVisible
+                )
+            }
+        }
         .sheet(isPresented: $isShowingCountryPicker) {
             SearchCountryPickerSheet(selectedCountryCode: $selectedCountryCode)
                 .environmentObject(libraryStore)
@@ -2457,11 +2543,14 @@ private struct LibraryScreen: View {
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
+    @State private var isHeaderVisible = true
+    @State private var previousScrollOffset: CGFloat = 0
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(
+                ShellScrollOffsetReader()
+                ShellScrollAwareHeader(
                     statusTitle: favorites.isEmpty
                         ? L10n.string("shell.library.status.empty")
                         : L10n.plural(
@@ -2469,7 +2558,8 @@ private struct LibraryScreen: View {
                             plural: "shell.library.status.saved.other",
                             count: favorites.count,
                             favorites.count
-                        )
+                        ),
+                    isVisible: isHeaderVisible
                 )
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -2540,8 +2630,18 @@ private struct LibraryScreen: View {
             .padding(24)
             .padding(.bottom, bottomContentPadding)
         }
+        .coordinateSpace(name: shellScrollCoordinateSpace)
         .scrollIndicators(.hidden)
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .onPreferenceChange(ShellScrollOffsetPreferenceKey.self) { offset in
+            withAnimation(.snappy(duration: 0.22)) {
+                isHeaderVisible = nextShellHeaderVisibility(
+                    currentOffset: offset,
+                    previousOffset: &previousScrollOffset,
+                    currentVisibility: isHeaderVisible
+                )
+            }
+        }
     }
 
     private var trimmedQuery: String {
@@ -2583,6 +2683,8 @@ private struct MusicScreen: View {
     @State private var browserDestination: BrowserDestination?
     @State private var hiddenDiscovery: DiscoveredTrack?
     @State private var selectedArtistName: String?
+    @State private var isHeaderVisible = true
+    @State private var previousScrollOffset: CGFloat = 0
 
     let discoveries: [DiscoveredTrack]
     @Binding var historyStationFilter: Station?
@@ -2599,8 +2701,10 @@ private struct MusicScreen: View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    ShellBrandHeader(
-                        statusTitle: musicStatusTitle
+                    ShellScrollOffsetReader()
+                    ShellScrollAwareHeader(
+                        statusTitle: musicStatusTitle,
+                        isVisible: isHeaderVisible
                     )
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -2641,11 +2745,21 @@ private struct MusicScreen: View {
                 .padding(24)
                 .padding(.bottom, bottomContentPadding)
             }
+            .coordinateSpace(name: shellScrollCoordinateSpace)
             .scrollIndicators(.hidden)
 
             hiddenDiscoveryUndoBanner
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .onPreferenceChange(ShellScrollOffsetPreferenceKey.self) { offset in
+            withAnimation(.snappy(duration: 0.22)) {
+                isHeaderVisible = nextShellHeaderVisibility(
+                    currentOffset: offset,
+                    previousOffset: &previousScrollOffset,
+                    currentVisibility: isHeaderVisible
+                )
+            }
+        }
         .confirmationDialog(
             L10n.string("shell.library.discoveries.clear.confirmTitle"),
             isPresented: $isConfirmingClearDiscoveries,
