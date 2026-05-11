@@ -413,7 +413,7 @@ struct DiscoveryStationSourceRow: View {
                         .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         )
-        .accessibilityLabel("\(summary.name), \(summary.discoveryCount) discoveries")
+        .accessibilityLabel(L10n.string("shell.music.discoveryStations.accessibilityLabel", summary.name, summary.discoveryCount))
         .accessibilityHint(L10n.string("shell.music.discovery.openStation.hint"))
         .accessibilityIdentifier("discoveryStationSourceRow.\(summary.id)")
     }

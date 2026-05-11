@@ -2414,18 +2414,18 @@ private struct SearchScreen: View {
                     clearAction: clearCountryFilter,
                     openAction: { isShowingCountryPicker = true }
                 )
-                Picker("Discovery mode", selection: $discoveryMode) {
-                    Text("Music").tag(TuneAVStationDiscoveryMode.music)
-                    Text("All radio").tag(TuneAVStationDiscoveryMode.allRadio)
+                Picker(L10n.string("shell.search.discoveryMode"), selection: $discoveryMode) {
+                    Text(L10n.string("shell.search.discoveryMode.music")).tag(TuneAVStationDiscoveryMode.music)
+                    Text(L10n.string("shell.search.discoveryMode.allRadio")).tag(TuneAVStationDiscoveryMode.allRadio)
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("search.discoveryMode")
 
                 AviInlineBrief(
                     assetName: discoveryMode == .music ? "AviV2Thinking" : "AviV2HeadNeutral",
-                    title: "Avi is searching",
+                    title: L10n.string("shell.search.avi.title"),
                     detail: searchAviDetail,
-                    status: discoveryMode == .music ? "Music" : "All radio",
+                    status: discoveryMode == .music ? L10n.string("shell.search.discoveryMode.music") : L10n.string("shell.search.discoveryMode.allRadio"),
                     accessibilityIdentifier: "search.aviBrief"
                 )
 
@@ -2554,12 +2554,12 @@ private struct SearchScreen: View {
 
     private var searchAviDetail: String {
         if discoveryMode == .allRadio {
-            return "Avi is showing every live radio format, including news, sports, talk, and culture."
+            return L10n.string("shell.search.avi.detail.allRadio")
         }
         if let activeTag {
-            return "Avi is tuning music-heavy stations for \(L10n.genreLabel(for: activeTag))."
+            return L10n.string("shell.search.avi.detail.genre", L10n.genreLabel(for: activeTag))
         }
-        return "Avi is prioritizing stations with strong music signals."
+        return L10n.string("shell.search.avi.detail.music")
     }
 
     private var selectedCountryTitle: String {
@@ -2637,9 +2637,9 @@ private struct LibraryScreen: View {
 
                 AviInlineBrief(
                     assetName: favorites.isEmpty ? "AviV2Thinking" : "AviV2HeadNeutral",
-                    title: "Avi is organizing",
+                    title: L10n.string("shell.library.avi.title"),
                     detail: libraryAviDetail,
-                    status: favorites.isEmpty ? "Curious" : "Focused",
+                    status: favorites.isEmpty ? L10n.string("shell.avi.state.curious") : L10n.string("shell.avi.state.focused"),
                     accessibilityIdentifier: "library.aviBrief"
                 )
 
@@ -2748,9 +2748,9 @@ private struct LibraryScreen: View {
 
     private var libraryAviDetail: String {
         if favorites.isEmpty && recents.isEmpty {
-            return "Avi will use saved and recent radios to build a better music collection."
+            return L10n.string("shell.library.avi.detail.empty")
         }
-        return "Avi sees \(favorites.count) saved radios and \(recents.count) recent sessions to revisit."
+        return L10n.string("shell.library.avi.detail.signals", favorites.count, recents.count)
     }
 }
 
@@ -2800,9 +2800,9 @@ private struct MusicScreen: View {
 
                     AviInlineBrief(
                         assetName: visibleDiscoveries.isEmpty ? "AviV2Thinking" : "AviV2TuneHeadphones",
-                        title: "Avi is remembering",
+                        title: L10n.string("shell.music.avi.title"),
                         detail: musicAviDetail,
-                        status: visibleDiscoveries.isEmpty ? "Listening" : "Focused",
+                        status: visibleDiscoveries.isEmpty ? L10n.string("shell.avi.state.listening") : L10n.string("shell.avi.state.focused"),
                         accessibilityIdentifier: "music.aviBrief"
                     )
 
@@ -2825,8 +2825,8 @@ private struct MusicScreen: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         SearchAccessRow(
-                            title: "Find tracks or artists",
-                            detail: trimmedQuery.isEmpty ? "Search Avi's detected music memory." : "Filtering music memory for \(trimmedQuery).",
+                            title: L10n.string("shell.music.searchAccess.title"),
+                            detail: trimmedQuery.isEmpty ? L10n.string("shell.music.searchAccess.detail.empty") : L10n.string("shell.music.searchAccess.detail.filtering", trimmedQuery),
                             isExpanded: isSearchExpanded || !trimmedQuery.isEmpty,
                             action: {
                                 withAnimation(.snappy(duration: 0.22)) {
@@ -2934,8 +2934,8 @@ private struct MusicScreen: View {
         let stationSummaries = discoveryStationSummaries
         if !stationSummaries.isEmpty {
             StationSection(
-                title: "Stations behind discoveries",
-                subtitle: "The stations Avi keeps hearing music from.",
+                title: L10n.string("shell.music.discoveryStations.title"),
+                subtitle: L10n.string("shell.music.discoveryStations.subtitle"),
                 accessibilityIdentifier: "music.section.discoveryStations"
             ) {
                 VStack(spacing: 10) {
@@ -3187,12 +3187,12 @@ private struct MusicScreen: View {
 
     private var musicAviDetail: String {
         if visibleDiscoveries.isEmpty {
-            return "Avi needs a few detected tracks before this music memory fills in."
+            return L10n.string("shell.music.avi.detail.empty")
         }
         if let strongestStation = strongestDiscoveryStationName {
-            return "Avi has \(visibleDiscoveries.count) discoveries, led by \(strongestStation)."
+            return L10n.string("shell.music.avi.detail.strongestStation", visibleDiscoveries.count, strongestStation)
         }
-        return "Avi has \(visibleDiscoveries.count) discoveries and \(savedDiscoveries.count) saved tracks."
+        return L10n.string("shell.music.avi.detail.summary", visibleDiscoveries.count, savedDiscoveries.count)
     }
 
     private var strongestDiscoveryStationName: String? {
