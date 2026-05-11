@@ -347,63 +347,18 @@ struct NowPlayingView: View {
                 .lineLimit(1)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 3), spacing: 7) {
-                if aviActionTarget == .radio {
-                    ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
-                        let feedbackIdentifier = "player.avi.feedback." + feedback.rawValue
-                        aviSignalButton(
-                            systemImage: feedback.systemImage,
-                            isSelected: libraryStore.feedback(for: station) == feedback,
-                            accessibilityLabel: feedback.localizedState,
-                            accessibilityIdentifier: feedbackIdentifier
-                        ) {
-                            let nextFeedback = libraryStore.feedback(for: station) == feedback ? nil : feedback
-                            setFeedback(nextFeedback, for: station)
-                            showAviReaction(for: feedback)
-                        }
-                    }
-
-                    let stationIsFavorite = libraryStore.isFavorite(station)
+                ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+                    let feedbackIdentifier = "player.avi.feedback." + feedback.rawValue
                     aviSignalButton(
-                        systemImage: stationIsFavorite ? "star.fill" : "star",
-                        isSelected: stationIsFavorite,
-                        accessibilityLabel: stationIsFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"),
-                        accessibilityIdentifier: "player.avi.favorite"
+                        systemImage: feedback.systemImage,
+                        isSelected: libraryStore.feedback(for: station) == feedback,
+                        accessibilityLabel: feedback.localizedState,
+                        accessibilityIdentifier: feedbackIdentifier
                     ) {
-                        toggleFavorite(station)
-                        showAviReaction(.saved)
+                        let nextFeedback = libraryStore.feedback(for: station) == feedback ? nil : feedback
+                        setFeedback(nextFeedback, for: station)
+                        showAviReaction(for: feedback)
                     }
-                } else {
-                    aviSignalButton(
-                        systemImage: isCurrentTrackSaved ? "bookmark.fill" : "bookmark",
-                        isSelected: isCurrentTrackSaved,
-                        accessibilityLabel: isCurrentTrackSaved ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort"),
-                        accessibilityIdentifier: "player.avi.discovery.save"
-                    ) {
-                        _ = saveCurrentDiscovery(for: station)
-                        showAviReaction(.saved)
-                    }
-
-                    aviSignalButton(
-                        systemImage: "text.quote",
-                        isSelected: false,
-                        accessibilityLabel: L10n.string("player.discovery.lyrics"),
-                        accessibilityIdentifier: "player.avi.discovery.lyrics",
-                        action: {
-                            openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
-                            showAviReaction(.curious)
-                        }
-                    )
-
-                    aviSignalButton(
-                        systemImage: "play.rectangle.fill",
-                        isSelected: false,
-                        accessibilityLabel: L10n.string("player.discovery.youtube"),
-                        accessibilityIdentifier: "player.avi.discovery.youtube",
-                        action: {
-                            openExternalSearch(.youtubeSearch, destination: .youtube)
-                            showAviReaction(.curious)
-                        }
-                    )
                 }
             }
 
@@ -416,11 +371,6 @@ struct NowPlayingView: View {
             .accessibilityIdentifier("player.avi.context")
         }
         .padding(10)
-        .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.11), lineWidth: 1)
-        }
     }
 
     private func aviSignalButton(
@@ -437,10 +387,6 @@ struct NowPlayingView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
             .background(isSelected ? TuneAVTheme.highlight : Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.5) : Color.white.opacity(0.11), lineWidth: 1)
-            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -1410,6 +1356,9 @@ private struct PlayerSignalDeck: View {
         Menu {
             if hasSongContext {
                 Section("Song") {
+                    Button(isCurrentTrackDiscovered ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort")) {
+                        _ = onSaveDiscovery()
+                    }
                     Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
                     Button(L10n.string("player.discovery.lyrics"), action: onOpenLyrics)
                     Button(L10n.string("player.discovery.youtube"), action: onOpenYouTube)
