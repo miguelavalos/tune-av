@@ -35,10 +35,12 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var recents: [RecentStation] = []
     @Published private(set) var discoveries: [DiscoveredTrack] = []
     @Published private(set) var stationFeedback: [String: TuneAVStationFeedback] = [:]
+    @Published private(set) var trackFeedback: [String: TuneAVStationFeedback] = [:]
     @Published private(set) var settings: AppSettings
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
+    private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
 
     private let context: ModelContext
     private var appDataService: TuneAVAppDataService?
@@ -60,6 +62,7 @@ final class LibraryStore: ObservableObject {
         }
 
         stationFeedback = Self.loadStationFeedback()
+        trackFeedback = Self.loadTrackFeedback()
         refresh()
     }
 
@@ -264,6 +267,23 @@ final class LibraryStore: ObservableObject {
         }
 
         Self.saveStationFeedback(stationFeedback)
+    }
+
+    func feedbackForDiscoveredTrack(title: String?, artist: String?) -> TuneAVStationFeedback? {
+        guard let key = discoveredTrackFeedbackKey(title: title, artist: artist) else { return nil }
+        return trackFeedback[key]
+    }
+
+    func setFeedbackForDiscoveredTrack(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?) {
+        guard let key = discoveredTrackFeedbackKey(title: title, artist: artist) else { return }
+
+        if let feedback {
+            trackFeedback[key] = feedback
+        } else {
+            trackFeedback.removeValue(forKey: key)
+        }
+
+        Self.saveTrackFeedback(trackFeedback)
     }
 
     func recordDiscoveredTrack(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -532,6 +552,18 @@ final class LibraryStore: ObservableObject {
         TuneAVText.normalizedValue(value)
     }
 
+    private func discoveredTrackFeedbackKey(title: String?, artist: String?) -> String? {
+        guard
+            let normalizedTitle = normalizedTrackValue(title)
+        else { return nil }
+
+        return TuneAVDiscoveredTrackSupport.makeID(
+            title: normalizedTitle,
+            artist: normalizedTrackValue(artist),
+            stationID: "track"
+        )
+    }
+
     private static func loadStationFeedback() -> [String: TuneAVStationFeedback] {
         guard let data = UserDefaults.standard.data(forKey: stationFeedbackStorageKey) else { return [:] }
         return (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
@@ -540,6 +572,16 @@ final class LibraryStore: ObservableObject {
     private static func saveStationFeedback(_ feedback: [String: TuneAVStationFeedback]) {
         guard let data = try? JSONEncoder().encode(feedback) else { return }
         UserDefaults.standard.set(data, forKey: stationFeedbackStorageKey)
+    }
+
+    private static func loadTrackFeedback() -> [String: TuneAVStationFeedback] {
+        guard let data = UserDefaults.standard.data(forKey: trackFeedbackStorageKey) else { return [:] }
+        return (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+    }
+
+    private static func saveTrackFeedback(_ feedback: [String: TuneAVStationFeedback]) {
+        guard let data = try? JSONEncoder().encode(feedback) else { return }
+        UserDefaults.standard.set(data, forKey: trackFeedbackStorageKey)
     }
 
     private func saveAndRefresh() {

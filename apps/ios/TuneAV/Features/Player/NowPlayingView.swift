@@ -336,6 +336,9 @@ struct NowPlayingView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("player.avi.stage")
+        .onChange(of: currentTrackIdentity) { _, _ in
+            aviReaction = nil
+        }
     }
 
     private func aviSignalConsole(for station: Station, compact: Bool) -> some View {
@@ -351,12 +354,11 @@ struct NowPlayingView: View {
                     let feedbackIdentifier = "player.avi.feedback." + feedback.rawValue
                     aviSignalButton(
                         systemImage: feedback.systemImage,
-                        isSelected: libraryStore.feedback(for: station) == feedback,
+                        isSelected: aviSelectedFeedback(for: station) == feedback,
                         accessibilityLabel: feedback.localizedState,
                         accessibilityIdentifier: feedbackIdentifier
                     ) {
-                        let nextFeedback = libraryStore.feedback(for: station) == feedback ? nil : feedback
-                        setFeedback(nextFeedback, for: station)
+                        setAviFeedback(feedback, for: station)
                         showAviReaction(for: feedback)
                     }
                 }
@@ -413,6 +415,37 @@ struct NowPlayingView: View {
 
     private var aviActionTarget: PlayerRatingTarget {
         currentTrackHasSongContext && audioPlayer.isPlaying ? .song : .radio
+    }
+
+    private func aviSelectedFeedback(for station: Station) -> TuneAVStationFeedback? {
+        switch aviActionTarget {
+        case .song:
+            return libraryStore.feedbackForDiscoveredTrack(
+                title: audioPlayer.currentTrackTitle,
+                artist: audioPlayer.currentTrackArtist
+            )
+        case .radio:
+            return libraryStore.feedback(for: station)
+        }
+    }
+
+    private func setAviFeedback(_ feedback: TuneAVStationFeedback, for station: Station) {
+        switch aviActionTarget {
+        case .song:
+            let currentFeedback = libraryStore.feedbackForDiscoveredTrack(
+                title: audioPlayer.currentTrackTitle,
+                artist: audioPlayer.currentTrackArtist
+            )
+            let nextFeedback = currentFeedback == feedback ? nil : feedback
+            libraryStore.setFeedbackForDiscoveredTrack(
+                nextFeedback,
+                title: audioPlayer.currentTrackTitle,
+                artist: audioPlayer.currentTrackArtist
+            )
+        case .radio:
+            let nextFeedback = libraryStore.feedback(for: station) == feedback ? nil : feedback
+            setFeedback(nextFeedback, for: station)
+        }
     }
 
     private func showAviReaction(_ reaction: PlayerAviReaction) {
