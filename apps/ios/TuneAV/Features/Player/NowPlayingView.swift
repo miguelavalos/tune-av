@@ -101,48 +101,7 @@ struct NowPlayingView: View {
     }
 
     private var playerBackdrop: some View {
-        ZStack {
-            TuneAVTheme.onboardingBackground.ignoresSafeArea()
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [TuneAVTheme.highlight.opacity(0.20), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 180
-                    )
-                )
-                .frame(width: 360, height: 360)
-                .blur(radius: 18)
-                .offset(x: 118, y: -240)
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [TuneAVTheme.highlight.opacity(0.12), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 150
-                    )
-                )
-                .frame(width: 300, height: 300)
-                .blur(radius: 24)
-                .offset(x: -150, y: 250)
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.white.opacity(0.06), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 120
-                    )
-                )
-                .frame(width: 240, height: 240)
-                .blur(radius: 14)
-                .offset(x: 54, y: 96)
-        }
+        TuneAVTheme.shellBackground.ignoresSafeArea()
     }
 
     private func dismissBar() -> some View {
@@ -312,12 +271,12 @@ struct NowPlayingView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(playerAviStateTitle)
                     .font(.system(size: compact ? 14 : 16, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textInverse)
+                    .foregroundStyle(TuneAVTheme.textPrimary)
                     .lineLimit(1)
 
                 Text(playerAviDetail(for: station))
                     .font(.system(size: compact ? 11 : 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.68))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
                     .multilineTextAlignment(.leading)
                     .lineLimit(compact ? 2 : 2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -329,11 +288,11 @@ struct NowPlayingView: View {
         .frame(width: width)
         .background(
             RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
-                .fill(Color.white.opacity(0.055))
+                .fill(TuneAVTheme.cardSurface)
         )
         .overlay {
             RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
-                .stroke(Color.white.opacity(0.11), lineWidth: 1)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("player.avi.stage")
@@ -385,10 +344,10 @@ struct NowPlayingView: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 15, weight: .black))
-                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse.opacity(0.84))
+                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-            .background(isSelected ? TuneAVTheme.highlight : Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(isSelected ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -490,7 +449,7 @@ struct NowPlayingView: View {
 
             Text(trackTitleLine(for: station))
                 .font(.system(size: compact ? 21 : 25, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textInverse)
+                .foregroundStyle(TuneAVTheme.textPrimary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(compact ? 2 : 3)
                 .minimumScaleFactor(0.82)
@@ -498,7 +457,7 @@ struct NowPlayingView: View {
 
             Text(trackSupportingLine(for: station))
                 .font(compact ? .subheadline : .body)
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.68))
+                .foregroundStyle(TuneAVTheme.textSecondary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(1)
                 .padding(.top, compact ? 0 : 2)
@@ -523,15 +482,15 @@ struct NowPlayingView: View {
                 } label: {
                     Image(systemName: feedback.systemImage)
                         .font(.system(size: compact ? 11 : 12, weight: .black))
-                        .foregroundStyle(activeFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse.opacity(0.76))
+                        .foregroundStyle(activeFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
                         .frame(width: compact ? 32 : 36, height: compact ? 28 : 32)
                         .background(
-                            activeFeedback == feedback ? TuneAVTheme.highlight : Color.white.opacity(0.08),
+                            activeFeedback == feedback ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
                             in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                         )
                         .overlay {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(activeFeedback == feedback ? TuneAVTheme.highlight.opacity(0.44) : Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(activeFeedback == feedback ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
                         }
                 }
                 .buttonStyle(.plain)
@@ -547,12 +506,12 @@ struct NowPlayingView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: compact ? 10 : 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.82))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
                         .frame(width: compact ? 28 : 32, height: compact ? 28 : 32)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                         }
                 }
                 .buttonStyle(.plain)
@@ -621,14 +580,14 @@ struct NowPlayingView: View {
         .padding(.vertical, compact ? 10 : 14)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(TuneAVTheme.cardSurface)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(Color.white.opacity(0.11), lineWidth: 1)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
         }
         .frame(width: contentWidth)
-        .shadow(color: .black.opacity(0.08), radius: 10, y: 6)
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 10, y: 6)
     }
 
     private func statusRow(contentWidth: CGFloat) -> some View {
@@ -647,13 +606,13 @@ struct NowPlayingView: View {
     private var loadingStatusPill: some View {
         HStack(spacing: 8) {
             ProgressView()
-                .tint(TuneAVTheme.textInverse.opacity(0.86))
+                .tint(TuneAVTheme.textPrimary)
                 .controlSize(.small)
 
             Text(L10n.string("audio.status.loading"))
         }
         .font(.caption.weight(.semibold))
-        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.86))
+        .foregroundStyle(TuneAVTheme.textPrimary)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(TuneAVTheme.highlight.opacity(0.24), in: Capsule())
@@ -667,13 +626,13 @@ struct NowPlayingView: View {
     private func statusPill(text: String) -> some View {
         Text(text)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(TuneAVTheme.textInverse.opacity(0.82))
+            .foregroundStyle(TuneAVTheme.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.white.opacity(0.08), in: Capsule())
+            .background(TuneAVTheme.elevatedSurface, in: Capsule())
             .overlay {
                 Capsule()
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
     }
 
@@ -713,13 +672,13 @@ struct NowPlayingView: View {
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.78))
+                .foregroundStyle(TuneAVTheme.textPrimary)
                 .rotationEffect(.degrees(90))
                 .frame(width: 36, height: 36)
-                .background(Color.white.opacity(0.08), in: Circle())
+                .background(TuneAVTheme.elevatedSurface, in: Circle())
                 .overlay {
                     Circle()
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
@@ -732,14 +691,14 @@ struct NowPlayingView: View {
             TuneAVSavedStationIcon(
                 isSaved: libraryStore.isFavorite(station),
                 size: 18,
-                inactiveColor: TuneAVTheme.textInverse,
+                inactiveColor: TuneAVTheme.textPrimary,
                 activeColor: TuneAVTheme.highlight
             )
                 .frame(width: 36, height: 36)
-                .background(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.08), in: Circle())
+                .background(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.18) : TuneAVTheme.elevatedSurface, in: Circle())
                 .overlay {
                     Circle()
-                        .stroke(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.36) : Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.36) : TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
@@ -751,15 +710,15 @@ struct NowPlayingView: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: compact ? 20 : 22, weight: .bold))
-                .foregroundStyle(canCycleStations ? TuneAVTheme.textInverse : TuneAVTheme.textInverse.opacity(0.36))
+                .foregroundStyle(canCycleStations ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary.opacity(0.6))
                 .frame(width: size, height: size)
-                .background(Color.white.opacity(0.08), in: Circle())
+                .background(TuneAVTheme.elevatedSurface, in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(systemImage.contains("backward") ? "player.transport.previous" : "player.transport.next")
         .overlay {
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                 .frame(width: size, height: size)
         }
     }
@@ -836,7 +795,7 @@ struct NowPlayingView: View {
 
             Text(L10n.string("player.empty"))
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.84))
+                .foregroundStyle(TuneAVTheme.textPrimary)
                 .multilineTextAlignment(.center)
 
             Spacer()
@@ -1291,13 +1250,13 @@ private struct PlayerSignalDeck: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(0.075))
+                .fill(TuneAVTheme.cardSurface)
                 .overlay {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(0.13), lineWidth: 1)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         )
-        .shadow(color: TuneAVTheme.highlight.opacity(0.14), radius: 18, y: 10)
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 18, y: 10)
         .frame(height: 128, alignment: .top)
         .accessibilityElement(children: .contain)
         .fullScreenCover(isPresented: $isArtworkZoomed) {
@@ -1379,7 +1338,7 @@ private struct PlayerSignalDeck: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(station.name)
                 .font(.system(size: 13, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.94))
+                .foregroundStyle(TuneAVTheme.textPrimary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1387,7 +1346,7 @@ private struct PlayerSignalDeck: View {
 
             Text(stationDisplayLines.artistLine)
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.58))
+                .foregroundStyle(TuneAVTheme.textSecondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1395,7 +1354,7 @@ private struct PlayerSignalDeck: View {
 
             Text(stationDisplayLines.titleLine)
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textInverse.opacity(0.72))
+                .foregroundStyle(TuneAVTheme.textSecondary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1451,10 +1410,10 @@ private struct PlayerSignalDeck: View {
     private var deckMoreIcon: some View {
         Image(systemName: "ellipsis")
             .font(.system(size: 15, weight: .black))
-            .foregroundStyle(TuneAVTheme.textInverse.opacity(0.82))
+            .foregroundStyle(TuneAVTheme.textPrimary)
             .rotationEffect(.degrees(90))
             .frame(width: 32, height: 32)
-            .background(Color.white.opacity(0.10), in: Circle())
+            .background(TuneAVTheme.elevatedSurface, in: Circle())
     }
 
     private var stationDisplayLines: TuneAVStationDisplayLines {
@@ -1520,13 +1479,13 @@ private struct PlayerAviContextPill: View {
             .font(.system(size: 10, weight: .black))
             .lineLimit(1)
             .minimumScaleFactor(0.78)
-            .foregroundStyle(TuneAVTheme.textInverse.opacity(0.86))
+            .foregroundStyle(TuneAVTheme.textSecondary)
             .padding(.horizontal, 8)
             .frame(height: 25)
-            .background(Color.white.opacity(0.08), in: Capsule())
+            .background(TuneAVTheme.elevatedSurface, in: Capsule())
             .overlay {
                 Capsule()
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
     }
 }
