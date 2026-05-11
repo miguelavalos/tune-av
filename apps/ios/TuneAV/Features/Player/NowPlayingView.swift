@@ -1340,7 +1340,7 @@ private struct PlayerSignalDeck: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         } else {
             stationArtwork(size: size)
         }
@@ -1371,7 +1371,7 @@ private struct PlayerSignalDeck: View {
             size: size,
             surfaceStyle: .dark,
             contentInsetRatio: 0.04,
-            cornerRadiusRatio: 0.28,
+            cornerRadiusRatio: 0.18,
             textMode: .stationName,
             animationOverlay: .automatic,
             isAnimationActive: isPlaying,
