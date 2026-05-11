@@ -206,6 +206,7 @@ struct AppShellView: View {
                 errorMessage: homeErrorMessage,
                 recentStations: enrichedStations(homeSnapshot.recentStations),
                 favoriteStations: enrichedStations(homeSnapshot.favoriteStations),
+                lastPlayedStation: lastPlayedStation.map(enrichedStation),
                 discoveries: libraryStore.discoveries,
                 stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
@@ -335,6 +336,10 @@ struct AppShellView: View {
 
     private var enrichedRecentStations: [Station] {
         enrichedStations(recentStations)
+    }
+
+    private var lastPlayedStation: Station? {
+        libraryStore.station(for: libraryStore.settings.lastPlayedStationID)
     }
 
     private var searchRequestKey: String {
@@ -1800,6 +1805,7 @@ private struct HomeScreen: View {
     let errorMessage: String?
     let recentStations: [Station]
     let favoriteStations: [Station]
+    let lastPlayedStation: Station?
     let discoveries: [DiscoveredTrack]
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
@@ -1820,6 +1826,7 @@ private struct HomeScreen: View {
 
     private enum FeaturedSource {
         case current
+        case lastPlayed
         case recent
         case favorite
         case popular
@@ -2054,6 +2061,8 @@ private struct HomeScreen: View {
         switch source {
         case .favorite:
             return L10n.string("shell.home.favorites.title")
+        case .lastPlayed:
+            return "Continue listening"
         case .recent:
             return L10n.string("shell.home.recents.title")
         case .current:
@@ -2083,6 +2092,9 @@ private struct HomeScreen: View {
     }
 
     private var featuredSource: FeaturedSource? {
+        if lastPlayedStation != nil {
+            return .lastPlayed
+        }
         if !favoriteStations.isEmpty {
             return .favorite
         }
@@ -2096,6 +2108,8 @@ private struct HomeScreen: View {
         switch featuredSource {
         case .current:
             return audioPlayer.currentStation
+        case .lastPlayed:
+            return lastPlayedStation
         case .recent:
             return nil
         case .favorite:
@@ -2218,6 +2232,8 @@ private struct HomeScreen: View {
         switch heroSource {
         case .current:
             return .singleStation
+        case .lastPlayed:
+            return .homeRecents
         case .recent:
             return .homeRecents
         case .favorite:
@@ -2231,6 +2247,8 @@ private struct HomeScreen: View {
         switch heroSource {
         case .current:
             return audioPlayer.currentStation.map { [$0] } ?? []
+        case .lastPlayed:
+            return [lastPlayedStation].compactMap { $0 }
         case .recent:
             return recentStations
         case .favorite:
@@ -2253,6 +2271,8 @@ private struct HomeScreen: View {
             return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
         case .current:
             return L10n.string("shell.liveNow.title").uppercased(with: .current)
+        case .lastPlayed:
+            return "CONTINUE LISTENING"
         case .popular, .none:
             break
         }
