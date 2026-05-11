@@ -529,6 +529,7 @@ final class SharedAppleSupportTests: XCTestCase {
             XCTAssertNil(self.queryValue("q", in: request.url))
             XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
             XCTAssertEqual(self.queryValue("locale", in: request.url), "es")
+            XCTAssertEqual(self.queryValue("surface", in: request.url), "home")
 
             let body = #"""
             {
@@ -598,6 +599,7 @@ final class SharedAppleSupportTests: XCTestCase {
             XCTAssertNil(self.queryValue("q", in: request.url))
             XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
             XCTAssertEqual(self.queryValue("locale", in: request.url), "es")
+            XCTAssertNil(self.queryValue("surface", in: request.url))
 
             let body = #"""
             {

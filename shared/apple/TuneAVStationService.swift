@@ -115,7 +115,7 @@ struct TuneAVStationService {
 
         if let avalsysPopularBaseURL {
             do {
-                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL)
+                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL, surface: "home")
             } catch {
                 // Older API deployments may not have the semantic popular endpoint yet.
             }
@@ -124,7 +124,7 @@ struct TuneAVStationService {
         return try await searchStations(filters: popularFilters)
     }
 
-    private func searchAVALSYS(filters: NormalizedStationSearchFilters, baseURL: URL) async throws -> [Station] {
+    private func searchAVALSYS(filters: NormalizedStationSearchFilters, baseURL: URL, surface: String? = nil) async throws -> [Station] {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         components?.queryItems = [
             filters.query.isEmpty ? nil : URLQueryItem(name: "q", value: filters.query),
@@ -133,6 +133,7 @@ struct TuneAVStationService {
             filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
             filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
             filters.locale.isEmpty ? nil : URLQueryItem(name: "locale", value: filters.locale),
+            surface.map { URLQueryItem(name: "surface", value: $0) },
             URLQueryItem(name: "limit", value: String(filters.limit))
         ]
         .compactMap { $0 }
