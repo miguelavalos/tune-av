@@ -55,11 +55,6 @@ struct ShellBrandHeader: View {
             .accessibilityLabel(L10n.string("shell.header.account"))
             .accessibilityIdentifier("header.account")
         }
-        .overlay(alignment: .bottom) {
-            ShellStatusPill(title: statusTitle)
-                .offset(y: 34)
-        }
-        .padding(.bottom, 28)
     }
 }
 
