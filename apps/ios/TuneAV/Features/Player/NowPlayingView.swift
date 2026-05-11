@@ -1132,19 +1132,26 @@ private struct PlayerSignalDeck: View {
     let onOpenWebsite: (URL) -> Void
 
     @State private var discoveryFeedback: DiscoveryFeedback?
+    @State private var isShowingRadioActions = false
 
     private var hasSongContext: Bool {
         isDiscoverableTrack || trackArtworkURL != nil || TuneAVText.normalizedValue(trackTitle) != nil
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            if hasSongContext {
-                songNowPlaying
-                radioSourceRow
-            } else {
-                radioNowPlaying
+        VStack(alignment: .center, spacing: 8) {
+            stationHeaderLabel
+
+            ZStack {
+                radioPanel
+                    .opacity(shouldShowRadioPanel ? 1 : 0)
+                    .allowsHitTesting(shouldShowRadioPanel)
+
+                songPanel
+                    .opacity(shouldShowRadioPanel ? 0 : 1)
+                    .allowsHitTesting(!shouldShowRadioPanel)
             }
+            .animation(.snappy(duration: 0.22), value: shouldShowRadioPanel)
         }
         .padding(12)
         .background(
@@ -1156,37 +1163,75 @@ private struct PlayerSignalDeck: View {
                 }
         )
         .shadow(color: TuneAVTheme.highlight.opacity(0.14), radius: 18, y: 10)
+        .frame(height: 194, alignment: .top)
+        .onChange(of: trackIdentity) { _, _ in
+            if hasSongContext {
+                isShowingRadioActions = false
+            }
+        }
         .accessibilityElement(children: .contain)
     }
 
-    private var songNowPlaying: some View {
-        HStack(alignment: .center, spacing: 10) {
-            songArtwork(size: 58)
+    private var shouldShowRadioPanel: Bool {
+        !hasSongContext || isShowingRadioActions
+    }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow"))
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(TuneAVTheme.textInverse)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
+    private var stationHeaderLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 10, weight: .black))
 
-                Text(songSecondaryTitle)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.64))
-                    .lineLimit(1)
+            Text(station.name)
+                .font(.system(size: 11, weight: .black))
+                .lineLimit(1)
+        }
+        .foregroundStyle(TuneAVTheme.highlight.opacity(0.92))
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityIdentifier("player.signalDeck.stationHeader")
+    }
+
+    private var songPanel: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .center, spacing: 10) {
+                songArtwork(size: 58)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(TuneAVText.normalizedValue(trackTitle) ?? L10n.string("player.track.liveNow"))
+                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textInverse)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
+
+                    Text(songSecondaryTitle)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.64))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Menu {
+                    Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
+                    Button(L10n.string("player.discovery.lyrics"), action: onOpenLyrics)
+                    Button(L10n.string("player.discovery.youtube"), action: onOpenYouTube)
+                    Button(trackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view"), action: openArtist)
+                } label: {
+                    deckMoreIcon
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("player.signalDeck.songMore")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Menu {
-                Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
-                Button(L10n.string("player.discovery.lyrics"), action: onOpenLyrics)
-                Button(L10n.string("player.discovery.youtube"), action: onOpenYouTube)
-                Button(trackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view"), action: openArtist)
-            } label: {
-                deckMoreIcon
+            HStack(spacing: 8) {
+                songPrimaryAction
+
+                deckActionButton(
+                    systemImage: "radio",
+                    title: "Radio",
+                    accessibilityIdentifier: "player.signalDeck.showRadioActions"
+                ) {
+                    isShowingRadioActions = true
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("player.signalDeck.songMore")
         }
     }
 
@@ -1208,45 +1253,12 @@ private struct PlayerSignalDeck: View {
         }
     }
 
-    private var radioSourceRow: some View {
+    private var radioPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 9) {
-                stationArtwork(size: 38)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Listening on")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight.opacity(0.9))
-                        .textCase(.uppercase)
-                        .lineLimit(1)
-
-                    Text(station.name)
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textInverse)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                stationMoreMenu
-            }
-
-            stationFeedbackControls
-            songPrimaryAction
-        }
-        .padding(9)
-        .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        }
-    }
-
-    private var radioNowPlaying: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .center, spacing: 10) {
                 stationArtwork(size: 58)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(station.name)
                         .font(.system(size: 15, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textInverse)
@@ -1264,6 +1276,25 @@ private struct PlayerSignalDeck: View {
             }
 
             stationFeedbackControls
+
+            if hasSongContext {
+                Button {
+                    isShowingRadioActions = false
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 12, weight: .black))
+                        Text("Song")
+                            .font(.system(size: 11, weight: .black))
+                    }
+                    .foregroundStyle(TuneAVTheme.textInverse.opacity(0.88))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 30)
+                    .background(Color.white.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("player.signalDeck.showSong")
+            }
         }
     }
 
@@ -1378,6 +1409,16 @@ private struct PlayerSignalDeck: View {
     private var radioSecondaryTitle: String {
         let meta = station.shortMeta.trimmingCharacters(in: .whitespacesAndNewlines)
         return meta.isEmpty ? L10n.string("player.track.liveStreamActive") : meta
+    }
+
+    private var trackIdentity: String {
+        [
+            TuneAVText.normalizedValue(trackTitle),
+            TuneAVText.normalizedValue(trackArtist),
+            trackArtworkURL?.absoluteString
+        ]
+        .compactMap { $0 }
+        .joined(separator: "|")
     }
 
     private func openArtist() {
