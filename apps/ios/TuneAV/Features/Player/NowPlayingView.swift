@@ -304,8 +304,8 @@ struct NowPlayingView: View {
                     size: min(aviHeight, compact ? 118 : 132),
                     offset: playerAviBodyOffset
                 )
-                .frame(width: compact ? 118 : 132, alignment: .trailing)
-                .offset(x: compact ? 10 : 14)
+                .frame(width: compact ? 104 : 116, alignment: .trailing)
+                .offset(x: compact ? 16 : 22)
                 .accessibilityLabel(L10n.string("shell.avi.title"))
             }
 
