@@ -347,7 +347,11 @@ struct NowPlayingView: View {
                 .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-            .background(isSelected ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(isSelected ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -580,11 +584,11 @@ struct NowPlayingView: View {
         .padding(.vertical, compact ? 10 : 14)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(TuneAVTheme.cardSurface)
+                .fill(TuneAVTheme.elevatedSurface)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                .stroke(TuneAVTheme.borderStrong.opacity(0.64), lineWidth: 1.2)
         }
         .frame(width: contentWidth)
         .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 10, y: 6)
@@ -710,15 +714,15 @@ struct NowPlayingView: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: compact ? 20 : 22, weight: .bold))
-                .foregroundStyle(canCycleStations ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary.opacity(0.6))
+                .foregroundStyle(canCycleStations ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary.opacity(0.72))
                 .frame(width: size, height: size)
-                .background(TuneAVTheme.elevatedSurface, in: Circle())
+                .background(TuneAVTheme.mutedSurface, in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(systemImage.contains("backward") ? "player.transport.previous" : "player.transport.next")
         .overlay {
             Circle()
-                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                .stroke(TuneAVTheme.borderStrong.opacity(0.7), lineWidth: 1.2)
                 .frame(width: size, height: size)
         }
     }
