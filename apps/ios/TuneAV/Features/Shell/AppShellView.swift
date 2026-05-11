@@ -1550,6 +1550,56 @@ private struct HomeAviBrief: View {
     }
 }
 
+private struct AviInlineBrief: View {
+    let assetName: String
+    let title: String
+    let detail: String
+    let status: String
+    var accessibilityIdentifier: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 48, height: 48)
+                .padding(5)
+                .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    Text(status)
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .padding(.horizontal, 8)
+                        .frame(height: 24)
+                        .background(TuneAVTheme.highlight.opacity(0.12), in: Capsule())
+                }
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(3)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.64), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+}
+
 private struct HomeMoodGenreSuggestion: Hashable {
     let tag: String
     let title: String
@@ -2233,6 +2283,14 @@ private struct SearchScreen: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("search.discoveryMode")
 
+                AviInlineBrief(
+                    assetName: discoveryMode == .music ? "AviV2Thinking" : "AviV2HeadNeutral",
+                    title: "Avi is searching",
+                    detail: searchAviDetail,
+                    status: discoveryMode == .music ? "Music" : "All radio",
+                    accessibilityIdentifier: "search.aviBrief"
+                )
+
                 GenreTagStrip(tags: visibleTags, activeTag: activeTag, toggleTag: toggleTag)
 
                 StationSection(
@@ -2346,6 +2404,16 @@ private struct SearchScreen: View {
         }
     }
 
+    private var searchAviDetail: String {
+        if discoveryMode == .allRadio {
+            return "Avi is showing every live radio format, including news, sports, talk, and culture."
+        }
+        if let activeTag {
+            return "Avi is tuning music-heavy stations for \(L10n.genreLabel(for: activeTag))."
+        }
+        return "Avi is prioritizing stations with strong music signals."
+    }
+
     private var selectedCountryTitle: String {
         guard let selectedCountryCode else {
             return L10n.string("shell.search.country.all")
@@ -2413,6 +2481,14 @@ private struct LibraryScreen: View {
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                 }
+
+                AviInlineBrief(
+                    assetName: favorites.isEmpty ? "AviV2Thinking" : "AviV2HeadNeutral",
+                    title: "Avi is organizing",
+                    detail: libraryAviDetail,
+                    status: favorites.isEmpty ? "Curious" : "Focused",
+                    accessibilityIdentifier: "library.aviBrief"
+                )
 
                 SearchField(query: $query, prompt: L10n.string("shell.library.searchPrompt"))
 
@@ -2489,6 +2565,13 @@ private struct LibraryScreen: View {
     private func filterStations(_ stations: [Station]) -> [Station] {
         TuneAVLibraryStationLogic.filteredStations(stations, query: trimmedQuery)
     }
+
+    private var libraryAviDetail: String {
+        if favorites.isEmpty && recents.isEmpty {
+            return "Avi will use saved and recent radios to build a better music collection."
+        }
+        return "Avi sees \(favorites.count) saved radios and \(recents.count) recent sessions to revisit."
+    }
 }
 
 private struct MusicScreen: View {
@@ -2529,6 +2612,14 @@ private struct MusicScreen: View {
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(TuneAVTheme.textSecondary)
                     }
+
+                    AviInlineBrief(
+                        assetName: visibleDiscoveries.isEmpty ? "AviV2Thinking" : "AviV2TuneHeadphones",
+                        title: "Avi is remembering",
+                        detail: musicAviDetail,
+                        status: visibleDiscoveries.isEmpty ? "Listening" : "Focused",
+                        accessibilityIdentifier: "music.aviBrief"
+                    )
 
                     SearchField(query: $query, prompt: L10n.string("shell.music.searchPrompt"))
                     MusicSignalSummary(
@@ -2833,6 +2924,22 @@ private struct MusicScreen: View {
         }
 
         return L10n.string("shell.music.status.empty")
+    }
+
+    private var musicAviDetail: String {
+        if visibleDiscoveries.isEmpty {
+            return "Avi needs a few detected tracks before this music memory fills in."
+        }
+        if let strongestStation = strongestDiscoveryStationName {
+            return "Avi has \(visibleDiscoveries.count) discoveries, led by \(strongestStation)."
+        }
+        return "Avi has \(visibleDiscoveries.count) discoveries and \(savedDiscoveries.count) saved tracks."
+    }
+
+    private var strongestDiscoveryStationName: String? {
+        let counts = Dictionary(grouping: visibleDiscoveries, by: \.stationName)
+            .mapValues(\.count)
+        return counts.max { lhs, rhs in lhs.value < rhs.value }?.key
     }
 
     private var filteredDiscoveries: [DiscoveredTrack] {
