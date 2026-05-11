@@ -174,6 +174,109 @@ struct TuneAVFallbackArtwork: Equatable {
     }
 }
 
+private struct StationFallbackIdentity {
+    enum Motif {
+        case broadcast
+        case editorial
+        case waveform
+        case orbit
+        case skyline
+    }
+
+    let primary: Color
+    let secondary: Color
+    let accent: Color
+    let motif: Motif
+    let layoutSeed: Int
+
+    init(seed: String, category: TuneAVFallbackArtworkCategory) {
+        let hash = TuneAVFallbackArtwork.stableHash(seed)
+        let baseHue = Self.baseHue(for: category)
+        let hueOffset = Double(hash % 23) / 100.0
+        let accentHue = (baseHue + hueOffset).truncatingRemainder(dividingBy: 1)
+        let companionHue = (accentHue + 0.12 + Double((hash / 29) % 17) / 100.0).truncatingRemainder(dividingBy: 1)
+        let saturation = Self.saturation(for: category, hash: hash)
+
+        primary = Color(hue: accentHue, saturation: saturation, brightness: Self.primaryBrightness(for: category))
+        secondary = Color(hue: companionHue, saturation: max(saturation - 0.16, 0.34), brightness: Self.secondaryBrightness(for: category))
+        accent = Color(hue: (accentHue + 0.54).truncatingRemainder(dividingBy: 1), saturation: min(saturation + 0.12, 0.86), brightness: 0.92)
+        motif = Self.motif(for: category, hash: hash)
+        layoutSeed = hash
+    }
+
+    private static func baseHue(for category: TuneAVFallbackArtworkCategory) -> Double {
+        switch category {
+        case .popHits: return 0.92
+        case .rockAlternative: return 0.02
+        case .electronicDance: return 0.58
+        case .jazzBluesSoul: return 0.72
+        case .chillAmbient: return 0.47
+        case .latinWorld: return 0.08
+        case .decadesOldies: return 0.13
+        case .classicalInstrumental: return 0.11
+        case .countryFolk: return 0.26
+        case .genericUnknown: return 0.40
+        }
+    }
+
+    private static func saturation(for category: TuneAVFallbackArtworkCategory, hash: Int) -> Double {
+        let jitter = Double(hash % 12) / 100.0
+        switch category {
+        case .classicalInstrumental, .chillAmbient:
+            return 0.34 + jitter
+        case .jazzBluesSoul, .countryFolk, .decadesOldies:
+            return 0.46 + jitter
+        default:
+            return 0.58 + jitter
+        }
+    }
+
+    private static func primaryBrightness(for category: TuneAVFallbackArtworkCategory) -> Double {
+        switch category {
+        case .rockAlternative, .electronicDance:
+            return 0.42
+        case .classicalInstrumental, .chillAmbient:
+            return 0.84
+        default:
+            return 0.68
+        }
+    }
+
+    private static func secondaryBrightness(for category: TuneAVFallbackArtworkCategory) -> Double {
+        switch category {
+        case .rockAlternative, .electronicDance:
+            return 0.58
+        case .classicalInstrumental, .chillAmbient:
+            return 0.94
+        default:
+            return 0.82
+        }
+    }
+
+    private static func motif(for category: TuneAVFallbackArtworkCategory, hash: Int) -> Motif {
+        switch category {
+        case .popHits, .electronicDance:
+            return hash.isMultiple(of: 2) ? .waveform : .orbit
+        case .rockAlternative:
+            return hash.isMultiple(of: 2) ? .waveform : .broadcast
+        case .jazzBluesSoul, .chillAmbient, .classicalInstrumental:
+            return hash.isMultiple(of: 2) ? .orbit : .waveform
+        case .latinWorld, .countryFolk:
+            return hash.isMultiple(of: 2) ? .skyline : .broadcast
+        case .decadesOldies:
+            return hash.isMultiple(of: 2) ? .editorial : .orbit
+        case .genericUnknown:
+            switch hash % 5 {
+            case 0: return .broadcast
+            case 1: return .editorial
+            case 2: return .waveform
+            case 3: return .orbit
+            default: return .skyline
+            }
+        }
+    }
+}
+
 struct StationArtworkView: View {
     enum SurfaceStyle {
         case light
@@ -330,12 +433,19 @@ struct StationArtworkView: View {
     }
 
     private var fallbackCover: some View {
-        ZStack {
+        let identity = StationFallbackIdentity(seed: fallbackSeed, category: fallbackArtwork.category)
+
+        return ZStack {
             Image(fallbackArtwork.assetName)
                 .resizable()
                 .scaledToFill()
                 .frame(width: size, height: size)
                 .clipped()
+                .saturation(0.72)
+                .contrast(0.92)
+
+            identityColorWash(identity)
+            identityMotif(identity)
 
             if shouldAnimateOverlay {
                 selectedOverlay
@@ -345,6 +455,51 @@ struct StationArtworkView: View {
             if textMode != .none {
                 fallbackTextPlate
             }
+        }
+    }
+
+    private func identityColorWash(_ identity: StationFallbackIdentity) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    identity.primary.opacity(0.46),
+                    identity.secondary.opacity(0.28),
+                    Color.white.opacity(0.10)
+                ],
+                startPoint: identity.layoutSeed.isMultiple(of: 2) ? .topLeading : .bottomLeading,
+                endPoint: identity.layoutSeed.isMultiple(of: 2) ? .bottomTrailing : .topTrailing
+            )
+
+            RadialGradient(
+                colors: [
+                    identity.accent.opacity(0.34),
+                    identity.accent.opacity(0.0)
+                ],
+                center: identity.layoutSeed.isMultiple(of: 3) ? .topTrailing : .bottomLeading,
+                startRadius: size * 0.04,
+                endRadius: size * 0.82
+            )
+            .blendMode(.softLight)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .blendMode(.screen)
+        }
+    }
+
+    @ViewBuilder
+    private func identityMotif(_ identity: StationFallbackIdentity) -> some View {
+        switch identity.motif {
+        case .broadcast:
+            FallbackBroadcastMotif(size: size, color: identity.accent, seed: identity.layoutSeed)
+        case .editorial:
+            FallbackEditorialMotif(size: size, color: identity.accent, seed: identity.layoutSeed)
+        case .waveform:
+            FallbackWaveformMotif(size: size, color: identity.accent, seed: identity.layoutSeed)
+        case .orbit:
+            FallbackOrbitMotif(size: size, color: identity.accent, seed: identity.layoutSeed)
+        case .skyline:
+            FallbackSkylineMotif(size: size, color: identity.accent, seed: identity.layoutSeed)
         }
     }
 
@@ -505,6 +660,129 @@ struct StationArtworkView: View {
 
     private var inkColor: Color {
         Color(red: 0.08, green: 0.1, blue: 0.29)
+    }
+}
+
+private struct FallbackBroadcastMotif: View {
+    let size: CGFloat
+    let color: Color
+    let seed: Int
+
+    var body: some View {
+        ZStack(alignment: seed.isMultiple(of: 2) ? .topTrailing : .bottomLeading) {
+            ForEach(0..<4, id: \.self) { index in
+                Circle()
+                    .trim(from: 0.08, to: 0.36)
+                    .stroke(color.opacity(0.18 + Double(index) * 0.05), lineWidth: max(1.2, size * 0.012))
+                    .frame(width: size * (0.42 + CGFloat(index) * 0.16), height: size * (0.42 + CGFloat(index) * 0.16))
+                    .rotationEffect(.degrees(seed.isMultiple(of: 2) ? -10 : 168))
+            }
+
+            Circle()
+                .fill(color.opacity(0.22))
+                .frame(width: size * 0.13, height: size * 0.13)
+                .padding(size * 0.16)
+        }
+        .frame(width: size, height: size)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct FallbackEditorialMotif: View {
+    let size: CGFloat
+    let color: Color
+    let seed: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: size * 0.045) {
+            ForEach(0..<5, id: \.self) { index in
+                RoundedRectangle(cornerRadius: size * 0.015, style: .continuous)
+                    .fill(color.opacity(0.16 + Double(index % 2) * 0.12))
+                    .frame(width: lineWidth(index), height: max(1.5, size * 0.024))
+            }
+        }
+        .rotationEffect(.degrees(seed.isMultiple(of: 2) ? -6 : 7))
+        .frame(width: size, height: size, alignment: seed.isMultiple(of: 3) ? .bottomLeading : .topLeading)
+        .padding(size * 0.16)
+        .allowsHitTesting(false)
+    }
+
+    private func lineWidth(_ index: Int) -> CGFloat {
+        let base = [0.62, 0.42, 0.7, 0.5, 0.34][index]
+        return size * CGFloat(base)
+    }
+}
+
+private struct FallbackWaveformMotif: View {
+    let size: CGFloat
+    let color: Color
+    let seed: Int
+
+    var body: some View {
+        HStack(alignment: .center, spacing: size * 0.024) {
+            ForEach(0..<9, id: \.self) { index in
+                Capsule(style: .continuous)
+                    .fill(color.opacity(0.24 + Double((index + seed) % 3) * 0.08))
+                    .frame(width: size * 0.035, height: barHeight(index))
+            }
+        }
+        .rotationEffect(.degrees(seed.isMultiple(of: 2) ? -8 : 8))
+        .frame(width: size, height: size, alignment: .center)
+        .allowsHitTesting(false)
+    }
+
+    private func barHeight(_ index: Int) -> CGFloat {
+        let steps: [CGFloat] = [0.18, 0.38, 0.62, 0.44, 0.76, 0.42, 0.58, 0.32, 0.2]
+        let shiftedIndex = (index + seed) % steps.count
+        return size * steps[shiftedIndex]
+    }
+}
+
+private struct FallbackOrbitMotif: View {
+    let size: CGFloat
+    let color: Color
+    let seed: Int
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<3, id: \.self) { index in
+                Ellipse()
+                    .stroke(color.opacity(0.16 + Double(index) * 0.08), lineWidth: max(1, size * 0.01))
+                    .frame(width: size * (0.56 + CGFloat(index) * 0.16), height: size * (0.24 + CGFloat(index) * 0.08))
+                    .rotationEffect(.degrees(Double((seed % 36) - 18) + Double(index) * 34))
+            }
+
+            Circle()
+                .fill(color.opacity(0.22))
+                .frame(width: size * 0.14, height: size * 0.14)
+                .offset(x: size * (seed.isMultiple(of: 2) ? 0.24 : -0.24), y: size * -0.18)
+        }
+        .frame(width: size, height: size)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct FallbackSkylineMotif: View {
+    let size: CGFloat
+    let color: Color
+    let seed: Int
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: size * 0.02) {
+            ForEach(0..<7, id: \.self) { index in
+                RoundedRectangle(cornerRadius: size * 0.015, style: .continuous)
+                    .fill(color.opacity(0.16 + Double((index + seed) % 2) * 0.12))
+                    .frame(width: size * 0.07, height: size * skylineHeight(index))
+            }
+        }
+        .frame(width: size, height: size, alignment: seed.isMultiple(of: 2) ? .bottomLeading : .bottomTrailing)
+        .padding(size * 0.13)
+        .allowsHitTesting(false)
+    }
+
+    private func skylineHeight(_ index: Int) -> CGFloat {
+        let heights: [CGFloat] = [0.18, 0.28, 0.44, 0.34, 0.52, 0.24, 0.38]
+        return heights[(index + seed) % heights.count]
     }
 }
 
