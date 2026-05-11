@@ -12,6 +12,13 @@ struct RootView: View {
     @State private var hasShownSplashThisLaunch = false
 
     private let launchContext = LaunchContext.current
+    private let initialHomeFeed = AppShellHomeFeed(
+        stationService: StationService(),
+        localizedCountryName: L10n.countryName(for:),
+        resolvedDeviceCountryCode: {
+            AppShellHomeFeed.resolvedDeviceCountryCode()
+        }
+    )
 
     var body: some View {
         Group {
@@ -48,6 +55,7 @@ struct RootView: View {
         .tint(TuneAVTheme.highlight)
         .task {
             updateIdleTimer(for: scenePhase)
+            await prefetchInitialHomeFeedIfNeeded()
             await accessController.syncFromAccountProvider()
             await refreshLibrarySync()
             markAutomaticGuestOnboardingSeenIfNeeded()
@@ -158,6 +166,11 @@ struct RootView: View {
                 isShowingSplash = false
             }
         }
+    }
+
+    private func prefetchInitialHomeFeedIfNeeded() async {
+        guard !launchContext.isUITesting else { return }
+        await initialHomeFeed.prefetchInitialFeed()
     }
 }
 

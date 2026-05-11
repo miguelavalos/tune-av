@@ -27,6 +27,7 @@
 		3F9A20636CE17A83BFE8E8C4 /* AppShellTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458EF57C362E247FF5234C69 /* AppShellTab.swift */; };
 		4313B398CF2F95B8E38D6106 /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */; };
 		45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */; };
+		4C8F8E53D05A4AA992DDAE31 /* TuneAVLocalRecommendationScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F8E52D05A4AA992DDAE31 /* TuneAVLocalRecommendationScorer.swift */; };
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
 		570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */; };
 		5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B77C435B56B564DDAC2DE52 /* UITestAccountDeletionAPI.swift */; };
@@ -144,6 +145,7 @@
 		47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSharedTheme.swift; sourceTree = "<group>"; };
 		47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVBundleConfig.swift; sourceTree = "<group>"; };
+		4C8F8E52D05A4AA992DDAE31 /* TuneAVLocalRecommendationScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLocalRecommendationScorer.swift; sourceTree = "<group>"; };
 		4FD0A67AA9366F52644BCFA5 /* HomeEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEmptyStateUITests.swift; sourceTree = "<group>"; };
 		502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthOnboardingView.swift; sourceTree = "<group>"; };
 		5066BF0197AA106B6FE9A2E3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -296,6 +298,14 @@
 			path = Audio;
 			sourceTree = "<group>";
 		};
+		5B8BD0BC464E49F0975151C1 /* Recommendations */ = {
+			isa = PBXGroup;
+			children = (
+				4C8F8E52D05A4AA992DDAE31 /* TuneAVLocalRecommendationScorer.swift */,
+			);
+			path = Recommendations;
+			sourceTree = "<group>";
+		};
 		5E00663EE7D22F0ED6AC6E5B /* TuneAV */ = {
 			isa = PBXGroup;
 			children = (
@@ -335,6 +345,7 @@
 			children = (
 				5A86B8485A737245201A7B08 /* Audio */,
 				AE3069F5E99E6AE3F5ECE216 /* Persistence */,
+				5B8BD0BC464E49F0975151C1 /* Recommendations */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -672,6 +683,7 @@
 				8E77E39D1BCD9055AFA1550C /* TuneAVExternalSearchURL.swift in Sources */,
 				539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */,
 				4313B398CF2F95B8E38D6106 /* TuneAVL10n.swift in Sources */,
+				4C8F8E53D05A4AA992DDAE31 /* TuneAVLocalRecommendationScorer.swift in Sources */,
 				C251B301DC91D6E149165562 /* TuneAVLaunchContext.swift in Sources */,
 				A9C7CF8352325D492B036270 /* TuneAVLibraryStationLogic.swift in Sources */,
 				B4EC53597531260584D454A8 /* TuneAVLibrarySync.swift in Sources */,

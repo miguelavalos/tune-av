@@ -38,6 +38,7 @@ struct TuneAVStationService {
     }
 
     private let avalsysBaseURL: URL?
+    private let avalsysPopularBaseURL: URL?
     private let radioBrowserBaseURL: URL
     private let session: URLSession
     private let fallbacks: TuneAVStationFallbacks
@@ -46,12 +47,14 @@ struct TuneAVStationService {
     init(
         session: URLSession = .shared,
         avalsysBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/search")!,
+        avalsysPopularBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/popular")!,
         radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
         fallbacks: TuneAVStationFallbacks = .english,
         invalidResponseMessage: String = "The station service returned an invalid response."
     ) {
         self.session = session
         self.avalsysBaseURL = avalsysBaseURL
+        self.avalsysPopularBaseURL = avalsysPopularBaseURL
         self.radioBrowserBaseURL = radioBrowserBaseURL
         self.fallbacks = fallbacks
         self.invalidResponseMessage = invalidResponseMessage
@@ -88,6 +91,37 @@ struct TuneAVStationService {
         }
 
         return try await searchRadioBrowser(filters: normalizedFilters)
+    }
+
+    func popularStations(filters: TuneAVStationSearchFilters) async throws -> [Station] {
+        var popularFilters = filters
+        popularFilters.query = ""
+        popularFilters.allowsEmptySearch = true
+
+        let trimmedCountryCode = popularFilters.countryCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLanguage = popularFilters.language.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTag = popularFilters.tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLocale = popularFilters.locale.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let normalizedFilters = NormalizedStationSearchFilters(
+            query: "",
+            country: "",
+            countryCode: trimmedCountryCode,
+            language: trimmedLanguage,
+            tag: trimmedTag,
+            locale: trimmedLocale,
+            limit: popularFilters.limit
+        )
+
+        if let avalsysPopularBaseURL {
+            do {
+                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL)
+            } catch {
+                // Older API deployments may not have the semantic popular endpoint yet.
+            }
+        }
+
+        return try await searchStations(filters: popularFilters)
     }
 
     private func searchAVALSYS(filters: NormalizedStationSearchFilters, baseURL: URL) async throws -> [Station] {

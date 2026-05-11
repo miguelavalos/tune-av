@@ -523,6 +523,68 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testStationServiceUsesPopularEndpointBeforeSearchFallback() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/v1/tune/stations/popular")
+            XCTAssertNil(self.queryValue("q", in: request.url))
+            XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
+            XCTAssertEqual(self.queryValue("locale", in: request.url), "es")
+
+            let body = #"""
+            {
+              "stations": [
+                {
+                  "id": "popular-ser",
+                  "name": "Popular SER",
+                  "country": "Spain",
+                  "countryCode": "ES",
+                  "state": null,
+                  "language": "Spanish",
+                  "languageCodes": ["es"],
+                  "tags": "news,talk",
+                  "streamURL": "https://example.com/popular-ser.mp3",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": null,
+                  "votes": 10,
+                  "clickCount": 20,
+                  "clickTrend": 1,
+                  "isHLS": false,
+                  "hasExtendedInfo": false,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st_rb_popular_ser",
+                  "category": "news",
+                  "visibility": "public",
+                  "qualityScore": 84,
+                  "enrichmentStatus": "enriched",
+                  "artwork": { "status": "none", "url": null, "version": null }
+                }
+              ],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!
+        )
+
+        let stations = try await service.popularStations(
+            filters: TuneAVStationSearchFilters(query: "ignored", countryCode: "ES", locale: "es", limit: 12)
+        )
+
+        XCTAssertEqual(stations.map(\.id), ["popular-ser"])
+    }
+
     func testStationServiceFallsBackToRadioBrowserWhenAVALSYSFails() async throws {
         var requestedHosts: [String] = []
         TuneAVTestURLProtocol.requestHandler = { request in
@@ -927,6 +989,44 @@ final class SharedAppleSupportTests: XCTestCase {
                 fallback: Locale(identifier: "en_EU")
             )
         )
+    }
+
+    func testHomeFeedCacheEncodesDecodesAndExpiresPayloads() {
+        let suiteName = "tuneav.homeFeedCache.tests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let cache = HomeFeedCache(userDefaults: userDefaults, maxAge: 60)
+        let station = Station(
+            id: "cached",
+            name: "Cached Radio",
+            country: "Spain",
+            language: "Spanish",
+            tags: "news",
+            streamURL: "https://example.com/cached"
+        )
+        let key = HomeFeedCache.Key(
+            localeIdentifier: "es",
+            countryCode: "ES",
+            preferredTag: " news ",
+            language: nil,
+            limit: 12
+        )
+
+        cache.save(
+            HomeFeedResult(stations: [station], context: .popularInCountry("ES")),
+            for: key,
+            now: Date(timeIntervalSince1970: 1_000)
+        )
+
+        let cached = cache.load(for: key, now: Date(timeIntervalSince1970: 1_030))
+        XCTAssertEqual(cached?.stations.map(\.id), ["cached"])
+        XCTAssertEqual(cached?.context, .popularInCountry("ES"))
+        XCTAssertEqual(cached?.cachedAt, Date(timeIntervalSince1970: 1_000))
+
+        XCTAssertNil(cache.load(for: key, now: Date(timeIntervalSince1970: 1_061)))
     }
 
     func testSearchRequestNormalizesKeyAndMode() {
@@ -1475,6 +1575,52 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(station.initials, "RN")
     }
 
+    func testLocalRecommendationScorerPrioritizesPositiveFeedback() {
+        let liked = recommendationStation(id: "liked", tags: "jazz")
+        let disliked = recommendationStation(id: "disliked", tags: "jazz")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [
+                liked.id: .liked,
+                disliked.id: .disliked
+            ],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let likedRank = scorer.rank(liked)
+        let dislikedRank = scorer.rank(disliked)
+
+        XCTAssertGreaterThan(likedRank.score, dislikedRank.score)
+        XCTAssertEqual(likedRank.primaryReason, .likedStation)
+        XCTAssertEqual(dislikedRank.primaryReason, .dislikedStation)
+    }
+
+    func testLocalRecommendationScorerExplainsRecentTagMatches() {
+        let recent = recommendationStation(id: "recent", tags: "jazz, soul")
+        let candidate = recommendationStation(id: "candidate", tags: "ambient, jazz")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let rank = scorer.rank(candidate)
+
+        XCTAssertTrue(rank.reasons.contains(.recentTag))
+        XCTAssertEqual(
+            TuneAVLocalRecommendationScorer.localizedSummary(for: .recentTag),
+            L10n.string("recommendations.reason.recentTag")
+        )
+    }
+
     private func queryValue(_ name: String, in url: URL?) -> String? {
         guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
@@ -1496,6 +1642,18 @@ final class SharedAppleSupportTests: XCTestCase {
             countryCode: countryCode,
             language: "English",
             tags: "live",
+            streamURL: "https://example.com/\(id)"
+        )
+    }
+
+    private func recommendationStation(id: String, tags: String, countryCode: String = "US") -> Station {
+        Station(
+            id: id,
+            name: "Station \(id)",
+            country: "Country \(countryCode)",
+            countryCode: countryCode,
+            language: "English",
+            tags: tags,
             streamURL: "https://example.com/\(id)"
         )
     }

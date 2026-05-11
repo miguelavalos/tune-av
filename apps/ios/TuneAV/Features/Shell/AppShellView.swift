@@ -186,6 +186,7 @@ struct AppShellView: View {
                 recentStations: enrichedStations(homeSnapshot.recentStations),
                 favoriteStations: enrichedStations(homeSnapshot.favoriteStations),
                 discoveries: libraryStore.discoveries,
+                stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
@@ -970,6 +971,7 @@ private struct HomeScreen: View {
     let recentStations: [Station]
     let favoriteStations: [Station]
     let discoveries: [DiscoveredTrack]
+    let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
