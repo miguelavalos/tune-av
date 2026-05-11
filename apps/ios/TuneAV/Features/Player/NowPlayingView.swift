@@ -1280,7 +1280,8 @@ private struct PlayerSignalDeck: View {
     }
 
     var body: some View {
-        VStack(alignment: .center, spacing: 0) {
+        VStack(alignment: .center, spacing: 10) {
+            stationHeaderLabel
             nowPlayingSummary
         }
         .padding(.horizontal, 16)
@@ -1296,6 +1297,20 @@ private struct PlayerSignalDeck: View {
         .shadow(color: TuneAVTheme.highlight.opacity(0.14), radius: 18, y: 10)
         .frame(height: 128, alignment: .top)
         .accessibilityElement(children: .contain)
+    }
+
+    private var stationHeaderLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 10, weight: .black))
+
+            Text(station.name)
+                .font(.system(size: 11, weight: .black))
+                .lineLimit(1)
+        }
+        .foregroundStyle(TuneAVTheme.highlight.opacity(0.92))
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityIdentifier("player.signalDeck.stationHeader")
     }
 
     private var nowPlayingSummary: some View {
