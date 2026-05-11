@@ -549,16 +549,25 @@ struct NowPlayingView: View {
         let primaryButtonSize: CGFloat = compact ? 84 : 96
 
         return HStack(spacing: compact ? 14 : 18) {
-            compactTransportButton(systemImage: "backward.fill", size: sideButtonSize, compact: compact, action: playPreviousStation)
-                .disabled(!canCycleStations)
+            compactTransportButton(
+                systemImage: "backward.fill",
+                size: sideButtonSize,
+                compact: compact,
+                isEnabled: canCycleStations,
+                action: playPreviousStation
+            )
 
             Button {
                 audioPlayer.togglePlayback()
             } label: {
                 ZStack {
                     Circle()
-                        .fill(TuneAVTheme.signalGradient)
-                        .shadow(color: TuneAVTheme.highlight.opacity(0.25), radius: 18, y: 10)
+                        .fill(TuneAVTheme.highlight)
+                        .overlay {
+                            Circle()
+                                .stroke(TuneAVTheme.highlight.opacity(0.38), lineWidth: 1.2)
+                        }
+                        .shadow(color: TuneAVTheme.highlight.opacity(0.18), radius: 10, y: 5)
 
                     if audioPlayer.isLoading {
                         ProgressView()
@@ -576,8 +585,13 @@ struct NowPlayingView: View {
             .accessibilityLabel(audioPlayer.isLoading ? L10n.string("audio.status.loading") : (audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play")))
             .accessibilityIdentifier("player.transport.playPause")
 
-            compactTransportButton(systemImage: "forward.fill", size: sideButtonSize, compact: compact, action: playNextStation)
-                .disabled(!canCycleStations)
+            compactTransportButton(
+                systemImage: "forward.fill",
+                size: sideButtonSize,
+                compact: compact,
+                isEnabled: canCycleStations,
+                action: playNextStation
+            )
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, compact ? 14 : 18)
@@ -710,11 +724,14 @@ struct NowPlayingView: View {
         .accessibilityIdentifier("player.station.favorite")
     }
 
-    private func compactTransportButton(systemImage: String, size: CGFloat, compact: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    private func compactTransportButton(systemImage: String, size: CGFloat, compact: Bool, isEnabled: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            guard isEnabled else { return }
+            action()
+        } label: {
             Image(systemName: systemImage)
                 .font(.system(size: compact ? 20 : 22, weight: .bold))
-                .foregroundStyle(canCycleStations ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary.opacity(0.72))
+                .foregroundStyle(isEnabled ? TuneAVTheme.textPrimary : TuneAVTheme.neutral600)
                 .frame(width: size, height: size)
                 .background(TuneAVTheme.mutedSurface, in: Circle())
         }
@@ -722,7 +739,7 @@ struct NowPlayingView: View {
         .accessibilityIdentifier(systemImage.contains("backward") ? "player.transport.previous" : "player.transport.next")
         .overlay {
             Circle()
-                .stroke(TuneAVTheme.borderStrong.opacity(0.7), lineWidth: 1.2)
+                .stroke(TuneAVTheme.borderStrong.opacity(isEnabled ? 0.72 : 0.58), lineWidth: 1.2)
                 .frame(width: size, height: size)
         }
     }
