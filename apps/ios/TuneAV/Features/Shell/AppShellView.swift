@@ -15,6 +15,7 @@ struct AppShellView: View {
     @State private var searchQuery: String
     @State private var searchTag: String?
     @State private var searchCountryCode: String?
+    @State private var searchDiscoveryMode: TuneAVStationDiscoveryMode = .music
     @State private var searchFocusRequest = 0
     @State private var searchResults: [Station] = []
     @State private var searchIsLoading = false
@@ -34,7 +35,7 @@ struct AppShellView: View {
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
-    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
+    private let genreTags = TuneAVStationMusicClassifier.musicTags
 
     private var homeFeed: AppShellHomeFeed {
         AppShellHomeFeed(
@@ -220,6 +221,7 @@ struct AppShellView: View {
                     searchQuery = ""
                     searchCountryCode = nil
                     searchTag = tag
+                    searchDiscoveryMode = .music
                     selectedTab = .search
                 },
                 refreshHome: refreshHomePresentationAndFeed,
@@ -235,6 +237,7 @@ struct AppShellView: View {
                 query: $searchQuery,
                 activeTag: $searchTag,
                 selectedCountryCode: $searchCountryCode,
+                discoveryMode: $searchDiscoveryMode,
                 results: enrichedStations(searchResults),
                 isLoading: searchIsLoading,
                 errorMessage: searchErrorMessage,
@@ -339,7 +342,7 @@ struct AppShellView: View {
     }
 
     private var searchRequest: AppShellSearchRequest {
-        AppShellSearchRequest(query: searchQuery, tag: searchTag, countryCode: searchCountryCode)
+        AppShellSearchRequest(query: searchQuery, tag: searchTag, countryCode: searchCountryCode, discoveryMode: searchDiscoveryMode)
     }
 
     private var shellScrollBottomPadding: CGFloat {
@@ -2182,6 +2185,7 @@ private struct SearchScreen: View {
     @Binding var query: String
     @Binding var activeTag: String?
     @Binding var selectedCountryCode: String?
+    @Binding var discoveryMode: TuneAVStationDiscoveryMode
 
     let results: [Station]
     let isLoading: Bool
@@ -2222,7 +2226,14 @@ private struct SearchScreen: View {
                     clearAction: clearCountryFilter,
                     openAction: { isShowingCountryPicker = true }
                 )
-                GenreTagStrip(tags: tags, activeTag: activeTag, toggleTag: toggleTag)
+                Picker("Discovery mode", selection: $discoveryMode) {
+                    Text("Music").tag(TuneAVStationDiscoveryMode.music)
+                    Text("All radio").tag(TuneAVStationDiscoveryMode.allRadio)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("search.discoveryMode")
+
+                GenreTagStrip(tags: visibleTags, activeTag: activeTag, toggleTag: toggleTag)
 
                 StationSection(
                     title: queryText.isEmpty && activeTag == nil && selectedCountryCode != nil
@@ -2324,6 +2335,15 @@ private struct SearchScreen: View {
 
     private func toggleTag(_ tag: String) {
         activeTag = activeTag == tag ? nil : tag
+    }
+
+    private var visibleTags: [String] {
+        switch discoveryMode {
+        case .music:
+            return tags
+        case .allRadio:
+            return tags + ["news", "sports", "talk", "culture", "local", "public", "religion"]
+        }
     }
 
     private var selectedCountryTitle: String {

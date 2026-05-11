@@ -1106,10 +1106,11 @@ final class SharedAppleSupportTests: XCTestCase {
         let direct = AppShellSearchRequest(query: "  nova  ", tag: " jazz ", countryCode: " es ")
         let worldwide = AppShellSearchRequest(query: "   ", tag: nil, countryCode: nil)
 
-        XCTAssertEqual(direct.key, "nova|jazz|ES")
+        XCTAssertEqual(direct.key, "nova|jazz|ES|music")
+        XCTAssertEqual(direct.discoveryMode, .music)
         XCTAssertFalse(direct.usesWorldwideDiscovery)
         XCTAssertEqual(direct.searchLimit, 24)
-        XCTAssertEqual(worldwide.key, "||")
+        XCTAssertEqual(worldwide.key, "|||music")
         XCTAssertTrue(worldwide.usesWorldwideDiscovery)
         XCTAssertEqual(worldwide.searchLimit, 12)
     }
