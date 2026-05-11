@@ -890,6 +890,10 @@ struct NowPlayingView: View {
             return L10n.string("player.avi.detail.thinking", station.name)
         }
         if audioPlayer.isPlaying {
+            if let latestDiscovery = latestDiscovery(for: station) {
+                return "Avi remembers \(stationDiscoveryCount(for: station)) tracks from \(station.name). Latest: \(latestDiscovery.title)."
+            }
+
             return L10n.string("player.avi.detail.listening", station.name)
         }
         return L10n.string("player.avi.detail.neutral")
@@ -912,6 +916,11 @@ struct NowPlayingView: View {
             prompts.append(country)
         }
 
+        let stationDiscoveries = stationDiscoveryCount(for: station)
+        if stationDiscoveries > 0 {
+            prompts.append("\(stationDiscoveries) discoveries")
+        }
+
         if let tag = station.normalizedTags.first {
             prompts.append(tag.capitalized(with: L10n.locale))
         }
@@ -925,6 +934,20 @@ struct NowPlayingView: View {
         }
 
         return TuneAVText.normalizedValue(station.country, excluding: Station.unknownDetailValues, locale: L10n.locale)
+    }
+
+    private func latestDiscovery(for station: Station) -> DiscoveredTrack? {
+        playerDiscoveries(for: station)
+            .max { first, second in first.playedAt < second.playedAt }
+    }
+
+    private func stationDiscoveryCount(for station: Station) -> Int {
+        playerDiscoveries(for: station).count
+    }
+
+    private func playerDiscoveries(for station: Station) -> [DiscoveredTrack] {
+        TuneAVMusicLibraryLogic.visibleDiscoveries(libraryStore.discoveries)
+            .filter { $0.stationID == station.id }
     }
 
     private var homepageURL: URL? {
