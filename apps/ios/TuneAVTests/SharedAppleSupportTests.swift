@@ -1714,6 +1714,169 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertGreaterThan(ranked[0].rank.score, ranked[1].rank.score)
     }
 
+    func testLocalRecommendationScorerSuppressesNegativeFeedbackFromRankedStations() {
+        let liked = recommendationStation(id: "liked", tags: "jazz")
+        let notForMe = recommendationStation(id: "not-for-me", tags: "jazz")
+        let disliked = recommendationStation(id: "disliked", tags: "jazz")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [
+                liked.id: .liked,
+                notForMe.id: .notForMe,
+                disliked.id: .disliked
+            ],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let ranked = scorer.rankedStations([disliked, notForMe, liked])
+
+        XCTAssertEqual(ranked.map(\.station.id), [liked.id])
+        XCTAssertTrue(scorer.rank(disliked).reasons.contains(.dislikedStation))
+        XCTAssertTrue(scorer.rank(notForMe).reasons.contains(.notForMeStation))
+    }
+
+    func testLocalRecommendationScorerPenalizesTagsFromNegativeFeedback() {
+        let rejected = recommendationStation(id: "rejected", tags: "jazz, lounge")
+        let similar = recommendationStation(id: "similar", tags: "jazz")
+        let neutral = recommendationStation(id: "neutral", tags: "news")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [rejected],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [
+                rejected.id: .notForMe
+            ],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let ranked = scorer.rankedStations([similar, neutral])
+
+        XCTAssertEqual(ranked.map(\.station.id), [neutral.id, similar.id])
+        XCTAssertTrue(scorer.rank(similar).reasons.contains(.negativeTag))
+        XCTAssertEqual(
+            TuneAVLocalRecommendationScorer.localizedSummary(for: .negativeTag),
+            L10n.string("recommendations.reason.negativeTag")
+        )
+    }
+
+    func testLocalRecommendationScorerUsesStableIDTieBreak() {
+        let zebra = recommendationStation(id: "zebra", tags: "news")
+        let alpha = recommendationStation(id: "alpha", tags: "news")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "",
+            date: Date(timeIntervalSince1970: 0)
+        )
+
+        let ranked = scorer.rankedStations([zebra, alpha])
+
+        XCTAssertEqual(ranked.map(\.station.id), ["alpha", "zebra"])
+    }
+
+    func testLocalRecommendationScorerExplainsCountryTimeAndFrequentTagSignals() {
+        let recent = recommendationStation(id: "recent", tags: "jazz")
+        let favorite = recommendationStation(id: "favorite", tags: "jazz")
+        let candidate = recommendationStation(id: "candidate", tags: "jazz, ambient", countryCode: "ES")
+        let evening = Date(timeIntervalSince1970: 68_400)
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [favorite],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "",
+            currentCountryCode: "ES",
+            date: evening
+        )
+
+        let rank = scorer.rank(candidate)
+
+        XCTAssertTrue(rank.reasons.contains(.frequentTag))
+        XCTAssertTrue(rank.reasons.contains(.currentCountryPreference))
+        XCTAssertTrue(rank.reasons.contains(.timeOfDay))
+    }
+
+    func testLocalRecommendationScorerBoostsRecentDiscoveries() {
+        let recentStation = recommendationStation(id: "recent-discovery", tags: "news")
+        let oldStation = recommendationStation(id: "old-discovery", tags: "news")
+        let now = Date(timeIntervalSince1970: 200_000)
+        let recentDiscovery = DiscoveredTrack(
+            title: "Fresh Song",
+            artist: "Artist",
+            station: recentStation,
+            artworkURL: nil,
+            playedAt: now.addingTimeInterval(-60 * 60)
+        )
+        let oldDiscovery = DiscoveredTrack(
+            title: "Old Song",
+            artist: "Artist",
+            station: oldStation,
+            artworkURL: nil,
+            playedAt: now.addingTimeInterval(-7 * 24 * 60 * 60)
+        )
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [oldDiscovery, recentDiscovery],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "",
+            date: now
+        )
+
+        let ranked = scorer.rankedStations([oldStation, recentStation])
+
+        XCTAssertEqual(ranked.map(\.station.id), [recentStation.id, oldStation.id])
+        XCTAssertTrue(scorer.rank(recentStation).reasons.contains(.recentDiscovery))
+        XCTAssertEqual(
+            TuneAVLocalRecommendationScorer.localizedSummary(for: .recentDiscovery),
+            L10n.string("recommendations.reason.recentDiscovery")
+        )
+    }
+
+    func testHomeAroundYouSelectorPrefersCountryMatches() {
+        let first = recommendationStation(id: "first", tags: "news", countryCode: "US")
+        let local = recommendationStation(id: "local", tags: "jazz", countryCode: "ES")
+        let secondLocal = recommendationStation(id: "second-local", tags: "pop", countryCode: "ES")
+
+        let selected = HomeAroundYouStationSelector.select(
+            from: [first, local, secondLocal],
+            excluding: [first.id],
+            countryCode: "ES",
+            limit: 6
+        )
+
+        XCTAssertEqual(selected.map(\.id), [local.id, secondLocal.id])
+    }
+
+    func testHomeAroundYouSelectorFallsBackWhenCountryHasNoMatches() {
+        let first = recommendationStation(id: "first", tags: "news", countryCode: "US")
+        let second = recommendationStation(id: "second", tags: "jazz", countryCode: "FR")
+        let third = recommendationStation(id: "third", tags: "pop", countryCode: "DE")
+
+        let selected = HomeAroundYouStationSelector.select(
+            from: [first, second, third],
+            excluding: [first.id],
+            countryCode: "ES",
+            limit: 6
+        )
+
+        XCTAssertEqual(selected.map(\.id), [second.id, third.id])
+    }
+
     private func queryValue(_ name: String, in url: URL?) -> String? {
         guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil

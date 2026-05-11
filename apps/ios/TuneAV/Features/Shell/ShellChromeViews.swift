@@ -12,7 +12,9 @@ struct ShellBrandHeader: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: chromeActions.openSettings) {
+            Button {
+                chromeActions.openSettings()
+            } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textPrimary)
@@ -36,7 +38,9 @@ struct ShellBrandHeader: View {
 
             Spacer(minLength: 8)
 
-            Button(action: chromeActions.openAccount) {
+            Button {
+                chromeActions.openAccount()
+            } label: {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textPrimary)

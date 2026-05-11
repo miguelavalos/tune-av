@@ -1,11 +1,17 @@
 import SwiftUI
 
 struct ProfileScreen: View {
+    enum Mode {
+        case account
+        case settings
+    }
+
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var themeController: AppThemeController
     @EnvironmentObject private var libraryStore: LibraryStore
 
+    let mode: Mode
     let startSignInFlow: (Bool) -> Void
     let bottomContentPadding: CGFloat
 
@@ -21,29 +27,19 @@ struct ProfileScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(statusTitle: L10n.string("profile.statusTitle.account"))
+                ShellBrandHeader(statusTitle: statusTitle)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(L10n.string("profile.title"))
+                    Text(screenTitle)
                         .font(.system(size: 34, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textPrimary)
 
-                    Text(L10n.string("profile.subtitle"))
+                    Text(screenSubtitle)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                 }
 
-                profileSummaryCard
-                appPreferencesCard
-                localDataCard
-                if accessController.capabilities.canUseCloudSync {
-                    cloudSyncCard
-                }
-                helpAndLegalCard
-
-                if accessController.accessMode != .guest {
-                    accountSafetyCard
-                }
+                screenContent
             }
             .padding(24)
             .padding(.bottom, bottomContentPadding)
@@ -73,6 +69,24 @@ struct ProfileScreen: View {
         }
         .sheet(isPresented: $isShowingAccountDeletion) {
             AccountDeletionScreen(viewModel: accountDeletionViewModel)
+        }
+    }
+
+    @ViewBuilder
+    private var screenContent: some View {
+        switch mode {
+        case .account:
+            profileSummaryCard
+            if accessController.capabilities.canUseCloudSync {
+                cloudSyncCard
+            }
+            if accessController.accessMode != .guest {
+                accountSafetyCard
+            }
+        case .settings:
+            appPreferencesCard
+            localDataCard
+            helpAndLegalCard
         }
     }
 
@@ -197,24 +211,16 @@ struct ProfileScreen: View {
 
             languageSelector
 
-            if accessController.accessMode == .guest {
-                ShellRow(
-                    systemImage: "sparkles",
-                    title: L10n.string("profile.preferences.accountPerk.title"),
-                    detail: L10n.string("profile.preferences.accountPerk.detail")
+            ShellRow(
+                systemImage: "music.note.list",
+                title: L10n.string("profile.preferences.preferredGenre.title"),
+                detail: L10n.string(
+                    "profile.preferences.preferredGenre.detail",
+                    preferredGenreLabel
                 )
-            } else {
-                ShellRow(
-                    systemImage: "music.note.list",
-                    title: L10n.string("profile.preferences.preferredGenre.title"),
-                    detail: L10n.string(
-                        "profile.preferences.preferredGenre.detail",
-                        preferredGenreLabel
-                    )
-                )
+            )
 
-                preferredGenreSelector
-            }
+            preferredGenreSelector
 
             ShellRow(
                 systemImage: "circle.lefthalf.filled",
@@ -404,6 +410,33 @@ struct ProfileScreen: View {
             accessController.accountUser?.emailAddress
                 ?? accessController.accountUser?.id
                 ?? L10n.string("profile.subtitle.accountFallback")
+        }
+    }
+
+    private var statusTitle: String {
+        switch mode {
+        case .account:
+            L10n.string("profile.statusTitle.account")
+        case .settings:
+            L10n.string("profile.statusTitle.settings")
+        }
+    }
+
+    private var screenTitle: String {
+        switch mode {
+        case .account:
+            L10n.string("profile.accountScreen.title")
+        case .settings:
+            L10n.string("profile.settingsScreen.title")
+        }
+    }
+
+    private var screenSubtitle: String {
+        switch mode {
+        case .account:
+            L10n.string("profile.accountScreen.subtitle")
+        case .settings:
+            L10n.string("profile.settingsScreen.subtitle")
         }
     }
 

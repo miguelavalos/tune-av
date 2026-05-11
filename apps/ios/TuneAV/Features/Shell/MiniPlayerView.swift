@@ -2,13 +2,18 @@ import SwiftUI
 
 struct MiniPlayerView: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
+    @EnvironmentObject private var libraryStore: LibraryStore
 
     let station: Station
     let openPlayer: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            miniArtwork
+            ZStack(alignment: .topLeading) {
+                miniArtwork
+                feedbackBadge
+                    .offset(x: -5, y: -5)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(station.name)
@@ -93,6 +98,23 @@ struct MiniPlayerView: View {
         .accessibilityLabel(L10n.string("shell.miniPlayer.accessibility.label", station.name))
         .accessibilityHint(L10n.string("shell.miniPlayer.accessibility.hint"))
         .accessibilityIdentifier("miniPlayer.container")
+    }
+
+    @ViewBuilder
+    private var feedbackBadge: some View {
+        if let feedback = libraryStore.feedback(for: station) {
+            Image(systemName: feedback.systemImage)
+                .font(.system(size: 9, weight: .black))
+                .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
+                .frame(width: 22, height: 22)
+                .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.78), lineWidth: 1)
+                }
+                .accessibilityLabel(feedback.localizedState)
+                .accessibilityIdentifier("miniPlayer.feedback")
+        }
     }
 
     @ViewBuilder

@@ -339,6 +339,16 @@ struct NowPlayingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
+
+            if !playerAviContextPrompts(for: station).isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(playerAviContextPrompts(for: station), id: \.self) { prompt in
+                        PlayerAviContextPill(title: prompt)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("player.avi.context")
+            }
         }
         .padding(.horizontal, compact ? 14 : 18)
         .padding(.vertical, compact ? 12 : 18)
@@ -390,9 +400,65 @@ struct NowPlayingView: View {
                 .lineLimit(1)
                 .padding(.top, compact ? 0 : 2)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            playerFeedbackRow(for: station, compact: compact)
+                .padding(.top, compact ? 2 : 4)
         }
         .frame(width: contentWidth, alignment: .leading)
         .frame(minHeight: minHeight, alignment: .topLeading)
+    }
+
+    private func playerFeedbackRow(for station: Station, compact: Bool) -> some View {
+        let activeFeedback = libraryStore.feedback(for: station)
+
+        return HStack(spacing: 8) {
+            ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+                Button {
+                    let nextFeedback = activeFeedback == feedback ? nil : feedback
+                    libraryStore.setFeedback(nextFeedback, for: station)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    Image(systemName: feedback.systemImage)
+                        .font(.system(size: compact ? 11 : 12, weight: .black))
+                        .foregroundStyle(activeFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse.opacity(0.76))
+                        .frame(width: compact ? 32 : 36, height: compact ? 28 : 32)
+                        .background(
+                            activeFeedback == feedback ? TuneAVTheme.highlight : Color.white.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(activeFeedback == feedback ? TuneAVTheme.highlight.opacity(0.44) : Color.white.opacity(0.12), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(feedback.localizedState)
+                .accessibilityValue(activeFeedback == feedback ? L10n.string("common.selected") : "")
+                .accessibilityIdentifier("player.station.feedback.\(feedback.rawValue)")
+            }
+
+            if activeFeedback != nil {
+                Button {
+                    libraryStore.setFeedback(nil, for: station)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: compact ? 10 : 11, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textInverse.opacity(0.82))
+                        .frame(width: compact ? 28 : 32, height: compact ? 28 : 32)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.string("shell.stationFeedback.clear"))
+                .accessibilityIdentifier("player.station.feedback.clear")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("player.station.feedback")
     }
 
     private func playerControls(contentWidth: CGFloat, compact: Bool) -> some View {
@@ -829,6 +895,38 @@ struct NowPlayingView: View {
         return L10n.string("player.avi.detail.neutral")
     }
 
+    private func playerAviContextPrompts(for station: Station) -> [String] {
+        var prompts: [String] = []
+
+        if let feedback = libraryStore.feedback(for: station) {
+            prompts.append(feedback.localizedState)
+        }
+
+        if isCurrentTrackSaved {
+            prompts.append(L10n.string("player.discovery.savedShort"))
+        } else if hasDiscoverableTrack {
+            prompts.append(L10n.string("player.discovery.stateNew"))
+        }
+
+        if let country = playerStationCountryPrompt(for: station) {
+            prompts.append(country)
+        }
+
+        if let tag = station.normalizedTags.first {
+            prompts.append(tag.capitalized(with: L10n.locale))
+        }
+
+        return Array(prompts.prefix(3))
+    }
+
+    private func playerStationCountryPrompt(for station: Station) -> String? {
+        if let countryCode = TuneAVCountry.sanitizedCode(station.countryCode) {
+            return L10n.countryName(for: countryCode)
+        }
+
+        return TuneAVText.normalizedValue(station.country, excluding: Station.unknownDetailValues, locale: L10n.locale)
+    }
+
     private var homepageURL: URL? {
         audioPlayer.currentStation?.resolvedHomepageURL
     }
@@ -971,6 +1069,25 @@ struct NowPlayingView: View {
 
     private func isVerticalDismissSwipe(_ value: DragGesture.Value) -> Bool {
         value.translation.height > 0 && abs(value.translation.height) > abs(value.translation.width)
+    }
+}
+
+private struct PlayerAviContextPill: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 10, weight: .black))
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .foregroundStyle(TuneAVTheme.textInverse.opacity(0.86))
+            .padding(.horizontal, 8)
+            .frame(height: 25)
+            .background(Color.white.opacity(0.08), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            }
     }
 }
 

@@ -30,6 +30,7 @@ struct AppShellView: View {
     @State private var stationNowPlayingTracks: [String: NowPlayingTrack] = [:]
     @State private var stationNowPlayingCache: [String: CachedStationNowPlaying] = [:]
     @State private var didBootstrap = false
+    @State private var profileMode: ProfileScreen.Mode = .settings
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
@@ -91,9 +92,11 @@ struct AppShellView: View {
         .environmentObject(chromeActions)
         .onAppear {
             chromeActions.openSettings = {
+                profileMode = .settings
                 selectedTab = .profile
             }
             chromeActions.openAccount = {
+                profileMode = .account
                 selectedTab = .profile
             }
         }
@@ -206,15 +209,25 @@ struct AppShellView: View {
                 stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
                 preferredTag: libraryStore.settings.preferredTag,
+                preferredCountryCode: libraryStore.settings.preferredCountry,
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
                 openAvi: {
                     selectedTab = .avi
                 },
+                openSearchTag: { tag in
+                    searchQuery = ""
+                    searchCountryCode = nil
+                    searchTag = tag
+                    selectedTab = .search
+                },
                 refreshHome: refreshHomePresentationAndFeed,
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
+                setStationFeedback: { station, feedback in
+                    libraryStore.setFeedback(feedback, for: station)
+                },
                 showStationDetails: showStationDetails
             )
         case .search:
@@ -230,6 +243,7 @@ struct AppShellView: View {
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
+                stationFeedback: libraryStore.stationFeedback,
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
                 showStationDetails: showStationDetails
@@ -244,6 +258,7 @@ struct AppShellView: View {
                 stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
                 preferredTag: libraryStore.settings.preferredTag,
+                preferredCountryCode: libraryStore.settings.preferredCountry,
                 bottomContentPadding: shellScrollBottomPadding,
                 openSearch: {
                     selectedTab = .search
@@ -258,6 +273,9 @@ struct AppShellView: View {
                 playStation: { station, queue in
                     playStation(station, queueSource: .homeDiscovery, queue: queue)
                 },
+                setStationFeedback: { station, feedback in
+                    libraryStore.setFeedback(feedback, for: station)
+                },
                 showStationDetails: { station, queue in
                     showStationDetails(station, queueSource: .homeDiscovery, queue: queue)
                 }
@@ -269,6 +287,7 @@ struct AppShellView: View {
                 bottomContentPadding: shellScrollBottomPadding,
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
+                stationFeedback: libraryStore.stationFeedback,
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
                 showStationDetails: showStationDetails
@@ -288,6 +307,7 @@ struct AppShellView: View {
             )
         case .profile:
             ProfileScreen(
+                mode: profileMode,
                 startSignInFlow: startSignInFlow,
                 bottomContentPadding: shellScrollBottomPadding
             )
@@ -325,7 +345,7 @@ struct AppShellView: View {
     private var shellScrollBottomPadding: CGFloat {
         // The footer is visually detached and floats above scroll content,
         // so scrollable screens need extra trailing space to bring the last row above it.
-        audioPlayer.currentStation == nil ? 96 : 168
+        audioPlayer.currentStation == nil ? 176 : 224
     }
 
     private var stationNowPlayingRequestKey: String {
@@ -1025,11 +1045,13 @@ private struct AviScreen: View {
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
     let preferredTag: String
+    let preferredCountryCode: String
     let bottomContentPadding: CGFloat
     let openSearch: () -> Void
     let openLibrary: () -> Void
     let openPlayer: () -> Void
     let playStation: (Station, [Station]) -> Void
+    let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
     let showStationDetails: (Station, [Station]) -> Void
 
     var body: some View {
@@ -1154,6 +1176,18 @@ private struct AviScreen: View {
                     .accessibilityIdentifier("avi.recommendation.details")
                 }
 
+                StationFeedbackControl(
+                    selectedFeedback: stationFeedback[recommendation.station.id],
+                    selectFeedback: { feedback in
+                        let nextFeedback = stationFeedback[recommendation.station.id] == feedback ? nil : feedback
+                        setStationFeedback(recommendation.station, nextFeedback)
+                    },
+                    clearFeedback: {
+                        setStationFeedback(recommendation.station, nil)
+                    }
+                )
+                .padding(.top, 2)
+
                 if !secondaryRecommendations.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(L10n.string("shell.avi.recommendation.nextTitle"))
@@ -1164,8 +1198,16 @@ private struct AviScreen: View {
                             AviRecommendationRow(
                                 station: recommendation.station,
                                 reason: recommendation.reason,
+                                selectedFeedback: stationFeedback[recommendation.station.id],
                                 playAction: {
                                     playStation(recommendation.station, recommendationQueue)
+                                },
+                                feedbackAction: { feedback in
+                                    let nextFeedback = stationFeedback[recommendation.station.id] == feedback ? nil : feedback
+                                    setStationFeedback(recommendation.station, nextFeedback)
+                                },
+                                clearFeedback: {
+                                    setStationFeedback(recommendation.station, nil)
                                 },
                                 detailsAction: {
                                     showStationDetails(recommendation.station, recommendationQueue)
@@ -1215,19 +1257,29 @@ private struct AviScreen: View {
             AviSignalRow(
                 title: L10n.string("shell.avi.signals.recent.title"),
                 detail: recentStations.isEmpty ? L10n.string("shell.avi.signals.recent.empty") : L10n.string("shell.avi.signals.recent.count", recentStations.count),
-                systemImage: "clock.arrow.circlepath"
+                systemImage: "clock.arrow.circlepath",
+                accessibilityIdentifier: "avi.signals.recent"
             )
 
             AviSignalRow(
                 title: L10n.string("shell.avi.signals.saved.title"),
                 detail: favoriteStations.isEmpty ? L10n.string("shell.avi.signals.saved.empty") : L10n.string("shell.avi.signals.saved.count", favoriteStations.count),
-                systemImage: "heart"
+                systemImage: "heart",
+                accessibilityIdentifier: "avi.signals.saved"
+            )
+
+            AviSignalRow(
+                title: L10n.string("shell.avi.signals.discoveries.title"),
+                detail: recentDiscoveryCount == 0 ? L10n.string("shell.avi.signals.discoveries.empty") : L10n.string("shell.avi.signals.discoveries.count", recentDiscoveryCount),
+                systemImage: "sparkles",
+                accessibilityIdentifier: "avi.signals.discoveries"
             )
 
             AviSignalRow(
                 title: L10n.string("shell.avi.signals.feedback.title"),
                 detail: feedbackSignalCount == 0 ? L10n.string("shell.avi.signals.feedback.empty") : L10n.string("shell.avi.signals.feedback.count", feedbackSignalCount),
-                systemImage: "hand.thumbsup"
+                systemImage: "hand.thumbsup",
+                accessibilityIdentifier: "avi.signals.feedback"
             )
         }
         .padding(18)
@@ -1272,7 +1324,8 @@ private struct AviScreen: View {
             discoveries: discoveries,
             stationFeedback: stationFeedback,
             feedContext: feedContext,
-            preferredTag: preferredTag
+            preferredTag: preferredTag,
+            currentCountryCode: preferredCountryCode
         )
     }
 
@@ -1317,51 +1370,120 @@ private struct AviScreen: View {
             }
         }.count
     }
+
+    private var recentDiscoveryCount: Int {
+        let cutoff = Date().addingTimeInterval(-48 * 60 * 60)
+        return discoveries.filter { discovery in
+            !discovery.isHidden && discovery.playedAt >= cutoff
+        }.count
+    }
 }
 
 private struct AviRecommendationRow: View {
     let station: Station
     let reason: String
+    let selectedFeedback: TuneAVStationFeedback?
     let playAction: () -> Void
+    let feedbackAction: (TuneAVStationFeedback) -> Void
+    let clearFeedback: () -> Void
     let detailsAction: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Button(action: playAction) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.brandBlack)
-                    .frame(width: 32, height: 32)
-                    .background(TuneAVTheme.highlight, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.avi.recommendation.play"))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Button(action: playAction) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.brandBlack)
+                        .frame(width: 32, height: 32)
+                        .background(TuneAVTheme.highlight, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.string("shell.avi.recommendation.play"))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(station.name)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(station.name)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(1)
 
-                Text(reason)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(reason)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button(action: detailsAction) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .frame(width: 34, height: 34)
+                Button(action: detailsAction) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.string("shell.avi.recommendation.details"))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.avi.recommendation.details"))
+
+            AviCompactFeedbackControl(
+                selectedFeedback: selectedFeedback,
+                selectFeedback: feedbackAction,
+                clearFeedback: clearFeedback
+            )
         }
         .padding(10)
         .background(TuneAVTheme.highlight.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityIdentifier("avi.recommendation.secondary")
+    }
+}
+
+private struct AviCompactFeedbackControl: View {
+    let selectedFeedback: TuneAVStationFeedback?
+    let selectFeedback: (TuneAVStationFeedback) -> Void
+    var clearFeedback: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+                Button {
+                    selectFeedback(feedback)
+                } label: {
+                    Image(systemName: feedback.systemImage)
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(selectedFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textSecondary)
+                        .frame(width: 34, height: 30)
+                        .background(
+                            selectedFeedback == feedback ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
+                            in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                .stroke(selectedFeedback == feedback ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(feedback.localizedState)
+                .accessibilityValue(selectedFeedback == feedback ? L10n.string("common.selected") : "")
+                .accessibilityIdentifier("avi.recommendation.feedback.\(feedback.rawValue)")
+            }
+
+            if selectedFeedback != nil, let clearFeedback {
+                Button(action: clearFeedback) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(TuneAVTheme.elevatedSurface, in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.string("shell.stationFeedback.clear"))
+                .accessibilityIdentifier("avi.recommendation.feedback.clear")
+            }
+        }
+        .accessibilityIdentifier("avi.recommendation.feedback")
     }
 }
 
@@ -1425,6 +1547,82 @@ private struct HomeAviBrief: View {
     }
 }
 
+private struct HomeMoodGenreSuggestion: Hashable {
+    let tag: String
+    let title: String
+}
+
+private struct HomeMoodGenreDesk: View {
+    let tags: [HomeMoodGenreSuggestion]
+    let selectTag: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.string("shell.home.moodsGenres.title"))
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(L10n.string("shell.home.moodsGenres.subtitle"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            FlowLayout(horizontalSpacing: 8, verticalSpacing: 8) {
+                ForEach(tags, id: \.self) { suggestion in
+                    HomeMoodGenrePill(title: suggestion.title, accessibilityID: "home.moodGenre.\(suggestion.tag)") {
+                        selectTag(suggestion.tag)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home.section.moodsGenres")
+    }
+}
+
+private struct HomeMoodGenrePill: View {
+    let title: String
+    let accessibilityID: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: "sparkle")
+                .font(.system(size: 13, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .padding(.horizontal, 12)
+                .frame(height: 36)
+                .background(TuneAVTheme.elevatedSurface, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(TuneAVTheme.borderSubtle.opacity(0.7), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityID)
+    }
+}
+
+enum HomeAroundYouStationSelector {
+    static func select(
+        from stations: [Station],
+        excluding excludedIDs: Set<String>,
+        countryCode: String,
+        limit: Int
+    ) -> [Station] {
+        let remainingStations = stations.filter { !excludedIDs.contains($0.id) }
+        let countryStations = remainingStations.filter { station in
+            TuneAVCountry.sanitizedCode(station.countryCode) == countryCode
+        }
+
+        return Array((countryStations.isEmpty ? remainingStations : countryStations).prefix(limit))
+    }
+}
+
 private struct AviActionButton: View {
     let title: String
     let systemImage: String
@@ -1451,6 +1649,7 @@ private struct AviSignalRow: View {
     let title: String
     let detail: String
     let systemImage: String
+    let accessibilityIdentifier: String
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -1471,6 +1670,8 @@ private struct AviSignalRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 
@@ -1486,13 +1687,16 @@ private struct HomeScreen: View {
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
     let preferredTag: String
+    let preferredCountryCode: String
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
     let openAvi: () -> Void
+    let openSearchTag: (String) -> Void
     let refreshHome: () async -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
+    let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
 
     private enum FeaturedSource {
@@ -1544,6 +1748,7 @@ private struct HomeScreen: View {
                         isCurrentStation: audioPlayer.isCurrent(heroStation),
                         isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
                         isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
+                        stationFeedback: stationFeedback[heroStation.id],
                         playAction: {
                             if audioPlayer.isCurrent(heroStation) {
                                 audioPlayer.togglePlayback()
@@ -1552,6 +1757,10 @@ private struct HomeScreen: View {
                             }
                         },
                         favoriteAction: { toggleFavorite(heroStation) },
+                        feedbackAction: { feedback in
+                            let nextFeedback = stationFeedback[heroStation.id] == feedback ? nil : feedback
+                            setStationFeedback(heroStation, nextFeedback)
+                        },
                         detailsAction: { showStationDetails(heroStation, featuredQueueSource, featuredQueueStations) }
                     )
 
@@ -1562,51 +1771,62 @@ private struct HomeScreen: View {
                     )
                 }
 
-                if !displayedRecentStations.isEmpty {
-                    StationSection(title: L10n.string("shell.home.recents.title"), subtitle: L10n.string("shell.home.recents.subtitle"), accessibilityIdentifier: "home.section.recents") {
-                        StationCompactCarousel(
-                            stations: displayedRecentStations,
-                            favoriteStationIDs: favoriteStationIDs,
-                            nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: { _ in nil },
-                            queueSource: .homeRecents,
-                            queueStations: recentStations,
-                            playStation: playStation,
-                            toggleFavorite: toggleFavorite,
-                            showStationDetails: showStationDetails
-                        )
-                    }
+                if !moodGenreTags.isEmpty {
+                    HomeMoodGenreDesk(tags: moodGenreTags, selectTag: openSearchTag)
                 }
 
-                if !displayedFavoriteStations.isEmpty {
-                    StationSection(title: L10n.string("shell.home.favorites.title"), subtitle: L10n.string("shell.home.favorites.subtitle"), accessibilityIdentifier: "home.section.favorites") {
-                        StationCompactCarousel(
-                            stations: displayedFavoriteStations,
-                            favoriteStationIDs: favoriteStationIDs,
-                            nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: { _ in nil },
-                            queueSource: .homeFavorites,
-                            queueStations: favoriteStations,
-                            playStation: playStation,
-                            toggleFavorite: toggleFavorite,
-                            showStationDetails: showStationDetails
-                        )
-                    }
-                }
-
-                if !displayedPopularStations.isEmpty {
+                if !displayedAviPickStations.isEmpty {
                     StationSection(
-                        title: sectionTitle,
-                        subtitle: sectionSubtitle,
-                        accessibilityIdentifier: "home.section.discovery"
+                        title: L10n.string("shell.home.aviPicks.title"),
+                        subtitle: L10n.string("shell.home.aviPicks.subtitle"),
+                        accessibilityIdentifier: "home.section.aviPicks"
                     ) {
                         StationCompactCarousel(
-                            stations: displayedPopularStations,
+                            stations: displayedAviPickStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
                             stationInsight: recommendationInsight,
+                            stationFeedback: stationFeedback,
                             queueSource: .homeDiscovery,
-                            queueStations: displayedPopularStations,
+                            queueStations: displayedAviPickStations,
+                            playStation: playStation,
+                            toggleFavorite: toggleFavorite,
+                            showStationDetails: showStationDetails
+                        )
+                    }
+                }
+
+                if !displayedAroundYouStations.isEmpty {
+                    StationSection(
+                        title: L10n.string("shell.home.aroundYou.title"),
+                        subtitle: L10n.string("shell.home.aroundYou.subtitle"),
+                        accessibilityIdentifier: "home.section.aroundYou"
+                    ) {
+                        StationCompactCarousel(
+                            stations: displayedAroundYouStations,
+                            favoriteStationIDs: favoriteStationIDs,
+                            nowPlayingTracks: nowPlayingTracks,
+                            stationInsight: recommendationInsight,
+                            stationFeedback: stationFeedback,
+                            queueSource: .homeDiscovery,
+                            queueStations: displayedAroundYouStations,
+                            playStation: playStation,
+                            toggleFavorite: toggleFavorite,
+                            showStationDetails: showStationDetails
+                        )
+                    }
+                }
+
+                if !displayedRecentStations.isEmpty || !displayedFavoriteStations.isEmpty {
+                    StationSection(title: L10n.string("shell.home.recentsFavorites.title"), subtitle: L10n.string("shell.home.recentsFavorites.subtitle"), accessibilityIdentifier: "home.section.recentsFavorites") {
+                        StationCompactCarousel(
+                            stations: displayedRecentAndFavoriteStations,
+                            favoriteStationIDs: favoriteStationIDs,
+                            nowPlayingTracks: nowPlayingTracks,
+                            stationInsight: { station in stationFeedback[station.id]?.localizedState },
+                            stationFeedback: stationFeedback,
+                            queueSource: .homeRecents,
+                            queueStations: displayedRecentAndFavoriteStations,
                             playStation: playStation,
                             toggleFavorite: toggleFavorite,
                             showStationDetails: showStationDetails
@@ -1785,6 +2005,73 @@ private struct HomeScreen: View {
         return recommendationScorer.rankedStations(candidates).map(\.station)
     }
 
+    private var displayedAviPickStations: [Station] {
+        Array(displayedPopularStations.prefix(4))
+    }
+
+    private var displayedAroundYouStations: [Station] {
+        let preferredCountry = TuneAVCountry.sanitizedCode(preferredCountryCode)
+        let currentCountry = TuneAVCountry.sanitizedCode(audioPlayer.currentStation?.countryCode)
+        let country = preferredCountry ?? currentCountry
+
+        guard let country else {
+            return Array(displayedPopularStations.dropFirst(4).prefix(6))
+        }
+
+        let aviPickIDs = Set(displayedAviPickStations.map(\.id))
+        return HomeAroundYouStationSelector.select(
+            from: displayedPopularStations,
+            excluding: aviPickIDs,
+            countryCode: country,
+            limit: 6
+        )
+    }
+
+    private var displayedRecentAndFavoriteStations: [Station] {
+        Array(AppShellNowPlayingPreviews.uniqueStations(displayedRecentStations + displayedFavoriteStations).prefix(8))
+    }
+
+    private var moodGenreTags: [HomeMoodGenreSuggestion] {
+        let sourceStations = [audioPlayer.currentStation].compactMap { $0 } + recentStations.prefix(8) + favoriteStations.prefix(8)
+        let tagCounts = sourceStations
+            .flatMap(\.normalizedTags)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+            .reduce(into: [String: Int]()) { counts, tag in
+                counts[tag, default: 0] += 1
+            }
+
+        let frequentTags = tagCounts
+            .sorted { first, second in
+                if first.value == second.value {
+                    return first.key.localizedStandardCompare(second.key) == .orderedAscending
+                }
+                return first.value > second.value
+            }
+            .map(\.key)
+
+        let preferred = preferredTag.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let combined = ([preferred] + frequentTags + visibleDiscoveryTags).filter { !$0.isEmpty }
+        var seen = Set<String>()
+
+        return combined
+            .filter { seen.insert($0).inserted }
+            .prefix(8)
+            .map { tag in
+                HomeMoodGenreSuggestion(
+                    tag: tag,
+                    title: L10n.genreLabel(for: tag).capitalized(with: L10n.locale)
+                )
+            }
+    }
+
+    private var visibleDiscoveryTags: [String] {
+        displayedPopularStations
+            .prefix(8)
+            .flatMap(\.normalizedTags)
+            .map { $0.lowercased() }
+    }
+
     private var recommendationScorer: TuneAVLocalRecommendationScorer {
         TuneAVLocalRecommendationScorer(
             currentStation: audioPlayer.currentStation,
@@ -1793,7 +2080,8 @@ private struct HomeScreen: View {
             discoveries: discoveries,
             stationFeedback: stationFeedback,
             feedContext: feedContext,
-            preferredTag: preferredTag
+            preferredTag: preferredTag,
+            currentCountryCode: preferredCountryCode
         )
     }
 
@@ -1903,6 +2191,7 @@ private struct SearchScreen: View {
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
+    let stationFeedback: [String: TuneAVStationFeedback]
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -1967,6 +2256,7 @@ private struct SearchScreen: View {
                                         isFavorite: favoriteStationIDs.contains(station.id),
                                         nowPlayingTrack: nowPlayingTracks[station.id],
                                         recommendationInsight: nil,
+                                        stationFeedback: stationFeedback[station.id],
                                         toggleFavorite: { toggleFavorite(station) },
                                         playAction: { playStation(station, .searchResults, results) },
                                         detailsAction: { showStationDetails(station, .searchResults, results) }
@@ -1979,6 +2269,7 @@ private struct SearchScreen: View {
                                 favoriteStationIDs: favoriteStationIDs,
                                 nowPlayingTracks: nowPlayingTracks,
                                 stationInsight: { _ in nil },
+                                stationFeedback: stationFeedback,
                                 queueSource: .searchResults,
                                 queueStations: results,
                                 playStation: playStation,
@@ -2074,6 +2365,7 @@ private struct LibraryScreen: View {
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
+    let stationFeedback: [String: TuneAVStationFeedback]
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -2120,6 +2412,7 @@ private struct LibraryScreen: View {
                                     isFavorite: favoriteStationIDs.contains(station.id),
                                     nowPlayingTrack: nowPlayingTracks[station.id],
                                     recommendationInsight: nil,
+                                    stationFeedback: stationFeedback[station.id],
                                     toggleFavorite: { toggleFavorite(station) },
                                     playAction: { playStation(station, .libraryFavorites, favorites) },
                                     detailsAction: { showStationDetails(station, .libraryFavorites, favorites) }
@@ -2138,6 +2431,7 @@ private struct LibraryScreen: View {
                                     isFavorite: favoriteStationIDs.contains(station.id),
                                     nowPlayingTrack: nowPlayingTracks[station.id],
                                     recommendationInsight: nil,
+                                    stationFeedback: stationFeedback[station.id],
                                     toggleFavorite: { toggleFavorite(station) },
                                     playAction: { playStation(station, .libraryRecents, recents) },
                                     detailsAction: { showStationDetails(station, .libraryRecents, recents) }
@@ -2958,8 +3252,10 @@ private struct HomeTuningDeskHero: View {
     let isCurrentStation: Bool
     let isPlaying: Bool
     let isLoading: Bool
+    let stationFeedback: TuneAVStationFeedback?
     let playAction: () -> Void
     let favoriteAction: () -> Void
+    let feedbackAction: (TuneAVStationFeedback) -> Void
     let detailsAction: () -> Void
 
     var body: some View {
@@ -2973,6 +3269,16 @@ private struct HomeTuningDeskHero: View {
                     stationText
                         .layoutPriority(1)
                     deskControls
+                    AviCompactFeedbackControl(
+                        selectedFeedback: stationFeedback,
+                        selectFeedback: feedbackAction,
+                        clearFeedback: {
+                            if let stationFeedback {
+                                feedbackAction(stationFeedback)
+                            }
+                        }
+                    )
+                    .accessibilityIdentifier("home.hero.feedback")
                 }
             }
         }
@@ -3316,6 +3622,7 @@ private struct StationCompactCarousel: View {
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
     let stationInsight: (Station) -> String?
+    var stationFeedback: [String: TuneAVStationFeedback] = [:]
     let queueSource: AudioPlayerService.PlaybackQueue.Source
     let queueStations: [Station]
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -3331,6 +3638,7 @@ private struct StationCompactCarousel: View {
                         isFavorite: favoriteStationIDs.contains(station.id),
                         nowPlayingTrack: nowPlayingTracks[station.id],
                         recommendationInsight: stationInsight(station),
+                        stationFeedback: stationFeedback[station.id],
                         toggleFavorite: { toggleFavorite(station) },
                         playAction: { playStation(station, queueSource, queueStations) },
                         detailsAction: { showStationDetails(station, queueSource, queueStations) }
@@ -3352,6 +3660,7 @@ private struct StationCompactCard: View {
     let isFavorite: Bool
     let nowPlayingTrack: NowPlayingTrack?
     let recommendationInsight: String?
+    var stationFeedback: TuneAVStationFeedback? = nil
     let toggleFavorite: () -> Void
     let playAction: () -> Void
     let detailsAction: () -> Void
@@ -3423,6 +3732,11 @@ private struct StationCompactCard: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("stationRow.play.\(station.id)")
 
+                feedbackBadge
+                    .padding(.leading, 6)
+                    .padding(.top, 6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
                 favoriteButton
                     .padding(6)
             }
@@ -3461,6 +3775,23 @@ private struct StationCompactCard: View {
         .frame(height: StationCompactMetrics.cardHeight, alignment: .top)
         .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .onTapGesture(perform: detailsAction)
+    }
+
+    @ViewBuilder
+    private var feedbackBadge: some View {
+        if let stationFeedback {
+            Image(systemName: stationFeedback.systemImage)
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(stationFeedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
+                .frame(width: 24, height: 24)
+                .background(stationFeedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.82), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(0.76), lineWidth: 1)
+                }
+                .accessibilityLabel(stationFeedback.localizedState)
+                .accessibilityIdentifier("stationRow.feedback.\(station.id)")
+        }
     }
 
     private var favoriteButton: some View {
@@ -3664,6 +3995,9 @@ private struct StationDetailSheet: View {
                         selectedFeedback: stationFeedback,
                         selectFeedback: { feedback in
                             setStationFeedback(stationFeedback == feedback ? nil : feedback)
+                        },
+                        clearFeedback: {
+                            setStationFeedback(nil)
                         }
                     )
                 }
@@ -3871,17 +4205,33 @@ private struct StationDetailTabBar: View {
 private struct StationFeedbackControl: View {
     let selectedFeedback: TuneAVStationFeedback?
     let selectFeedback: (TuneAVStationFeedback) -> Void
+    let clearFeedback: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(L10n.string("shell.stationFeedback.title"))
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textSecondary)
+            HStack(spacing: 10) {
+                Text(L10n.string("shell.stationFeedback.title"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+
+                Spacer()
+
+                if selectedFeedback != nil {
+                    Button(action: clearFeedback) {
+                        Label(L10n.string("shell.stationFeedback.clear"), systemImage: "xmark.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("stationFeedback.clear")
+                }
+            }
 
             HStack(spacing: 8) {
                 StationFeedbackButton(
                     title: L10n.string("shell.stationFeedback.like"),
                     systemImage: "hand.thumbsup.fill",
+                    feedback: .liked,
                     isSelected: selectedFeedback == .liked,
                     action: { selectFeedback(.liked) }
                 )
@@ -3889,6 +4239,7 @@ private struct StationFeedbackControl: View {
                 StationFeedbackButton(
                     title: L10n.string("shell.stationFeedback.notForMe"),
                     systemImage: "minus.circle.fill",
+                    feedback: .notForMe,
                     isSelected: selectedFeedback == .notForMe,
                     action: { selectFeedback(.notForMe) }
                 )
@@ -3896,6 +4247,7 @@ private struct StationFeedbackControl: View {
                 StationFeedbackButton(
                     title: L10n.string("shell.stationFeedback.dislike"),
                     systemImage: "hand.thumbsdown.fill",
+                    feedback: .disliked,
                     isSelected: selectedFeedback == .disliked,
                     action: { selectFeedback(.disliked) }
                 )
@@ -3908,6 +4260,7 @@ private struct StationFeedbackControl: View {
 private struct StationFeedbackButton: View {
     let title: String
     let systemImage: String
+    let feedback: TuneAVStationFeedback
     let isSelected: Bool
     let action: () -> Void
 
@@ -3931,6 +4284,8 @@ private struct StationFeedbackButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+        .accessibilityValue(isSelected ? L10n.string("common.selected") : "")
+        .accessibilityIdentifier("stationFeedback.\(feedback.rawValue)")
     }
 }
 
