@@ -716,7 +716,7 @@ struct AppShellView: View {
 
     private func loadSearchResults() async {
         let request = searchRequest
-        let requestKey = request.key
+        let requestKey = searchRequestKey
 
         searchIsLoading = true
         searchErrorMessage = nil
