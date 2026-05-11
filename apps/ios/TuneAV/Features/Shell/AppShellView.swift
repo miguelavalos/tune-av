@@ -1669,6 +1669,48 @@ private struct AviInlineBrief: View {
     }
 }
 
+private struct SearchAccessRow: View {
+    let title: String
+    let detail: String
+    let isExpanded: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 36, height: 36)
+                    .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    Text(detail)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+            }
+            .padding(14)
+            .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle.opacity(0.64), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct HomeMoodGenreSuggestion: Hashable {
     let tag: String
     let title: String
@@ -2553,6 +2595,7 @@ private struct SearchScreen: View {
 
 private struct LibraryScreen: View {
     @State private var query = ""
+    @State private var isSearchExpanded = false
 
     let favorites: [Station]
     let recents: [Station]
@@ -2600,8 +2643,6 @@ private struct LibraryScreen: View {
                     accessibilityIdentifier: "library.aviBrief"
                 )
 
-                SearchField(query: $query, prompt: L10n.string("shell.library.searchPrompt"))
-
                 StationSection(title: L10n.string("shell.library.favorites.title"), subtitle: L10n.string("shell.library.favorites.subtitle"), accessibilityIdentifier: "library.section.favorites") {
                     if filteredFavorites.isEmpty {
                         EmptyLibraryState(
@@ -2644,6 +2685,25 @@ private struct LibraryScreen: View {
                                 )
                             }
                         }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    SearchAccessRow(
+                        title: "Find more stations",
+                        detail: trimmedQuery.isEmpty ? "Search your saved and recent radios." : "Filtering collection for \(trimmedQuery).",
+                        isExpanded: isSearchExpanded || !trimmedQuery.isEmpty,
+                        action: {
+                            withAnimation(.snappy(duration: 0.22)) {
+                                isSearchExpanded.toggle()
+                            }
+                        }
+                    )
+                    .accessibilityIdentifier("library.searchAccess")
+
+                    if isSearchExpanded || !trimmedQuery.isEmpty {
+                        SearchField(query: $query, prompt: L10n.string("shell.library.searchPrompt"))
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
@@ -2703,6 +2763,7 @@ private struct MusicScreen: View {
     @State private var browserDestination: BrowserDestination?
     @State private var hiddenDiscovery: DiscoveredTrack?
     @State private var selectedArtistName: String?
+    @State private var isSearchExpanded = false
     @State private var isHeaderVisible = true
     @State private var previousScrollOffset: CGFloat = 0
 
@@ -2745,7 +2806,6 @@ private struct MusicScreen: View {
                         accessibilityIdentifier: "music.aviBrief"
                     )
 
-                    SearchField(query: $query, prompt: L10n.string("shell.music.searchPrompt"))
                     MusicSignalSummary(
                         savedCount: savedDiscoveries.count,
                         historyCount: visibleDiscoveries.count,
@@ -2761,6 +2821,25 @@ private struct MusicScreen: View {
                     )
 
                     discoveryLibrarySection
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SearchAccessRow(
+                            title: "Find tracks or artists",
+                            detail: trimmedQuery.isEmpty ? "Search Avi's detected music memory." : "Filtering music memory for \(trimmedQuery).",
+                            isExpanded: isSearchExpanded || !trimmedQuery.isEmpty,
+                            action: {
+                                withAnimation(.snappy(duration: 0.22)) {
+                                    isSearchExpanded.toggle()
+                                }
+                            }
+                        )
+                        .accessibilityIdentifier("music.searchAccess")
+
+                        if isSearchExpanded || !trimmedQuery.isEmpty {
+                            SearchField(query: $query, prompt: L10n.string("shell.music.searchPrompt"))
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
                 }
                 .padding(24)
                 .padding(.bottom, bottomContentPadding)
