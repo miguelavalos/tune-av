@@ -585,6 +585,77 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(stations.map(\.id), ["popular-ser"])
     }
 
+    func testStationServiceFallsBackToSearchWhenPopularEndpointFails() async throws {
+        var requestedPaths: [String] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedPaths.append(request.url?.path ?? "")
+
+            if request.url?.path == "/v1/tune/stations/popular" {
+                return (HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!, Data())
+            }
+
+            XCTAssertEqual(request.url?.path, "/v1/tune/stations/search")
+            XCTAssertNil(self.queryValue("q", in: request.url))
+            XCTAssertEqual(self.queryValue("countryCode", in: request.url), "ES")
+            XCTAssertEqual(self.queryValue("locale", in: request.url), "es")
+
+            let body = #"""
+            {
+              "stations": [
+                {
+                  "id": "search-popular-fallback",
+                  "name": "Search Popular Fallback",
+                  "country": "Spain",
+                  "countryCode": "ES",
+                  "state": null,
+                  "language": "Spanish",
+                  "languageCodes": ["es"],
+                  "tags": "music",
+                  "streamURL": "https://example.com/search-popular-fallback.mp3",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": null,
+                  "votes": 10,
+                  "clickCount": 20,
+                  "clickTrend": 1,
+                  "isHLS": false,
+                  "hasExtendedInfo": false,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st_rb_search_popular_fallback",
+                  "category": "music",
+                  "visibility": "public",
+                  "qualityScore": 80,
+                  "enrichmentStatus": "providerFallback",
+                  "artwork": { "status": "none", "url": null, "version": null }
+                }
+              ],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!
+        )
+
+        let stations = try await service.popularStations(
+            filters: TuneAVStationSearchFilters(query: "ignored", countryCode: "ES", locale: "es", limit: 12)
+        )
+
+        XCTAssertEqual(requestedPaths, ["/v1/tune/stations/popular", "/v1/tune/stations/search"])
+        XCTAssertEqual(stations.map(\.id), ["search-popular-fallback"])
+    }
+
     func testStationServiceFallsBackToRadioBrowserWhenAVALSYSFails() async throws {
         var requestedHosts: [String] = []
         TuneAVTestURLProtocol.requestHandler = { request in
