@@ -190,6 +190,7 @@ struct StationThumbnailView: View {
     let station: Station
     let size: CGFloat
     var surfaceStyle: StationArtworkView.SurfaceStyle = .light
+    var textMode: StationArtworkView.TextMode = .initials
     var animationOverlay: StationArtworkView.AnimationOverlay = .none
     var isAnimationActive: Bool = false
 
@@ -202,6 +203,7 @@ struct StationThumbnailView: View {
             station: station,
             size: size,
             surfaceStyle: surfaceStyle,
+            textMode: textMode,
             animationOverlay: animationOverlay,
             isAnimationActive: isAnimationActive
         )

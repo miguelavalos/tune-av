@@ -181,6 +181,7 @@ struct StationArtworkView: View {
     }
 
     enum TextMode {
+        case none
         case initials
         case stationName
     }
@@ -341,7 +342,9 @@ struct StationArtworkView: View {
                     .allowsHitTesting(false)
             }
 
-            fallbackTextPlate
+            if textMode != .none {
+                fallbackTextPlate
+            }
         }
     }
 
@@ -423,6 +426,8 @@ struct StationArtworkView: View {
 
     private var resolvedOverlayText: String {
         switch textMode {
+        case .none:
+            return ""
         case .initials:
             return fallbackText ?? TuneAVInitials.make(from: stationName ?? "Tune AV")
         case .stationName:

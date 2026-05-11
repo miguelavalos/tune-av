@@ -2318,7 +2318,7 @@ private struct SearchScreen: View {
 
     private var searchGridColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 104, maximum: 120), spacing: 12)
+            GridItem(.adaptive(minimum: 280, maximum: 420), spacing: 12)
         ]
     }
 
@@ -2454,7 +2454,7 @@ private struct LibraryScreen: View {
 
     private var stationGridColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 104, maximum: 120), spacing: 12)
+            GridItem(.adaptive(minimum: 280, maximum: 420), spacing: 12)
         ]
     }
 
@@ -3610,8 +3610,9 @@ private enum StationRowMetrics {
 }
 
 private enum StationCompactMetrics {
-    static let cardWidth: CGFloat = 112
-    static let cardHeight: CGFloat = 164
+    static let cardWidth: CGFloat = 258
+    static let cardHeight: CGFloat = 124
+    static let artworkSize: CGFloat = 96
     static let favoriteButtonSize: CGFloat = 30
     static let playBadgeSize: CGFloat = 36
     static let textLineHeight: CGFloat = 13
@@ -3691,7 +3692,7 @@ private struct StationCompactCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        HStack(alignment: .top, spacing: 11) {
             ZStack(alignment: .topTrailing) {
                 Button {
                     if audioPlayer.isCurrent(station) {
@@ -3702,12 +3703,13 @@ private struct StationCompactCard: View {
                 } label: {
                     StationThumbnailView(
                         station: station,
-                        size: StationCompactMetrics.cardWidth,
+                        size: StationCompactMetrics.artworkSize,
+                        textMode: .none,
                         animationOverlay: .none,
                         isAnimationActive: false
                     )
                         .overlay {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .fill(isCurrentStationActive ? TuneAVTheme.highlight.opacity(0.16) : .clear)
                         }
                         .overlay {
@@ -3725,7 +3727,7 @@ private struct StationCompactCard: View {
                             }
                         }
                         .overlay {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .stroke(isCurrentStationActive ? TuneAVTheme.highlight : TuneAVTheme.borderSubtle, lineWidth: isCurrentStationActive ? 2 : 1)
                         }
                 }
@@ -3741,38 +3743,47 @@ private struct StationCompactCard: View {
                     .padding(6)
             }
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(station.name)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .frame(height: 15, alignment: .leading)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(compactPrimaryLine)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(reliableArtist != nil || reliableTitle != nil ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
-                    .lineLimit(1)
-                    .frame(height: 14, alignment: .leading)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let compactSecondaryLine {
                     Text(compactSecondaryLine)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.74))
-                        .lineLimit(1)
-                        .frame(height: 13, alignment: .leading)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Color.clear
-                        .frame(height: 13)
+                    Spacer(minLength: 0)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: StationCompactMetrics.artworkSize, alignment: .topLeading)
             .contentShape(Rectangle())
             .onTapGesture(perform: detailsAction)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("stationRow.\(station.id)")
         }
+        .padding(8)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: StationCompactMetrics.cardHeight, alignment: .top)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(TuneAVTheme.cardSurface.opacity(0.72))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle.opacity(0.66), lineWidth: 1)
+                }
+        )
         .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .onTapGesture(perform: detailsAction)
     }
