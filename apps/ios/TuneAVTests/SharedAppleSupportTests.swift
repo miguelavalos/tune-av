@@ -137,7 +137,8 @@ final class SharedAppleSupportTests: XCTestCase {
 
     func testTrackMetadataParserIdentifiesStationNamesAsNotSongs() {
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Rock FM", stationName: "ROCK FM"))
-        XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Los 40 Classic", stationName: "LOS40 Classic"))
+        XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("CityBeat", stationName: "CityBeat Mainstream Radio"))
+        XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Metro Hits", stationName: "Metro Hits Central"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Classic Rock", stationName: "RADIO BOB! Classic Rock"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Dance Hits", stationName: "Capital Dance Hits UK"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Alternative", stationName: "KEXP Alternative"))
@@ -160,6 +161,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVDisplayMetadata.normalized("  Teardrop  "), "Teardrop")
         XCTAssertEqual(TuneAVDisplayMetadata.plausibleTitle("Teardrop", stationName: "Radio Nova"), "Teardrop")
         XCTAssertNil(TuneAVDisplayMetadata.plausibleTitle("Now Playing", stationName: "Radio Nova"))
+        XCTAssertNil(TuneAVDisplayMetadata.plausibleTitle("CityBeat", stationName: "CityBeat Mainstream Radio"))
         XCTAssertEqual(TuneAVDisplayMetadata.plausibleArtist("Massive Attack", stationName: "Radio Nova"), "Massive Attack")
         XCTAssertNil(TuneAVDisplayMetadata.plausibleArtist("Radio Nova", stationName: "Radio Nova"))
     }

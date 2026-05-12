@@ -412,13 +412,11 @@ struct AppShellView: View {
     private func recordCurrentTrackDiscovery() {
         guard
             let station = audioPlayer.currentStation,
-            normalizedTrackValue(audioPlayer.currentTrackTitle) != nil,
-            normalizedTrackValue(audioPlayer.currentTrackArtist) != nil,
-            !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(
+            let trackTitle = TuneAVDisplayMetadata.plausibleTitle(
                 audioPlayer.currentTrackTitle,
                 stationName: station.name
             ),
-            !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(
+            let trackArtist = TuneAVDisplayMetadata.plausibleArtist(
                 audioPlayer.currentTrackArtist,
                 stationName: station.name
             )
@@ -427,8 +425,8 @@ struct AppShellView: View {
         }
 
         libraryStore.recordDiscoveredTrack(
-            title: audioPlayer.currentTrackTitle,
-            artist: audioPlayer.currentTrackArtist,
+            title: trackTitle,
+            artist: trackArtist,
             station: station,
             artworkURL: audioPlayer.currentTrackArtworkURL,
             discoveryLimit: accessController.limits.discoveredTracks
@@ -442,10 +440,6 @@ struct AppShellView: View {
             title: launchContext.uiTestTrackTitle,
             artist: launchContext.uiTestTrackArtist
         )
-    }
-
-    private func normalizedTrackValue(_ value: String?) -> String? {
-        TuneAVDisplayMetadata.normalized(value)
     }
 
     private func bootstrapIfNeeded() async {

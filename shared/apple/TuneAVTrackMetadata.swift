@@ -270,6 +270,10 @@ enum TuneAVTrackMetadataParser {
             }
         }
 
+        if title.compact.count >= 5, stationName.compact.hasPrefix(title.compact) {
+            return true
+        }
+
         let distance = levenshteinDistance(title.compact, stationName.compact)
         let similarity = 1 - (Double(distance) / Double(longerCount))
         if longerCount >= 6, similarity >= 0.86 {
