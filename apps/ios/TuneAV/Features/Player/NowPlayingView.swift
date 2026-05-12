@@ -961,13 +961,13 @@ struct NowPlayingView: View {
             return aviReaction.assetName
         }
         if audioPlayer.hasFailure {
-            return "AviV2Thinking"
+            return "AviV2Warning"
         }
         if audioPlayer.isLoading {
-            return "AviV2Thinking"
+            return "AviV2TuneFocused"
         }
         if audioPlayer.isPlaying {
-            return "AviV2TuneHeadphones"
+            return "AviV2TuneListening"
         }
         return "AviV2NeutralFullbody"
     }
@@ -1488,7 +1488,7 @@ private enum PlayerAviReaction: Equatable {
     var assetName: String {
         switch self {
         case .happy, .saved:
-            return "AviV2TuneHeadphones"
+            return "AviV2TuneHappy"
         case .thinking:
             return "AviV2Thinking"
         case .curious:

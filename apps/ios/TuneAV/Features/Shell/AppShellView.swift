@@ -1365,7 +1365,7 @@ private struct AviScreen: View {
     }
 
     private var aviAssetName: String {
-        currentStation == nil ? "AviV2Thinking" : "AviV2TuneHeadphones"
+        currentStation == nil ? "AviV2Thinking" : "AviV2TuneListening"
     }
 
     private var aviMoodLine: String {
@@ -2416,7 +2416,7 @@ private struct SearchScreen: View {
                 .accessibilityIdentifier("search.discoveryMode")
 
                 AviInlineBrief(
-                    assetName: discoveryMode == .music ? "AviV2Thinking" : "AviV2HeadNeutral",
+                    assetName: discoveryMode == .music ? "AviV2TuneFocused" : "AviV2HeadNeutral",
                     title: L10n.string("shell.search.avi.title"),
                     detail: searchAviDetail,
                     status: discoveryMode == .music ? L10n.string("shell.search.discoveryMode.music") : L10n.string("shell.search.discoveryMode.allRadio"),
@@ -2793,7 +2793,7 @@ private struct MusicScreen: View {
                     }
 
                     AviInlineBrief(
-                        assetName: visibleDiscoveries.isEmpty ? "AviV2Thinking" : "AviV2TuneHeadphones",
+                        assetName: visibleDiscoveries.isEmpty ? "AviV2TuneListening" : "AviV2TuneFocused",
                         title: L10n.string("shell.music.avi.title"),
                         detail: musicAviDetail,
                         status: visibleDiscoveries.isEmpty ? L10n.string("shell.avi.state.listening") : L10n.string("shell.avi.state.focused"),

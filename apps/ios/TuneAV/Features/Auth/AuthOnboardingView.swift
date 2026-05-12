@@ -291,7 +291,7 @@ private struct OnboardingPaperScene: View {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: compact ? 76 : 88)
+                .frame(width: compact ? 76 : 88, height: compact ? 43 : 50)
                 .opacity(0.9)
                 .padding(.top, 18)
                 .padding(.leading, 18)
@@ -318,7 +318,7 @@ private struct BrandHeaderBadge: View {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 146)
+                .frame(width: 146, height: 52)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tune AV")

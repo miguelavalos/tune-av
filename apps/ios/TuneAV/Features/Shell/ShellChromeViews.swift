@@ -34,7 +34,7 @@ struct ShellBrandHeader: View {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 132)
+                .frame(width: 132, height: 44)
 
             Spacer(minLength: 8)
 

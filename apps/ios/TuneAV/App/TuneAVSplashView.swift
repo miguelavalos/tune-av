@@ -25,7 +25,7 @@ struct TuneAVSplashView: View {
                 Image("OnboardingWordmark")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 174)
+                    .frame(width: 174, height: 98)
                     .opacity(contentVisible ? 1 : 0)
 
                 SplashTuningScene()
@@ -109,7 +109,7 @@ private struct SplashTuningScene: View {
                 .offset(x: -70, y: -34)
                 .shadow(color: TuneAVTheme.brandGraphite.opacity(0.16), radius: 12, y: 7)
 
-            Image("AviV2TuneHeadphones")
+            Image("AviV2TuneListening")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 166, height: 166)
