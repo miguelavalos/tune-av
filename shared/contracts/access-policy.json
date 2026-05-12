@@ -6,7 +6,7 @@
       "planTier": "free",
       "capabilities": {
         "isSignedIn": false,
-        "canUseBackend": false,
+        "canUseBackend": true,
         "canUsePremiumFeatures": false,
         "canUseCloudSync": false,
         "canManagePlan": false
@@ -28,7 +28,7 @@
       "planTier": "free",
       "capabilities": {
         "isSignedIn": true,
-        "canUseBackend": false,
+        "canUseBackend": true,
         "canUsePremiumFeatures": false,
         "canUseCloudSync": false,
         "canManagePlan": true

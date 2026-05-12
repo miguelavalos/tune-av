@@ -208,7 +208,7 @@ struct AccessCapabilities: Codable, Equatable {
     }
 
     var isLocalOnly: Bool {
-        !canUseBackend && !canUseCloudSync
+        !canUseCloudSync
     }
 
     var usesBackend: Bool {
@@ -287,7 +287,7 @@ enum TuneAVAccessPolicy {
         case "guest":
             TuneAVAccessCapabilityValues(
                 isSignedIn: false,
-                canUseBackend: false,
+                canUseBackend: true,
                 canAccessPremiumFeatures: false,
                 canUseCloudSync: false,
                 canManagePlan: false
@@ -295,7 +295,7 @@ enum TuneAVAccessPolicy {
         case "signedInFree":
             TuneAVAccessCapabilityValues(
                 isSignedIn: true,
-                canUseBackend: false,
+                canUseBackend: true,
                 canAccessPremiumFeatures: false,
                 canUseCloudSync: false,
                 canManagePlan: true

@@ -37,7 +37,7 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(limits.discoverySharesPerDay, 1)
     }
 
-    func testSignedInFreeLimitsAreHigherButStillLocalOnly() {
+    func testSignedInFreeLimitsAreHigherAndBackendEnabledButCloudSyncLocalOnly() {
         let limits = AccessLimits.forMode(.signedInFree)
         let capabilities = AccessCapabilities.forMode(.signedInFree)
 
@@ -53,7 +53,7 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(limits.discoverySharesPerDay, 3)
         XCTAssertTrue(capabilities.isSignedIn)
         XCTAssertTrue(capabilities.isLocalOnly)
-        XCTAssertFalse(capabilities.canUseBackend)
+        XCTAssertTrue(capabilities.canUseBackend)
         XCTAssertFalse(capabilities.canUseCloudSync)
         XCTAssertFalse(capabilities.canAccessPremiumFeatures)
     }

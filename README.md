@@ -6,7 +6,7 @@ This repository contains the active Tune AV iOS and macOS clients together with 
 
 The current product targets are `iOS` and `macOS`.
 
-When configured by the app operator, the Apple clients can resolve signed-in access from Account AV while remaining local-first by default.
+When configured by the app operator, the Apple clients can resolve access from Account AV and use bounded backend services while keeping the user library local unless Cloud Sync is enabled.
 
 ## License
 
@@ -41,7 +41,7 @@ shared/
 - `apps/macos` is active again and targets Mac App Store parity with iOS
 - `shared/apple` is the shared Swift implementation root for Apple-domain behavior
 - `shared/contracts` is reserved for platform-neutral contracts when a non-Apple consumer exists
-- the repo remains local-first overall, and account-platform adoption is intentionally narrow
+- the repo keeps user library storage local unless Cloud Sync is enabled, and account-platform adoption is intentionally narrow
 - current product focus is App Store distribution for `tune-av iOS` and `tune-av macOS`
 
 ## Local Setup
