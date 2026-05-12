@@ -405,7 +405,7 @@ private struct CallToActionSection: View {
             }
             .overlay(alignment: .topTrailing) {
                 AviOnboardingCompanion()
-                    .offset(x: -2, y: -96)
+                    .offset(x: -2, y: -112)
                     .allowsHitTesting(false)
             }
 
