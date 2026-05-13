@@ -241,21 +241,21 @@
 "profile.safety.title" = "Kontosicherheit";
 
 "accountDeletion.accountWebsiteLink" = "Auf der Apps AV-Kontowebsite verwalten";
-"accountDeletion.blocked.detail" = "Apps AV sagt, dass dieses gemeinsame Konto hier noch nicht gelöscht werden kann. Die vollständige Löschung kann auf der Apps AV-Kontowebsite verwaltet werden.";
+"accountDeletion.blocked.detail" = "Apps AV kann die Loeschung hier nicht abschliessen, weil eine erforderliche Abhaengigkeit nicht verfuegbar ist. Die vollstaendige Loeschung kann auf der Apps AV-Kontowebsite verwaltet werden.";
 "accountDeletion.blocked.title" = "Löschen ist blockiert";
 "accountDeletion.blocker.job.title" = "Löschung läuft bereits";
-"accountDeletion.blocker.linkedApp.detail" = "Dieses gemeinsame Apps AV-Konto ist noch mit einer anderen App verknüpft.";
+"accountDeletion.blocker.linkedApp.detail" = "Durch das Loeschen dieses gemeinsamen Apps AV-Kontos werden auch diese App-Verknuepfung und ihre Suite-Daten entfernt.";
 "accountDeletion.blocker.linkedApp.title" = "Verknüpfte Apps AV-App";
-"accountDeletion.blocker.pro.detail" = "Aktiver Pro-Zugriff muss enden, bevor das gemeinsame Apps AV-Konto gelöscht werden kann.";
+"accountDeletion.blocker.pro.detail" = "Dieser Pro-Zugriff wird aus Apps AV-Datensaetzen entfernt. Die Abrechnung kann beim Anbieter weiterlaufen, bis sie gekuendigt wird oder ablaeuft.";
 "accountDeletion.blocker.pro.title" = "Aktiver Pro-Zugriff";
-"accountDeletion.blocker.subscription.detail" = "Kündige das Anbieter-Abonnement oder warte bis zum Ablauf, bevor du dieses Konto löschst.";
+"accountDeletion.blocker.subscription.detail" = "Die Abrechnung kann beim Anbieter weiterlaufen, bis das Abonnement gekuendigt wird oder ablaeuft.";
 "accountDeletion.blocker.subscription.title" = "Aktives Abonnement";
 "accountDeletion.completed.detail" = "Apps AV hat das gemeinsame Konto gelöscht. Diese App kehrt in den Gastmodus zurück.";
 "accountDeletion.completed.title" = "Konto gelöscht";
 "accountDeletion.confirm.instructions" = "Gib DELETE ein, um das Löschen des gemeinsamen Apps AV-Kontos zu bestätigen.";
 "accountDeletion.deleteButton" = "Apps AV-Konto löschen";
 "accountDeletion.deleting" = "Konto wird gelöscht...";
-"accountDeletion.eligible.detail" = "Apps AV meldet keine verknüpften Apps, keinen aktiven Pro-Zugriff und keine aktiven Anbieter-Abonnements, die das Löschen blockieren.";
+"accountDeletion.eligible.detail" = "Pruefe die Warnungen und bestaetige dann die Loeschung des gemeinsamen Apps AV-Kontos.";
 "accountDeletion.eligible.title" = "Bereit zum Löschen";
 "accountDeletion.error.finalize" = "Diese App konnte die Löschung nicht abschließen. Versuche es gleich erneut.";
 "accountDeletion.error.load" = "Diese App konnte den Löschstatus nicht laden. Das Löschen bleibt blockiert.";

@@ -242,21 +242,21 @@
 "profile.safety.title" = "Seguridad de la cuenta";
 
 "accountDeletion.accountWebsiteLink" = "Gestionar en la web de cuenta Apps AV";
-"accountDeletion.blocked.detail" = "Apps AV indica que esta cuenta compartida no se puede eliminar desde aquí todavía. Puedes gestionar la eliminación completa en la web de cuenta de Apps AV.";
+"accountDeletion.blocked.detail" = "Apps AV no puede completar la eliminación aquí porque falta una dependencia necesaria. Puedes gestionar la eliminación completa en la web de cuenta de Apps AV.";
 "accountDeletion.blocked.title" = "La eliminación está bloqueada";
 "accountDeletion.blocker.job.title" = "Ya hay una eliminación en curso";
-"accountDeletion.blocker.linkedApp.detail" = "Esta cuenta compartida de Apps AV sigue vinculada a otra app.";
+"accountDeletion.blocker.linkedApp.detail" = "Eliminar esta cuenta compartida de Apps AV también elimina este vínculo de app y sus datos de la suite.";
 "accountDeletion.blocker.linkedApp.title" = "App Apps AV vinculada";
-"accountDeletion.blocker.pro.detail" = "El acceso Pro activo debe finalizar antes de eliminar la cuenta compartida de Apps AV.";
+"accountDeletion.blocker.pro.detail" = "Este acceso Pro se retirará de los registros de Apps AV. La facturación puede continuar en el proveedor hasta que se cancele o expire.";
 "accountDeletion.blocker.pro.title" = "Acceso Pro activo";
-"accountDeletion.blocker.subscription.detail" = "Cancela o deja expirar la suscripción del proveedor antes de eliminar esta cuenta.";
+"accountDeletion.blocker.subscription.detail" = "La facturación puede continuar en el proveedor hasta que la suscripción se cancele o expire.";
 "accountDeletion.blocker.subscription.title" = "Suscripción activa";
 "accountDeletion.completed.detail" = "Apps AV ha eliminado la cuenta compartida. Esta app volverá al modo invitado.";
 "accountDeletion.completed.title" = "Cuenta eliminada";
 "accountDeletion.confirm.instructions" = "Escribe DELETE para confirmar que quieres eliminar la cuenta compartida de Apps AV.";
 "accountDeletion.deleteButton" = "Eliminar cuenta de Apps AV";
 "accountDeletion.deleting" = "Eliminando cuenta...";
-"accountDeletion.eligible.detail" = "Apps AV no informa de apps vinculadas, acceso Pro activo ni suscripciones activas que bloqueen la eliminación.";
+"accountDeletion.eligible.detail" = "Revisa las advertencias y confirma para solicitar la eliminación de la cuenta compartida de Apps AV.";
 "accountDeletion.eligible.title" = "Lista para solicitar eliminación";
 "accountDeletion.error.finalize" = "Esta app no ha podido finalizar la eliminación. Inténtalo de nuevo en un momento.";
 "accountDeletion.error.load" = "Esta app no ha podido cargar el estado de eliminación. La eliminación sigue bloqueada.";

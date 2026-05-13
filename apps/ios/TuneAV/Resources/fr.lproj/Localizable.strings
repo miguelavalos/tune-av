@@ -241,21 +241,21 @@
 "profile.safety.title" = "Sécurité du compte";
 
 "accountDeletion.accountWebsiteLink" = "Gérer sur le site du compte Apps AV";
-"accountDeletion.blocked.detail" = "Apps AV indique que ce compte partagé ne peut pas encore être supprimé ici. Vous pouvez gérer la suppression complète sur le site du compte Apps AV.";
+"accountDeletion.blocked.detail" = "Apps AV ne peut pas terminer la suppression ici car une dependance requise est indisponible. Vous pouvez gerer la suppression complete sur le site du compte Apps AV.";
 "accountDeletion.blocked.title" = "Suppression bloquée";
 "accountDeletion.blocker.job.title" = "Suppression déjà en cours";
-"accountDeletion.blocker.linkedApp.detail" = "Ce compte Apps AV partagé est encore lié à une autre app.";
+"accountDeletion.blocker.linkedApp.detail" = "Supprimer ce compte Apps AV partage supprime aussi ce lien d'app et ses donnees de la suite.";
 "accountDeletion.blocker.linkedApp.title" = "App Apps AV liée";
-"accountDeletion.blocker.pro.detail" = "L'accès Pro actif doit prendre fin avant de supprimer le compte Apps AV partagé.";
+"accountDeletion.blocker.pro.detail" = "Cet acces Pro sera retire des enregistrements Apps AV. La facturation peut continuer chez le fournisseur jusqu'a annulation ou expiration.";
 "accountDeletion.blocker.pro.title" = "Accès Pro actif";
-"accountDeletion.blocker.subscription.detail" = "Annulez ou laissez expirer l'abonnement du fournisseur avant de supprimer ce compte.";
+"accountDeletion.blocker.subscription.detail" = "La facturation peut continuer chez le fournisseur jusqu'a annulation ou expiration de l'abonnement.";
 "accountDeletion.blocker.subscription.title" = "Abonnement actif";
 "accountDeletion.completed.detail" = "Apps AV a supprimé le compte partagé. Cette app revient en mode invité.";
 "accountDeletion.completed.title" = "Compte supprimé";
 "accountDeletion.confirm.instructions" = "Saisissez DELETE pour confirmer la suppression du compte Apps AV partagé.";
 "accountDeletion.deleteButton" = "Supprimer le compte Apps AV";
 "accountDeletion.deleting" = "Suppression du compte...";
-"accountDeletion.eligible.detail" = "Apps AV ne signale aucune app liée, aucun accès Pro actif ni abonnement fournisseur actif bloquant la suppression.";
+"accountDeletion.eligible.detail" = "Consultez les avertissements, puis confirmez pour demander la suppression du compte Apps AV partage.";
 "accountDeletion.eligible.title" = "Prêt à demander la suppression";
 "accountDeletion.error.finalize" = "Cette app n'a pas pu finaliser la suppression. Réessayez dans un instant.";
 "accountDeletion.error.load" = "Cette app n'a pas pu charger l'état de suppression. La suppression reste bloquée.";

@@ -241,21 +241,21 @@
 "profile.safety.title" = "Seguretat del compte";
 
 "accountDeletion.accountWebsiteLink" = "Gestionar al web del compte Apps AV";
-"accountDeletion.blocked.detail" = "Apps AV indica que aquest compte compartit encara no es pot eliminar des d'aqui. Pots gestionar l'eliminacio completa al web del compte d'Apps AV.";
+"accountDeletion.blocked.detail" = "Apps AV no pot completar l'eliminacio aqui perque falta una dependencia necessaria. Pots gestionar l'eliminacio completa al web del compte d'Apps AV.";
 "accountDeletion.blocked.title" = "L'eliminació està bloquejada";
 "accountDeletion.blocker.job.title" = "Ja hi ha una eliminació en curs";
-"accountDeletion.blocker.linkedApp.detail" = "Aquest compte compartit d'Apps AV encara esta vinculat a una altra app.";
+"accountDeletion.blocker.linkedApp.detail" = "Eliminar aquest compte compartit d'Apps AV tambe elimina aquest vincle d'app i les seves dades de la suite.";
 "accountDeletion.blocker.linkedApp.title" = "App Apps AV vinculada";
-"accountDeletion.blocker.pro.detail" = "L'accés Pro actiu ha de finalitzar abans d'eliminar el compte compartit d'Apps AV.";
+"accountDeletion.blocker.pro.detail" = "Aquest acces Pro es retirara dels registres d'Apps AV. La facturacio pot continuar al proveidor fins que es cancel·li o expiri.";
 "accountDeletion.blocker.pro.title" = "Acces Pro actiu";
-"accountDeletion.blocker.subscription.detail" = "Cancel·la o deixa expirar la subscripció del proveïdor abans d'eliminar aquest compte.";
+"accountDeletion.blocker.subscription.detail" = "La facturacio pot continuar al proveidor fins que la subscripcio es cancel·li o expiri.";
 "accountDeletion.blocker.subscription.title" = "Subscripció activa";
 "accountDeletion.completed.detail" = "Apps AV ha eliminat el compte compartit. Aquesta app torna al mode convidat.";
 "accountDeletion.completed.title" = "Compte eliminat";
 "accountDeletion.confirm.instructions" = "Escriu DELETE per confirmar que vols eliminar el compte compartit d'Apps AV.";
 "accountDeletion.deleteButton" = "Eliminar el compte d'Apps AV";
 "accountDeletion.deleting" = "Eliminant el compte...";
-"accountDeletion.eligible.detail" = "Apps AV no informa d'apps vinculades, acces Pro actiu ni subscripcions actives que bloquegin l'eliminacio.";
+"accountDeletion.eligible.detail" = "Revisa les advertencies i confirma per sol·licitar l'eliminacio del compte compartit d'Apps AV.";
 "accountDeletion.eligible.title" = "Preparat per sol·licitar l'eliminació";
 "accountDeletion.error.finalize" = "Aquesta app no ha pogut finalitzar l'eliminació. Torna-ho a provar d'aquí a un moment.";
 "accountDeletion.error.load" = "Aquesta app no ha pogut carregar l'estat d'eliminació. L'eliminació continua bloquejada.";

@@ -242,21 +242,21 @@
 "profile.safety.title" = "Account safety";
 
 "accountDeletion.accountWebsiteLink" = "Manage on Apps AV account website";
-"accountDeletion.blocked.detail" = "Apps AV says this shared account cannot be deleted here yet. You can manage full deletion on the Apps AV account website.";
+"accountDeletion.blocked.detail" = "Apps AV cannot complete deletion here because a required deletion dependency is unavailable. You can manage full deletion on the Apps AV account website.";
 "accountDeletion.blocked.title" = "Deletion is blocked";
 "accountDeletion.blocker.job.title" = "Deletion already in progress";
-"accountDeletion.blocker.linkedApp.detail" = "This shared Apps AV account is still linked to another app.";
+"accountDeletion.blocker.linkedApp.detail" = "Deleting this shared Apps AV account also removes this app link and its suite-owned data.";
 "accountDeletion.blocker.linkedApp.title" = "Linked Apps AV app";
-"accountDeletion.blocker.pro.detail" = "Active Pro access must end before the shared Apps AV account can be deleted.";
+"accountDeletion.blocker.pro.detail" = "This Pro access will be removed from Apps AV records. Billing may continue through the provider until cancelled or expired.";
 "accountDeletion.blocker.pro.title" = "Active Pro access";
-"accountDeletion.blocker.subscription.detail" = "Cancel or let the provider subscription expire before deleting this account.";
+"accountDeletion.blocker.subscription.detail" = "Billing may continue through the provider until the subscription is cancelled or expires.";
 "accountDeletion.blocker.subscription.title" = "Active subscription";
 "accountDeletion.completed.detail" = "Apps AV has deleted the shared account. This app is returning to guest mode.";
 "accountDeletion.completed.title" = "Account deleted";
 "accountDeletion.confirm.instructions" = "Type DELETE to confirm you want to delete the shared Apps AV account.";
 "accountDeletion.deleteButton" = "Delete Apps AV account";
 "accountDeletion.deleting" = "Deleting account...";
-"accountDeletion.eligible.detail" = "Apps AV reports no linked apps, active Pro access, or active provider subscriptions blocking deletion.";
+"accountDeletion.eligible.detail" = "Review any warnings below, then confirm to request deletion of the shared Apps AV account.";
 "accountDeletion.eligible.title" = "Ready to request deletion";
 "accountDeletion.error.finalize" = "This app could not finalize deletion. Try again in a moment.";
 "accountDeletion.error.load" = "This app could not load deletion status. Deletion remains blocked.";
