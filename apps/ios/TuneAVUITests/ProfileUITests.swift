@@ -10,6 +10,7 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         XCTAssertTrue(app.staticTexts["UI Test User"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["ui-test@example.test"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["profile.sync.card"].exists)
@@ -23,6 +24,7 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         let syncCard = app.descendants(matching: .any)["profile.sync.card"].firstMatch
         for _ in 0..<4 where !syncCard.waitForExistence(timeout: 1) {
             app.swipeUp()
@@ -40,6 +42,7 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["UI Test User"].exists)
     }
@@ -53,6 +56,7 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         openAccountDeletion(in: app)
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
 
@@ -65,7 +69,7 @@ final class ProfileUITests: TuneAVUITestCase {
         XCTAssertTrue(app.buttons["profile.account.connect"].waitForExistence(timeout: 5))
     }
 
-    func testDeleteAccountBlockedBySeriesAVLinkedApp() {
+    func testDeleteAccountWarnsForLinkedApp() {
         let app = launchApp(
             preferredTab: "settings",
             extraEnvironment: [
@@ -74,14 +78,15 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         openAccountDeletion(in: app)
 
-        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.blocked"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Series AV"].exists)
-        XCTAssertFalse(app.buttons["accountDeletion.deleteButton"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.warning.linkedApp"].exists)
+        XCTAssertTrue(app.buttons["accountDeletion.deleteButton"].exists)
     }
 
-    func testDeleteAccountBlockedByActivePro() {
+    func testDeleteAccountWarnsForActivePro() {
         let app = launchApp(
             preferredTab: "settings",
             extraEnvironment: [
@@ -90,11 +95,12 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         openAccountDeletion(in: app)
 
-        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.blocked"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.blocker.activeProAccess"].exists)
-        XCTAssertFalse(app.buttons["accountDeletion.deleteButton"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.warning.activeProAccess"].exists)
+        XCTAssertTrue(app.buttons["accountDeletion.deleteButton"].exists)
     }
 
     func testCompletedDeletionSignsOutLocally() {
@@ -106,9 +112,16 @@ final class ProfileUITests: TuneAVUITestCase {
             ]
         )
 
+        openAccountProfile(in: app)
         tapAccountDeletionRow(in: app)
 
         XCTAssertTrue(app.buttons["profile.account.connect"].waitForExistence(timeout: 5))
+    }
+
+    private func openAccountProfile(in app: XCUIApplication) {
+        let accountButton = app.buttons["header.account"].firstMatch
+        XCTAssertTrue(accountButton.waitForExistence(timeout: 5))
+        accountButton.tap()
     }
 
     private func openAccountDeletion(in app: XCUIApplication) {
