@@ -3809,7 +3809,7 @@ private struct HomeTuningDeskHero: View {
                 )
 
             ZStack(alignment: .bottomTrailing) {
-                Image("AviOnboardingHero")
+                Image("AviOnboardingHeroStatic")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 300)
