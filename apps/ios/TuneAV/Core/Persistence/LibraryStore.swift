@@ -1,34 +1,6 @@
 import SwiftData
 import SwiftUI
 
-enum TuneAVStationFeedback: String, Codable, CaseIterable {
-    case liked
-    case disliked
-    case notForMe
-
-    var localizedState: String {
-        switch self {
-        case .liked:
-            return L10n.string("shell.stationFeedback.like")
-        case .disliked:
-            return L10n.string("shell.stationFeedback.dislike")
-        case .notForMe:
-            return L10n.string("shell.stationFeedback.notForMe")
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .liked:
-            return "hand.thumbsup.fill"
-        case .disliked:
-            return "hand.thumbsdown.fill"
-        case .notForMe:
-            return "minus.circle.fill"
-        }
-    }
-}
-
 @MainActor
 final class LibraryStore: ObservableObject {
     @Published private(set) var favorites: [FavoriteStation] = []

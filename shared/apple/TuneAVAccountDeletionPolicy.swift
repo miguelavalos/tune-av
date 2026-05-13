@@ -58,9 +58,10 @@ struct TuneAVAccountDeletionPolicy {
         suiteAppId: String = "avapps"
     ) -> AccountDeletionEligibility {
         var blockers: [AccountDeletionBlocker] = []
+        var warnings: [AccountDeletionBlocker] = []
 
         for linkedApp in summary.linkedApps where linkedApp.appId != currentAppId && linkedApp.appId != suiteAppId {
-            blockers.append(
+            warnings.append(
                 AccountDeletionBlocker(
                     type: .linkedApp,
                     appId: linkedApp.appId,
@@ -72,7 +73,7 @@ struct TuneAVAccountDeletionPolicy {
         }
 
         for appAccess in summary.access where appAccess.planTier == .pro || appAccess.accessMode == .signedInPro {
-            blockers.append(
+            warnings.append(
                 AccountDeletionBlocker(
                     type: .activeProAccess,
                     appId: appAccess.appId,
@@ -84,7 +85,7 @@ struct TuneAVAccountDeletionPolicy {
         }
 
         for subscription in summary.billing?.subscriptions ?? [] where activeBillingStatuses.contains(subscription.status) {
-            blockers.append(
+            warnings.append(
                 AccountDeletionBlocker(
                     type: .activeBillingSubscription,
                     appId: subscription.appId,
@@ -109,10 +110,10 @@ struct TuneAVAccountDeletionPolicy {
         }
 
         if blockers.isEmpty {
-            blockers.append(unavailableBlocker(copy: copy))
+            return AccountDeletionEligibility(status: .eligible, blockers: [], warnings: warnings, currentJob: summary.currentDeletionJob)
         }
 
-        return AccountDeletionEligibility(status: .unavailable, blockers: blockers, currentJob: summary.currentDeletionJob)
+        return AccountDeletionEligibility(status: .unavailable, blockers: blockers, warnings: warnings, currentJob: summary.currentDeletionJob)
     }
 
     static func unavailableEligibility(copy: Copy) -> AccountDeletionEligibility {

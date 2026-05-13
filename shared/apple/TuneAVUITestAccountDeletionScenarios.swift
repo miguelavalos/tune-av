@@ -13,8 +13,9 @@ enum TuneAVUITestAccountDeletionScenarios {
                     LinkedAccountApp(appId: "seriesav", label: "Apps AV")
                 ],
                 deleteAccountEligibility: AccountDeletionEligibility(
-                    status: .blocked,
-                    blockers: [
+                    status: .eligible,
+                    blockers: [],
+                    warnings: [
                         AccountDeletionBlocker(
                             type: .linkedApp,
                             appId: "seriesav",
@@ -41,8 +42,9 @@ enum TuneAVUITestAccountDeletionScenarios {
                     )
                 ],
                 deleteAccountEligibility: AccountDeletionEligibility(
-                    status: .blocked,
-                    blockers: [
+                    status: .eligible,
+                    blockers: [],
+                    warnings: [
                         AccountDeletionBlocker(
                             type: .activeProAccess,
                             appId: "tuneav",

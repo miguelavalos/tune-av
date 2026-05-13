@@ -35,6 +35,10 @@ final class AccountDeletionViewModel: ObservableObject {
         resolvedEligibility?.blockers ?? []
     }
 
+    var warnings: [AccountDeletionBlocker] {
+        resolvedEligibility?.warnings ?? []
+    }
+
     var canUnlinkCurrentApp: Bool {
         guard let summary, !isSubmitting else { return false }
         return TuneAVAccountDeletionPolicy.canUnlinkCurrentApp(from: summary)

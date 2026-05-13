@@ -124,6 +124,7 @@ struct AccountBillingSubscription: Decodable, Equatable, Identifiable {
 struct AccountDeletionEligibility: Decodable, Equatable {
     let status: Status
     let blockers: [AccountDeletionBlocker]
+    let warnings: [AccountDeletionBlocker]
     let currentJob: AccountDeletionJob?
 
     enum Status: String, Decodable {
@@ -132,6 +133,33 @@ struct AccountDeletionEligibility: Decodable, Equatable {
         case inProgress
         case completed
         case unavailable
+    }
+
+    init(
+        status: Status,
+        blockers: [AccountDeletionBlocker],
+        warnings: [AccountDeletionBlocker] = [],
+        currentJob: AccountDeletionJob?
+    ) {
+        self.status = status
+        self.blockers = blockers
+        self.warnings = warnings
+        self.currentJob = currentJob
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case blockers
+        case warnings
+        case currentJob
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decode(Status.self, forKey: .status)
+        blockers = try container.decodeIfPresent([AccountDeletionBlocker].self, forKey: .blockers) ?? []
+        warnings = try container.decodeIfPresent([AccountDeletionBlocker].self, forKey: .warnings) ?? []
+        currentJob = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .currentJob)
     }
 }
 

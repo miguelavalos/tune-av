@@ -8,8 +8,8 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(summary.id, "ui-test-user")
         XCTAssertEqual(summary.access.first?.appId, "tuneav")
         XCTAssertEqual(summary.access.first?.accessMode, .signedInPro)
-        XCTAssertEqual(summary.deleteAccountEligibility?.status, .blocked)
-        XCTAssertEqual(summary.deleteAccountEligibility?.blockers.first?.type, .activeProAccess)
+        XCTAssertEqual(summary.deleteAccountEligibility?.status, .eligible)
+        XCTAssertEqual(summary.deleteAccountEligibility?.warnings.first?.type, .activeProAccess)
     }
 
     func testAccountDeletionPolicyPrefersBackendEligibilityOverConservativeFallback() {
@@ -38,8 +38,9 @@ final class SharedAppleSupportTests: XCTestCase {
 
         let eligibility = TuneAVAccountDeletionPolicy.resolvedEligibility(from: summary, copy: accountDeletionCopy)
 
-        XCTAssertEqual(eligibility.status, .unavailable)
-        XCTAssertEqual(eligibility.blockers.first?.type, .linkedApp)
+        XCTAssertEqual(eligibility.status, .eligible)
+        XCTAssertEqual(eligibility.warnings.first?.type, .linkedApp)
+        XCTAssertTrue(eligibility.blockers.isEmpty)
     }
 
     func testAccessLimitPolicyMakesDailyProFeaturesUnlimitedAndAppliesUITestOverrides() {

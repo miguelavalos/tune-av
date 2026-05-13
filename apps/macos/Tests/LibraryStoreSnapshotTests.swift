@@ -15,14 +15,15 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         super.tearDown()
     }
 
-    func testUITestAccountDeletionScenariosResolveSharedBlockedProSummary() {
+    func testUITestAccountDeletionScenariosResolveSharedProWarningSummary() {
         let summary = TuneAVUITestAccountDeletionScenarios.summary(for: "blocked_pro")
 
         XCTAssertEqual(summary.id, "ui-test-user")
         XCTAssertEqual(summary.access.first?.appId, "tuneav")
         XCTAssertEqual(summary.access.first?.accessMode, .signedInPro)
-        XCTAssertEqual(summary.deleteAccountEligibility?.status, .blocked)
-        XCTAssertEqual(summary.deleteAccountEligibility?.blockers.first?.type, .activeProAccess)
+        XCTAssertEqual(summary.deleteAccountEligibility?.status, .eligible)
+        XCTAssertEqual(summary.deleteAccountEligibility?.warnings.first?.type, .activeProAccess)
+        XCTAssertTrue(summary.deleteAccountEligibility?.blockers.isEmpty == true)
     }
 
     func testAccessLimitPolicyMakesDailyProFeaturesUnlimitedAndAppliesUITestOverrides() {
@@ -227,10 +228,10 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let direct = AppShellSearchRequest(query: "  nova  ", tag: " jazz ", countryCode: " es ")
         let worldwide = AppShellSearchRequest(query: "   ", tag: nil, countryCode: nil)
 
-        XCTAssertEqual(direct.key, "nova|jazz|ES")
+        XCTAssertEqual(direct.key, "nova|jazz|ES|music")
         XCTAssertFalse(direct.usesWorldwideDiscovery)
         XCTAssertEqual(direct.searchLimit, 24)
-        XCTAssertEqual(worldwide.key, "||")
+        XCTAssertEqual(worldwide.key, "|||music")
         XCTAssertTrue(worldwide.usesWorldwideDiscovery)
         XCTAssertEqual(worldwide.searchLimit, 12)
     }
@@ -336,7 +337,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(capturedRequest?.value(forHTTPHeaderField: "x-appsav-app-id"), "tuneav")
     }
 
-    func testMacAccountDeletionEligibilityBlocksSharedAccountWithoutBackendEligibility() {
+    func testMacAccountDeletionEligibilityWarnsSharedAccountWithoutBackendEligibility() {
         let summary = MacAccountSummary(
             linkedApps: [
                 MacLinkedAccountApp(appId: "tuneav", label: "Tune AV"),
@@ -361,11 +362,12 @@ final class LibraryStoreSnapshotTests: XCTestCase {
 
         let eligibility = MacAccountDeletionViewModel.conservativeEligibility(from: summary)
 
-        XCTAssertEqual(eligibility.status, .unavailable)
+        XCTAssertEqual(eligibility.status, .eligible)
         XCTAssertEqual(
-            eligibility.blockers.map(\.type),
+            eligibility.warnings.map(\.type),
             [.linkedApp, .activeProAccess, .activeBillingSubscription]
         )
+        XCTAssertTrue(eligibility.blockers.isEmpty)
     }
 
     func testMacAccountDeletionViewModelCanUnlinkTuneAVFromSharedFreeAccount() async {
@@ -541,7 +543,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
 
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
-        XCTAssertFalse(controller.capabilities.canUseBackend)
+        XCTAssertTrue(controller.capabilities.canUseBackend)
         XCTAssertEqual(controller.limits.favoriteStations, 5)
         XCTAssertEqual(controller.limits.lyricsSearchesPerDay, 3)
 
@@ -624,7 +626,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertFalse(didRefresh)
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
-        XCTAssertFalse(controller.capabilities.canUseBackend)
+        XCTAssertTrue(controller.capabilities.canUseBackend)
         XCTAssertEqual(controller.limits.favoriteStations, 5)
         XCTAssertEqual(controller.lastRefreshError as? MacAccessRefreshError, .requestFailed(statusCode: 503))
     }

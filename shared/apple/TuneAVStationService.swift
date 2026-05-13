@@ -230,7 +230,7 @@ actor TuneAVBackendHealthGate {
         failureThreshold: Int = 3,
         baseCooldown: TimeInterval = 5 * 60,
         maxCooldown: TimeInterval = 30 * 60,
-        now: @escaping @Sendable () -> Date = Date.init,
+        now: @escaping @Sendable () -> Date = { Date() },
         userDefaults: UserDefaults? = nil,
         storageKeyPrefix: String = "tuneav.stationBackendGate"
     ) {

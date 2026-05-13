@@ -124,6 +124,8 @@ struct AccountDeletionScreen: View {
             )
             .accessibilityIdentifier("accountDeletion.status.eligible")
 
+            warningList
+
             Text(L10n.string("accountDeletion.confirm.instructions"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
@@ -172,6 +174,7 @@ struct AccountDeletionScreen: View {
             )
             .accessibilityIdentifier("accountDeletion.status.inProgress")
             blockerList
+            warningList
 
             if viewModel.canFinalizeDeletion {
                 Button {
@@ -200,6 +203,7 @@ struct AccountDeletionScreen: View {
             )
             .accessibilityIdentifier("accountDeletion.status.blocked")
             blockerList
+            warningList
 
             if viewModel.canUnlinkCurrentApp {
                 Button {
@@ -270,6 +274,34 @@ struct AccountDeletionScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .accessibilityIdentifier("accountDeletion.blocker.\(blocker.type.rawValue)")
+            }
+        }
+    }
+
+    private var warningList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(viewModel.warnings) { warning in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(warning.label)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+
+                    if let detail = warning.detail, !detail.isEmpty {
+                        Text(detail)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let managementUrl = warning.managementUrl {
+                        Link(L10n.string("accountDeletion.manageLink"), destination: managementUrl)
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .accessibilityIdentifier("accountDeletion.warning.\(warning.type.rawValue)")
             }
         }
     }

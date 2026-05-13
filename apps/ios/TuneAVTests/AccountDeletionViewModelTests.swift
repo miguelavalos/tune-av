@@ -35,7 +35,7 @@ final class AccountDeletionViewModelTests: XCTestCase {
         XCTAssertTrue(didSignOut)
     }
 
-    func testBlockedBySeriesAVLinkedApp() async {
+    func testWarnsButAllowsDeletionWithSeriesAVLinkedApp() async {
         let viewModel = AccountDeletionViewModel(
             api: MockAccountDeletionAPI(
                 summary: AccountSummary(
@@ -50,12 +50,14 @@ final class AccountDeletionViewModelTests: XCTestCase {
 
         await viewModel.load()
 
-        XCTAssertEqual(viewModel.resolvedEligibility?.status, .unavailable)
-        XCTAssertEqual(viewModel.blockers.first?.type, .linkedApp)
-        XCTAssertFalse(viewModel.canRequestDeletion)
+        XCTAssertEqual(viewModel.resolvedEligibility?.status, .eligible)
+        XCTAssertEqual(viewModel.warnings.first?.type, .linkedApp)
+        XCTAssertTrue(viewModel.blockers.isEmpty)
+        viewModel.confirmationText = "DELETE"
+        XCTAssertTrue(viewModel.canRequestDeletion)
     }
 
-    func testBlockedByActivePro() async {
+    func testWarnsButAllowsDeletionWithActivePro() async {
         let viewModel = AccountDeletionViewModel(
             api: MockAccountDeletionAPI(
                 summary: AccountSummary(
@@ -75,9 +77,11 @@ final class AccountDeletionViewModelTests: XCTestCase {
 
         await viewModel.load()
 
-        XCTAssertEqual(viewModel.resolvedEligibility?.status, .unavailable)
-        XCTAssertEqual(viewModel.blockers.first?.type, .activeProAccess)
-        XCTAssertFalse(viewModel.canRequestDeletion)
+        XCTAssertEqual(viewModel.resolvedEligibility?.status, .eligible)
+        XCTAssertEqual(viewModel.warnings.first?.type, .activeProAccess)
+        XCTAssertTrue(viewModel.blockers.isEmpty)
+        viewModel.confirmationText = "DELETE"
+        XCTAssertTrue(viewModel.canRequestDeletion)
     }
 
     func testCompletedDeletionSignsOutLocallyOnLoad() async {
