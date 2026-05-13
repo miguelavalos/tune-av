@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 struct TuneAVStationSearchFilters {
     var query: String
@@ -43,6 +44,7 @@ struct TuneAVStationService {
     private let session: URLSession
     private let fallbacks: TuneAVStationFallbacks
     private let invalidResponseMessage: String
+    private let backendGate: TuneAVBackendHealthGate
 
     init(
         session: URLSession = .shared,
@@ -50,7 +52,8 @@ struct TuneAVStationService {
         avalsysPopularBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/popular")!,
         radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
         fallbacks: TuneAVStationFallbacks = .english,
-        invalidResponseMessage: String = "The station service returned an invalid response."
+        invalidResponseMessage: String = "The station service returned an invalid response.",
+        backendGate: TuneAVBackendHealthGate = .shared
     ) {
         self.session = session
         self.avalsysBaseURL = avalsysBaseURL
@@ -58,6 +61,7 @@ struct TuneAVStationService {
         self.radioBrowserBaseURL = radioBrowserBaseURL
         self.fallbacks = fallbacks
         self.invalidResponseMessage = invalidResponseMessage
+        self.backendGate = backendGate
     }
 
     func searchStations(filters: TuneAVStationSearchFilters) async throws -> [Station] {
@@ -82,10 +86,13 @@ struct TuneAVStationService {
             limit: filters.limit
         )
 
-        if let avalsysBaseURL {
+        if let avalsysBaseURL, await backendGate.canAttempt() {
             do {
-                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysBaseURL)
+                let stations = try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysBaseURL)
+                await backendGate.recordSuccess()
+                return stations
             } catch {
+                await backendGate.recordFailure()
                 // Radio Browser remains the app's emergency catalog fallback.
             }
         }
@@ -113,10 +120,13 @@ struct TuneAVStationService {
             limit: popularFilters.limit
         )
 
-        if let avalsysPopularBaseURL {
+        if let avalsysPopularBaseURL, await backendGate.canAttempt() {
             do {
-                return try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL, surface: "home")
+                let stations = try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL, surface: "home")
+                await backendGate.recordSuccess()
+                return stations
             } catch {
+                await backendGate.recordFailure()
                 // Older API deployments may not have the semantic popular endpoint yet.
             }
         }
@@ -142,7 +152,7 @@ struct TuneAVStationService {
             throw URLError(.badURL)
         }
 
-        let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url)
+        let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url, timeoutInterval: 4)
         return applyExactTagFilterIfNeeded(response.resolvedStations, tag: filters.tag, limit: filters.limit)
     }
 
@@ -171,10 +181,10 @@ struct TuneAVStationService {
         return applyExactTagFilterIfNeeded(resolvedStations, tag: filters.tag, limit: filters.limit)
     }
 
-    private func decodedResponse<T: Decodable>(_ type: T.Type, url: URL) async throws -> T {
+    private func decodedResponse<T: Decodable>(_ type: T.Type, url: URL, timeoutInterval: TimeInterval = 15) async throws -> T {
         var request = URLRequest(url: url)
         request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 15
+        request.timeoutInterval = timeoutInterval
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
@@ -198,6 +208,100 @@ struct TuneAVStationService {
         }
 
         return resolvedStations
+    }
+}
+
+actor TuneAVBackendHealthGate {
+    static let shared = TuneAVBackendHealthGate(userDefaults: .standard)
+    private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "stations")
+
+    private let failureThreshold: Int
+    private let baseCooldown: TimeInterval
+    private let maxCooldown: TimeInterval
+    private let now: @Sendable () -> Date
+    private let userDefaults: UserDefaults?
+    private let unavailableUntilKey: String
+    private let cooldownLevelKey: String
+    private var consecutiveFailures = 0
+    private var cooldownLevel = 0
+    private var unavailableUntil: Date?
+
+    init(
+        failureThreshold: Int = 3,
+        baseCooldown: TimeInterval = 5 * 60,
+        maxCooldown: TimeInterval = 30 * 60,
+        now: @escaping @Sendable () -> Date = Date.init,
+        userDefaults: UserDefaults? = nil,
+        storageKeyPrefix: String = "tuneav.stationBackendGate"
+    ) {
+        self.failureThreshold = failureThreshold
+        self.baseCooldown = baseCooldown
+        self.maxCooldown = maxCooldown
+        self.now = now
+        self.userDefaults = userDefaults
+        self.unavailableUntilKey = "\(storageKeyPrefix).unavailableUntil"
+        self.cooldownLevelKey = "\(storageKeyPrefix).cooldownLevel"
+
+        if let storedUnavailableUntil = userDefaults?.object(forKey: unavailableUntilKey) as? Date, now() < storedUnavailableUntil {
+            self.unavailableUntil = storedUnavailableUntil
+            self.cooldownLevel = userDefaults?.integer(forKey: cooldownLevelKey) ?? 0
+        } else {
+            userDefaults?.removeObject(forKey: unavailableUntilKey)
+            self.cooldownLevel = userDefaults?.integer(forKey: cooldownLevelKey) ?? 0
+        }
+    }
+
+    func canAttempt() -> Bool {
+        guard let unavailableUntil else {
+            return true
+        }
+        if now() >= unavailableUntil {
+            Self.logger.info("AVALSYS station backend cooldown expired; retrying catalog request")
+            self.unavailableUntil = nil
+            userDefaults?.removeObject(forKey: unavailableUntilKey)
+            return true
+        }
+        Self.logger.info("Skipping AVALSYS station backend until \(unavailableUntil, privacy: .public)")
+        return false
+    }
+
+    func recordSuccess() {
+        if consecutiveFailures > 0 || unavailableUntil != nil {
+            Self.logger.info("AVALSYS station backend recovered; clearing temporary cooldown")
+        }
+        consecutiveFailures = 0
+        cooldownLevel = 0
+        unavailableUntil = nil
+        clearPersistedState()
+    }
+
+    func recordFailure() {
+        consecutiveFailures += 1
+        guard consecutiveFailures >= failureThreshold else {
+            return
+        }
+
+        let multiplier = pow(2.0, Double(cooldownLevel))
+        let cooldown = min(baseCooldown * multiplier, maxCooldown)
+        unavailableUntil = now().addingTimeInterval(cooldown)
+        Self.logger.error("AVALSYS station backend temporarily unavailable after repeated failures; cooldown \(cooldown, privacy: .public)s")
+        cooldownLevel += 1
+        consecutiveFailures = 0
+        persistCooldownState()
+    }
+
+    private func persistCooldownState() {
+        guard let unavailableUntil else {
+            clearPersistedState()
+            return
+        }
+        userDefaults?.set(unavailableUntil, forKey: unavailableUntilKey)
+        userDefaults?.set(cooldownLevel, forKey: cooldownLevelKey)
+    }
+
+    private func clearPersistedState() {
+        userDefaults?.removeObject(forKey: unavailableUntilKey)
+        userDefaults?.removeObject(forKey: cooldownLevelKey)
     }
 }
 
