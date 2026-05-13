@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class ZHomeEmptyStateUITests: TuneAVUITestCase {
-    func testNewUserHomeShowsDiscoveryWithoutRoutineSections() {
+    func testNewUserHomeShowsAviBriefWithoutRoutineSections() {
         let app = launchApp(
             extraEnvironment: [
                 "TUNEAV_UI_TESTS_DISABLE_LIBRARY_SEED": "1",
@@ -10,12 +10,14 @@ final class ZHomeEmptyStateUITests: TuneAVUITestCase {
             ]
         )
 
-        let recentsSection = app.otherElements["home.section.recents"]
-        let favoritesSection = app.otherElements["home.section.favorites"]
-        let discoverySection = app.otherElements["home.section.discovery"]
+        let aviBrief = app.buttons["home.aviBrief.open"].firstMatch
+        let recentsFavoritesSection = app.otherElements["home.section.recentsFavorites"]
+        let legacyRecentsSection = app.otherElements["home.section.recents"]
+        let legacyFavoritesSection = app.otherElements["home.section.favorites"]
 
-        XCTAssertTrue(discoverySection.waitForExistence(timeout: 5))
-        XCTAssertFalse(recentsSection.exists)
-        XCTAssertFalse(favoritesSection.exists)
+        XCTAssertTrue(aviBrief.waitForExistence(timeout: 5))
+        XCTAssertFalse(recentsFavoritesSection.exists)
+        XCTAssertFalse(legacyRecentsSection.exists)
+        XCTAssertFalse(legacyFavoritesSection.exists)
     }
 }

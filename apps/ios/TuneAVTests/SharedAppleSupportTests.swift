@@ -399,7 +399,8 @@ final class SharedAppleSupportTests: XCTestCase {
 
         let service = TuneAVStationService(
             session: testURLSession(),
-            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            backendGate: makeBackendGate()
         )
 
         let stations = try await service.searchStations(
@@ -488,7 +489,8 @@ final class SharedAppleSupportTests: XCTestCase {
 
         let service = TuneAVStationService(
             session: testURLSession(),
-            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            backendGate: makeBackendGate()
         )
 
         let stations = try await service.searchStations(
@@ -517,7 +519,8 @@ final class SharedAppleSupportTests: XCTestCase {
 
         let service = TuneAVStationService(
             session: testURLSession(),
-            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            backendGate: makeBackendGate()
         )
 
         _ = try await service.searchStations(
@@ -578,7 +581,8 @@ final class SharedAppleSupportTests: XCTestCase {
         let service = TuneAVStationService(
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
-            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
+            backendGate: makeBackendGate()
         )
 
         let stations = try await service.popularStations(
@@ -649,7 +653,8 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: makeBackendGate()
         )
 
         let stations = try await service.popularStations(
@@ -706,7 +711,8 @@ final class SharedAppleSupportTests: XCTestCase {
         let service = TuneAVStationService(
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: makeBackendGate()
         )
 
         let stations = try await service.searchStations(
@@ -716,6 +722,220 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(requestedHosts, ["api.test", "radio.test"])
         XCTAssertEqual(stations.map(\.id), ["fallback"])
         XCTAssertNil(stations.first?.editorial)
+    }
+
+    func testStationServiceTemporarilySkipsAVALSYSAfterRepeatedFailures() async throws {
+        var requestedHosts: [String] = []
+        let gate = TuneAVBackendHealthGate(failureThreshold: 2, baseCooldown: 60)
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedHosts.append(request.url?.host ?? "")
+
+            if request.url?.host == "api.test" {
+                return (HTTPURLResponse(url: request.url!, statusCode: 503, httpVersion: nil, headerFields: nil)!, Data())
+            }
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, self.radioBrowserFallbackBody(id: "fallback"))
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: gate
+        )
+
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test", "radio.test", "radio.test"])
+    }
+
+    func testPopularStationsSkipsAVALSYSWhenBackendGateIsTemporarilyBlocked() async throws {
+        var requestedHosts: [String] = []
+        let gate = TuneAVBackendHealthGate(failureThreshold: 1, baseCooldown: 60)
+        await gate.recordFailure()
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedHosts.append(request.url?.host ?? "")
+
+            if request.url?.host == "api.test" {
+                XCTFail("Popular stations should not call AVALSYS while the backend gate is blocked")
+                return (HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!, Data())
+            }
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, self.radioBrowserFallbackBody(id: "popular-fallback"))
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: gate
+        )
+
+        let stations = try await service.popularStations(filters: TuneAVStationSearchFilters(query: "", countryCode: "ES", locale: "es", limit: 5))
+
+        XCTAssertEqual(requestedHosts, ["radio.test"])
+        XCTAssertEqual(stations.map(\.id), ["popular-fallback"])
+    }
+
+    func testStationServiceRetriesAVALSYSAfterTemporaryBlockExpiresAndResetsOnSuccess() async throws {
+        var requestedHosts: [String] = []
+        let clock = MutableTestDate(Date(timeIntervalSince1970: 1_000))
+        let gate = TuneAVBackendHealthGate(failureThreshold: 2, baseCooldown: 60, now: { clock.value })
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedHosts.append(request.url?.host ?? "")
+
+            if request.url?.host == "api.test" {
+                if requestedHosts.filter({ $0 == "api.test" }).count <= 2 {
+                    return (HTTPURLResponse(url: request.url!, statusCode: 503, httpVersion: nil, headerFields: nil)!, Data())
+                }
+
+                return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, self.avalsysSearchBody(id: "recovered"))
+            }
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, self.radioBrowserFallbackBody(id: "fallback"))
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: gate
+        )
+
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+        _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
+
+        clock.advance(by: 61)
+        let recovered = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Recovered", limit: 5))
+        let secondRecovered = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Recovered", limit: 5))
+
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test", "radio.test", "radio.test", "api.test", "api.test"])
+        XCTAssertEqual(recovered.map(\.id), ["recovered"])
+        XCTAssertEqual(secondRecovered.map(\.id), ["recovered"])
+    }
+
+    func testBackendHealthGatePersistsTemporaryCooldownAcrossInstances() async {
+        let suiteName = "TuneAVBackendHealthGate.tests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let clock = MutableTestDate(Date(timeIntervalSince1970: 2_000))
+        let gate = TuneAVBackendHealthGate(
+            failureThreshold: 2,
+            baseCooldown: 60,
+            now: { clock.value },
+            userDefaults: userDefaults,
+            storageKeyPrefix: "test.stationBackendGate"
+        )
+
+        await gate.recordFailure()
+        await gate.recordFailure()
+
+        let relaunchedGate = TuneAVBackendHealthGate(
+            failureThreshold: 2,
+            baseCooldown: 60,
+            now: { clock.value },
+            userDefaults: userDefaults,
+            storageKeyPrefix: "test.stationBackendGate"
+        )
+
+        let canAttemptDuringCooldown = await relaunchedGate.canAttempt()
+        XCTAssertFalse(canAttemptDuringCooldown)
+        clock.advance(by: 61)
+        let canAttemptAfterCooldown = await relaunchedGate.canAttempt()
+        XCTAssertTrue(canAttemptAfterCooldown)
+        XCTAssertNil(userDefaults.object(forKey: "test.stationBackendGate.unavailableUntil"))
+        XCTAssertEqual(userDefaults.integer(forKey: "test.stationBackendGate.cooldownLevel"), 1)
+    }
+
+    func testBackendHealthGateEscalatesCooldownAfterRepeatedOutagesUntilSuccess() async {
+        let clock = MutableTestDate(Date(timeIntervalSince1970: 3_000))
+        let gate = TuneAVBackendHealthGate(
+            failureThreshold: 1,
+            baseCooldown: 60,
+            maxCooldown: 300,
+            now: { clock.value }
+        )
+
+        await gate.recordFailure()
+        let canAttemptDuringFirstCooldown = await gate.canAttempt()
+        XCTAssertFalse(canAttemptDuringFirstCooldown)
+
+        clock.advance(by: 61)
+        let canAttemptAfterFirstCooldown = await gate.canAttempt()
+        XCTAssertTrue(canAttemptAfterFirstCooldown)
+
+        await gate.recordFailure()
+        clock.advance(by: 119)
+        let canAttemptBeforeSecondCooldownExpires = await gate.canAttempt()
+        XCTAssertFalse(canAttemptBeforeSecondCooldownExpires)
+        clock.advance(by: 2)
+        let canAttemptAfterSecondCooldown = await gate.canAttempt()
+        XCTAssertTrue(canAttemptAfterSecondCooldown)
+
+        await gate.recordSuccess()
+        await gate.recordFailure()
+        clock.advance(by: 61)
+        let canAttemptAfterSuccessReset = await gate.canAttempt()
+        XCTAssertTrue(canAttemptAfterSuccessReset)
+    }
+
+    func testBackendHealthGateClearsPersistedCooldownOnSuccess() async {
+        let suiteName = "TuneAVBackendHealthGate.tests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let gate = TuneAVBackendHealthGate(
+            failureThreshold: 1,
+            baseCooldown: 60,
+            userDefaults: userDefaults,
+            storageKeyPrefix: "test.stationBackendGate"
+        )
+
+        await gate.recordFailure()
+        XCTAssertNotNil(userDefaults.object(forKey: "test.stationBackendGate.unavailableUntil"))
+
+        await gate.recordSuccess()
+
+        XCTAssertNil(userDefaults.object(forKey: "test.stationBackendGate.unavailableUntil"))
+        XCTAssertNil(userDefaults.object(forKey: "test.stationBackendGate.cooldownLevel"))
+    }
+
+    func testBackendHealthGateDiscardsExpiredPersistedCooldownWindowOnInitialization() async {
+        let suiteName = "TuneAVBackendHealthGate.tests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let storageKeyPrefix = "test.stationBackendGate"
+        userDefaults.set(Date(timeIntervalSince1970: 2_000), forKey: "\(storageKeyPrefix).unavailableUntil")
+        userDefaults.set(3, forKey: "\(storageKeyPrefix).cooldownLevel")
+
+        let gate = TuneAVBackendHealthGate(
+            failureThreshold: 2,
+            baseCooldown: 60,
+            now: { Date(timeIntervalSince1970: 2_001) },
+            userDefaults: userDefaults,
+            storageKeyPrefix: storageKeyPrefix
+        )
+
+        let canAttempt = await gate.canAttempt()
+
+        XCTAssertTrue(canAttempt)
+        XCTAssertNil(userDefaults.object(forKey: "\(storageKeyPrefix).unavailableUntil"))
+        XCTAssertEqual(userDefaults.integer(forKey: "\(storageKeyPrefix).cooldownLevel"), 3)
     }
 
     func testNowPlayingDisplayLinesPreferAlbumFallbackBeforeStationTags() {
@@ -1755,7 +1975,8 @@ final class SharedAppleSupportTests: XCTestCase {
                 rejected.id: .notForMe
             ],
             feedContext: .popularWorldwide,
-            preferredTag: ""
+            preferredTag: "",
+            date: Date(timeIntervalSince1970: 12 * 60 * 60)
         )
 
         let ranked = scorer.rankedStations([similar, neutral])
@@ -1880,6 +2101,175 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), [second.id, third.id])
     }
 
+    func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
+        let station = recommendationStation(id: "pop", tags: "pop, hits")
+
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: station,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: true,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: true,
+                feedback: .liked,
+                stationDiscoveryCount: 4
+            ),
+            .warning
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: station,
+                isPlaying: true,
+                isLoading: true,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: true,
+                feedback: .liked,
+                stationDiscoveryCount: 4
+            ),
+            .thinking
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: station,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: true,
+                feedback: .disliked,
+                stationDiscoveryCount: 4
+            ),
+            .dislike
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: station,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: true,
+                feedback: nil,
+                stationDiscoveryCount: 4
+            ),
+            .happy
+        )
+    }
+
+    func testAviPlayerEmotionChangesWithStationSignalAndTrackDiscovery() {
+        let dance = recommendationStation(id: "dance", tags: "dance, electronic")
+        let news = recommendationStation(id: "news", tags: "news, talk")
+        let ambient = recommendationStation(id: "ambient", tags: "ambient, chill")
+
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: dance,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: false,
+                feedback: nil,
+                stationDiscoveryCount: 0
+            ),
+            .surprised
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: dance,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: false,
+                feedback: nil,
+                stationDiscoveryCount: 2
+            ),
+            .celebrate
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: news,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: false,
+                isCurrentTrackSaved: false,
+                feedback: nil,
+                stationDiscoveryCount: 0
+            ),
+            .focused
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: ambient,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: false,
+                isCurrentTrackSaved: false,
+                feedback: nil,
+                stationDiscoveryCount: 0
+            ),
+            .sleep
+        )
+    }
+
+    func testAviScreenEmotionsResolveDefaultAndActionStates() {
+        XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: true, hasResults: false, query: "bbc", discoveryMode: .allRadio), .thinking)
+        XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: false, hasResults: false, query: "bbc", discoveryMode: .allRadio), .surprised)
+        XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: false, hasResults: true, query: "bbc", discoveryMode: .music), .focused)
+        XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 0, recentCount: 0, isFiltering: false), .thinking)
+        XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 2, recentCount: 0, isFiltering: false), .happy)
+        XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 2, recentCount: 1, isFiltering: true), .focused)
+        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 0, savedDiscoveryCount: 0, artistCount: 0), .listening)
+        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 1, artistCount: 1), .happy)
+        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 3, artistCount: 1), .celebrate)
+    }
+
+    func testAviEmotionStabilityDelaysLowPriorityChanges() {
+        XCTAssertFalse(
+            TuneAVAviEmotionStability.shouldAdopt(
+                displayed: .listening,
+                candidate: .focused,
+                elapsedSinceLastChange: 1.0
+            )
+        )
+        XCTAssertTrue(
+            TuneAVAviEmotionStability.shouldAdopt(
+                displayed: .listening,
+                candidate: .focused,
+                elapsedSinceLastChange: 2.4
+            )
+        )
+    }
+
+    func testAviEmotionStabilityAllowsUrgentChangesSooner() {
+        XCTAssertFalse(
+            TuneAVAviEmotionStability.shouldAdopt(
+                displayed: .listening,
+                candidate: .warning,
+                elapsedSinceLastChange: 0.2
+            )
+        )
+        XCTAssertTrue(
+            TuneAVAviEmotionStability.shouldAdopt(
+                displayed: .listening,
+                candidate: .warning,
+                elapsedSinceLastChange: 0.45
+            )
+        )
+        XCTAssertFalse(
+            TuneAVAviEmotionStability.shouldAdopt(
+                displayed: .warning,
+                candidate: .listening,
+                elapsedSinceLastChange: 1.0
+            )
+        )
+    }
+
     private func queryValue(_ name: String, in url: URL?) -> String? {
         guard let url, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
@@ -1891,6 +2281,104 @@ final class SharedAppleSupportTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [TuneAVTestURLProtocol.self]
         return URLSession(configuration: configuration)
+    }
+
+    private func makeBackendGate() -> TuneAVBackendHealthGate {
+        TuneAVBackendHealthGate()
+    }
+
+    private func radioBrowserFallbackBody(id: String) -> Data {
+        #"""
+        [
+          {
+            "stationuuid": "\#(id)",
+            "name": "Fallback Radio",
+            "country": "Spain",
+            "countrycode": "ES",
+            "state": "",
+            "language": "Spanish",
+            "languagecodes": "es",
+            "tags": "news",
+            "url": "https://example.com/fallback.mp3",
+            "url_resolved": "https://example.com/fallback.mp3",
+            "favicon": "",
+            "bitrate": 128,
+            "codec": "MP3",
+            "homepage": "https://example.com/",
+            "votes": 1,
+            "clickcount": 2,
+            "clicktrend": 0,
+            "hls": 0,
+            "has_extended_info": false,
+            "ssl_error": 0,
+            "lastcheckoktime_iso8601": null,
+            "geo_lat": null,
+            "geo_long": null,
+            "lastcheckok": 1
+          }
+        ]
+        """#.data(using: .utf8)!
+    }
+
+    private func avalsysSearchBody(id: String) -> Data {
+        #"""
+        {
+          "stations": [
+            {
+              "id": "\#(id)",
+              "name": "Recovered Radio",
+              "country": "Spain",
+              "countryCode": "ES",
+              "state": null,
+              "language": "Spanish",
+              "languageCodes": "es",
+              "tags": "news,talk",
+              "streamURL": "https://example.com/recovered.mp3",
+              "faviconURL": null,
+              "bitrate": 128,
+              "codec": "MP3",
+              "homepageURL": "https://example.com/",
+              "votes": 10,
+              "clickCount": 20,
+              "clickTrend": 1,
+              "isHLS": false,
+              "hasExtendedInfo": false,
+              "hasSSLError": false,
+              "lastCheckOKAt": null,
+              "geoLatitude": null,
+              "geoLongitude": null,
+              "canonicalStationId": "st_rb_recovered",
+              "category": "news",
+              "visibility": "public",
+              "qualityScore": 84,
+              "enrichmentStatus": "enriched",
+              "artwork": { "status": "none", "url": null, "version": null },
+              "editorial": null
+            }
+          ],
+          "provider": "radioBrowser",
+          "generatedAt": "2026-05-09T10:00:00Z"
+        }
+        """#.data(using: .utf8)!
+    }
+
+    private final class MutableTestDate: @unchecked Sendable {
+        private let lock = NSLock()
+        private var storedValue: Date
+
+        init(_ value: Date) {
+            self.storedValue = value
+        }
+
+        var value: Date {
+            lock.withLock { storedValue }
+        }
+
+        func advance(by interval: TimeInterval) {
+            lock.withLock {
+                storedValue = storedValue.addingTimeInterval(interval)
+            }
+        }
     }
 
     private func station(id: String, countryCode: String) -> Station {

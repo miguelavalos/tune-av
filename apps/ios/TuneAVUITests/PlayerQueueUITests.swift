@@ -17,15 +17,15 @@ final class PlayerQueueUITests: TuneAVUITestCase {
 
         miniPlayer.tap()
 
-        let headerTitle = app.staticTexts["player.headerTitle"]
+        let headerTitle = app.staticTexts["avi.context.header"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
-        XCTAssertEqual(headerTitle.label, "BBC Radio 1")
+        XCTAssertTrue(headerTitle.label.contains("BBC Radio 1"))
 
-        let nextButton = app.buttons["player.transport.next"]
+        let nextButton = app.buttons["avi.controls.next"]
         XCTAssertTrue(nextButton.exists)
         nextButton.tap()
 
-        let switched = NSPredicate(format: "label == %@", "SomaFM Groove Salad")
+        let switched = NSPredicate(format: "label CONTAINS %@", "SomaFM Groove Salad")
         expectation(for: switched, evaluatedWith: headerTitle)
         waitForExpectations(timeout: 5)
     }

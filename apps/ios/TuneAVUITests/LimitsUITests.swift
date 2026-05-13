@@ -12,10 +12,7 @@ final class LimitsUITests: TuneAVUITestCase {
             ]
         )
 
-        let recentsSection = app.otherElements["home.section.recents"]
-        XCTAssertTrue(recentsSection.waitForExistence(timeout: 5))
-
-        let favoriteButton = recentsSection.descendants(matching: .button)["stationRow.favorite.demo-groove-salad"].firstMatch
+        let favoriteButton = app.buttons["home.hero.favorite.demo-groove-salad"].firstMatch
         XCTAssertTrue(favoriteButton.waitForExistence(timeout: 5))
         favoriteButton.tap()
 
@@ -73,9 +70,6 @@ final class LimitsUITests: TuneAVUITestCase {
                 "TUNEAV_UI_TEST_UPGRADE_PROMPT_FEATURE": feature
             ]
         )
-
-        let artworkFront = app.descendants(matching: .any)["player.artwork.front"].firstMatch
-        XCTAssertTrue(artworkFront.waitForExistence(timeout: 5))
 
         let upgradeSheet = app.descendants(matching: .any)["limits.upgrade.sheet.\(feature)"].firstMatch
         XCTAssertTrue(upgradeSheet.waitForExistence(timeout: 5))

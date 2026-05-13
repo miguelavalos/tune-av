@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class StationDetailQueueUITests: TuneAVUITestCase {
-    func testPlayingFromSearchStationSheetKeepsSearchQueue() {
+    func testPlayingFromSearchRowKeepsSearchQueue() {
         let app = launchApp(
             preferredTab: "search",
             extraEnvironment: [
@@ -10,13 +10,9 @@ final class StationDetailQueueUITests: TuneAVUITestCase {
             ]
         )
 
-        let stationRow = app.otherElements["stationRow.bbc-radio-1"].firstMatch
-        XCTAssertTrue(stationRow.waitForExistence(timeout: 5))
-        stationRow.tap()
-
-        let sheetPlayButton = app.buttons["stationDetail.play"].firstMatch
-        XCTAssertTrue(sheetPlayButton.waitForExistence(timeout: 5))
-        sheetPlayButton.tap()
+        let playButton = app.buttons["stationRow.play.bbc-radio-1"].firstMatch
+        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
+        playButton.tap()
 
         let miniPlayer = app.buttons["miniPlayer.container"].firstMatch
         let miniPlayerNext = app.buttons["miniPlayer.next"].firstMatch

@@ -9,24 +9,22 @@ final class HomeRefreshUITests: TuneAVUITestCase {
             ]
         )
 
-        let recentsSection = app.otherElements["home.section.recents"]
-        let favoritesSection = app.otherElements["home.section.favorites"]
-        let recentsFavoriteButton = recentsSection.descendants(matching: .button)["stationRow.favorite.groove-salad"].firstMatch
-        let favoritesRow = favoritesSection.descendants(matching: .other)["stationRow.groove-salad"].firstMatch
+        let recentsFavoritesSection = app.otherElements["home.section.recentsFavorites"]
+        let recentsFavoriteButton = recentsFavoritesSection.descendants(matching: .button)["stationRow.favorite.groove-salad"].firstMatch
+        let favoritesRow = recentsFavoritesSection.descendants(matching: .other)["stationRow.groove-salad"].firstMatch
 
-        XCTAssertTrue(recentsSection.waitForExistence(timeout: 5))
-        XCTAssertTrue(favoritesSection.exists)
+        XCTAssertTrue(recentsFavoritesSection.waitForExistence(timeout: 5))
         XCTAssertTrue(recentsFavoriteButton.exists)
         XCTAssertTrue(favoritesRow.exists)
 
         recentsFavoriteButton.tap()
 
-        XCTAssertTrue(favoritesRow.exists)
+        XCTAssertTrue(favoritesRow.waitForNonExistence(timeout: 5))
 
         let scrollView = app.scrollViews.firstMatch
         triggerRefresh(in: scrollView)
 
-        if !favoritesRow.waitForNonExistence(timeout: 3) {
+        if favoritesRow.exists {
             triggerRefresh(in: scrollView, startY: 0.12, endY: 0.9)
         }
 

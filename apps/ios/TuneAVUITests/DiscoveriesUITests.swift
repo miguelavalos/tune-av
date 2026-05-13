@@ -150,7 +150,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(shareSheet.waitForExistence(timeout: 5))
     }
 
-    func testArtworkFlipsToTrackOptionsAndSavesDiscovery() {
+    func testAviShowsTrackActionsForDiscoverableMetadata() {
         let title = "Reckoner UI \(UUID().uuidString.prefix(8))"
         let app = launchApp(
             preferredTab: "player",
@@ -162,32 +162,18 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             ]
         )
 
-        let artwork = waitForPlayerArtwork(in: app)
-        artwork.tap()
+        openAviActions(in: app)
 
-        XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Radiohead"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.share"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.radioInfo"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.lyrics"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.saveSong"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.radioInfo"].exists)
 
-        let saveButton = app.buttons["player.artwork.options.discovery"].firstMatch
+        let saveButton = app.buttons["avi.actions.saveSong"].firstMatch
+        XCTAssertTrue(saveButton.isHittable)
         saveButton.tap()
-
-        app.buttons["player.artwork.options.discovery"].firstMatch.tap()
-
-        app.buttons["player.artwork.options.discovery"].firstMatch.tap()
-
-        closePlayer(in: app)
-        app.buttons["tab.music"].tap()
-        openDiscover(in: app)
-
-        let discoveriesSection = app.otherElements["music.section.discoveries"]
-        XCTAssertTrue(discoveriesSection.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts[title].exists)
-        XCTAssertTrue(app.staticTexts["Radiohead"].exists)
     }
 
-    func testArtworkOptionsHandleLongMetadataAndNonActionTitleTapFlipsBack() {
+    func testAviTrackActionsHandleLongMetadataAndCollapse() {
         let app = launchApp(
             preferredTab: "player",
             extraEnvironment: [
@@ -198,19 +184,15 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             ]
         )
 
-        let artwork = waitForPlayerArtwork(in: app)
-        artwork.tap()
+        openAviActions(in: app)
 
-        let longTitle = app.staticTexts["You Think I Ain't Worth A Dollar, But I Feel Like A Millionaire"].firstMatch
-        XCTAssertTrue(longTitle.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Queens of the Stone Age"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.discovery"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.artist"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.artistYouTube"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.saveSong"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.lyrics"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.saveRadio"].exists)
 
-        app.buttons["player.artwork.options.songInfo"].tap()
+        app.buttons["avi.actions.toggle"].tap()
 
-        XCTAssertTrue(waitForPlayerArtwork(in: app).waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
     }
 
     func testArtworkShowsRadioOptionsWhenTrackArtistIsMissing() {
@@ -223,15 +205,14 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             ]
         )
 
-        let artwork = waitForPlayerArtwork(in: app)
-        artwork.tap()
+        openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["player.artwork.options.playPause"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["player.artwork.options.favorite"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.radioInfo"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.discovery"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.artist"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.lyrics"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.radioInfo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.saveRadio"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.history"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.artist"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.lyrics"].exists)
     }
 
     func testArtworkShowsRadioModeWhenMetadataLooksLikeBroadcast() {
@@ -245,18 +226,15 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             ]
         )
 
-        let artwork = waitForPlayerArtwork(in: app)
-        artwork.tap()
+        openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["player.artwork.options.radioInfo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["player.artwork.options.playPause"].exists)
-        XCTAssertTrue(app.buttons["player.artwork.options.favorite"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.discovery"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.share"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.lyrics"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.youtube"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.artist"].exists)
-        XCTAssertFalse(app.buttons["player.artwork.options.artistYouTube"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.radioInfo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.saveRadio"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.history"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.lyrics"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.youtube"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.artist"].exists)
     }
 
     func testDetectedTrackAppearsWithoutBeingMarkedInteresting() {
@@ -309,15 +287,12 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(musicTab.isHittable)
     }
 
-    private func waitForPlayerArtwork(in app: XCUIApplication, timeout: TimeInterval = 5) -> XCUIElement {
-        let button = app.buttons["player.artwork.front"].firstMatch
-        if button.waitForExistence(timeout: timeout) {
-            return button
-        }
+    private func openAviActions(in app: XCUIApplication, timeout: TimeInterval = 5) {
+        let toggle = app.buttons["avi.actions.toggle"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: timeout))
+        toggle.tap()
 
-        let otherElement = app.otherElements["player.artwork.front"].firstMatch
-        XCTAssertTrue(otherElement.waitForExistence(timeout: timeout))
-        return otherElement
+        XCTAssertTrue(app.buttons["avi.actions.history"].waitForExistence(timeout: timeout))
     }
 
     private func showDiscoveryHistory(in app: XCUIApplication) {
