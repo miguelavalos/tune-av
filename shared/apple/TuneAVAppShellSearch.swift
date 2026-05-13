@@ -190,6 +190,263 @@ enum TuneAVStationMusicClassifier {
     }
 }
 
+enum TuneAVAviEmotion: Equatable {
+    case neutral
+    case listening
+    case focused
+    case happy
+    case celebrate
+    case surprised
+    case thinking
+    case warning
+    case sleep
+    case dislike
+
+    var assetName: String {
+        switch self {
+        case .neutral:
+            return "AviV2HeadNeutral"
+        case .listening:
+            return "AviV2TuneListening"
+        case .focused:
+            return "AviV2TuneFocused"
+        case .happy:
+            return "AviV2TuneHappy"
+        case .celebrate:
+            return "AviV2TuneCelebrate"
+        case .surprised:
+            return "AviV2TuneSurprised"
+        case .thinking:
+            return "AviV2Thinking"
+        case .warning:
+            return "AviV2Warning"
+        case .sleep:
+            return "AviV2Sleep"
+        case .dislike:
+            return "AviV2TuneDislike"
+        }
+    }
+
+    var fullBodyAssetName: String {
+        switch self {
+        case .neutral:
+            return "AviV2NeutralFullbody"
+        default:
+            return assetName
+        }
+    }
+
+    var transitionPriority: Int {
+        switch self {
+        case .warning:
+            return 4
+        case .thinking:
+            return 3
+        case .celebrate, .dislike:
+            return 2
+        case .surprised, .happy:
+            return 1
+        case .neutral, .listening, .focused, .sleep:
+            return 0
+        }
+    }
+}
+
+enum TuneAVAviEmotionStability {
+    static let defaultMinimumDisplayInterval: TimeInterval = 2.4
+    static let immediateMinimumDisplayInterval: TimeInterval = 0.45
+
+    static func shouldAdopt(
+        displayed: TuneAVAviEmotion,
+        candidate: TuneAVAviEmotion,
+        elapsedSinceLastChange: TimeInterval,
+        minimumDisplayInterval: TimeInterval = defaultMinimumDisplayInterval
+    ) -> Bool {
+        guard displayed != candidate else { return false }
+        if candidate.transitionPriority > displayed.transitionPriority {
+            return elapsedSinceLastChange >= immediateMinimumDisplayInterval
+        }
+        return elapsedSinceLastChange >= minimumDisplayInterval
+    }
+}
+
+enum TuneAVAviEmotionResolver {
+    static func playerEmotion(
+        for station: Station,
+        isPlaying: Bool,
+        isLoading: Bool,
+        hasFailure: Bool,
+        hasDiscoverableTrack: Bool,
+        isCurrentTrackSaved: Bool,
+        feedback: TuneAVStationFeedback?,
+        stationDiscoveryCount: Int
+    ) -> TuneAVAviEmotion {
+        if hasFailure {
+            return .warning
+        }
+        if isLoading {
+            return .thinking
+        }
+        if let feedback {
+            return emotion(for: feedback)
+        }
+        if isCurrentTrackSaved {
+            return .happy
+        }
+        if isPlaying, hasDiscoverableTrack {
+            return stationDiscoveryCount == 0 ? .surprised : energeticEmotion(for: station)
+        }
+        if isPlaying {
+            return ambientEmotion(for: station)
+        }
+        return .neutral
+    }
+
+    static func homeEmotion(currentStation: Station?, recentCount: Int, favoriteCount: Int) -> TuneAVAviEmotion {
+        if let currentStation {
+            return ambientEmotion(for: currentStation)
+        }
+        if favoriteCount > 0 {
+            return .happy
+        }
+        if recentCount > 0 {
+            return .focused
+        }
+        return .thinking
+    }
+
+    static func searchEmotion(isLoading: Bool, hasResults: Bool, query: String, discoveryMode: TuneAVStationDiscoveryMode) -> TuneAVAviEmotion {
+        if isLoading {
+            return .thinking
+        }
+        if !hasResults && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return .surprised
+        }
+        switch discoveryMode {
+        case .music:
+            return .focused
+        case .allRadio:
+            return .neutral
+        }
+    }
+
+    static func libraryEmotion(favoriteCount: Int, recentCount: Int, isFiltering: Bool) -> TuneAVAviEmotion {
+        if isFiltering {
+            return .focused
+        }
+        if favoriteCount == 0 && recentCount == 0 {
+            return .thinking
+        }
+        if favoriteCount > 0 {
+            return .happy
+        }
+        return .neutral
+    }
+
+    static func musicEmotion(visibleDiscoveryCount: Int, savedDiscoveryCount: Int, artistCount: Int) -> TuneAVAviEmotion {
+        if visibleDiscoveryCount == 0 {
+            return .listening
+        }
+        if savedDiscoveryCount >= 3 || artistCount >= 3 {
+            return .celebrate
+        }
+        if savedDiscoveryCount > 0 {
+            return .happy
+        }
+        return .focused
+    }
+
+    static func focusedSignalEmotion(
+        focusedStation: Station?,
+        isFocusedStationActive: Bool,
+        isPlaying: Bool,
+        isLoading: Bool,
+        currentTrackTitle: String?,
+        currentTrackArtist: String?,
+        feedback: TuneAVStationFeedback?
+    ) -> TuneAVAviEmotion {
+        guard let focusedStation else {
+            return .thinking
+        }
+        if isLoading {
+            return .thinking
+        }
+        if let feedback {
+            return emotion(for: feedback)
+        }
+        if isFocusedStationActive, isPlaying {
+            let hasTrack = TuneAVText.normalizedValue(currentTrackTitle) != nil || TuneAVText.normalizedValue(currentTrackArtist) != nil
+            return hasTrack ? energeticEmotion(for: focusedStation) : ambientEmotion(for: focusedStation)
+        }
+        return .focused
+    }
+
+    static func emotion(for feedback: TuneAVStationFeedback) -> TuneAVAviEmotion {
+        switch feedback {
+        case .liked:
+            return .celebrate
+        case .notForMe:
+            return .thinking
+        case .disliked:
+            return .dislike
+        }
+    }
+
+    private static func energeticEmotion(for station: Station) -> TuneAVAviEmotion {
+        let tokens = Set(stationEmotionTokens(for: station))
+        if !tokens.isDisjoint(with: ["dance", "electronic", "house", "techno", "hits", "charts", "pop", "party"]) {
+            return .celebrate
+        }
+        if !tokens.isDisjoint(with: ["rock", "alternative", "metal", "hip-hop", "hiphop", "latin", "reggae"]) {
+            return .happy
+        }
+        if !tokens.isDisjoint(with: ["news", "sports", "talk", "public", "politics", "business"]) {
+            return .focused
+        }
+        return .listening
+    }
+
+    private static func ambientEmotion(for station: Station) -> TuneAVAviEmotion {
+        let tokens = Set(stationEmotionTokens(for: station))
+        if !tokens.isDisjoint(with: ["ambient", "chill", "chillout", "classical", "instrumental"]) {
+            return .sleep
+        }
+        if !tokens.isDisjoint(with: ["jazz", "blues", "soul", "folk", "country"]) {
+            return .listening
+        }
+        if TuneAVStationMusicClassifier.nonMusicCategory(station) != nil {
+            return .focused
+        }
+        return energeticEmotion(for: station)
+    }
+
+    private static func stationEmotionTokens(for station: Station) -> [String] {
+        var values = station.tagsList
+        values.append(station.category ?? "")
+        if let editorial = station.editorial {
+            values.append(editorial.primaryFormat)
+            values.append(editorial.musicIntensity)
+            values.append(editorial.speechIntensity)
+            values += editorial.secondaryFormats
+            values += editorial.programming
+            if let discoveryProfile = editorial.discoveryProfile {
+                values.append(discoveryProfile.attentionMode)
+                values.append(discoveryProfile.musicLevel)
+                values.append(discoveryProfile.speechLevel)
+                values += discoveryProfile.genres
+                values += discoveryProfile.moods
+                values += discoveryProfile.bestFor
+            }
+        }
+        return values.flatMap { value in
+            value
+                .lowercased()
+                .split { !$0.isLetter && !$0.isNumber && $0 != "-" }
+                .map(String.init)
+        }
+    }
+}
+
 struct AppShellSearchRequest: Equatable {
     let query: String
     let tag: String?

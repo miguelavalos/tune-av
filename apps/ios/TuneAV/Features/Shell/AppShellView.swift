@@ -1102,7 +1102,7 @@ private struct ShellScrollAwareHeader: View {
 }
 
 private struct AviScreenHeader: View {
-    let assetName: String
+    let emotion: TuneAVAviEmotion
     let title: String
     let summary: String
     var status: String? = nil
@@ -1110,10 +1110,7 @@ private struct AviScreenHeader: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 54)
+            AviStableEmotionImage(emotion: emotion, assetVariant: .head, width: 54)
                 .accessibilityLabel(L10n.string("shell.avi.title"))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -1147,6 +1144,92 @@ private struct AviScreenHeader: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier(accessibilityIdentifier)
+    }
+}
+
+private struct AviStableEmotionImage: View {
+    enum AssetVariant {
+        case head
+        case fullBody
+    }
+
+    let emotion: TuneAVAviEmotion
+    let assetVariant: AssetVariant
+    let width: CGFloat
+    var height: CGFloat?
+
+    @State private var displayedEmotion: TuneAVAviEmotion
+    @State private var lastEmotionChange = Date.distantPast
+
+    init(
+        emotion: TuneAVAviEmotion,
+        assetVariant: AssetVariant,
+        width: CGFloat,
+        height: CGFloat? = nil
+    ) {
+        self.emotion = emotion
+        self.assetVariant = assetVariant
+        self.width = width
+        self.height = height
+        _displayedEmotion = State(initialValue: emotion)
+    }
+
+    private var assetName: String {
+        switch assetVariant {
+        case .head:
+            return displayedEmotion.assetName
+        case .fullBody:
+            return displayedEmotion.fullBodyAssetName
+        }
+    }
+
+    var body: some View {
+        Image(assetName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: width, height: height)
+            .animation(.snappy(duration: 0.24), value: assetName)
+            .onAppear {
+                displayedEmotion = emotion
+                lastEmotionChange = Date()
+            }
+            .onChange(of: emotion) { _, candidate in
+                adopt(candidate)
+            }
+            .task(id: emotion) {
+                await adoptWhenAllowed(emotion)
+            }
+    }
+
+    private func adopt(_ candidate: TuneAVAviEmotion) {
+        let now = Date()
+        guard TuneAVAviEmotionStability.shouldAdopt(
+            displayed: displayedEmotion,
+            candidate: candidate,
+            elapsedSinceLastChange: now.timeIntervalSince(lastEmotionChange)
+        ) else { return }
+
+        displayedEmotion = candidate
+        lastEmotionChange = now
+    }
+
+    @MainActor
+    private func adoptWhenAllowed(_ candidate: TuneAVAviEmotion) async {
+        guard displayedEmotion != candidate else { return }
+        let minimumInterval = candidate.transitionPriority > displayedEmotion.transitionPriority
+            ? TuneAVAviEmotionStability.immediateMinimumDisplayInterval
+            : TuneAVAviEmotionStability.defaultMinimumDisplayInterval
+        let elapsed = Date().timeIntervalSince(lastEmotionChange)
+        let remaining = max(0, minimumInterval - elapsed)
+        if remaining > 0 {
+            do {
+                try await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            } catch {
+                return
+            }
+        }
+        guard !Task.isCancelled else { return }
+        adopt(candidate)
     }
 }
 
@@ -1259,7 +1342,7 @@ private struct AviScreen: View {
     private var aviContextHeader: some View {
         ZStack(alignment: .bottomTrailing) {
             AviScreenHeader(
-                assetName: aviAssetName,
+                emotion: aviEmotion,
                 title: aviContextTitle,
                 summary: aviContextMeta,
                 status: focusedStation == nil ? nil : (isFocusedStationActive ? "sonando" : "info"),
@@ -1605,7 +1688,7 @@ private struct AviScreen: View {
                 aviHeroImage(width: 34)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(isFocusedStationActive && currentTrackTitle != nil ? "Te encaja esta canción?" : "Te encaja esta radio?")
+                    Text(isFocusedStationActive && hasCurrentSongContext ? "Te encaja esta canción?" : "Te encaja esta radio?")
                         .font(.system(size: 14, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
 
@@ -1642,7 +1725,7 @@ private struct AviScreen: View {
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
 
-                Text(isFocusedStationActive ? "Te encaja esta canción?" : "Te encaja esta radio?")
+                Text(isFocusedStationActive && hasCurrentSongContext ? "Te encaja esta canción?" : "Te encaja esta radio?")
                     .font(.system(size: 20, weight: .black, design: .rounded))
                     .foregroundStyle(TuneAVTheme.textPrimary)
                     .lineLimit(2)
@@ -1711,7 +1794,9 @@ private struct AviScreen: View {
     }
 
     private var hasCurrentSongContext: Bool {
-        currentTrackTitle != nil || currentTrackArtist != nil
+        guard let station = focusedStation ?? currentStation else { return false }
+        return TuneAVDisplayMetadata.plausibleTitle(currentTrackTitle, stationName: station.name) != nil &&
+            TuneAVDisplayMetadata.plausibleArtist(currentTrackArtist, stationName: station.name) != nil
     }
 
     private var currentSongIdentity: String {
@@ -1826,10 +1911,7 @@ private struct AviScreen: View {
     }
 
     private func aviHeroImage(width: CGFloat) -> some View {
-        Image(aviAssetName)
-            .resizable()
-            .scaledToFit()
-            .frame(width: width)
+        AviStableEmotionImage(emotion: aviEmotion, assetVariant: .head, width: width)
             .accessibilityLabel(L10n.string("shell.avi.title"))
     }
 
@@ -2005,26 +2087,34 @@ private struct AviScreen: View {
 
             VStack(spacing: 7) {
                 if aviActionsPage == 0 {
-                    AviCommandButton(title: isFocusedStationActive ? "Busca la letra" : "Busca info pública", systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
-                        if isFocusedStationActive {
+                    AviCommandButton(
+                        title: hasCurrentSongContext ? "Busca la letra" : "Busca info pública",
+                        systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
+                        accessibilityIdentifier: hasCurrentSongContext ? "avi.actions.lyrics" : "avi.actions.radioInfo"
+                    ) {
+                        if hasCurrentSongContext {
                             openAviSearch(for: station, destination: .web, suffix: "lyrics")
                         } else {
                             openAviStationSearch(for: station)
                         }
                     }
-                    AviCommandButton(title: isFocusedStationActive ? "Guarda la canción" : "Guarda la radio", systemImage: "heart") {
-                        if isFocusedStationActive {
+                    AviCommandButton(
+                        title: hasCurrentSongContext ? "Guarda la canción" : "Guarda la radio",
+                        systemImage: "heart",
+                        accessibilityIdentifier: hasCurrentSongContext ? "avi.actions.saveSong" : "avi.actions.saveRadio"
+                    ) {
+                        if hasCurrentSongContext {
                             saveAviCurrentDiscovery(for: station)
                         } else {
                             toggleFavorite(station)
                         }
                         closeAviActions()
                     }
-                    AviCommandButton(title: "Enséñame historial", systemImage: "clock.arrow.circlepath") {
+                    AviCommandButton(title: "Enséñame historial", systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
                         showStationDetails(station, [station])
                         closeAviActions()
                     }
-                    AviCommandButton(title: "Abre su web", systemImage: "safari") {
+                    AviCommandButton(title: "Abre su web", systemImage: "safari", accessibilityIdentifier: "avi.actions.web") {
                         if let url = station.resolvedHomepageURL {
                             browserDestination = BrowserDestination(url: url)
                         } else {
@@ -2033,42 +2123,42 @@ private struct AviScreen: View {
                     }
                 } else if aviActionsPage == 1 {
                     if isFocusedStationActive && hasCurrentSongContext {
-                        AviCommandButton(title: "Feedback de radio", systemImage: "dot.radiowaves.left.and.right") {
+                        AviCommandButton(title: "Feedback de radio", systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioFeedback") {
                             withAnimation(.snappy(duration: 0.2)) {
                                 isEditingRadioFeedback = true
                                 aviActionsPage = 2
                             }
                         }
                     }
-                    AviCommandButton(title: "Busca en YouTube", systemImage: "play.rectangle") {
+                    AviCommandButton(title: "Busca en YouTube", systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube") {
                         openAviSearch(for: station, destination: .youtube)
                     }
-                    AviCommandButton(title: "Busca en Apple Music", systemImage: "music.note") {
+                    AviCommandButton(title: "Busca en Apple Music", systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic") {
                         openAviSearch(for: station, destination: .appleMusic)
                     }
-                    AviCommandButton(title: "Busca artista", systemImage: "person.crop.circle") {
+                    AviCommandButton(title: "Busca artista", systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist") {
                         openAviArtistSearch()
                     }
                     if !isFocusedStationActive {
-                        AviCommandButton(title: "Pon esta radio", systemImage: "play.fill") {
+                        AviCommandButton(title: "Pon esta radio", systemImage: "play.fill", accessibilityIdentifier: "avi.actions.playRadio") {
                             openPlayer()
                             closeAviActions()
                         }
                     }
                 } else {
-                    AviCommandButton(title: "Me gusta", systemImage: "hand.thumbsup.fill") {
+                    AviCommandButton(title: "Me gusta", systemImage: "hand.thumbsup.fill", accessibilityIdentifier: "avi.actions.feedback.liked") {
                         setAviMenuFeedback(.liked, for: station)
                         closeAviActions()
                     }
-                    AviCommandButton(title: "No es para mí", systemImage: "minus.circle.fill") {
+                    AviCommandButton(title: "No es para mí", systemImage: "minus.circle.fill", accessibilityIdentifier: "avi.actions.feedback.notForMe") {
                         setAviMenuFeedback(.notForMe, for: station)
                         closeAviActions()
                     }
-                    AviCommandButton(title: "No me gusta", systemImage: "hand.thumbsdown.fill") {
+                    AviCommandButton(title: "No me gusta", systemImage: "hand.thumbsdown.fill", accessibilityIdentifier: "avi.actions.feedback.disliked") {
                         setAviMenuFeedback(.disliked, for: station)
                         closeAviActions()
                     }
-                    AviCommandButton(title: "Quitar feedback", systemImage: "xmark.circle") {
+                    AviCommandButton(title: "Quitar feedback", systemImage: "xmark.circle", accessibilityIdentifier: "avi.actions.feedback.clear") {
                         setAviMenuFeedback(nil, for: station)
                         closeAviActions()
                     }
@@ -2448,8 +2538,16 @@ private struct AviScreen: View {
         L10n.string("shell.avi.subtitle")
     }
 
-    private var aviAssetName: String {
-        focusedStation == nil ? "AviV2Thinking" : "AviV2TuneListening"
+    private var aviEmotion: TuneAVAviEmotion {
+        TuneAVAviEmotionResolver.focusedSignalEmotion(
+            focusedStation: focusedStation,
+            isFocusedStationActive: isFocusedStationActive,
+            isPlaying: isPlaying,
+            isLoading: isLoading,
+            currentTrackTitle: currentTrackTitle,
+            currentTrackArtist: currentTrackArtist,
+            feedback: focusedStation.flatMap { stationFeedback[$0.id] }
+        )
     }
 
     private var aviMoodLine: String {
@@ -2643,14 +2741,12 @@ private struct HomeAviBrief: View {
     let currentStation: Station?
     let recentCount: Int
     let favoriteCount: Int
+    let emotion: TuneAVAviEmotion
     let openAvi: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
-            Image("AviV2HeadNeutral")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 58, height: 58)
+            AviStableEmotionImage(emotion: emotion, assetVariant: .head, width: 58, height: 58)
                 .padding(6)
                 .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
                 .accessibilityHidden(true)
@@ -2921,7 +3017,20 @@ private struct AviSignalActionChip: View {
 private struct AviCommandButton: View {
     let title: String
     let systemImage: String
+    let accessibilityIdentifier: String?
     let action: () -> Void
+
+    init(
+        title: String,
+        systemImage: String,
+        accessibilityIdentifier: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.accessibilityIdentifier = accessibilityIdentifier
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -2956,6 +3065,23 @@ private struct AviCommandButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+        .modifier(OptionalAccessibilityIdentifier(accessibilityIdentifier))
+    }
+}
+
+private struct OptionalAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+
+    init(_ identifier: String?) {
+        self.identifier = identifier
+    }
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
     }
 }
 
@@ -3045,6 +3171,11 @@ private struct HomeScreen: View {
                     currentStation: audioPlayer.currentStation,
                     recentCount: recentStations.count,
                     favoriteCount: favoriteStations.count,
+                    emotion: TuneAVAviEmotionResolver.homeEmotion(
+                        currentStation: audioPlayer.currentStation,
+                        recentCount: recentStations.count,
+                        favoriteCount: favoriteStations.count
+                    ),
                     openAvi: openAvi
                 )
 
@@ -3535,7 +3666,12 @@ private struct SearchScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: queryText.isEmpty ? 20 : 14) {
                 AviScreenHeader(
-                    assetName: discoveryMode == .music ? "AviV2TuneFocused" : "AviV2HeadNeutral",
+                    emotion: TuneAVAviEmotionResolver.searchEmotion(
+                        isLoading: isLoading,
+                        hasResults: !results.isEmpty,
+                        query: queryText,
+                        discoveryMode: discoveryMode
+                    ),
                     title: L10n.string("shell.search.title"),
                     summary: searchAviDetail,
                     status: discoveryMode == .music ? L10n.string("shell.search.discoveryMode.music") : L10n.string("shell.search.discoveryMode.allRadio"),
@@ -3710,7 +3846,11 @@ private struct LibraryScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 AviScreenHeader(
-                    assetName: favorites.isEmpty ? "AviV2Thinking" : "AviV2HeadNeutral",
+                    emotion: TuneAVAviEmotionResolver.libraryEmotion(
+                        favoriteCount: favorites.count,
+                        recentCount: recents.count,
+                        isFiltering: !trimmedQuery.isEmpty
+                    ),
                     title: L10n.string("shell.library.title"),
                     summary: libraryAviDetail,
                     status: favorites.isEmpty ? L10n.string("shell.avi.state.curious") : L10n.string("shell.avi.state.focused"),
@@ -3846,7 +3986,11 @@ private struct MusicScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     AviScreenHeader(
-                        assetName: visibleDiscoveries.isEmpty ? "AviV2TuneListening" : "AviV2TuneFocused",
+                        emotion: TuneAVAviEmotionResolver.musicEmotion(
+                            visibleDiscoveryCount: visibleDiscoveries.count,
+                            savedDiscoveryCount: savedDiscoveries.count,
+                            artistCount: visibleArtistSummaries.count
+                        ),
                         title: L10n.string("shell.music.title"),
                         summary: musicAviDetail,
                         status: visibleDiscoveries.isEmpty ? L10n.string("shell.avi.state.listening") : L10n.string("shell.avi.state.focused"),
@@ -4797,6 +4941,7 @@ private struct HomeTuningDeskHero: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort"))
+            .accessibilityIdentifier("home.hero.favorite.\(station.id)")
 
             Button(action: detailsAction) {
                 Image(systemName: "info.circle")
@@ -5460,6 +5605,7 @@ private struct StationListActionRow: View {
             .menuStyle(.button)
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("common.more"))
+            .accessibilityIdentifier("stationRow.more.\(station.id)")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)

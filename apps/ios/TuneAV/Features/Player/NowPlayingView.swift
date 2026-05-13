@@ -281,9 +281,10 @@ struct NowPlayingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     PlayerAviBody(
-                        assetName: playerAviAssetName,
+                        emotion: playerAviEmotion,
+                        reactionAssetName: aviReaction?.assetName,
                         size: compact ? 88 : 98,
-                        offset: playerAviBodyOffset
+                        offsetForEmotion: playerAviBodyOffset(for:)
                     )
                     .frame(width: compact ? 88 : 98, height: compact ? 96 : 106, alignment: .center)
                 }
@@ -369,9 +370,10 @@ struct NowPlayingView: View {
     private func aviCharacterColumn(for station: Station, compact: Bool) -> some View {
         VStack(spacing: compact ? 6 : 8) {
             PlayerAviBody(
-                assetName: playerAviAssetName,
+                emotion: playerAviEmotion,
+                reactionAssetName: aviReaction?.assetName,
                 size: compact ? 88 : 98,
-                offset: playerAviBodyOffset
+                offsetForEmotion: playerAviBodyOffset(for:)
             )
             .frame(width: compact ? 88 : 98, height: compact ? 96 : 106, alignment: .center)
 
@@ -421,34 +423,52 @@ struct NowPlayingView: View {
 
     private func aviOrbitActions(for station: Station) -> [AviOrbitAction] {
         if aviOptionLayer == .primary {
-            return [
-                AviOrbitAction(id: "lyrics", title: "Letra", systemImage: "text.quote") {
+            var actions: [AviOrbitAction] = []
+
+            if hasDiscoverableTrack {
+                actions.append(AviOrbitAction(id: "lyrics", title: "Letra", systemImage: "text.quote") {
                     openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
                     closeAviOptions()
-                },
-                AviOrbitAction(id: "artist", title: "Artista", systemImage: "person.crop.circle") {
+                })
+                actions.append(AviOrbitAction(id: "artist", title: "Artista", systemImage: "person.crop.circle") {
                     openArtistFromAviOffer()
                     closeAviOptions()
-                },
-                AviOrbitAction(id: "save", title: isCurrentTrackSaved ? "Guardada" : "Guardar", systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                })
+                actions.append(AviOrbitAction(id: "save", title: isCurrentTrackSaved ? "Guardada" : "Guardar", systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
                     _ = saveCurrentDiscovery(for: station)
                     showAviReaction(.saved)
                     closeAviOptions()
-                },
-                AviOrbitAction(id: "web", title: homepageURL == nil ? "Buscar" : "Web", systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
-                    if let homepageURL {
-                        browserDestination = BrowserDestination(url: homepageURL)
-                    } else {
-                        openStationSearch(for: station)
-                    }
+                })
+            } else {
+                actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? "Pausa" : "Play", systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
+                    audioPlayer.togglePlayback()
                     closeAviOptions()
-                },
-                AviOrbitAction(id: "more", title: "Más", systemImage: "ellipsis") {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                        aviOptionLayer = .more
-                    }
+                })
+                actions.append(AviOrbitAction(id: "favorite", title: "Favorita", systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                    toggleFavorite(station)
+                    closeAviOptions()
+                })
+                actions.append(AviOrbitAction(id: "detail", title: "Detalle", systemImage: "info.circle") {
+                    stationHistoryAction(station)
+                    closeAviOptions()
+                })
+            }
+
+            actions.append(AviOrbitAction(id: "web", title: homepageURL == nil ? "Buscar" : "Web", systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
+                if let homepageURL {
+                    browserDestination = BrowserDestination(url: homepageURL)
+                } else {
+                    openStationSearch(for: station)
                 }
-            ]
+                closeAviOptions()
+            })
+            actions.append(AviOrbitAction(id: "more", title: "Más", systemImage: "ellipsis") {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                    aviOptionLayer = .more
+                }
+            })
+
+            return actions
         }
 
         return [
@@ -1337,9 +1357,9 @@ struct NowPlayingView: View {
     }
 
     private var currentTrackHasSongContext: Bool {
-        hasDiscoverableTrack ||
-            audioPlayer.currentTrackArtworkURL != nil ||
-            TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) != nil
+        guard let station = audioPlayer.currentStation else { return false }
+        return TuneAVDisplayMetadata.plausibleTitle(audioPlayer.currentTrackTitle, stationName: station.name) != nil &&
+            TuneAVDisplayMetadata.plausibleArtist(audioPlayer.currentTrackArtist, stationName: station.name) != nil
     }
 
     private var currentTrackIdentity: String {
@@ -1401,33 +1421,37 @@ struct NowPlayingView: View {
         audioPlayer.sleepTimerDescription != nil
     }
 
-    private var playerAviAssetName: String {
-        if let aviReaction {
-            return aviReaction.assetName
+    private var playerAviEmotion: TuneAVAviEmotion {
+        guard let station = audioPlayer.currentStation else {
+            return .neutral
         }
-        if audioPlayer.hasFailure {
-            return "AviV2Warning"
-        }
-        if audioPlayer.isLoading {
-            return "AviV2TuneFocused"
-        }
-        if audioPlayer.isPlaying {
-            return "AviV2TuneListening"
-        }
-        return "AviV2NeutralFullbody"
+        return TuneAVAviEmotionResolver.playerEmotion(
+            for: station,
+            isPlaying: audioPlayer.isPlaying,
+            isLoading: audioPlayer.isLoading,
+            hasFailure: audioPlayer.hasFailure,
+            hasDiscoverableTrack: hasDiscoverableTrack,
+            isCurrentTrackSaved: isCurrentTrackSaved,
+            feedback: aviSelectedFeedback(for: station),
+            stationDiscoveryCount: stationDiscoveryCount(for: station)
+        )
     }
 
-    private var playerAviBodyOffset: CGSize {
-        if audioPlayer.hasFailure {
+    private func playerAviBodyOffset(for emotion: TuneAVAviEmotion) -> CGSize {
+        switch emotion {
+        case .warning:
             return CGSize(width: -3, height: 0)
-        }
-        if audioPlayer.isLoading {
+        case .thinking, .focused:
             return CGSize(width: -4, height: 1)
-        }
-        if audioPlayer.isPlaying {
+        case .listening, .happy, .celebrate, .surprised:
             return CGSize(width: 4, height: -2)
+        case .sleep:
+            return CGSize(width: 2, height: 1)
+        case .dislike:
+            return CGSize(width: -2, height: 0)
+        case .neutral:
+            return .zero
         }
-        return .zero
     }
 
     private var playerAviStateTitle: String {
@@ -1662,9 +1686,34 @@ struct NowPlayingView: View {
 }
 
 private struct PlayerAviBody: View {
-    let assetName: String
+    let emotion: TuneAVAviEmotion
+    let reactionAssetName: String?
     let size: CGFloat
-    let offset: CGSize
+    let offsetForEmotion: (TuneAVAviEmotion) -> CGSize
+
+    @State private var displayedEmotion: TuneAVAviEmotion
+    @State private var lastEmotionChange = Date.distantPast
+
+    init(
+        emotion: TuneAVAviEmotion,
+        reactionAssetName: String?,
+        size: CGFloat,
+        offsetForEmotion: @escaping (TuneAVAviEmotion) -> CGSize
+    ) {
+        self.emotion = emotion
+        self.reactionAssetName = reactionAssetName
+        self.size = size
+        self.offsetForEmotion = offsetForEmotion
+        _displayedEmotion = State(initialValue: emotion)
+    }
+
+    private var assetName: String {
+        reactionAssetName ?? displayedEmotion.fullBodyAssetName
+    }
+
+    private var offset: CGSize {
+        reactionAssetName == nil ? offsetForEmotion(displayedEmotion) : .zero
+    }
 
     var body: some View {
         ZStack {
@@ -1678,6 +1727,47 @@ private struct PlayerAviBody: View {
         .clipped()
         .animation(.snappy(duration: 0.24), value: assetName)
         .animation(.snappy(duration: 0.24), value: offset)
+        .onAppear {
+            displayedEmotion = emotion
+            lastEmotionChange = Date()
+        }
+        .onChange(of: emotion) { _, candidate in
+            adopt(candidate)
+        }
+        .task(id: emotion) {
+            await adoptWhenAllowed(emotion)
+        }
+    }
+
+    private func adopt(_ candidate: TuneAVAviEmotion) {
+        let now = Date()
+        guard TuneAVAviEmotionStability.shouldAdopt(
+            displayed: displayedEmotion,
+            candidate: candidate,
+            elapsedSinceLastChange: now.timeIntervalSince(lastEmotionChange)
+        ) else { return }
+
+        displayedEmotion = candidate
+        lastEmotionChange = now
+    }
+
+    @MainActor
+    private func adoptWhenAllowed(_ candidate: TuneAVAviEmotion) async {
+        guard displayedEmotion != candidate else { return }
+        let minimumInterval = candidate.transitionPriority > displayedEmotion.transitionPriority
+            ? TuneAVAviEmotionStability.immediateMinimumDisplayInterval
+            : TuneAVAviEmotionStability.defaultMinimumDisplayInterval
+        let elapsed = Date().timeIntervalSince(lastEmotionChange)
+        let remaining = max(0, minimumInterval - elapsed)
+        if remaining > 0 {
+            do {
+                try await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            } catch {
+                return
+            }
+        }
+        guard !Task.isCancelled else { return }
+        adopt(candidate)
     }
 }
 
@@ -1934,7 +2024,7 @@ private enum PlayerAviReaction: Equatable {
         case .thinking:
             return "AviV2Thinking"
         case .curious:
-            return "AviV2NeutralFullbody"
+            return "AviV2TuneSurprised"
         }
     }
 }
