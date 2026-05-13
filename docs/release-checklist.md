@@ -22,14 +22,24 @@ Use this checklist before creating a public GitHub release.
 
 ## Build Verification
 
-1. Generate Xcode projects when `project.yml` changes:
+1. For any signed Account AV smoke test or production-flavored iPhone install,
+   use the guarded preflight before building:
+
+   ```bash
+   bun run ios:check:prod
+   ```
+
+   This must resolve `com.avalsys.tuneav`,
+   `https://api-account-av.avalsys.com`, and a `pk_live_...` publishable key.
+
+2. Generate Xcode projects when `project.yml` changes:
 
    ```bash
    cd apps/ios && xcodegen generate
    cd ../macos && xcodegen generate
    ```
 
-2. Run iOS unit tests:
+3. Run iOS unit tests:
 
    ```bash
    cd apps/ios
@@ -40,7 +50,7 @@ Use this checklist before creating a public GitHub release.
      CODE_SIGNING_ALLOWED=NO
    ```
 
-3. Run macOS tests:
+4. Run macOS tests:
 
    ```bash
    cd apps/macos
