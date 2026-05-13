@@ -41,10 +41,9 @@ struct ProfileScreen: View {
 
                 screenContent
             }
-            .padding(24)
-            .padding(.bottom, bottomContentPadding)
+            .shellScreenContentPadding(bottom: bottomContentPadding)
         }
-        .scrollIndicators(.hidden)
+        .shellScreenScrollBehavior()
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .alert(clearLibraryAlertTitle, isPresented: $isShowingClearLocalDataAlert) {
             Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {}

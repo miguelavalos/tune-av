@@ -15,6 +15,8 @@ struct NowPlayingView: View {
     @State private var verticalDragOffset: CGFloat = 0
     @State private var browserDestination: BrowserDestination?
     @State private var aviReaction: PlayerAviReaction?
+    @State private var isShowingAviOptions = false
+    @State private var aviOptionLayer: AviOptionLayer = .primary
 
     private let swipeThreshold: CGFloat = 72
     private let dismissSwipeThreshold: CGFloat = 88
@@ -71,6 +73,7 @@ struct NowPlayingView: View {
                 .padding(.top, topInset)
                 .padding(.bottom, bottomInset)
                 .offset(y: max(verticalDragOffset, 0))
+
             }
         }
         .simultaneousGesture(dismissSwipeGesture)
@@ -185,14 +188,9 @@ struct NowPlayingView: View {
         contentHeight: CGFloat,
         compact: Bool
     ) -> some View {
-        let verticalSpacing: CGFloat = compact ? 10 : 14
         let aviHeight = playerAviHeight(in: contentHeight, compact: compact)
 
-        return VStack(spacing: verticalSpacing) {
-            contextDeck(for: station, compact: compact)
-                .offset(x: horizontalDragOffset)
-                .gesture(stationSwipeGesture)
-
+        return VStack(spacing: compact ? 10 : 14) {
             aviPlayerStage(
                 for: station,
                 width: contentWidth,
@@ -222,18 +220,13 @@ struct NowPlayingView: View {
 
         return VStack(spacing: 0) {
             HStack(alignment: .center, spacing: columnSpacing) {
-                contextDeck(for: station, compact: true)
-                    .frame(width: columnWidth)
-                    .offset(x: horizontalDragOffset)
-                    .gesture(stationSwipeGesture)
-
                 aviPlayerStage(
                     for: station,
-                    width: columnWidth,
+                    width: columnWidth * 2 + columnSpacing,
                     aviHeight: compact ? 126 : 136,
                     compact: true
                 )
-                    .frame(width: columnWidth)
+                    .frame(width: columnWidth * 2 + columnSpacing)
                     .offset(x: horizontalDragOffset)
                     .gesture(stationSwipeGesture)
 
@@ -253,38 +246,104 @@ struct NowPlayingView: View {
         aviHeight: CGFloat,
         compact: Bool
     ) -> some View {
-        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
-            HStack(alignment: .center, spacing: compact ? 10 : 12) {
-                aviSignalConsole(for: station, compact: compact)
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: compact ? 9 : 11) {
+                HStack(alignment: .firstTextBaseline) {
+                    Spacer(minLength: 12)
+
+                    Text(station.name)
+                        .font(.system(size: compact ? 12 : 13, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 12)
+                }
+                .accessibilityIdentifier("player.avi.headers")
+
+                HStack(alignment: .center, spacing: compact ? 12 : 16) {
+                    HStack(alignment: .center, spacing: 10) {
+                        listeningArtwork(for: station, size: compact ? 44 : 50)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(trackTitleLine(for: station))
+                                .font(.system(size: compact ? 20 : 23, weight: .black, design: .rounded))
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.78)
+
+                            Text(trackSupportingLine(for: station))
+                                .font(.system(size: compact ? 12 : 13, weight: .bold))
+                                .foregroundStyle(TuneAVTheme.textSecondary)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                PlayerAviBody(
-                    assetName: playerAviAssetName,
-                    size: min(aviHeight, compact ? 118 : 132),
-                    offset: playerAviBodyOffset
-                )
-                .frame(width: compact ? 104 : 116, alignment: .trailing)
-                .offset(x: compact ? 16 : 22)
-                .accessibilityLabel(L10n.string("shell.avi.title"))
+                    PlayerAviBody(
+                        assetName: playerAviAssetName,
+                        size: compact ? 88 : 98,
+                        offset: playerAviBodyOffset
+                    )
+                    .frame(width: compact ? 88 : 98, height: compact ? 96 : 106, alignment: .center)
+                }
+
+                HStack(alignment: .center, spacing: compact ? 10 : 12) {
+                    VStack(alignment: .leading, spacing: compact ? 7 : 8) {
+                        Text(aviCommandTitle(for: station))
+                            .font(.system(size: compact ? 15 : 17, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.86)
+
+                        aviFeedbackRow(for: station, compact: compact)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
+                            isShowingAviOptions.toggle()
+                            if !isShowingAviOptions {
+                                aviOptionLayer = .primary
+                            }
+                        }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 11, weight: .black))
+                            Text("Opciones")
+                                .font(.system(size: compact ? 10 : 11, weight: .black))
+                            Image(systemName: isShowingAviOptions ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 8, weight: .black))
+                        }
+                        .foregroundStyle(TuneAVTheme.brandBlack)
+                        .padding(.horizontal, 10)
+                        .frame(height: 34)
+                        .background(TuneAVTheme.highlight, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("player.avi.optionsToggle")
+                }
+
+                HStack(spacing: 6) {
+                    ForEach(playerAviContextPrompts(for: station).prefix(compact ? 2 : 3), id: \.self) { prompt in
+                        PlayerAviContextPill(title: prompt)
+                    }
+                }
+                .frame(height: 25, alignment: .leading)
+                .accessibilityIdentifier("player.avi.context")
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(playerAviStateTitle)
-                    .font(.system(size: compact ? 14 : 16, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-
-                Text(playerAviDetail(for: station))
-                    .font(.system(size: compact ? 11 : 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(compact ? 2 : 2)
-                    .fixedSize(horizontal: false, vertical: true)
+            if isShowingAviOptions {
+                aviOptionsPanel(for: station, compact: compact)
+                    .offset(y: compact ? 214 : 232)
+                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .topTrailing)))
+                    .zIndex(3)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, compact ? 12 : 18)
+        .padding(.vertical, compact ? 12 : 16)
         .frame(width: width)
         .background(
             RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
@@ -298,64 +357,450 @@ struct NowPlayingView: View {
         .accessibilityIdentifier("player.avi.stage")
         .onChange(of: currentTrackIdentity) { _, _ in
             aviReaction = nil
+            isShowingAviOptions = false
+            aviOptionLayer = .primary
         }
     }
 
-    private func aviSignalConsole(for station: Station, compact: Bool) -> some View {
-        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
-            Text(aviActionEyebrow)
-                .font(.system(size: 9, weight: .black))
-                .foregroundStyle(TuneAVTheme.highlight.opacity(0.94))
-                .textCase(.uppercase)
-                .lineLimit(1)
+    private var trackArtistActionTitle: String {
+        audioPlayer.currentTrackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view")
+    }
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 3), spacing: 7) {
-                ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
-                    let feedbackIdentifier = "player.avi.feedback." + feedback.rawValue
-                    aviSignalButton(
-                        systemImage: feedback.systemImage,
-                        isSelected: aviSelectedFeedback(for: station) == feedback,
-                        accessibilityLabel: feedback.localizedState,
-                        accessibilityIdentifier: feedbackIdentifier
-                    ) {
-                        setAviFeedback(feedback, for: station)
-                        showAviReaction(for: feedback)
+    private func aviCharacterColumn(for station: Station, compact: Bool) -> some View {
+        VStack(spacing: compact ? 6 : 8) {
+            PlayerAviBody(
+                assetName: playerAviAssetName,
+                size: compact ? 88 : 98,
+                offset: playerAviBodyOffset
+            )
+            .frame(width: compact ? 88 : 98, height: compact ? 96 : 106, alignment: .center)
+
+            Button {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                    isShowingAviOptions.toggle()
+                    if !isShowingAviOptions {
+                        aviOptionLayer = .primary
                     }
                 }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10, weight: .black))
+                    Text("Avi")
+                        .font(.system(size: 10, weight: .black))
+                    Image(systemName: isShowingAviOptions ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 8, weight: .black))
+                }
+                .foregroundStyle(TuneAVTheme.brandBlack)
+                .padding(.horizontal, 9)
+                .frame(height: 30)
+                .background(TuneAVTheme.highlight, in: Capsule())
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("player.avi.optionsToggle")
 
-            HStack(spacing: 6) {
-                ForEach(playerAviContextPrompts(for: station).prefix(2), id: \.self) { prompt in
-                    PlayerAviContextPill(title: prompt)
+            if isShowingAviOptions {
+                aviOptionOrbit(for: station, compact: compact)
+                    .transition(.opacity.combined(with: .scale(scale: 0.82, anchor: .top)))
+            }
+        }
+        .zIndex(2)
+    }
+
+    private func aviOptionOrbit(for station: Station, compact: Bool) -> some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(aviOrbitActions(for: station).enumerated()), id: \.element.id) { index, action in
+                AviOrbitActionButton(action: action, compact: compact)
+                    .offset(aviOrbitOffset(index: index, compact: compact))
+            }
+        }
+        .frame(width: compact ? 176 : 194, height: compact ? 130 : 142, alignment: .topLeading)
+        .accessibilityIdentifier("player.avi.optionOrbit")
+    }
+
+    private func aviOrbitActions(for station: Station) -> [AviOrbitAction] {
+        if aviOptionLayer == .primary {
+            return [
+                AviOrbitAction(id: "lyrics", title: "Letra", systemImage: "text.quote") {
+                    openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
+                    closeAviOptions()
+                },
+                AviOrbitAction(id: "artist", title: "Artista", systemImage: "person.crop.circle") {
+                    openArtistFromAviOffer()
+                    closeAviOptions()
+                },
+                AviOrbitAction(id: "save", title: isCurrentTrackSaved ? "Guardada" : "Guardar", systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                    _ = saveCurrentDiscovery(for: station)
+                    showAviReaction(.saved)
+                    closeAviOptions()
+                },
+                AviOrbitAction(id: "web", title: homepageURL == nil ? "Buscar" : "Web", systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
+                    if let homepageURL {
+                        browserDestination = BrowserDestination(url: homepageURL)
+                    } else {
+                        openStationSearch(for: station)
+                    }
+                    closeAviOptions()
+                },
+                AviOrbitAction(id: "more", title: "Más", systemImage: "ellipsis") {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                        aviOptionLayer = .more
+                    }
+                }
+            ]
+        }
+
+        return [
+            AviOrbitAction(id: "apple", title: "Apple", systemImage: "music.note") {
+                openExternalSearch(.appleMusicSearch, destination: .appleMusic)
+                closeAviOptions()
+            },
+            AviOrbitAction(id: "youtube", title: "YouTube", systemImage: "play.rectangle") {
+                openExternalSearch(.youtubeSearch, destination: .youtube)
+                closeAviOptions()
+            },
+            AviOrbitAction(id: "detail", title: "Detalle", systemImage: "info.circle") {
+                stationHistoryAction(station)
+                closeAviOptions()
+            },
+            AviOrbitAction(id: "favorite", title: "Favorita", systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                toggleFavorite(station)
+                closeAviOptions()
+            },
+            AviOrbitAction(id: "back", title: "Volver", systemImage: "chevron.left") {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                    aviOptionLayer = .primary
                 }
             }
-            .frame(height: 25, alignment: .leading)
-            .accessibilityIdentifier("player.avi.context")
+        ]
+    }
+
+    private func aviOrbitOffset(index: Int, compact: Bool) -> CGSize {
+        let points: [CGSize] = [
+            CGSize(width: compact ? 58 : 66, height: 0),
+            CGSize(width: compact ? 88 : 100, height: compact ? 28 : 32),
+            CGSize(width: compact ? 78 : 90, height: compact ? 62 : 70),
+            CGSize(width: compact ? 48 : 56, height: compact ? 92 : 104),
+            CGSize(width: compact ? 24 : 30, height: compact ? 104 : 116)
+        ]
+        return points[min(index, points.count - 1)]
+    }
+
+    private func aviOptionsPanel(for station: Station, compact: Bool) -> some View {
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(TuneAVTheme.highlight.opacity(0.24), lineWidth: 1)
+                }
+                .shadow(color: TuneAVTheme.softShadow.opacity(0.28), radius: 18, y: 10)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+
+                Text(aviOptionLayer == .primary ? "Pídele a Avi" : "Más con Avi")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 14)
+            .padding(.top, 12)
+
+            Button {
+                closeAviOptions()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(TuneAVTheme.elevatedSurface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(10)
+
+            ForEach(Array(aviOrbitActions(for: station).enumerated()), id: \.element.id) { index, action in
+                Button(action: action.action) {
+                    VStack(spacing: 5) {
+                        Image(systemName: action.systemImage)
+                            .font(.system(size: 13, weight: .black))
+                            .frame(width: 30, height: 30)
+                            .foregroundStyle(TuneAVTheme.brandBlack)
+                            .background(TuneAVTheme.highlight, in: Circle())
+
+                        Text(action.title)
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+                    .frame(width: compact ? 64 : 68, height: compact ? 58 : 62)
+                    .background(TuneAVTheme.mutedSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .offset(aviPanelOffset(index: index, compact: compact))
+                .accessibilityIdentifier("player.avi.panel.\(action.id)")
+            }
+        }
+        .frame(width: compact ? 246 : 260, height: compact ? 176 : 188)
+        .accessibilityIdentifier("player.avi.optionsPanel")
+    }
+
+    private func aviPanelOffset(index: Int, compact: Bool) -> CGSize {
+        let points: [CGSize] = [
+            CGSize(width: compact ? -168 : -178, height: compact ? 52 : 56),
+            CGSize(width: compact ? -104 : -110, height: compact ? 34 : 36),
+            CGSize(width: compact ? -48 : -52, height: compact ? 70 : 76),
+            CGSize(width: compact ? -98 : -104, height: compact ? 112 : 120),
+            CGSize(width: compact ? -164 : -174, height: compact ? 108 : 116)
+        ]
+        return points[min(index, points.count - 1)]
+    }
+
+    private func closeAviOptions() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+            isShowingAviOptions = false
+            aviOptionLayer = .primary
         }
     }
 
-    private func aviSignalButton(
-        systemImage: String,
-        isSelected: Bool,
-        accessibilityLabel: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .background(isSelected ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+    private func aviListeningCard(for station: Station, compact: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            listeningArtwork(for: station, size: compact ? 42 : 48)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 10, weight: .black))
+                    Text("Avi escucha")
+                        .font(.system(size: 10, weight: .black))
                 }
+                .foregroundStyle(TuneAVTheme.highlight)
+
+                Text(trackTitleLine(for: station))
+                    .font(.system(size: compact ? 19 : 22, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+
+                Text(trackSupportingLine(for: station))
+                    .font(.system(size: compact ? 11 : 12, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        .padding(.horizontal, 12)
+        .padding(.vertical, compact ? 10 : 12)
+        .frame(minHeight: compact ? 96 : 112, alignment: .center)
+        .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .accessibilityIdentifier("player.avi.listeningCard")
+    }
+
+    @ViewBuilder
+    private func listeningArtwork(for station: Station, size: CGFloat) -> some View {
+        if let artworkURL = audioPlayer.currentTrackArtworkURL {
+            AsyncImage(url: artworkURL) { phase in
+                if case .success(let image) = phase {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    listeningStationArtwork(for: station, size: size)
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            listeningStationArtwork(for: station, size: size)
+        }
+    }
+
+    private func listeningStationArtwork(for station: Station, size: CGFloat) -> some View {
+        StationArtworkView(
+            station: station,
+            size: size,
+            surfaceStyle: .dark,
+            contentInsetRatio: 0.04,
+            cornerRadiusRatio: 0.18,
+            textMode: .stationName,
+            animationOverlay: .none,
+            isAnimationActive: false
+        )
+    }
+
+    private func aviCommandTitle(for station: Station) -> String {
+        if audioPlayer.hasFailure {
+            return L10n.string("player.avi.state.error")
+        }
+        if audioPlayer.isLoading {
+            return L10n.string("player.avi.state.thinking")
+        }
+        if aviSelectedFeedback(for: station) != nil {
+            return "Lo tengo. ¿Qué hacemos ahora?"
+        }
+        switch aviActionTarget {
+        case .song:
+            return "¿Te encaja esta canción?"
+        case .radio:
+            return "¿Te encaja esta radio?"
+        }
+    }
+
+    private func aviCommandDetail(for station: Station) -> String {
+        if audioPlayer.hasFailure {
+            return L10n.string("player.avi.detail.error")
+        }
+        if audioPlayer.isLoading {
+            return L10n.string("player.avi.detail.thinking", station.name)
+        }
+        if aviSelectedFeedback(for: station) != nil {
+            return "Avi ajusta tus preferencias y mantiene las acciones a mano."
+        }
+        if hasDiscoverableTrack {
+            return trackSupportingLine(for: station)
+        }
+        return playerAviDetail(for: station)
+    }
+
+    private func aviFeedbackRow(for station: Station, compact: Bool) -> some View {
+        HStack(spacing: 7) {
+            ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+                let isSelected = aviSelectedFeedback(for: station) == feedback
+                Button {
+                    setAviFeedback(feedback, for: station)
+                    showAviReaction(for: feedback)
+                } label: {
+                    Image(systemName: feedback.systemImage)
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: compact ? 38 : 42)
+                        .background(isSelected ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(feedback.localizedState)
+                .accessibilityIdentifier("player.avi.feedback." + feedback.rawValue)
+            }
+        }
+    }
+
+    private func aviSecondaryOffer(for station: Station, compact: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .frame(width: 28, height: 28)
+                .background(TuneAVTheme.elevatedSurface, in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Avi también puede ayudarte")
+                    .font(.system(size: compact ? 11 : 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(1)
+
+                Text(secondaryOfferSummary(for: station))
+                    .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Menu {
+                if hasDiscoverableTrack {
+                    Button(L10n.string("player.discovery.lyrics"), systemImage: "text.quote") {
+                        openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
+                    }
+
+                    Button(trackArtistActionTitle, systemImage: "person.crop.circle") {
+                        openArtistFromAviOffer()
+                    }
+
+                    Button(isCurrentTrackSaved ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort"), systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                        _ = saveCurrentDiscovery(for: station)
+                        showAviReaction(.saved)
+                    }
+
+                    Button(L10n.string("player.discovery.appleMusic"), systemImage: "music.note") {
+                        openExternalSearch(.appleMusicSearch, destination: .appleMusic)
+                    }
+
+                    Button(L10n.string("player.discovery.youtube"), systemImage: "play.rectangle") {
+                        openExternalSearch(.youtubeSearch, destination: .youtube)
+                    }
+                }
+
+                Button(homepageURL == nil ? L10n.string("player.menu.searchStation") : L10n.string("player.menu.openWebsite"), systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
+                    if let homepageURL {
+                        browserDestination = BrowserDestination(url: homepageURL)
+                    } else {
+                        openStationSearch(for: station)
+                    }
+                }
+
+                Button(libraryStore.isFavorite(station) ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                    toggleFavorite(station)
+                }
+
+                Button("Detalle", systemImage: "info.circle") {
+                    stationHistoryAction(station)
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Text("Opciones")
+                        .font(.system(size: compact ? 10 : 11, weight: .black))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .black))
+                }
+                .foregroundStyle(TuneAVTheme.brandBlack)
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .background(TuneAVTheme.highlight, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("player.avi.secondaryOptions")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+    }
+
+    private func secondaryOfferSummary(for station: Station) -> String {
+        if hasDiscoverableTrack {
+            return "letra, artista, guardar y más"
+        }
+        if homepageURL != nil {
+            return "web, favorita, detalle y más"
+        }
+        return "buscar radio, favorita y detalle"
+    }
+
+    private func openArtistFromAviOffer() {
+        if let trackArtistURL = audioPlayer.currentTrackArtistURL {
+            browserDestination = BrowserDestination(url: trackArtistURL)
+        } else {
+            openArtistSearch(destination: .web, feature: .webSearch)
+        }
     }
 
     private var aviActionEyebrow: String {
@@ -1317,9 +1762,6 @@ private struct PlayerSignalDeck: View {
 
             nowPlayingLine
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            actionMenu
-                .offset(x: 4)
         }
         .frame(height: 72)
     }
@@ -1497,6 +1939,18 @@ private enum PlayerAviReaction: Equatable {
     }
 }
 
+private enum AviOptionLayer {
+    case primary
+    case more
+}
+
+private struct AviOrbitAction: Identifiable {
+    let id: String
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+}
+
 private struct PlayerAviContextPill: View {
     let title: String
 
@@ -1513,6 +1967,37 @@ private struct PlayerAviContextPill: View {
                 Capsule()
                     .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
+    }
+}
+
+private struct AviOrbitActionButton: View {
+    let action: AviOrbitAction
+    let compact: Bool
+
+    var body: some View {
+        Button(action: action.action) {
+            HStack(spacing: 5) {
+                Image(systemName: action.systemImage)
+                    .font(.system(size: compact ? 11 : 12, weight: .black))
+
+                Text(action.title)
+                    .font(.system(size: compact ? 9 : 10, weight: .black))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .foregroundStyle(TuneAVTheme.textPrimary)
+            .padding(.leading, 8)
+            .padding(.trailing, 9)
+            .frame(height: compact ? 30 : 32)
+            .background(.regularMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(TuneAVTheme.highlight.opacity(0.28), lineWidth: 1)
+            }
+            .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 10, y: 5)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("player.avi.orbit.\(action.id)")
     }
 }
 

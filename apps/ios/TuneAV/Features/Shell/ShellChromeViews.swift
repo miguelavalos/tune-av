@@ -16,13 +16,13 @@ struct ShellBrandHeader: View {
                 chromeActions.openSettings()
             } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(width: 42, height: 42)
+                    .frame(width: 36, height: 36)
                     .background(TuneAVTheme.elevatedSurface, in: Circle())
                     .overlay {
                         Circle()
-                            .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                            .stroke(TuneAVTheme.borderSubtle.opacity(0.52), lineWidth: 1)
                     }
             }
             .buttonStyle(.plain)
@@ -34,7 +34,7 @@ struct ShellBrandHeader: View {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 132, height: 44)
+                .frame(width: 160, height: 54)
 
             Spacer(minLength: 8)
 
@@ -42,13 +42,13 @@ struct ShellBrandHeader: View {
                 chromeActions.openAccount()
             } label: {
                 Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(width: 42, height: 42)
+                    .frame(width: 36, height: 36)
                     .background(TuneAVTheme.elevatedSurface, in: Circle())
                     .overlay {
                         Circle()
-                            .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                            .stroke(TuneAVTheme.borderSubtle.opacity(0.52), lineWidth: 1)
                     }
             }
             .buttonStyle(.plain)

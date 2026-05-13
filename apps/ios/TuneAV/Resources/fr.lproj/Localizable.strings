@@ -25,7 +25,7 @@
 "auth.cta.skip" = "PASSER POUR L'INSTANT";
 "auth.cta.subtitle.available" = "Commencez par découvrir. Connectez un compte quand vous voulez emporter votre carnet.";
 "auth.cta.subtitle.unavailable" = "Account AV n'est pas encore configuré dans cette build. Vous pouvez quand même utiliser Tune AV localement sur cet appareil.";
-"auth.feature.subtitle" = "Explorez des stations en direct, voyez ce qui passe et gardez les radios que vous voulez retrouver vite.";
+"auth.feature.subtitle" = "Trouvez des radios en direct et découvrez les morceaux qui passent.";
 "auth.feature.title" = "Accordez-vous au monde";
 "auth.avi.note" = "Je vous signalerai les stations à essayer.";
 "auth.avi.accessibilityLabel" = "Guide Avi avec illustration de radio en direct et de carnet";

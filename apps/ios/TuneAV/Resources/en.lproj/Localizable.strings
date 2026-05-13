@@ -25,7 +25,7 @@
 "auth.cta.skip" = "SKIP FOR NOW";
 "auth.cta.subtitle.available" = "Start with discovery. Connect when you want your notebook to follow you.";
 "auth.cta.subtitle.unavailable" = "Sign-in isn't configured in this build yet. You can still use Tune AV locally on this device.";
-"auth.feature.subtitle" = "Explore live stations, see what's playing, and save the radios you want nearby.";
+"auth.feature.subtitle" = "Find live radio stations and discover the songs playing now.";
 "auth.feature.title" = "Tune into the world";
 "auth.avi.note" = "I will point out stations worth trying.";
 "auth.avi.accessibilityLabel" = "Avi guide with live radio and notebook illustration";

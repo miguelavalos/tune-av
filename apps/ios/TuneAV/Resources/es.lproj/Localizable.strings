@@ -25,7 +25,7 @@
 "auth.cta.skip" = "OMITIR POR AHORA";
 "auth.cta.subtitle.available" = "Empieza descubriendo. Conecta una cuenta cuando quieras llevar tu cuaderno contigo.";
 "auth.cta.subtitle.unavailable" = "El inicio de sesión aún no está configurado en esta compilación. Puedes seguir usando Tune AV de forma local en este dispositivo.";
-"auth.feature.subtitle" = "Explora emisoras en directo, mira qué está sonando y guarda las radios que quieras tener cerca.";
+"auth.feature.subtitle" = "Encuentra radios en directo y descubre qué canciones están sonando.";
 "auth.feature.title" = "Sintoniza el mundo";
 "auth.avi.note" = "Te señalaré emisoras que valga la pena probar.";
 "auth.avi.accessibilityLabel" = "Guía Avi con ilustración de radio en directo y cuaderno";

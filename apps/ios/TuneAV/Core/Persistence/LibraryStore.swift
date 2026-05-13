@@ -127,31 +127,14 @@ final class LibraryStore: ObservableObject {
     }
 
     func recordPlayback(of station: Station, recentLimit: Int? = nil) {
-        removeTombstone(resource: "recents", identityKey: Self.stationIdentityKey(for: station))
-        if let existing = recents.first(where: { $0.stationID == station.id }) {
-            existing.name = station.name
-            existing.country = station.country
-            existing.countryCode = station.countryCode
-            existing.state = station.state
-            existing.language = station.language
-            existing.languageCodes = station.languageCodes
-            existing.tags = station.tags
-            existing.streamURL = station.streamURL
-            existing.faviconURL = station.faviconURL
-            existing.bitrate = station.bitrate
-            existing.codec = station.codec
-            existing.homepageURL = station.homepageURL
-            existing.votes = station.votes
-            existing.clickCount = station.clickCount
-            existing.clickTrend = station.clickTrend
-            existing.isHLS = station.isHLS
-            existing.hasExtendedInfo = station.hasExtendedInfo
-            existing.hasSSLError = station.hasSSLError
-            existing.lastCheckOKAt = station.lastCheckOKAt
-            existing.geoLatitude = station.geoLatitude
-            existing.geoLongitude = station.geoLongitude
-            existing.updateStationSnapshot(station)
-            existing.lastPlayedAt = .now
+        let identityKey = Self.stationIdentityKey(for: station)
+        removeTombstone(resource: "recents", identityKey: identityKey)
+        if let existing = recents.first(where: { $0.stationID == station.id || Self.stationIdentityKey(for: Station(recent: $0)) == identityKey }) {
+            updateRecent(existing, with: station)
+            for duplicate in recents where duplicate !== existing && Self.stationIdentityKey(for: Station(recent: duplicate)) == identityKey {
+                rememberRecentDeletion(for: Station(recent: duplicate))
+                context.delete(duplicate)
+            }
         } else {
             context.insert(RecentStation(station: station))
         }
@@ -395,7 +378,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func recentStations() -> [Station] {
-        recents.map(Station.init(recent:))
+        Self.uniqueRecentStations(from: recents)
     }
 
     func setPreferredTag(_ tag: String?) {
@@ -539,6 +522,46 @@ final class LibraryStore: ObservableObject {
             rememberRecentDeletion(for: Station(recent: item))
             context.delete(item)
         }
+    }
+
+    private func updateRecent(_ recent: RecentStation, with station: Station) {
+        recent.name = station.name
+        recent.country = station.country
+        recent.countryCode = station.countryCode
+        recent.state = station.state
+        recent.language = station.language
+        recent.languageCodes = station.languageCodes
+        recent.tags = station.tags
+        recent.streamURL = station.streamURL
+        recent.faviconURL = station.faviconURL
+        recent.bitrate = station.bitrate
+        recent.codec = station.codec
+        recent.homepageURL = station.homepageURL
+        recent.votes = station.votes
+        recent.clickCount = station.clickCount
+        recent.clickTrend = station.clickTrend
+        recent.isHLS = station.isHLS
+        recent.hasExtendedInfo = station.hasExtendedInfo
+        recent.hasSSLError = station.hasSSLError
+        recent.lastCheckOKAt = station.lastCheckOKAt
+        recent.geoLatitude = station.geoLatitude
+        recent.geoLongitude = station.geoLongitude
+        recent.updateStationSnapshot(station)
+        recent.lastPlayedAt = .now
+    }
+
+    private static func uniqueRecentStations(from recents: [RecentStation]) -> [Station] {
+        var seen = Set<String>()
+        var stations: [Station] = []
+
+        for recent in recents {
+            let station = Station(recent: recent)
+            let identityKey = stationIdentityKey(for: station)
+            guard seen.insert(identityKey).inserted else { continue }
+            stations.append(station)
+        }
+
+        return stations
     }
 
     private func trimDiscoveries(limit: Int) {

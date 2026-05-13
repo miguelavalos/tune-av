@@ -25,7 +25,7 @@
 "auth.cta.skip" = "VORERST ÜBERSPRINGEN";
 "auth.cta.subtitle.available" = "Starte mit Entdeckungen. Verbinde dein Konto, wenn dein Notizbuch mitkommen soll.";
 "auth.cta.subtitle.unavailable" = "Account AV ist in diesem Build noch nicht konfiguriert. Du kannst Tune AV trotzdem lokal auf diesem Gerät verwenden.";
-"auth.feature.subtitle" = "Entdecke Live-Sender, sieh was gerade läuft und speichere Radios, die du griffbereit haben willst.";
+"auth.feature.subtitle" = "Finde Live-Radios und entdecke die Songs, die gerade laufen.";
 "auth.feature.title" = "Stimme dich auf die Welt ein";
 "auth.avi.note" = "Ich zeige dir Sender, die einen Versuch wert sind.";
 "auth.avi.accessibilityLabel" = "Avi-Guide mit Live-Radio- und Notizbuch-Illustration";

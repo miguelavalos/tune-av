@@ -212,6 +212,11 @@ final class AudioPlayerService: NSObject, ObservableObject {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
+    func stopAndClearCurrentStation() {
+        stop()
+        currentStation = nil
+    }
+
     func retry() {
         guard let currentStation else { return }
         userRequestedPlayback = true

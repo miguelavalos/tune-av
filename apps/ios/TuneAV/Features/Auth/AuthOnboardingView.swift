@@ -38,7 +38,7 @@ struct AuthOnboardingView: View {
 
                 VStack(spacing: 0) {
                     Color.clear
-                        .frame(height: max(proxy.safeAreaInsets.top + 44, authOptionsArePresented ? 62 : 68))
+                        .frame(height: max(proxy.safeAreaInsets.top + 44, 62))
 
                     DiscoveryHero(compact: authOptionsArePresented)
 
@@ -232,20 +232,20 @@ private struct DiscoveryHero: View {
     let compact: Bool
 
     var body: some View {
-        VStack(spacing: compact ? 8 : 10) {
+        VStack(spacing: 8) {
             Text(L10n.string("auth.feature.title"))
-                .font(.system(size: compact ? 30 : 36, weight: .black))
+                .font(.system(size: 30, weight: .black))
                 .foregroundStyle(TuneAVTheme.brandGraphite)
                 .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.86)
 
             Text(L10n.string("auth.feature.subtitle"))
-                .font(.system(size: compact ? 15 : 16, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
                 .multilineTextAlignment(.center)
-                .lineLimit(nil)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 308)
+                .frame(maxWidth: 316)
         }
         .padding(.horizontal, 24)
         .padding(.horizontal, 18)

@@ -21,20 +21,26 @@ struct TuneAVSplashView: View {
 
             PaperSignalBackdrop(expanded: signalExpanded)
 
-            VStack(spacing: 34) {
+            VStack(spacing: 0) {
                 Image("OnboardingWordmark")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 174, height: 98)
+                    .frame(width: 232, height: 78)
                     .opacity(contentVisible ? 1 : 0)
+                    .padding(.top, 92)
+
+                Spacer(minLength: 14)
 
                 SplashTuningScene()
                     .scaleEffect(contentVisible ? 1 : 0.94)
                     .opacity(contentVisible ? 1 : 0.68)
+                    .padding(.horizontal, 4)
+
+                Spacer(minLength: 18)
 
                 VStack(spacing: 10) {
                     Text(L10n.string("splash.tagline"))
-                        .font(.system(size: 28, weight: .black, design: .serif))
+                        .font(.system(size: 25, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.brandGraphite)
                         .multilineTextAlignment(.center)
 
@@ -52,6 +58,8 @@ struct TuneAVSplashView: View {
                 }
                 .opacity(contentVisible ? 1 : 0)
                 .offset(y: contentVisible ? 0 : 10)
+
+                Spacer(minLength: 88)
             }
             .padding(.horizontal, 24)
         }
@@ -83,49 +91,45 @@ struct TuneAVSplashView: View {
 
 private struct SplashTuningScene: View {
     var body: some View {
-        ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.white.opacity(0.36))
-                .frame(width: 286, height: 220)
+        ZStack {
+            Image("AviSplashListeningBackground")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 330, height: 386)
+                .clipped()
+                .opacity(0.96)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.0),
+                            Color.white.opacity(0.04),
+                            Color.white.opacity(0.20)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
                 }
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.08), radius: 24, y: 14)
+                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.08), radius: 16, y: 8)
 
-            ForEach(Array([82.0, 124.0, 166.0].enumerated()), id: \.offset) { index, size in
+            ForEach(Array([136.0, 184.0, 232.0].enumerated()), id: \.offset) { index, size in
                 Circle()
-                    .trim(from: 0.02, to: 0.18)
-                    .stroke(TuneAVTheme.highlight.opacity(0.2 - Double(index) * 0.04), lineWidth: 1.6)
+                    .trim(from: 0.04, to: 0.24)
+                    .stroke(TuneAVTheme.highlight.opacity(0.16 - Double(index) * 0.032), lineWidth: 1.5)
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(-22))
-                    .offset(x: -12, y: -42)
+                    .offset(x: 94, y: 28)
             }
-
-            Image("BrandMark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 112, height: 112)
-                .offset(x: -70, y: -34)
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.16), radius: 12, y: 7)
-
-            Image("AviV2TuneListening")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 166, height: 166)
-                .offset(x: 58, y: -6)
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.14), radius: 14, y: 8)
 
             HStack(spacing: 5) {
-                ForEach(Array([14.0, 24.0, 18.0, 32.0, 16.0].enumerated()), id: \.offset) { index, height in
+                ForEach(Array([12.0, 22.0, 16.0, 30.0, 14.0].enumerated()), id: \.offset) { index, height in
                     Capsule(style: .continuous)
-                        .fill(index == 3 ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.18))
-                        .frame(width: 5, height: height)
+                        .fill(index == 3 ? TuneAVTheme.highlight.opacity(0.86) : TuneAVTheme.brandGraphite.opacity(0.16))
+                        .frame(width: 4, height: height)
                 }
             }
-            .offset(x: -71, y: -8)
+            .offset(x: -86, y: 128)
         }
-        .frame(width: 316, height: 238)
+        .frame(width: 330, height: 386)
     }
 }
 

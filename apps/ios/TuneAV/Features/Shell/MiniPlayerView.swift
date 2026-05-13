@@ -34,6 +34,10 @@ struct MiniPlayerView: View {
 
             Spacer(minLength: 8)
 
+            queueButton(systemImage: "backward.fill", accessibilityIdentifier: "miniPlayer.previous") {
+                audioPlayer.playPreviousInQueue()
+            }
+
             Button {
                 audioPlayer.togglePlayback()
             } label: {
@@ -55,22 +59,8 @@ struct MiniPlayerView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("miniPlayer.playPause")
 
-            if audioPlayer.canCyclePlaybackQueue {
-                Button {
-                    audioPlayer.playNextInQueue()
-                } label: {
-                    Image(systemName: "forward.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 34, height: 34)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(.white.opacity(0.12), lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("miniPlayer.next")
+            queueButton(systemImage: "forward.fill", accessibilityIdentifier: "miniPlayer.next") {
+                audioPlayer.playNextInQueue()
             }
         }
         .padding(.horizontal, 12)
@@ -192,6 +182,27 @@ struct MiniPlayerView: View {
 
     private var playButtonForeground: Color {
         .white
+    }
+
+    private func queueButton(
+        systemImage: String,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(audioPlayer.canCyclePlaybackQueue ? TuneAVTheme.textSecondary : TuneAVTheme.textSecondary.opacity(0.28))
+                .frame(width: 34, height: 34)
+                .background(.ultraThinMaterial.opacity(audioPlayer.canCyclePlaybackQueue ? 1 : 0.45), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(.white.opacity(audioPlayer.canCyclePlaybackQueue ? 0.12 : 0.06), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(!audioPlayer.canCyclePlaybackQueue)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     private func normalizedMetadata(_ value: String?) -> String? {
