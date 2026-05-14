@@ -31,6 +31,8 @@ final class LibraryStore: ObservableObject {
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
     private var listeningSessionUploadTask: Task<Void, Never>?
     private var listeningSessionFlushTask: Task<Void, Never>?
+    private var stationFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
+    private var trackFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
 
     private enum RefreshScope {
         case favorites
@@ -490,6 +492,10 @@ final class LibraryStore: ObservableObject {
             listeningSessionUploadTask = nil
             listeningSessionFlushTask?.cancel()
             listeningSessionFlushTask = nil
+            stationFeedbackSyncTasks.values.forEach { $0.cancel() }
+            stationFeedbackSyncTasks.removeAll()
+            trackFeedbackSyncTasks.values.forEach { $0.cancel() }
+            trackFeedbackSyncTasks.removeAll()
             pendingListeningSessions.removeAll()
         }
     }
@@ -839,8 +845,19 @@ final class LibraryStore: ObservableObject {
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
         guard let backendService, backendService.isConfigured() else { return }
 
-        Task {
-            try? await backendService.setStationFeedback(feedback, stationID: stationID)
+        stationFeedbackSyncTasks[stationID]?.cancel()
+        stationFeedbackSyncTasks[stationID] = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                try await backendService.setStationFeedback(feedback, stationID: stationID)
+            } catch is CancellationError {
+                return
+            } catch {
+                stationFeedbackSyncTasks[stationID] = nil
+                return
+            }
+            stationFeedbackSyncTasks[stationID] = nil
         }
     }
 
@@ -848,11 +865,24 @@ final class LibraryStore: ObservableObject {
         guard
             let backendService,
             backendService.isConfigured(),
-            let title = normalizedTrackValue(title)
+            let title = normalizedTrackValue(title),
+            let feedbackKey = discoveredTrackFeedbackKey(title: title, artist: artist)
         else { return }
 
-        Task {
-            try? await backendService.setTrackFeedback(feedback, title: title, artist: normalizedTrackValue(artist), stationID: stationID)
+        let normalizedArtist = normalizedTrackValue(artist)
+        trackFeedbackSyncTasks[feedbackKey]?.cancel()
+        trackFeedbackSyncTasks[feedbackKey] = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                try await backendService.setTrackFeedback(feedback, title: title, artist: normalizedArtist, stationID: stationID)
+            } catch is CancellationError {
+                return
+            } catch {
+                trackFeedbackSyncTasks[feedbackKey] = nil
+                return
+            }
+            trackFeedbackSyncTasks[feedbackKey] = nil
         }
     }
 
