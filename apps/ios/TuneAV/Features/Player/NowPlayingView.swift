@@ -367,60 +367,6 @@ struct NowPlayingView: View {
         audioPlayer.currentTrackArtistURL == nil ? L10n.string("player.artist.search") : L10n.string("player.artist.view")
     }
 
-    private func aviCharacterColumn(for station: Station, compact: Bool) -> some View {
-        VStack(spacing: compact ? 6 : 8) {
-            PlayerAviBody(
-                emotion: playerAviEmotion,
-                reactionAssetName: aviReaction?.assetName,
-                size: compact ? 88 : 98,
-                offsetForEmotion: playerAviBodyOffset(for:)
-            )
-            .frame(width: compact ? 88 : 98, height: compact ? 96 : 106, alignment: .center)
-
-            Button {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                    isShowingAviOptions.toggle()
-                    if !isShowingAviOptions {
-                        aviOptionLayer = .primary
-                    }
-                }
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 10, weight: .black))
-                    Text(L10n.string("shell.avi.title"))
-                        .font(.system(size: 10, weight: .black))
-                    Image(systemName: isShowingAviOptions ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 8, weight: .black))
-                }
-                .foregroundStyle(TuneAVTheme.brandBlack)
-                .padding(.horizontal, 9)
-                .frame(height: 30)
-                .background(TuneAVTheme.highlight, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("player.avi.optionsToggle")
-
-            if isShowingAviOptions {
-                aviOptionOrbit(for: station, compact: compact)
-                    .transition(.opacity.combined(with: .scale(scale: 0.82, anchor: .top)))
-            }
-        }
-        .zIndex(2)
-    }
-
-    private func aviOptionOrbit(for station: Station, compact: Bool) -> some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(Array(aviOrbitActions(for: station).enumerated()), id: \.element.id) { index, action in
-                AviOrbitActionButton(action: action, compact: compact)
-                    .offset(aviOrbitOffset(index: index, compact: compact))
-            }
-        }
-        .frame(width: compact ? 176 : 194, height: compact ? 130 : 142, alignment: .topLeading)
-        .accessibilityIdentifier("player.avi.optionOrbit")
-    }
-
     private func aviOrbitActions(for station: Station) -> [AviOrbitAction] {
         if aviOptionLayer == .primary {
             var actions: [AviOrbitAction] = []
@@ -494,17 +440,6 @@ struct NowPlayingView: View {
                 }
             }
         ]
-    }
-
-    private func aviOrbitOffset(index: Int, compact: Bool) -> CGSize {
-        let points: [CGSize] = [
-            CGSize(width: compact ? 58 : 66, height: 0),
-            CGSize(width: compact ? 88 : 100, height: compact ? 28 : 32),
-            CGSize(width: compact ? 78 : 90, height: compact ? 62 : 70),
-            CGSize(width: compact ? 48 : 56, height: compact ? 92 : 104),
-            CGSize(width: compact ? 24 : 30, height: compact ? 104 : 116)
-        ]
-        return points[min(index, points.count - 1)]
     }
 
     private func aviOptionsPanel(for station: Station, compact: Bool) -> some View {
@@ -2057,37 +1992,6 @@ private struct PlayerAviContextPill: View {
                 Capsule()
                     .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
-    }
-}
-
-private struct AviOrbitActionButton: View {
-    let action: AviOrbitAction
-    let compact: Bool
-
-    var body: some View {
-        Button(action: action.action) {
-            HStack(spacing: 5) {
-                Image(systemName: action.systemImage)
-                    .font(.system(size: compact ? 11 : 12, weight: .black))
-
-                Text(action.title)
-                    .font(.system(size: compact ? 9 : 10, weight: .black))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            .foregroundStyle(TuneAVTheme.textPrimary)
-            .padding(.leading, 8)
-            .padding(.trailing, 9)
-            .frame(height: compact ? 30 : 32)
-            .background(.regularMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.highlight.opacity(0.28), lineWidth: 1)
-            }
-            .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 10, y: 5)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("player.avi.orbit.\(action.id)")
     }
 }
 
