@@ -161,8 +161,12 @@ final class FavoriteStation {
         Station.persistenceSnapshot(from: stationSnapshotJSON)
     }
 
-    func updateStationSnapshot(_ station: Station) {
-        stationSnapshotJSON = station.persistenceSnapshotJSON
+    @discardableResult
+    func updateStationSnapshot(_ station: Station) -> Bool {
+        let nextSnapshotJSON = station.persistenceSnapshotJSON
+        guard stationSnapshotJSON != nextSnapshotJSON else { return false }
+        stationSnapshotJSON = nextSnapshotJSON
+        return true
     }
 }
 
@@ -241,8 +245,12 @@ final class RecentStation {
         Station.persistenceSnapshot(from: stationSnapshotJSON)
     }
 
-    func updateStationSnapshot(_ station: Station) {
-        stationSnapshotJSON = station.persistenceSnapshotJSON
+    @discardableResult
+    func updateStationSnapshot(_ station: Station) -> Bool {
+        let nextSnapshotJSON = station.persistenceSnapshotJSON
+        guard stationSnapshotJSON != nextSnapshotJSON else { return false }
+        stationSnapshotJSON = nextSnapshotJSON
+        return true
     }
 }
 

@@ -146,13 +146,11 @@ final class LibraryStore: ObservableObject {
         var didUpdate = false
         for station in stations {
             if let favorite = favorites.first(where: { $0.stationID == station.id }) {
-                favorite.updateStationSnapshot(station)
-                didUpdate = true
+                didUpdate = favorite.updateStationSnapshot(station) || didUpdate
             }
 
             if let recent = recents.first(where: { $0.stationID == station.id }) {
-                recent.updateStationSnapshot(station)
-                didUpdate = true
+                didUpdate = recent.updateStationSnapshot(station) || didUpdate
             }
         }
 
