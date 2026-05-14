@@ -569,12 +569,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
             guard nowPlayingService.supports(station) else { return }
 
             try? await Task.sleep(for: TuneAVAudioPlaybackPolicy.nowPlayingFallbackInitialDelay)
+            guard !Task.isCancelled else { return }
 
             while !Task.isCancelled {
                 guard self.currentStation?.id == station.id else { return }
                 if self.currentTrackSource == .stream { return }
 
-                if let track = await nowPlayingService.fetchTrack(for: station) {
+                let track = await nowPlayingService.fetchTrack(for: station)
+                guard !Task.isCancelled else { return }
+
+                if let track {
                     self.applyFallbackTrack(track, for: station)
                 }
 

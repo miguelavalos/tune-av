@@ -433,8 +433,7 @@ struct AppShellView: View {
         [
             audioPlayer.currentStation?.id ?? "",
             audioPlayer.currentTrackArtist ?? "",
-            audioPlayer.currentTrackTitle ?? "",
-            audioPlayer.currentTrackArtworkURL?.absoluteString ?? ""
+            audioPlayer.currentTrackTitle ?? ""
         ].joined(separator: "|")
     }
 
@@ -470,7 +469,10 @@ struct AppShellView: View {
                 continue
             }
 
-            guard let track = await stationNowPlayingService.fetchTrack(for: station) else {
+            let track = await stationNowPlayingService.fetchTrack(for: station)
+            guard !Task.isCancelled else { return }
+
+            guard let track else {
                 stationNowPlayingFailureCache[station.id] = Date()
                 continue
             }
