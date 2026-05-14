@@ -852,6 +852,7 @@ struct AppShellView: View {
 
         let candidates = libraryEnrichmentCandidates()
         guard !candidates.isEmpty else { return }
+        let candidatesKey = libraryEnrichmentCandidatesKey(candidates)
 
         var enrichedMatches: [Station] = []
         for station in candidates {
@@ -876,6 +877,8 @@ struct AppShellView: View {
             }
         }
 
+        guard !Task.isCancelled else { return }
+        guard candidatesKey == libraryEnrichmentCandidatesKey(libraryEnrichmentCandidates()) else { return }
         rememberBackendStations(enrichedMatches)
     }
 
@@ -893,6 +896,12 @@ struct AppShellView: View {
         }
         .prefix(12)
         .map { $0 }
+    }
+
+    private func libraryEnrichmentCandidatesKey(_ candidates: [Station]) -> String {
+        candidates
+            .map { "\($0.id):\($0.enrichmentRank)" }
+            .joined(separator: "|")
     }
 
     private func openDiscoveryStation(_ discovery: DiscoveredTrack) {
