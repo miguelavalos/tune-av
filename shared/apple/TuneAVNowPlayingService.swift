@@ -68,6 +68,7 @@ private extension NowPlayingService {
 
         private func fetchICYTrack(from streamURL: URL, using session: URLSession) async throws -> NowPlayingTrack? {
             var request = URLRequest(url: streamURL)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
             request.timeoutInterval = 5
             request.setValue("1", forHTTPHeaderField: "Icy-MetaData")
             request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
@@ -129,6 +130,7 @@ private extension NowPlayingService {
         private func fetch80s80sTrack(for station: Station, using session: URLSession) async throws -> NowPlayingTrack? {
             let requestURL = TuneAVEighties80sNowPlaying.resolvedURL(for: station) ?? TuneAVEighties80sNowPlaying.fallbackURL
             var request = URLRequest(url: requestURL)
+            request.cachePolicy = .reloadIgnoringLocalCacheData
             request.timeoutInterval = 10
             request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
 
