@@ -815,6 +815,7 @@ final class LibraryStore: ObservableObject {
                 let snapshot = librarySnapshot()
                 cloudSyncStatus = .syncing
                 let remoteDocument = try await appDataService.pullLibrary()
+                try Task.checkCancellation()
                 let snapshotToPush: TuneAVLibrarySnapshot
                 if let remoteSnapshot = remoteDocument.snapshot {
                     snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
@@ -825,7 +826,9 @@ final class LibraryStore: ObservableObject {
                     snapshotToPush = snapshot
                 }
 
+                try Task.checkCancellation()
                 try await appDataService.pushLibrary(snapshotToPush)
+                try Task.checkCancellation()
                 if snapshotToPush != snapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
