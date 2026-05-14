@@ -309,12 +309,14 @@ final class LibraryStore: ObservableObject {
     }
 
     func hideDiscovery(_ discovery: DiscoveredTrack) {
+        guard discovery.hiddenAt == nil || discovery.isMarkedInteresting else { return }
         discovery.hiddenAt = .now
         discovery.markedInterestedAt = nil
         saveAndRefresh(.discoveries)
     }
 
     func restoreDiscovery(_ discovery: DiscoveredTrack) {
+        guard discovery.hiddenAt != nil else { return }
         discovery.hiddenAt = nil
         saveAndRefresh(.discoveries)
     }
