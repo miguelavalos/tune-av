@@ -1,6 +1,6 @@
 import Foundation
 
-struct HomeFeedSnapshot {
+struct HomeFeedSnapshot: Equatable {
     var stations: [Station] = []
     var recentStations: [Station] = []
     var favoriteStations: [Station] = []

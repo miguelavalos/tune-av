@@ -915,12 +915,14 @@ struct AppShellView: View {
     }
 
     private func refreshHomePresentation() {
-        homeSnapshot = HomeFeedSnapshot(
+        let snapshot = HomeFeedSnapshot(
             stations: homeStations,
             recentStations: recentStations,
             favoriteStations: favoriteStations,
             feedContext: homeFeedContext
         )
+        guard homeSnapshot != snapshot else { return }
+        homeSnapshot = snapshot
     }
 
     private func refreshHomePresentationAndFeed() async {
