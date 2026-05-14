@@ -5967,7 +5967,6 @@ private struct MusicDetailHeader: View {
 
 private struct MusicScreen: View {
     private static let pageSize = 40
-    private static let stationSummaryPageSize = 20
     private static let overviewLimit = 12
 
     @EnvironmentObject private var accessController: AccessController
@@ -5985,7 +5984,6 @@ private struct MusicScreen: View {
     @State private var isSearchExpanded = false
     @State private var visibleDiscoveryLimit = pageSize
     @State private var visibleArtistLimit = pageSize
-    @State private var visibleStationSummaryLimit = stationSummaryPageSize
     @State private var openMusicAviActionsID: String?
 
     let discoveries: [DiscoveredTrack]
@@ -6326,25 +6324,6 @@ private struct MusicScreen: View {
         .accessibilityIdentifier("music.section.discoveries")
     }
 
-    private var discoveryStationsList: some View {
-        LazyVStack(spacing: 10) {
-            ForEach(visibleDiscoveryStationSummaries) { summary in
-                DiscoveryStationSourceRow(
-                    summary: summary,
-                    openStation: { openDiscoveryStation(summary.latestDiscovery) }
-                )
-            }
-
-            if canShowMoreDiscoveryStations {
-                ShowMoreButton(
-                    title: L10n.string("common.showMore"),
-                    remainingCount: filteredDiscoveryStationSummaries.count - visibleDiscoveryStationSummaries.count,
-                    action: showMoreDiscoveryStations
-                )
-            }
-        }
-    }
-
     private func discoveryTrackList(_ snapshot: MusicLibraryDerivedState) -> some View {
         LazyVStack(spacing: 10) {
             ForEach(Array(snapshot.visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
@@ -6564,59 +6543,6 @@ private struct MusicScreen: View {
         AppShellMusicLibrary.visibleDiscoveries(discoveries)
     }
 
-    private var discoveryStationSummaries: [DiscoveryStationSourceSummary] {
-        Dictionary(grouping: visibleDiscoveries, by: \.stationID)
-            .compactMap { stationID, discoveries in
-                guard let latestDiscovery = discoveries.max(by: { $0.playedAt < $1.playedAt }) else {
-                    return nil
-                }
-
-                return DiscoveryStationSourceSummary(
-                    id: stationID,
-                    name: latestDiscovery.stationName,
-                    discoveryCount: discoveries.count,
-                    latestDiscovery: latestDiscovery,
-                    artworkURL: latestDiscovery.resolvedStationArtworkURL ?? latestDiscovery.resolvedArtworkURL
-                )
-            }
-            .sorted { first, second in
-                if first.discoveryCount == second.discoveryCount {
-                    return first.latestDiscovery.playedAt > second.latestDiscovery.playedAt
-                }
-
-                return first.discoveryCount > second.discoveryCount
-            }
-    }
-
-    private var visibleDiscoveryStationSummaries: [DiscoveryStationSourceSummary] {
-        Array(sortedDiscoveryStationSummaries.prefix(visibleStationSummaryLimit))
-    }
-
-    private var canShowMoreDiscoveryStations: Bool {
-        visibleDiscoveryStationSummaries.count < sortedDiscoveryStationSummaries.count
-    }
-
-    private var filteredDiscoveryStationSummaries: [DiscoveryStationSourceSummary] {
-        guard let trimmedQuery = TuneAVText.normalizedValue(query) else { return discoveryStationSummaries }
-
-        return discoveryStationSummaries.filter { summary in
-            summary.name.localizedCaseInsensitiveContains(trimmedQuery)
-                || summary.latestDiscovery.title.localizedCaseInsensitiveContains(trimmedQuery)
-                || summary.latestDiscovery.artistDisplayText.localizedCaseInsensitiveContains(trimmedQuery)
-        }
-    }
-
-    private var sortedDiscoveryStationSummaries: [DiscoveryStationSourceSummary] {
-        switch musicSort {
-        case .recent:
-            return filteredDiscoveryStationSummaries.sorted { $0.latestDiscovery.playedAt > $1.latestDiscovery.playedAt }
-        case .alphabetical:
-            return filteredDiscoveryStationSummaries.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        case .strongest:
-            return filteredDiscoveryStationSummaries
-        }
-    }
-
     private func musicAviDetail(_ snapshot: MusicLibraryDerivedState) -> String {
         if snapshot.visibleDiscoveries.isEmpty {
             return L10n.string("shell.music.avi.detail.empty")
@@ -6723,7 +6649,6 @@ private struct MusicScreen: View {
     private func resetVisibleLimits() {
         visibleDiscoveryLimit = Self.pageSize
         visibleArtistLimit = Self.pageSize
-        visibleStationSummaryLimit = Self.stationSummaryPageSize
     }
 
     private func showMoreDiscoveries() {
@@ -6734,11 +6659,6 @@ private struct MusicScreen: View {
     private func showMoreArtists() {
         TuneAVHaptics.lightImpact()
         visibleArtistLimit += Self.pageSize
-    }
-
-    private func showMoreDiscoveryStations() {
-        TuneAVHaptics.lightImpact()
-        visibleStationSummaryLimit += Self.stationSummaryPageSize
     }
 
     private var musicSort: MusicLibrarySort {
