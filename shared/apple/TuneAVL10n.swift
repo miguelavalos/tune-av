@@ -81,6 +81,13 @@ final class AppLanguageController: ObservableObject {
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
+        if let launchLanguage = ProcessInfo.processInfo.environment["TUNEAV_APP_LANGUAGE"] {
+            let resolvedLanguage = AppLanguage.resolved(from: launchLanguage)
+            currentLanguage = resolvedLanguage
+            userDefaults.set(resolvedLanguage.rawValue, forKey: userDefaultsKey)
+            return
+        }
+
         let storedLanguage = userDefaults.string(forKey: userDefaultsKey)
         let resolvedLanguage = AppLanguage.resolved(
             from: storedLanguage ?? Locale.preferredLanguages.first

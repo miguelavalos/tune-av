@@ -14,9 +14,6 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         let discoveriesSection = app.otherElements["music.section.discoveries"]
         XCTAssertTrue(discoveriesSection.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["music.mode.songs"].exists)
-        XCTAssertTrue(app.buttons["music.mode.history"].exists)
-        XCTAssertTrue(app.buttons["music.mode.artists"].exists)
         XCTAssertTrue(app.staticTexts["Sweet Disposition"].exists)
         XCTAssertFalse(app.staticTexts["Midnight City"].exists)
 
@@ -42,7 +39,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
         saveButton.tap()
 
-        app.buttons["music.mode.songs"].tap()
+        showSavedSongs(in: app)
         XCTAssertTrue(app.staticTexts["Midnight City"].waitForExistence(timeout: 5))
 
         let unsaveButton = app.buttons["discoveryTrack.save.\(discoveryID)"].firstMatch
@@ -296,8 +293,34 @@ final class DiscoveriesUITests: TuneAVUITestCase {
     }
 
     private func showDiscoveryHistory(in app: XCUIApplication) {
-        let historyButton = app.buttons["music.mode.history"].firstMatch
+        if app.staticTexts["Historial reciente"].firstMatch.exists {
+            return
+        }
+
+        openMusicOverview(in: app)
+
+        let historyButton = app.buttons["music.overview.history"].firstMatch
         XCTAssertTrue(historyButton.waitForExistence(timeout: 5))
         historyButton.tap()
+        XCTAssertTrue(app.otherElements["music.section.discoveries"].firstMatch.waitForExistence(timeout: 5))
+    }
+
+    private func showSavedSongs(in app: XCUIApplication) {
+        openMusicOverview(in: app)
+
+        let songsButton = app.buttons["music.overview.songs"].firstMatch
+        XCTAssertTrue(songsButton.waitForExistence(timeout: 5))
+        songsButton.tap()
+        XCTAssertTrue(app.otherElements["music.section.discoveries"].firstMatch.waitForExistence(timeout: 5))
+    }
+
+    private func openMusicOverview(in app: XCUIApplication) {
+        if app.buttons["music.overview.songs"].firstMatch.exists {
+            return
+        }
+
+        let backButton = app.buttons["music.detail.back"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 5))
+        backButton.tap()
     }
 }

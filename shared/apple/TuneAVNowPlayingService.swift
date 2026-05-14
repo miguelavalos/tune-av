@@ -5,7 +5,7 @@ typealias NowPlayingTrack = TuneAVNowPlayingTrack
 actor NowPlayingService {
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = TuneAVURLSessions.catalog) {
         self.session = session
     }
 
@@ -148,7 +148,7 @@ struct TuneAVAlternateMetadataStreamResolver {
     private let baseURL: URL
 
     init(
-        session: URLSession = .shared,
+        session: URLSession = TuneAVURLSessions.catalog,
         baseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!
     ) {
         self.session = session

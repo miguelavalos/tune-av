@@ -3,12 +3,50 @@ import Foundation
 typealias TrackArtwork = TuneAVTrackArtwork
 typealias TrackArtworkService = TuneAVTrackArtworkService
 
+enum TuneAVURLSessions {
+    static let catalog: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = URLCache(
+            memoryCapacity: 8 * 1024 * 1024,
+            diskCapacity: 32 * 1024 * 1024
+        )
+        configuration.requestCachePolicy = .useProtocolCachePolicy
+        configuration.timeoutIntervalForRequest = 8
+        configuration.timeoutIntervalForResource = 20
+        configuration.waitsForConnectivity = true
+        return URLSession(configuration: configuration)
+    }()
+
+    static let artwork: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = URLCache(
+            memoryCapacity: 24 * 1024 * 1024,
+            diskCapacity: 96 * 1024 * 1024
+        )
+        configuration.requestCachePolicy = .useProtocolCachePolicy
+        configuration.timeoutIntervalForRequest = 10
+        configuration.timeoutIntervalForResource = 30
+        configuration.waitsForConnectivity = true
+        return URLSession(configuration: configuration)
+    }()
+
+    static let account: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.timeoutIntervalForRequest = 12
+        configuration.timeoutIntervalForResource = 30
+        configuration.waitsForConnectivity = true
+        return URLSession(configuration: configuration)
+    }()
+}
+
 struct StationService {
     typealias SearchFilters = TuneAVStationSearchFilters
 
     private let service: TuneAVStationService
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = TuneAVURLSessions.catalog) {
         self.service = TuneAVStationService(
             session: session,
             fallbacks: TuneAVStationFallbacks(

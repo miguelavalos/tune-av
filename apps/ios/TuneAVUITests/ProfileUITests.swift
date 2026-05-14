@@ -131,10 +131,11 @@ final class ProfileUITests: TuneAVUITestCase {
 
     private func tapAccountDeletionRow(in app: XCUIApplication) {
         let deleteRow = app.descendants(matching: .any)["profile.safety.delete"].firstMatch
-        for _ in 0..<5 where !deleteRow.exists {
+        for _ in 0..<6 where !deleteRow.exists || !deleteRow.isHittable {
             app.swipeUp()
         }
         XCTAssertTrue(deleteRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(deleteRow.isHittable)
         deleteRow.tap()
     }
 }

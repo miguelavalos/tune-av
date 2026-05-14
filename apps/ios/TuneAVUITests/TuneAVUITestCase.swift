@@ -11,6 +11,8 @@ class TuneAVUITestCase: XCTestCase {
         app.launchEnvironment["TUNEAV_UI_TESTS"] = "1"
         app.launchEnvironment["TUNEAV_DISABLE_SPLASH"] = "1"
         app.launchEnvironment["TUNEAV_DISABLE_ONBOARDING"] = "1"
+        app.launchEnvironment["TUNEAV_APP_LANGUAGE"] = "es"
+        app.launchEnvironment["TUNEAV_UI_TEST_DISCOVERY_SHARE_LIMIT"] = "100"
 
         if let preferredTab {
             app.launchEnvironment["TUNEAV_OPEN_TAB"] = preferredTab

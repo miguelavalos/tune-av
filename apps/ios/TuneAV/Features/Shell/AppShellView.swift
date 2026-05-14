@@ -39,6 +39,7 @@ struct AppShellView: View {
     @State private var enrichedStationsByID: [String: Station] = [:]
     @State private var stationNowPlayingTracks: [String: NowPlayingTrack] = [:]
     @State private var stationNowPlayingCache: [String: CachedStationNowPlaying] = [:]
+    @State private var stationNowPlayingFailureCache: [String: Date] = [:]
     @State private var didBootstrap = false
     @State private var profileMode: ProfileScreen.Mode = .settings
     @State private var listeningSession: ActiveListeningSession?
@@ -462,14 +463,26 @@ struct AppShellView: View {
             if Task.isCancelled { return }
 
             if let cached = stationNowPlayingCache[station.id], cached.isFresh {
-                stationNowPlayingTracks[station.id] = cached.track
+                setStationNowPlayingTrack(cached.track, for: station.id)
+                continue
+            }
+            if let failedAt = stationNowPlayingFailureCache[station.id], Date().timeIntervalSince(failedAt) < 180 {
                 continue
             }
 
-            guard let track = await stationNowPlayingService.fetchTrack(for: station) else { continue }
-            stationNowPlayingTracks[station.id] = track
+            guard let track = await stationNowPlayingService.fetchTrack(for: station) else {
+                stationNowPlayingFailureCache[station.id] = Date()
+                continue
+            }
+            setStationNowPlayingTrack(track, for: station.id)
             stationNowPlayingCache[station.id] = CachedStationNowPlaying(track: track, fetchedAt: Date())
+            stationNowPlayingFailureCache[station.id] = nil
         }
+    }
+
+    private func setStationNowPlayingTrack(_ track: NowPlayingTrack, for stationID: String) {
+        guard stationNowPlayingTracks[stationID] != track else { return }
+        stationNowPlayingTracks[stationID] = track
     }
 
     private var isProNowPlayingEnabled: Bool {
@@ -603,7 +616,6 @@ struct AppShellView: View {
             stations: resolvedQueue
         )
         audioPlayer.play(station: resolvedStation, queue: playbackQueue)
-        libraryStore.recordPlayback(of: resolvedStation, recentLimit: accessController.limits.recentStations)
         beginListeningSession(for: resolvedStation, source: queueSource)
     }
 
@@ -818,6 +830,7 @@ struct AppShellView: View {
         let candidates = libraryEnrichmentCandidates()
         guard !candidates.isEmpty else { return }
 
+        var enrichedMatches: [Station] = []
         for station in candidates {
             if Task.isCancelled { return }
 
@@ -832,13 +845,15 @@ struct AppShellView: View {
                     )
                 )
                 guard let enrichedMatch = results.bestBackendMatch(for: station) else { continue }
-                rememberBackendStations([enrichedMatch])
+                enrichedMatches.append(enrichedMatch)
             } catch is CancellationError {
                 return
             } catch {
                 continue
             }
         }
+
+        rememberBackendStations(enrichedMatches)
     }
 
     private func libraryEnrichmentCandidates() -> [Station] {
@@ -864,6 +879,7 @@ struct AppShellView: View {
     }
 
     private func refreshHomeFeed(forceRemote: Bool = false) async {
+        let preferredTag = libraryStore.settings.preferredTag
         homeIsLoading = true
         homeErrorMessage = nil
 
@@ -877,8 +893,9 @@ struct AppShellView: View {
 
         do {
             let feed = forceRemote
-                ? try await homeFeed.refresh(preferredTag: libraryStore.settings.preferredTag)
-                : try await homeFeed.load(preferredTag: libraryStore.settings.preferredTag)
+                ? try await homeFeed.refresh(preferredTag: preferredTag)
+                : try await homeFeed.load(preferredTag: preferredTag)
+            guard preferredTag == libraryStore.settings.preferredTag else { return }
             rememberBackendStations(feed.stations)
             homeStations = feed.stations
             homeFeedContext = feed.context
@@ -4576,18 +4593,20 @@ private struct LibraryScreen: View {
 
     private var radioOverview: some View {
         VStack(alignment: .leading, spacing: 24) {
-            AccountSummaryStatusCard(
-                kind: .radios,
-                state: libraryStore.userSummaryRefreshState,
-                summary: summary,
-                isSignedIn: accessController.isSignedIn,
-                hasProAccess: accessController.capabilities.canAccessPremiumFeatures,
-                openAccountAction: openAccountAction,
-                startSignInAction: startSignInAction,
-                refreshAction: {
-                    await libraryStore.refreshUserSummary(force: true)
-                }
-            )
+            if accessController.capabilities.canAccessPremiumFeatures {
+                AccountSummaryStatusCard(
+                    kind: .radios,
+                    state: libraryStore.userSummaryRefreshState,
+                    summary: summary,
+                    isSignedIn: accessController.isSignedIn,
+                    hasProAccess: true,
+                    openAccountAction: openAccountAction,
+                    startSignInAction: startSignInAction,
+                    refreshAction: {
+                        await libraryStore.refreshUserSummary(force: true)
+                    }
+                )
+            }
 
             if hasRadioOverviewContent {
                 RadioOverviewMetricGrid {
@@ -4626,6 +4645,7 @@ private struct LibraryScreen: View {
                     title: L10n.string("shell.library.overview.saved"),
                     subtitle: L10n.string("shell.library.favorites.subtitle"),
                     queueSource: .libraryFavorites,
+                    accessibilityIdentifier: "library.section.favorites",
                     action: { openMode(.saved) }
                 )
 
@@ -4667,12 +4687,14 @@ private struct LibraryScreen: View {
         title: String,
         subtitle: String,
         queueSource: AudioPlayerService.PlaybackQueue.Source,
+        accessibilityIdentifier: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         if !stations.isEmpty {
             RadioOverviewCarouselSection(
                 title: title,
                 subtitle: subtitle,
+                accessibilityIdentifier: accessibilityIdentifier,
                 action: action
             ) {
                 radioOverviewCarousel(stations: stations, queueSource: queueSource)
@@ -4697,34 +4719,35 @@ private struct LibraryScreen: View {
         )
     }
     private var radioDetailSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if activeFilteredStations.isEmpty {
+        let snapshot = activeStationSnapshot
+        return VStack(alignment: .leading, spacing: 12) {
+            if snapshot.filteredStations.isEmpty {
                 EmptyLibraryState(
-                    title: activeBaseStations.isEmpty ? selectedMode.emptyTitle : L10n.string("shell.library.noMatch.title"),
-                    detail: activeBaseStations.isEmpty
+                    title: snapshot.baseStations.isEmpty ? selectedMode.emptyTitle : L10n.string("shell.library.noMatch.title"),
+                    detail: snapshot.baseStations.isEmpty
                         ? selectedMode.emptyDetail
                         : L10n.string("shell.library.favorites.noMatch.detail")
                 )
             } else {
                 LazyVStack(spacing: 8) {
-                    ForEach(Array(visibleStations.enumerated()), id: \.element.id) { index, station in
+                    ForEach(Array(snapshot.visibleStations.enumerated()), id: \.element.id) { index, station in
                         StationListActionRow(
                             station: station,
                             isFavorite: favoriteStationIDs.contains(station.id),
                             nowPlayingTrack: nowPlayingTracks[station.id],
                             stationFeedback: stationFeedback[station.id],
                             toggleFavorite: { toggleFavorite(station) },
-                            playAction: { playStation(station, queueSource(for: selectedMode), activeFilteredStations) },
+                            playAction: { playStation(station, queueSource(for: selectedMode), snapshot.filteredStations) },
                             openWebsiteAction: { openStationWebsite(station) },
-                            detailsAction: { showStationDetails(station, queueSource(for: selectedMode), activeFilteredStations, selectedMode, false) }
+                            detailsAction: { showStationDetails(station, queueSource(for: selectedMode), snapshot.filteredStations, selectedMode, false) }
                         )
-                        .zIndex(Double(visibleStations.count - index))
+                        .zIndex(Double(snapshot.visibleStations.count - index))
                     }
 
-                    if canShowMoreStations {
+                    if snapshot.canShowMore {
                         ShowMoreButton(
                             title: L10n.string("common.showMore"),
-                            remainingCount: activeFilteredStations.count - visibleStations.count,
+                            remainingCount: snapshot.filteredStations.count - snapshot.visibleStations.count,
                             action: showMoreStations
                         )
                     }
@@ -4795,6 +4818,17 @@ private struct LibraryScreen: View {
 
     private var activeFilteredStations: [Station] {
         filterStations(activeBaseStations)
+    }
+
+    private var activeStationSnapshot: RadioStationListSnapshot {
+        let baseStations = activeBaseStations
+        let filteredStations = filterStations(baseStations)
+        let visibleStations = Array(filteredStations.prefix(visibleLimit))
+        return RadioStationListSnapshot(
+            baseStations: baseStations,
+            filteredStations: filteredStations,
+            visibleStations: visibleStations
+        )
     }
 
     private var visibleStations: [Station] {
@@ -5006,6 +5040,16 @@ private enum RadioLibraryMode: String, CaseIterable, Identifiable {
     }
 }
 
+private struct RadioStationListSnapshot {
+    let baseStations: [Station]
+    let filteredStations: [Station]
+    let visibleStations: [Station]
+
+    var canShowMore: Bool {
+        visibleStations.count < filteredStations.count
+    }
+}
+
 private enum RadioSavedSort: String, CaseIterable, Identifiable {
     case recentlyAdded
     case alphabetical
@@ -5075,7 +5119,6 @@ private struct RadioDetailHeader: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .accessibilityElement(children: .contain)
     }
 
     private var sortButton: some View {
@@ -5152,10 +5195,36 @@ private struct ShowMoreButton: View {
 private struct RadioOverviewCarouselSection<Content: View>: View {
     let title: String
     let subtitle: String
+    var accessibilityIdentifier: String?
     let action: () -> Void
     @ViewBuilder let content: () -> Content
 
+    init(
+        title: String,
+        subtitle: String,
+        accessibilityIdentifier: String? = nil,
+        action: @escaping () -> Void,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.accessibilityIdentifier = accessibilityIdentifier
+        self.action = action
+        self.content = content
+    }
+
+    @ViewBuilder
     var body: some View {
+        if let accessibilityIdentifier {
+            section
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(accessibilityIdentifier)
+        } else {
+            section
+        }
+    }
+
+    private var section: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -5396,7 +5465,24 @@ private struct RadioOverviewMetricCard: View {
     let value: Int
     let systemImage: String
     let tint: Color
+    let accessibilityIdentifier: String?
     let action: () -> Void
+
+    init(
+        title: String,
+        value: Int,
+        systemImage: String,
+        tint: Color,
+        accessibilityIdentifier: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.value = value
+        self.systemImage = systemImage
+        self.tint = tint
+        self.accessibilityIdentifier = accessibilityIdentifier
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -5430,6 +5516,23 @@ private struct RadioOverviewMetricCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(value)")
+        .modifyIfLet(accessibilityIdentifier) { view, identifier in
+            view.accessibilityIdentifier(identifier)
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func modifyIfLet<Value, Modified: View>(
+        _ value: Value?,
+        transform: (Self, Value) -> Modified
+    ) -> some View {
+        if let value {
+            transform(self, value)
+        } else {
+            self
+        }
     }
 }
 
@@ -5565,6 +5668,42 @@ private enum MusicContentMode: String, CaseIterable, Identifiable {
         case .history:
             return L10n.string("shell.music.detail.history.subtitle")
         }
+    }
+}
+
+private struct MusicLibraryDerivedState {
+    let visibleDiscoveries: [DiscoveredTrack]
+    let savedDiscoveries: [DiscoveredTrack]
+    let tunedDiscoveries: [DiscoveredTrack]
+    let visibleArtistSummaries: [DiscoveryArtistSummary]
+    let filteredDiscoveries: [DiscoveredTrack]
+    let visibleFilteredDiscoveries: [DiscoveredTrack]
+    let filteredArtistSummaries: [DiscoveryArtistSummary]
+    let visibleArtistSummariesForMode: [DiscoveryArtistSummary]
+    let musicMode: MusicContentMode
+
+    var hasOverviewContent: Bool {
+        !savedDiscoveries.isEmpty
+            || !visibleDiscoveries.isEmpty
+            || !tunedDiscoveries.isEmpty
+            || !visibleArtistSummaries.isEmpty
+    }
+
+    var isCurrentModeEmpty: Bool {
+        switch musicMode {
+        case .songs, .top, .history:
+            return filteredDiscoveries.isEmpty
+        case .artists:
+            return filteredArtistSummaries.isEmpty
+        }
+    }
+
+    var canShowMoreDiscoveries: Bool {
+        visibleFilteredDiscoveries.count < filteredDiscoveries.count
+    }
+
+    var canShowMoreArtists: Bool {
+        visibleArtistSummariesForMode.count < filteredArtistSummaries.count
     }
 }
 
@@ -5877,6 +6016,7 @@ private struct MusicScreen: View {
             Button(L10n.string("shell.library.discoveries.clear.confirmAction"), role: .destructive) {
                 clearDiscoveries()
             }
+            .accessibilityIdentifier("Borrar descubrimientos")
 
             Button(L10n.string("common.cancel"), role: .cancel) {}
         } message: {
@@ -5950,75 +6090,82 @@ private struct MusicScreen: View {
     }
 
     private var musicOverview: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            AccountSummaryStatusCard(
-                kind: .music,
-                state: libraryStore.userSummaryRefreshState,
-                summary: summary,
-                isSignedIn: accessController.isSignedIn,
-                hasProAccess: accessController.capabilities.canAccessPremiumFeatures,
-                openAccountAction: openAccountAction,
-                startSignInAction: startSignInAction,
-                refreshAction: {
-                    await libraryStore.refreshUserSummary(force: true)
-                }
-            )
+        let snapshot = musicDerivedState
+        return VStack(alignment: .leading, spacing: 24) {
+            if accessController.capabilities.canAccessPremiumFeatures {
+                AccountSummaryStatusCard(
+                    kind: .music,
+                    state: libraryStore.userSummaryRefreshState,
+                    summary: summary,
+                    isSignedIn: accessController.isSignedIn,
+                    hasProAccess: true,
+                    openAccountAction: openAccountAction,
+                    startSignInAction: startSignInAction,
+                    refreshAction: {
+                        await libraryStore.refreshUserSummary(force: true)
+                    }
+                )
+            }
 
             RadioOverviewMetricGrid {
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.music.overview.songs"),
-                    value: summary?.music.cards.songs.count ?? savedDiscoveries.count,
+                    value: summary?.music.cards.songs.count ?? snapshot.savedDiscoveries.count,
                     systemImage: "bookmark.fill",
                     tint: TuneAVTheme.highlight,
+                    accessibilityIdentifier: "music.overview.songs",
                     action: { openMusicMode(.songs) }
                 )
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.music.overview.artists"),
-                    value: summary?.music.cards.artists.count ?? visibleArtistSummaries.count,
+                    value: summary?.music.cards.artists.count ?? snapshot.visibleArtistSummaries.count,
                     systemImage: "person.2.fill",
                     tint: Color(red: 0.17, green: 0.52, blue: 0.96),
+                    accessibilityIdentifier: "music.overview.artists",
                     action: { openMusicMode(.artists) }
                 )
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.music.overview.top"),
-                    value: tunedDiscoveries.count,
+                    value: snapshot.tunedDiscoveries.count,
                     systemImage: "sparkles",
                     tint: Color(red: 0.95, green: 0.48, blue: 0.18),
+                    accessibilityIdentifier: "music.overview.top",
                     action: { openMusicMode(.top) }
                 )
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.music.overview.history"),
-                    value: summary?.music.cards.history.count ?? visibleDiscoveries.count,
+                    value: summary?.music.cards.history.count ?? snapshot.visibleDiscoveries.count,
                     systemImage: "clock.fill",
                     tint: Color(red: 0.54, green: 0.43, blue: 0.90),
+                    accessibilityIdentifier: "music.overview.history",
                     action: { openMusicMode(.history) }
                 )
             }
 
-            if hasMusicOverviewContent {
+            if snapshot.hasOverviewContent {
                 musicOverviewTrackSectionIfNeeded(
-                    discoveries: overviewSavedDiscoveries,
+                    discoveries: Array(snapshot.savedDiscoveries.prefix(Self.overviewLimit)),
                     title: L10n.string("shell.music.overview.songs"),
                     subtitle: L10n.string("shell.music.detail.songs.subtitle"),
                     action: { openMusicMode(.songs) }
                 )
 
                 musicOverviewArtistSectionIfNeeded(
-                    artists: overviewArtistSummaries,
+                    artists: Array(snapshot.visibleArtistSummaries.prefix(Self.overviewLimit)),
                     title: L10n.string("shell.music.overview.artists"),
                     subtitle: L10n.string("shell.music.detail.artists.subtitle"),
                     action: { openMusicMode(.artists) }
                 )
 
                 musicOverviewTrackSectionIfNeeded(
-                    discoveries: overviewTopDiscoveries,
+                    discoveries: Array(snapshot.tunedDiscoveries.prefix(Self.overviewLimit)),
                     title: L10n.string("shell.music.overview.top"),
                     subtitle: L10n.string("shell.music.detail.top.subtitle"),
                     action: { openMusicMode(.top) }
                 )
 
                 musicOverviewTrackSectionIfNeeded(
-                    discoveries: overviewDiscoveries,
+                    discoveries: Array(snapshot.visibleDiscoveries.prefix(Self.overviewLimit)),
                     title: L10n.string("shell.music.overview.history"),
                     subtitle: L10n.string("shell.music.overview.latest.subtitle"),
                     action: { openMusicMode(.history) }
@@ -6030,6 +6177,23 @@ private struct MusicScreen: View {
                 )
             }
         }
+    }
+
+    private var musicModeControls: some View {
+        let snapshot = musicDerivedState
+        return MusicLibraryControls(
+            savedCount: snapshot.savedDiscoveries.count,
+            historyCount: snapshot.visibleDiscoveries.count,
+            artistCount: snapshot.visibleArtistSummaries.count,
+            stationCount: snapshot.tunedDiscoveries.count,
+            selectedMode: musicMode,
+            selectMode: selectMusicMode(_:),
+            sort: musicSort,
+            setSort: setMusicSort(_:),
+            isSearchExpanded: isSearchExpanded,
+            showOverview: showOverview,
+            toggleSearch: toggleMusicSearch
+        )
     }
 
     private var overviewDiscoveries: [DiscoveredTrack] {
@@ -6102,8 +6266,9 @@ private struct MusicScreen: View {
     }
 
     private var discoveryLibrarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if isCurrentMusicModeEmpty {
+        let snapshot = musicDerivedState
+        return VStack(alignment: .leading, spacing: 12) {
+            if snapshot.isCurrentModeEmpty {
                 EmptyLibraryState(
                     title: emptyDiscoveryTitle,
                     detail: emptyDiscoveryDetail
@@ -6111,10 +6276,12 @@ private struct MusicScreen: View {
             } else {
                 switch musicMode {
                 case .songs, .top, .history:
+                    discoverySongsHeader
                     discoveryTrackList
                 case .artists:
+                    discoveryArtistsHeader
                     LazyVStack(spacing: 10) {
-                        ForEach(Array(visibleArtistSummariesForMode.enumerated()), id: \.element.id) { index, artist in
+                        ForEach(Array(snapshot.visibleArtistSummariesForMode.enumerated()), id: \.element.id) { index, artist in
                             DiscoveryArtistRow(
                                 summary: artist,
                                 openAviActionsID: $openMusicAviActionsID,
@@ -6123,13 +6290,13 @@ private struct MusicScreen: View {
                                 openAppleMusic: { openAppleMusicArtistSearch(artist.name) },
                                 openSpotify: { openSpotifyArtistSearch(artist.name) }
                             )
-                            .zIndex(openMusicAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(visibleArtistSummariesForMode.count - index))
+                            .zIndex(openMusicAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(snapshot.visibleArtistSummariesForMode.count - index))
                         }
 
-                        if canShowMoreArtists {
+                        if snapshot.canShowMoreArtists {
                             ShowMoreButton(
                                 title: L10n.string("common.showMore"),
-                                remainingCount: filteredArtistSummaries.count - visibleArtistSummariesForMode.count,
+                                remainingCount: snapshot.filteredArtistSummaries.count - snapshot.visibleArtistSummariesForMode.count,
                                 action: showMoreArtists
                             )
                         }
@@ -6137,7 +6304,8 @@ private struct MusicScreen: View {
                 }
             }
         }
-        .accessibilityIdentifier("music.section.\(musicMode.rawValue)")
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("music.section.discoveries")
     }
 
     private var musicSectionTitle: String {
@@ -6187,8 +6355,9 @@ private struct MusicScreen: View {
     }
 
     private var discoveryTrackList: some View {
-        LazyVStack(spacing: 10) {
-            ForEach(Array(visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
+        let snapshot = musicDerivedState
+        return LazyVStack(spacing: 10) {
+            ForEach(Array(snapshot.visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
                 DiscoveryTrackCard(
                     discovery: discovery,
                     stationArtworkURL: stationArtworkURL(discovery),
@@ -6203,13 +6372,13 @@ private struct MusicScreen: View {
                     hideAction: { hideDiscoveryWithUndo(discovery) },
                     removeAction: { removeDiscovery(discovery) }
                 )
-                .zIndex(openMusicAviActionsID == "track-\(discovery.discoveryID)" ? 10_000 : Double(visibleFilteredDiscoveries.count - index))
+                .zIndex(openMusicAviActionsID == "track-\(discovery.discoveryID)" ? 10_000 : Double(snapshot.visibleFilteredDiscoveries.count - index))
             }
 
-            if canShowMoreDiscoveries {
+            if snapshot.canShowMoreDiscoveries {
                 ShowMoreButton(
                     title: L10n.string("common.showMore"),
-                    remainingCount: filteredDiscoveries.count - visibleFilteredDiscoveries.count,
+                    remainingCount: snapshot.filteredDiscoveries.count - snapshot.visibleFilteredDiscoveries.count,
                     action: showMoreDiscoveries
                 )
             }
@@ -6382,6 +6551,27 @@ private struct MusicScreen: View {
         AppShellMusicLibrary.savedDiscoveries(discoveries)
     }
 
+    private var musicDerivedState: MusicLibraryDerivedState {
+        let visibleDiscoveries = AppShellMusicLibrary.visibleDiscoveries(discoveries)
+        let savedDiscoveries = AppShellMusicLibrary.savedDiscoveries(discoveries)
+        let tunedDiscoveries = sortTunedDiscoveries(visibleDiscoveries.filter { trackFeedback($0) != nil })
+        let visibleArtistSummaries = AppShellMusicLibrary.visibleArtistSummaries(discoveries)
+        let filteredDiscoveries = resolvedFilteredDiscoveries()
+        let filteredArtistSummaries = resolvedFilteredArtistSummaries()
+
+        return MusicLibraryDerivedState(
+            visibleDiscoveries: visibleDiscoveries,
+            savedDiscoveries: savedDiscoveries,
+            tunedDiscoveries: tunedDiscoveries,
+            visibleArtistSummaries: visibleArtistSummaries,
+            filteredDiscoveries: filteredDiscoveries,
+            visibleFilteredDiscoveries: Array(filteredDiscoveries.prefix(visibleDiscoveryLimit)),
+            filteredArtistSummaries: filteredArtistSummaries,
+            visibleArtistSummariesForMode: Array(filteredArtistSummaries.prefix(visibleArtistLimit)),
+            musicMode: musicMode
+        )
+    }
+
     private var visibleDiscoveries: [DiscoveredTrack] {
         AppShellMusicLibrary.visibleDiscoveries(discoveries)
     }
@@ -6478,6 +6668,10 @@ private struct MusicScreen: View {
     }
 
     private var filteredDiscoveries: [DiscoveredTrack] {
+        resolvedFilteredDiscoveries()
+    }
+
+    private func resolvedFilteredDiscoveries() -> [DiscoveredTrack] {
         let filtered = AppShellMusicLibrary.filteredDiscoveries(
             discoveries,
             mode: currentMusicLibraryMode,
@@ -6555,6 +6749,10 @@ private struct MusicScreen: View {
     }
 
     private var filteredArtistSummaries: [DiscoveryArtistSummary] {
+        resolvedFilteredArtistSummaries()
+    }
+
+    private func resolvedFilteredArtistSummaries() -> [DiscoveryArtistSummary] {
         let summaries = AppShellMusicLibrary.filteredArtistSummaries(
             discoveries,
             mode: currentMusicLibraryMode,
@@ -6662,6 +6860,11 @@ private struct MusicScreen: View {
             historyStationID: historyStationFilter?.id
         )
         musicMode = MusicContentMode(libraryMode: initialMode)
+        if TuneAVLaunchContext.current.shouldUseLocalUITestDiscovery
+            || TuneAVLaunchContext.current.uiTestTrackTitle != nil
+            || TuneAVLaunchContext.current.uiTestTrackArtist != nil {
+            isShowingOverview = false
+        }
     }
 
     private func consumeRequestedMusicReturnIfNeeded() {

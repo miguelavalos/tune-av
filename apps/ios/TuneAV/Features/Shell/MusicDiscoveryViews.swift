@@ -67,6 +67,7 @@ struct DiscoveryTrackCard: View {
                 MusicFeedbackBadge(feedback: feedback, size: 30, fontSize: 13)
             }
 
+            saveButton
             aviActionsMenu
         }
         .padding(12)
@@ -81,6 +82,23 @@ struct DiscoveryTrackCard: View {
         .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 8, y: 3)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("discoveryTrack.\(discovery.discoveryID)")
+    }
+
+    private var saveButton: some View {
+        Button(action: toggleSaved) {
+            Image(systemName: discovery.isMarkedInteresting ? "bookmark.fill" : "bookmark")
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(discovery.isMarkedInteresting ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                .frame(width: 36, height: 36)
+                .background(TuneAVTheme.mutedSurface, in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save"))
+        .accessibilityIdentifier("discoveryTrack.save.\(discovery.discoveryID)")
     }
 
     private var aviActionsMenu: some View {
@@ -107,7 +125,7 @@ struct DiscoveryTrackCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.avi.actions.askShort"))
-        .accessibilityIdentifier("discoveryTrack.aviActions.\(discovery.discoveryID)")
+        .accessibilityIdentifier("discoveryTrack.menu.\(discovery.discoveryID)")
         .popover(
             isPresented: Binding(
                 get: { isShowingAviActions },
@@ -133,16 +151,27 @@ struct DiscoveryTrackCard: View {
             if aviActionsPage == 0 {
                 AviListActionButton(
                     title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save"),
-                    systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark"
+                    systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
+                    accessibilityIdentifier: "discoveryTrack.save.\(discovery.discoveryID)"
                 ) {
                     toggleSaved()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("player.discovery.hide"), systemImage: "eye.slash", role: .destructive) {
+                AviListActionButton(
+                    title: L10n.string("player.discovery.hide"),
+                    systemImage: "eye.slash",
+                    role: .destructive,
+                    accessibilityIdentifier: "discoveryTrack.hide.\(discovery.discoveryID)"
+                ) {
                     hideAction()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("player.discovery.remove"), systemImage: "trash", role: .destructive) {
+                AviListActionButton(
+                    title: L10n.string("player.discovery.remove"),
+                    systemImage: "trash",
+                    role: .destructive,
+                    accessibilityIdentifier: "discoveryTrack.remove.\(discovery.discoveryID)"
+                ) {
                     removeAction()
                     closeAviActions()
                 }
@@ -499,6 +528,7 @@ private struct AviListActionButton: View {
     let title: String
     let systemImage: String
     var role: ButtonRole?
+    var accessibilityIdentifier: String?
     let action: () -> Void
 
     var body: some View {
@@ -532,6 +562,23 @@ private struct AviListActionButton: View {
             }
         }
         .buttonStyle(.plain)
+        .modifier(OptionalMusicDiscoveryAccessibilityIdentifier(accessibilityIdentifier))
+    }
+}
+
+private struct OptionalMusicDiscoveryAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+
+    init(_ identifier: String?) {
+        self.identifier = identifier
+    }
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
     }
 }
 

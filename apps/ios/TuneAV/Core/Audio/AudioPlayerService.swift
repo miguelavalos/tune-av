@@ -78,6 +78,11 @@ final class AudioPlayerService: NSObject, ObservableObject {
         case cached
     }
 
+    private func setStatus(_ newStatus: PlaybackStatus) {
+        guard status != newStatus else { return }
+        status = newStatus
+    }
+
     override init() {
         super.init()
         configureAudioSession()
@@ -117,7 +122,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         userRequestedPlayback = true
         currentStation = station
         restoreCachedNowPlaying(for: station)
-        status = .loading
+        setStatus(.loading)
 
         let item = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: item)
@@ -164,7 +169,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
         activateSessionIfNeeded()
         player?.play()
-        status = .loading
+        setStatus(.loading)
         userRequestedPlayback = true
         lastErrorMessage = nil
         updateNowPlayingInfo()
@@ -174,7 +179,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         player?.pause()
         userRequestedPlayback = false
         if currentStation != nil {
-            status = .paused
+            setStatus(.paused)
         }
         updateNowPlayingInfo()
     }
@@ -199,13 +204,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
         metadataOutput = nil
         metadataDelegate = nil
         currentTrackSource = nil
-        status = .idle
+        setStatus(.idle)
         lastErrorMessage = nil
-        currentTrackTitle = nil
-        currentTrackArtist = nil
-        currentTrackAlbumTitle = nil
-        currentTrackArtworkURL = nil
-        currentTrackArtistURL = nil
+        setCurrentTrackIdentity(title: nil, artist: nil)
+        setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
         playbackQueue = .init(source: .singleStation, stations: [])
@@ -283,7 +285,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
         } catch {
-            status = .failed(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.sessionUnavailable))
+            setStatus(.failed(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.sessionUnavailable)))
         }
     }
 
@@ -296,16 +298,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
                     self.loadingTimeoutTask?.cancel()
                     self.loadingTimeoutTask = nil
                     if self.player?.timeControlStatus == .playing {
-                        self.status = .playing
+                        self.setStatus(.playing)
                     }
                     self.activateSessionIfNeeded()
                     self.updateNowPlayingInfo()
                 case .failed:
                     self.setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.streamLoadFailed))
                 case .unknown:
-                    self.status = .loading
+                    self.setStatus(.loading)
                 @unknown default:
-                    self.status = .loading
+                    self.setStatus(.loading)
                 }
             }
         }
@@ -317,13 +319,13 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 case .playing:
                     self.loadingTimeoutTask?.cancel()
                     self.loadingTimeoutTask = nil
-                    self.status = .playing
+                    self.setStatus(.playing)
                 case .paused:
                     if case .loading = self.status { break }
                     if case .failed = self.status { break }
-                    self.status = .paused
+                    self.setStatus(.paused)
                 case .waitingToPlayAtSpecifiedRate:
-                    self.status = .loading
+                    self.setStatus(.loading)
                 @unknown default:
                     break
                 }
@@ -363,7 +365,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 if self.userRequestedPlayback {
-                    self.status = .loading
+                    self.setStatus(.loading)
                     self.startLoadingTimeout()
                 }
             }
@@ -395,7 +397,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         artworkResolutionTask = nil
         nowPlayingArtworkTask?.cancel()
         nowPlayingArtworkTask = nil
-        status = .failed(message)
+        setStatus(.failed(message))
         lastErrorMessage = message
         player?.pause()
         updateNowPlayingInfo()
@@ -453,11 +455,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         playbackStalledObserver = nil
         metadataOutput = nil
         metadataDelegate = nil
-        currentTrackTitle = nil
-        currentTrackArtist = nil
-        currentTrackAlbumTitle = nil
-        currentTrackArtworkURL = nil
-        currentTrackArtistURL = nil
+        setCurrentTrackIdentity(title: nil, artist: nil)
+        setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         currentTrackSource = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
@@ -483,7 +482,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            status = .failed(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.activateAudio))
+            setStatus(.failed(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.activateAudio)))
         }
     }
 
@@ -556,8 +555,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
 
         if resolvedTitle != currentTrackTitle || resolvedArtist != currentTrackArtist {
-            currentTrackTitle = resolvedTitle
-            currentTrackArtist = resolvedArtist
+            setCurrentTrackIdentity(title: resolvedTitle, artist: resolvedArtist)
             persistCurrentNowPlayingState()
             resolveArtworkForCurrentTrack()
             updateNowPlayingInfo()
@@ -601,8 +599,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
             return
         }
 
-        currentTrackTitle = normalizedTitle
-        currentTrackArtist = resolvedArtist
+        setCurrentTrackIdentity(title: normalizedTitle, artist: resolvedArtist)
         currentTrackSource = .fallback
         persistCurrentNowPlayingState()
         resolveArtworkForCurrentTrack()
@@ -613,15 +610,11 @@ final class AudioPlayerService: NSObject, ObservableObject {
         artworkResolutionTask?.cancel()
 
         guard let artist = currentTrackArtist, let title = currentTrackTitle else {
-            currentTrackAlbumTitle = nil
-            currentTrackArtworkURL = nil
-            currentTrackArtistURL = nil
+            setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
             return
         }
 
-        currentTrackAlbumTitle = nil
-        currentTrackArtworkURL = nil
-        currentTrackArtistURL = nil
+        setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
 
         artworkResolutionTask = Task { [weak self] in
             guard let self else { return }
@@ -629,12 +622,46 @@ final class AudioPlayerService: NSObject, ObservableObject {
             guard !Task.isCancelled else { return }
             guard self.currentTrackArtist == artist, self.currentTrackTitle == title else { return }
 
-            self.currentTrackAlbumTitle = resolved?.albumTitle
-            self.currentTrackArtworkURL = resolved?.artworkURL
-            self.currentTrackArtistURL = resolved?.artistURL
+            guard self.setCurrentTrackArtworkMetadata(
+                albumTitle: resolved?.albumTitle,
+                artworkURL: resolved?.artworkURL,
+                artistURL: resolved?.artistURL
+            ) else { return }
             self.persistCurrentNowPlayingState()
             self.updateNowPlayingInfo()
         }
+    }
+
+    @discardableResult
+    private func setCurrentTrackIdentity(title: String?, artist: String?) -> Bool {
+        var didChange = false
+        if currentTrackTitle != title {
+            currentTrackTitle = title
+            didChange = true
+        }
+        if currentTrackArtist != artist {
+            currentTrackArtist = artist
+            didChange = true
+        }
+        return didChange
+    }
+
+    @discardableResult
+    private func setCurrentTrackArtworkMetadata(albumTitle: String?, artworkURL: URL?, artistURL: URL?) -> Bool {
+        var didChange = false
+        if currentTrackAlbumTitle != albumTitle {
+            currentTrackAlbumTitle = albumTitle
+            didChange = true
+        }
+        if currentTrackArtworkURL != artworkURL {
+            currentTrackArtworkURL = artworkURL
+            didChange = true
+        }
+        if currentTrackArtistURL != artistURL {
+            currentTrackArtistURL = artistURL
+            didChange = true
+        }
+        return didChange
     }
 
     private func resolvedNowPlayingArtworkImage(for station: Station) -> UIImage? {
@@ -673,7 +700,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         guard let url else { return UIImage(named: "BrandMark") }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await TuneAVURLSessions.artwork.data(from: url)
             guard !Task.isCancelled else { return nil }
             return await Task.detached(priority: .utility) {
                 UIImage(data: data)
@@ -767,7 +794,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 if type == .began {
                     self.player?.pause()
                     if self.currentStation != nil {
-                        self.status = .paused
+                        self.setStatus(.paused)
                     }
                     self.updateNowPlayingInfo()
                     return

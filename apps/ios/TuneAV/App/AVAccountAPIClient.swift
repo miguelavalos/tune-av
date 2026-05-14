@@ -33,7 +33,7 @@ final class AVAccountAPIClient {
 
     init(
         getToken: @escaping () async throws -> String?,
-        urlSession: URLSession = .shared,
+        urlSession: URLSession = TuneAVURLSessions.account,
         decoder: JSONDecoder = JSONDecoder()
     ) {
         self.getToken = getToken

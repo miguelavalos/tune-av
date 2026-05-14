@@ -17,6 +17,7 @@ final class LibraryStore: ObservableObject {
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
     private static let listeningSessionBatchSize = 5
+    private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
     private var appDataService: TuneAVAppDataService?
@@ -29,6 +30,17 @@ final class LibraryStore: ObservableObject {
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
     private var listeningSessionUploadTask: Task<Void, Never>?
+
+    private enum RefreshScope {
+        case favorites
+        case recents
+        case discoveries
+        case settings
+        case favoritesAndRecents
+        case recentsAndSettings
+        case discoveriesAndSettings
+        case all
+    }
 
     init(container: ModelContainer) {
         self.context = ModelContext(container)
@@ -48,20 +60,58 @@ final class LibraryStore: ObservableObject {
     }
 
     func refresh() {
+        refresh(.all)
+    }
+
+    private func refresh(_ scope: RefreshScope) {
+        switch scope {
+        case .favorites:
+            refreshFavorites()
+        case .recents:
+            refreshRecents()
+        case .discoveries:
+            refreshDiscoveries()
+        case .settings:
+            refreshSettings()
+        case .favoritesAndRecents:
+            refreshFavorites()
+            refreshRecents()
+        case .recentsAndSettings:
+            refreshRecents()
+            refreshSettings()
+        case .discoveriesAndSettings:
+            refreshDiscoveries()
+            refreshSettings()
+        case .all:
+            refreshFavorites()
+            refreshRecents()
+            refreshDiscoveries()
+            refreshSettings()
+        }
+    }
+
+    private func refreshFavorites() {
         let favoriteDescriptor = FetchDescriptor<FavoriteStation>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        favorites = (try? context.fetch(favoriteDescriptor)) ?? []
+    }
+
+    private func refreshRecents() {
         let recentDescriptor = FetchDescriptor<RecentStation>(
             sortBy: [SortDescriptor(\.lastPlayedAt, order: .reverse)]
         )
+        recents = (try? context.fetch(recentDescriptor)) ?? []
+    }
+
+    private func refreshDiscoveries() {
         let discoveryDescriptor = FetchDescriptor<DiscoveredTrack>(
             sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
         )
-
-        favorites = (try? context.fetch(favoriteDescriptor)) ?? []
-        recents = (try? context.fetch(recentDescriptor)) ?? []
         discoveries = (try? context.fetch(discoveryDescriptor)) ?? []
+    }
 
+    private func refreshSettings() {
         if let currentSettings = try? context.fetch(FetchDescriptor<AppSettings>()).first {
             settings = currentSettings
         }
@@ -84,7 +134,7 @@ final class LibraryStore: ObservableObject {
             context.insert(FavoriteStation(station: station))
         }
 
-        saveAndRefresh()
+        saveAndRefresh(.favorites)
     }
 
     func rememberStationSnapshots(_ stations: [Station]) {
@@ -104,7 +154,7 @@ final class LibraryStore: ObservableObject {
         }
 
         guard didUpdate else { return }
-        saveAndRefresh()
+        saveAndRefresh(.favoritesAndRecents)
     }
 
     func recordPlayback(of station: Station, recentLimit: Int? = nil) {
@@ -123,7 +173,7 @@ final class LibraryStore: ObservableObject {
         settings.lastPlayedStationID = station.id
         settings.updatedAt = .now
         trimRecents(limit: recentLimit ?? 20)
-        saveAndRefresh()
+        saveAndRefresh(.recentsAndSettings)
     }
 
     func isDiscoveredTrack(title: String?, artist: String?, station: Station?) -> Bool {
@@ -185,7 +235,7 @@ final class LibraryStore: ObservableObject {
             discovery.hiddenAt = nil
         }
 
-        saveAndRefresh()
+        saveAndRefresh(.discoveries)
         return true
     }
 
@@ -211,12 +261,12 @@ final class LibraryStore: ObservableObject {
     func hideDiscovery(_ discovery: DiscoveredTrack) {
         discovery.hiddenAt = .now
         discovery.markedInterestedAt = nil
-        saveAndRefresh()
+        saveAndRefresh(.discoveries)
     }
 
     func restoreDiscovery(_ discovery: DiscoveredTrack) {
         discovery.hiddenAt = nil
-        saveAndRefresh()
+        saveAndRefresh(.discoveries)
     }
 
     func feedback(for station: Station) -> TuneAVStationFeedback? {
@@ -316,13 +366,13 @@ final class LibraryStore: ObservableObject {
         }
 
         trimDiscoveries(limit: discoveryLimit ?? 100)
-        saveAndRefresh()
+        saveAndRefresh(.discoveries)
     }
 
     func removeDiscovery(_ discovery: DiscoveredTrack) {
         rememberDiscoveryDeletion(for: discovery)
         context.delete(discovery)
-        saveAndRefresh()
+        saveAndRefresh(.discoveries)
     }
 
     func clearDiscoveries() {
@@ -331,7 +381,8 @@ final class LibraryStore: ObservableObject {
             context.delete(discovery)
         }
 
-        saveAndRefresh()
+        discoveries = []
+        saveAndRefresh(.discoveries)
     }
 
     func station(for stationID: String?) -> Station? {
@@ -361,7 +412,7 @@ final class LibraryStore: ObservableObject {
 
         settings.lastPlayedStationID = station.id
         settings.updatedAt = .now
-        saveAndRefresh()
+        saveAndRefresh(.all)
     }
 
     func favoriteStations() -> [Station] {
@@ -375,13 +426,13 @@ final class LibraryStore: ObservableObject {
     func setPreferredTag(_ tag: String?) {
         settings.preferredTag = tag?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         settings.updatedAt = .now
-        saveAndRefresh()
+        saveAndRefresh(.settings)
     }
 
     func setPreferredCountry(_ countryCode: String?) {
         settings.preferredCountry = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         settings.updatedAt = .now
-        saveAndRefresh()
+        saveAndRefresh(.settings)
     }
 
     func clearLocalData(propagatesToCloud: Bool = false) {
@@ -712,9 +763,9 @@ final class LibraryStore: ObservableObject {
         UserDefaults.standard.set(data, forKey: trackFeedbackStorageKey)
     }
 
-    private func saveAndRefresh() {
+    private func saveAndRefresh(_ scope: RefreshScope = .all) {
         try? context.save()
-        refresh()
+        refresh(scope)
         scheduleCloudPushIfNeeded()
     }
 
@@ -723,10 +774,13 @@ final class LibraryStore: ObservableObject {
             return
         }
 
-        let snapshot = librarySnapshot()
         pushTask?.cancel()
-        pushTask = Task { [snapshot] in
+        pushTask = Task { [appDataService] in
             do {
+                try await Task.sleep(for: Self.cloudPushDebounce)
+                guard !Task.isCancelled else { return }
+
+                let snapshot = librarySnapshot()
                 cloudSyncStatus = .syncing
                 let remoteDocument = try await appDataService.pullLibrary()
                 let snapshotToPush: TuneAVLibrarySnapshot
@@ -746,6 +800,8 @@ final class LibraryStore: ObservableObject {
                 cloudSyncStatus = .synced(.now)
             } catch TuneAVAppDataError.conflict {
                 await refreshCloudLibraryIfNeeded()
+            } catch is CancellationError {
+                return
             } catch {
                 cloudSyncStatus = .failed
             }
