@@ -5971,35 +5971,38 @@ private struct MusicScreen: View {
     let clearDiscoveries: () -> Void
 
     var body: some View {
+        let snapshot = musicDerivedState
+        let showsOverview = isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil
+
         ZStack(alignment: .top) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    if isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil {
+                    if showsOverview {
                         AviScreenHeader(
                             emotion: TuneAVAviEmotionResolver.musicEmotion(
-                                visibleDiscoveryCount: visibleDiscoveries.count,
-                                savedDiscoveryCount: savedDiscoveries.count,
-                                artistCount: visibleArtistSummaries.count
+                                visibleDiscoveryCount: snapshot.visibleDiscoveries.count,
+                                savedDiscoveryCount: snapshot.savedDiscoveries.count,
+                                artistCount: snapshot.visibleArtistSummaries.count
                             ),
                             title: L10n.string("shell.music.title"),
-                            summary: musicAviDetail,
+                            summary: musicAviDetail(snapshot),
                             showsAviImage: false,
                             accessibilityIdentifier: "music.aviHeader"
                         )
 
-                        musicOverview
+                        musicOverview(snapshot)
                     } else {
                         Color.clear
                             .frame(height: musicDetailHeaderReservedHeight)
 
-                        discoveryLibrarySection
+                        discoveryLibrarySection(snapshot)
                     }
                 }
                 .shellScreenContentPadding(bottom: bottomContentPadding)
             }
             .shellScreenScrollBehavior()
 
-            if !(isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil) {
+            if !showsOverview {
                 stickyMusicDetailHeader
             }
 
@@ -6027,7 +6030,7 @@ private struct MusicScreen: View {
             InAppBrowserView(destination: destination)
         }
         .sheet(isPresented: $isShowingDiscoveriesShare) {
-            ShareSheetView(items: [discoveriesShareText])
+            ShareSheetView(items: [discoveriesShareText(musicDerivedState)])
         }
         .onAppear {
             normalizeInitialDiscoveryFilter()
@@ -6090,9 +6093,8 @@ private struct MusicScreen: View {
         }
     }
 
-    private var musicOverview: some View {
-        let snapshot = musicDerivedState
-        return VStack(alignment: .leading, spacing: 24) {
+    private func musicOverview(_ snapshot: MusicLibraryDerivedState) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
             if accessController.capabilities.canAccessPremiumFeatures {
                 AccountSummaryStatusCard(
                     kind: .music,
@@ -6180,9 +6182,8 @@ private struct MusicScreen: View {
         }
     }
 
-    private var musicModeControls: some View {
-        let snapshot = musicDerivedState
-        return MusicLibraryControls(
+    private func musicModeControls(_ snapshot: MusicLibraryDerivedState) -> some View {
+        MusicLibraryControls(
             savedCount: snapshot.savedDiscoveries.count,
             historyCount: snapshot.visibleDiscoveries.count,
             artistCount: snapshot.visibleArtistSummaries.count,
@@ -6266,21 +6267,20 @@ private struct MusicScreen: View {
         }
     }
 
-    private var discoveryLibrarySection: some View {
-        let snapshot = musicDerivedState
-        return VStack(alignment: .leading, spacing: 12) {
+    private func discoveryLibrarySection(_ snapshot: MusicLibraryDerivedState) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             if snapshot.isCurrentModeEmpty {
                 EmptyLibraryState(
-                    title: emptyDiscoveryTitle,
-                    detail: emptyDiscoveryDetail
+                    title: emptyDiscoveryTitle(snapshot),
+                    detail: emptyDiscoveryDetail(snapshot)
                 )
             } else {
                 switch musicMode {
                 case .songs, .top, .history:
-                    discoverySongsHeader
-                    discoveryTrackList
+                    discoverySongsHeader(snapshot)
+                    discoveryTrackList(snapshot)
                 case .artists:
-                    discoveryArtistsHeader
+                    discoveryArtistsHeader(snapshot)
                     LazyVStack(spacing: 10) {
                         ForEach(Array(snapshot.visibleArtistSummariesForMode.enumerated()), id: \.element.id) { index, artist in
                             DiscoveryArtistRow(
@@ -6355,9 +6355,8 @@ private struct MusicScreen: View {
         }
     }
 
-    private var discoveryTrackList: some View {
-        let snapshot = musicDerivedState
-        return LazyVStack(spacing: 10) {
+    private func discoveryTrackList(_ snapshot: MusicLibraryDerivedState) -> some View {
+        LazyVStack(spacing: 10) {
             ForEach(Array(snapshot.visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
                 DiscoveryTrackCard(
                     discovery: discovery,
@@ -6386,14 +6385,14 @@ private struct MusicScreen: View {
         }
     }
 
-    private var discoveryArtistsHeader: some View {
+    private func discoveryArtistsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
         HStack(spacing: 10) {
             Text(L10n.string("shell.music.artists.title"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            discoveryActions
+            discoveryActions(snapshot)
         }
     }
 
@@ -6435,7 +6434,7 @@ private struct MusicScreen: View {
         browserDestination = BrowserDestination(url: search.url)
     }
 
-    private var discoverySongsHeader: some View {
+    private func discoverySongsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
         HStack(spacing: 10) {
             Text(historyStationFilterTitle ?? currentMusicLibraryMode.songsTitle)
                 .font(.system(size: 14, weight: .semibold))
@@ -6457,7 +6456,7 @@ private struct MusicScreen: View {
                 .accessibilityIdentifier("music.history.all")
             }
 
-            discoveryActions
+            discoveryActions(snapshot)
         }
     }
 
@@ -6466,10 +6465,11 @@ private struct MusicScreen: View {
         return "\(MusicLibraryMode.history.title) · \(historyStationFilter.name)"
     }
 
-    private var discoveryActions: some View {
+    private func discoveryActions(_ snapshot: MusicLibraryDerivedState) -> some View {
         HStack(spacing: 10) {
             Button {
-                guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: discoveriesShareText) else { return }
+                let shareText = discoveriesShareText(snapshot)
+                guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
                 isShowingDiscoveriesShare = true
             } label: {
                 Image(systemName: "square.and.arrow.up")
@@ -6481,7 +6481,7 @@ private struct MusicScreen: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.library.discoveries.share"))
             .accessibilityIdentifier("discoveries.share")
-            .disabled(filteredDiscoveries.isEmpty)
+            .disabled(snapshot.filteredDiscoveries.isEmpty)
 
             Button {
                 isConfirmingClearDiscoveries = true
@@ -6652,17 +6652,17 @@ private struct MusicScreen: View {
         return L10n.string("shell.music.status.empty")
     }
 
-    private var musicAviDetail: String {
-        if visibleDiscoveries.isEmpty {
+    private func musicAviDetail(_ snapshot: MusicLibraryDerivedState) -> String {
+        if snapshot.visibleDiscoveries.isEmpty {
             return L10n.string("shell.music.avi.detail.empty")
         }
-        if let strongestStation = strongestDiscoveryStationName {
-            return L10n.string("shell.music.avi.detail.strongestStation", visibleDiscoveries.count, strongestStation)
+        if let strongestStation = strongestDiscoveryStationName(snapshot.visibleDiscoveries) {
+            return L10n.string("shell.music.avi.detail.strongestStation", snapshot.visibleDiscoveries.count, strongestStation)
         }
-        return L10n.string("shell.music.avi.detail.summary", visibleDiscoveries.count, savedDiscoveries.count)
+        return L10n.string("shell.music.avi.detail.summary", snapshot.visibleDiscoveries.count, snapshot.savedDiscoveries.count)
     }
 
-    private var strongestDiscoveryStationName: String? {
+    private func strongestDiscoveryStationName(_ visibleDiscoveries: [DiscoveredTrack]) -> String? {
         let counts = Dictionary(grouping: visibleDiscoveries, by: \.stationName)
             .mapValues(\.count)
         return counts.max { lhs, rhs in lhs.value < rhs.value }?.key
@@ -6780,10 +6780,10 @@ private struct MusicScreen: View {
         AppShellMusicLibrary.visibleArtistSummaries(discoveries)
     }
 
-    private var discoveriesShareText: String {
+    private func discoveriesShareText(_ snapshot: MusicLibraryDerivedState) -> String {
         AppShellMusicLibrary.shareText(
             title: L10n.string("shell.library.discoveries.shareTitle"),
-            discoveries: filteredDiscoveries
+            discoveries: snapshot.filteredDiscoveries
         )
     }
 
@@ -6812,8 +6812,8 @@ private struct MusicScreen: View {
         MusicLibrarySort(rawValue: musicSortRawValue) ?? .recent
     }
 
-    private var emptyDiscoveryTitle: String {
-        if visibleDiscoveries.isEmpty {
+    private func emptyDiscoveryTitle(_ snapshot: MusicLibraryDerivedState) -> String {
+        if snapshot.visibleDiscoveries.isEmpty {
             return L10n.string("shell.library.discoveries.empty")
         }
 
@@ -6833,8 +6833,8 @@ private struct MusicScreen: View {
         }
     }
 
-    private var emptyDiscoveryDetail: String {
-        if visibleDiscoveries.isEmpty {
+    private func emptyDiscoveryDetail(_ snapshot: MusicLibraryDerivedState) -> String {
+        if snapshot.visibleDiscoveries.isEmpty {
             return L10n.string("shell.library.discoveries.empty.detail")
         }
 
