@@ -174,12 +174,16 @@ struct AppShellView: View {
     private var currentScreen: some View {
         switch selectedTab {
         case .home:
+            let stations = enrichedStations(homeSnapshot.stations)
+            let recentStations = enrichedStations(homeSnapshot.recentStations)
+            let favoriteStations = enrichedStations(homeSnapshot.favoriteStations)
+
             HomeScreen(
-                stations: enrichedStations(homeSnapshot.stations),
+                stations: stations,
                 isLoading: homeIsLoading,
                 errorMessage: homeErrorMessage,
-                recentStations: enrichedStations(homeSnapshot.recentStations),
-                favoriteStations: enrichedStations(homeSnapshot.favoriteStations),
+                recentStations: recentStations,
+                favoriteStations: favoriteStations,
                 lastPlayedStation: lastPlayedStation.map(enrichedStation),
                 discoveries: libraryStore.discoveries,
                 stationFeedback: libraryStore.stationFeedback,
@@ -210,12 +214,14 @@ struct AppShellView: View {
                 }
             )
         case .search:
+            let results = enrichedStations(searchResults)
+
             SearchScreen(
                 query: $searchQuery,
                 activeTag: $searchTag,
                 selectedCountryCode: $searchCountryCode,
                 discoveryMode: $searchDiscoveryMode,
-                results: enrichedStations(searchResults),
+                results: results,
                 isLoading: searchIsLoading,
                 errorMessage: searchErrorMessage,
                 tags: genreTags,
@@ -233,6 +239,10 @@ struct AppShellView: View {
             let focusedStation = selectedStationDetail.map { enrichedStation($0.station) } ?? audioPlayer.currentStation
             let focusedQueueStations = selectedStationDetail.map { enrichedStations($0.queueStations) }
             let focusedQueueSource = selectedStationDetail?.queueSource ?? .singleStation
+            let stations = enrichedStations(homeSnapshot.stations)
+            let recentStations = enrichedRecentStations
+            let favoriteStations = enrichedFavoriteStations
+
             AviScreen(
                 currentStation: audioPlayer.currentStation,
                 focusedStation: focusedStation,
@@ -242,9 +252,9 @@ struct AppShellView: View {
                 currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
                 isPlaying: audioPlayer.isPlaying,
                 isLoading: audioPlayer.isLoading,
-                stations: enrichedStations(homeSnapshot.stations),
-                recentStations: enrichedStations(recentStations),
-                favoriteStations: enrichedStations(favoriteStations),
+                stations: stations,
+                recentStations: recentStations,
+                favoriteStations: favoriteStations,
                 discoveries: libraryStore.discoveries,
                 focusedMusicDetail: selectedMusicAviDetail,
                 stationFeedback: libraryStore.stationFeedback,
@@ -287,9 +297,12 @@ struct AppShellView: View {
                 closeFocusedDetail: closeFocusedAviDetail
             )
         case .library:
+            let favorites = enrichedFavoriteStations
+            let recents = enrichedRecentStations
+
             LibraryScreen(
-                favorites: enrichedStations(favoriteStations),
-                recents: enrichedStations(recentStations),
+                favorites: favorites,
+                recents: recents,
                 discoveries: libraryStore.discoveries,
                 summary: libraryStore.userSummary,
                 requestedMode: $requestedRadioMode,
