@@ -81,6 +81,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var cachedNowPlayingByStationID: [String: TuneAVCachedNowPlayingState] = [:]
     private var nowPlayingArtworkImage: UIImage?
     private var nowPlayingArtworkSourceURL: URL?
+    private var lastNowPlayingInfoSignature: String?
     private static let nowPlayingArtworkImageCache: NSCache<NSURL, UIImage> = {
         let cache = NSCache<NSURL, UIImage>()
         cache.countLimit = 40
@@ -226,6 +227,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
         playbackQueue = .init(source: .singleStation, stations: [])
+        lastNowPlayingInfoSignature = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
@@ -475,6 +477,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         currentTrackSource = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
+        lastNowPlayingInfoSignature = nil
     }
 
     private var shouldReloadCurrentStation: Bool {
@@ -503,6 +506,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     private func updateNowPlayingInfo() {
         guard let currentStation else {
+            lastNowPlayingInfoSignature = nil
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
@@ -524,8 +528,35 @@ final class AudioPlayerService: NSObject, ObservableObject {
             info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
         }
 
+        let signature = nowPlayingInfoSignature(station: currentStation, elapsed: info[MPNowPlayingInfoPropertyElapsedPlaybackTime])
+        guard signature != lastNowPlayingInfoSignature else {
+            refreshNowPlayingArtworkIfNeeded(for: currentStation)
+            return
+        }
+        lastNowPlayingInfoSignature = signature
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         refreshNowPlayingArtworkIfNeeded(for: currentStation)
+    }
+
+    private func nowPlayingInfoSignature(station: Station, elapsed: Any?) -> String {
+        let elapsedBucket: Int
+        if let elapsed = elapsed as? Double, elapsed.isFinite {
+            elapsedBucket = Int(elapsed.rounded(.down))
+        } else {
+            elapsedBucket = -1
+        }
+
+        return [
+            station.id,
+            currentTrackTitle ?? "",
+            currentTrackArtist ?? "",
+            currentTrackAlbumTitle ?? "",
+            currentTrackArtworkURL?.absoluteString ?? "",
+            isPlaying ? "playing" : "notPlaying",
+            "\(elapsedBucket)",
+            nowPlayingArtworkSourceURL?.absoluteString ?? "",
+            nowPlayingArtworkImage == nil ? "noImage" : "image"
+        ].joined(separator: "\u{1F}")
     }
 
     private func updateTrackMetadata(from events: [TuneAVStreamMetadataEvent]) async {
