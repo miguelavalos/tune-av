@@ -20,6 +20,7 @@ final class AccessController: ObservableObject {
     private let dailyUsageLimiter: TuneAVDailyUsageLimiter
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
+    private var accessRefreshGeneration = 0
 
     init(
         accountService: AVAccountService = DefaultAVAccountService(),
@@ -76,17 +77,23 @@ final class AccessController: ObservableObject {
     }
 
     func syncFromAccountProvider() async {
+        accessRefreshGeneration += 1
+        let generation = accessRefreshGeneration
         accountUser = accountService.currentUser
         if accountUser == nil {
             do {
                 _ = try await accountService.getToken()
+                guard generation == accessRefreshGeneration else { return }
                 accountUser = accountService.currentUser
             } catch {
+                guard generation == accessRefreshGeneration else { return }
                 authLogger.error("Unable to hydrate Account AV session before access refresh: \(String(reflecting: error), privacy: .public)")
             }
         }
         resolveAccessState()
+        let userForRefresh = accountUser
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
+        guard generation == accessRefreshGeneration, accountUser == userForRefresh else { return }
         applyResolvedAccess(refreshedAccess)
     }
 
@@ -95,7 +102,9 @@ final class AccessController: ObservableObject {
     }
 
     func signOut() async throws {
+        accessRefreshGeneration += 1
         try await accountService.signOut()
+        accessRefreshGeneration += 1
         accountUser = nil
         resolveAccessState()
     }
