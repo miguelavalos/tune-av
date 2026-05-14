@@ -851,10 +851,15 @@ struct AppShellView: View {
     private func rememberBackendStations(_ stations: [Station]) {
         guard !stations.isEmpty else { return }
 
+        var nextEnrichedStationsByID = enrichedStationsByID
+
         for station in stations where station.hasBackendEnrichment {
-            let current = enrichedStationsByID[station.id]
+            let current = nextEnrichedStationsByID[station.id]
             guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
-            enrichedStationsByID[station.id] = station
+            nextEnrichedStationsByID[station.id] = station
+        }
+        if nextEnrichedStationsByID != enrichedStationsByID {
+            enrichedStationsByID = nextEnrichedStationsByID
         }
 
         libraryStore.rememberStationSnapshots(stations)
