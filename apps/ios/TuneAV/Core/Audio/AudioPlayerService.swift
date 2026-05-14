@@ -215,8 +215,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         player = nil
         playerItemStatusObserver = nil
         timeControlStatusObserver = nil
-        failedToEndObserver = nil
-        playbackStalledObserver = nil
+        removePlayerItemObservers()
         metadataOutput = nil
         metadataDelegate = nil
         currentTrackSource = nil
@@ -468,8 +467,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         player = nil
         playerItemStatusObserver = nil
         timeControlStatusObserver = nil
-        failedToEndObserver = nil
-        playbackStalledObserver = nil
+        removePlayerItemObservers()
         metadataOutput = nil
         metadataDelegate = nil
         setCurrentTrackIdentity(title: nil, artist: nil)
@@ -811,6 +809,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     private func configureRemoteCommands() {
         let commandCenter = MPRemoteCommandCenter.shared()
+        removeRemoteCommandTargets()
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.togglePlayPauseCommand.isEnabled = true
@@ -833,6 +832,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     private func observeAudioSessionNotifications() {
         let center = NotificationCenter.default
+        removeAudioSessionObservers()
 
         interruptionObserver = center.addObserver(
             forName: AVAudioSession.interruptionNotification,
@@ -876,6 +876,37 @@ final class AudioPlayerService: NSObject, ObservableObject {
             Task { @MainActor in
                 self?.updateNowPlayingInfo()
             }
+        }
+    }
+
+    private func removeRemoteCommandTargets() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.removeTarget(nil)
+        commandCenter.pauseCommand.removeTarget(nil)
+        commandCenter.togglePlayPauseCommand.removeTarget(nil)
+    }
+
+    private func removeAudioSessionObservers() {
+        let center = NotificationCenter.default
+        if let interruptionObserver {
+            center.removeObserver(interruptionObserver)
+            self.interruptionObserver = nil
+        }
+        if let routeChangeObserver {
+            center.removeObserver(routeChangeObserver)
+            self.routeChangeObserver = nil
+        }
+    }
+
+    private func removePlayerItemObservers() {
+        let center = NotificationCenter.default
+        if let failedToEndObserver {
+            center.removeObserver(failedToEndObserver)
+            self.failedToEndObserver = nil
+        }
+        if let playbackStalledObserver {
+            center.removeObserver(playbackStalledObserver)
+            self.playbackStalledObserver = nil
         }
     }
 }
