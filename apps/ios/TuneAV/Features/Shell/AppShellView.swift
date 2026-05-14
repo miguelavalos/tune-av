@@ -934,7 +934,6 @@ struct AppShellView: View {
 
         searchIsLoading = true
         searchErrorMessage = nil
-        searchResults = []
 
         if launchContext.isUITesting && launchContext.shouldUseLocalUITestSearch {
             let results = AppShellSearch.localUITestSearchResults(request: request)
