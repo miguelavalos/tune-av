@@ -246,7 +246,9 @@ struct NowPlayingView: View {
         aviHeight: CGFloat,
         compact: Bool
     ) -> some View {
-        ZStack(alignment: .topTrailing) {
+        let contextPrompts = playerAviContextPrompts(for: station, limit: compact ? 2 : 3)
+
+        return ZStack(alignment: .topTrailing) {
             VStack(alignment: .leading, spacing: compact ? 9 : 11) {
                 HStack(alignment: .firstTextBaseline) {
                     Spacer(minLength: 12)
@@ -328,7 +330,7 @@ struct NowPlayingView: View {
                 }
 
                 HStack(spacing: 6) {
-                    ForEach(playerAviContextPrompts(for: station).prefix(compact ? 2 : 3), id: \.self) { prompt in
+                    ForEach(contextPrompts, id: \.self) { prompt in
                         PlayerAviContextPill(title: prompt)
                     }
                 }
@@ -443,7 +445,9 @@ struct NowPlayingView: View {
     }
 
     private func aviOptionsPanel(for station: Station, compact: Bool) -> some View {
-        ZStack(alignment: .topTrailing) {
+        let actions = aviOrbitActions(for: station)
+
+        return ZStack(alignment: .topTrailing) {
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay {
@@ -477,7 +481,7 @@ struct NowPlayingView: View {
             .buttonStyle(.plain)
             .padding(10)
 
-            ForEach(Array(aviOrbitActions(for: station).enumerated()), id: \.element.id) { index, action in
+            ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
                 Button(action: action.action) {
                     VStack(spacing: 5) {
                         Image(systemName: action.systemImage)
@@ -1424,7 +1428,7 @@ struct NowPlayingView: View {
         return L10n.string("player.avi.detail.neutral")
     }
 
-    private func playerAviContextPrompts(for station: Station) -> [String] {
+    private func playerAviContextPrompts(for station: Station, limit: Int) -> [String] {
         var prompts: [String] = []
 
         if let feedback = libraryStore.feedback(for: station) {
@@ -1450,7 +1454,7 @@ struct NowPlayingView: View {
             prompts.append(tag.capitalized(with: L10n.locale))
         }
 
-        return Array(prompts.prefix(3))
+        return Array(prompts.prefix(limit))
     }
 
     private func playerStationCountryPrompt(for station: Station) -> String? {
