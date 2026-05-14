@@ -41,8 +41,7 @@ struct AppShellHomeFeed {
 
     @MainActor
     func prefetchInitialFeed(preferredTag: String = "", limit: Int = 12) async {
-        guard cachedFeed(preferredTag: preferredTag, limit: limit) == nil else { return }
-        _ = try? await loadRemote(preferredTag: preferredTag, limit: limit)
+        _ = try? await load(preferredTag: preferredTag, limit: limit)
     }
 
     @MainActor
