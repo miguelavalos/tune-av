@@ -97,26 +97,65 @@ final class LibraryStore: ObservableObject {
         let favoriteDescriptor = FetchDescriptor<FavoriteStation>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
-        favorites = (try? context.fetch(favoriteDescriptor)) ?? []
+        let nextFavorites = (try? context.fetch(favoriteDescriptor)) ?? []
+        guard favoriteSignature(favorites) != favoriteSignature(nextFavorites) else { return }
+        favorites = nextFavorites
     }
 
     private func refreshRecents() {
         let recentDescriptor = FetchDescriptor<RecentStation>(
             sortBy: [SortDescriptor(\.lastPlayedAt, order: .reverse)]
         )
-        recents = (try? context.fetch(recentDescriptor)) ?? []
+        let nextRecents = (try? context.fetch(recentDescriptor)) ?? []
+        guard recentSignature(recents) != recentSignature(nextRecents) else { return }
+        recents = nextRecents
     }
 
     private func refreshDiscoveries() {
         let discoveryDescriptor = FetchDescriptor<DiscoveredTrack>(
             sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
         )
-        discoveries = (try? context.fetch(discoveryDescriptor)) ?? []
+        let nextDiscoveries = (try? context.fetch(discoveryDescriptor)) ?? []
+        guard discoverySignature(discoveries) != discoverySignature(nextDiscoveries) else { return }
+        discoveries = nextDiscoveries
     }
 
     private func refreshSettings() {
         if let currentSettings = try? context.fetch(FetchDescriptor<AppSettings>()).first {
             settings = currentSettings
+        }
+    }
+
+    private func favoriteSignature(_ items: [FavoriteStation]) -> [String] {
+        items.map { favorite in
+            [
+                favorite.stationID,
+                TuneAVAppDataService.isoString(from: favorite.createdAt),
+                favorite.stationSnapshotJSON ?? ""
+            ].joined(separator: "\u{1F}")
+        }
+    }
+
+    private func recentSignature(_ items: [RecentStation]) -> [String] {
+        items.map { recent in
+            [
+                recent.stationID,
+                TuneAVAppDataService.isoString(from: recent.lastPlayedAt),
+                recent.stationSnapshotJSON ?? ""
+            ].joined(separator: "\u{1F}")
+        }
+    }
+
+    private func discoverySignature(_ items: [DiscoveredTrack]) -> [String] {
+        items.map { discovery in
+            [
+                discovery.discoveryID,
+                TuneAVAppDataService.isoString(from: discovery.playedAt),
+                discovery.markedInterestedAt.map(TuneAVAppDataService.isoString(from:)) ?? "",
+                discovery.hiddenAt.map(TuneAVAppDataService.isoString(from:)) ?? "",
+                discovery.artworkURL ?? "",
+                discovery.stationArtworkURL ?? ""
+            ].joined(separator: "\u{1F}")
         }
     }
 
