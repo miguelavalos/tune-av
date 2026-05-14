@@ -411,7 +411,7 @@ struct AppShellView: View {
 
     private var stationNowPlayingRequestKey: String {
         let ids = stationNowPlayingCandidates.map(\.id).joined(separator: "|")
-        return "\(selectedTab)|\(ids)"
+        return "\(selectedTab)|\(isProNowPlayingEnabled)|\(ids)"
     }
 
     private var summaryRefreshRequestKey: String {
@@ -449,14 +449,23 @@ struct AppShellView: View {
     }
 
     private func loadStationNowPlayingPreviews() async {
-        guard isProNowPlayingEnabled else { return }
-        guard !launchContext.isUITesting else { return }
+        guard isProNowPlayingEnabled else {
+            clearStationNowPlayingPreviews()
+            return
+        }
+        guard !launchContext.isUITesting else {
+            clearStationNowPlayingPreviews()
+            return
+        }
 
         let supportedStations = stationNowPlayingCandidates
             .filter { stationNowPlayingService.supports($0) }
             .prefix(6)
 
-        guard !supportedStations.isEmpty else { return }
+        guard !supportedStations.isEmpty else {
+            clearStationNowPlayingPreviews()
+            return
+        }
 
         for station in supportedStations {
             if Task.isCancelled { return }
@@ -485,6 +494,18 @@ struct AppShellView: View {
     private func setStationNowPlayingTrack(_ track: NowPlayingTrack, for stationID: String) {
         guard stationNowPlayingTracks[stationID] != track else { return }
         stationNowPlayingTracks[stationID] = track
+    }
+
+    private func clearStationNowPlayingPreviews() {
+        if !stationNowPlayingTracks.isEmpty {
+            stationNowPlayingTracks.removeAll(keepingCapacity: true)
+        }
+        if !stationNowPlayingCache.isEmpty {
+            stationNowPlayingCache.removeAll(keepingCapacity: true)
+        }
+        if !stationNowPlayingFailureCache.isEmpty {
+            stationNowPlayingFailureCache.removeAll(keepingCapacity: true)
+        }
     }
 
     private var isProNowPlayingEnabled: Bool {
