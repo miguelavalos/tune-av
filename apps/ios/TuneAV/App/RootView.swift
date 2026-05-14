@@ -54,20 +54,17 @@ struct RootView: View {
         }
         .tint(TuneAVTheme.highlight)
         .task {
-            updateIdleTimer(for: scenePhase)
             await prefetchInitialHomeFeedIfNeeded()
+        }
+        .task(id: scenePhase) {
+            updateIdleTimer(for: scenePhase)
+            guard scenePhase == .active else { return }
             await accessController.syncFromAccountProvider()
             await refreshLibrarySync()
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in
             updateIdleTimer(for: newPhase)
-            guard newPhase == .active else { return }
-            Task {
-                await accessController.syncFromAccountProvider()
-                await refreshLibrarySync()
-                markAutomaticGuestOnboardingSeenIfNeeded()
-            }
         }
         .onChange(of: accessController.accessMode) { _, _ in
             authOptionsArePresented = false
