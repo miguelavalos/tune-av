@@ -6234,29 +6234,6 @@ private struct MusicScreen: View {
         )
     }
 
-    private var overviewDiscoveries: [DiscoveredTrack] {
-        Array(visibleDiscoveries.prefix(Self.overviewLimit))
-    }
-
-    private var overviewSavedDiscoveries: [DiscoveredTrack] {
-        Array(savedDiscoveries.prefix(Self.overviewLimit))
-    }
-
-    private var overviewTopDiscoveries: [DiscoveredTrack] {
-        Array(tunedDiscoveries.prefix(Self.overviewLimit))
-    }
-
-    private var overviewArtistSummaries: [DiscoveryArtistSummary] {
-        Array(visibleArtistSummaries.prefix(Self.overviewLimit))
-    }
-
-    private var hasMusicOverviewContent: Bool {
-        !overviewSavedDiscoveries.isEmpty
-            || !overviewDiscoveries.isEmpty
-            || !overviewTopDiscoveries.isEmpty
-            || !overviewArtistSummaries.isEmpty
-    }
-
     @ViewBuilder
     private func musicOverviewTrackSectionIfNeeded(
         discoveries: [DiscoveredTrack],
@@ -6343,33 +6320,6 @@ private struct MusicScreen: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("music.section.discoveries")
-    }
-
-    private var musicSectionTitle: String {
-        switch musicMode {
-        case .top:
-            return L10n.string("shell.music.mode.top")
-        default:
-            return L10n.string("shell.music.discoveries.title")
-        }
-    }
-
-    private var musicSectionSubtitle: String {
-        switch musicMode {
-        case .top:
-            return L10n.string("shell.music.detail.top.subtitle")
-        default:
-            return L10n.string("shell.music.discoveries.subtitle")
-        }
-    }
-
-    private var isCurrentMusicModeEmpty: Bool {
-        switch musicMode {
-        case .songs, .top, .history:
-            return filteredDiscoveries.isEmpty
-        case .artists:
-            return filteredArtistSummaries.isEmpty
-        }
     }
 
     private var discoveryStationsList: some View {
@@ -6584,10 +6534,6 @@ private struct MusicScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var savedDiscoveries: [DiscoveredTrack] {
-        AppShellMusicLibrary.savedDiscoveries(discoveries)
-    }
-
     private var musicDerivedState: MusicLibraryDerivedState {
         let visibleDiscoveries = AppShellMusicLibrary.visibleDiscoveries(discoveries)
         let savedDiscoveries = AppShellMusicLibrary.savedDiscoveries(discoveries)
@@ -6666,28 +6612,6 @@ private struct MusicScreen: View {
         }
     }
 
-    private var musicStatusTitle: String {
-        if !savedDiscoveries.isEmpty {
-            return L10n.plural(
-                singular: "shell.music.status.saved.one",
-                plural: "shell.music.status.saved.other",
-                count: savedDiscoveries.count,
-                savedDiscoveries.count
-            )
-        }
-
-        if !visibleDiscoveries.isEmpty {
-            return L10n.plural(
-                singular: "shell.music.status.history.one",
-                plural: "shell.music.status.history.other",
-                count: visibleDiscoveries.count,
-                visibleDiscoveries.count
-            )
-        }
-
-        return L10n.string("shell.music.status.empty")
-    }
-
     private func musicAviDetail(_ snapshot: MusicLibraryDerivedState) -> String {
         if snapshot.visibleDiscoveries.isEmpty {
             return L10n.string("shell.music.avi.detail.empty")
@@ -6702,10 +6626,6 @@ private struct MusicScreen: View {
         let counts = Dictionary(grouping: visibleDiscoveries, by: \.stationName)
             .mapValues(\.count)
         return counts.max { lhs, rhs in lhs.value < rhs.value }?.key
-    }
-
-    private var filteredDiscoveries: [DiscoveredTrack] {
-        resolvedFilteredDiscoveries()
     }
 
     private func resolvedFilteredDiscoveries() -> [DiscoveredTrack] {
@@ -6729,10 +6649,6 @@ private struct MusicScreen: View {
         case .strongest:
             return strongestSortedDiscoveries(filtered)
         }
-    }
-
-    private var tunedDiscoveries: [DiscoveredTrack] {
-        sortTunedDiscoveries(visibleDiscoveries.filter { trackFeedback($0) != nil })
     }
 
     private func sortTunedDiscoveries(_ discoveries: [DiscoveredTrack]) -> [DiscoveredTrack] {
@@ -6777,18 +6693,6 @@ private struct MusicScreen: View {
         "\(TuneAVText.normalizedValue(discovery.artistDisplayText) ?? discovery.artistDisplayText.lowercased())|\(TuneAVText.normalizedValue(discovery.title) ?? discovery.title.lowercased())"
     }
 
-    private var visibleFilteredDiscoveries: [DiscoveredTrack] {
-        Array(filteredDiscoveries.prefix(visibleDiscoveryLimit))
-    }
-
-    private var canShowMoreDiscoveries: Bool {
-        visibleFilteredDiscoveries.count < filteredDiscoveries.count
-    }
-
-    private var filteredArtistSummaries: [DiscoveryArtistSummary] {
-        resolvedFilteredArtistSummaries()
-    }
-
     private func resolvedFilteredArtistSummaries() -> [DiscoveryArtistSummary] {
         let summaries = AppShellMusicLibrary.filteredArtistSummaries(
             discoveries,
@@ -6802,18 +6706,6 @@ private struct MusicScreen: View {
         case .alphabetical:
             return summaries.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         }
-    }
-
-    private var visibleArtistSummariesForMode: [DiscoveryArtistSummary] {
-        Array(filteredArtistSummaries.prefix(visibleArtistLimit))
-    }
-
-    private var canShowMoreArtists: Bool {
-        visibleArtistSummariesForMode.count < filteredArtistSummaries.count
-    }
-
-    private var visibleArtistSummaries: [DiscoveryArtistSummary] {
-        AppShellMusicLibrary.visibleArtistSummaries(discoveries)
     }
 
     private func discoveriesShareText(_ snapshot: MusicLibraryDerivedState) -> String {
