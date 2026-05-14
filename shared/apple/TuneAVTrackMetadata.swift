@@ -151,21 +151,59 @@ enum TuneAVNowPlayingMetadata {
         return TuneAVTrackMetadataParser.parse(streamTitle).nowPlayingTrack
     }
 
-    private static func metadataValue(named name: String, in metadata: String) -> String? {
-        let pattern = "\(name)='([^']*)'"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return nil
-        }
-
-        let nsRange = NSRange(metadata.startIndex..<metadata.endIndex, in: metadata)
+    static func metadataValue(named name: String, in metadata: String) -> String? {
         guard
-            let match = regex.firstMatch(in: metadata, range: nsRange),
-            let valueRange = Range(match.range(at: 1), in: metadata)
+            let nameRange = metadata.range(of: name, options: [.caseInsensitive]),
+            let equalsRange = metadata[nameRange.upperBound...].range(of: "=")
         else {
             return nil
         }
 
-        return String(metadata[valueRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        var cursor = equalsRange.upperBound
+        while cursor < metadata.endIndex, metadata[cursor].isWhitespace {
+            cursor = metadata.index(after: cursor)
+        }
+
+        guard cursor < metadata.endIndex else { return nil }
+
+        let quote = metadata[cursor]
+        if quote == "'" || quote == "\"" {
+            cursor = metadata.index(after: cursor)
+            var value = ""
+            var isEscaped = false
+
+            while cursor < metadata.endIndex {
+                let character = metadata[cursor]
+
+                if isEscaped {
+                    value.append(character)
+                    isEscaped = false
+                    cursor = metadata.index(after: cursor)
+                    continue
+                }
+
+                if character == "\\" {
+                    isEscaped = true
+                    cursor = metadata.index(after: cursor)
+                    continue
+                }
+
+                let nextIndex = metadata.index(after: cursor)
+                if character == quote {
+                    if nextIndex == metadata.endIndex || metadata[nextIndex] == ";" {
+                        break
+                    }
+                }
+
+                value.append(character)
+                cursor = nextIndex
+            }
+
+            return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let endIndex = metadata[cursor...].firstIndex(of: ";") ?? metadata.endIndex
+        return String(metadata[cursor..<endIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -198,8 +236,8 @@ enum TuneAVDisplayMetadata {
 
 enum TuneAVTrackMetadataParser {
     static func parse(_ rawValue: String) -> TuneAVTrackMetadata {
-        let cleaned = rawValue
-            .replacingOccurrences(of: "StreamTitle=", with: "")
+        let unwrappedValue = TuneAVNowPlayingMetadata.metadataValue(named: "StreamTitle", in: rawValue) ?? rawValue
+        let cleaned = unwrappedValue
             .trimmingCharacters(in: CharacterSet(charactersIn: "'; ").union(.whitespacesAndNewlines))
 
         for separator in [" - ", " – ", " — "] where cleaned.contains(separator) {

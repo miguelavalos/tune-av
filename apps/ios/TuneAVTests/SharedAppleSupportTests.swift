@@ -136,6 +136,26 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(parsed.title, "La femme d'argent")
     }
 
+    func testTrackMetadataParserKeepsApostrophesInsideStreamTitleWrapper() {
+        let titleApostrophe = TuneAVTrackMetadataParser.parse("StreamTitle='Artist - Let's go';")
+        let artistApostrophe = TuneAVTrackMetadataParser.parse("StreamTitle='Guns N' Roses - Sweet Child O' Mine';")
+
+        XCTAssertEqual(titleApostrophe.artist, "Artist")
+        XCTAssertEqual(titleApostrophe.title, "Let's go")
+        XCTAssertEqual(artistApostrophe.artist, "Guns N' Roses")
+        XCTAssertEqual(artistApostrophe.title, "Sweet Child O' Mine")
+    }
+
+    func testTrackMetadataParserHandlesQuotedAndEscapedStreamTitleWrappers() {
+        let doubleQuoted = TuneAVTrackMetadataParser.parse("StreamTitle=\"AC/DC - It's a Long Way\";")
+        let escaped = TuneAVTrackMetadataParser.parse("StreamTitle='Artist - It\\'s Alright';")
+
+        XCTAssertEqual(doubleQuoted.artist, "AC/DC")
+        XCTAssertEqual(doubleQuoted.title, "It's a Long Way")
+        XCTAssertEqual(escaped.artist, "Artist")
+        XCTAssertEqual(escaped.title, "It's Alright")
+    }
+
     func testTrackMetadataParserIdentifiesStationNamesAsNotSongs() {
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Rock FM", stationName: "ROCK FM"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("CityBeat", stationName: "CityBeat Mainstream Radio"))
@@ -1027,6 +1047,14 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(track?.artist, "Massive Attack")
         XCTAssertEqual(track?.title, "Teardrop")
+    }
+
+    func testNowPlayingMetadataKeepsApostrophesInsideICYStreamTitle() {
+        let bytes = Array("StreamTitle='Artist - Let's go';StreamUrl='';\0\0".utf8)
+        let track = TuneAVNowPlayingMetadata.parseICYMetadata(bytes)
+
+        XCTAssertEqual(track?.artist, "Artist")
+        XCTAssertEqual(track?.title, "Let's go")
     }
 
     func testNowPlayingMetadataReadsCaseInsensitiveIntervalHeader() {
