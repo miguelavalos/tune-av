@@ -138,14 +138,10 @@ struct AppShellView: View {
         .task {
             refreshHomePresentation()
         }
-        .task {
-            await refreshHomeFeed()
-        }
-        .task(id: libraryStore.settings.preferredTag) {
+        .task(id: homeFeedRequestKey) {
             await refreshHomeFeed()
         }
         .task(id: languageController.currentLanguage.id) {
-            await refreshHomeFeed()
             await refreshLibraryStationEnrichment()
         }
         .task(id: searchRequestKey) {
@@ -397,6 +393,10 @@ struct AppShellView: View {
 
     private var searchRequestKey: String {
         "\(searchRequest.key)|\(languageController.currentLanguage.id)"
+    }
+
+    private var homeFeedRequestKey: String {
+        "\(libraryStore.settings.preferredTag)|\(languageController.currentLanguage.id)"
     }
 
     private var searchRequest: AppShellSearchRequest {
