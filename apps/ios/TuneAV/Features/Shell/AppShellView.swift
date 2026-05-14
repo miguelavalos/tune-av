@@ -480,11 +480,13 @@ struct AppShellView: View {
             return
         }
 
+        var nextTracks = stationNowPlayingTracks
+
         for station in supportedStations {
             if Task.isCancelled { return }
 
             if let cached = stationNowPlayingCache[station.id], cached.isFresh {
-                setStationNowPlayingTrack(cached.track, for: station.id)
+                nextTracks[station.id] = cached.track
                 continue
             }
             if let failedAt = stationNowPlayingFailureCache[station.id], Date().timeIntervalSince(failedAt) < 180 {
@@ -498,15 +500,13 @@ struct AppShellView: View {
                 stationNowPlayingFailureCache[station.id] = Date()
                 continue
             }
-            setStationNowPlayingTrack(track, for: station.id)
+            nextTracks[station.id] = track
             stationNowPlayingCache[station.id] = CachedStationNowPlaying(track: track, fetchedAt: Date())
             stationNowPlayingFailureCache[station.id] = nil
         }
-    }
 
-    private func setStationNowPlayingTrack(_ track: NowPlayingTrack, for stationID: String) {
-        guard stationNowPlayingTracks[stationID] != track else { return }
-        stationNowPlayingTracks[stationID] = track
+        guard stationNowPlayingTracks != nextTracks else { return }
+        stationNowPlayingTracks = nextTracks
     }
 
     private func clearStationNowPlayingPreviews() {
