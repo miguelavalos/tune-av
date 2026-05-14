@@ -519,14 +519,17 @@ final class LibraryStore: ObservableObject {
             userSummaryRefreshState = .loading
             do {
                 let summary = try await backendService.fetchUserSummary(limit: 12)
+                guard self.backendService === backendService else { return }
                 userSummary = summary
                 userSummaryFetchedAt = .now
                 userSummaryRefreshState = summary.hasAnyActivity ? .loaded : .empty
             } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
+                guard self.backendService === backendService else { return }
                 userSummary = nil
                 userSummaryFetchedAt = nil
                 userSummaryRefreshState = .unavailable
             } catch {
+                guard self.backendService === backendService else { return }
                 userSummary = nil
                 userSummaryFetchedAt = nil
                 userSummaryRefreshState = .failed
