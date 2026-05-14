@@ -100,6 +100,26 @@ final class AudioPlayerService: NSObject, ObservableObject {
         status = newStatus
     }
 
+    private func setCurrentStation(_ station: Station?) {
+        guard currentStation != station else { return }
+        currentStation = station
+    }
+
+    private func setPlaybackQueue(_ queue: PlaybackQueue) {
+        guard playbackQueue != queue else { return }
+        playbackQueue = queue
+    }
+
+    private func setSleepTimerDescription(_ description: String?) {
+        guard sleepTimerDescription != description else { return }
+        sleepTimerDescription = description
+    }
+
+    private func setLastErrorMessage(_ message: String?) {
+        guard lastErrorMessage != message else { return }
+        lastErrorMessage = message
+    }
+
     override init() {
         super.init()
         configureAudioSession()
@@ -126,7 +146,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
 
         if let queue {
-            playbackQueue = sanitizedPlaybackQueue(queue, currentStationID: station.id)
+            setPlaybackQueue(sanitizedPlaybackQueue(queue, currentStationID: station.id))
         }
 
         guard let url = URL(string: station.streamURL) else {
@@ -136,7 +156,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
         resetTransientStateForNewPlayback()
         userRequestedPlayback = true
-        currentStation = station
+        setCurrentStation(station)
         restoreCachedNowPlaying(for: station)
         setStatus(.loading)
 
@@ -187,7 +207,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         player?.play()
         setStatus(.loading)
         userRequestedPlayback = true
-        lastErrorMessage = nil
+        setLastErrorMessage(nil)
         updateNowPlayingInfo()
     }
 
@@ -220,19 +240,19 @@ final class AudioPlayerService: NSObject, ObservableObject {
         metadataDelegate = nil
         currentTrackSource = nil
         setStatus(.idle)
-        lastErrorMessage = nil
+        setLastErrorMessage(nil)
         setCurrentTrackIdentity(title: nil, artist: nil)
         setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
-        playbackQueue = .init(source: .singleStation, stations: [])
+        setPlaybackQueue(.init(source: .singleStation, stations: []))
         lastNowPlayingInfoSignature = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
     func stopAndClearCurrentStation() {
         stop()
-        currentStation = nil
+        setCurrentStation(nil)
     }
 
     func retry() {
@@ -260,7 +280,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     func setSleepTimer(minutes: Int?) {
         sleepTimerController.setTimer(
             minutes: minutes,
-            setDescription: { [weak self] description in self?.sleepTimerDescription = description },
+            setDescription: { [weak self] description in self?.setSleepTimerDescription(description) },
             onFire: { [weak self] in self?.stop() }
         )
     }
@@ -268,7 +288,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     func clearSleepTimerNotice() {
         sleepTimerController.clearNoticeIfIdle(
             isIdle: status == .idle,
-            setDescription: { [weak self] description in self?.sleepTimerDescription = description }
+            setDescription: { [weak self] description in self?.setSleepTimerDescription(description) }
         )
     }
 
@@ -414,7 +434,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         nowPlayingArtworkTask?.cancel()
         nowPlayingArtworkTask = nil
         setStatus(.failed(message))
-        lastErrorMessage = message
+        setLastErrorMessage(message)
         player?.pause()
         updateNowPlayingInfo()
     }
@@ -462,7 +482,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         artworkResolutionTask = nil
         nowPlayingArtworkTask?.cancel()
         nowPlayingArtworkTask = nil
-        lastErrorMessage = nil
+        setLastErrorMessage(nil)
         player?.pause()
         player = nil
         playerItemStatusObserver = nil
