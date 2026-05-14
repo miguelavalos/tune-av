@@ -3762,7 +3762,20 @@ private struct HomeScreen: View {
         case popular
     }
 
+    private struct DerivedState {
+        let displayedRecentStations: [Station]
+        let displayedFavoriteStations: [Station]
+        let displayedPopularStations: [Station]
+        let displayedAviPickStations: [Station]
+        let displayedAroundYouStations: [Station]
+        let displayedRecentAndFavoriteStations: [Station]
+        let moodGenreTags: [HomeMoodGenreSuggestion]
+        let recommendationInsights: [String: String]
+    }
+
     var body: some View {
+        let derivedState = homeDerivedState
+
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 ShellBrandHeader(
@@ -3796,7 +3809,7 @@ private struct HomeScreen: View {
                     LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
                 }
 
-                if isLoading && heroStation == nil && displayedPopularStations.isEmpty {
+                if isLoading && heroStation == nil && derivedState.displayedPopularStations.isEmpty {
                     StationCardSkeletonGroup()
                 } else if let errorMessage {
                     EmptyLibraryState(
@@ -3834,24 +3847,24 @@ private struct HomeScreen: View {
                     )
                 }
 
-                if !moodGenreTags.isEmpty {
-                    HomeMoodGenreDesk(tags: moodGenreTags, selectTag: openSearchTag)
+                if !derivedState.moodGenreTags.isEmpty {
+                    HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
                 }
 
-                if !displayedAviPickStations.isEmpty {
+                if !derivedState.displayedAviPickStations.isEmpty {
                     StationSection(
                         title: L10n.string("shell.home.aviPicks.title"),
                         subtitle: L10n.string("shell.home.aviPicks.subtitle"),
                         accessibilityIdentifier: "home.section.aviPicks"
                     ) {
                         StationCompactCarousel(
-                            stations: displayedAviPickStations,
+                            stations: derivedState.displayedAviPickStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: recommendationInsight,
+                            stationInsight: { derivedState.recommendationInsights[$0.id] },
                             stationFeedback: stationFeedback,
                             queueSource: .homeDiscovery,
-                            queueStations: displayedAviPickStations,
+                            queueStations: derivedState.displayedAviPickStations,
                             playStation: playStation,
                             toggleFavorite: toggleFavorite,
                             showStationDetails: showStationDetails
@@ -3859,20 +3872,20 @@ private struct HomeScreen: View {
                     }
                 }
 
-                if !displayedAroundYouStations.isEmpty {
+                if !derivedState.displayedAroundYouStations.isEmpty {
                     StationSection(
                         title: L10n.string("shell.home.aroundYou.title"),
                         subtitle: L10n.string("shell.home.aroundYou.subtitle"),
                         accessibilityIdentifier: "home.section.aroundYou"
                     ) {
                         StationCompactCarousel(
-                            stations: displayedAroundYouStations,
+                            stations: derivedState.displayedAroundYouStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: recommendationInsight,
+                            stationInsight: { derivedState.recommendationInsights[$0.id] },
                             stationFeedback: stationFeedback,
                             queueSource: .homeDiscovery,
-                            queueStations: displayedAroundYouStations,
+                            queueStations: derivedState.displayedAroundYouStations,
                             playStation: playStation,
                             toggleFavorite: toggleFavorite,
                             showStationDetails: showStationDetails
@@ -3880,16 +3893,16 @@ private struct HomeScreen: View {
                     }
                 }
 
-                if !displayedRecentStations.isEmpty || !displayedFavoriteStations.isEmpty {
+                if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
                     StationSection(title: L10n.string("shell.home.recentsFavorites.title"), subtitle: L10n.string("shell.home.recentsFavorites.subtitle"), accessibilityIdentifier: "home.section.recentsFavorites") {
                         StationCompactCarousel(
-                            stations: displayedRecentAndFavoriteStations,
+                            stations: derivedState.displayedRecentAndFavoriteStations,
                             favoriteStationIDs: favoriteStationIDs,
                             nowPlayingTracks: nowPlayingTracks,
                             stationInsight: { station in stationFeedback[station.id]?.localizedState },
                             stationFeedback: stationFeedback,
                             queueSource: .homeRecents,
-                            queueStations: displayedRecentAndFavoriteStations,
+                            queueStations: derivedState.displayedRecentAndFavoriteStations,
                             playStation: playStation,
                             toggleFavorite: toggleFavorite,
                             showStationDetails: showStationDetails
@@ -4056,6 +4069,50 @@ private struct HomeScreen: View {
         heroStation?.id
     }
 
+    private var homeDerivedState: DerivedState {
+        let displayedRecentStations = displayedRecentStations
+        let displayedFavoriteStations = displayedFavoriteStations
+        let displayedPopularStations = displayedPopularStations(
+            displayedRecentStations: displayedRecentStations,
+            displayedFavoriteStations: displayedFavoriteStations
+        )
+        let displayedAviPickStations = Array(displayedPopularStations.prefix(4))
+        let displayedAroundYouStations = displayedAroundYouStations(
+            displayedPopularStations: displayedPopularStations,
+            displayedAviPickStations: displayedAviPickStations
+        )
+        let displayedRecentAndFavoriteStations = Array(
+            AppShellNowPlayingPreviews.uniqueStations(displayedRecentStations + displayedFavoriteStations).prefix(8)
+        )
+        let visibleDiscoveryTags = displayedPopularStations
+            .prefix(8)
+            .flatMap(\.normalizedTags)
+            .map { $0.lowercased() }
+        let moodGenreTags = moodGenreTags(visibleDiscoveryTags: visibleDiscoveryTags)
+        let scorer = recommendationScorer
+        let recommendationInsights = Dictionary(
+            uniqueKeysWithValues: (displayedAviPickStations + displayedAroundYouStations).map { station in
+                (
+                    station.id,
+                    TuneAVLocalRecommendationScorer.localizedSummary(
+                        for: scorer.rank(station).primaryReason
+                    ) ?? L10n.string("shell.avi.recommendation.reasonFallback")
+                )
+            }
+        )
+
+        return DerivedState(
+            displayedRecentStations: displayedRecentStations,
+            displayedFavoriteStations: displayedFavoriteStations,
+            displayedPopularStations: displayedPopularStations,
+            displayedAviPickStations: displayedAviPickStations,
+            displayedAroundYouStations: displayedAroundYouStations,
+            displayedRecentAndFavoriteStations: displayedRecentAndFavoriteStations,
+            moodGenreTags: moodGenreTags,
+            recommendationInsights: recommendationInsights
+        )
+    }
+
     private var displayedRecentStations: [Station] {
         Array(filteredStationsExcludingFeatured(from: recentStations).prefix(6))
     }
@@ -4064,7 +4121,7 @@ private struct HomeScreen: View {
         Array(filteredStationsExcludingFeatured(from: favoriteStations).prefix(6))
     }
 
-    private var displayedPopularStations: [Station] {
+    private func displayedPopularStations(displayedRecentStations: [Station], displayedFavoriteStations: [Station]) -> [Station] {
         let excludedIDs = Set(displayedRecentStations.map(\.id) + displayedFavoriteStations.map(\.id))
 
         let candidates = filteredStationsExcludingFeatured(from: stations)
@@ -4073,11 +4130,7 @@ private struct HomeScreen: View {
         return recommendationScorer.rankedStations(candidates).map(\.station)
     }
 
-    private var displayedAviPickStations: [Station] {
-        Array(displayedPopularStations.prefix(4))
-    }
-
-    private var displayedAroundYouStations: [Station] {
+    private func displayedAroundYouStations(displayedPopularStations: [Station], displayedAviPickStations: [Station]) -> [Station] {
         let preferredCountry = TuneAVCountry.sanitizedCode(preferredCountryCode)
         let currentCountry = TuneAVCountry.sanitizedCode(audioPlayer.currentStation?.countryCode)
         let country = preferredCountry ?? currentCountry
@@ -4095,11 +4148,7 @@ private struct HomeScreen: View {
         )
     }
 
-    private var displayedRecentAndFavoriteStations: [Station] {
-        Array(AppShellNowPlayingPreviews.uniqueStations(displayedRecentStations + displayedFavoriteStations).prefix(8))
-    }
-
-    private var moodGenreTags: [HomeMoodGenreSuggestion] {
+    private func moodGenreTags(visibleDiscoveryTags: [String]) -> [HomeMoodGenreSuggestion] {
         let sourceStations = [audioPlayer.currentStation].compactMap { $0 } + recentStations.prefix(8) + favoriteStations.prefix(8)
         let tagCounts = sourceStations
             .flatMap(\.normalizedTags)
@@ -4133,13 +4182,6 @@ private struct HomeScreen: View {
             }
     }
 
-    private var visibleDiscoveryTags: [String] {
-        displayedPopularStations
-            .prefix(8)
-            .flatMap(\.normalizedTags)
-            .map { $0.lowercased() }
-    }
-
     private var recommendationScorer: TuneAVLocalRecommendationScorer {
         TuneAVLocalRecommendationScorer(
             currentStation: audioPlayer.currentStation,
@@ -4150,12 +4192,6 @@ private struct HomeScreen: View {
             feedContext: feedContext,
             preferredTag: preferredTag,
             currentCountryCode: preferredCountryCode
-        )
-    }
-
-    private func recommendationInsight(for station: Station) -> String? {
-        TuneAVLocalRecommendationScorer.localizedSummary(
-            for: recommendationScorer.rank(station).primaryReason
         )
     }
 
