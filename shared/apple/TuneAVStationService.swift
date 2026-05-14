@@ -47,7 +47,7 @@ struct TuneAVStationService {
     private let backendGate: TuneAVBackendHealthGate
 
     init(
-        session: URLSession = .shared,
+        session: URLSession = TuneAVURLSessions.catalog,
         avalsysBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/search")!,
         avalsysPopularBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/popular")!,
         radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
