@@ -711,6 +711,34 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(stations.map(\.id), ["search-popular-fallback"])
     }
 
+    func testPopularStationsFallsBackDirectlyToRadioBrowserWhenAVALSYSIsUnavailable() async throws {
+        var requestedHosts: [String] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestedHosts.append(request.url?.host ?? "")
+
+            if request.url?.host == "api.test" {
+                return (HTTPURLResponse(url: request.url!, statusCode: 503, httpVersion: nil, headerFields: nil)!, Data())
+            }
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, self.radioBrowserFallbackBody(id: "popular-outage-fallback"))
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
+            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            backendGate: makeBackendGate()
+        )
+
+        let stations = try await service.popularStations(
+            filters: TuneAVStationSearchFilters(query: "ignored", countryCode: "ES", locale: "es", limit: 12)
+        )
+
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test"])
+        XCTAssertEqual(stations.map(\.id), ["popular-outage-fallback"])
+    }
+
     func testStationServiceFallsBackToRadioBrowserWhenAVALSYSFails() async throws {
         var requestedHosts: [String] = []
         TuneAVTestURLProtocol.requestHandler = { request in

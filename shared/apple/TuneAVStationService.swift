@@ -29,11 +29,14 @@ struct TuneAVStationFallbacks {
 struct TuneAVStationService {
     enum ServiceError: LocalizedError {
         case invalidResponse(String)
+        case requestFailed(statusCode: Int)
 
         var errorDescription: String? {
             switch self {
             case .invalidResponse(let message):
                 return message
+            case .requestFailed(let statusCode):
+                return "Station service request failed with status \(statusCode)."
             }
         }
     }
@@ -125,9 +128,12 @@ struct TuneAVStationService {
                 let stations = try await searchAVALSYS(filters: normalizedFilters, baseURL: avalsysPopularBaseURL, surface: "home")
                 await backendGate.recordSuccess()
                 return stations
+            } catch ServiceError.requestFailed(let statusCode) where statusCode == 404 {
+                // Older API deployments may not have the semantic popular endpoint yet.
+                return try await searchStations(filters: popularFilters)
             } catch {
                 await backendGate.recordFailure()
-                // Older API deployments may not have the semantic popular endpoint yet.
+                return try await searchRadioBrowser(filters: normalizedFilters)
             }
         }
 
@@ -187,8 +193,11 @@ struct TuneAVStationService {
         request.timeoutInterval = timeoutInterval
 
         let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+        guard let httpResponse = response as? HTTPURLResponse else {
             throw ServiceError.invalidResponse(invalidResponseMessage)
+        }
+        guard 200..<300 ~= httpResponse.statusCode else {
+            throw ServiceError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
         return try JSONDecoder().decode(type, from: data)
