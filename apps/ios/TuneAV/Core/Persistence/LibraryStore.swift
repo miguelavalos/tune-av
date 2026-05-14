@@ -159,6 +159,16 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    private func setCloudSyncStatus(_ status: CloudSyncStatus) {
+        guard cloudSyncStatus != status else { return }
+        cloudSyncStatus = status
+    }
+
+    private func setUserSummaryRefreshState(_ state: TuneAVUserSummaryRefreshState) {
+        guard userSummaryRefreshState != state else { return }
+        userSummaryRefreshState = state
+    }
+
     func isFavorite(_ station: Station) -> Bool {
         let identityKey = Self.stationIdentityKey(for: station)
         return favorites.contains {
@@ -321,6 +331,7 @@ final class LibraryStore: ObservableObject {
             nextFeedback.removeValue(forKey: station.id)
         }
 
+        guard nextFeedback != stationFeedback else { return }
         stationFeedback = nextFeedback
         Self.saveStationFeedback(stationFeedback)
         syncStationFeedback(feedback, stationID: station.id)
@@ -345,6 +356,7 @@ final class LibraryStore: ObservableObject {
             nextFeedback.removeValue(forKey: key)
         }
 
+        guard nextFeedback != trackFeedback else { return }
         trackFeedback = nextFeedback
         Self.saveTrackFeedback(trackFeedback)
         syncTrackFeedback(feedback, title: title, artist: artist, stationID: nil)
@@ -518,7 +530,7 @@ final class LibraryStore: ObservableObject {
         if service == nil {
             pushTask?.cancel()
             pushTask = nil
-            cloudSyncStatus = .idle
+            setCloudSyncStatus(.idle)
         }
     }
 
@@ -527,7 +539,7 @@ final class LibraryStore: ObservableObject {
         if service == nil {
             userSummary = nil
             userSummaryFetchedAt = nil
-            userSummaryRefreshState = .unavailable
+            setUserSummaryRefreshState(.unavailable)
             userSummaryRefreshTask?.cancel()
             userSummaryRefreshTask = nil
             listeningSessionUploadTask?.cancel()
@@ -546,7 +558,7 @@ final class LibraryStore: ObservableObject {
         guard let backendService, backendService.isConfigured() else {
             userSummary = nil
             userSummaryFetchedAt = nil
-            userSummaryRefreshState = .unavailable
+            setUserSummaryRefreshState(.unavailable)
             return
         }
 
@@ -560,23 +572,23 @@ final class LibraryStore: ObservableObject {
         }
 
         let task = Task { @MainActor in
-            userSummaryRefreshState = .loading
+            setUserSummaryRefreshState(.loading)
             do {
                 let summary = try await backendService.fetchUserSummary(limit: 12)
                 guard self.backendService === backendService else { return }
                 userSummary = summary
                 userSummaryFetchedAt = .now
-                userSummaryRefreshState = summary.hasAnyActivity ? .loaded : .empty
+                setUserSummaryRefreshState(summary.hasAnyActivity ? .loaded : .empty)
             } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
                 guard self.backendService === backendService else { return }
                 userSummary = nil
                 userSummaryFetchedAt = nil
-                userSummaryRefreshState = .unavailable
+                setUserSummaryRefreshState(.unavailable)
             } catch {
                 guard self.backendService === backendService else { return }
                 userSummary = nil
                 userSummaryFetchedAt = nil
-                userSummaryRefreshState = .failed
+                setUserSummaryRefreshState(.failed)
             }
         }
 
@@ -674,12 +686,12 @@ final class LibraryStore: ObservableObject {
 
     func refreshCloudLibraryIfNeeded() async {
         guard let appDataService, appDataService.isConfigured() else {
-            cloudSyncStatus = .idle
+            setCloudSyncStatus(.idle)
             return
         }
 
         do {
-            cloudSyncStatus = .syncing
+            setCloudSyncStatus(.syncing)
             let remoteDocument = try await appDataService.pullLibrary()
             guard self.appDataService === appDataService else { return }
             let localSnapshot = librarySnapshot()
@@ -719,36 +731,36 @@ final class LibraryStore: ObservableObject {
                 break
             }
 
-            cloudSyncStatus = .synced(.now)
+            setCloudSyncStatus(.synced(.now))
         } catch TuneAVAppDataError.conflict {
             guard self.appDataService === appDataService else { return }
-            cloudSyncStatus = .conflict
+            setCloudSyncStatus(.conflict)
         } catch {
             guard self.appDataService === appDataService else { return }
-            cloudSyncStatus = .failed
+            setCloudSyncStatus(.failed)
             return
         }
     }
 
     func overwriteCloudLibraryWithLocalData() async {
         guard let appDataService, appDataService.isConfigured() else {
-            cloudSyncStatus = .idle
+            setCloudSyncStatus(.idle)
             return
         }
 
         do {
-            cloudSyncStatus = .syncing
+            setCloudSyncStatus(.syncing)
             try await appDataService.overwriteLibrary(librarySnapshot())
-            cloudSyncStatus = .synced(.now)
+            setCloudSyncStatus(.synced(.now))
         } catch TuneAVAppDataError.conflict {
-            cloudSyncStatus = .conflict
+            setCloudSyncStatus(.conflict)
         } catch {
-            cloudSyncStatus = .failed
+            setCloudSyncStatus(.failed)
         }
     }
 
     func clearCloudSyncStatus() {
-        cloudSyncStatus = .idle
+        setCloudSyncStatus(.idle)
     }
 
     func setCloudSyncStatusForUITests(_ status: CloudSyncStatus) {
@@ -756,7 +768,7 @@ final class LibraryStore: ObservableObject {
             return
         }
 
-        cloudSyncStatus = status
+        setCloudSyncStatus(status)
     }
 
     private func trimRecents(limit: Int) {
@@ -867,7 +879,7 @@ final class LibraryStore: ObservableObject {
                 guard !Task.isCancelled, self.appDataService === appDataService else { return }
 
                 let snapshot = librarySnapshot()
-                cloudSyncStatus = .syncing
+                setCloudSyncStatus(.syncing)
                 let remoteDocument = try await appDataService.pullLibrary()
                 try Task.checkCancellation()
                 guard self.appDataService === appDataService else { return }
@@ -888,7 +900,7 @@ final class LibraryStore: ObservableObject {
                 if snapshotToPush != snapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
-                cloudSyncStatus = .synced(.now)
+                setCloudSyncStatus(.synced(.now))
             } catch TuneAVAppDataError.conflict {
                 guard self.appDataService === appDataService else { return }
                 await refreshCloudLibraryIfNeeded()
@@ -896,7 +908,7 @@ final class LibraryStore: ObservableObject {
                 return
             } catch {
                 guard self.appDataService === appDataService else { return }
-                cloudSyncStatus = .failed
+                setCloudSyncStatus(.failed)
             }
         }
     }
