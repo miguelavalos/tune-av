@@ -4480,6 +4480,22 @@ private struct LibraryScreen: View {
     private static let pageSize = 40
     private static let overviewLimit = 12
 
+    private struct DerivedState {
+        let overviewRecentStations: [Station]
+        let overviewFavoriteStations: [Station]
+        let overviewTunedStations: [Station]
+        let overviewMusicStations: [Station]
+        let musicStationCount: Int
+        let activeStationSnapshot: RadioStationListSnapshot
+
+        var hasRadioOverviewContent: Bool {
+            !overviewFavoriteStations.isEmpty
+                || !overviewRecentStations.isEmpty
+                || !overviewTunedStations.isEmpty
+                || !overviewMusicStations.isEmpty
+        }
+    }
+
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
     @State private var query = ""
@@ -4508,10 +4524,13 @@ private struct LibraryScreen: View {
     @State private var browserDestination: BrowserDestination?
 
     var body: some View {
+        let showsOverview = isShowingOverview && trimmedQuery.isEmpty
+        let derivedState = radioDerivedState(includeDetail: !showsOverview)
+
         ZStack(alignment: .top) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    if isShowingOverview && trimmedQuery.isEmpty {
+                    if showsOverview {
                         AviScreenHeader(
                             emotion: TuneAVAviEmotionResolver.libraryEmotion(
                                 favoriteCount: favorites.count,
@@ -4524,12 +4543,12 @@ private struct LibraryScreen: View {
                             accessibilityIdentifier: "library.aviHeader"
                         )
 
-                        radioOverview
+                        radioOverview(derivedState)
                     } else {
                         Color.clear
                             .frame(height: detailHeaderReservedHeight)
 
-                        radioDetailSection
+                        radioDetailSection(derivedState)
                     }
                 }
                 .shellScreenContentPadding(bottom: bottomContentPadding)
@@ -4537,7 +4556,7 @@ private struct LibraryScreen: View {
             }
             .shellScreenScrollBehavior()
 
-            if !(isShowingOverview && trimmedQuery.isEmpty) {
+            if !showsOverview {
                 stickyDetailHeader
             }
         }
@@ -4627,7 +4646,7 @@ private struct LibraryScreen: View {
         return "library-detail-\(selectedMode.rawValue)"
     }
 
-    private var radioOverview: some View {
+    private func radioOverview(_ derivedState: DerivedState) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             if accessController.capabilities.canAccessPremiumFeatures {
                 AccountSummaryStatusCard(
@@ -4644,7 +4663,7 @@ private struct LibraryScreen: View {
                 )
             }
 
-            if hasRadioOverviewContent {
+            if derivedState.hasRadioOverviewContent {
                 RadioOverviewMetricGrid {
                     RadioOverviewMetricCard(
                         title: L10n.string("shell.library.overview.saved"),
@@ -4669,7 +4688,7 @@ private struct LibraryScreen: View {
                     )
                     RadioOverviewMetricCard(
                         title: L10n.string("shell.library.overview.musicStationsShort"),
-                        value: musicStations.count,
+                        value: derivedState.musicStationCount,
                         systemImage: "music.note.list",
                         tint: Color(red: 0.54, green: 0.43, blue: 0.90),
                         action: { openMode(.music) }
@@ -4677,7 +4696,7 @@ private struct LibraryScreen: View {
                 }
 
                 radioOverviewSectionIfNeeded(
-                    stations: overviewFavoriteStations,
+                    stations: derivedState.overviewFavoriteStations,
                     title: L10n.string("shell.library.overview.saved"),
                     subtitle: L10n.string("shell.library.favorites.subtitle"),
                     queueSource: .libraryFavorites,
@@ -4686,7 +4705,7 @@ private struct LibraryScreen: View {
                 )
 
                 radioOverviewSectionIfNeeded(
-                    stations: overviewRecentStations,
+                    stations: derivedState.overviewRecentStations,
                     title: L10n.string("shell.library.overview.latest.title"),
                     subtitle: L10n.string("shell.library.recents.subtitle"),
                     queueSource: .libraryRecents,
@@ -4694,7 +4713,7 @@ private struct LibraryScreen: View {
                 )
 
                 radioOverviewSectionIfNeeded(
-                    stations: overviewTunedStations,
+                    stations: derivedState.overviewTunedStations,
                     title: L10n.string("shell.library.overview.tuned"),
                     subtitle: L10n.string("shell.avi.signals.feedback.title"),
                     queueSource: .libraryFavorites,
@@ -4702,7 +4721,7 @@ private struct LibraryScreen: View {
                 )
 
                 radioOverviewSectionIfNeeded(
-                    stations: overviewMusicStations,
+                    stations: derivedState.overviewMusicStations,
                     title: L10n.string("shell.library.overview.musicStations"),
                     subtitle: L10n.string("shell.library.musicStations.subtitle"),
                     queueSource: .libraryRecents,
@@ -4754,8 +4773,9 @@ private struct LibraryScreen: View {
             }
         )
     }
-    private var radioDetailSection: some View {
-        let snapshot = activeStationSnapshot
+
+    private func radioDetailSection(_ derivedState: DerivedState) -> some View {
+        let snapshot = derivedState.activeStationSnapshot
         return VStack(alignment: .leading, spacing: 12) {
             if snapshot.filteredStations.isEmpty {
                 EmptyLibraryState(
@@ -4793,27 +4813,43 @@ private struct LibraryScreen: View {
         .accessibilityIdentifier("library.section.\(selectedMode.rawValue)")
     }
 
-    private var overviewRecentStations: [Station] {
-        Array(recents.prefix(Self.overviewLimit))
+    private func radioDerivedState(includeDetail: Bool) -> DerivedState {
+        let tunedStations = (favorites + recents).uniquedByStationID().filter { stationFeedback[$0.id] != nil }
+        let musicStations = musicStations
+        let activeStationSnapshot = includeDetail
+            ? activeStationSnapshot(tunedStations: tunedStations, musicStations: musicStations)
+            : RadioStationListSnapshot(baseStations: [], filteredStations: [], visibleStations: [])
+        return DerivedState(
+            overviewRecentStations: Array(recents.prefix(Self.overviewLimit)),
+            overviewFavoriteStations: Array(favorites.prefix(Self.overviewLimit)),
+            overviewTunedStations: Array(tunedStations.prefix(Self.overviewLimit)),
+            overviewMusicStations: Array(musicStations.prefix(Self.overviewLimit)),
+            musicStationCount: musicStations.count,
+            activeStationSnapshot: activeStationSnapshot
+        )
     }
 
-    private var overviewFavoriteStations: [Station] {
-        Array(favorites.prefix(Self.overviewLimit))
-    }
+    private func activeStationSnapshot(tunedStations: [Station], musicStations: [Station]) -> RadioStationListSnapshot {
+        let recentRanks = recentRanksByStationID
+        let baseStations: [Station]
 
-    private var overviewTunedStations: [Station] {
-        Array(tunedStations.prefix(Self.overviewLimit))
-    }
+        switch selectedMode {
+        case .saved:
+            baseStations = sortedStations(favorites, sort: savedSort, recentRanks: recentRanks)
+        case .recent:
+            baseStations = sortedStations(recents, sort: recentSort, recentRanks: recentRanks)
+        case .tuned:
+            baseStations = sortedStations(tunedStations, sort: savedSort, recentRanks: recentRanks)
+        case .music:
+            baseStations = sortedStations(musicStations, sort: recentSort, recentRanks: recentRanks)
+        }
 
-    private var overviewMusicStations: [Station] {
-        Array(musicStations.prefix(Self.overviewLimit))
-    }
-
-    private var hasRadioOverviewContent: Bool {
-        !overviewFavoriteStations.isEmpty
-            || !overviewRecentStations.isEmpty
-            || !overviewTunedStations.isEmpty
-            || !overviewMusicStations.isEmpty
+        let filteredStations = filterStations(baseStations)
+        return RadioStationListSnapshot(
+            baseStations: baseStations,
+            filteredStations: filteredStations,
+            visibleStations: Array(filteredStations.prefix(visibleLimit))
+        )
     }
 
     private func radioOverviewInsight(for station: Station) -> String? {
@@ -4839,84 +4875,13 @@ private struct LibraryScreen: View {
         }
     }
 
-    private var activeBaseStations: [Station] {
-        switch selectedMode {
-        case .saved:
-            return sortedFavorites
-        case .recent:
-            return sortedRecents
-        case .tuned:
-            return sortedTunedStations
-        case .music:
-            return sortedMusicStations
-        }
-    }
-
-    private var activeFilteredStations: [Station] {
-        filterStations(activeBaseStations)
-    }
-
-    private var activeStationSnapshot: RadioStationListSnapshot {
-        let baseStations = activeBaseStations
-        let filteredStations = filterStations(baseStations)
-        let visibleStations = Array(filteredStations.prefix(visibleLimit))
-        return RadioStationListSnapshot(
-            baseStations: baseStations,
-            filteredStations: filteredStations,
-            visibleStations: visibleStations
-        )
-    }
-
-    private var visibleStations: [Station] {
-        Array(activeFilteredStations.prefix(visibleLimit))
-    }
-
-    private var canShowMoreStations: Bool {
-        visibleStations.count < activeFilteredStations.count
-    }
-
-    private var sortedFavorites: [Station] {
-        switch savedSort {
-        case .recentlyAdded:
-            return favorites
-        case .alphabetical:
-            return favorites.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        case .lastListened:
-            let recentRanks = recentRanksByStationID
-            return favorites.sorted { first, second in
-                lastListenedSort(first, second, recentRanks: recentRanks)
-            }
-        }
-    }
-
-    private var sortedRecents: [Station] {
-        switch recentSort {
-        case .recentlyAdded, .lastListened:
-            return recents
-        case .alphabetical:
-            return recents.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        }
-    }
-
-    private var sortedTunedStations: [Station] {
-        sortRadioStations(tunedStations, sort: savedSort)
-    }
-
-    private var sortedMusicStations: [Station] {
-        sortRadioStations(musicStations, sort: recentSort)
-    }
-
-    private var tunedStations: [Station] {
-        (favorites + recents).uniquedByStationID().filter { stationFeedback[$0.id] != nil }
-    }
-
     private var musicStations: [Station] {
         discoveries.compactMap { discovery in
             recents.first { $0.id == discovery.stationID } ?? favorites.first { $0.id == discovery.stationID }
         }.uniquedByStationID()
     }
 
-    private func sortRadioStations(_ stations: [Station], sort: RadioSavedSort) -> [Station] {
+    private func sortedStations(_ stations: [Station], sort: RadioSavedSort, recentRanks: [String: Int]) -> [Station] {
         switch sort {
         case .recentlyAdded:
             return stations
