@@ -76,7 +76,7 @@ struct AuthOnboardingView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 BrandHeaderBadge()
-                    .padding(.top, proxy.safeAreaInsets.top - 30)
+                    .padding(.top, 24)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
         }
@@ -318,7 +318,7 @@ private struct BrandHeaderBadge: View {
             Image("OnboardingWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 146, height: 52)
+                .frame(width: 160, height: 54)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tune AV")

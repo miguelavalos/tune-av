@@ -18,19 +18,17 @@ Use this checklist before creating a public GitHub release.
    - `.env.*`
    - private bootstrap files
 4. Confirm no signing files, provisioning profiles, private keys, exported certificates, or local build products are present.
-5. Confirm public docs do not contain private email addresses, personal account names, Team IDs, local backend URLs, provider secrets, or operator runbooks.
+5. Confirm public docs do not contain private email addresses, personal account names, Team IDs, local backend URLs, provider secrets, runbooks, or non-public operational/planning details.
 
 ## Build Verification
 
-1. For any signed Account AV smoke test or production-flavored iPhone install,
-   use the guarded preflight before building:
+1. For any signed local install, use the guarded preflight before building:
 
    ```bash
    bun run ios:check:prod
    ```
 
-   This must resolve `com.avalsys.tuneav`,
-   `https://api-account-av.avalsys.com`, and a `pk_live_...` publishable key.
+   Private validation details belong outside the public repository.
 
 2. Generate Xcode projects when `project.yml` changes:
 
@@ -69,4 +67,4 @@ Use this checklist before creating a public GitHub release.
 
 ## Private Operations
 
-Store portal plans, provider setup, signing steps, production config, account-platform smoke tests, and review-response material outside this public repository.
+Store portal plans, provider setup, signing steps, production config, service smoke tests, implementation plans, and review-response material belong outside this public repository.

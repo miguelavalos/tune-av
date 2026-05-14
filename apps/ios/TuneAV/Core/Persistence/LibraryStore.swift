@@ -10,12 +10,14 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var trackFeedback: [String: TuneAVStationFeedback] = [:]
     @Published private(set) var settings: AppSettings
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
+    @Published private(set) var userSummary: TuneAVUserSummary?
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
 
     private let context: ModelContext
     private var appDataService: TuneAVAppDataService?
+    private var backendService: TuneAVAppDataService?
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
@@ -215,13 +217,16 @@ final class LibraryStore: ObservableObject {
     }
 
     func setFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
+        var nextFeedback = stationFeedback
         if let feedback {
-            stationFeedback[station.id] = feedback
+            nextFeedback[station.id] = feedback
         } else {
-            stationFeedback.removeValue(forKey: station.id)
+            nextFeedback.removeValue(forKey: station.id)
         }
 
+        stationFeedback = nextFeedback
         Self.saveStationFeedback(stationFeedback)
+        syncStationFeedback(feedback, stationID: station.id)
     }
 
     func feedbackForDiscoveredTrack(title: String?, artist: String?) -> TuneAVStationFeedback? {
@@ -229,16 +234,23 @@ final class LibraryStore: ObservableObject {
         return trackFeedback[key]
     }
 
+    func feedback(for discovery: DiscoveredTrack) -> TuneAVStationFeedback? {
+        feedbackForDiscoveredTrack(title: discovery.title, artist: discovery.artist)
+    }
+
     func setFeedbackForDiscoveredTrack(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?) {
         guard let key = discoveredTrackFeedbackKey(title: title, artist: artist) else { return }
 
+        var nextFeedback = trackFeedback
         if let feedback {
-            trackFeedback[key] = feedback
+            nextFeedback[key] = feedback
         } else {
-            trackFeedback.removeValue(forKey: key)
+            nextFeedback.removeValue(forKey: key)
         }
 
+        trackFeedback = nextFeedback
         Self.saveTrackFeedback(trackFeedback)
+        syncTrackFeedback(feedback, title: title, artist: artist, stationID: nil)
     }
 
     func recordDiscoveredTrack(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -405,6 +417,48 @@ final class LibraryStore: ObservableObject {
 
     func setAppDataService(_ service: TuneAVAppDataService?) {
         appDataService = service
+    }
+
+    func setBackendService(_ service: TuneAVAppDataService?) {
+        backendService = service
+        if service == nil {
+            userSummary = nil
+        }
+    }
+
+    func refreshUserSummary() async {
+        guard let backendService, backendService.isConfigured() else {
+            userSummary = nil
+            return
+        }
+
+        do {
+            userSummary = try await backendService.fetchUserSummary(limit: 12)
+        } catch {
+            userSummary = nil
+        }
+    }
+
+    func recordListeningSession(
+        station: Station,
+        startedAt: Date,
+        endedAt: Date,
+        source: String,
+        endedReason: String,
+        trackDetectedCount: Int
+    ) {
+        guard let backendService, backendService.isConfigured() else { return }
+
+        Task {
+            try? await backendService.recordListeningSession(
+                station: station,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                source: source,
+                endedReason: endedReason,
+                trackDetectedCount: trackDetectedCount
+            )
+        }
     }
 
     func refreshCloudLibraryIfNeeded() async {
@@ -616,6 +670,26 @@ final class LibraryStore: ObservableObject {
             } catch {
                 cloudSyncStatus = .failed
             }
+        }
+    }
+
+    private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard let backendService, backendService.isConfigured() else { return }
+
+        Task {
+            try? await backendService.setStationFeedback(feedback, stationID: stationID)
+        }
+    }
+
+    private func syncTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?, stationID: String?) {
+        guard
+            let backendService,
+            backendService.isConfigured(),
+            let title = normalizedTrackValue(title)
+        else { return }
+
+        Task {
+            try? await backendService.setTrackFeedback(feedback, title: title, artist: normalizedTrackValue(artist), stationID: stationID)
         }
     }
 

@@ -313,7 +313,7 @@ struct NowPlayingView: View {
                         HStack(spacing: 5) {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 11, weight: .black))
-                            Text("Opciones")
+                            Text(L10n.string("common.options"))
                                 .font(.system(size: compact ? 10 : 11, weight: .black))
                             Image(systemName: isShowingAviOptions ? "chevron.up" : "chevron.down")
                                 .font(.system(size: 8, weight: .black))
@@ -389,7 +389,7 @@ struct NowPlayingView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 10, weight: .black))
-                    Text("Avi")
+                    Text(L10n.string("shell.avi.title"))
                         .font(.system(size: 10, weight: .black))
                     Image(systemName: isShowingAviOptions ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .black))
@@ -426,35 +426,35 @@ struct NowPlayingView: View {
             var actions: [AviOrbitAction] = []
 
             if hasDiscoverableTrack {
-                actions.append(AviOrbitAction(id: "lyrics", title: "Letra", systemImage: "text.quote") {
+                actions.append(AviOrbitAction(id: "lyrics", title: L10n.string("player.discovery.lyricsShort"), systemImage: "text.quote") {
                     openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "artist", title: "Artista", systemImage: "person.crop.circle") {
+                actions.append(AviOrbitAction(id: "artist", title: L10n.string("player.discovery.artistShort"), systemImage: "person.crop.circle") {
                     openArtistFromAviOffer()
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "save", title: isCurrentTrackSaved ? "Guardada" : "Guardar", systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                actions.append(AviOrbitAction(id: "save", title: isCurrentTrackSaved ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort"), systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
                     _ = saveCurrentDiscovery(for: station)
                     showAviReaction(.saved)
                     closeAviOptions()
                 })
             } else {
-                actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? "Pausa" : "Play", systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
+                actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play"), systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
                     audioPlayer.togglePlayback()
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "favorite", title: "Favorita", systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                actions.append(AviOrbitAction(id: "favorite", title: L10n.string("player.avi.action.favorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
                     toggleFavorite(station)
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "detail", title: "Detalle", systemImage: "info.circle") {
+                actions.append(AviOrbitAction(id: "detail", title: L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
                     stationHistoryAction(station)
                     closeAviOptions()
                 })
             }
 
-            actions.append(AviOrbitAction(id: "web", title: homepageURL == nil ? "Buscar" : "Web", systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
+            actions.append(AviOrbitAction(id: "web", title: homepageURL == nil ? L10n.string("common.search") : L10n.string("player.avi.action.web"), systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
                 if let homepageURL {
                     browserDestination = BrowserDestination(url: homepageURL)
                 } else {
@@ -462,7 +462,7 @@ struct NowPlayingView: View {
                 }
                 closeAviOptions()
             })
-            actions.append(AviOrbitAction(id: "more", title: "Más", systemImage: "ellipsis") {
+            actions.append(AviOrbitAction(id: "more", title: L10n.string("common.more"), systemImage: "ellipsis") {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
                     aviOptionLayer = .more
                 }
@@ -472,23 +472,23 @@ struct NowPlayingView: View {
         }
 
         return [
-            AviOrbitAction(id: "apple", title: "Apple", systemImage: "music.note") {
+            AviOrbitAction(id: "apple", title: L10n.string("player.discovery.appleMusicShort"), systemImage: "music.note") {
                 openExternalSearch(.appleMusicSearch, destination: .appleMusic)
                 closeAviOptions()
             },
-            AviOrbitAction(id: "youtube", title: "YouTube", systemImage: "play.rectangle") {
+            AviOrbitAction(id: "youtube", title: L10n.string("player.discovery.youtubeShort"), systemImage: "play.rectangle") {
                 openExternalSearch(.youtubeSearch, destination: .youtube)
                 closeAviOptions()
             },
-            AviOrbitAction(id: "detail", title: "Detalle", systemImage: "info.circle") {
+            AviOrbitAction(id: "detail", title: L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
                 stationHistoryAction(station)
                 closeAviOptions()
             },
-            AviOrbitAction(id: "favorite", title: "Favorita", systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+            AviOrbitAction(id: "favorite", title: L10n.string("player.avi.action.favorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
                 toggleFavorite(station)
                 closeAviOptions()
             },
-            AviOrbitAction(id: "back", title: "Volver", systemImage: "chevron.left") {
+            AviOrbitAction(id: "back", title: L10n.string("common.back"), systemImage: "chevron.left") {
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
                     aviOptionLayer = .primary
                 }
@@ -522,7 +522,7 @@ struct NowPlayingView: View {
                     .font(.system(size: 12, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
 
-                Text(aviOptionLayer == .primary ? "Pídele a Avi" : "Más con Avi")
+                Text(aviOptionLayer == .primary ? L10n.string("player.avi.ask") : L10n.string("player.avi.moreWithAvi"))
                     .font(.system(size: 13, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
             }
@@ -599,7 +599,7 @@ struct NowPlayingView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "waveform")
                         .font(.system(size: 10, weight: .black))
-                    Text("Avi escucha")
+                    Text(L10n.string("player.avi.listeningNowShort"))
                         .font(.system(size: 10, weight: .black))
                 }
                 .foregroundStyle(TuneAVTheme.highlight)
@@ -668,13 +668,13 @@ struct NowPlayingView: View {
             return L10n.string("player.avi.state.thinking")
         }
         if aviSelectedFeedback(for: station) != nil {
-            return "Lo tengo. ¿Qué hacemos ahora?"
+            return L10n.string("player.avi.feedback.received")
         }
         switch aviActionTarget {
         case .song:
-            return "¿Te encaja esta canción?"
+            return L10n.string("player.avi.feedback.songQuestion")
         case .radio:
-            return "¿Te encaja esta radio?"
+            return L10n.string("player.avi.feedback.radioQuestion")
         }
     }
 
@@ -686,7 +686,7 @@ struct NowPlayingView: View {
             return L10n.string("player.avi.detail.thinking", station.name)
         }
         if aviSelectedFeedback(for: station) != nil {
-            return "Avi ajusta tus preferencias y mantiene las acciones a mano."
+            return L10n.string("player.avi.feedback.detail")
         }
         if hasDiscoverableTrack {
             return trackSupportingLine(for: station)
@@ -729,7 +729,7 @@ struct NowPlayingView: View {
                 .background(TuneAVTheme.elevatedSurface, in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Avi también puede ayudarte")
+                Text(L10n.string("player.avi.secondaryOffer.title"))
                     .font(.system(size: compact ? 11 : 12, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
                     .lineLimit(1)
@@ -778,12 +778,12 @@ struct NowPlayingView: View {
                     toggleFavorite(station)
                 }
 
-                Button("Detalle", systemImage: "info.circle") {
+                Button(L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
                     stationHistoryAction(station)
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Text("Opciones")
+                    Text(L10n.string("common.options"))
                         .font(.system(size: compact ? 10 : 11, weight: .black))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .black))
@@ -807,12 +807,12 @@ struct NowPlayingView: View {
 
     private func secondaryOfferSummary(for station: Station) -> String {
         if hasDiscoverableTrack {
-            return "letra, artista, guardar y más"
+            return L10n.string("player.avi.secondaryOffer.song")
         }
         if homepageURL != nil {
-            return "web, favorita, detalle y más"
+            return L10n.string("player.avi.secondaryOffer.stationWeb")
         }
-        return "buscar radio, favorita y detalle"
+        return L10n.string("player.avi.secondaryOffer.stationSearch")
     }
 
     private func openArtistFromAviOffer() {
@@ -2004,9 +2004,9 @@ private enum PlayerRatingTarget {
     var title: String {
         switch self {
         case .song:
-            return "Song"
+            return L10n.string("player.ratingTarget.song")
         case .radio:
-            return "Radio"
+            return L10n.string("player.ratingTarget.radio")
         }
     }
 }

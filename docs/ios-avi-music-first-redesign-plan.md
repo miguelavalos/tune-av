@@ -9,19 +9,35 @@ Avi should be present across music-related surfaces as a curator and contextual 
 Current baseline:
 
 - iOS app lives in `apps/ios/TuneAV`.
-- First redesign phase is already on `origin/main`.
-- Current local work may include fallback artwork identity changes in `shared/apple/TuneAVStationArtworkView.swift`; inspect `git status` before editing.
-- Dev simulator should use bundle id `com.avalsys.tuneav.dev`.
-- Station service defaults to preview endpoints in `shared/apple/TuneAVStationService.swift`.
+- Current local work is focused on the Radios, Music, Search, and Avi detail experience.
+- Simulator verification uses the `TuneAV` scheme with local signing config only when needed.
+- Signing, account, and production values must remain in local non-versioned configuration.
+- Public docs should stay technical and avoid non-public operational or planning details.
 
 Hard constraints:
 
-- Do not touch backend.
-- Do not introduce backend AI.
 - Do not rewrite the app.
 - Keep SwiftUI idiomatic and follow existing component patterns.
 - Preserve current playback behavior and queue behavior.
 - Verify iOS Simulator build at the end.
+- Do not expose private endpoints, signing values, account operations, internal roadmaps, or non-public planning details in product-facing copy or public docs.
+
+## Current Implementation Status
+
+As of May 14, 2026, the iOS redesign direction is:
+
+- Search no longer automatically focuses the search field or opens the keyboard when entering the screen.
+- Radio, Music, and Search headings no longer use the Avi avatar as a decorative top-left page marker.
+- Main app screens use tighter shared horizontal padding. Onboarding and Login may keep their own logo positioning and spacing.
+- Radios and Music use summary landing screens with lightweight previews and dedicated detail pages for long lists.
+- Radio owns radio content only. Music owns songs and artists only.
+- Radio summary exposes saved, recent, most-played/listened, tuned/feedback, and music-related radio signals when data exists. Empty sections are hidden; an all-empty state appears when there is no useful content.
+- Music summary exposes songs, artists, tuned tracks, and listening history. It does not show radio lists.
+- Detail pages keep top navigation visible while scrolling, preserve search/sort controls, and default sorting toward recent listening where relevant.
+- Song and artist cards follow the radio card language: compact visual identity, aligned padding, and no unrelated action buttons on the right.
+- Navigating from a list to an Avi detail page must return to the exact source screen and state, not a generic tab.
+- Product copy should describe the content the user is seeing, not internal rules such as preview limits, service status, roadmap plans, or implementation constraints.
+- Account-connected behavior is optional and configuration-gated. Public docs should describe only the client-facing technical boundary.
 
 ## Product Direction
 
@@ -42,7 +58,7 @@ Avi is the product layer that explains, curates, and guides:
   - Music: high.
   - Search: medium.
   - Full Player: high.
-  - Account: low, mostly subscription/perks later.
+  - Account: low.
   - Settings: none unless there are explicit Avi settings later.
 
 ## UX Decisions
@@ -226,7 +242,6 @@ Implementation notes:
 Account:
 
 - Keep account/account-safety content.
-- Later, add Avi subscription/perk card if subscription exists.
 - Do not overdo Avi here yet.
 
 Settings:
@@ -289,9 +304,33 @@ Good:
 
 Avoid:
 
-- Explaining backend/API/private implementation.
+- Explaining private implementation details.
+- Explaining non-public operational or planning decisions.
 - Long instructional text.
 - Overusing Avi in settings/account.
+
+## Avi Action Menu Guidelines
+
+Avi actions should scale by context. Lists are for scanning and quick action; detail pages are where richer actions belong.
+
+Principles:
+
+- In list rows for radios, songs, and artists, keep the Avi menu minimal.
+- Prefer one primary "ask Avi" entry point in the row instead of many visible controls.
+- The list menu should contain only the most basic actions needed without leaving the list.
+- Full action sets belong in the related detail page for the radio, song, or artist.
+- Detail pages may show multiple Avi action pages, with a maximum of 4 actions per page.
+- If a detail action set has 4 or fewer actions, show a single page without pagination controls.
+- Use the same visual treatment, text sizing, icon sizing, spacing, and destructive-action styling across radio, song, and artist Avi menus.
+- Destructive actions may use a red icon, but action text should remain the standard primary text color.
+
+Current direction:
+
+- Radio list: keep basic actions only, such as save/remove, open details, and website when available.
+- Song list: keep a single Avi entry point; detailed song actions should move into the song detail page during the song detail redesign.
+- Artist list: keep a single Avi entry point; detailed artist actions should move into the artist detail page during the artist detail redesign.
+- Radio detail: continue supporting richer actions because the user is already inside the radio context.
+- Future song and artist detail pages should follow the radio detail pattern: basic entry from the list, richer organized actions in detail.
 
 ## Implementation Phases
 
@@ -354,19 +393,22 @@ Generic build:
 xcodebuild -project /Users/elibot/github/avalsys/public/tune-av/apps/ios/TuneAV.xcodeproj -scheme TuneAV -destination 'generic/platform=iOS Simulator' build
 ```
 
-Dev simulator run through XcodeBuildMCP:
+Simulator run through XcodeBuildMCP:
 
 - session defaults should point to:
   - project: `/Users/elibot/github/avalsys/public/tune-av/apps/ios/TuneAV.xcodeproj`
   - scheme: `TuneAV`
-  - simulator: `iPhone 17 Pro`
-  - bundle id: `com.avalsys.tuneav.dev`
-- build/run extra args:
+  - an available iOS simulator, for example the current `iPhone 17`
+  - bundle id: use local configuration when intentionally testing a signed build flavor
 
-```text
-TUNEAV_BUNDLE_IDENTIFIER=com.avalsys.tuneav.dev
--destination
-id=8EA3138B-0338-4CB8-B21C-EB069FCEB0B7
+Keep signing and account values in `apps/ios/Config/Local.xcconfig`, which is gitignored and must not be committed. If private local config has been removed for repository hygiene, restore or regenerate it locally before signed run verification.
+
+Repository hygiene before commit:
+
+```sh
+bun run config:hygiene
+git diff --check
+plutil -lint apps/ios/TuneAV/Resources/*.lproj/Localizable.strings
 ```
 
 ## Open Questions
@@ -375,4 +417,3 @@ id=8EA3138B-0338-4CB8-B21C-EB069FCEB0B7
 - Should Home include a small "More live radio" section immediately after music genres or lower on the page?
 - Should Avi emotion be centralized in a single model/helper before redesigning the player?
 - Should station artwork expansion happen in this phase or wait until backend artwork is more stable?
-

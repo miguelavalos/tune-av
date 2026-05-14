@@ -77,6 +77,7 @@ struct RootView: View {
                 isShowingAccountOnboarding = false
             } else {
                 libraryStore.setAppDataService(nil)
+                libraryStore.setBackendService(nil)
             }
         }
     }
@@ -124,6 +125,7 @@ struct RootView: View {
 
         guard accessController.capabilities.canUseCloudSync else {
             libraryStore.setAppDataService(nil)
+            await refreshTuneBackendService()
             return
         }
 
@@ -132,11 +134,27 @@ struct RootView: View {
         )
         guard appDataService.isConfigured() else {
             libraryStore.setAppDataService(nil)
+            libraryStore.setBackendService(nil)
             return
         }
 
+        libraryStore.setBackendService(appDataService)
         libraryStore.setAppDataService(appDataService)
+        await libraryStore.refreshUserSummary()
         await libraryStore.refreshCloudLibraryIfNeeded()
+    }
+
+    private func refreshTuneBackendService() async {
+        guard accessController.isSignedIn else {
+            libraryStore.setBackendService(nil)
+            return
+        }
+
+        let backendService = TuneAVAppDataService(
+            apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
+        )
+        libraryStore.setBackendService(backendService.isConfigured() ? backendService : nil)
+        await libraryStore.refreshUserSummary()
     }
 
     private func markAutomaticGuestOnboardingSeenIfNeeded() {

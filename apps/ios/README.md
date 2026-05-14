@@ -6,25 +6,23 @@ SwiftUI iOS app for Tune AV.
 
 1. From the repo root, run `bun install`.
 2. Create `Config/Local.xcconfig` outside git only if your build needs signing or account-platform values.
-4. Open `TuneAV.xcodeproj` in Xcode.
+3. Open `TuneAV.xcodeproj` in Xcode.
 
 The public repository ships with neutral defaults. Local builds can override `TUNEAV_BUNDLE_IDENTIFIER`, `AVALSYS_APPLE_DEVELOPMENT_TEAM`, and the other client-facing values in the local, non-versioned `Config/Local.xcconfig`.
 
-Optional shared-platform access config:
+Optional account-connected behavior:
 
-- set `ACCOUNTAV_API_BASE_URL` in `Config/Local.xcconfig` to enable backend-owned access resolution through Account AV
-- when both `ACCOUNTAV_PUBLISHABLE_KEY` and `ACCOUNTAV_API_BASE_URL` are configured, signed-in access refreshes from `GET /v1/me/access`
-- Account AV is the source of truth for Pro entitlements in this release
+- private configuration can enable signed-in client behavior
+- public docs should avoid non-public operational details, private endpoints, and implementation plans
 
 ## Current app shape
 
-- shared internal access model with `guest`, `signedInFree`, and `signedInPro`
-- current product-facing states are `local mode`, `connected account`, and `pro`
-- `Account AV` as the product-facing account layer name
+- shared internal access model with local and signed-in states
 - onboarding with `Skip for now`
 - local-first shell that works without sign-in
-- signing in does not change storage behavior yet; it only connects an account and can refresh backend-owned access when configured
-- premium access remains the only state allowed to grow into backend-backed features
+- Radios and Music use overview screens with lightweight section previews, plus dedicated detail pages for long lists, search, and sorting
+- Radio surfaces contain only radios; Music surfaces contain songs and artists
+- signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 
 ## Localization
 
