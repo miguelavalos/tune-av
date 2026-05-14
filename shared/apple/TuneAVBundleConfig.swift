@@ -13,6 +13,21 @@ enum TuneAVBundleConfig {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    static func boolValue(for key: String, in bundle: Bundle = .main, default defaultValue: Bool = false) -> Bool {
+        guard let rawValue = nonEmptyStringValue(for: key, in: bundle) else {
+            return defaultValue
+        }
+
+        switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "1", "true", "yes", "enabled":
+            return true
+        case "0", "false", "no", "disabled":
+            return false
+        default:
+            return defaultValue
+        }
+    }
+
     static func urlValue(
         for key: String,
         in bundle: Bundle = .main,

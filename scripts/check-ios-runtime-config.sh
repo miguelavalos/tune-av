@@ -95,6 +95,7 @@ tuneav_bundle_identifier="$(setting TUNEAV_BUNDLE_IDENTIFIER)"
 api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
+listening_analytics_uploads="$(setting TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)"
 delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
 terms_url="$(setting TUNEAV_TERMS_URL)"
 privacy_url="$(setting TUNEAV_PRIVACY_URL)"
@@ -105,6 +106,7 @@ for item in \
   "PRODUCT_BUNDLE_IDENTIFIER:$product_bundle_identifier" \
   "TUNEAV_BUNDLE_IDENTIFIER:$tuneav_bundle_identifier" \
   "ACCOUNTAV_API_BASE_URL:$api_base_url" \
+  "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:$listening_analytics_uploads" \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
   "ACCOUNTAV_PUBLISHABLE_KEY:$publishable_key" \
   "TUNEAV_DELETE_ACCOUNT_URL:$delete_account_url" \
@@ -119,6 +121,7 @@ if [ "$env_name" = "prod" ]; then
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
   [ "$api_base_url" = "https://api-account-av.avalsys.com" ] || fail "prod API URL mismatch: $api_base_url"
   [ "$management_url" = "https://account-av.avalsys.com" ] || fail "prod management URL mismatch: $management_url"
+  [ "$listening_analytics_uploads" = "0" ] || fail "prod listening analytics uploads must stay disabled until signed-in backend smoke passes"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if printf '%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
     fail "prod settings contain preview/local/dev values"
@@ -128,6 +131,7 @@ else
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.dev"
   [ "$api_base_url" = "https://api-account-av-preview.avalsys.com" ] || fail "dev API URL mismatch: $api_base_url"
   [ "$management_url" = "https://account-av-preview.avalsys.com" ] || fail "dev management URL mismatch: $management_url"
+  [[ "$listening_analytics_uploads" == "0" || "$listening_analytics_uploads" == "1" ]] || fail "dev TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must be 0 or 1"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi
 

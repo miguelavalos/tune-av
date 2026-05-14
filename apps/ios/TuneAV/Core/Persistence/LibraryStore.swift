@@ -447,6 +447,7 @@ final class LibraryStore: ObservableObject {
         endedReason: String,
         trackDetectedCount: Int
     ) {
+        guard AppConfig.isListeningAnalyticsUploadEnabled else { return }
         guard let backendService, backendService.isConfigured() else { return }
 
         Task {

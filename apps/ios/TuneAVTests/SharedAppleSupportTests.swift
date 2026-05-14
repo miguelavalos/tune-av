@@ -2,6 +2,31 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("bundle")
+        try FileManager.default.createDirectory(at: bundleURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bundleURL) }
+
+        let infoPlistURL = bundleURL.appendingPathComponent("Info.plist")
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.avalsys.tuneav.tests.bool-fixture",
+            "TuneAVBundleConfigTrueFixture": "YES",
+            "TuneAVBundleConfigFalseFixture": "0",
+            "TuneAVBundleConfigUnknownFixture": "maybe"
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+        try data.write(to: infoPlistURL)
+
+        let bundle = try XCTUnwrap(Bundle(url: bundleURL))
+
+        XCTAssertTrue(TuneAVBundleConfig.boolValue(for: "TuneAVBundleConfigTrueFixture", in: bundle))
+        XCTAssertFalse(TuneAVBundleConfig.boolValue(for: "TuneAVBundleConfigFalseFixture", in: bundle, default: true))
+        XCTAssertTrue(TuneAVBundleConfig.boolValue(for: "TuneAVBundleConfigUnknownFixture", in: bundle, default: true))
+        XCTAssertFalse(TuneAVBundleConfig.boolValue(for: "TuneAVBundleConfigMissingFixture", in: bundle))
+    }
+
     func testUITestAccountDeletionScenariosResolveSharedBlockedProSummary() {
         let summary = TuneAVUITestAccountDeletionScenarios.summary(for: "blocked_pro")
 

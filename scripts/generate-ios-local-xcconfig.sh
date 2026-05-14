@@ -80,6 +80,11 @@ fi
 development_team="${AVALSYS_APPLE_DEVELOPMENT_TEAM:-\$(inherited)}"
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-com.avalsys.tuneav.pro.monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
+if [ "$env_name" = "prod" ]; then
+  listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-0}"
+else
+  listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
+fi
 
 escape_xcconfig_url() {
   printf '%s' "$1" | sed 's#/#$(XCCONFIG_SLASH)#g'
@@ -98,6 +103,7 @@ ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
 TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
 TUNEAV_SUPPORT_EMAIL = $support_email
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
+TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = $listening_analytics_uploads
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$management_url")
 TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/delete-account")
 TUNEAV_TERMS_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/terms")

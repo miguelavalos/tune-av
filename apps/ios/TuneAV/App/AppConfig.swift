@@ -15,6 +15,10 @@ enum AppConfig {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL")
     }
 
+    static var isListeningAnalyticsUploadEnabled: Bool {
+        TuneAVBundleConfig.boolValue(for: "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS")
+    }
+
     static var accountManagementURL: URL? {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
     }
