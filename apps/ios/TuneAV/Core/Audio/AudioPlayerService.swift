@@ -81,6 +81,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var cachedNowPlayingByStationID: [String: TuneAVCachedNowPlayingState] = [:]
     private var nowPlayingArtworkImage: UIImage?
     private var nowPlayingArtworkSourceURL: URL?
+    private static let nowPlayingArtworkImageCache: NSCache<NSURL, UIImage> = {
+        let cache = NSCache<NSURL, UIImage>()
+        cache.countLimit = 40
+        cache.totalCostLimit = 24 * 1024 * 1024
+        return cache
+    }()
 
     private enum TrackSource {
         case stream
@@ -708,15 +714,23 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
     }
 
-    private nonisolated static func loadNowPlayingArtworkImage(from url: URL?) async -> UIImage? {
+    private static func loadNowPlayingArtworkImage(from url: URL?) async -> UIImage? {
         guard let url else { return UIImage(named: "BrandMark") }
+
+        if let cachedImage = nowPlayingArtworkImageCache.object(forKey: url as NSURL) {
+            return cachedImage
+        }
 
         do {
             let (data, _) = try await TuneAVURLSessions.artwork.data(from: url)
             guard !Task.isCancelled else { return nil }
-            return await Task.detached(priority: .utility) {
+            let image = await Task.detached(priority: .utility) {
                 UIImage(data: data)
             }.value
+            if let image {
+                nowPlayingArtworkImageCache.setObject(image, forKey: url as NSURL, cost: data.count)
+            }
+            return image
         } catch {
             return UIImage(named: "BrandMark")
         }
