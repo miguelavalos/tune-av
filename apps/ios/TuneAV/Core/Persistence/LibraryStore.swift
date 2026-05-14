@@ -476,13 +476,17 @@ final class LibraryStore: ObservableObject {
     }
 
     func setPreferredTag(_ tag: String?) {
-        settings.preferredTag = tag?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let preferredTag = tag?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard settings.preferredTag != preferredTag else { return }
+        settings.preferredTag = preferredTag
         settings.updatedAt = .now
         saveAndRefresh(.settings)
     }
 
     func setPreferredCountry(_ countryCode: String?) {
-        settings.preferredCountry = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let preferredCountry = countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard settings.preferredCountry != preferredCountry else { return }
+        settings.preferredCountry = preferredCountry
         settings.updatedAt = .now
         saveAndRefresh(.settings)
     }
