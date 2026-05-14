@@ -927,7 +927,10 @@ struct AppShellView: View {
             let feed = forceRemote
                 ? try await homeFeed.refresh(preferredTag: preferredTag)
                 : try await homeFeed.load(preferredTag: preferredTag)
-            guard preferredTag == libraryStore.settings.preferredTag else { return }
+            guard preferredTag == libraryStore.settings.preferredTag else {
+                homeIsLoading = false
+                return
+            }
             rememberBackendStations(feed.stations)
             homeStations = feed.stations
             homeFeedContext = feed.context
