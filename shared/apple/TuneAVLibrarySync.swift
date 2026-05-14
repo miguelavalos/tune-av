@@ -79,6 +79,11 @@ enum TuneAVLibrarySyncPlanner {
 }
 
 enum TuneAVLibrarySnapshotMerger {
+    private struct DatedRecord<Record> {
+        let record: Record
+        let date: Date
+    }
+
     static func merged(local: TuneAVLibrarySnapshot, remote: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: mergedFavorites(local.favorites, remote.favorites),
@@ -92,52 +97,70 @@ enum TuneAVLibrarySnapshotMerger {
         _ local: [FavoriteStationRecord],
         _ remote: [FavoriteStationRecord]
     ) -> [FavoriteStationRecord] {
-        newestByKey(local + remote, key: { stationIdentityKey($0.station) }, date: favoriteUpdateDate)
-            .sorted { favoriteUpdateDate($0) < favoriteUpdateDate($1) }
+        newestDatedByKey(
+            datedRecords(local + remote, date: favoriteUpdateDate),
+            key: { stationIdentityKey($0.station) }
+        )
+        .sorted { $0.date < $1.date }
+        .map(\.record)
     }
 
     private static func mergedRecents(
         _ local: [RecentStationRecord],
         _ remote: [RecentStationRecord]
     ) -> [RecentStationRecord] {
-        newestByKey(local + remote, key: { stationIdentityKey($0.station) }, date: recentUpdateDate)
-            .sorted { recentUpdateDate($0) > recentUpdateDate($1) }
+        newestDatedByKey(
+            datedRecords(local + remote, date: recentUpdateDate),
+            key: { stationIdentityKey($0.station) }
+        )
+        .sorted { $0.date > $1.date }
+        .map(\.record)
     }
 
     private static func mergedDiscoveries(
         _ local: [DiscoveredTrackRecord],
         _ remote: [DiscoveredTrackRecord]
     ) -> [DiscoveredTrackRecord] {
-        newestByKey(local + remote, key: { $0.discoveryID }, date: discoveryUpdateDate)
-            .sorted { discoveryUpdateDate($0) > discoveryUpdateDate($1) }
+        newestDatedByKey(
+            datedRecords(local + remote, date: discoveryUpdateDate),
+            key: { $0.discoveryID }
+        )
+        .sorted { $0.date > $1.date }
+        .map(\.record)
     }
 
     private static func newestSettings(_ local: AppSettingsRecord, _ remote: AppSettingsRecord) -> AppSettingsRecord {
         date(local.updatedAt) >= date(remote.updatedAt) ? local : remote
     }
 
-    private static func newestByKey<Record>(
+    private static func datedRecords<Record>(
         _ records: [Record],
-        key: (Record) -> String,
-        date: (Record) -> String
-    ) -> [Record] {
-        var values: [String: Record] = [:]
-        for record in records {
-            let recordKey = key(record)
+        date: (Record) -> Date
+    ) -> [DatedRecord<Record>] {
+        records.map { DatedRecord(record: $0, date: date($0)) }
+    }
+
+    private static func newestDatedByKey<Record>(
+        _ records: [DatedRecord<Record>],
+        key: (Record) -> String
+    ) -> [DatedRecord<Record>] {
+        var values: [String: DatedRecord<Record>] = [:]
+        for datedRecord in records {
+            let recordKey = key(datedRecord.record)
             guard let current = values[recordKey] else {
-                values[recordKey] = record
+                values[recordKey] = datedRecord
                 continue
             }
 
-            if Self.date(date(record)) >= Self.date(date(current)) {
-                values[recordKey] = record
+            if datedRecord.date >= current.date {
+                values[recordKey] = datedRecord
             }
         }
 
         return Array(values.values)
     }
 
-    private static func discoveryUpdateDate(_ discovery: DiscoveredTrackRecord) -> String {
+    private static func discoveryUpdateDate(_ discovery: DiscoveredTrackRecord) -> Date {
         [
             discovery.playedAt,
             discovery.markedInterestedAt,
@@ -145,19 +168,22 @@ enum TuneAVLibrarySnapshotMerger {
             discovery.deletedAt
         ]
         .compactMap { $0 }
-        .max { date($0) < date($1) } ?? discovery.playedAt
+        .map(date)
+        .max() ?? date(discovery.playedAt)
     }
 
-    private static func favoriteUpdateDate(_ favorite: FavoriteStationRecord) -> String {
+    private static func favoriteUpdateDate(_ favorite: FavoriteStationRecord) -> Date {
         [favorite.createdAt, favorite.deletedAt]
             .compactMap { $0 }
-            .max { date($0) < date($1) } ?? "1970-01-01T00:00:00.000Z"
+            .map(date)
+            .max() ?? .distantPast
     }
 
-    private static func recentUpdateDate(_ recent: RecentStationRecord) -> String {
+    private static func recentUpdateDate(_ recent: RecentStationRecord) -> Date {
         [recent.lastPlayedAt, recent.deletedAt]
             .compactMap { $0 }
-            .max { date($0) < date($1) } ?? "1970-01-01T00:00:00.000Z"
+            .map(date)
+            .max() ?? .distantPast
     }
 
     static func stationIdentityKey(_ station: StationRecord) -> String {
