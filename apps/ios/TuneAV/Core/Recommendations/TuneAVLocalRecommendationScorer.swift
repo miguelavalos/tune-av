@@ -40,6 +40,25 @@ struct TuneAVLocalRecommendationScorer {
     let currentCountryCode: String?
     let date: Date
 
+    private struct DiscoverySignal {
+        var score = 0
+        var didMatchRecent = false
+    }
+
+    private let currentStationCountryCode: String?
+    private let recentCountryCodes: Set<String>
+    private let favoriteCountryCodes: Set<String>
+    private let recentStationTags: Set<String>
+    private let favoriteStationTags: Set<String>
+    private let normalizedPreferredTag: String
+    private let feedContextPreferredTag: String?
+    private let negativeFeedbackTags: Set<String>
+    private let frequentTag: String?
+    private let sanitizedCurrentCountryCode: String?
+    private let isWeekend: Bool
+    private let hour: Int
+    private let discoverySignalsByStationID: [String: DiscoverySignal]
+
     init(
         currentStation: Station?,
         recentStations: [Station],
@@ -60,6 +79,68 @@ struct TuneAVLocalRecommendationScorer {
         self.preferredTag = preferredTag
         self.currentCountryCode = currentCountryCode
         self.date = date
+
+        currentStationCountryCode = Self.sanitizedCountryCode(currentStation)
+        recentCountryCodes = Set(recentStations.compactMap(Self.sanitizedCountryCode))
+        favoriteCountryCodes = Set(favoriteStations.compactMap(Self.sanitizedCountryCode))
+        recentStationTags = Set(recentStations.flatMap(Self.normalizedTags))
+        favoriteStationTags = Set(favoriteStations.flatMap(Self.normalizedTags))
+        normalizedPreferredTag = preferredTag.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if case .preferredGenre(let tag) = feedContext {
+            feedContextPreferredTag = tag.lowercased()
+        } else {
+            feedContextPreferredTag = nil
+        }
+        sanitizedCurrentCountryCode = TuneAVCountry.sanitizedCode(currentCountryCode)
+
+        let sourceStations = Array(recentStations.prefix(8)) + favoriteStations
+        let tagCounts = sourceStations
+            .flatMap(Self.normalizedTags)
+            .reduce(into: [String: Int]()) { counts, tag in
+                counts[tag, default: 0] += 1
+            }
+        let topTag = tagCounts.max { first, second in
+            if first.value == second.value {
+                return first.key > second.key
+            }
+            return first.value < second.value
+        }
+        frequentTag = topTag?.value ?? 0 >= 2 ? topTag?.key : nil
+
+        let negativeStationIDs = Set(stationFeedback.compactMap { stationID, feedback in
+            switch feedback {
+            case .disliked, .notForMe:
+                return stationID
+            case .liked:
+                return nil
+            }
+        })
+        negativeFeedbackTags = Set(
+            (recentStations + favoriteStations + [currentStation].compactMap { $0 })
+                .filter { negativeStationIDs.contains($0.id) }
+                .flatMap(Self.normalizedTags)
+        )
+
+        let calendar = Calendar.current
+        hour = calendar.component(.hour, from: date)
+        let weekday = calendar.component(.weekday, from: date)
+        isWeekend = weekday == 1 || weekday == 7
+
+        let recentCutoff = date.addingTimeInterval(-48 * 60 * 60)
+        discoverySignalsByStationID = discoveries.reduce(into: [String: DiscoverySignal]()) { signals, discovery in
+            var signal = signals[discovery.stationID, default: DiscoverySignal()]
+            if discovery.isMarkedInteresting {
+                signal.score += 8
+            } else if discovery.isHidden {
+                signal.score -= 6
+            } else if discovery.playedAt >= recentCutoff {
+                signal.score += 3
+                signal.didMatchRecent = true
+            } else {
+                signal.score += 1
+            }
+            signals[discovery.stationID] = signal
+        }
     }
 
     func rank(_ station: Station) -> Rank {
@@ -80,78 +161,64 @@ struct TuneAVLocalRecommendationScorer {
             break
         }
 
-        if matchesCountry(station, currentStation) {
+        let candidateCountryCode = Self.sanitizedCountryCode(station)
+        let candidateTags = Self.normalizedTags(station)
+
+        if let candidateCountryCode, candidateCountryCode == currentStationCountryCode {
             score += 4
             reasons.append(.currentCountry)
         }
 
-        if recentStations.contains(where: { matchesCountry(station, $0) }) {
+        if let candidateCountryCode, recentCountryCodes.contains(candidateCountryCode) {
             score += 3
             reasons.append(.recentCountry)
         }
 
-        if favoriteStations.contains(where: { matchesCountry(station, $0) }) {
+        if let candidateCountryCode, favoriteCountryCodes.contains(candidateCountryCode) {
             score += 4
             reasons.append(.favoriteCountry)
         }
 
-        if recentStations.contains(where: { sharesTag(station, $0) }) {
+        if !candidateTags.isDisjoint(with: recentStationTags) {
             score += 5
             reasons.append(.recentTag)
         }
 
-        if favoriteStations.contains(where: { sharesTag(station, $0) }) {
+        if !candidateTags.isDisjoint(with: favoriteStationTags) {
             score += 6
             reasons.append(.favoriteTag)
         }
 
-        if matchesPreferredTag(station) {
+        if matchesPreferredTag(candidateTags) {
             score += 5
             reasons.append(.preferredTag)
         }
 
-        if matchesNegativeFeedbackTag(station) {
+        if !candidateTags.isEmpty, !candidateTags.isDisjoint(with: negativeFeedbackTags) {
             score -= 7
             reasons.append(.negativeTag)
         }
 
-        if matchesFrequentTag(station) {
+        if let frequentTag, candidateTags.contains(frequentTag) {
             score += 4
             reasons.append(.frequentTag)
         }
 
-        if matchesCurrentCountryPreference(station) {
+        if let candidateCountryCode, candidateCountryCode == sanitizedCurrentCountryCode {
             score += 4
             reasons.append(.currentCountryPreference)
         }
 
-        if matchesTimeOfDay(station) {
+        if matchesTimeOfDay(candidateTags) {
             score += 3
             reasons.append(.timeOfDay)
         }
 
-        var didMatchRecentDiscovery = false
-        let discoveryScore = discoveries.reduce(0) { partial, discovery in
-            guard discovery.stationID == station.id else { return partial }
-
-            if discovery.isMarkedInteresting {
-                return partial + 8
-            }
-
-            if discovery.isHidden {
-                return partial - 6
-            }
-
-            if isRecentDiscovery(discovery) {
-                didMatchRecentDiscovery = true
-                return partial + 3
-            }
-
-            return partial + 1
-        }
+        let discoverySignal = discoverySignalsByStationID[station.id]
+        let discoveryScore = discoverySignal?.score ?? 0
 
         if discoveryScore > 0 {
-            reasons.append(didMatchRecentDiscovery ? .recentDiscovery : .savedDiscovery)
+            reasons.append(discoverySignal?.didMatchRecent == true ? .recentDiscovery : .savedDiscovery)
         } else if discoveryScore < 0 {
             reasons.append(.hiddenDiscovery)
         }
@@ -234,99 +301,27 @@ struct TuneAVLocalRecommendationScorer {
         }
     }
 
-    private func matchesCountry(_ station: Station, _ other: Station?) -> Bool {
-        guard
-            let lhs = TuneAVCountry.sanitizedCode(station.countryCode),
-            let rhs = TuneAVCountry.sanitizedCode(other?.countryCode)
-        else {
-            return false
-        }
-
-        return lhs == rhs
-    }
-
-    private func sharesTag(_ station: Station, _ other: Station) -> Bool {
-        !normalizedTags(station).isDisjoint(with: normalizedTags(other))
-    }
-
-    private func matchesPreferredTag(_ station: Station) -> Bool {
-        let normalizedPreferredTag = preferredTag.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    private func matchesPreferredTag(_ tags: Set<String>) -> Bool {
         guard !normalizedPreferredTag.isEmpty else {
-            if case .preferredGenre(let tag) = feedContext {
-                return normalizedTags(station).contains(tag.lowercased())
+            if let feedContextPreferredTag {
+                return tags.contains(feedContextPreferredTag)
             }
             return false
         }
 
-        return normalizedTags(station).contains { tag in
+        return tags.contains { tag in
             tag == normalizedPreferredTag || tag.localizedCaseInsensitiveContains(normalizedPreferredTag)
         }
     }
 
-    private func matchesFrequentTag(_ station: Station) -> Bool {
-        let candidateTags = normalizedTags(station)
-        guard !candidateTags.isEmpty else { return false }
-
-        let sourceStations = Array(recentStations.prefix(8)) + favoriteStations
-        let tagCounts = sourceStations
-            .flatMap { normalizedTags($0) }
-            .reduce(into: [String: Int]()) { counts, tag in
-                counts[tag, default: 0] += 1
-            }
-
-        guard let topTag = tagCounts.max(by: { first, second in
-            if first.value == second.value {
-                return first.key > second.key
-            }
-            return first.value < second.value
-        }) else { return false }
-
-        return topTag.value >= 2 && candidateTags.contains(topTag.key)
-    }
-
-    private func matchesNegativeFeedbackTag(_ station: Station) -> Bool {
-        let candidateTags = normalizedTags(station)
-        guard !candidateTags.isEmpty else { return false }
-
-        let negativeStationIDs = stationFeedback.compactMap { stationID, feedback in
-            switch feedback {
-            case .disliked, .notForMe:
-                return stationID
-            case .liked:
-                return nil
-            }
-        }
-
-        guard !negativeStationIDs.isEmpty else { return false }
-
-        let signalStations = (recentStations + favoriteStations + [currentStation].compactMap { $0 })
-            .filter { negativeStationIDs.contains($0.id) }
-
-        return signalStations.contains { signalStation in
-            !candidateTags.isDisjoint(with: normalizedTags(signalStation))
-        }
-    }
-
-    private func matchesCurrentCountryPreference(_ station: Station) -> Bool {
-        guard
-            let preferredCountry = TuneAVCountry.sanitizedCode(currentCountryCode),
-            let stationCountry = TuneAVCountry.sanitizedCode(station.countryCode)
-        else { return false }
-
-        return stationCountry == preferredCountry
-    }
-
-    private func matchesTimeOfDay(_ station: Station) -> Bool {
-        let tags = normalizedTags(station)
+    private func matchesTimeOfDay(_ tags: Set<String>) -> Bool {
         guard !tags.isEmpty else { return false }
 
-        let hour = Calendar.current.component(.hour, from: date)
         let morningTags = ["news", "talk", "business", "traffic", "morning"]
         let eveningTags = ["jazz", "soul", "chill", "ambient", "classical", "lounge"]
         let weekendTags = ["sports", "dance", "electronic", "latin", "hits"]
-        let weekday = Calendar.current.component(.weekday, from: date)
 
-        if weekday == 1 || weekday == 7 {
+        if isWeekend {
             return tags.contains { tag in weekendTags.contains { tag.localizedCaseInsensitiveContains($0) } }
         }
 
@@ -341,12 +336,11 @@ struct TuneAVLocalRecommendationScorer {
         return false
     }
 
-    private func isRecentDiscovery(_ discovery: DiscoveredTrack) -> Bool {
-        let recentCutoff = date.addingTimeInterval(-48 * 60 * 60)
-        return discovery.playedAt >= recentCutoff
+    private static func sanitizedCountryCode(_ station: Station?) -> String? {
+        TuneAVCountry.sanitizedCode(station?.countryCode)
     }
 
-    private func normalizedTags(_ station: Station) -> Set<String> {
+    private static func normalizedTags(_ station: Station) -> Set<String> {
         Set(
             station.tags
                 .split(separator: ",")
