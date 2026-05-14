@@ -88,21 +88,40 @@ final class TuneAVAppDataService {
         let duration = max(0, Int(endedAt.timeIntervalSince(startedAt).rounded()))
         guard duration >= 10 else { return }
 
-        let payload = TuneAVListeningSessionsRequest(
-            deviceId: "tuneav-ios",
-            sessions: [
+        try await recordListeningSessions([
+            TuneAVListeningSessionDraft(
+                station: station,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                durationSeconds: duration,
+                source: source,
+                endedReason: endedReason,
+                trackDetectedCount: trackDetectedCount
+            )
+        ])
+    }
+
+    func recordListeningSessions(_ sessions: [TuneAVListeningSessionDraft]) async throws {
+        let inputs = sessions
+            .filter { $0.durationSeconds >= 10 }
+            .map { session in
                 TuneAVListeningSessionInput(
                     id: UUID().uuidString,
-                    stationId: station.id,
-                    stationName: station.name,
-                    startedAt: TuneAVDateCoding.string(from: startedAt),
-                    endedAt: TuneAVDateCoding.string(from: endedAt),
-                    durationSeconds: duration,
-                    source: source,
-                    endedReason: endedReason,
-                    trackDetectedCount: trackDetectedCount
+                    stationId: session.station.id,
+                    stationName: session.station.name,
+                    startedAt: TuneAVDateCoding.string(from: session.startedAt),
+                    endedAt: TuneAVDateCoding.string(from: session.endedAt),
+                    durationSeconds: session.durationSeconds,
+                    source: session.source,
+                    endedReason: session.endedReason,
+                    trackDetectedCount: session.trackDetectedCount
                 )
-            ]
+            }
+        guard !inputs.isEmpty else { return }
+
+        let payload = TuneAVListeningSessionsRequest(
+            deviceId: "tuneav-ios",
+            sessions: inputs
         )
         _ = try await apiClient.requestData(
             path: "/v1/tune/analytics/listening-sessions",
@@ -139,6 +158,16 @@ private struct TuneAVTrackFeedbackRequest: Encodable {
     let artist: String?
     let stationId: String?
     let feedback: String?
+}
+
+struct TuneAVListeningSessionDraft: Equatable {
+    let station: Station
+    let startedAt: Date
+    let endedAt: Date
+    let durationSeconds: Int
+    let source: String
+    let endedReason: String
+    let trackDetectedCount: Int
 }
 
 private struct TuneAVListeningSessionsRequest: Encodable {

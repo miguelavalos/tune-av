@@ -4585,7 +4585,7 @@ private struct LibraryScreen: View {
                 openAccountAction: openAccountAction,
                 startSignInAction: startSignInAction,
                 refreshAction: {
-                    await libraryStore.refreshUserSummary()
+                    await libraryStore.refreshUserSummary(force: true)
                 }
             )
 
@@ -5960,7 +5960,7 @@ private struct MusicScreen: View {
                 openAccountAction: openAccountAction,
                 startSignInAction: startSignInAction,
                 refreshAction: {
-                    await libraryStore.refreshUserSummary()
+                    await libraryStore.refreshUserSummary(force: true)
                 }
             )
 

@@ -15,6 +15,8 @@ final class LibraryStore: ObservableObject {
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
+    private static let userSummaryRefreshInterval: TimeInterval = 300
+    private static let listeningSessionBatchSize = 5
 
     private let context: ModelContext
     private var appDataService: TuneAVAppDataService?
@@ -23,6 +25,10 @@ final class LibraryStore: ObservableObject {
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
     private var pushTask: Task<Void, Never>?
+    private var userSummaryFetchedAt: Date?
+    private var userSummaryRefreshTask: Task<Void, Never>?
+    private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
+    private var listeningSessionUploadTask: Task<Void, Never>?
 
     init(container: ModelContainer) {
         self.context = ModelContext(container)
@@ -424,29 +430,54 @@ final class LibraryStore: ObservableObject {
         backendService = service
         if service == nil {
             userSummary = nil
+            userSummaryFetchedAt = nil
             userSummaryRefreshState = .unavailable
+            userSummaryRefreshTask?.cancel()
+            userSummaryRefreshTask = nil
+            listeningSessionUploadTask?.cancel()
+            listeningSessionUploadTask = nil
+            pendingListeningSessions.removeAll()
         }
     }
 
-    func refreshUserSummary() async {
+    func refreshUserSummary(force: Bool = false) async {
         guard let backendService, backendService.isConfigured() else {
             userSummary = nil
+            userSummaryFetchedAt = nil
             userSummaryRefreshState = .unavailable
             return
         }
 
-        userSummaryRefreshState = .loading
-        do {
-            let summary = try await backendService.fetchUserSummary(limit: 12)
-            userSummary = summary
-            userSummaryRefreshState = summary.hasAnyActivity ? .loaded : .empty
-        } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
-            userSummary = nil
-            userSummaryRefreshState = .unavailable
-        } catch {
-            userSummary = nil
-            userSummaryRefreshState = .failed
+        if !force, let userSummaryFetchedAt, Date().timeIntervalSince(userSummaryFetchedAt) < Self.userSummaryRefreshInterval, userSummary != nil {
+            return
         }
+
+        if let userSummaryRefreshTask {
+            await userSummaryRefreshTask.value
+            return
+        }
+
+        let task = Task { @MainActor in
+            userSummaryRefreshState = .loading
+            do {
+                let summary = try await backendService.fetchUserSummary(limit: 12)
+                userSummary = summary
+                userSummaryFetchedAt = .now
+                userSummaryRefreshState = summary.hasAnyActivity ? .loaded : .empty
+            } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
+                userSummary = nil
+                userSummaryFetchedAt = nil
+                userSummaryRefreshState = .unavailable
+            } catch {
+                userSummary = nil
+                userSummaryFetchedAt = nil
+                userSummaryRefreshState = .failed
+            }
+        }
+
+        userSummaryRefreshTask = task
+        await task.value
+        userSummaryRefreshTask = nil
     }
 
     func recordListeningSession(
@@ -459,16 +490,53 @@ final class LibraryStore: ObservableObject {
     ) {
         guard AppConfig.isListeningAnalyticsUploadEnabled else { return }
         guard let backendService, backendService.isConfigured() else { return }
+        let duration = max(0, Int(endedAt.timeIntervalSince(startedAt).rounded()))
+        guard duration >= 10 else { return }
 
-        Task {
-            try? await backendService.recordListeningSession(
+        pendingListeningSessions.append(
+            TuneAVListeningSessionDraft(
                 station: station,
                 startedAt: startedAt,
                 endedAt: endedAt,
+                durationSeconds: duration,
                 source: source,
                 endedReason: endedReason,
                 trackDetectedCount: trackDetectedCount
             )
+        )
+
+        if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
+            flushListeningSessionUploads()
+        } else {
+            scheduleListeningSessionUpload()
+        }
+    }
+
+    private func scheduleListeningSessionUpload() {
+        guard listeningSessionUploadTask == nil else { return }
+
+        listeningSessionUploadTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled else { return }
+            flushListeningSessionUploads()
+        }
+    }
+
+    private func flushListeningSessionUploads() {
+        listeningSessionUploadTask?.cancel()
+        listeningSessionUploadTask = nil
+
+        guard let backendService, backendService.isConfigured() else {
+            pendingListeningSessions.removeAll()
+            return
+        }
+        guard !pendingListeningSessions.isEmpty else { return }
+
+        let sessions = pendingListeningSessions
+        pendingListeningSessions.removeAll(keepingCapacity: true)
+
+        Task {
+            try? await backendService.recordListeningSessions(sessions)
         }
     }
 
