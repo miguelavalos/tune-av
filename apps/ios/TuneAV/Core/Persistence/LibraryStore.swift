@@ -476,6 +476,11 @@ final class LibraryStore: ObservableObject {
 
     func setAppDataService(_ service: TuneAVAppDataService?) {
         appDataService = service
+        if service == nil {
+            pushTask?.cancel()
+            pushTask = nil
+            cloudSyncStatus = .idle
+        }
     }
 
     func setBackendService(_ service: TuneAVAppDataService?) {
@@ -600,10 +605,12 @@ final class LibraryStore: ObservableObject {
         listeningSessionFlushTask = Task { @MainActor in
             do {
                 try await backendService.recordListeningSessions(sessions)
+                guard self.backendService === backendService else { return }
                 finishListeningSessionUpload(didUpload: true, sessions: sessions)
             } catch is CancellationError {
                 return
             } catch {
+                guard self.backendService === backendService else { return }
                 finishListeningSessionUpload(didUpload: false, sessions: sessions)
             }
         }
@@ -635,6 +642,7 @@ final class LibraryStore: ObservableObject {
         do {
             cloudSyncStatus = .syncing
             let remoteDocument = try await appDataService.pullLibrary()
+            guard self.appDataService === appDataService else { return }
             let localSnapshot = librarySnapshot()
 
             switch TuneAVLibrarySyncPlanner.decision(
@@ -650,6 +658,7 @@ final class LibraryStore: ObservableObject {
                 applyRemoteSnapshot(mergedSnapshot)
                 if mergedSnapshot != remoteSnapshot {
                     try await appDataService.pushLibrary(mergedSnapshot)
+                    guard self.appDataService === appDataService else { return }
                 }
             case .pushLocal:
                 let snapshotToPush: TuneAVLibrarySnapshot
@@ -663,6 +672,7 @@ final class LibraryStore: ObservableObject {
                 }
 
                 try await appDataService.pushLibrary(snapshotToPush)
+                guard self.appDataService === appDataService else { return }
                 if snapshotToPush != localSnapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
@@ -672,8 +682,10 @@ final class LibraryStore: ObservableObject {
 
             cloudSyncStatus = .synced(.now)
         } catch TuneAVAppDataError.conflict {
+            guard self.appDataService === appDataService else { return }
             cloudSyncStatus = .conflict
         } catch {
+            guard self.appDataService === appDataService else { return }
             cloudSyncStatus = .failed
             return
         }
@@ -813,12 +825,13 @@ final class LibraryStore: ObservableObject {
         pushTask = Task { [appDataService] in
             do {
                 try await Task.sleep(for: Self.cloudPushDebounce)
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.appDataService === appDataService else { return }
 
                 let snapshot = librarySnapshot()
                 cloudSyncStatus = .syncing
                 let remoteDocument = try await appDataService.pullLibrary()
                 try Task.checkCancellation()
+                guard self.appDataService === appDataService else { return }
                 let snapshotToPush: TuneAVLibrarySnapshot
                 if let remoteSnapshot = remoteDocument.snapshot {
                     snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
@@ -832,15 +845,18 @@ final class LibraryStore: ObservableObject {
                 try Task.checkCancellation()
                 try await appDataService.pushLibrary(snapshotToPush)
                 try Task.checkCancellation()
+                guard self.appDataService === appDataService else { return }
                 if snapshotToPush != snapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
                 cloudSyncStatus = .synced(.now)
             } catch TuneAVAppDataError.conflict {
+                guard self.appDataService === appDataService else { return }
                 await refreshCloudLibraryIfNeeded()
             } catch is CancellationError {
                 return
             } catch {
+                guard self.appDataService === appDataService else { return }
                 cloudSyncStatus = .failed
             }
         }
@@ -853,14 +869,16 @@ final class LibraryStore: ObservableObject {
         stationFeedbackSyncTasks[stationID] = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.backendService === backendService else { return }
                 try await backendService.setStationFeedback(feedback, stationID: stationID)
             } catch is CancellationError {
                 return
             } catch {
+                guard self.backendService === backendService else { return }
                 stationFeedbackSyncTasks[stationID] = nil
                 return
             }
+            guard self.backendService === backendService else { return }
             stationFeedbackSyncTasks[stationID] = nil
         }
     }
@@ -878,14 +896,16 @@ final class LibraryStore: ObservableObject {
         trackFeedbackSyncTasks[feedbackKey] = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.backendService === backendService else { return }
                 try await backendService.setTrackFeedback(feedback, title: title, artist: normalizedArtist, stationID: stationID)
             } catch is CancellationError {
                 return
             } catch {
+                guard self.backendService === backendService else { return }
                 trackFeedbackSyncTasks[feedbackKey] = nil
                 return
             }
+            guard self.backendService === backendService else { return }
             trackFeedbackSyncTasks[feedbackKey] = nil
         }
     }
