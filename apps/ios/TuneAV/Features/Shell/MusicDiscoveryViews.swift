@@ -205,17 +205,23 @@ struct DiscoveryTrackCard: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = discovery.resolvedArtworkURL {
-            remoteArtwork(url: artworkURL, fallback: AnyView(fallbackArtwork))
+            remoteArtwork(url: artworkURL) {
+                fallbackArtwork
+            }
         } else if let stationArtworkURL {
-            remoteArtwork(url: stationArtworkURL, fallback: AnyView(fallbackArtwork))
+            remoteArtwork(url: stationArtworkURL) {
+                fallbackArtwork
+            }
         } else if let stationArtworkURL = discovery.resolvedStationArtworkURL {
-            remoteArtwork(url: stationArtworkURL, fallback: AnyView(fallbackArtwork))
+            remoteArtwork(url: stationArtworkURL) {
+                fallbackArtwork
+            }
         } else {
             fallbackArtwork
         }
     }
 
-    private func remoteArtwork(url: URL, fallback: AnyView) -> some View {
+    private func remoteArtwork<Fallback: View>(url: URL, @ViewBuilder fallback: @escaping () -> Fallback) -> some View {
         AsyncImage(url: url) { phase in
             switch phase {
             case .success(let image):
@@ -223,7 +229,7 @@ struct DiscoveryTrackCard: View {
                     .resizable()
                     .scaledToFill()
             default:
-                fallback
+                fallback()
             }
         }
         .frame(width: 54, height: 54)
