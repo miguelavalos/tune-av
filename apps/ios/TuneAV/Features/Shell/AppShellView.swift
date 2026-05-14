@@ -5978,6 +5978,7 @@ private struct MusicScreen: View {
     @AppStorage("tuneav.music.sort") private var musicSortRawValue = MusicLibrarySort.recent.rawValue
     @State private var isConfirmingClearDiscoveries = false
     @State private var isShowingDiscoveriesShare = false
+    @State private var discoveriesShareTextDraft: String?
     @State private var browserDestination: BrowserDestination?
     @State private var hiddenDiscovery: DiscoveredTrack?
     @State private var selectedArtistName: String?
@@ -6065,8 +6066,11 @@ private struct MusicScreen: View {
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
         }
-        .sheet(isPresented: $isShowingDiscoveriesShare) {
-            ShareSheetView(items: [discoveriesShareText(musicDerivedState)])
+        .sheet(
+            isPresented: $isShowingDiscoveriesShare,
+            onDismiss: { discoveriesShareTextDraft = nil }
+        ) {
+            ShareSheetView(items: [discoveriesShareTextDraft ?? discoveriesShareText(musicDerivedState)])
         }
         .onAppear {
             normalizeInitialDiscoveryFilter()
@@ -6456,6 +6460,7 @@ private struct MusicScreen: View {
             Button {
                 let shareText = discoveriesShareText(snapshot)
                 guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
+                discoveriesShareTextDraft = shareText
                 isShowingDiscoveriesShare = true
             } label: {
                 Image(systemName: "square.and.arrow.up")
