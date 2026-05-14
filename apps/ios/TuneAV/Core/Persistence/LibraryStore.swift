@@ -11,6 +11,7 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var settings: AppSettings
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
     @Published private(set) var userSummary: TuneAVUserSummary?
+    @Published private(set) var userSummaryRefreshState: TuneAVUserSummaryRefreshState = .idle
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
@@ -423,19 +424,28 @@ final class LibraryStore: ObservableObject {
         backendService = service
         if service == nil {
             userSummary = nil
+            userSummaryRefreshState = .unavailable
         }
     }
 
     func refreshUserSummary() async {
         guard let backendService, backendService.isConfigured() else {
             userSummary = nil
+            userSummaryRefreshState = .unavailable
             return
         }
 
+        userSummaryRefreshState = .loading
         do {
-            userSummary = try await backendService.fetchUserSummary(limit: 12)
+            let summary = try await backendService.fetchUserSummary(limit: 12)
+            userSummary = summary
+            userSummaryRefreshState = summary.hasAnyActivity ? .loaded : .empty
+        } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
+            userSummary = nil
+            userSummaryRefreshState = .unavailable
         } catch {
             userSummary = nil
+            userSummaryRefreshState = .failed
         }
     }
 

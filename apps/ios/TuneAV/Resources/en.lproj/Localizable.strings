@@ -709,6 +709,17 @@
 "shell.music.overview.radios" = "Radios";
 "shell.music.overview.songs" = "Songs";
 "shell.music.overview.top" = "Tuned";
+"shell.summary.empty" = "Pro history is connected. Listen for a while and this account summary will fill in.";
+"shell.summary.failed" = "Account summary could not refresh. Check the connection or try again.";
+"shell.summary.free" = "Your account is connected. Open Pro to enable your listening summary.";
+"shell.summary.loading" = "Refreshing account listening summary…";
+"shell.summary.music.loaded" = "Account history has %d detected songs across %d artists.";
+"shell.summary.music.title" = "Music summary";
+"shell.summary.radios.loaded" = "Account history has %d top-week stations and %d tuned signals.";
+"shell.summary.radios.title" = "Radio summary";
+"shell.summary.ready" = "Account summary is ready to refresh.";
+"shell.summary.refresh" = "Refresh account summary";
+"shell.summary.signIn" = "Sign in to save and view your Pro listening summary across devices.";
 "shell.avi.music.artist.future" = "A summary of saved songs, radios where this artist played, and signals that help understand the artist.";
 "shell.avi.music.artist.label" = "Artist";
 "shell.avi.music.artist.radios" = "Radios where it played";

@@ -193,6 +193,28 @@ struct TuneAVSummaryCard: Decodable, Equatable {
     let count: Int
 }
 
+enum TuneAVUserSummaryRefreshState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case empty
+    case failed
+    case unavailable
+}
+
+extension TuneAVUserSummary {
+    var hasAnyActivity: Bool {
+        radio.cards.saved.count > 0 ||
+            radio.cards.recent.count > 0 ||
+            radio.cards.topWeek.count > 0 ||
+            radio.cards.tuned.count > 0 ||
+            music.cards.songs.count > 0 ||
+            music.cards.artists.count > 0 ||
+            music.cards.radios.count > 0 ||
+            music.cards.history.count > 0
+    }
+}
+
 private extension TuneAVStationFeedback {
     var backendValue: String {
         switch self {

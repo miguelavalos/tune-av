@@ -153,6 +153,9 @@ struct AppShellView: View {
         .task(id: stationNowPlayingRequestKey) {
             await loadStationNowPlayingPreviews()
         }
+        .task(id: summaryRefreshRequestKey) {
+            await refreshUserSummaryForVisibleTab()
+        }
         .onChange(of: selectedTab) { _, newValue in
             guard newValue == .home else { return }
             refreshHomePresentation()
@@ -298,6 +301,13 @@ struct AppShellView: View {
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
                 stationFeedback: libraryStore.stationFeedback,
+                openAccountAction: {
+                    profileMode = .account
+                    selectedTab = .profile
+                },
+                startSignInAction: {
+                    startSignInFlow(true)
+                },
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
                 showStationDetails: { station, queueSource, queue, mode, showsOverview in
@@ -327,6 +337,13 @@ struct AppShellView: View {
                 },
                 stationArtworkURL: { _ in nil },
                 trackFeedback: { discovery in libraryStore.feedback(for: discovery) },
+                openAccountAction: {
+                    profileMode = .account
+                    selectedTab = .profile
+                },
+                startSignInAction: {
+                    startSignInFlow(true)
+                },
                 toggleDiscoverySaved: toggleDiscoverySaved(_:),
                 hideDiscovery: libraryStore.hideDiscovery(_:),
                 restoreDiscovery: libraryStore.restoreDiscovery(_:),
@@ -394,6 +411,21 @@ struct AppShellView: View {
     private var stationNowPlayingRequestKey: String {
         let ids = stationNowPlayingCandidates.map(\.id).joined(separator: "|")
         return "\(selectedTab)|\(ids)"
+    }
+
+    private var summaryRefreshRequestKey: String {
+        switch selectedTab {
+        case .library, .music:
+            return "\(selectedTab)|\(accessController.accessMode)|\(accessController.accountUser?.id ?? "guest")"
+        case .home, .search, .avi, .profile:
+            return ""
+        }
+    }
+
+    private func refreshUserSummaryForVisibleTab() async {
+        guard selectedTab == .library || selectedTab == .music else { return }
+        guard !launchContext.isUITesting else { return }
+        await libraryStore.refreshUserSummary()
     }
 
     private var currentTrackDiscoveryKey: String {
@@ -4395,6 +4427,8 @@ private struct LibraryScreen: View {
     private static let pageSize = 40
     private static let overviewLimit = 12
 
+    @EnvironmentObject private var accessController: AccessController
+    @EnvironmentObject private var libraryStore: LibraryStore
     @State private var query = ""
     @State private var isSearchExpanded = false
     @State private var selectedMode: RadioLibraryMode = .saved
@@ -4413,6 +4447,8 @@ private struct LibraryScreen: View {
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
     let stationFeedback: [String: TuneAVStationFeedback]
+    let openAccountAction: () -> Void
+    let startSignInAction: () -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?, RadioLibraryMode?, Bool?) -> Void
@@ -4540,6 +4576,19 @@ private struct LibraryScreen: View {
 
     private var radioOverview: some View {
         VStack(alignment: .leading, spacing: 24) {
+            AccountSummaryStatusCard(
+                kind: .radios,
+                state: libraryStore.userSummaryRefreshState,
+                summary: summary,
+                isSignedIn: accessController.isSignedIn,
+                hasProAccess: accessController.capabilities.canAccessPremiumFeatures,
+                openAccountAction: openAccountAction,
+                startSignInAction: startSignInAction,
+                refreshAction: {
+                    await libraryStore.refreshUserSummary()
+                }
+            )
+
             if hasRadioOverviewContent {
                 RadioOverviewMetricGrid {
                     RadioOverviewMetricCard(
@@ -5157,6 +5206,191 @@ private struct RadioOverviewMetricGrid<Content: View>: View {
     }
 }
 
+private enum AccountSummaryStatusKind {
+    case radios
+    case music
+
+    var title: String {
+        switch self {
+        case .radios:
+            return L10n.string("shell.summary.radios.title")
+        case .music:
+            return L10n.string("shell.summary.music.title")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .radios:
+            return "antenna.radiowaves.left.and.right"
+        case .music:
+            return "music.note.list"
+        }
+    }
+}
+
+private struct AccountSummaryStatusCard: View {
+    let kind: AccountSummaryStatusKind
+    let state: TuneAVUserSummaryRefreshState
+    let summary: TuneAVUserSummary?
+    let isSignedIn: Bool
+    let hasProAccess: Bool
+    let openAccountAction: () -> Void
+    let startSignInAction: () -> Void
+    let refreshAction: () async -> Void
+
+    @State private var isRefreshing = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: statusImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(statusTint)
+                .frame(width: 34, height: 34)
+                .background(statusTint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(kind.title)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            trailingAction
+        }
+        .padding(14)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(statusTint.opacity(0.22), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("summary.\(kind == .radios ? "radios" : "music")")
+    }
+
+    @ViewBuilder
+    private var trailingAction: some View {
+        if !isSignedIn {
+            Button(action: startSignInAction) {
+                Text(L10n.string("profile.account.connect"))
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(TuneAVTheme.highlight, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        } else if !hasProAccess {
+            Button(action: openAccountAction) {
+                Text(L10n.string("profile.summary.plan.detail.pro"))
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(TuneAVTheme.highlight, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                Task {
+                    isRefreshing = true
+                    await refreshAction()
+                    isRefreshing = false
+                }
+            } label: {
+                Image(systemName: isRefreshing || state == .loading ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 36, height: 36)
+                    .background(TuneAVTheme.highlight.opacity(0.10), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isRefreshing || state == .loading)
+            .accessibilityLabel(L10n.string("shell.summary.refresh"))
+        }
+    }
+
+    private var statusImage: String {
+        switch state {
+        case .loading:
+            return "arrow.triangle.2.circlepath"
+        case .failed:
+            return "exclamationmark.triangle.fill"
+        case .loaded:
+            return kind.systemImage
+        case .empty:
+            return "tray"
+        case .idle, .unavailable:
+            return isSignedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle"
+        }
+    }
+
+    private var statusTint: Color {
+        switch state {
+        case .failed:
+            return Color(red: 1.0, green: 0.17, blue: 0.38)
+        case .loaded:
+            return TuneAVTheme.highlight
+        case .empty:
+            return Color(red: 0.95, green: 0.48, blue: 0.18)
+        case .loading:
+            return Color(red: 0.17, green: 0.52, blue: 0.96)
+        case .idle, .unavailable:
+            return TuneAVTheme.textSecondary
+        }
+    }
+
+    private var detail: String {
+        guard isSignedIn else {
+            return L10n.string("shell.summary.signIn")
+        }
+
+        guard hasProAccess else {
+            return L10n.string("shell.summary.free")
+        }
+
+        switch state {
+        case .loading:
+            return L10n.string("shell.summary.loading")
+        case .failed:
+            return L10n.string("shell.summary.failed")
+        case .loaded:
+            return loadedDetail
+        case .empty:
+            return L10n.string("shell.summary.empty")
+        case .idle, .unavailable:
+            return L10n.string("shell.summary.ready")
+        }
+    }
+
+    private var loadedDetail: String {
+        guard let summary else {
+            return L10n.string("shell.summary.ready")
+        }
+
+        switch kind {
+        case .radios:
+            return L10n.string(
+                "shell.summary.radios.loaded",
+                summary.radio.cards.topWeek.count,
+                summary.radio.cards.tuned.count
+            )
+        case .music:
+            return L10n.string(
+                "shell.summary.music.loaded",
+                summary.music.cards.history.count,
+                summary.music.cards.artists.count
+            )
+        }
+    }
+}
+
 private struct RadioOverviewMetricCard: View {
     let title: String
     let value: Int
@@ -5561,6 +5795,7 @@ private struct MusicScreen: View {
     private static let overviewLimit = 12
 
     @EnvironmentObject private var accessController: AccessController
+    @EnvironmentObject private var libraryStore: LibraryStore
     @State private var query = ""
     @State private var musicMode: MusicContentMode = .songs
     @State private var isShowingOverview = true
@@ -5587,6 +5822,8 @@ private struct MusicScreen: View {
     let openArtistInfo: (DiscoveryArtistSummary, MusicContentMode?) -> Void
     let stationArtworkURL: (DiscoveredTrack) -> URL?
     let trackFeedback: (DiscoveredTrack) -> TuneAVStationFeedback?
+    let openAccountAction: () -> Void
+    let startSignInAction: () -> Void
     let toggleDiscoverySaved: (DiscoveredTrack) -> Void
     let hideDiscovery: (DiscoveredTrack) -> Void
     let restoreDiscovery: (DiscoveredTrack) -> Void
@@ -5714,6 +5951,19 @@ private struct MusicScreen: View {
 
     private var musicOverview: some View {
         VStack(alignment: .leading, spacing: 24) {
+            AccountSummaryStatusCard(
+                kind: .music,
+                state: libraryStore.userSummaryRefreshState,
+                summary: summary,
+                isSignedIn: accessController.isSignedIn,
+                hasProAccess: accessController.capabilities.canAccessPremiumFeatures,
+                openAccountAction: openAccountAction,
+                startSignInAction: startSignInAction,
+                refreshAction: {
+                    await libraryStore.refreshUserSummary()
+                }
+            )
+
             RadioOverviewMetricGrid {
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.music.overview.songs"),

@@ -709,6 +709,17 @@
 "shell.music.overview.radios" = "Radios";
 "shell.music.overview.songs" = "Chansons";
 "shell.music.overview.top" = "Affinés";
+"shell.summary.empty" = "L'historique Pro est connecté. Écoute un moment et ce résumé de compte se remplira.";
+"shell.summary.failed" = "Le résumé de compte n'a pas pu être actualisé. Vérifie la connexion ou réessaie.";
+"shell.summary.free" = "Ton compte est connecté. Ouvre Pro pour activer ton résumé d'écoute.";
+"shell.summary.loading" = "Actualisation du résumé d'écoute du compte…";
+"shell.summary.music.loaded" = "L'historique du compte contient %d chansons détectées chez %d artistes.";
+"shell.summary.music.title" = "Résumé musique";
+"shell.summary.radios.loaded" = "L'historique du compte contient %d radios top de la semaine et %d signaux affinés.";
+"shell.summary.radios.title" = "Résumé radios";
+"shell.summary.ready" = "Le résumé de compte est prêt à être actualisé.";
+"shell.summary.refresh" = "Actualiser le résumé de compte";
+"shell.summary.signIn" = "Connecte-toi pour enregistrer et voir ton résumé d'écoute Pro sur tous tes appareils.";
 "shell.avi.music.artist.future" = "Un résumé des chansons enregistrées, des radios où cet artiste est passé et des signaux pour mieux le situer.";
 "shell.avi.music.artist.label" = "Artiste";
 "shell.avi.music.artist.radios" = "Radios où il est passé";

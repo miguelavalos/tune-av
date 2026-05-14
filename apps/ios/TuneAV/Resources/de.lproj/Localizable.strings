@@ -709,6 +709,17 @@
 "shell.music.overview.radios" = "Radios";
 "shell.music.overview.songs" = "Songs";
 "shell.music.overview.top" = "Abgestimmt";
+"shell.summary.empty" = "Der Pro-Verlauf ist verbunden. Höre eine Weile, dann füllt sich diese Kontoübersicht.";
+"shell.summary.failed" = "Die Kontoübersicht konnte nicht aktualisiert werden. Prüfe die Verbindung oder versuche es erneut.";
+"shell.summary.free" = "Dein Konto ist verbunden. Öffne Pro, um deine Hörübersicht zu aktivieren.";
+"shell.summary.loading" = "Konto-Hörübersicht wird aktualisiert…";
+"shell.summary.music.loaded" = "Der Kontoverlauf enthält %d erkannte Songs von %d Künstlern.";
+"shell.summary.music.title" = "Musikübersicht";
+"shell.summary.radios.loaded" = "Der Kontoverlauf enthält %d Top-Wochen-Radios und %d abgestimmte Signale.";
+"shell.summary.radios.title" = "Radioübersicht";
+"shell.summary.ready" = "Die Kontoübersicht ist bereit zur Aktualisierung.";
+"shell.summary.refresh" = "Kontoübersicht aktualisieren";
+"shell.summary.signIn" = "Melde dich an, um deine Pro-Hörübersicht geräteübergreifend zu speichern und anzuzeigen.";
 "shell.avi.music.artist.future" = "Eine Zusammenfassung gespeicherter Songs, Radios, in denen dieser Künstler lief, und Signale zum besseren Einordnen.";
 "shell.avi.music.artist.label" = "Künstler";
 "shell.avi.music.artist.radios" = "Radios, in denen er lief";

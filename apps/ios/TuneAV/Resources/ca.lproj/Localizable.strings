@@ -709,6 +709,17 @@
 "shell.music.overview.radios" = "Ràdios";
 "shell.music.overview.songs" = "Cançons";
 "shell.music.overview.top" = "Afinades";
+"shell.summary.empty" = "L'historial Pro està connectat. Escolta una estona i aquest resum de compte s'omplirà.";
+"shell.summary.failed" = "No s'ha pogut actualitzar el resum de compte. Comprova la connexió o torna-ho a provar.";
+"shell.summary.free" = "El teu compte està connectat. Obre Pro per activar el resum d'escolta.";
+"shell.summary.loading" = "Actualitzant el resum d'escolta del compte…";
+"shell.summary.music.loaded" = "L'historial de compte té %d cançons detectades en %d artistes.";
+"shell.summary.music.title" = "Resum de música";
+"shell.summary.radios.loaded" = "L'historial de compte té %d ràdios top de la setmana i %d senyals afinats.";
+"shell.summary.radios.title" = "Resum de ràdios";
+"shell.summary.ready" = "El resum de compte està a punt per actualitzar-se.";
+"shell.summary.refresh" = "Actualitzar resum de compte";
+"shell.summary.signIn" = "Inicia sessió per desar i veure el teu resum Pro d'escolta entre dispositius.";
 "shell.avi.music.artist.future" = "Resum de les cançons desades, ràdios on ha sonat i senyals que ajuden a entendre aquest artista.";
 "shell.avi.music.artist.label" = "Artista";
 "shell.avi.music.artist.radios" = "Ràdios on ha sonat";
