@@ -30,6 +30,7 @@ final class LibraryStore: ObservableObject {
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
     private var listeningSessionUploadTask: Task<Void, Never>?
+    private var listeningSessionFlushTask: Task<Void, Never>?
 
     private enum RefreshScope {
         case favorites
@@ -487,6 +488,8 @@ final class LibraryStore: ObservableObject {
             userSummaryRefreshTask = nil
             listeningSessionUploadTask?.cancel()
             listeningSessionUploadTask = nil
+            listeningSessionFlushTask?.cancel()
+            listeningSessionFlushTask = nil
             pendingListeningSessions.removeAll()
         }
     }
@@ -576,6 +579,7 @@ final class LibraryStore: ObservableObject {
     private func flushListeningSessionUploads() {
         listeningSessionUploadTask?.cancel()
         listeningSessionUploadTask = nil
+        guard listeningSessionFlushTask == nil else { return }
 
         guard let backendService, backendService.isConfigured() else {
             pendingListeningSessions.removeAll()
@@ -586,8 +590,32 @@ final class LibraryStore: ObservableObject {
         let sessions = pendingListeningSessions
         pendingListeningSessions.removeAll(keepingCapacity: true)
 
-        Task {
-            try? await backendService.recordListeningSessions(sessions)
+        listeningSessionFlushTask = Task { @MainActor in
+            do {
+                try await backendService.recordListeningSessions(sessions)
+                finishListeningSessionUpload(didUpload: true, sessions: sessions)
+            } catch is CancellationError {
+                return
+            } catch {
+                finishListeningSessionUpload(didUpload: false, sessions: sessions)
+            }
+        }
+    }
+
+    private func finishListeningSessionUpload(didUpload: Bool, sessions: [TuneAVListeningSessionDraft]) {
+        listeningSessionFlushTask = nil
+
+        guard didUpload else {
+            pendingListeningSessions.insert(contentsOf: sessions, at: 0)
+            scheduleListeningSessionUpload()
+            return
+        }
+
+        guard !pendingListeningSessions.isEmpty else { return }
+        if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
+            flushListeningSessionUploads()
+        } else {
+            scheduleListeningSessionUpload()
         }
     }
 
