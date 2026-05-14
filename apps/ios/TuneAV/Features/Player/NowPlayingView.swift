@@ -641,7 +641,7 @@ struct NowPlayingView: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous))
         } else {
             listeningStationArtwork(for: station, size: size)
         }
@@ -653,7 +653,7 @@ struct NowPlayingView: View {
             size: size,
             surfaceStyle: .dark,
             contentInsetRatio: 0.04,
-            cornerRadiusRatio: 0.18,
+            cornerRadiusRatio: StationArtworkView.ArtworkStyle.cornerRadiusRatio,
             textMode: .stationName,
             animationOverlay: .none,
             isAnimationActive: false
@@ -1925,7 +1925,7 @@ private struct PlayerSignalDeck: View {
             size: size,
             surfaceStyle: .dark,
             contentInsetRatio: 0.04,
-            cornerRadiusRatio: 0.18,
+            cornerRadiusRatio: StationArtworkView.ArtworkStyle.cornerRadiusRatio,
             textMode: .stationName,
             animationOverlay: .none,
             isAnimationActive: false
@@ -2716,7 +2716,7 @@ private struct FlippingPlayerArtwork: View {
 
     @ViewBuilder
     private var heroArtwork: some View {
-        let cornerRadius: CGFloat = 32
+        let cornerRadius = StationArtworkView.ArtworkStyle.cornerRadius(for: size)
 
         Group {
             if let heroArtworkURL {
@@ -2767,7 +2767,7 @@ private struct FlippingPlayerArtwork: View {
     }
 
     private var heroCornerRadiusRatio: CGFloat {
-        32 / size
+        StationArtworkView.ArtworkStyle.cornerRadiusRatio
     }
 
     private var flipControlSize: CGFloat {

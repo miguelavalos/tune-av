@@ -198,11 +198,15 @@ struct DiscoveryTrackCard: View {
             }
         }
         .frame(width: 54, height: 54)
-        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .clipShape(artworkShape(size: 54))
+        .overlay {
+            artworkShape(size: 54)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 15, style: .continuous)
+        artworkShape(size: 54)
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: 54, height: 54)
             .overlay {
@@ -210,6 +214,14 @@ struct DiscoveryTrackCard: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape(size: 54)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 }
 
@@ -340,11 +352,15 @@ private struct MusicTrackCompactCard: View {
             }
         }
         .frame(width: 68, height: 68)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(artworkShape(size: 68))
+        .overlay {
+            artworkShape(size: 68)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        artworkShape(size: 68)
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: 68, height: 68)
             .overlay {
@@ -352,6 +368,14 @@ private struct MusicTrackCompactCard: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape(size: 68)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 
     private var discoveryMenu: some View {
@@ -599,14 +623,18 @@ private struct MusicArtistCompactCard: View {
                 }
             }
             .frame(width: artworkSize, height: artworkSize)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(artworkShape)
+            .overlay {
+                artworkShape
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             fallbackArtwork
         }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        artworkShape
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: artworkSize, height: artworkSize)
             .overlay {
@@ -614,6 +642,14 @@ private struct MusicArtistCompactCard: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private var artworkShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: artworkSize), style: .continuous)
     }
 }
 
@@ -780,14 +816,18 @@ struct DiscoveryArtistCard: View {
                 }
             }
             .frame(width: 42, height: 42)
-            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .clipShape(artworkShape(size: 42))
+            .overlay {
+                artworkShape(size: 42)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             fallbackArtwork
         }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
+        artworkShape(size: 42)
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: 42, height: 42)
             .overlay {
@@ -795,6 +835,14 @@ struct DiscoveryArtistCard: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape(size: 42)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 }
 
@@ -872,14 +920,18 @@ struct DiscoveryStationSourceRow: View {
                 }
             }
             .frame(width: 42, height: 42)
-            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .clipShape(artworkShape(size: 42))
+            .overlay {
+                artworkShape(size: 42)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             fallbackArtwork
         }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
+        artworkShape(size: 42)
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: 42, height: 42)
             .overlay {
@@ -887,6 +939,14 @@ struct DiscoveryStationSourceRow: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape(size: 42)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 }
 
@@ -1035,14 +1095,18 @@ struct DiscoveryArtistRow: View {
                 }
             }
             .frame(width: artworkSize, height: artworkSize)
-            .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .clipShape(artworkShape)
+            .overlay {
+                artworkShape
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             fallbackArtwork
         }
     }
 
     private var fallbackArtwork: some View {
-        RoundedRectangle(cornerRadius: 15, style: .continuous)
+        artworkShape
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: artworkSize, height: artworkSize)
             .overlay {
@@ -1050,5 +1114,13 @@ struct DiscoveryArtistRow: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                artworkShape
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private var artworkShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: artworkSize), style: .continuous)
     }
 }

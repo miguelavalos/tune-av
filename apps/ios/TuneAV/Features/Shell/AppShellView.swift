@@ -1726,7 +1726,11 @@ private struct AviScreen: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(musicArtworkShape(size: size))
+            .overlay {
+                musicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             musicArtworkFallback(systemImage: "music.note", size: size)
         }
@@ -1744,7 +1748,11 @@ private struct AviScreen: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(musicArtworkShape(size: size))
+            .overlay {
+                musicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             musicArtworkFallback(systemImage: "person.fill", size: size)
         }
@@ -1779,7 +1787,7 @@ private struct AviScreen: View {
     }
 
     private func musicArtworkFallback(systemImage: String, size: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
+        musicArtworkShape(size: size)
             .fill(TuneAVTheme.mutedSurface)
             .frame(width: size, height: size)
             .overlay {
@@ -1787,6 +1795,14 @@ private struct AviScreen: View {
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
             }
+            .overlay {
+                musicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+
+    private func musicArtworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 
     private var aviContextHeader: some View {
@@ -1983,10 +1999,18 @@ private struct AviScreen: View {
                 }
             }
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(artworkShape(size: size))
+            .overlay {
+                artworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
         } else {
             StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
         }
+    }
+
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 
     private func artworkZoomOverlay(for station: Station) -> some View {
@@ -7371,7 +7395,7 @@ private struct StationCompactCard: View {
                         isAnimationActive: false
                     )
                         .overlay {
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            artworkShape
                                 .fill(isCurrentStationActive ? TuneAVTheme.highlight.opacity(0.16) : .clear)
                         }
                         .overlay {
@@ -7389,7 +7413,7 @@ private struct StationCompactCard: View {
                             }
                         }
                         .overlay {
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            artworkShape
                                 .stroke(isCurrentStationActive ? TuneAVTheme.highlight : TuneAVTheme.borderSubtle, lineWidth: isCurrentStationActive ? 2 : 1)
                         }
                 }
@@ -7476,6 +7500,13 @@ private struct StationCompactCard: View {
 
     private func normalizedMetadata(_ value: String?) -> String? {
         TuneAVDisplayMetadata.normalized(value)
+    }
+
+    private var artworkShape: RoundedRectangle {
+        RoundedRectangle(
+            cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: StationCompactMetrics.artworkSize),
+            style: .continuous
+        )
     }
 
     private var reliableArtist: String? {

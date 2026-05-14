@@ -5,28 +5,31 @@ final class AppShellChromeActions: ObservableObject {
     var openAccount: () -> Void = {}
 }
 
+enum ShellBrandHeaderActiveItem {
+    case settings
+    case account
+}
+
 struct ShellBrandHeader: View {
     @EnvironmentObject private var chromeActions: AppShellChromeActions
 
     let statusTitle: String
+    var activeItem: ShellBrandHeaderActiveItem?
 
     var body: some View {
         HStack(spacing: 12) {
             Button {
                 chromeActions.openSettings()
             } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.elevatedSurface, in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(TuneAVTheme.borderSubtle.opacity(0.52), lineWidth: 1)
-                    }
+                headerIcon(
+                    systemName: "gearshape.fill",
+                    isSelected: activeItem == .settings,
+                    fontSize: 15
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.header.settings"))
+            .accessibilityValue(activeItem == .settings ? L10n.string("common.selected") : "")
             .accessibilityIdentifier("header.settings")
 
             Spacer(minLength: 8)
@@ -41,20 +44,33 @@ struct ShellBrandHeader: View {
             Button {
                 chromeActions.openAccount()
             } label: {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.elevatedSurface, in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(TuneAVTheme.borderSubtle.opacity(0.52), lineWidth: 1)
-                    }
+                headerIcon(
+                    systemName: "person.crop.circle.fill",
+                    isSelected: activeItem == .account,
+                    fontSize: 16
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.header.account"))
+            .accessibilityValue(activeItem == .account ? L10n.string("common.selected") : "")
             .accessibilityIdentifier("header.account")
         }
+    }
+
+    private func headerIcon(systemName: String, isSelected: Bool, fontSize: CGFloat) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: fontSize, weight: .semibold))
+            .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
+            .frame(width: 36, height: 36)
+            .background(isSelected ? TuneAVTheme.footerGlassSelected : TuneAVTheme.elevatedSurface, in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(
+                        isSelected ? TuneAVTheme.highlight.opacity(0.28) : TuneAVTheme.borderSubtle.opacity(0.52),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.12 : 0), radius: 8, y: 3)
     }
 }
 
@@ -190,7 +206,7 @@ struct StationThumbnailView: View {
     var isAnimationActive: Bool = false
 
     private var cornerRadius: CGFloat {
-        size * 0.24
+        StationArtworkView.ArtworkStyle.cornerRadius(for: size)
     }
 
     var body: some View {

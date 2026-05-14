@@ -278,6 +278,14 @@ private struct StationFallbackIdentity {
 }
 
 struct StationArtworkView: View {
+    enum ArtworkStyle {
+        static let cornerRadiusRatio: CGFloat = 0.12
+
+        static func cornerRadius(for size: CGFloat) -> CGFloat {
+            size * cornerRadiusRatio
+        }
+    }
+
     enum SurfaceStyle {
         case light
         case dark
@@ -311,7 +319,7 @@ struct StationArtworkView: View {
     private let fallbackSeed: String
     private let fallbackArtwork: TuneAVFallbackArtwork
     var size: CGFloat = 84
-    var cornerRadiusRatio: CGFloat = 0.24
+    var cornerRadiusRatio: CGFloat = ArtworkStyle.cornerRadiusRatio
     var contentInsetRatio: CGFloat = 0.18
     var surfaceStyle: SurfaceStyle = .light
     var stageWidthRatio: CGFloat = 0.64
@@ -332,7 +340,7 @@ struct StationArtworkView: View {
         fallbackArtwork: TuneAVFallbackArtwork = .popHitsA,
         stationName: String? = nil,
         size: CGFloat = 84,
-        cornerRadiusRatio: CGFloat = 0.24,
+        cornerRadiusRatio: CGFloat = ArtworkStyle.cornerRadiusRatio,
         contentInsetRatio: CGFloat = 0.18,
         surfaceStyle: SurfaceStyle = .light,
         stageWidthRatio: CGFloat = 0.64,
@@ -366,7 +374,7 @@ struct StationArtworkView: View {
         size: CGFloat = 84,
         surfaceStyle: SurfaceStyle = .light,
         contentInsetRatio: CGFloat = 0.18,
-        cornerRadiusRatio: CGFloat = 0.24,
+        cornerRadiusRatio: CGFloat = ArtworkStyle.cornerRadiusRatio,
         stageWidthRatio: CGFloat = 0.64,
         stageHeightRatio: CGFloat = 0.48,
         basePlateShadowColor: Color = Color.black.opacity(0.12),

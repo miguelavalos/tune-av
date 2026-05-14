@@ -27,7 +27,7 @@ struct ProfileScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(statusTitle: statusTitle)
+                ShellBrandHeader(statusTitle: statusTitle, activeItem: headerActiveItem)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(screenTitle)
@@ -418,6 +418,15 @@ struct ProfileScreen: View {
             L10n.string("profile.statusTitle.account")
         case .settings:
             L10n.string("profile.statusTitle.settings")
+        }
+    }
+
+    private var headerActiveItem: ShellBrandHeaderActiveItem {
+        switch mode {
+        case .account:
+            .account
+        case .settings:
+            .settings
         }
     }
 

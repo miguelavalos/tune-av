@@ -121,9 +121,9 @@ struct MiniPlayerView: View {
                 }
             }
             .frame(width: 46, height: 46)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46), style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46), style: .continuous)
                     .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
             }
         } else {
