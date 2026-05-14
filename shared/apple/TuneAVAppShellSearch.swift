@@ -502,6 +502,8 @@ struct AppShellSearchRequest: Equatable {
 }
 
 struct AppShellSearch {
+    private static let maxWorldwideDiscoveryCountryRequests = 6
+
     let stationService: StationService
     let resolvedDeviceCountryCode: () -> String?
     let hasResolvedCountry: (Station) -> Bool
@@ -548,7 +550,7 @@ struct AppShellSearch {
         )
 
         var merged: [Station] = []
-        for code in orderedCodes {
+        for code in orderedCodes.prefix(Self.maxWorldwideDiscoveryCountryRequests) {
             let stations = try await stationService.searchStations(
                 filters: .init(
                     query: "",
