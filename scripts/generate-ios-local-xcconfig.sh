@@ -81,7 +81,7 @@ development_team="${AVALSYS_APPLE_DEVELOPMENT_TEAM:-\$(inherited)}"
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-com.avalsys.tuneav.pro.monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
 if [ "$env_name" = "prod" ]; then
-  listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-0}"
+  listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 else
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 fi
