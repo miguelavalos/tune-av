@@ -13,18 +13,28 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let stations: [Station]
     }
 
+    private struct CurrentTrackMetadata: Equatable {
+        var title: String?
+        var artist: String?
+        var albumTitle: String?
+        var artworkURL: URL?
+        var artistURL: URL?
+    }
+
     typealias PlaybackStatus = TuneAVPlaybackState
 
     @Published private(set) var currentStation: Station?
     @Published private(set) var status: PlaybackStatus = .idle
     @Published private(set) var sleepTimerDescription: String?
     @Published private(set) var lastErrorMessage: String?
-    @Published private(set) var currentTrackTitle: String?
-    @Published private(set) var currentTrackArtist: String?
-    @Published private(set) var currentTrackAlbumTitle: String?
-    @Published private(set) var currentTrackArtworkURL: URL?
-    @Published private(set) var currentTrackArtistURL: URL?
+    @Published private var currentTrackMetadata = CurrentTrackMetadata()
     @Published private(set) var playbackQueue: PlaybackQueue = .init(source: .singleStation, stations: [])
+
+    var currentTrackTitle: String? { currentTrackMetadata.title }
+    var currentTrackArtist: String? { currentTrackMetadata.artist }
+    var currentTrackAlbumTitle: String? { currentTrackMetadata.albumTitle }
+    var currentTrackArtworkURL: URL? { currentTrackMetadata.artworkURL }
+    var currentTrackArtistURL: URL? { currentTrackMetadata.artistURL }
 
     var isPlaying: Bool {
         if case .playing = status {
@@ -97,8 +107,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     func applyUITestTrackMetadata(title: String?, artist: String?) {
         guard TuneAVUITestEnvironment.current.isEnabled else { return }
-        currentTrackTitle = title
-        currentTrackArtist = artist
+        setCurrentTrackIdentity(title: title, artist: artist)
         currentTrackSource = title == nil && artist == nil ? nil : .fallback
         persistCurrentNowPlayingState()
         updateNowPlayingInfo()
@@ -638,34 +647,33 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     @discardableResult
     private func setCurrentTrackIdentity(title: String?, artist: String?) -> Bool {
-        var didChange = false
-        if currentTrackTitle != title {
-            currentTrackTitle = title
-            didChange = true
-        }
-        if currentTrackArtist != artist {
-            currentTrackArtist = artist
-            didChange = true
-        }
-        return didChange
+        let nextMetadata = CurrentTrackMetadata(
+            title: title,
+            artist: artist,
+            albumTitle: currentTrackAlbumTitle,
+            artworkURL: currentTrackArtworkURL,
+            artistURL: currentTrackArtistURL
+        )
+        return setCurrentTrackMetadata(nextMetadata)
     }
 
     @discardableResult
     private func setCurrentTrackArtworkMetadata(albumTitle: String?, artworkURL: URL?, artistURL: URL?) -> Bool {
-        var didChange = false
-        if currentTrackAlbumTitle != albumTitle {
-            currentTrackAlbumTitle = albumTitle
-            didChange = true
-        }
-        if currentTrackArtworkURL != artworkURL {
-            currentTrackArtworkURL = artworkURL
-            didChange = true
-        }
-        if currentTrackArtistURL != artistURL {
-            currentTrackArtistURL = artistURL
-            didChange = true
-        }
-        return didChange
+        let nextMetadata = CurrentTrackMetadata(
+            title: currentTrackTitle,
+            artist: currentTrackArtist,
+            albumTitle: albumTitle,
+            artworkURL: artworkURL,
+            artistURL: artistURL
+        )
+        return setCurrentTrackMetadata(nextMetadata)
+    }
+
+    @discardableResult
+    private func setCurrentTrackMetadata(_ nextMetadata: CurrentTrackMetadata) -> Bool {
+        guard currentTrackMetadata != nextMetadata else { return false }
+        currentTrackMetadata = nextMetadata
+        return true
     }
 
     private func resolvedNowPlayingArtworkImage(for station: Station) -> UIImage? {
@@ -741,11 +749,13 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let sanitizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(cachedState.artist)
         let sanitizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(cachedState.title, artist: sanitizedArtist)
 
-        currentTrackTitle = sanitizedTitle
-        currentTrackArtist = sanitizedArtist
-        currentTrackAlbumTitle = cachedState.albumTitle
-        currentTrackArtworkURL = cachedState.artworkURL
-        currentTrackArtistURL = cachedState.artistURL
+        setCurrentTrackMetadata(CurrentTrackMetadata(
+            title: sanitizedTitle,
+            artist: sanitizedArtist,
+            albumTitle: cachedState.albumTitle,
+            artworkURL: cachedState.artworkURL,
+            artistURL: cachedState.artistURL
+        ))
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
     }
 
