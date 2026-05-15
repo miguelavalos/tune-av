@@ -746,3 +746,10 @@
 "shell.stationInfo.publicSignal" = "Öffentliches Signal";
 "shell.stationInfo.summary" = "Zusammenfassung";
 "shell.stationInfo.title" = "Radio-Info";
+"subscription.error.cancelled" = "Kauf abgebrochen.";
+"subscription.error.configuration" = "Abos sind in diesem Build nicht konfiguriert.";
+"subscription.error.offerUnavailable" = "Das Pro-Angebot ist im Moment nicht verfügbar.";
+"subscription.error.productUnavailable" = "Das monatliche Pro-Abo ist im Moment nicht verfügbar.";
+"subscription.error.sdkUnavailable" = "Abos sind in diesem Build nicht verfügbar.";
+"subscription.error.signInRequired" = "Melde dich an, bevor du ein Abo startest.";
+"subscription.error.unknown" = "Das Abo konnte nicht abgeschlossen werden.";

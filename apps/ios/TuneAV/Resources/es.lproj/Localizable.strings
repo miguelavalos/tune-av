@@ -746,3 +746,10 @@
 "shell.stationInfo.publicSignal" = "Señal pública";
 "shell.stationInfo.summary" = "Resumen";
 "shell.stationInfo.title" = "Info radio";
+"subscription.error.cancelled" = "Compra cancelada.";
+"subscription.error.configuration" = "Las suscripciones no están configuradas en esta build.";
+"subscription.error.offerUnavailable" = "La oferta Pro no está disponible ahora mismo.";
+"subscription.error.productUnavailable" = "La suscripción mensual Pro no está disponible ahora mismo.";
+"subscription.error.sdkUnavailable" = "Las suscripciones no están disponibles en esta build.";
+"subscription.error.signInRequired" = "Inicia sesión antes de empezar una suscripción.";
+"subscription.error.unknown" = "No se pudo completar la suscripción.";

@@ -42,6 +42,18 @@ enum AppConfig {
         TuneAVBundleConfig.urlValue(for: "TUNEAV_OPEN_SOURCE_URL")
     }
 
+    static var revenueCatPublicAPIKey: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_PUBLIC_API_KEY")
+    }
+
+    static var revenueCatOfferingID: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_OFFERING_ID")
+    }
+
+    static var revenueCatMonthlyPackageID: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID")
+    }
+
     static var supportURL: URL? {
         TuneAVBundleConfig.supportURL(email: supportEmail)
     }

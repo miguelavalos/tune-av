@@ -551,6 +551,58 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(controller.limits, .forMode(.guest))
     }
 
+    @MainActor
+    func testGuestCannotStartSubscriptionPurchaseBoundary() async {
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        let controller = AccessController(
+            accountService: StubAccountService(user: nil),
+            entitlementService: StubEntitlementService(access: .guest),
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.loadMonthlySubscriptionOffer()
+        await controller.purchaseMonthlyPro()
+        await controller.restorePurchases()
+
+        XCTAssertEqual(controller.subscriptionError, .missingAccountUser)
+        XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, [])
+        XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [])
+        XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, [])
+    }
+
+    @MainActor
+    func testPurchaseRefreshesAccessAndWaitsForBackendEntitlementAuthority() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let entitlementService = MutableStubEntitlementService(access: .signedInFree)
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            entitlementService: entitlementService,
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.loadMonthlySubscriptionOffer()
+
+        XCTAssertEqual(controller.subscriptionOffer?.localizedPrice, "$4.99")
+        XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, [user.id])
+
+        await controller.purchaseMonthlyPro()
+
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [user.id])
+
+        entitlementService.access = .signedInPro
+        await controller.syncFromAccountProvider()
+
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+    }
+
     private func isolatedUserDefaults() -> UserDefaults {
         let suiteName = "AccessLimitsTests.\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
@@ -774,6 +826,23 @@ private struct StubEntitlementService: EntitlementService {
 }
 
 @MainActor
+private final class MutableStubEntitlementService: EntitlementService {
+    var access: ResolvedAccess
+
+    init(access: ResolvedAccess) {
+        self.access = access
+    }
+
+    func resolveAccess(for user: AccountUser?) -> ResolvedAccess {
+        user == nil ? .guest : access
+    }
+
+    func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
+        resolveAccess(for: user)
+    }
+}
+
+@MainActor
 private final class MutableStubAccountService: AVAccountService {
     private var user: AccountUser?
 
@@ -797,7 +866,55 @@ private final class MutableStubAccountService: AVAccountService {
     }
 }
 
+@MainActor
+private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
+    private(set) var loadedOfferUserIDs: [String] = []
+    private(set) var purchaseUserIDs: [String] = []
+    private(set) var restoreUserIDs: [String] = []
+
+    func prepare(for user: AccountUser?) async throws {
+        _ = try userID(user)
+    }
+
+    func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
+        let id = try userID(user)
+        loadedOfferUserIDs.append(id)
+        return TuneAVSubscriptionOffer(
+            identifier: "$rc_monthly",
+            productIdentifier: "tuneav_pro_monthly",
+            localizedTitle: "Tune AV Pro",
+            localizedPrice: "$4.99"
+        )
+    }
+
+    func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
+        let id = try userID(user)
+        purchaseUserIDs.append(id)
+        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
+    }
+
+    func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
+        let id = try userID(user)
+        restoreUserIDs.append(id)
+        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
+    }
+
+    private func userID(_ user: AccountUser?) throws -> String {
+        guard let id = user?.id else {
+            throw TuneAVSubscriptionPurchaseError.missingAccountUser
+        }
+        return id
+    }
+}
+
 private extension ResolvedAccess {
+    static let signedInFree = ResolvedAccess(
+        planTier: .free,
+        accessMode: .signedInFree,
+        capabilities: .forMode(.signedInFree),
+        limits: .forMode(.signedInFree)
+    )
+
     static let signedInPro = ResolvedAccess(
         planTier: .pro,
         accessMode: .signedInPro,
