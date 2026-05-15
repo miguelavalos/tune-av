@@ -86,10 +86,14 @@ struct AppShellView: View {
                 selectedTab = .search
             },
             aviAction: {
-                selectedTab = .avi
+                openContextualAvi()
             },
             selectTab: { tab in
-                selectedTab = tab
+                if tab == .avi {
+                    openContextualAvi()
+                } else {
+                    selectedTab = tab
+                }
             },
             content: {
                 NavigationStack {
@@ -204,7 +208,7 @@ struct AppShellView: View {
                 favoriteStationIDs: favoriteStationIDs,
                 nowPlayingTracks: stationNowPlayingTracks,
                 openAvi: {
-                    selectedTab = .avi
+                    openContextualAvi()
                 },
                 openSearchTag: { tag in
                     searchQuery = ""
@@ -795,6 +799,30 @@ struct AppShellView: View {
             queueSource: queueSource,
             queueStations: queueStations
         )
+        selectedTab = .avi
+    }
+
+    private func openContextualAvi() {
+        guard selectedTab != .avi else { return }
+
+        aviReturnTab = selectedTab == .avi ? aviReturnTab : selectedTab
+        aviReturnRadioMode = nil
+        aviReturnShowsRadioOverview = nil
+        aviReturnMusicMode = nil
+        aviReturnShowsMusicOverview = nil
+        selectedMusicAviDetail = nil
+
+        if let station = audioPlayer.currentStation {
+            let resolvedStation = enrichedStation(station)
+            selectedStationDetail = SelectedStationDetail(
+                station: resolvedStation,
+                queueSource: .singleStation,
+                queueStations: [resolvedStation]
+            )
+        } else {
+            selectedStationDetail = nil
+        }
+
         selectedTab = .avi
     }
 
