@@ -443,10 +443,24 @@ struct AppShellView: View {
     }
 
     private var currentTrackDiscoveryKey: String {
-        [
-            audioPlayer.currentStation?.id ?? "",
-            audioPlayer.currentTrackArtist ?? "",
-            audioPlayer.currentTrackTitle ?? ""
+        guard
+            let station = audioPlayer.currentStation,
+            let trackTitle = TuneAVDisplayMetadata.plausibleTitle(
+                audioPlayer.currentTrackTitle,
+                stationName: station.name
+            ),
+            let trackArtist = TuneAVDisplayMetadata.plausibleArtist(
+                audioPlayer.currentTrackArtist,
+                stationName: station.name
+            )
+        else {
+            return ""
+        }
+
+        return [
+            station.id,
+            TuneAVText.normalizedValue(trackArtist) ?? trackArtist.lowercased(),
+            TuneAVText.normalizedValue(trackTitle) ?? trackTitle.lowercased()
         ].joined(separator: "|")
     }
 
