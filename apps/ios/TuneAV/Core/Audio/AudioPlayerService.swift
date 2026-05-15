@@ -1,5 +1,6 @@
 @preconcurrency import AVFoundation
 import Foundation
+import ImageIO
 import MediaPlayer
 import Network
 import UIKit
@@ -62,6 +63,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var timeControlStatusObserver: NSKeyValueObservation?
     private var interruptionObserver: NSObjectProtocol?
     private var routeChangeObserver: NSObjectProtocol?
+    private var memoryWarningObserver: NSObjectProtocol?
     private var failedToEndObserver: NSObjectProtocol?
     private var playbackStalledObserver: NSObjectProtocol?
     private let networkMonitor = NWPathMonitor()
@@ -79,9 +81,11 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private let trackArtworkService = TrackArtworkService()
     private var currentTrackSource: TrackSource?
     private var cachedNowPlayingByStationID: [String: TuneAVCachedNowPlayingState] = [:]
+    private var cachedNowPlayingStationIDs: [String] = []
     private var nowPlayingArtworkImage: UIImage?
     private var nowPlayingArtworkSourceURL: URL?
     private var lastNowPlayingInfoSignature: String?
+    private static let maxCachedNowPlayingStations = 80
     private static let nowPlayingArtworkImageCache: NSCache<NSURL, UIImage> = {
         let cache = NSCache<NSURL, UIImage>()
         cache.countLimit = 40
@@ -125,11 +129,15 @@ final class AudioPlayerService: NSObject, ObservableObject {
         configureAudioSession()
         configureRemoteCommands()
         observeAudioSessionNotifications()
+        observeMemoryWarnings()
         observeNetworkChanges()
     }
 
     deinit {
         networkMonitor.cancel()
+        if let memoryWarningObserver {
+            NotificationCenter.default.removeObserver(memoryWarningObserver)
+        }
     }
 
     func applyUITestTrackMetadata(title: String?, artist: String?) {
@@ -774,7 +782,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
             let (data, _) = try await TuneAVURLSessions.artwork.data(from: url)
             guard !Task.isCancelled else { return nil }
             let image = await Task.detached(priority: .utility) {
-                UIImage(data: data)
+                tuneAVDownsampleNowPlayingArtwork(data, maxPixelSize: 512) ?? UIImage(data: data)
             }.value
             if let image {
                 nowPlayingArtworkImageCache.setObject(image, forKey: url as NSURL, cost: data.count)
@@ -804,10 +812,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
             artworkURL: currentTrackArtworkURL,
             artistURL: currentTrackArtistURL
         )
+        rememberCachedNowPlayingStationID(stationID)
     }
 
     private func restoreCachedNowPlaying(for station: Station) {
         guard let cachedState = cachedNowPlayingByStationID[station.id] else { return }
+        rememberCachedNowPlayingStationID(station.id)
 
         let sanitizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(cachedState.artist)
         let sanitizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(cachedState.title, artist: sanitizedArtist)
@@ -820,6 +830,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
             artistURL: cachedState.artistURL
         ))
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
+    }
+
+    private func rememberCachedNowPlayingStationID(_ stationID: String) {
+        cachedNowPlayingStationIDs.removeAll { $0 == stationID }
+        cachedNowPlayingStationIDs.append(stationID)
+
+        while cachedNowPlayingStationIDs.count > Self.maxCachedNowPlayingStations {
+            let removedStationID = cachedNowPlayingStationIDs.removeFirst()
+            cachedNowPlayingByStationID[removedStationID] = nil
+        }
     }
 
     private nonisolated static func makeNowPlayingArtwork(from image: UIImage) -> MPMediaItemArtwork {
@@ -899,6 +919,30 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
     }
 
+    private func observeMemoryWarnings() {
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleMemoryWarning()
+            }
+        }
+    }
+
+    private func handleMemoryWarning() {
+        cachedNowPlayingByStationID.removeAll(keepingCapacity: false)
+        cachedNowPlayingStationIDs.removeAll(keepingCapacity: false)
+        Self.nowPlayingArtworkImageCache.removeAllObjects()
+        HomeFeedCache.shared.clearMemoryCache()
+        Task {
+            await TuneAVArtworkImagePipeline.shared.clearMemoryCache()
+            await TuneAVStationResponseCache.shared.clearMemoryCache()
+            await TuneAVAlternateMetadataStreamCache.shared.clearMemoryCache()
+        }
+    }
+
     private func removeRemoteCommandTargets() {
         let commandCenter = MPRemoteCommandCenter.shared()
         commandCenter.playCommand.removeTarget(nil)
@@ -929,4 +973,22 @@ final class AudioPlayerService: NSObject, ObservableObject {
             self.playbackStalledObserver = nil
         }
     }
+}
+
+private func tuneAVDownsampleNowPlayingArtwork(_ data: Data, maxPixelSize: Int) -> UIImage? {
+    let options = [kCGImageSourceShouldCache: false] as CFDictionary
+    guard let source = CGImageSourceCreateWithData(data as CFData, options) else { return nil }
+
+    let thumbnailOptions = [
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceShouldCacheImmediately: true,
+        kCGImageSourceCreateThumbnailWithTransform: true,
+        kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+    ] as CFDictionary
+
+    guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+        return nil
+    }
+
+    return UIImage(cgImage: cgImage)
 }

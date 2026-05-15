@@ -16,6 +16,8 @@ final class LibraryStore: ObservableObject {
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
+    private static let cloudLibraryRefreshInterval: TimeInterval = 300
+    private static let discoveryRefreshInterval: TimeInterval = 60
     private static let listeningSessionBatchSize = 5
     private static let cloudPushDebounce: Duration = .seconds(2)
 
@@ -26,6 +28,8 @@ final class LibraryStore: ObservableObject {
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
     private var pushTask: Task<Void, Never>?
+    private var cloudLibraryRefreshTask: Task<Void, Never>?
+    private var cloudLibraryRefreshedAt: Date?
     private var userSummaryFetchedAt: Date?
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
@@ -397,14 +401,23 @@ final class LibraryStore: ObservableObject {
             stationID: station.id
         )
 
+        let now = Date.now
+        let nextArtworkURL = artworkURL?.absoluteString
+
         if let existing = discoveries.first(where: { $0.discoveryID == discoveryID }) {
+            if !markInteresting,
+               now.timeIntervalSince(existing.playedAt) < Self.discoveryRefreshInterval,
+               (nextArtworkURL == nil || nextArtworkURL == existing.artworkURL) {
+                return
+            }
+
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
-            existing.playedAt = .now
+            existing.playedAt = now
             if markInteresting {
-                existing.markedInterestedAt = existing.markedInterestedAt ?? .now
+                existing.markedInterestedAt = existing.markedInterestedAt ?? now
                 existing.hiddenAt = nil
             }
-            existing.artworkURL = artworkURL?.absoluteString ?? existing.artworkURL
+            existing.artworkURL = nextArtworkURL ?? existing.artworkURL
             existing.stationArtworkURL = nil
         } else {
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
@@ -414,7 +427,7 @@ final class LibraryStore: ObservableObject {
                     artist: normalizedArtist,
                     station: station,
                     artworkURL: artworkURL,
-                    markedInterestedAt: markInteresting ? .now : nil
+                    markedInterestedAt: markInteresting ? now : nil
                 )
             )
         }
@@ -534,10 +547,16 @@ final class LibraryStore: ObservableObject {
     }
 
     func setAppDataService(_ service: TuneAVAppDataService?) {
+        let previousService = appDataService
         appDataService = service
-        if service == nil {
+        if previousService !== service {
             pushTask?.cancel()
             pushTask = nil
+            cloudLibraryRefreshTask?.cancel()
+            cloudLibraryRefreshTask = nil
+            cloudLibraryRefreshedAt = nil
+        }
+        if service == nil {
             setCloudSyncStatus(.idle)
         }
     }
@@ -692,12 +711,32 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func refreshCloudLibraryIfNeeded() async {
+    func refreshCloudLibraryIfNeeded(force: Bool = false) async {
         guard let appDataService, appDataService.isConfigured() else {
             setCloudSyncStatus(.idle)
             return
         }
 
+        if !force,
+           let cloudLibraryRefreshedAt,
+           Date().timeIntervalSince(cloudLibraryRefreshedAt) < Self.cloudLibraryRefreshInterval {
+            return
+        }
+
+        if let cloudLibraryRefreshTask {
+            await cloudLibraryRefreshTask.value
+            return
+        }
+
+        let task = Task { @MainActor in
+            await performCloudLibraryRefresh(using: appDataService)
+        }
+        cloudLibraryRefreshTask = task
+        await task.value
+        cloudLibraryRefreshTask = nil
+    }
+
+    private func performCloudLibraryRefresh(using appDataService: TuneAVAppDataService) async {
         do {
             setCloudSyncStatus(.syncing)
             let remoteDocument = try await appDataService.pullLibrary()
@@ -740,6 +779,7 @@ final class LibraryStore: ObservableObject {
             }
 
             setCloudSyncStatus(.synced(.now))
+            cloudLibraryRefreshedAt = .now
         } catch TuneAVAppDataError.conflict {
             guard self.appDataService === appDataService else { return }
             setCloudSyncStatus(.conflict)
@@ -870,6 +910,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func saveAndRefresh(_ scope: RefreshScope = .all) {
+        guard context.hasChanges else { return }
         try? context.save()
         refresh(scope)
         scheduleCloudPushIfNeeded()
@@ -911,7 +952,7 @@ final class LibraryStore: ObservableObject {
                 setCloudSyncStatus(.synced(.now))
             } catch TuneAVAppDataError.conflict {
                 guard self.appDataService === appDataService else { return }
-                await refreshCloudLibraryIfNeeded()
+                await refreshCloudLibraryIfNeeded(force: true)
             } catch is CancellationError {
                 return
             } catch {

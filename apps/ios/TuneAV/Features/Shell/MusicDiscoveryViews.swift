@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct DiscoveryTrackCard: View {
+    @Environment(\.displayScale) private var displayScale
+
     let discovery: DiscoveredTrack
     let stationArtworkURL: URL?
     let feedback: TuneAVStationFeedback?
@@ -214,15 +216,8 @@ struct DiscoveryTrackCard: View {
     }
 
     private func remoteArtwork<Fallback: View>(url: URL, @ViewBuilder fallback: @escaping () -> Fallback) -> some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            default:
-                fallback()
-            }
+        TuneAVRemoteArtworkImage(url: url, size: 54, scale: displayScale) {
+            fallback()
         }
         .frame(width: 54, height: 54)
         .clipShape(artworkShape(size: 54))
@@ -293,6 +288,8 @@ struct MusicTrackCompactCarousel: View {
 }
 
 private struct MusicTrackCompactCard: View {
+    @Environment(\.displayScale) private var displayScale
+
     let discovery: DiscoveredTrack
     let stationArtworkURL: URL?
     let feedback: TuneAVStationFeedback?
@@ -370,13 +367,8 @@ private struct MusicTrackCompactCard: View {
     }
 
     private func remoteArtwork(url: URL) -> some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFill()
-            default:
-                fallbackArtwork
-            }
+        TuneAVRemoteArtworkImage(url: url, size: 68, scale: displayScale) {
+            fallbackArtwork
         }
         .frame(width: 68, height: 68)
         .clipShape(artworkShape(size: 68))
@@ -609,6 +601,7 @@ struct MusicArtistCompactCarousel: View {
 }
 
 private struct MusicArtistCompactCard: View {
+    @Environment(\.displayScale) private var displayScale
     private let artworkSize: CGFloat = 68
 
     let summary: DiscoveryArtistSummary
@@ -659,13 +652,8 @@ private struct MusicArtistCompactCard: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = summary.displayArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    fallbackArtwork
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
+                fallbackArtwork
             }
             .frame(width: artworkSize, height: artworkSize)
             .clipShape(artworkShape)
@@ -784,6 +772,8 @@ private struct MusicSignalButton: View {
 }
 
 struct DiscoveryArtistCard: View {
+    @Environment(\.displayScale) private var displayScale
+
     let summary: DiscoveryArtistSummary
     let openArtist: () -> Void
     let openYouTube: () -> Void
@@ -850,15 +840,8 @@ struct DiscoveryArtistCard: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = summary.displayArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    fallbackArtwork
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: 42, scale: displayScale) {
+                fallbackArtwork
             }
             .frame(width: 42, height: 42)
             .clipShape(artworkShape(size: 42))
@@ -892,6 +875,7 @@ struct DiscoveryArtistCard: View {
 }
 
 struct DiscoveryArtistRow: View {
+    @Environment(\.displayScale) private var displayScale
     private let artworkSize: CGFloat = 54
 
     let summary: DiscoveryArtistSummary
@@ -1025,15 +1009,8 @@ struct DiscoveryArtistRow: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = summary.displayArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    fallbackArtwork
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
+                fallbackArtwork
             }
             .frame(width: artworkSize, height: artworkSize)
             .clipShape(artworkShape)

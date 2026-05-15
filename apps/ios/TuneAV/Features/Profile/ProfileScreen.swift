@@ -157,7 +157,7 @@ struct ProfileScreen: View {
                 isLoading: libraryStore.cloudSyncStatus == .syncing,
                 action: {
                     Task {
-                        await libraryStore.refreshCloudLibraryIfNeeded()
+                        await libraryStore.refreshCloudLibraryIfNeeded(force: true)
                     }
                 }
             )

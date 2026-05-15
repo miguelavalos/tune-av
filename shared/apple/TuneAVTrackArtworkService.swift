@@ -15,6 +15,7 @@ actor TuneAVTrackArtworkService {
 
     private static let positiveCacheMaxAge: TimeInterval = 60 * 60 * 12
     private static let negativeCacheMaxAge: TimeInterval = 60 * 20
+    private static let maxCachedLookups = 160
 
     private let session: URLSession
     private let userAgent: String
@@ -52,8 +53,23 @@ actor TuneAVTrackArtworkService {
 
         let artwork = await task.value
         inFlightLookups[cacheKey] = nil
-        cache[cacheKey] = CachedLookup(artwork: artwork, cachedAt: Date())
+        saveCachedLookup(CachedLookup(artwork: artwork, cachedAt: Date()), for: cacheKey)
         return artwork
+    }
+
+    private func saveCachedLookup(_ lookup: CachedLookup, for key: String, now: Date = Date()) {
+        removeExpiredLookups(now: now)
+        if cache.count >= Self.maxCachedLookups,
+           let oldestKey = cache.min(by: { $0.value.cachedAt < $1.value.cachedAt })?.key {
+            cache[oldestKey] = nil
+        }
+        cache[key] = lookup
+    }
+
+    private func removeExpiredLookups(now: Date) {
+        for (key, lookup) in cache where !Self.isFresh(lookup, now: now) {
+            cache[key] = nil
+        }
     }
 
     private static func isFresh(_ cached: CachedLookup, now: Date) -> Bool {

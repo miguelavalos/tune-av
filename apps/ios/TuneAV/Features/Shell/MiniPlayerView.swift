@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MiniPlayerView: View {
+    @Environment(\.displayScale) private var displayScale
     @EnvironmentObject private var audioPlayer: AudioPlayerService
     @EnvironmentObject private var libraryStore: LibraryStore
 
@@ -110,15 +111,8 @@ struct MiniPlayerView: View {
     @ViewBuilder
     private var miniArtwork: some View {
         if let artworkURL = audioPlayer.currentTrackArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    StationArtworkView(station: station, size: 46)
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: 46, scale: displayScale) {
+                StationArtworkView(station: station, size: 46)
             }
             .frame(width: 46, height: 46)
             .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46), style: .continuous))

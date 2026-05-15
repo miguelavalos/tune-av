@@ -4,6 +4,7 @@ typealias NowPlayingTrack = TuneAVNowPlayingTrack
 
 actor NowPlayingService {
     private let session: URLSession
+    private var inFlightTracks: [String: Task<NowPlayingTrack?, Never>] = [:]
 
     init(session: URLSession = TuneAVURLSessions.catalog) {
         self.session = session
@@ -15,12 +16,22 @@ actor NowPlayingService {
 
     func fetchTrack(for station: Station) async -> NowPlayingTrack? {
         guard let provider = provider(for: station) else { return nil }
-
-        do {
-            return try await provider.fetchTrack(for: station, using: session)
-        } catch {
-            return nil
+        let key = "\(station.id)|\(station.streamURL)|\(provider.cacheKey)"
+        if let inFlightTrack = inFlightTracks[key] {
+            return await inFlightTrack.value
         }
+
+        let task = Task { [session] in
+            do {
+                return try await provider.fetchTrack(for: station, using: session)
+            } catch {
+                return nil
+            }
+        }
+        inFlightTracks[key] = task
+        let track = await task.value
+        inFlightTracks[key] = nil
+        return track
     }
 
     private nonisolated func provider(for station: Station) -> Provider? {
@@ -40,6 +51,15 @@ private extension NowPlayingService {
     enum Provider {
         case eighties80s
         case icyStream
+
+        var cacheKey: String {
+            switch self {
+            case .eighties80s:
+                return "eighties80s"
+            case .icyStream:
+                return "icyStream"
+            }
+        }
 
         func fetchTrack(for station: Station, using session: URLSession) async throws -> NowPlayingTrack? {
             switch self {
@@ -148,19 +168,23 @@ private extension NowPlayingService {
 struct TuneAVAlternateMetadataStreamResolver {
     private let session: URLSession
     private let baseURL: URL
+    private let cache: TuneAVAlternateMetadataStreamCache
 
     init(
         session: URLSession = TuneAVURLSessions.catalog,
-        baseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!
+        baseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
+        cache: TuneAVAlternateMetadataStreamCache = .shared
     ) {
         self.session = session
         self.baseURL = baseURL
+        self.cache = cache
     }
 
     func resolveAlternateStreamURL(for station: Station) async -> URL? {
         guard let request = request(for: station) else { return nil }
+        let key = Self.cacheKey(for: station, request: request)
 
-        do {
+        return await cache.url(for: key) {
             let (data, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
                 return nil
@@ -168,8 +192,6 @@ struct TuneAVAlternateMetadataStreamResolver {
 
             let candidates = try JSONDecoder().decode([RadioBrowserMetadataCandidate].self, from: data)
             return Self.bestAlternateStreamURL(for: station, candidates: candidates)
-        } catch {
-            return nil
         }
     }
 
@@ -206,6 +228,79 @@ struct TuneAVAlternateMetadataStreamResolver {
         request.timeoutInterval = 8
         request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
         return request
+    }
+
+    private static func cacheKey(for station: Station, request: URLRequest) -> String {
+        [
+            station.id,
+            station.name.normalizedMetadataIdentityValue,
+            station.countryCode ?? "",
+            station.streamURL.normalizedMetadataIdentityValue,
+            request.url?.absoluteString ?? ""
+        ].joined(separator: "\u{1F}")
+    }
+}
+
+actor TuneAVAlternateMetadataStreamCache {
+    static let shared = TuneAVAlternateMetadataStreamCache()
+
+    private struct Entry {
+        let url: URL?
+        let cachedAt: Date
+    }
+
+    private static let positiveMaxAge: TimeInterval = 60 * 60 * 12
+    private static let negativeMaxAge: TimeInterval = 60 * 20
+    private static let maxEntries = 120
+
+    private var entries: [String: Entry] = [:]
+    private var inFlight: [String: Task<URL?, Never>] = [:]
+
+    func url(for key: String, load: @escaping @Sendable () async throws -> URL?) async -> URL? {
+        if let entry = entries[key], Self.isFresh(entry, now: .now) {
+            return entry.url
+        }
+        if let task = inFlight[key] {
+            return await task.value
+        }
+
+        let task = Task {
+            do {
+                return try await load()
+            } catch {
+                return nil
+            }
+        }
+        inFlight[key] = task
+
+        let url = await task.value
+        inFlight[key] = nil
+        save(Entry(url: url, cachedAt: .now), for: key)
+        return url
+    }
+
+    private func save(_ entry: Entry, for key: String, now: Date = .now) {
+        removeExpiredEntries(now: now)
+        if entries.count >= Self.maxEntries,
+           let oldestKey = entries.min(by: { $0.value.cachedAt < $1.value.cachedAt })?.key {
+            entries[oldestKey] = nil
+        }
+        entries[key] = entry
+    }
+
+    private func removeExpiredEntries(now: Date) {
+        for (key, entry) in entries where !Self.isFresh(entry, now: now) {
+            entries[key] = nil
+        }
+    }
+
+    func clearMemoryCache() {
+        entries.removeAll(keepingCapacity: false)
+    }
+
+    private static func isFresh(_ entry: Entry, now: Date) -> Bool {
+        let maxAge = entry.url == nil ? negativeMaxAge : positiveMaxAge
+        return now.timeIntervalSince(entry.cachedAt) < maxAge
     }
 }
 

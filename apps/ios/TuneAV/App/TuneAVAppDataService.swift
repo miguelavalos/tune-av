@@ -10,7 +10,6 @@ final class TuneAVAppDataService {
         self.apiClient = apiClient
         self.syncClient = TuneAVAppDataSyncClient(
             deviceId: "tuneav-ios",
-            isConfigured: { apiClient.isConfigured() },
             request: { path, method, body, headers in
                 do {
                     return try await apiClient.requestData(
@@ -33,7 +32,7 @@ final class TuneAVAppDataService {
     }
 
     func isConfigured() -> Bool {
-        syncClient.isConfigured()
+        apiClient.isConfigured()
     }
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {

@@ -1,4 +1,13 @@
+import ImageIO
 import SwiftUI
+
+#if canImport(UIKit)
+import UIKit
+private typealias TuneAVPlatformImage = UIImage
+#elseif canImport(AppKit)
+import AppKit
+private typealias TuneAVPlatformImage = NSImage
+#endif
 
 enum TuneAVFallbackArtworkCategory: String, Equatable {
     case popHits
@@ -312,6 +321,7 @@ struct StationArtworkView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.displayScale) private var displayScale
 
     let artworkURL: URL?
     private let fallbackText: String?
@@ -427,13 +437,8 @@ struct StationArtworkView: View {
     @ViewBuilder
     private var artworkSurface: some View {
         if let artworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    fallbackCover
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                fallbackCover
             }
         } else {
             fallbackCover
@@ -668,6 +673,142 @@ struct StationArtworkView: View {
 
     private var inkColor: Color {
         Color(red: 0.08, green: 0.1, blue: 0.29)
+    }
+}
+
+struct TuneAVRemoteArtworkImage<Placeholder: View>: View {
+    let url: URL
+    let size: CGFloat
+    let scale: CGFloat
+    @ViewBuilder let placeholder: () -> Placeholder
+
+    @State private var image: Image?
+
+    var body: some View {
+        Group {
+            if let image {
+                image
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholder()
+            }
+        }
+        .task(id: requestKey) {
+            image = nil
+            let loadedImage = await TuneAVArtworkImagePipeline.shared.image(
+                from: url,
+                maxPixelSize: max(1, Int((size * scale).rounded(.up)))
+            )
+            guard !Task.isCancelled else { return }
+            image = loadedImage
+        }
+    }
+
+    private var requestKey: String {
+        "\(url.absoluteString)|\(Int((size * scale).rounded(.up)))"
+    }
+}
+
+actor TuneAVArtworkImagePipeline {
+    static let shared = TuneAVArtworkImagePipeline()
+
+    private let session: URLSession
+    private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
+    private var inFlight: [String: Task<TuneAVPlatformImage?, Never>] = [:]
+
+    init(session: URLSession = TuneAVURLSessions.artwork) {
+        self.session = session
+        cache.countLimit = 120
+        cache.totalCostLimit = 36 * 1024 * 1024
+    }
+
+    func image(from url: URL, maxPixelSize: Int) async -> Image? {
+        let key = cacheKey(url: url, maxPixelSize: maxPixelSize)
+        if let cached = cache.object(forKey: key as NSString)?.image {
+            return Image(platformImage: cached)
+        }
+
+        if let task = inFlight[key] {
+            return await task.value.map(Image.init(platformImage:))
+        }
+
+        let task = Task { [session] in
+            await Self.loadImage(from: url, maxPixelSize: maxPixelSize, session: session)
+        }
+        inFlight[key] = task
+
+        let loadedImage = await task.value
+        inFlight[key] = nil
+        if let loadedImage {
+            cache.setObject(
+                TuneAVPlatformImageBox(loadedImage),
+                forKey: key as NSString,
+                cost: maxPixelSize * maxPixelSize * 4
+            )
+        }
+        return loadedImage.map(Image.init(platformImage:))
+    }
+
+    func clearMemoryCache() {
+        cache.removeAllObjects()
+    }
+
+    private func cacheKey(url: URL, maxPixelSize: Int) -> String {
+        "\(url.absoluteString)|\(maxPixelSize)"
+    }
+
+    private static func loadImage(from url: URL, maxPixelSize: Int, session: URLSession) async -> TuneAVPlatformImage? {
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard !Task.isCancelled else { return nil }
+            guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                return nil
+            }
+            return downsampleImage(data: data, maxPixelSize: maxPixelSize)
+        } catch {
+            return nil
+        }
+    }
+
+    private static func downsampleImage(data: Data, maxPixelSize: Int) -> TuneAVPlatformImage? {
+        let options = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, options) else { return nil }
+
+        let downsampleOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ] as CFDictionary
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, downsampleOptions) else {
+            return nil
+        }
+
+        #if canImport(UIKit)
+        return UIImage(cgImage: cgImage)
+        #elseif canImport(AppKit)
+        return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+        #endif
+    }
+}
+
+private final class TuneAVPlatformImageBox {
+    let image: TuneAVPlatformImage
+
+    init(_ image: TuneAVPlatformImage) {
+        self.image = image
+    }
+}
+
+private extension Image {
+    init(platformImage: TuneAVPlatformImage) {
+        #if canImport(UIKit)
+        self.init(uiImage: platformImage)
+        #elseif canImport(AppKit)
+        self.init(nsImage: platformImage)
+        #endif
     }
 }
 

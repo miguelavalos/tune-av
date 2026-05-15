@@ -44,18 +44,16 @@ struct TuneAVAppDataResourceDocument<Entry: Codable> {
     let etag: String?
 }
 
-@MainActor
-final class TuneAVAppDataSyncClient {
-    typealias Request = (
+actor TuneAVAppDataSyncClient {
+    typealias Request = @Sendable (
         _ path: String,
         _ method: String,
         _ body: Data?,
         _ headers: [String: String]
     ) async throws -> Data
 
-    private let appId: String
-    private let deviceId: String
-    private let isConfiguredHandler: () -> Bool
+    private nonisolated let appId: String
+    private nonisolated let deviceId: String
     private let request: Request
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
@@ -65,21 +63,15 @@ final class TuneAVAppDataSyncClient {
     init(
         appId: String = "tuneav",
         deviceId: String,
-        isConfigured: @escaping () -> Bool,
         request: @escaping Request,
         decoder: JSONDecoder = JSONDecoder(),
         encoder: JSONEncoder = JSONEncoder()
     ) {
         self.appId = appId
         self.deviceId = deviceId
-        self.isConfiguredHandler = isConfigured
         self.request = request
         self.decoder = decoder
         self.encoder = encoder
-    }
-
-    func isConfigured() -> Bool {
-        isConfiguredHandler()
     }
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {

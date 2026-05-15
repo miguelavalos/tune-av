@@ -37,6 +37,8 @@ struct AppShellView: View {
     @State private var requestedMusicOverview: Bool?
     @State private var musicHistoryStationFilter: Station?
     @State private var enrichedStationsByID: [String: Station] = [:]
+    @State private var lastLibraryEnrichmentRequestKey: String?
+    @State private var lastLibraryEnrichmentRequestAt: Date?
     @State private var stationNowPlayingTracks: [String: NowPlayingTrack] = [:]
     @State private var stationNowPlayingCache: [String: CachedStationNowPlaying] = [:]
     @State private var stationNowPlayingFailureCache: [String: Date] = [:]
@@ -47,6 +49,7 @@ struct AppShellView: View {
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
     private let genreTags = TuneAVStationMusicClassifier.musicTags
+    private static let libraryEnrichmentRefreshInterval: TimeInterval = 300
 
     private var homeFeed: AppShellHomeFeed {
         AppShellHomeFeed(
@@ -488,13 +491,14 @@ struct AppShellView: View {
         let supportedStations = stationNowPlayingCandidates
             .filter { stationNowPlayingService.supports($0) }
             .prefix(6)
+        let supportedStationIDs = Set(supportedStations.map(\.id))
 
         guard !supportedStations.isEmpty else {
-            clearStationNowPlayingPreviews()
+            clearVisibleStationNowPlayingPreviews()
             return
         }
 
-        var nextTracks = stationNowPlayingTracks
+        var nextTracks = stationNowPlayingTracks.filter { supportedStationIDs.contains($0.key) }
 
         for station in supportedStations {
             if Task.isCancelled { return }
@@ -521,6 +525,12 @@ struct AppShellView: View {
 
         guard stationNowPlayingTracks != nextTracks else { return }
         stationNowPlayingTracks = nextTracks
+    }
+
+    private func clearVisibleStationNowPlayingPreviews() {
+        if !stationNowPlayingTracks.isEmpty {
+            stationNowPlayingTracks.removeAll(keepingCapacity: true)
+        }
     }
 
     private func clearStationNowPlayingPreviews() {
@@ -885,6 +895,9 @@ struct AppShellView: View {
         let candidates = libraryEnrichmentCandidates()
         guard !candidates.isEmpty else { return }
         let candidatesKey = libraryEnrichmentCandidatesKey(candidates)
+        guard shouldRefreshLibraryEnrichment(for: candidatesKey) else { return }
+        lastLibraryEnrichmentRequestKey = candidatesKey
+        lastLibraryEnrichmentRequestAt = .now
 
         var enrichedMatches: [Station] = []
         for station in candidates {
@@ -912,6 +925,13 @@ struct AppShellView: View {
         guard !Task.isCancelled else { return }
         guard candidatesKey == libraryEnrichmentCandidatesKey(libraryEnrichmentCandidates()) else { return }
         rememberBackendStations(enrichedMatches)
+    }
+
+    private func shouldRefreshLibraryEnrichment(for key: String, now: Date = .now) -> Bool {
+        guard key == lastLibraryEnrichmentRequestKey, let lastLibraryEnrichmentRequestAt else {
+            return true
+        }
+        return now.timeIntervalSince(lastLibraryEnrichmentRequestAt) >= Self.libraryEnrichmentRefreshInterval
     }
 
     private func libraryEnrichmentCandidates() -> [Station] {
@@ -999,6 +1019,11 @@ struct AppShellView: View {
         let request = searchRequest
         let requestKey = searchRequestKey
 
+        guard shouldLoadSearchResults(for: request) else {
+            searchIsLoading = false
+            return
+        }
+
         searchIsLoading = true
         searchErrorMessage = nil
 
@@ -1034,6 +1059,13 @@ struct AppShellView: View {
             searchErrorMessage = L10n.string("shell.error.search")
             searchIsLoading = false
         }
+    }
+
+    private func shouldLoadSearchResults(for request: AppShellSearchRequest) -> Bool {
+        selectedTab == .search ||
+            !request.query.isEmpty ||
+            request.tag != nil ||
+            request.countryCode != nil
     }
 
     private var defaultEditorialStations: [Station] {
@@ -1123,7 +1155,7 @@ private struct CachedStationNowPlaying {
     let fetchedAt: Date
 
     var isFresh: Bool {
-        Date().timeIntervalSince(fetchedAt) < 60
+        Date().timeIntervalSince(fetchedAt) < 300
     }
 }
 
@@ -1575,6 +1607,7 @@ private func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: i
 }
 
 private struct AviScreen: View {
+    @Environment(\.displayScale) private var displayScale
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
 
@@ -1813,7 +1846,7 @@ private struct AviScreen: View {
                     .font(.system(size: 16, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
 
-                ForEach(Array(stations), id: \.name) { station in
+                ForEach(Array(stations), id: \.id) { station in
                     AviMusicMiniRow(
                         title: station.name,
                         subtitle: L10n.plural(
@@ -1834,13 +1867,8 @@ private struct AviScreen: View {
     @ViewBuilder
     private func discoveryArtwork(_ discovery: DiscoveredTrack, size: CGFloat) -> some View {
         if let artworkURL = discovery.resolvedArtworkURL ?? discovery.resolvedStationArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    musicArtworkFallback(systemImage: "music.note", size: size)
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                musicArtworkFallback(systemImage: "music.note", size: size)
             }
             .frame(width: size, height: size)
             .clipShape(musicArtworkShape(size: size))
@@ -1856,13 +1884,8 @@ private struct AviScreen: View {
     @ViewBuilder
     private func artistArtwork(_ summary: DiscoveryArtistSummary, size: CGFloat) -> some View {
         if let artworkURL = summary.displayArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    musicArtworkFallback(systemImage: "person.fill", size: size)
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                musicArtworkFallback(systemImage: "person.fill", size: size)
             }
             .frame(width: size, height: size)
             .clipShape(musicArtworkShape(size: size))
@@ -1885,10 +1908,12 @@ private struct AviScreen: View {
             .sorted { $0.playedAt > $1.playedAt }
     }
 
-    private func artistStationSummaries(for summary: DiscoveryArtistSummary) -> [(name: String, count: Int)] {
-        let grouped = Dictionary(grouping: artistDiscoveries(for: summary), by: \.stationName)
+    private func artistStationSummaries(for summary: DiscoveryArtistSummary) -> [(id: String, name: String, count: Int)] {
+        let grouped = Dictionary(grouping: artistDiscoveries(for: summary), by: \.stationID)
         return grouped
-            .map { (name: $0.key, count: $0.value.count) }
+            .map { stationID, discoveries in
+                (id: stationID, name: discoveries.first?.stationName ?? stationID, count: discoveries.count)
+            }
             .sorted {
                 if $0.count != $1.count {
                     return $0.count > $1.count
@@ -2105,15 +2130,8 @@ private struct AviScreen: View {
     @ViewBuilder
     private func currentArtwork(for station: Station, size: CGFloat) -> some View {
         if let currentTrackArtworkURL {
-            AsyncImage(url: currentTrackArtworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
-                }
+            TuneAVRemoteArtworkImage(url: currentTrackArtworkURL, size: size, scale: displayScale) {
+                StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
             }
             .frame(width: size, height: size)
             .clipShape(artworkShape(size: size))

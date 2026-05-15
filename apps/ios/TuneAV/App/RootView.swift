@@ -10,6 +10,8 @@ struct RootView: View {
     @State private var isShowingAccountOnboarding = false
     @State private var isShowingSplash = false
     @State private var hasShownSplashThisLaunch = false
+    @State private var tuneBackendService: TuneAVAppDataService?
+    @State private var tuneBackendServiceUserID: String?
 
     private let launchContext = LaunchContext.current
     private let initialHomeFeed = AppShellHomeFeed(
@@ -72,6 +74,7 @@ struct RootView: View {
             } else {
                 libraryStore.setAppDataService(nil)
                 libraryStore.setBackendService(nil)
+                clearTuneBackendService()
             }
         }
     }
@@ -123,10 +126,7 @@ struct RootView: View {
             return
         }
 
-        let appDataService = TuneAVAppDataService(
-            apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
-        )
-        guard appDataService.isConfigured() else {
+        guard let appDataService = configuredTuneBackendService() else {
             libraryStore.setAppDataService(nil)
             libraryStore.setBackendService(nil)
             return
@@ -139,16 +139,43 @@ struct RootView: View {
     }
 
     private func refreshTuneBackendService() async {
-        guard accessController.isSignedIn else {
+        guard let backendService = configuredTuneBackendService() else {
             libraryStore.setBackendService(nil)
             return
         }
 
-        let backendService = TuneAVAppDataService(
+        libraryStore.setBackendService(backendService)
+        await libraryStore.refreshUserSummary()
+    }
+
+    private func configuredTuneBackendService() -> TuneAVAppDataService? {
+        guard accessController.isSignedIn, let userID = accessController.accountUser?.id else {
+            clearTuneBackendService()
+            return nil
+        }
+
+        if tuneBackendServiceUserID == userID,
+           let tuneBackendService,
+           tuneBackendService.isConfigured() {
+            return tuneBackendService
+        }
+
+        let service = TuneAVAppDataService(
             apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
         )
-        libraryStore.setBackendService(backendService.isConfigured() ? backendService : nil)
-        await libraryStore.refreshUserSummary()
+        guard service.isConfigured() else {
+            clearTuneBackendService()
+            return nil
+        }
+
+        tuneBackendService = service
+        tuneBackendServiceUserID = userID
+        return service
+    }
+
+    private func clearTuneBackendService() {
+        tuneBackendService = nil
+        tuneBackendServiceUserID = nil
     }
 
     private func markAutomaticGuestOnboardingSeenIfNeeded() {

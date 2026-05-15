@@ -3,6 +3,7 @@ import UIKit
 
 struct NowPlayingView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var audioPlayer: AudioPlayerService
@@ -570,14 +571,8 @@ struct NowPlayingView: View {
     @ViewBuilder
     private func listeningArtwork(for station: Station, size: CGFloat) -> some View {
         if let artworkURL = audioPlayer.currentTrackArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                if case .success(let image) = phase {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    listeningStationArtwork(for: station, size: size)
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                listeningStationArtwork(for: station, size: size)
             }
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous))
@@ -1711,6 +1706,7 @@ private struct PlayerAviBody: View {
 }
 
 private struct PlayerSignalDeck: View {
+    @Environment(\.displayScale) private var displayScale
     @State private var isArtworkZoomed = false
 
     let station: Station
@@ -1798,13 +1794,8 @@ private struct PlayerSignalDeck: View {
     @ViewBuilder
     private func songArtwork(size: CGFloat) -> some View {
         if hasSongContext, let trackArtworkURL {
-            AsyncImage(url: trackArtworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    stationArtwork(size: size)
-                }
+            TuneAVRemoteArtworkImage(url: trackArtworkURL, size: size, scale: displayScale) {
+                stationArtwork(size: size)
             }
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -2000,6 +1991,8 @@ private struct PlayerAviContextPill: View {
 }
 
 private struct FlippingPlayerArtwork: View {
+    @Environment(\.displayScale) private var displayScale
+
     let station: Station
     let size: CGFloat
     let trackTitle: String?
@@ -2174,17 +2167,13 @@ private struct FlippingPlayerArtwork: View {
     @ViewBuilder
     private var blurredBackdrop: some View {
         if let artworkURL = heroArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                if case .success(let image) = phase {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: size, height: size)
-                        .blur(radius: 24)
-                        .opacity(0.22)
-                        .clipped()
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                EmptyView()
             }
+            .frame(width: size, height: size)
+            .blur(radius: 24)
+            .opacity(0.22)
+            .clipped()
         }
     }
 
@@ -2455,13 +2444,8 @@ private struct FlippingPlayerArtwork: View {
     @ViewBuilder
     private func compactArtwork(size: CGFloat) -> some View {
         if let artworkURL = heroArtworkURL {
-            AsyncImage(url: artworkURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    stationFallbackArtwork(size: size)
-                }
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                stationFallbackArtwork(size: size)
             }
             .frame(width: size, height: size)
             .clipShape(playerArtworkShape(for: size))
@@ -2628,17 +2612,8 @@ private struct FlippingPlayerArtwork: View {
 
         Group {
             if let heroArtworkURL {
-                AsyncImage(url: heroArtworkURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: size, height: size)
-                            .clipped()
-                    default:
-                        fallbackArtwork(cornerRadius: cornerRadius)
-                    }
+                TuneAVRemoteArtworkImage(url: heroArtworkURL, size: size, scale: displayScale) {
+                    fallbackArtwork(cornerRadius: cornerRadius)
                 }
             } else {
                 fallbackArtwork(cornerRadius: cornerRadius)

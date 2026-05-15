@@ -816,14 +816,15 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
-            backendGate: gate
+            backendGate: gate,
+            responseCache: TuneAVStationResponseCache()
         )
 
         _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
         _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
         _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
 
-        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test", "radio.test", "radio.test"])
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test"])
     }
 
     func testPopularStationsSkipsAVALSYSWhenBackendGateIsTemporarilyBlocked() async throws {
@@ -879,7 +880,8 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
-            backendGate: gate
+            backendGate: gate,
+            responseCache: TuneAVStationResponseCache()
         )
 
         _ = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Fallback", limit: 5))
@@ -890,9 +892,51 @@ final class SharedAppleSupportTests: XCTestCase {
         let recovered = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Recovered", limit: 5))
         let secondRecovered = try await service.searchStations(filters: TuneAVStationSearchFilters(query: "Recovered", limit: 5))
 
-        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test", "radio.test", "radio.test", "api.test", "api.test"])
+        XCTAssertEqual(requestedHosts, ["api.test", "radio.test", "api.test", "api.test"])
         XCTAssertEqual(recovered.map(\.id), ["recovered"])
         XCTAssertEqual(secondRecovered.map(\.id), ["recovered"])
+    }
+
+    func testStationResponseCacheDeduplicatesConcurrentLoads() async throws {
+        let cache = TuneAVStationResponseCache(maxAge: 60)
+        let counter = AsyncCounter()
+
+        async let first = cache.stations(for: "same-request") {
+            await counter.increment()
+            try await Task.sleep(for: .milliseconds(50))
+            return [Station(id: "cached", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/cached")]
+        }
+        async let second = cache.stations(for: "same-request") {
+            await counter.increment()
+            return [Station(id: "duplicate", name: "Duplicate", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/duplicate")]
+        }
+
+        let firstResults = try await first
+        let secondResults = try await second
+        let loadCount = await counter.currentValue()
+
+        XCTAssertEqual(firstResults.map(\.id), ["cached"])
+        XCTAssertEqual(secondResults.map(\.id), ["cached"])
+        XCTAssertEqual(loadCount, 1)
+    }
+
+    func testStationResponseCacheReloadsAfterExpiry() async throws {
+        let cache = TuneAVStationResponseCache(maxAge: -1)
+        let counter = AsyncCounter()
+
+        let first = try await cache.stations(for: "expiring-request") {
+            let count = await counter.increment()
+            return [Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")]
+        }
+        let second = try await cache.stations(for: "expiring-request") {
+            let count = await counter.increment()
+            return [Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")]
+        }
+        let loadCount = await counter.currentValue()
+
+        XCTAssertEqual(first.map(\.id), ["cached-1"])
+        XCTAssertEqual(second.map(\.id), ["cached-2"])
+        XCTAssertEqual(loadCount, 2)
     }
 
     func testBackendHealthGatePersistsTemporaryCooldownAcrossInstances() async {
@@ -2499,6 +2543,20 @@ final class SharedAppleSupportTests: XCTestCase {
             unavailableTitle: "Unavailable",
             unavailableDetail: "Unavailable detail"
         )
+    }
+}
+
+private actor AsyncCounter {
+    private var value = 0
+
+    @discardableResult
+    func increment() -> Int {
+        value += 1
+        return value
+    }
+
+    func currentValue() -> Int {
+        value
     }
 }
 

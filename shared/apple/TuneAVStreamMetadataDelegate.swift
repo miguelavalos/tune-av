@@ -9,6 +9,7 @@ struct TuneAVStreamMetadataEvent: Sendable {
 
 final class TuneAVStreamMetadataDelegate: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     private let handler: @Sendable ([TuneAVStreamMetadataEvent]) async -> Void
+    private let signatureCache = TuneAVStreamMetadataSignatureCache()
 
     init(handler: @escaping @Sendable ([TuneAVStreamMetadataEvent]) async -> Void) {
         self.handler = handler
@@ -41,8 +42,30 @@ final class TuneAVStreamMetadataDelegate: NSObject, AVPlayerItemMetadataOutputPu
             }
 
             guard !events.isEmpty else { return }
+            let signature = TuneAVStreamMetadataDelegate.signature(for: events)
+            guard signatureCache.rememberIfChanged(signature) else { return }
             await handler(events)
         }
+    }
+
+    private static func signature(for events: [TuneAVStreamMetadataEvent]) -> String {
+        events
+            .map { "\($0.commonKey)\u{1F}\($0.identifier)\u{1F}\($0.value)" }
+            .joined(separator: "\u{1E}")
+    }
+}
+
+private final class TuneAVStreamMetadataSignatureCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lastSignature: String?
+
+    func rememberIfChanged(_ signature: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard signature != lastSignature else { return false }
+        lastSignature = signature
+        return true
     }
 }
 

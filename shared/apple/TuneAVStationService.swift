@@ -48,6 +48,7 @@ struct TuneAVStationService {
     private let fallbacks: TuneAVStationFallbacks
     private let invalidResponseMessage: String
     private let backendGate: TuneAVBackendHealthGate
+    private let responseCache: TuneAVStationResponseCache
 
     init(
         session: URLSession = TuneAVURLSessions.catalog,
@@ -56,7 +57,8 @@ struct TuneAVStationService {
         radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
         fallbacks: TuneAVStationFallbacks = .english,
         invalidResponseMessage: String = "The station service returned an invalid response.",
-        backendGate: TuneAVBackendHealthGate = .shared
+        backendGate: TuneAVBackendHealthGate = .shared,
+        responseCache: TuneAVStationResponseCache = .shared
     ) {
         self.session = session
         self.avalsysBaseURL = avalsysBaseURL
@@ -65,6 +67,7 @@ struct TuneAVStationService {
         self.fallbacks = fallbacks
         self.invalidResponseMessage = invalidResponseMessage
         self.backendGate = backendGate
+        self.responseCache = responseCache
     }
 
     func searchStations(filters: TuneAVStationSearchFilters) async throws -> [Station] {
@@ -158,8 +161,11 @@ struct TuneAVStationService {
             throw URLError(.badURL)
         }
 
-        let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url, timeoutInterval: 4)
-        return applyExactTagFilterIfNeeded(response.resolvedStations, tag: filters.tag, limit: filters.limit)
+        let cacheKey = "avalsys|\(url.absoluteString)"
+        return try await responseCache.stations(for: cacheKey) {
+            let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url, timeoutInterval: 4)
+            return applyExactTagFilterIfNeeded(response.resolvedStations, tag: filters.tag, limit: filters.limit)
+        }
     }
 
     private func searchRadioBrowser(filters: NormalizedStationSearchFilters) async throws -> [Station] {
@@ -181,10 +187,12 @@ struct TuneAVStationService {
             throw URLError(.badURL)
         }
 
-        let stations = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
-        let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
-
-        return applyExactTagFilterIfNeeded(resolvedStations, tag: filters.tag, limit: filters.limit)
+        let cacheKey = "radioBrowser|\(url.absoluteString)"
+        return try await responseCache.stations(for: cacheKey) {
+            let stations = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
+            let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
+            return applyExactTagFilterIfNeeded(resolvedStations, tag: filters.tag, limit: filters.limit)
+        }
     }
 
     private func decodedResponse<T: Decodable>(_ type: T.Type, url: URL, timeoutInterval: TimeInterval = 15) async throws -> T {
@@ -217,6 +225,77 @@ struct TuneAVStationService {
         }
 
         return resolvedStations
+    }
+}
+
+actor TuneAVStationResponseCache {
+    static let shared = TuneAVStationResponseCache()
+
+    private struct Entry {
+        let stations: [Station]
+        let cachedAt: Date
+    }
+
+    private let maxAge: TimeInterval
+    private let maxEntries: Int
+    private var entries: [String: Entry] = [:]
+    private var inFlightRequests: [String: Task<[Station], Error>] = [:]
+
+    init(maxAge: TimeInterval = 120, maxEntries: Int = 80) {
+        self.maxAge = maxAge
+        self.maxEntries = maxEntries
+    }
+
+    func stations(for key: String, load: @escaping @Sendable () async throws -> [Station]) async throws -> [Station] {
+        if let cached = cachedStations(for: key) {
+            return cached
+        }
+        if let inFlightRequest = inFlightRequests[key] {
+            return try await inFlightRequest.value
+        }
+
+        let task = Task {
+            try await load()
+        }
+        inFlightRequests[key] = task
+
+        do {
+            let stations = try await task.value
+            inFlightRequests[key] = nil
+            save(stations, for: key)
+            return stations
+        } catch {
+            inFlightRequests[key] = nil
+            throw error
+        }
+    }
+
+    private func cachedStations(for key: String, now: Date = .now) -> [Station]? {
+        guard let entry = entries[key] else { return nil }
+        guard now.timeIntervalSince(entry.cachedAt) <= maxAge else {
+            entries[key] = nil
+            return nil
+        }
+        return entry.stations
+    }
+
+    private func save(_ stations: [Station], for key: String, now: Date = .now) {
+        removeExpiredEntries(now: now)
+        if entries.count >= maxEntries,
+           let oldestKey = entries.min(by: { $0.value.cachedAt < $1.value.cachedAt })?.key {
+            entries[oldestKey] = nil
+        }
+        entries[key] = Entry(stations: stations, cachedAt: now)
+    }
+
+    private func removeExpiredEntries(now: Date) {
+        for (key, entry) in entries where now.timeIntervalSince(entry.cachedAt) > maxAge {
+            entries[key] = nil
+        }
+    }
+
+    func clearMemoryCache() {
+        entries.removeAll(keepingCapacity: false)
     }
 }
 

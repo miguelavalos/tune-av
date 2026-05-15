@@ -141,7 +141,7 @@ struct AppShellHomeFeed {
     }
 }
 
-struct HomeFeedCache {
+struct HomeFeedCache: @unchecked Sendable {
     struct Key {
         let localeIdentifier: String
         let countryCode: String?
@@ -160,23 +160,51 @@ struct HomeFeedCache {
 
     private let userDefaults: UserDefaults
     private let maxAge: TimeInterval
+    private let memoryCache = NSCache<NSString, HomeFeedCacheBox>()
 
     init(userDefaults: UserDefaults = .standard, maxAge: TimeInterval = 60 * 60 * 12) {
         self.userDefaults = userDefaults
         self.maxAge = maxAge
+        self.memoryCache.countLimit = 16
     }
 
     func load(for key: Key, now: Date = .now) -> CachedFeed? {
-        guard let data = userDefaults.data(forKey: storageKey(for: key)) else { return nil }
-        guard let payload = try? JSONDecoder().decode(HomeFeedCachePayload.self, from: data) else { return nil }
-        guard now.timeIntervalSince(payload.cachedAt) <= maxAge else { return nil }
-        return CachedFeed(stations: payload.stations, context: payload.context, cachedAt: payload.cachedAt)
+        let storageKey = storageKey(for: key)
+        if let cached = memoryCache.object(forKey: storageKey as NSString)?.feed {
+            guard now.timeIntervalSince(cached.cachedAt) <= maxAge else {
+                memoryCache.removeObject(forKey: storageKey as NSString)
+                userDefaults.removeObject(forKey: storageKey)
+                return nil
+            }
+            return cached
+        }
+
+        guard let data = userDefaults.data(forKey: storageKey) else { return nil }
+        guard let payload = try? JSONDecoder().decode(HomeFeedCachePayload.self, from: data) else {
+            userDefaults.removeObject(forKey: storageKey)
+            return nil
+        }
+        guard now.timeIntervalSince(payload.cachedAt) <= maxAge else {
+            userDefaults.removeObject(forKey: storageKey)
+            return nil
+        }
+        let cached = CachedFeed(stations: payload.stations, context: payload.context, cachedAt: payload.cachedAt)
+        memoryCache.setObject(HomeFeedCacheBox(cached), forKey: storageKey as NSString)
+        return cached
     }
 
     func save(_ result: HomeFeedResult, for key: Key, now: Date = .now) {
+        let storageKey = storageKey(for: key)
+        let cached = CachedFeed(stations: result.stations, context: result.context, cachedAt: now)
+        memoryCache.setObject(HomeFeedCacheBox(cached), forKey: storageKey as NSString)
+
         let payload = HomeFeedCachePayload(stations: result.stations, context: result.context, cachedAt: now)
         guard let data = try? JSONEncoder().encode(payload) else { return }
-        userDefaults.set(data, forKey: storageKey(for: key))
+        userDefaults.set(data, forKey: storageKey)
+    }
+
+    func clearMemoryCache() {
+        memoryCache.removeAllObjects()
     }
 
     private func storageKey(for key: Key) -> String {
@@ -188,6 +216,14 @@ struct HomeFeedCache {
             key.language?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "",
             String(key.limit)
         ].joined(separator: ".")
+    }
+}
+
+private final class HomeFeedCacheBox {
+    let feed: HomeFeedCache.CachedFeed
+
+    init(_ feed: HomeFeedCache.CachedFeed) {
+        self.feed = feed
     }
 }
 
