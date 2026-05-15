@@ -75,12 +75,12 @@ final class SharedAppleSupportTests: XCTestCase {
             environment: [
                 "TUNEAV_UI_TESTS": "1",
                 "TUNEAV_UI_TEST_FAVORITE_LIMIT": "3",
-                "TUNEAV_UI_TEST_LYRICS_LIMIT": "2"
+                "TUNEAV_UI_TEST_AVI_ACTION_LIMIT": "2"
             ]
         )
 
         XCTAssertEqual(limits.favoriteStations, 3)
-        XCTAssertEqual(limits.lyricsSearchesPerDay, 2)
+        XCTAssertEqual(limits.aviActionsPerDay, 2)
         XCTAssertNil(limits.webSearchesPerDay)
         XCTAssertNil(limits.discoverySharesPerDay)
     }
@@ -92,7 +92,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(content.feature, .youtubeSearch)
         XCTAssertEqual(content.title, L10n.string("limits.upgrade.youtube.title"))
-        XCTAssertEqual(content.message, L10n.string("limits.upgrade.youtube.message", 3))
+        XCTAssertEqual(content.message, L10n.string("limits.upgrade.aviAction.message", 3))
     }
 
     func testUpgradePromptContextUsesSharedLimitCopyAndProgress() {

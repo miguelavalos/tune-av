@@ -48,6 +48,8 @@
 "language.french" = "Französisch";
 "language.german" = "Deutsch";
 "language.catalan" = "Katalanisch";
+"limits.upgrade.aviAction.message" = "Du hast die heutigen %d Avi-Aktionen genutzt. Pro hält Musiksuchen und Hilfsaktionen ohne tägliche Limits des lokalen Modus verfügbar.";
+"limits.upgrade.aviAction.title" = "Tägliche Avi-Aktionen sind begrenzt";
 "limits.upgrade.appleMusic.message" = "Du hast die heutigen %d Apple Music-Suchen genutzt. Pro hält Musiksuchen ohne tägliche Limits des lokalen Modus verfügbar.";
 "limits.upgrade.appleMusic.title" = "Apple Music-Suchen sind begrenzt";
 "limits.upgrade.connectAccount" = "Account verbinden";
@@ -536,6 +538,7 @@
 "mac.limits.progress.today" = "%d von %d heute verwendet";
 "mac.limits.daily.title" = "Tageslimit für %@ erreicht";
 "mac.limits.daily.message" = "Du hast %d von den heutigen %d %@ verwendet.";
+"mac.limits.feature.aviAction" = "Avi-Aktionen";
 "mac.limits.feature.favoriteStations" = "Lieblingssender";
 "mac.limits.feature.savedTracks" = "gespeicherte Titel";
 "mac.limits.feature.discoveredTracks" = "entdeckte Titel";

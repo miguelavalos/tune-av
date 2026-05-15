@@ -48,6 +48,7 @@ struct TuneAVResolvedAccess: Equatable {
 }
 
 enum LimitedFeature: String, CaseIterable, Codable {
+    case aviAction
     case favoriteStations
     case savedTracks
     case discoveredTracks
@@ -59,6 +60,7 @@ enum LimitedFeature: String, CaseIterable, Codable {
     case discoveryShare
 
     static let dailyUsageLimitedFeatures: Set<LimitedFeature> = [
+        .aviAction,
         .lyricsSearch,
         .webSearch,
         .youtubeSearch,
@@ -73,6 +75,7 @@ struct TuneAVAccessLimitValues: Equatable {
     let recentStations: Int?
     let discoveredTracks: Int?
     let savedTracks: Int?
+    let aviActionsPerDay: Int?
     let lyricsSearchesPerDay: Int?
     let webSearchesPerDay: Int?
     let youtubeSearchesPerDay: Int?
@@ -94,6 +97,7 @@ struct AccessLimits: Codable, Equatable {
     let recentStations: Int?
     let discoveredTracks: Int?
     let savedTracks: Int?
+    let aviActionsPerDay: Int?
     let lyricsSearchesPerDay: Int?
     let webSearchesPerDay: Int?
     let youtubeSearchesPerDay: Int?
@@ -106,6 +110,7 @@ struct AccessLimits: Codable, Equatable {
         case recentStations
         case discoveredTracks
         case savedTracks
+        case aviActionsPerDay
         case lyricsSearchesPerDay
         case webSearchesPerDay
         case youtubeSearchesPerDay
@@ -119,6 +124,7 @@ struct AccessLimits: Codable, Equatable {
         recentStations: Int?,
         discoveredTracks: Int?,
         savedTracks: Int?,
+        aviActionsPerDay: Int?,
         lyricsSearchesPerDay: Int?,
         webSearchesPerDay: Int?,
         youtubeSearchesPerDay: Int?,
@@ -130,6 +136,7 @@ struct AccessLimits: Codable, Equatable {
         self.recentStations = recentStations
         self.discoveredTracks = discoveredTracks
         self.savedTracks = savedTracks
+        self.aviActionsPerDay = aviActionsPerDay
         self.lyricsSearchesPerDay = lyricsSearchesPerDay
         self.webSearchesPerDay = webSearchesPerDay
         self.youtubeSearchesPerDay = youtubeSearchesPerDay
@@ -144,6 +151,7 @@ struct AccessLimits: Codable, Equatable {
         self.recentStations = try container.decodeIfPresent(Int.self, forKey: .recentStations)
         self.discoveredTracks = try container.decodeIfPresent(Int.self, forKey: .discoveredTracks)
         self.savedTracks = try container.decodeIfPresent(Int.self, forKey: .savedTracks)
+        self.aviActionsPerDay = try container.decodeIfPresent(Int.self, forKey: .aviActionsPerDay)
         self.lyricsSearchesPerDay = try container.decodeIfPresent(Int.self, forKey: .lyricsSearchesPerDay)
         self.webSearchesPerDay = try container.decodeIfPresent(Int.self, forKey: .webSearchesPerDay)
         self.youtubeSearchesPerDay = try container.decodeIfPresent(Int.self, forKey: .youtubeSearchesPerDay)
@@ -154,6 +162,8 @@ struct AccessLimits: Codable, Equatable {
 
     func limit(for feature: LimitedFeature) -> Int? {
         switch feature {
+        case .aviAction:
+            aviActionsPerDay
         case .favoriteStations:
             favoriteStations
         case .savedTracks:
@@ -161,17 +171,17 @@ struct AccessLimits: Codable, Equatable {
         case .discoveredTracks:
             discoveredTracks
         case .lyricsSearch:
-            lyricsSearchesPerDay
+            aviActionsPerDay ?? lyricsSearchesPerDay
         case .webSearch:
-            webSearchesPerDay
+            aviActionsPerDay ?? webSearchesPerDay
         case .youtubeSearch:
-            youtubeSearchesPerDay
+            aviActionsPerDay ?? youtubeSearchesPerDay
         case .appleMusicSearch:
-            appleMusicSearchesPerDay
+            aviActionsPerDay ?? appleMusicSearchesPerDay
         case .spotifySearch:
-            spotifySearchesPerDay
+            aviActionsPerDay ?? spotifySearchesPerDay
         case .discoveryShare:
-            discoverySharesPerDay
+            aviActionsPerDay ?? discoverySharesPerDay
         }
     }
 
@@ -182,6 +192,7 @@ struct AccessLimits: Codable, Equatable {
             recentStations: values.recentStations,
             discoveredTracks: values.discoveredTracks,
             savedTracks: values.savedTracks,
+            aviActionsPerDay: values.aviActionsPerDay,
             lyricsSearchesPerDay: values.lyricsSearchesPerDay,
             webSearchesPerDay: values.webSearchesPerDay,
             youtubeSearchesPerDay: values.youtubeSearchesPerDay,
@@ -240,29 +251,31 @@ enum TuneAVAccessPolicy {
         switch accessMode {
         case "guest":
             TuneAVAccessLimitValues(
-                favoriteStations: 5,
-                recentStations: 10,
-                discoveredTracks: 20,
-                savedTracks: 5,
+                favoriteStations: 3,
+                recentStations: 8,
+                discoveredTracks: 10,
+                savedTracks: 3,
+                aviActionsPerDay: 3,
                 lyricsSearchesPerDay: 3,
                 webSearchesPerDay: 3,
                 youtubeSearchesPerDay: 3,
                 appleMusicSearchesPerDay: 3,
                 spotifySearchesPerDay: 3,
-                discoverySharesPerDay: 1
+                discoverySharesPerDay: 3
             )
         case "signedInFree":
             TuneAVAccessLimitValues(
-                favoriteStations: 15,
-                recentStations: 25,
-                discoveredTracks: 50,
-                savedTracks: 20,
+                favoriteStations: 10,
+                recentStations: 20,
+                discoveredTracks: 25,
+                savedTracks: 10,
+                aviActionsPerDay: 10,
                 lyricsSearchesPerDay: 10,
                 webSearchesPerDay: 10,
                 youtubeSearchesPerDay: 10,
                 appleMusicSearchesPerDay: 10,
                 spotifySearchesPerDay: 10,
-                discoverySharesPerDay: 3
+                discoverySharesPerDay: 10
             )
         case "signedInPro":
             TuneAVAccessLimitValues(
@@ -270,6 +283,7 @@ enum TuneAVAccessPolicy {
                 recentStations: 200,
                 discoveredTracks: 1_000,
                 savedTracks: 1_000,
+                aviActionsPerDay: nil,
                 lyricsSearchesPerDay: nil,
                 webSearchesPerDay: nil,
                 youtubeSearchesPerDay: nil,

@@ -12,16 +12,17 @@
         "canManagePlan": false
       },
       "limits": {
-        "favoriteStations": 5,
-        "recentStations": 10,
-        "discoveredTracks": 20,
-        "savedTracks": 5,
+        "favoriteStations": 3,
+        "recentStations": 8,
+        "discoveredTracks": 10,
+        "savedTracks": 3,
+        "aviActionsPerDay": 3,
         "lyricsSearchesPerDay": 3,
         "webSearchesPerDay": 3,
         "youtubeSearchesPerDay": 3,
         "appleMusicSearchesPerDay": 3,
         "spotifySearchesPerDay": 3,
-        "discoverySharesPerDay": 1
+        "discoverySharesPerDay": 3
       }
     },
     "signedInFree": {
@@ -34,16 +35,17 @@
         "canManagePlan": true
       },
       "limits": {
-        "favoriteStations": 15,
-        "recentStations": 25,
-        "discoveredTracks": 50,
-        "savedTracks": 20,
+        "favoriteStations": 10,
+        "recentStations": 20,
+        "discoveredTracks": 25,
+        "savedTracks": 10,
+        "aviActionsPerDay": 10,
         "lyricsSearchesPerDay": 10,
         "webSearchesPerDay": 10,
         "youtubeSearchesPerDay": 10,
         "appleMusicSearchesPerDay": 10,
         "spotifySearchesPerDay": 10,
-        "discoverySharesPerDay": 3
+        "discoverySharesPerDay": 10
       }
     },
     "signedInPro": {
@@ -60,6 +62,7 @@
         "recentStations": 200,
         "discoveredTracks": 1000,
         "savedTracks": 1000,
+        "aviActionsPerDay": null,
         "lyricsSearchesPerDay": null,
         "webSearchesPerDay": null,
         "youtubeSearchesPerDay": null,

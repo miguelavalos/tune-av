@@ -118,33 +118,45 @@ final class AccessController: ObservableObject {
     }
 
     func dailyLimitState(for feature: LimitedFeature) -> FeatureLimitState {
-        dailyUsageLimiter.limitState(for: feature, limit: limits.limit(for: feature))
+        dailyUsageLimiter.limitState(for: dailyUsageFeature(for: feature), limit: limits.limit(for: feature))
     }
 
     func canUseDailyFeature(_ feature: LimitedFeature) -> Bool {
-        dailyUsageLimiter.canUse(feature, limit: limits.limit(for: feature))
+        dailyUsageLimiter.canUse(dailyUsageFeature(for: feature), limit: limits.limit(for: feature))
     }
 
     func canUseDailyFeature(_ feature: LimitedFeature, usageKey: String) -> Bool {
-        dailyUsageLimiter.canUse(feature, limit: limits.limit(for: feature), usageKey: usageKey)
+        dailyUsageLimiter.canUse(
+            dailyUsageFeature(for: feature),
+            limit: limits.limit(for: feature),
+            usageKey: dailyUsageKey(for: feature, usageKey: usageKey)
+        )
     }
 
     func recordDailyFeatureUse(_ feature: LimitedFeature) {
-        dailyUsageLimiter.recordUse(feature)
+        dailyUsageLimiter.recordUse(dailyUsageFeature(for: feature))
     }
 
     func recordDailyFeatureUse(_ feature: LimitedFeature, usageKey: String) {
-        dailyUsageLimiter.recordUse(feature, usageKey: usageKey)
+        dailyUsageLimiter.recordUse(dailyUsageFeature(for: feature), usageKey: dailyUsageKey(for: feature, usageKey: usageKey))
     }
 
     func presentUpgradePrompt(for feature: LimitedFeature, currentUsage: Int? = nil) {
         let state = FeatureLimitState(
             feature: feature,
-            currentUsage: currentUsage ?? dailyUsageLimiter.usageCount(for: feature),
+            currentUsage: currentUsage ?? dailyUsageLimiter.usageCount(for: dailyUsageFeature(for: feature)),
             limit: limits.limit(for: feature)
         )
 
         upgradePrompt = UpgradePrompt.forLimitState(state)
+    }
+
+    private func dailyUsageFeature(for feature: LimitedFeature) -> LimitedFeature {
+        LimitedFeature.dailyUsageLimitedFeatures.contains(feature) ? .aviAction : feature
+    }
+
+    private func dailyUsageKey(for feature: LimitedFeature, usageKey: String) -> String {
+        "\(feature.rawValue):\(TuneAVDailyUsageLimiter.normalizedUsageKey(usageKey))"
     }
 
     private func resolveAccessState() {

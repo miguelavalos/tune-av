@@ -58,6 +58,8 @@
 "language.french" = "Français";
 "language.german" = "Allemand";
 "language.catalan" = "Catalan";
+"limits.upgrade.aviAction.message" = "Vous avez utilisé les %d actions Avi du jour. Pro garde les recherches musicales et les actions d'aide disponibles sans limites quotidiennes du mode local.";
+"limits.upgrade.aviAction.title" = "Les actions Avi quotidiennes sont limitées";
 "limits.upgrade.appleMusic.message" = "Vous avez utilisé les %d recherches Apple Music du jour. Pro garde les recherches musicales disponibles sans limites quotidiennes du mode local.";
 "limits.upgrade.appleMusic.title" = "Les recherches Apple Music sont limitées";
 "limits.upgrade.connectAccount" = "Connecter un compte";

@@ -15,6 +15,8 @@ struct TuneAVUpgradePromptContent: Equatable {
 
     static func featureName(for feature: LimitedFeature) -> String {
         switch feature {
+        case .aviAction:
+            L10n.string("mac.limits.feature.aviAction")
         case .favoriteStations:
             L10n.string("mac.limits.feature.favoriteStations")
         case .savedTracks:
@@ -38,6 +40,8 @@ struct TuneAVUpgradePromptContent: Equatable {
 
     static func title(for feature: LimitedFeature) -> String {
         switch feature {
+        case .aviAction:
+            L10n.string("limits.upgrade.aviAction.title")
         case .favoriteStations:
             L10n.string("limits.upgrade.favoriteStations.title")
         case .savedTracks:
@@ -65,6 +69,8 @@ struct TuneAVUpgradePromptContent: Equatable {
         }
 
         switch state.feature {
+        case .aviAction:
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .favoriteStations:
             return L10n.string("limits.upgrade.favoriteStations.message", limit)
         case .savedTracks:
@@ -72,17 +78,17 @@ struct TuneAVUpgradePromptContent: Equatable {
         case .discoveredTracks:
             return L10n.string("limits.upgrade.discoveredTracks.message", limit)
         case .lyricsSearch:
-            return L10n.string("limits.upgrade.lyrics.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .webSearch:
-            return L10n.string("limits.upgrade.web.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .youtubeSearch:
-            return L10n.string("limits.upgrade.youtube.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .appleMusicSearch:
-            return L10n.string("limits.upgrade.appleMusic.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .spotifySearch:
-            return L10n.string("limits.upgrade.spotify.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         case .discoveryShare:
-            return L10n.string("limits.upgrade.discoveryShare.message", limit)
+            return L10n.string("limits.upgrade.aviAction.message", limit)
         }
     }
 }

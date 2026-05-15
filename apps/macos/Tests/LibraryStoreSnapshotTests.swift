@@ -544,7 +544,8 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
         XCTAssertTrue(controller.capabilities.canUseBackend)
-        XCTAssertEqual(controller.limits.favoriteStations, 5)
+        XCTAssertEqual(controller.limits.favoriteStations, 3)
+        XCTAssertEqual(controller.limits.aviActionsPerDay, 3)
         XCTAssertEqual(controller.limits.lyricsSearchesPerDay, 3)
 
         controller.updateAccessMode(.signedInPro)
@@ -627,7 +628,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
         XCTAssertTrue(controller.capabilities.canUseBackend)
-        XCTAssertEqual(controller.limits.favoriteStations, 5)
+        XCTAssertEqual(controller.limits.favoriteStations, 3)
         XCTAssertEqual(controller.lastRefreshError as? MacAccessRefreshError, .requestFailed(statusCode: 503))
     }
 
