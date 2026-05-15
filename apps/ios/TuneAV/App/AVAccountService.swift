@@ -50,6 +50,9 @@ struct DefaultAVAccountService: AVAccountService {
     }
 
     func getToken() async throws -> String? {
+        if Self.shouldUseGuestTokenForUITests {
+            return nil
+        }
         if Self.uiTestAccountUser != nil {
             return TuneAVUITestEnvironment.accountToken
         }
@@ -80,6 +83,11 @@ struct DefaultAVAccountService: AVAccountService {
 
     private static var shouldForceGuestForUITests: Bool {
         TuneAVUITestEnvironment.current.shouldForceGuest
+    }
+
+    private static var shouldUseGuestTokenForUITests: Bool {
+        let environment = TuneAVUITestEnvironment.current
+        return environment.isEnabled && !environment.hasAccountOverride
     }
 
     private static var uiTestAccountUser: AccountUser? {
