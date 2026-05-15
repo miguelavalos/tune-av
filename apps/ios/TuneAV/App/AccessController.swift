@@ -87,7 +87,7 @@ final class AccessController: ObservableObject {
                 accountUser = accountService.currentUser
             } catch {
                 guard generation == accessRefreshGeneration else { return }
-                authLogger.error("Unable to hydrate Account AV session before access refresh: \(String(reflecting: error), privacy: .public)")
+                authLogger.debug("No active Account AV session during access refresh: \(String(reflecting: error), privacy: .public)")
             }
         }
         resolveAccessState()
