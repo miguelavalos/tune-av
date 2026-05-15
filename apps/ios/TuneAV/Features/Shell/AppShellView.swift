@@ -45,6 +45,7 @@ struct AppShellView: View {
     @State private var didBootstrap = false
     @State private var profileMode: ProfileScreen.Mode = .settings
     @State private var listeningSession: ActiveListeningSession?
+    @State private var isShowingProPaywall = false
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
@@ -126,6 +127,8 @@ struct AppShellView: View {
                     accessController.upgradePrompt = nil
                     if accessController.accessMode == .guest {
                         startSignInFlow(true)
+                    } else {
+                        isShowingProPaywall = true
                     }
                 },
                 onDismiss: {
@@ -134,6 +137,10 @@ struct AppShellView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingProPaywall) {
+            TuneAVProPaywallView()
+                .environmentObject(accessController)
         }
         .task {
             await bootstrapIfNeeded()

@@ -22,6 +22,7 @@ struct ProfileScreen: View {
     @State private var isShowingSignOutError = false
     @State private var browserDestination: BrowserDestination?
     @State private var isShowingAccountDeletion = false
+    @State private var isShowingProPaywall = false
     private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
 
     var body: some View {
@@ -69,6 +70,10 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isShowingAccountDeletion) {
             AccountDeletionScreen(viewModel: accountDeletionViewModel)
         }
+        .sheet(isPresented: $isShowingProPaywall) {
+            TuneAVProPaywallView()
+                .environmentObject(accessController)
+        }
     }
 
     @ViewBuilder
@@ -76,6 +81,7 @@ struct ProfileScreen: View {
         switch mode {
         case .account:
             profileSummaryCard
+            proPlanCard
             if accessController.capabilities.canUseCloudSync {
                 cloudSyncCard
             }
@@ -167,6 +173,65 @@ struct ProfileScreen: View {
         .padding(22)
         .background(profileCardBackground)
         .accessibilityIdentifier("profile.sync.card")
+    }
+
+    private var proPlanCard: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            sectionHeader(
+                title: L10n.string("profile.pro.title"),
+                subtitle: proPlanSubtitle
+            )
+
+            VStack(alignment: .leading, spacing: 12) {
+                ShellRow(
+                    systemImage: "heart.text.square",
+                    title: L10n.string("profile.pro.library.title"),
+                    detail: L10n.string("profile.pro.library.detail")
+                )
+                ShellRow(
+                    systemImage: "icloud",
+                    title: L10n.string("profile.pro.sync.title"),
+                    detail: L10n.string("profile.pro.sync.detail")
+                )
+                ShellRow(
+                    systemImage: "sparkles",
+                    title: L10n.string("profile.pro.avi.title"),
+                    detail: L10n.string("profile.pro.avi.detail")
+                )
+            }
+
+            proPlanAction
+        }
+        .padding(22)
+        .background(profileCardBackground)
+        .accessibilityIdentifier("profile.pro.card")
+    }
+
+    @ViewBuilder
+    private var proPlanAction: some View {
+        switch accessController.accessMode {
+        case .guest:
+            ProfilePrimaryButton(
+                title: accessController.accountIsAvailable
+                    ? L10n.string("profile.pro.signIn")
+                    : L10n.string("profile.account.connectUnavailable"),
+                action: { startSignInFlow(true) }
+            )
+            .disabled(!accessController.accountIsAvailable)
+            .accessibilityIdentifier("profile.pro.signIn")
+        case .signedInFree:
+            ProfilePrimaryButton(
+                title: L10n.string("profile.pro.viewOffer"),
+                action: { isShowingProPaywall = true }
+            )
+            .accessibilityIdentifier("profile.pro.viewOffer")
+        case .signedInPro:
+            ProfileSecondaryButton(
+                title: L10n.string("profile.pro.manage"),
+                action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
+            )
+            .accessibilityIdentifier("profile.pro.manage")
+        }
     }
 
     @ViewBuilder
@@ -508,6 +573,17 @@ struct ProfileScreen: View {
             L10n.string("profile.summary.plan.detail.free")
         case .signedInPro:
             L10n.string("profile.summary.plan.detail.pro")
+        }
+    }
+
+    private var proPlanSubtitle: String {
+        switch accessController.accessMode {
+        case .guest:
+            L10n.string("profile.pro.subtitle.guest")
+        case .signedInFree:
+            L10n.string("profile.pro.subtitle.free")
+        case .signedInPro:
+            L10n.string("profile.pro.subtitle.pro")
         }
     }
 
