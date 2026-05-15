@@ -100,6 +100,9 @@ delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
 terms_url="$(setting TUNEAV_TERMS_URL)"
 privacy_url="$(setting TUNEAV_PRIVACY_URL)"
 open_source_url="$(setting TUNEAV_OPEN_SOURCE_URL)"
+revenuecat_public_api_key="$(setting TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
+revenuecat_offering_id="$(setting TUNEAV_REVENUECAT_OFFERING_ID)"
+revenuecat_monthly_package_id="$(setting TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
 development_team="$(setting DEVELOPMENT_TEAM)"
 
 for item in \
@@ -112,9 +115,17 @@ for item in \
   "TUNEAV_DELETE_ACCOUNT_URL:$delete_account_url" \
   "TUNEAV_TERMS_URL:$terms_url" \
   "TUNEAV_PRIVACY_URL:$privacy_url" \
-  "TUNEAV_OPEN_SOURCE_URL:$open_source_url"; do
+  "TUNEAV_OPEN_SOURCE_URL:$open_source_url" \
+  "TUNEAV_REVENUECAT_PUBLIC_API_KEY:$revenuecat_public_api_key" \
+  "TUNEAV_REVENUECAT_OFFERING_ID:$revenuecat_offering_id" \
+  "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:$revenuecat_monthly_package_id"; do
   require_present "${item%%:*}" "${item#*:}"
 done
+
+[[ "$revenuecat_public_api_key" == appl_* ]] || fail "TUNEAV_REVENUECAT_PUBLIC_API_KEY must use the RevenueCat public appl_ prefix"
+[[ "$revenuecat_public_api_key" != sk_* ]] || fail "TUNEAV_REVENUECAT_PUBLIC_API_KEY must not be a RevenueCat secret key"
+[ "$revenuecat_offering_id" = "default" ] || fail "TUNEAV_REVENUECAT_OFFERING_ID must be default, got $revenuecat_offering_id"
+[ "$revenuecat_monthly_package_id" = '$rc_monthly' ] || fail "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID must be literal \$rc_monthly, got $revenuecat_monthly_package_id"
 
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
@@ -143,6 +154,10 @@ redacted_key=""
 if [ -n "$publishable_key" ]; then
   redacted_key="${publishable_key:0:8}...${#publishable_key}"
 fi
+redacted_revenuecat_key=""
+if [ -n "$revenuecat_public_api_key" ]; then
+  redacted_revenuecat_key="${revenuecat_public_api_key:0:8}...${#revenuecat_public_api_key}"
+fi
 
 cat <<EOF
 Tune AV iOS runtime config ($env_name)
@@ -153,6 +168,9 @@ Tune AV iOS runtime config ($env_name)
   Account AV API: $api_base_url
   Account AV management: $management_url
   publishable key: $redacted_key
+  RevenueCat key: $redacted_revenuecat_key
+  RevenueCat offering: $revenuecat_offering_id
+  RevenueCat monthly package: $revenuecat_monthly_package_id
   delete account: $delete_account_url
   terms: $terms_url
   privacy: $privacy_url

@@ -77,13 +77,45 @@ if [ -z "$publishable_key" ]; then
   exit 1
 fi
 
-development_team="${AVALSYS_APPLE_DEVELOPMENT_TEAM:-\$(inherited)}"
+read_optional_config() {
+  local name="$1"
+  local value="${!name:-}"
+  if [ -n "$value" ]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  "$varlock_bin" printenv --path "$suite_root/services/api" "$name" 2>/dev/null || true
+}
+
+development_team="$(read_optional_config AVALSYS_APPLE_DEVELOPMENT_TEAM)"
+if [ -z "$development_team" ]; then
+  development_team="\$(inherited)"
+fi
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-com.avalsys.tuneav.pro.monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
+revenuecat_public_api_key="$(read_optional_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
+revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-default}"
+revenuecat_monthly_package_id="${TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:-\$rc_monthly}"
 if [ "$env_name" = "prod" ]; then
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 else
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
+fi
+
+if [ "$env_name" = "prod" ]; then
+  if [ -z "$revenuecat_public_api_key" ]; then
+    echo "Missing TUNEAV_REVENUECAT_PUBLIC_API_KEY for production profile." >&2
+    exit 1
+  fi
+  if [[ "$revenuecat_public_api_key" != appl_* ]]; then
+    echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must be a RevenueCat public app key with appl_ prefix." >&2
+    exit 1
+  fi
+  if [[ "$revenuecat_public_api_key" == sk_* ]]; then
+    echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must not be a RevenueCat secret key." >&2
+    exit 1
+  fi
 fi
 
 escape_xcconfig_url() {
@@ -109,6 +141,9 @@ TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/d
 TUNEAV_TERMS_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/terms")
 TUNEAV_PRIVACY_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/privacy")
 TUNEAV_OPEN_SOURCE_URL = $(escape_xcconfig_url "https://github.com/miguelavalos/tune-av")
+TUNEAV_REVENUECAT_PUBLIC_API_KEY = $revenuecat_public_api_key
+TUNEAV_REVENUECAT_OFFERING_ID = $revenuecat_offering_id
+TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $revenuecat_monthly_package_id
 EOF
 )"
 
