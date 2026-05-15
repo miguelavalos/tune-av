@@ -12,6 +12,7 @@ struct AuthOnboardingView: View {
     @State private var activeProvider: AuthProvider?
     @State private var errorMessage = ""
     @State private var isShowingError = false
+    @State private var signInTask: Task<Void, Never>?
     @GestureState private var authOptionsDragOffset: CGFloat = 0
 
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
@@ -86,6 +87,10 @@ struct AuthOnboardingView: View {
         } message: {
             Text(errorMessage)
         }
+        .onDisappear {
+            signInTask?.cancel()
+            signInTask = nil
+        }
     }
 
     private func startAppleSignIn() {
@@ -96,24 +101,30 @@ struct AuthOnboardingView: View {
         }
         guard activeProvider == nil else { return }
         activeProvider = .apple
+        signInTask?.cancel()
 
-        Task {
+        signInTask = Task {
             do {
                 try await onContinueWithApple()
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     authOptionsArePresented = false
                     activeProvider = nil
+                    signInTask = nil
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 guard !error.isAuthenticationCancellation else {
                     await MainActor.run {
                         activeProvider = nil
+                        signInTask = nil
                     }
                     return
                 }
                 logAuthError(error, provider: "apple")
                 await MainActor.run {
                     activeProvider = nil
+                    signInTask = nil
                     errorMessage = error.localizedDescription
                     isShowingError = true
                 }
@@ -129,24 +140,30 @@ struct AuthOnboardingView: View {
         }
         guard activeProvider == nil else { return }
         activeProvider = .google
+        signInTask?.cancel()
 
-        Task {
+        signInTask = Task {
             do {
                 try await onContinueWithGoogle()
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     authOptionsArePresented = false
                     activeProvider = nil
+                    signInTask = nil
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 guard !error.isAuthenticationCancellation else {
                     await MainActor.run {
                         activeProvider = nil
+                        signInTask = nil
                     }
                     return
                 }
                 logAuthError(error, provider: "google")
                 await MainActor.run {
                     activeProvider = nil
+                    signInTask = nil
                     errorMessage = error.localizedDescription
                     isShowingError = true
                 }
