@@ -63,9 +63,6 @@ struct RootView: View {
             await refreshLibrarySync()
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            updateIdleTimer(for: newPhase)
-        }
         .onChange(of: accessController.accessMode) { _, _ in
             authOptionsArePresented = false
 
