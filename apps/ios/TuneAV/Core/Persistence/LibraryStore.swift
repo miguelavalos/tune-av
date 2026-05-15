@@ -430,6 +430,8 @@ final class LibraryStore: ObservableObject {
     }
 
     func clearDiscoveries() {
+        guard !discoveries.isEmpty else { return }
+
         for discovery in discoveries {
             rememberDiscoveryDeletion(for: discovery)
             context.delete(discovery)
