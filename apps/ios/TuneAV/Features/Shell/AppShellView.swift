@@ -1502,8 +1502,17 @@ private struct AppShellFooterAviButton: View {
                 Image("AviV2HeadNeutral")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 38, height: 38)
-                    .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.24 : 0.08), radius: 6, y: 2)
+                    .frame(width: 48, height: 48)
+                    .scaleEffect(1.38)
+                    .offset(y: 4)
+                    .clipShape(Circle())
+                    .padding(8)
+                    .background(TuneAVTheme.highlight.opacity(isSelected ? 0.16 : 0.08), in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(TuneAVTheme.highlight.opacity(isSelected ? 0.28 : 0.12), lineWidth: 1)
+                    }
+                    .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.22 : 0.06), radius: 7, y: 2)
             }
             .frame(width: 62, height: 62)
             .contentShape(Circle())
@@ -1901,7 +1910,7 @@ private struct FullPlayerAviHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
-            AviStableEmotionImage(emotion: emotion, assetVariant: .head, width: 82)
+            AviFrameLoopEmotionImage(emotion: emotion, width: 82)
                 .frame(width: 86, height: 86)
                 .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
                 .overlay {
@@ -1933,6 +1942,130 @@ private struct FullPlayerAviHeader: View {
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("avi.fullPlayer.header")
     }
+}
+
+private struct AviFrameLoopEmotionImage: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let emotion: TuneAVAviEmotion
+    let width: CGFloat
+
+    @State private var displayedEmotion: TuneAVAviEmotion
+    @State private var lastEmotionChange = Date.distantPast
+
+    init(
+        emotion: TuneAVAviEmotion,
+        width: CGFloat
+    ) {
+        self.emotion = emotion
+        self.width = width
+        _displayedEmotion = State(initialValue: emotion)
+    }
+
+    private var frames: [String] {
+        guard !reduceMotion else { return [displayedEmotion.fullBodyAssetName] }
+        return AviFrameLoopFrames.frames(for: displayedEmotion)
+    }
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: AviFrameLoopFrames.frameDuration)) { timeline in
+            let frameIndex = AviFrameLoopFrames.frameIndex(
+                at: timeline.date,
+                frameCount: frames.count
+            )
+
+            Image(frames[frameIndex])
+                .resizable()
+                .scaledToFit()
+                .frame(width: width, height: width)
+        }
+        .frame(width: width, height: width)
+        .clipped()
+        .animation(.snappy(duration: 0.12), value: frames)
+        .onAppear {
+            displayedEmotion = emotion
+            lastEmotionChange = Date()
+        }
+        .onChange(of: emotion) { _, candidate in
+            adopt(candidate)
+        }
+        .task(id: emotion) {
+            await adoptWhenAllowed(emotion)
+        }
+    }
+
+    private func adopt(_ candidate: TuneAVAviEmotion) {
+        let now = Date()
+        guard TuneAVAviEmotionStability.shouldAdopt(
+            displayed: displayedEmotion,
+            candidate: candidate,
+            elapsedSinceLastChange: now.timeIntervalSince(lastEmotionChange)
+        ) else { return }
+
+        displayedEmotion = candidate
+        lastEmotionChange = now
+    }
+
+    @MainActor
+    private func adoptWhenAllowed(_ candidate: TuneAVAviEmotion) async {
+        guard displayedEmotion != candidate else { return }
+        let minimumInterval = candidate.transitionPriority > displayedEmotion.transitionPriority
+            ? TuneAVAviEmotionStability.immediateMinimumDisplayInterval
+            : TuneAVAviEmotionStability.defaultMinimumDisplayInterval
+        let elapsed = Date().timeIntervalSince(lastEmotionChange)
+        let remaining = max(0, minimumInterval - elapsed)
+        if remaining > 0 {
+            do {
+                try await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            } catch {
+                return
+            }
+        }
+        guard !Task.isCancelled else { return }
+        adopt(candidate)
+    }
+}
+
+private enum AviFrameLoopFrames {
+    static let frameDuration: TimeInterval = 1.0 / 12.0
+
+    static func frameIndex(at date: Date, frameCount: Int) -> Int {
+        guard frameCount > 1 else { return 0 }
+        let tick = Int((date.timeIntervalSinceReferenceDate / frameDuration).rounded(.down))
+        return abs(tick) % frameCount
+    }
+
+    static func frames(for emotion: TuneAVAviEmotion) -> [String] {
+        if let productionFrames = availableFrames(for: productionAnimationName(for: emotion), count: 20) {
+            return productionFrames
+        }
+
+        return [emotion.fullBodyAssetName]
+    }
+
+    private static func productionAnimationName(for emotion: TuneAVAviEmotion) -> String {
+        switch emotion {
+        case .neutral, .listening, .focused:
+            return "AviTuneListeningIdle"
+        case .happy, .celebrate:
+            return "AviTuneHappyReact"
+        case .thinking:
+            return "AviTuneThinking"
+        case .dislike, .warning:
+            return "AviTuneDislike"
+        case .surprised:
+            return "AviTuneSurprised"
+        case .sleep:
+            return "AviTuneSleepIdle"
+        }
+    }
+
+    private static func availableFrames(for prefix: String, count: Int) -> [String]? {
+        let names = (0..<count).map { "\(prefix)\(String(format: "%03d", $0))" }
+        let existing = names.filter { UIImage(named: $0) != nil }
+        return existing.count >= 2 ? existing : nil
+    }
+
 }
 
 private let shellScrollCoordinateSpace = "shellScrollCoordinateSpace"

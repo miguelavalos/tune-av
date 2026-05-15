@@ -285,7 +285,7 @@ struct NowPlayingView: View {
 
                     PlayerAviBody(
                         emotion: playerAviEmotion,
-                        reactionAssetName: aviReaction?.assetName,
+                        reactionEmotion: aviReaction?.emotion,
                         size: compact ? 88 : 98,
                         offsetForEmotion: playerAviBodyOffset(for:)
                     )
@@ -1680,8 +1680,10 @@ struct NowPlayingView: View {
 }
 
 private struct PlayerAviBody: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let emotion: TuneAVAviEmotion
-    let reactionAssetName: String?
+    let reactionEmotion: TuneAVAviEmotion?
     let size: CGFloat
     let offsetForEmotion: (TuneAVAviEmotion) -> CGSize
 
@@ -1690,28 +1692,38 @@ private struct PlayerAviBody: View {
 
     init(
         emotion: TuneAVAviEmotion,
-        reactionAssetName: String?,
+        reactionEmotion: TuneAVAviEmotion?,
         size: CGFloat,
         offsetForEmotion: @escaping (TuneAVAviEmotion) -> CGSize
     ) {
         self.emotion = emotion
-        self.reactionAssetName = reactionAssetName
+        self.reactionEmotion = reactionEmotion
         self.size = size
         self.offsetForEmotion = offsetForEmotion
         _displayedEmotion = State(initialValue: emotion)
     }
 
-    private var assetName: String {
-        reactionAssetName ?? displayedEmotion.fullBodyAssetName
+    private var activeEmotion: TuneAVAviEmotion {
+        reactionEmotion ?? displayedEmotion
     }
 
     private var offset: CGSize {
-        reactionAssetName == nil ? offsetForEmotion(displayedEmotion) : .zero
+        offsetForEmotion(activeEmotion)
+    }
+
+    private var frames: [String] {
+        guard !reduceMotion else { return [activeEmotion.fullBodyAssetName] }
+        return PlayerAviFrameLoopFrames.frames(for: activeEmotion)
     }
 
     var body: some View {
-        ZStack {
-            Image(assetName)
+        TimelineView(.periodic(from: .now, by: PlayerAviFrameLoopFrames.frameDuration)) { timeline in
+            let frameIndex = PlayerAviFrameLoopFrames.frameIndex(
+                at: timeline.date,
+                frameCount: frames.count
+            )
+
+            Image(frames[frameIndex])
                 .resizable()
                 .scaledToFit()
                 .frame(width: size, height: size)
@@ -1719,7 +1731,7 @@ private struct PlayerAviBody: View {
         }
         .frame(width: size, height: size)
         .clipped()
-        .animation(.snappy(duration: 0.24), value: assetName)
+        .animation(.snappy(duration: 0.12), value: frames)
         .animation(.snappy(duration: 0.24), value: offset)
         .onAppear {
             displayedEmotion = emotion
@@ -1763,6 +1775,45 @@ private struct PlayerAviBody: View {
         guard !Task.isCancelled else { return }
         adopt(candidate)
     }
+}
+
+private enum PlayerAviFrameLoopFrames {
+    static let frameDuration: TimeInterval = 1.0 / 12.0
+
+    static func frameIndex(at date: Date, frameCount: Int) -> Int {
+        guard frameCount > 1 else { return 0 }
+        let tick = Int((date.timeIntervalSinceReferenceDate / frameDuration).rounded(.down))
+        return abs(tick) % frameCount
+    }
+
+    static func frames(for emotion: TuneAVAviEmotion) -> [String] {
+        availableFrames(for: productionAnimationName(for: emotion), count: 20)
+            ?? [emotion.fullBodyAssetName]
+    }
+
+    private static func productionAnimationName(for emotion: TuneAVAviEmotion) -> String {
+        switch emotion {
+        case .neutral, .listening, .focused:
+            return "AviTuneListeningIdle"
+        case .happy, .celebrate:
+            return "AviTuneHappyReact"
+        case .thinking:
+            return "AviTuneThinking"
+        case .dislike, .warning:
+            return "AviTuneDislike"
+        case .surprised:
+            return "AviTuneSurprised"
+        case .sleep:
+            return "AviTuneSleepIdle"
+        }
+    }
+
+    private static func availableFrames(for prefix: String, count: Int) -> [String]? {
+        let names = (0..<count).map { "\(prefix)\(String(format: "%03d", $0))" }
+        let existing = names.filter { UIImage(named: $0) != nil }
+        return existing.count >= 2 ? existing : nil
+    }
+
 }
 
 private struct PlayerSignalDeck: View {
@@ -2007,14 +2058,14 @@ private enum PlayerAviReaction: Equatable {
     case curious
     case saved
 
-    var assetName: String {
+    var emotion: TuneAVAviEmotion {
         switch self {
         case .happy, .saved:
-            return "AviV2TuneHappy"
+            return .celebrate
         case .thinking:
-            return "AviV2Thinking"
+            return .thinking
         case .curious:
-            return "AviV2TuneSurprised"
+            return .surprised
         }
     }
 }
