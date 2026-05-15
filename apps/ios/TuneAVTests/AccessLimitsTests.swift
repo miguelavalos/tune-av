@@ -594,6 +594,7 @@ final class AccessLimitsTests: XCTestCase {
 
         XCTAssertEqual(controller.accessMode, .signedInFree)
         XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertEqual(controller.subscriptionReconciliationSource, .purchase)
         XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [user.id])
 
         entitlementService.access = .signedInPro
@@ -601,6 +602,28 @@ final class AccessLimitsTests: XCTestCase {
 
         XCTAssertEqual(controller.accessMode, .signedInPro)
         XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+    }
+
+    @MainActor
+    func testRestoreRefreshesAccessWithRestoreReconciliationSource() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let entitlementService = MutableStubEntitlementService(access: .signedInFree)
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            entitlementService: entitlementService,
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.restorePurchases()
+
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertEqual(controller.subscriptionReconciliationSource, .restore)
+        XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, [user.id])
     }
 
     private func isolatedUserDefaults() -> UserDefaults {

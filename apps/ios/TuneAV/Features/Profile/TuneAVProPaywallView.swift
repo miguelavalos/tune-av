@@ -62,7 +62,7 @@ struct TuneAVProPaywallView: View {
                     }
 
                     if accessController.isWaitingForSubscriptionReconciliation {
-                        paywallStatus("clock.arrow.circlepath", L10n.string("paywall.status.pending"))
+                        paywallStatus("clock.arrow.circlepath", reconciliationStatus)
                     } else if let error = accessController.subscriptionError?.errorDescription {
                         paywallStatus("exclamationmark.triangle", error)
                     }
@@ -113,6 +113,15 @@ struct TuneAVProPaywallView: View {
         accessController.isSubscriptionOperationInProgress
             ? L10n.string("paywall.restore.loading")
             : L10n.string("paywall.restore")
+    }
+
+    private var reconciliationStatus: String {
+        switch accessController.subscriptionReconciliationSource {
+        case .restore:
+            return L10n.string("paywall.status.restorePending")
+        case .purchase, .none:
+            return L10n.string("paywall.status.purchasePending")
+        }
     }
 
     private func paywallBenefit(_ systemImage: String, _ key: String) -> some View {

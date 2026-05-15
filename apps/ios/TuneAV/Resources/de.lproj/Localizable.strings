@@ -767,7 +767,8 @@
 "paywall.purchase.price" = "Fortfahren für %@";
 "paywall.restore" = "Käufe wiederherstellen";
 "paywall.restore.loading" = "Wird wiederhergestellt…";
-"paywall.status.pending" = "Kauf erhalten. Tune AV entsperrt Pro, sobald dein Kontozugriff aktualisiert wurde.";
+"paywall.status.purchasePending" = "Kauf erhalten. Tune AV entsperrt Pro, sobald dein Kontozugriff aktualisiert wurde.";
+"paywall.status.restorePending" = "Wiederherstellung abgeschlossen. Wenn dein App Store Konto ein aktives Abo hat, entsperrt Tune AV Pro, sobald Apps AV den Zugriff bestätigt.";
 "paywall.subtitle" = "Aktualisiere dein angemeldetes Tune AV Konto. Die App entsperrt Pro erst, wenn Apps AV den Zugriff bestätigt.";
 "paywall.terms" = "Bedingungen";
 "paywall.title" = "Mehr Platz für deine Radios und Musik";

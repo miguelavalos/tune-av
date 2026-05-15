@@ -3,6 +3,11 @@ import OSLog
 
 @MainActor
 final class AccessController: ObservableObject {
+    enum SubscriptionReconciliationSource: Equatable {
+        case purchase
+        case restore
+    }
+
     @Published private(set) var accessMode: AccessMode
     @Published private(set) var planTier: PlanTier
     @Published private(set) var capabilities: AccessCapabilities
@@ -13,6 +18,7 @@ final class AccessController: ObservableObject {
     @Published private(set) var subscriptionError: TuneAVSubscriptionPurchaseError?
     @Published private(set) var isSubscriptionOperationInProgress: Bool
     @Published private(set) var isWaitingForSubscriptionReconciliation: Bool
+    @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
     @Published var upgradePrompt: UpgradePrompt?
 
     let accountService: AVAccountService
@@ -62,6 +68,7 @@ final class AccessController: ObservableObject {
         self.subscriptionError = nil
         self.isSubscriptionOperationInProgress = false
         self.isWaitingForSubscriptionReconciliation = false
+        self.subscriptionReconciliationSource = nil
         self.upgradePrompt = nil
         self.accessMode = .guest
         resolveAccessState()
@@ -125,13 +132,13 @@ final class AccessController: ObservableObject {
     }
 
     func purchaseMonthlyPro() async {
-        await runSubscriptionOperation {
+        await runSubscriptionOperation(source: .purchase) {
             try await subscriptionPurchasing.purchaseMonthlyPro(for: accountUser)
         }
     }
 
     func restorePurchases() async {
-        await runSubscriptionOperation {
+        await runSubscriptionOperation(source: .restore) {
             try await subscriptionPurchasing.restorePurchases(for: accountUser)
         }
     }
@@ -148,6 +155,7 @@ final class AccessController: ObservableObject {
         subscriptionOffer = nil
         subscriptionError = nil
         isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
         resolveAccessState()
     }
 
@@ -201,7 +209,10 @@ final class AccessController: ObservableObject {
         "\(feature.rawValue):\(TuneAVDailyUsageLimiter.normalizedUsageKey(usageKey))"
     }
 
-    private func runSubscriptionOperation(_ operation: () async throws -> TuneAVPurchaseOutcome) async {
+    private func runSubscriptionOperation(
+        source: SubscriptionReconciliationSource,
+        _ operation: () async throws -> TuneAVPurchaseOutcome
+    ) async {
         guard accountUser != nil else {
             subscriptionError = .missingAccountUser
             return
@@ -217,9 +228,11 @@ final class AccessController: ObservableObject {
             let outcome = try await operation()
             guard outcome.shouldRefreshAccess else { return }
             isWaitingForSubscriptionReconciliation = true
+            subscriptionReconciliationSource = source
             await syncFromAccountProvider()
             if accessMode == .signedInPro {
                 isWaitingForSubscriptionReconciliation = false
+                subscriptionReconciliationSource = nil
                 upgradePrompt = nil
             }
         } catch let error as TuneAVSubscriptionPurchaseError {
@@ -251,6 +264,7 @@ final class AccessController: ObservableObject {
         limits = TuneAVAccessLimitPolicy.resolvedLimits(resolvedAccess.limits, accessMode: resolvedAccess.accessMode)
         if resolvedAccess.accessMode == .signedInPro {
             isWaitingForSubscriptionReconciliation = false
+            subscriptionReconciliationSource = nil
         }
         accountSession = AccountSession(
             user: accountUser,

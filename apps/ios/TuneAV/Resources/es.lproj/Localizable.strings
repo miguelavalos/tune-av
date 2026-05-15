@@ -767,7 +767,8 @@
 "paywall.purchase.price" = "Continuar por %@";
 "paywall.restore" = "Restaurar compras";
 "paywall.restore.loading" = "Restaurando…";
-"paywall.status.pending" = "Compra recibida. Tune AV desbloqueará Pro cuando se actualice el acceso de tu cuenta.";
+"paywall.status.purchasePending" = "Compra recibida. Tune AV desbloqueará Pro cuando se actualice el acceso de tu cuenta.";
+"paywall.status.restorePending" = "Restauración completada. Si tu App Store tiene una suscripción activa para esta cuenta, Tune AV desbloqueará Pro cuando Apps AV confirme el acceso.";
 "paywall.subtitle" = "Mejora tu cuenta de Tune AV con sesión. La app solo desbloquea Pro cuando Apps AV confirma el acceso.";
 "paywall.terms" = "Términos";
 "paywall.title" = "Más espacio para tus radios y música";
