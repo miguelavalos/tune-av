@@ -76,7 +76,15 @@ struct TuneAVNowPlayingDisplayLines: Equatable, Sendable {
         } else if let albumTitle = TuneAVDisplayMetadata.normalized(currentAlbumTitle) {
             trackSupportingLine = albumTitle
         } else {
-            let tags = station.normalizedTags.prefix(2).joined(separator: " · ")
+            let tags = station.normalizedTags
+                .compactMap(TuneAVMusicGenreCatalog.canonicalTag(for:))
+                .map { L10n.genreLabel(for: $0) }
+                .reduce(into: [String]()) { result, tag in
+                    guard !result.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame }) else { return }
+                    result.append(tag)
+                }
+                .prefix(2)
+                .joined(separator: " · ")
             trackSupportingLine = tags.isEmpty ? liveStreamFallback : tags
         }
 

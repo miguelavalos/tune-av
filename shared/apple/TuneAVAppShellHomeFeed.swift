@@ -20,13 +20,15 @@ enum HomeFeedContext: Equatable {
 }
 
 struct AppShellHomeFeed {
+    static let defaultFeedLimit = 16
+
     let stationService: StationService
     let localizedCountryName: (String) -> String
     let resolvedDeviceCountryCode: () -> String?
     var cache: HomeFeedCache = .shared
 
     @MainActor
-    func load(preferredTag: String = "", limit: Int = 12) async throws -> HomeFeedResult {
+    func load(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) async throws -> HomeFeedResult {
         if let cachedFeed = cachedFeed(preferredTag: preferredTag, limit: limit) {
             return cachedFeed
         }
@@ -35,17 +37,23 @@ struct AppShellHomeFeed {
     }
 
     @MainActor
-    func refresh(preferredTag: String = "", limit: Int = 12) async throws -> HomeFeedResult {
+    func refresh(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) async throws -> HomeFeedResult {
         try await loadRemote(preferredTag: preferredTag, limit: limit)
     }
 
     @MainActor
-    func prefetchInitialFeed(preferredTag: String = "", limit: Int = 12) async {
+    func prefetchInitialFeed(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) async {
         _ = try? await load(preferredTag: preferredTag, limit: limit)
+        _ = try? await refresh(preferredTag: preferredTag, limit: limit)
     }
 
     @MainActor
-    private func loadRemote(preferredTag: String = "", limit: Int = 12) async throws -> HomeFeedResult {
+    func cachedResult(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) -> HomeFeedResult? {
+        cachedFeed(preferredTag: preferredTag, limit: limit)
+    }
+
+    @MainActor
+    private func loadRemote(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) async throws -> HomeFeedResult {
         let normalizedPreferredTag = preferredTag.trimmingCharacters(in: .whitespacesAndNewlines)
         let localeIdentifier = AppLanguage.resolved(from: UserDefaults.standard.string(forKey: "tuneav.appLanguage")).rawValue
         if !normalizedPreferredTag.isEmpty {

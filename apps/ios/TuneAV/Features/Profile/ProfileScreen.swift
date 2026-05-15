@@ -23,7 +23,7 @@ struct ProfileScreen: View {
     @State private var browserDestination: BrowserDestination?
     @State private var isShowingAccountDeletion = false
     @State private var isShowingProPaywall = false
-    private let genreTags = TuneAVFallbackArtworkCategory.visibleSearchTags
+    private let genreTags = TuneAVMusicGenreCatalog.visibleTags
 
     var body: some View {
         ScrollView {

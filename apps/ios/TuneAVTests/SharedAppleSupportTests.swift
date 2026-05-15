@@ -1460,7 +1460,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(direct.searchLimit, 24)
         XCTAssertEqual(worldwide.key, "|||music")
         XCTAssertTrue(worldwide.usesWorldwideDiscovery)
-        XCTAssertEqual(worldwide.searchLimit, 12)
+        XCTAssertEqual(worldwide.searchLimit, AppShellHomeFeed.defaultFeedLimit)
     }
 
     func testAppShellTabResolvesLaunchContextDefaults() {

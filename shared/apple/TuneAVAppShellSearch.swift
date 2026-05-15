@@ -33,20 +33,82 @@ enum TuneAVStationFeedback: String, Codable, CaseIterable {
     }
 }
 
-enum TuneAVStationMusicClassifier {
-    static let musicTags = [
+enum TuneAVMusicGenreCatalog {
+    static let visibleTags = [
         "pop",
         "rock",
         "electronic",
         "latin",
+        "dance",
         "jazz",
         "chill",
-        "dance",
-        "classical",
         "oldies",
+        "classical",
         "hip-hop",
-        "indie"
+        "indie",
+        "country"
     ]
+
+    private static let canonicalTags = Set(visibleTags)
+    private static let aliases: [String: String] = [
+        "alternative": "rock",
+        "alternative rock": "rock",
+        "classic rock": "rock",
+        "hard rock": "rock",
+        "metal": "rock",
+        "pop rock": "rock",
+        "top 40": "pop",
+        "hits": "pop",
+        "charts": "pop",
+        "electro": "electronic",
+        "electronica": "electronic",
+        "house": "electronic",
+        "techno": "electronic",
+        "latina": "latin",
+        "latino": "latin",
+        "world": "latin",
+        "spanish": "latin",
+        "espanol": "latin",
+        "ambient": "chill",
+        "lounge": "chill",
+        "easy listening": "chill",
+        "70s": "oldies",
+        "80s": "oldies",
+        "90s": "oldies",
+        "2000s": "oldies",
+        "retro": "oldies",
+        "hiphop": "hip-hop",
+        "hip hop": "hip-hop",
+        "rap": "hip-hop",
+        "folk": "country",
+        "americana": "country"
+    ]
+
+    static func canonicalTag(for rawTag: String) -> String? {
+        let normalized = rawTag
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        guard !normalized.isEmpty else { return nil }
+
+        let direct = normalized.replacingOccurrences(of: " ", with: "-")
+        if canonicalTags.contains(direct) {
+            return direct
+        }
+
+        if let alias = aliases[normalized] {
+            return alias
+        }
+
+        return aliases.first { normalized.contains($0.key) }?.value
+    }
+}
+
+enum TuneAVStationMusicClassifier {
+    static let musicTags = TuneAVMusicGenreCatalog.visibleTags
 
     private static let musicSignals = Set([
         "music",
@@ -497,7 +559,7 @@ struct AppShellSearchRequest: Equatable {
     }
 
     var searchLimit: Int {
-        query.isEmpty ? 12 : 24
+        query.isEmpty ? AppShellHomeFeed.defaultFeedLimit : 24
     }
 }
 
@@ -515,9 +577,11 @@ struct AppShellSearch {
         favoriteStations: [Station]
     ) async throws -> [Station] {
         if request.usesWorldwideDiscovery {
-            let stations = try await loadWorldwideDiscoveryStations(
-                limit: 12,
+            let stations = try await loadPopularDiscoveryStations(
+                limit: AppShellHomeFeed.defaultFeedLimit,
                 tag: request.tag,
+                countryCode: resolvedDeviceCountryCode(),
+                language: Locale.autoupdatingCurrent.language.languageCode?.identifier,
                 recentStations: recentStations,
                 favoriteStations: favoriteStations
             )
@@ -534,6 +598,85 @@ struct AppShellSearch {
             )
         )
         return TuneAVStationMusicClassifier.orderedForDiscoveryMode(stations, mode: request.discoveryMode, request: request)
+    }
+
+    @MainActor
+    func loadPopularDiscoveryStations(
+        limit: Int,
+        tag: String?,
+        countryCode: String?,
+        language: String?,
+        recentStations: [Station],
+        favoriteStations: [Station]
+    ) async throws -> [Station] {
+        let sanitizedCountryCode = TuneAVCountry.sanitizedCode(countryCode)
+        let normalizedLanguage = TuneAVText.normalizedValue(language)?.lowercased()
+        do {
+            let popularStations = try await stationService.popularStations(
+                filters: .init(
+                    query: "",
+                    countryCode: sanitizedCountryCode ?? "",
+                    language: normalizedLanguage ?? "",
+                    tag: tag ?? "",
+                    limit: limit,
+                    allowsEmptySearch: true
+                )
+            )
+
+            let countryStations = sanitizedCountryCode != nil && popularStations.count < limit
+                ? (try? await stationService.popularStations(
+                    filters: .init(
+                        query: "",
+                        countryCode: sanitizedCountryCode ?? "",
+                        tag: tag ?? "",
+                        limit: limit - popularStations.count,
+                        allowsEmptySearch: true
+                    )
+                )) ?? []
+                : []
+            let regionalStations = Self.mergeUniqueStations(
+                primary: popularStations,
+                secondary: countryStations,
+                limit: limit
+            )
+            let globalStations = regionalStations.count < limit
+                ? (try? await stationService.popularStations(
+                    filters: .init(
+                        query: "",
+                        language: normalizedLanguage ?? "",
+                        tag: tag ?? "",
+                        limit: limit - regionalStations.count,
+                        allowsEmptySearch: true
+                    )
+                )) ?? []
+                : []
+
+            let merged = Self.mergeUniqueStations(
+                primary: regionalStations,
+                secondary: globalStations + recentStations + favoriteStations + Station.samples,
+                limit: limit
+            )
+
+            if !merged.isEmpty {
+                return merged
+            }
+        } catch {
+            let localStations = Self.mergeUniqueStations(
+                primary: recentStations + favoriteStations,
+                secondary: Station.samples,
+                limit: limit
+            )
+            if !localStations.isEmpty {
+                return localStations
+            }
+        }
+
+        return try await loadWorldwideDiscoveryStations(
+            limit: limit,
+            tag: tag,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations
+        )
     }
 
     @MainActor

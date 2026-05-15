@@ -21,17 +21,7 @@ enum TuneAVFallbackArtworkCategory: String, Equatable {
     case countryFolk
     case genericUnknown
 
-    static let visibleSearchTags = [
-        popHits.searchTag,
-        rockAlternative.searchTag,
-        electronicDance.searchTag,
-        jazzBluesSoul.searchTag,
-        chillAmbient.searchTag,
-        latinWorld.searchTag,
-        decadesOldies.searchTag,
-        classicalInstrumental.searchTag,
-        countryFolk.searchTag
-    ]
+    static let visibleSearchTags = TuneAVMusicGenreCatalog.visibleTags
 
     var searchTag: String {
         switch self {

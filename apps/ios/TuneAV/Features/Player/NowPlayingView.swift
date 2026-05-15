@@ -641,10 +641,15 @@ struct NowPlayingView: View {
         HStack(spacing: 7) {
             ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
                 let isSelected = aviSelectedFeedback(for: station) == feedback
-                Button {
-                    setAviFeedback(feedback, for: station)
-                    showAviReaction(for: feedback)
-                } label: {
+                PlayerFeedbackReactionButton(
+                    reaction: TuneAVActionReaction(feedback: feedback),
+                    accessibilityLabel: feedback.localizedState,
+                    accessibilityIdentifier: "player.avi.feedback." + feedback.rawValue,
+                    action: {
+                        setAviFeedback(feedback, for: station)
+                        showAviReaction(for: feedback)
+                    }
+                ) {
                     Image(systemName: feedback.systemImage)
                         .font(.system(size: 15, weight: .black))
                         .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
@@ -656,9 +661,6 @@ struct NowPlayingView: View {
                                 .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
                         }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(feedback.localizedState)
-                .accessibilityIdentifier("player.avi.feedback." + feedback.rawValue)
             }
         }
     }
@@ -887,11 +889,16 @@ struct NowPlayingView: View {
 
         return HStack(spacing: 8) {
             ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
-                Button {
-                    let nextFeedback = activeFeedback == feedback ? nil : feedback
-                    libraryStore.setFeedback(nextFeedback, for: station)
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                } label: {
+                PlayerFeedbackReactionButton(
+                    reaction: TuneAVActionReaction(feedback: feedback),
+                    accessibilityLabel: feedback.localizedState,
+                    accessibilityValue: activeFeedback == feedback ? L10n.string("common.selected") : "",
+                    accessibilityIdentifier: "player.station.feedback.\(feedback.rawValue)",
+                    action: {
+                        let nextFeedback = activeFeedback == feedback ? nil : feedback
+                        libraryStore.setFeedback(nextFeedback, for: station)
+                    }
+                ) {
                     Image(systemName: feedback.systemImage)
                         .font(.system(size: compact ? 11 : 12, weight: .black))
                         .foregroundStyle(activeFeedback == feedback ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
@@ -905,17 +912,17 @@ struct NowPlayingView: View {
                                 .stroke(activeFeedback == feedback ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
                         }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(feedback.localizedState)
-                .accessibilityValue(activeFeedback == feedback ? L10n.string("common.selected") : "")
-                .accessibilityIdentifier("player.station.feedback.\(feedback.rawValue)")
             }
 
             if activeFeedback != nil {
-                Button {
-                    libraryStore.setFeedback(nil, for: station)
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                } label: {
+                PlayerFeedbackReactionButton(
+                    reaction: .clear,
+                    accessibilityLabel: L10n.string("shell.stationFeedback.clear"),
+                    accessibilityIdentifier: "player.station.feedback.clear",
+                    action: {
+                        libraryStore.setFeedback(nil, for: station)
+                    }
+                ) {
                     Image(systemName: "xmark")
                         .font(.system(size: compact ? 10 : 11, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
@@ -926,9 +933,6 @@ struct NowPlayingView: View {
                                 .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                         }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.stationFeedback.clear"))
-                .accessibilityIdentifier("player.station.feedback.clear")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1494,11 +1498,11 @@ struct NowPlayingView: View {
 
         let stationDiscoveries = stationDiscoveryCount(for: station)
         if stationDiscoveries > 0 {
-            prompts.append(L10n.string("player.avi.context.discoveries", stationDiscoveries))
+            prompts.append(L10n.plural(singular: "player.avi.context.discoveries.one", plural: "player.avi.context.discoveries.other", count: stationDiscoveries, stationDiscoveries))
         }
 
-        if let tag = station.normalizedTags.first {
-            prompts.append(tag.capitalized(with: L10n.locale))
+        if let tag = station.normalizedTags.compactMap(TuneAVMusicGenreCatalog.canonicalTag(for:)).first {
+            prompts.append(L10n.genreLabel(for: tag).capitalized(with: L10n.locale))
         }
 
         return Array(prompts.prefix(limit))
@@ -2011,6 +2015,44 @@ private enum PlayerAviReaction: Equatable {
             return "AviV2Thinking"
         case .curious:
             return "AviV2TuneSurprised"
+        }
+    }
+}
+
+private struct PlayerFeedbackReactionButton<Label: View>: View {
+    let reaction: TuneAVActionReaction
+    let accessibilityLabel: String
+    var accessibilityValue: String = ""
+    let accessibilityIdentifier: String
+    let action: () -> Void
+    @ViewBuilder let label: () -> Label
+
+    @State private var reactionTrigger = 0
+
+    var body: some View {
+        Button {
+            reactionTrigger += 1
+            action()
+        } label: {
+            label()
+                .tuneAVActionReaction(reaction, trigger: reactionTrigger)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+}
+
+private extension TuneAVActionReaction {
+    init(feedback: TuneAVStationFeedback) {
+        switch feedback {
+        case .liked:
+            self = .like
+        case .disliked:
+            self = .dislike
+        case .notForMe:
+            self = .notForMe
         }
     }
 }

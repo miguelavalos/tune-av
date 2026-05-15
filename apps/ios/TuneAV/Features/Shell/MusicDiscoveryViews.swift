@@ -6,6 +6,7 @@ struct DiscoveryTrackCard: View {
     let discovery: DiscoveredTrack
     let stationArtworkURL: URL?
     let feedback: TuneAVStationFeedback?
+    var showsSaveButton = true
     @Binding var openAviActionsID: String?
     let openTrackInfo: () -> Void
     let toggleSaved: () -> Void
@@ -29,7 +30,7 @@ struct DiscoveryTrackCard: View {
         HStack(spacing: 12) {
             Button(action: openTrackInfo) {
                 HStack(spacing: 12) {
-                    artwork
+                    feedbackArtwork(size: 54, badgeSize: 22, badgeFontSize: 9, badgeOffset: -5)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(discovery.title)
@@ -57,11 +58,9 @@ struct DiscoveryTrackCard: View {
             .accessibilityHint(L10n.string("shell.music.discovery.openTrackInfo.hint"))
             .accessibilityIdentifier("discoveryTrack.openInfo.\(discovery.discoveryID)")
 
-            if let feedback {
-                MusicFeedbackBadge(feedback: feedback, size: 30, fontSize: 13)
+            if showsSaveButton {
+                saveButton
             }
-
-            saveButton
             aviActionsMenu
         }
         .padding(12)
@@ -76,6 +75,23 @@ struct DiscoveryTrackCard: View {
         .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 8, y: 3)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("discoveryTrack.\(discovery.discoveryID)")
+    }
+
+    private func feedbackArtwork(
+        size: CGFloat,
+        badgeSize: CGFloat,
+        badgeFontSize: CGFloat,
+        badgeOffset: CGFloat
+    ) -> some View {
+        ZStack(alignment: .topLeading) {
+            artwork
+
+            if let feedback {
+                MusicFeedbackBadge(feedback: feedback, size: badgeSize, fontSize: badgeFontSize)
+                    .offset(x: badgeOffset, y: badgeOffset)
+            }
+        }
+        .frame(width: size, height: size)
     }
 
     private var saveButton: some View {
@@ -304,7 +320,7 @@ private struct MusicTrackCompactCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 11) {
-            artwork
+            feedbackArtwork
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(discovery.title)
@@ -323,10 +339,6 @@ private struct MusicTrackCompactCard: View {
                     .lineLimit(1)
 
                 HStack(spacing: 5) {
-                    if let feedback {
-                        MusicFeedbackBadge(feedback: feedback, size: 17, fontSize: 8)
-                    }
-
                     if discovery.isMarkedInteresting {
                         Image(systemName: "bookmark.fill")
                             .font(.system(size: 10, weight: .black))
@@ -351,6 +363,18 @@ private struct MusicTrackCompactCard: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isButton)
+    }
+
+    private var feedbackArtwork: some View {
+        ZStack(alignment: .topLeading) {
+            artwork
+
+            if let feedback {
+                MusicFeedbackBadge(feedback: feedback, size: 22, fontSize: 9)
+                    .offset(x: -5, y: -5)
+            }
+        }
+        .frame(width: 68, height: 68)
     }
 
     @ViewBuilder
@@ -422,18 +446,10 @@ private struct MusicFeedbackBadge: View {
     let feedback: TuneAVStationFeedback
     var size: CGFloat = 18
     var fontSize: CGFloat = 8
+    var borderWidth: CGFloat = 1
 
     var body: some View {
-        Image(systemName: feedback.systemImage)
-            .font(.system(size: fontSize, weight: .black))
-            .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-            .frame(width: size, height: size)
-            .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.82), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(Color.white.opacity(0.82), lineWidth: 1)
-            }
-            .accessibilityLabel(feedback.localizedState)
+        TuneAVFeedbackBadge(feedback: feedback, size: size, fontSize: fontSize)
     }
 }
 

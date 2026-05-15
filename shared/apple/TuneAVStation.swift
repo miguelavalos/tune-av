@@ -209,6 +209,102 @@ extension Station {
             bitrate: 320,
             codec: "AAC",
             homepageURL: "https://www.radiofrance.fr/fip"
+        ),
+        Station(
+            id: "radio-paradise-main-mix",
+            name: "Radio Paradise",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "rock,eclectic,indie",
+            streamURL: "https://stream.radioparadise.com/mp3-128",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://radioparadise.com/"
+        ),
+        Station(
+            id: "kexp",
+            name: "KEXP",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "indie,alternative,live",
+            streamURL: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://www.kexp.org/"
+        ),
+        Station(
+            id: "bbc-6-music",
+            name: "BBC Radio 6 Music",
+            country: "United Kingdom",
+            countryCode: "GB",
+            language: "English",
+            tags: "alternative,indie,rock",
+            streamURL: "https://stream.live.vc.bbcmedia.co.uk/bbc_6music",
+            bitrate: 128,
+            codec: "AAC",
+            homepageURL: "https://www.bbc.co.uk/sounds/play/live:bbc_6music"
+        ),
+        Station(
+            id: "nts-radio-1",
+            name: "NTS Radio 1",
+            country: "United Kingdom",
+            countryCode: "GB",
+            language: "English",
+            tags: "electronic,experimental,underground",
+            streamURL: "https://stream-relay-geo.ntslive.net/stream",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://www.nts.live/"
+        ),
+        Station(
+            id: "rne-radio-3",
+            name: "RNE Radio 3",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "indie,alternative,culture",
+            streamURL: "https://rtvelivestream.akamaized.net/rtvesec/rne/rne_r3_main.m3u8",
+            bitrate: 128,
+            codec: "HLS",
+            homepageURL: "https://www.rtve.es/play/radio/radio-3/"
+        ),
+        Station(
+            id: "nrj-france",
+            name: "NRJ",
+            country: "France",
+            countryCode: "FR",
+            language: "French",
+            tags: "pop,hits,dance",
+            streamURL: "https://scdn.nrjaudio.fm/adwz2/fr/30001/mp3_128.mp3",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://www.nrj.fr/"
+        ),
+        Station(
+            id: "wfmu",
+            name: "WFMU",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "freeform,indie,eclectic",
+            streamURL: "https://stream0.wfmu.org/freeform-128k",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://wfmu.org/"
+        ),
+        Station(
+            id: "classic-fm-uk",
+            name: "Classic FM",
+            country: "United Kingdom",
+            countryCode: "GB",
+            language: "English",
+            tags: "classical,instrumental,relax",
+            streamURL: "https://media-ssl.musicradio.com/ClassicFMMP3",
+            bitrate: 128,
+            codec: "MP3",
+            homepageURL: "https://www.classicfm.com/"
         )
     ]
 

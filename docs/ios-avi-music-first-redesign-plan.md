@@ -1,5 +1,12 @@
 # iOS Avi Music-First Redesign Plan
 
+Status: superseded for active UI decisions.
+
+This public-safe plan is historical context for the iOS Avi music-first
+redesign. Active V1 UI, app behavior, and Avi decisions now live in the private
+Apps AV documentation. Keep this file only for public-repo context and do not
+update it with new private planning decisions.
+
 ## Context
 
 Tune AV should feel clearly focused on live music radio discovery: finding stations, understanding what is playing, saving radios, cataloging tracks/artists, and tuning preferences through Avi.

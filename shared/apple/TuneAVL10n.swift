@@ -141,6 +141,14 @@ enum L10n {
             return string("genre.pop")
         case "jazz":
             return string("genre.jazz")
+        case "dance":
+            return string("genre.dance")
+        case "chill":
+            return string("genre.chill")
+        case "hip-hop":
+            return string("genre.hipHop")
+        case "indie":
+            return string("genre.indie")
         case "news":
             return string("genre.news")
         case "electronic":

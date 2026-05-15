@@ -1,5 +1,25 @@
 import SwiftUI
 
+struct TuneAVFeedbackBadge: View {
+    let feedback: TuneAVStationFeedback
+    var size: CGFloat = 22
+    var fontSize: CGFloat? = nil
+    var borderOpacity: Double = 0.78
+
+    var body: some View {
+        Image(systemName: feedback.systemImage)
+            .font(.system(size: fontSize ?? size * 0.41, weight: .black))
+            .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
+            .frame(width: size, height: size)
+            .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(Color.white.opacity(borderOpacity), lineWidth: 1)
+            }
+            .accessibilityLabel(feedback.localizedState)
+    }
+}
+
 struct MiniPlayerView: View {
     @Environment(\.displayScale) private var displayScale
     @EnvironmentObject private var audioPlayer: AudioPlayerService
@@ -94,16 +114,7 @@ struct MiniPlayerView: View {
     @ViewBuilder
     private var feedbackBadge: some View {
         if let feedback = currentTrackFeedback {
-            Image(systemName: feedback.systemImage)
-                .font(.system(size: 9, weight: .black))
-                .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-                .frame(width: 22, height: 22)
-                .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(Color.white.opacity(0.78), lineWidth: 1)
-                }
-                .accessibilityLabel(feedback.localizedState)
+            TuneAVFeedbackBadge(feedback: feedback, size: 22)
                 .accessibilityIdentifier("miniPlayer.trackFeedback")
         }
     }

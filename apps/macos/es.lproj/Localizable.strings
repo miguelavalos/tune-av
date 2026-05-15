@@ -36,6 +36,10 @@
 "genre.electronic" = "Electrónica";
 "genre.frontPage" = "Para ti";
 "genre.jazz" = "Jazz";
+"genre.dance" = "Dance";
+"genre.chill" = "Chill";
+"genre.hipHop" = "Hip-Hop";
+"genre.indie" = "Indie";
 "genre.latin" = "Latina / Mundo";
 "genre.oldies" = "Clásicos";
 "genre.classical" = "Clásica";
