@@ -616,6 +616,7 @@
 "player.avi.feedback.songQuestion" = "Passt dieser Song zu dir?";
 "player.avi.listeningNowShort" = "Avi hört zu";
 "player.avi.moreWithAvi" = "Mehr mit Avi";
+"player.avi.poorInfo" = "Avi kann zuhören, aber dieses Radio sagt nicht immer, was gerade läuft.";
 "player.avi.secondaryOffer.song" = "Songtext, Künstler, speichern und mehr";
 "player.avi.secondaryOffer.stationSearch" = "Radio suchen, Favorit und Details";
 "player.avi.secondaryOffer.stationWeb" = "Web, Favorit, Details und mehr";

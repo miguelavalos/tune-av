@@ -337,6 +337,15 @@ struct NowPlayingView: View {
                 }
                 .frame(height: 25, alignment: .leading)
                 .accessibilityIdentifier("player.avi.context")
+
+                if shouldShowPoorInfoNotice(for: station) {
+                    Text(L10n.string("player.avi.poorInfo"))
+                        .font(.system(size: compact ? 11 : 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("player.avi.poorInfo")
+                }
             }
 
             if isShowingAviOptions {
@@ -933,7 +942,7 @@ struct NowPlayingView: View {
 
     private func playerControls(contentWidth: CGFloat, compact: Bool) -> some View {
         VStack(spacing: compact ? 10 : 14) {
-            transportSection(contentWidth: contentWidth, compact: compact)
+            listeningDock(contentWidth: contentWidth, compact: compact)
 
             if shouldShowStatusRow {
                 statusRow(contentWidth: contentWidth)
@@ -941,6 +950,49 @@ struct NowPlayingView: View {
 
             retrySection
         }
+    }
+
+    private func listeningDock(contentWidth: CGFloat, compact: Bool) -> some View {
+        let horizontalPadding: CGFloat = compact ? 10 : 12
+        let dockContentWidth = max(0, contentWidth - (horizontalPadding * 2))
+
+        return VStack(spacing: compact ? 10 : 12) {
+            if let station = audioPlayer.currentStation {
+                HStack(spacing: 12) {
+                    listeningArtwork(for: station, size: compact ? 42 : 48)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(station.name)
+                            .font(.system(size: compact ? 13 : 14, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+                            .lineLimit(1)
+
+                        Text(trackTitleLine(for: station))
+                            .font(.system(size: compact ? 12 : 13, weight: .semibold))
+                            .foregroundStyle(currentTrackHasSongContext ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .accessibilityIdentifier("player.dock.summary")
+            }
+
+            transportSection(contentWidth: dockContentWidth, compact: compact)
+        }
+        .padding(horizontalPadding)
+        .frame(width: contentWidth)
+        .background(
+            RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
+                .fill(TuneAVTheme.cardSurface)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: compact ? 26 : 30, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .shadow(color: TuneAVTheme.glassShadow.opacity(0.55), radius: 10, y: 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player.dock")
     }
 
     private func transportSection(contentWidth: CGFloat, compact: Bool) -> some View {
@@ -1450,6 +1502,10 @@ struct NowPlayingView: View {
         }
 
         return Array(prompts.prefix(limit))
+    }
+
+    private func shouldShowPoorInfoNotice(for station: Station) -> Bool {
+        audioPlayer.isCurrent(station) && audioPlayer.isPlaying && !currentTrackHasSongContext
     }
 
     private func playerStationCountryPrompt(for station: Station) -> String? {

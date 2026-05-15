@@ -616,6 +616,7 @@
 "player.avi.feedback.songQuestion" = "T'encaixa aquesta cançó?";
 "player.avi.listeningNowShort" = "Avi escolta";
 "player.avi.moreWithAvi" = "Més amb Avi";
+"player.avi.poorInfo" = "Avi pot escoltar, però aquesta ràdio no sempre diu què està sonant.";
 "player.avi.secondaryOffer.song" = "lletra, artista, desar i més";
 "player.avi.secondaryOffer.stationSearch" = "cercar ràdio, preferida i detall";
 "player.avi.secondaryOffer.stationWeb" = "web, preferida, detall i més";

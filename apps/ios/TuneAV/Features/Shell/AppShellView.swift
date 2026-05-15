@@ -2045,45 +2045,86 @@ private struct AviScreen: View {
     }
 
     private func focusedNowPlayingCard(for station: Station) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center) {
-                Text(L10n.string("shell.common.playingNow"))
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .center) {
+                    Text(L10n.string("shell.common.playingNow"))
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .textCase(.uppercase)
 
-                Spacer()
+                    Spacer()
 
-                Button {
-                    stopPlayback()
-                } label: {
-                    Image(systemName: "speaker.slash.fill")
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.9))
-                        .frame(width: 32, height: 28)
-                        .background(TuneAVTheme.cardSurface, in: Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                    Button {
+                        stopPlayback()
+                    } label: {
+                        Image(systemName: "speaker.slash.fill")
+                            .font(.system(size: 13, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.9))
+                            .frame(width: 32, height: 28)
+                            .background(TuneAVTheme.cardSurface, in: Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+                            }
                         }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.string("shell.accessibility.stopListening"))
+                    .accessibilityIdentifier("avi.controls.stop")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.accessibility.stopListening"))
-                .accessibilityIdentifier("avi.controls.stop")
-            }
-            .frame(height: 28)
 
-            HStack(alignment: .center, spacing: 13) {
+                Text(station.name)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(currentTrackTitle ?? L10n.string("player.track.liveNow"))
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.74)
+
+                Text(currentTrackArtist ?? station.primaryDetailLine)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(hasCurrentSongContext ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+
+                if isFocusedStationActive && !hasCurrentSongContext {
+                    Text(L10n.string("player.avi.poorInfo"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("player.avi.poorInfo")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            focusedListeningDock(for: station)
+        }
+        .padding(16)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 10, y: 6)
+    }
+
+    private func focusedListeningDock(for station: Station) -> some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
                 Button {
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                         isShowingArtworkZoom = true
                     }
                 } label: {
-                    currentArtwork(for: station, size: 68)
+                    currentArtwork(for: station, size: 50)
                         .overlay(alignment: .bottomTrailing) {
                             if let feedback = currentTrackFeedback {
-                                feedbackStatusBadge(feedback, size: 24)
-                                    .offset(x: 5, y: 5)
+                                feedbackStatusBadge(feedback, size: 20)
+                                    .offset(x: 4, y: 4)
                             }
                         }
                 }
@@ -2091,37 +2132,28 @@ private struct AviScreen: View {
                 .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
                 .accessibilityIdentifier("avi.nowPlaying.artworkZoom")
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(currentTrackTitle ?? L10n.string("player.track.liveNow"))
-                        .font(.system(size: 21, weight: .black, design: .rounded))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(station.name)
+                        .font(.system(size: 13, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .minimumScaleFactor(0.74)
 
-                    Text(currentTrackArtist ?? station.primaryDetailLine)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .minimumScaleFactor(0.8)
-
-                    Text(station.name)
+                    Text(hasCurrentSongContext ? [currentTrackArtist, currentTrackTitle].compactMap { $0 }.joined(separator: " - ") : L10n.string("player.track.liveNow"))
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .foregroundStyle(hasCurrentSongContext ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 58, alignment: .center)
             }
-            .frame(height: 68)
+            .accessibilityIdentifier("player.dock.summary")
 
             HStack(spacing: 12) {
                 listeningControlButton(systemImage: "backward.fill", accessibilityIdentifier: "avi.controls.previous", action: playPrevious)
 
                 Button(action: openPlayer) {
-                    focusedPlayButtonContent(height: 48, cornerRadius: 17)
+                    focusedPlayButtonContent(height: 52, cornerRadius: 18)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("avi.controls.playPause")
@@ -2129,9 +2161,14 @@ private struct AviScreen: View {
                 listeningControlButton(systemImage: "forward.fill", accessibilityIdentifier: "avi.controls.next", action: playNext)
             }
         }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 10, y: 6)
+        .padding(12)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player.dock")
     }
 
     @ViewBuilder
