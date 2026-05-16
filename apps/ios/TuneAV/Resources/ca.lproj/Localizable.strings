@@ -122,6 +122,8 @@
 "player.discovery.saveShort" = "Desa";
 "player.discovery.saved" = "Desada a Música";
 "player.discovery.savedShort" = "Desada";
+"player.discovery.ignore" = "Ignora";
+"player.discovery.ignoredHint" = "Avi no la desarà ara.";
 "player.discovery.removed" = "Eliminada de Música";
 "player.discovery.removedShort" = "Eliminada";
 "player.discovery.share" = "Comparteix descobriment";
@@ -148,6 +150,9 @@
 "player.menu.copyStreamURL" = "Copiar l'URL del stream";
 "player.menu.openWebsite" = "Web de l'emissora";
 "player.station.websiteShort" = "Emissora";
+"player.station.save" = "Desa la ràdio";
+"player.station.savedShort" = "Ràdio desada";
+"player.station.unsave" = "Treu la ràdio desada";
 "player.menu.removeFavorite" = "Treure de La meva col·lecció";
 "player.menu.searchStation" = "Cercar al web";
 "player.menu.stationHistory" = "El meu historial en aquesta emissora";

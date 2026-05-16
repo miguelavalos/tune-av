@@ -22,6 +22,7 @@ struct NowPlayingView: View {
     @State private var lastAutomaticAviReactionAt = Date.distantPast
     @State private var isShowingAviOptions = false
     @State private var aviOptionLayer: AviOptionLayer = .primary
+    @State private var discoveryDecision: PlayerDiscoveryDecision?
 
     private let swipeThreshold: CGFloat = 72
     private let dismissSwipeThreshold: CGFloat = 88
@@ -333,6 +334,8 @@ struct NowPlayingView: View {
                             .minimumScaleFactor(0.86)
 
                         aviFeedbackRow(for: station, compact: compact)
+
+                        discoveryDecisionRow(for: station, compact: compact)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -403,6 +406,7 @@ struct NowPlayingView: View {
         .onChange(of: currentTrackIdentity) { _, nextIdentity in
             isShowingAviOptions = false
             aviOptionLayer = .primary
+            discoveryDecision = nil
             showAviReactionForCurrentTrackChange(identity: nextIdentity)
         }
     }
@@ -426,7 +430,7 @@ struct NowPlayingView: View {
                     openArtistFromAviOffer()
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "save", title: isCurrentTrackSaved ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort"), systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                actions.append(AviOrbitAction(id: "save", title: currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage) {
                     _ = saveCurrentDiscovery(for: station)
                     showAviReaction(.saved)
                     closeAviOptions()
@@ -437,7 +441,7 @@ struct NowPlayingView: View {
                     audioPlayer.togglePlayback()
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "favorite", title: L10n.string("player.avi.action.favorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                actions.append(AviOrbitAction(id: "favorite", title: stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage(for: station)) {
                     showAviReaction(.liked)
                     toggleFavorite(station)
                     closeAviOptions()
@@ -479,7 +483,7 @@ struct NowPlayingView: View {
                 stationHistoryAction(station)
                 closeAviOptions()
             },
-            AviOrbitAction(id: "favorite", title: L10n.string("player.avi.action.favorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+            AviOrbitAction(id: "favorite", title: stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage(for: station)) {
                 toggleFavorite(station)
                 closeAviOptions()
             },
@@ -702,6 +706,73 @@ struct NowPlayingView: View {
         }
     }
 
+    @ViewBuilder
+    private func discoveryDecisionRow(for station: Station, compact: Bool) -> some View {
+        if hasDiscoverableTrack {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 7) {
+                    PlayerFeedbackReactionButton(
+                        reaction: .save,
+                        accessibilityLabel: currentTrackSaveActionTitle,
+                        accessibilityValue: isCurrentTrackSaved ? L10n.string("common.selected") : "",
+                        accessibilityIdentifier: "player.discovery.saveDecision",
+                        action: {
+                            let didToggle = saveCurrentDiscovery(for: station)
+                            if didToggle {
+                                showAviReaction(.saved)
+                            }
+                        }
+                    ) {
+                        Label(currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage)
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(isCurrentTrackSaved ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: compact ? 38 : 42)
+                            .background(isCurrentTrackSaved ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(isCurrentTrackSaved ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                            }
+                    }
+
+                    PlayerFeedbackReactionButton(
+                        reaction: .clear,
+                        accessibilityLabel: L10n.string("player.discovery.ignore"),
+                        accessibilityIdentifier: "player.discovery.ignoreDecision",
+                        action: ignoreCurrentDiscovery
+                    ) {
+                        Label(L10n.string("player.discovery.ignore"), systemImage: "xmark")
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(discoveryDecision == .ignored ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: compact ? 38 : 42)
+                            .background(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.82) : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.46) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                            }
+                    }
+                }
+
+                if let discoveryDecision {
+                    Text(discoveryDecision.localizedHint)
+                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .accessibilityIdentifier("player.discovery.decisionHint")
+                }
+            }
+            .accessibilityIdentifier("player.discovery.decision")
+        }
+    }
+
     private func aviSecondaryOffer(for station: Station, compact: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
@@ -736,7 +807,7 @@ struct NowPlayingView: View {
                         openArtistFromAviOffer()
                     }
 
-                    Button(isCurrentTrackSaved ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort"), systemImage: isCurrentTrackSaved ? "checkmark.circle.fill" : "music.note.list") {
+                    Button(currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage) {
                         _ = saveCurrentDiscovery(for: station)
                         showAviReaction(.saved)
                     }
@@ -761,7 +832,7 @@ struct NowPlayingView: View {
                     }
                 }
 
-                Button(libraryStore.isFavorite(station) ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                Button(stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage(for: station)) {
                     showAviReaction(.liked)
                     toggleFavorite(station)
                 }
@@ -966,6 +1037,11 @@ struct NowPlayingView: View {
 
             playerFeedbackRow(for: station, compact: compact)
                 .padding(.top, compact ? 2 : 4)
+
+            if libraryStore.feedback(for: station) != nil {
+                playerDiscoveryDecisionRow(for: station, compact: compact)
+                    .padding(.top, compact ? 2 : 0)
+            }
         }
         .frame(width: contentWidth, alignment: .leading)
         .frame(minHeight: minHeight, alignment: .topLeading)
@@ -1040,6 +1116,75 @@ struct NowPlayingView: View {
             }
 
             retrySection
+        }
+    }
+
+    @ViewBuilder
+    private func playerDiscoveryDecisionRow(for station: Station, compact: Bool) -> some View {
+        if hasDiscoverableTrack {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Button {
+                        let didToggle = saveCurrentDiscovery(for: station)
+                        if didToggle {
+                            showAviReaction(.saved)
+                        }
+                    } label: {
+                        Label(currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage)
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(isCurrentTrackSaved ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: compact ? 32 : 36)
+                            .background(
+                                isCurrentTrackSaved ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(isCurrentTrackSaved ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(currentTrackSaveActionTitle)
+                    .accessibilityValue(isCurrentTrackSaved ? L10n.string("common.selected") : "")
+                    .accessibilityIdentifier("player.discovery.saveDecision")
+
+                    Button(action: ignoreCurrentDiscovery) {
+                        Label(L10n.string("player.discovery.ignore"), systemImage: "xmark")
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(discoveryDecision == .ignored ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: compact ? 32 : 36)
+                            .background(
+                                discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.82) : TuneAVTheme.elevatedSurface,
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.string("player.discovery.ignore"))
+                    .accessibilityIdentifier("player.discovery.ignoreDecision")
+                }
+
+                if let discoveryDecision {
+                    Text(discoveryDecision.localizedHint)
+                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .accessibilityIdentifier("player.discovery.decisionHint")
+                }
+            }
+            .accessibilityIdentifier("player.discovery.decision")
         }
     }
 
@@ -1262,7 +1407,7 @@ struct NowPlayingView: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(libraryStore.isFavorite(station) ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"))
+        .accessibilityLabel(stationSaveActionTitle(for: station))
         .accessibilityIdentifier("player.station.favorite")
     }
 
@@ -1631,6 +1776,7 @@ struct NowPlayingView: View {
             currentUsage: libraryStore.savedDiscoveriesCount
         )
 
+        let wasSaved = isCurrentTrackSaved
         let didToggle = libraryStore.toggleDiscoveredTrackSaved(
             title: audioPlayer.currentTrackTitle,
             artist: audioPlayer.currentTrackArtist,
@@ -1645,7 +1791,29 @@ struct NowPlayingView: View {
         }
 
         UIImpactFeedbackGenerator(style: isCurrentTrackSaved ? .rigid : .light).impactOccurred()
+        discoveryDecision = wasSaved ? .removed : .saved
         return true
+    }
+
+    private func ignoreCurrentDiscovery() {
+        discoveryDecision = .ignored
+        showAviReaction(.notForMe)
+    }
+
+    private var currentTrackSaveActionTitle: String {
+        isCurrentTrackSaved ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")
+    }
+
+    private var currentTrackSaveActionSystemImage: String {
+        isCurrentTrackSaved ? "bookmark.slash" : "bookmark"
+    }
+
+    private func stationSaveActionTitle(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
+    }
+
+    private func stationSaveActionSystemImage(for _: Station) -> String {
+        "dot.radiowaves.left.and.right"
     }
 
     private func openExternalSearch(
@@ -2147,7 +2315,7 @@ private struct PlayerSignalDeck: View {
         Menu {
             if hasSongContext {
                 Section("Song") {
-                    Button(isCurrentTrackDiscovered ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort")) {
+                    Button(isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")) {
                         _ = onSaveDiscovery()
                     }
                     Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
@@ -2158,7 +2326,7 @@ private struct PlayerSignalDeck: View {
             }
 
             Section("Radio") {
-                Button(isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"), action: onToggleFavorite)
+                Button(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"), action: onToggleFavorite)
 
                 if let homepageURL {
                     Button(L10n.string("player.menu.openWebsite")) {
@@ -2217,6 +2385,23 @@ private enum PlayerRatingTarget {
             return L10n.string("player.ratingTarget.song")
         case .radio:
             return L10n.string("player.ratingTarget.radio")
+        }
+    }
+}
+
+private enum PlayerDiscoveryDecision {
+    case saved
+    case removed
+    case ignored
+
+    var localizedHint: String {
+        switch self {
+        case .saved:
+            return L10n.string("player.avi.feedback.savedHint")
+        case .removed:
+            return L10n.string("player.discovery.removed")
+        case .ignored:
+            return L10n.string("player.discovery.ignoredHint")
         }
     }
 }
@@ -2585,7 +2770,7 @@ private struct FlippingPlayerArtwork: View {
 
                 savedStationArtworkActionButton(
                     isSaved: isFavorite,
-                    accessibilityLabel: isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"),
+                    accessibilityLabel: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                     accessibilityIdentifier: "player.artwork.options.favorite",
                     action: onToggleFavorite
                 )
@@ -2774,7 +2959,7 @@ private struct FlippingPlayerArtwork: View {
             }
         }
 
-        return isCurrentTrackDiscovered ? L10n.string("player.discovery.savedShort") : L10n.string("player.discovery.saveShort")
+        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")
     }
 
     private var discoveryButtonAccessibilityLabel: String {
@@ -2787,7 +2972,7 @@ private struct FlippingPlayerArtwork: View {
             }
         }
 
-        return isCurrentTrackDiscovered ? L10n.string("player.discovery.saved") : L10n.string("player.discovery.save")
+        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save")
     }
 
     private var discoveryFeedbackAccessibilityValue: String {

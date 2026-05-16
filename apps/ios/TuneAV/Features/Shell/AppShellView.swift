@@ -2713,6 +2713,8 @@ private struct AviScreen: View {
                     focusedStationPrimaryCommands(for: focusedStation)
                 } else if let activeMusicDetail {
                     focusedMusicPrimaryCommands(for: activeMusicDetail)
+                } else if let currentStation {
+                    currentSignalPrimaryCommands(for: currentStation)
                 } else {
                     defaultAviPrimaryCommands
                 }
@@ -2740,8 +2742,8 @@ private struct AviScreen: View {
         }
 
         AviCommandButton(
-            title: hasCurrentSongContext ? L10n.string("shell.avi.actions.saveSong") : L10n.string("shell.avi.actions.saveRadio"),
-            systemImage: "heart",
+            title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
+            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
         ) {
             if hasCurrentSongContext {
@@ -2777,8 +2779,8 @@ private struct AviScreen: View {
         switch detail {
         case .track(let discovery):
             AviCommandButton(
-                title: discovery.isMarkedInteresting ? L10n.string("shell.avi.action.saved") : L10n.string("shell.avi.actions.saveSong"),
-                systemImage: discovery.isMarkedInteresting ? "bookmark.fill" : "heart",
+                title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("shell.avi.actions.saveSong"),
+                systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
                 accessibilityIdentifier: "avi.command.primary.music.save"
             ) {
                 toggleDiscoverySaved(discovery)
@@ -2830,6 +2832,49 @@ private struct AviScreen: View {
     }
 
     @ViewBuilder
+    private func currentSignalPrimaryCommands(for station: Station) -> some View {
+        AviCommandButton(
+            title: L10n.string("player.header.nowPlaying"),
+            systemImage: "waveform",
+            accessibilityIdentifier: "avi.command.primary.currentPlayer"
+        ) {
+            openPlayer()
+        }
+
+        AviCommandButton(
+            title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
+            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
+            accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
+        ) {
+            if hasCurrentSongContext {
+                saveAviCurrentDiscovery(for: station)
+            } else {
+                toggleFavorite(station)
+            }
+        }
+
+        AviCommandButton(
+            title: hasCurrentSongContext ? L10n.string("shell.avi.actions.searchLyrics") : L10n.string("shell.avi.actions.searchPublicInfo"),
+            systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
+            accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.searchLyrics" : "avi.command.primary.searchRadio"
+        ) {
+            if hasCurrentSongContext {
+                openAviSearch(for: station, destination: .web, suffix: "lyrics")
+            } else {
+                openAviStationSearch(for: station)
+            }
+        }
+
+        AviCommandButton(
+            title: L10n.string("shell.avi.actions.history"),
+            systemImage: "clock.arrow.circlepath",
+            accessibilityIdentifier: "avi.command.primary.history"
+        ) {
+            showStationDetails(station, [station])
+        }
+    }
+
+    @ViewBuilder
     private var defaultAviPrimaryCommands: some View {
         if currentStation != nil {
             AviCommandButton(
@@ -2851,7 +2896,7 @@ private struct AviScreen: View {
 
         AviCommandButton(
             title: L10n.string("shell.avi.action.saved"),
-            systemImage: "heart.fill",
+            systemImage: "bookmark.fill",
             accessibilityIdentifier: "avi.command.primary.saved"
         ) {
             openLibrary()
@@ -3317,8 +3362,8 @@ private struct AviScreen: View {
                         openSpotify: {
                             openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
                         },
-                        hideAction: {},
-                        removeAction: {}
+                        hideAction: nil,
+                        removeAction: nil
                     )
                 }
 
@@ -3809,7 +3854,7 @@ private struct AviScreen: View {
             ArtistStatPill(
                 title: L10n.string("shell.library.favorites.title"),
                 value: libraryStore.isFavorite(station) ? L10n.string("common.yes") : L10n.string("common.no"),
-                systemImage: "heart.fill"
+                systemImage: "dot.radiowaves.left.and.right"
             )
 
             ArtistStatPill(
@@ -3852,8 +3897,8 @@ private struct AviScreen: View {
                         openSpotify: {
                             openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
                         },
-                        hideAction: {},
-                        removeAction: {}
+                        hideAction: nil,
+                        removeAction: nil
                     )
                 }
 
@@ -4351,8 +4396,8 @@ private struct AviScreen: View {
 
             HStack(spacing: 10) {
                 fullPlayerAviActionButton(
-                    title: hasCurrentSongContext ? L10n.string("shell.avi.actions.saveSong") : L10n.string("shell.avi.actions.saveRadio"),
-                    systemImage: "heart.fill",
+                    title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
+                    systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
                     accessibilityIdentifier: hasCurrentSongContext ? "avi.fullPlayer.saveSong" : "avi.fullPlayer.saveRadio"
                 ) {
                     if hasCurrentSongContext {
@@ -4561,56 +4606,18 @@ private struct AviScreen: View {
         station: Station
     ) -> some View {
         if feedback == .liked && hasCurrentSongContext {
-            if isCurrentSongSaved {
-                fullPlayerFeedbackInfoRow(
-                    title: L10n.string("player.discovery.saved"),
-                    subtitle: L10n.string("player.avi.feedback.savedHint"),
-                    systemImage: "bookmark.fill",
-                    isAction: false
-                )
-            } else {
-                Button {
-                    showAviReaction(.saved)
-                    saveAviCurrentDiscovery(for: station)
-                } label: {
-                    HStack(spacing: 9) {
-                        Image(systemName: "bookmark.fill")
-                            .font(.system(size: 13, weight: .black))
-                            .frame(width: 28, height: 28)
-                            .background(TuneAVTheme.brandBlack.opacity(0.12), in: Circle())
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(L10n.string("player.discovery.save"))
-                                .font(.system(size: 13, weight: .black))
-                                .lineLimit(1)
-
-                            Text(L10n.string("player.avi.feedback.saveHint"))
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(TuneAVTheme.brandBlack.opacity(0.72))
-                                .lineLimit(1)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .black))
-                    }
-                    .foregroundStyle(TuneAVTheme.brandBlack)
-                    .padding(.horizontal, 11)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 38)
-                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.avi.actions.saveSong"))
-                .accessibilityIdentifier("avi.fullPlayer.saveSong")
-            }
+            fullPlayerFeedbackSaveAction(
+                title: currentTrackSaveActionTitle(for: station),
+                subtitle: isCurrentSongSaved ? L10n.string("player.avi.feedback.savedHint") : L10n.string("player.avi.feedback.saveHint"),
+                systemImage: currentTrackSaveActionSystemImage(for: station),
+                station: station
+            )
         } else if hasCurrentSongContext && isCurrentSongSaved {
-            fullPlayerFeedbackInfoRow(
-                title: L10n.string("player.discovery.saved"),
+            fullPlayerFeedbackSaveAction(
+                title: currentTrackSaveActionTitle(for: station),
                 subtitle: L10n.string("player.avi.feedback.savedHint"),
-                systemImage: "bookmark.fill",
-                isAction: false
+                systemImage: currentTrackSaveActionSystemImage(for: station),
+                station: station
             )
         } else if feedback != nil {
             fullPlayerFeedbackInfoRow(
@@ -4627,6 +4634,48 @@ private struct AviScreen: View {
                 isAction: false
             )
         }
+    }
+
+    private func fullPlayerFeedbackSaveAction(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        station: Station
+    ) -> some View {
+        Button {
+            saveAviCurrentDiscovery(for: station)
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .black))
+                    .frame(width: 28, height: 28)
+                    .background(TuneAVTheme.brandBlack.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .black))
+                        .lineLimit(1)
+
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.brandBlack.opacity(0.72))
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .black))
+            }
+            .foregroundStyle(TuneAVTheme.brandBlack)
+            .padding(.horizontal, 11)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier("avi.fullPlayer.saveSong")
     }
 
     private func fullPlayerFeedbackInfoRow(
@@ -5135,8 +5184,8 @@ private struct AviScreen: View {
                         }
                     }
                     AviCommandButton(
-                        title: hasCurrentSongContext && isNowPlayingFullPlayer ? L10n.string("shell.avi.actions.saveSong") : L10n.string("shell.avi.actions.saveRadio"),
-                        systemImage: "heart",
+                        title: hasCurrentSongContext && isNowPlayingFullPlayer ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
+                        systemImage: hasCurrentSongContext && isNowPlayingFullPlayer ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
                         accessibilityIdentifier: hasCurrentSongContext && isNowPlayingFullPlayer ? "avi.actions.saveSong" : "avi.actions.saveRadio"
                     ) {
                         if hasCurrentSongContext && isNowPlayingFullPlayer {
@@ -5389,25 +5438,57 @@ private struct AviScreen: View {
             currentUsage: libraryStore.savedDiscoveriesCount
         )
 
-        guard libraryStore.canMarkTrackInteresting(
-            title: currentTrackTitle,
-            artist: currentTrackArtist,
-            station: station,
-            limit: state.limit
-        ) else {
-            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-            return false
+        if !isCurrentTrackSaved(for: station) {
+            guard libraryStore.canMarkTrackInteresting(
+                title: currentTrackTitle,
+                artist: currentTrackArtist,
+                station: station,
+                limit: state.limit
+            ) else {
+                accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
+                return false
+            }
         }
 
-        libraryStore.markTrackInteresting(
+        let didToggle = libraryStore.toggleDiscoveredTrackSaved(
             title: currentTrackTitle,
             artist: currentTrackArtist,
             station: station,
             artworkURL: nil,
+            savedLimit: state.limit,
             discoveryLimit: accessController.limits.discoveredTracks
         )
-        showAviReaction(.saved)
+        guard didToggle else {
+            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
+            return false
+        }
+
+        showAviReaction(isCurrentTrackSaved(for: station) ? .saved : .curious)
         return true
+    }
+
+    private func isCurrentTrackSaved(for station: Station) -> Bool {
+        libraryStore.isSavedDiscoveredTrack(
+            title: currentTrackTitle,
+            artist: currentTrackArtist,
+            station: station
+        )
+    }
+
+    private func currentTrackSaveActionTitle(for station: Station) -> String {
+        isCurrentTrackSaved(for: station) ? L10n.string("player.discovery.unsave") : L10n.string("shell.avi.actions.saveSong")
+    }
+
+    private func currentTrackSaveActionSystemImage(for station: Station) -> String {
+        isCurrentTrackSaved(for: station) ? "bookmark.slash" : "bookmark"
+    }
+
+    private func stationSaveActionTitle(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
+    }
+
+    private var stationSaveActionSystemImage: String {
+        "dot.radiowaves.left.and.right"
     }
 
     private func focusedSignalActions(for station: Station) -> some View {
@@ -5418,20 +5499,37 @@ private struct AviScreen: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    AviSignalActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {}
+                    AviSignalActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
+                        if isFocusedStationActive && hasCurrentSongContext {
+                            openAviSearch(for: station, destination: .web, suffix: "lyrics")
+                        } else {
+                            openAviStationSearch(for: station)
+                        }
+                    }
                     AviSignalActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
                         showStationDetails(station, [station])
                     }
-                    AviSignalActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {}
+                    AviSignalActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
+                        if let url = station.resolvedHomepageURL {
+                            browserDestination = BrowserDestination(url: url)
+                        } else {
+                            openAviStationSearch(for: station)
+                        }
+                    }
                     if isFocusedStationActive {
                         AviSignalActionChip(title: L10n.string("shell.accessibility.stopListening"), systemImage: "speaker.slash.fill") {
                             stopPlayback()
                         }
                     }
-                    AviSignalActionChip(title: L10n.string("player.discovery.saveShort"), systemImage: "heart") {
+                    AviSignalActionChip(title: stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage) {
                         toggleFavorite(station)
                     }
-                    AviSignalActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {}
+                    AviSignalActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {
+                        withAnimation(.snappy(duration: 0.22)) {
+                            isShowingAviActions = true
+                            aviActionsPage = 0
+                        }
+                    }
                 }
             }
         }
@@ -5618,7 +5716,7 @@ private struct AviScreen: View {
 
             HStack(spacing: 12) {
                 AviActionButton(title: L10n.string("tab.search"), systemImage: "magnifyingglass", action: openSearch)
-                AviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "heart.fill", action: openLibrary)
+                AviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "bookmark.fill", action: openLibrary)
             }
         }
     }
@@ -5639,7 +5737,7 @@ private struct AviScreen: View {
             AviSignalRow(
                 title: L10n.string("shell.avi.signals.saved.title"),
                 detail: favoriteStations.isEmpty ? L10n.string("shell.avi.signals.saved.empty") : L10n.plural(singular: "shell.avi.signals.saved.count.one", plural: "shell.avi.signals.saved.count.other", count: favoriteStations.count, favoriteStations.count),
-                systemImage: "heart",
+                systemImage: "dot.radiowaves.left.and.right",
                 accessibilityIdentifier: "avi.signals.saved"
             )
 
@@ -7301,7 +7399,7 @@ private struct LibraryScreen: View {
                     RadioOverviewMetricCard(
                         title: L10n.string("shell.library.overview.saved"),
                         value: summary?.radio.cards.saved.count ?? favorites.count,
-                        systemImage: "heart.fill",
+                        systemImage: "dot.radiowaves.left.and.right",
                         tint: TuneAVTheme.highlight,
                         action: { openMode(.saved) }
                     )
@@ -9721,7 +9819,7 @@ private struct HomeTuningDeskHero: View {
                     }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isFavorite ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort"))
+            .accessibilityLabel(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"))
             .accessibilityIdentifier("home.hero.favorite.\(station.id)")
 
             Button(action: detailsAction) {
@@ -10105,7 +10203,7 @@ private struct StationCompactCard: View {
 
     private var contextFallbackLine: String {
         if isFavorite {
-            return L10n.string("player.discovery.savedShort")
+            return L10n.string("player.station.savedShort")
         }
         if audioPlayer.isCurrent(station) {
             return isPlayingCurrentStation ? "En directo ahora" : "Pausada"
@@ -10242,7 +10340,7 @@ private struct StationCompactCard: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"))
+        .accessibilityLabel(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"))
         .accessibilityIdentifier("stationRow.favorite.\(station.id)")
     }
 
@@ -10426,8 +10524,8 @@ private struct StationListActionRow: View {
     private var aviActionsPanel: some View {
         AviRowActionsPanel(close: closeAviActions) {
             AviRowActionButton(
-                title: isFavorite ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"),
-                systemImage: isFavorite ? "heart.slash" : "heart"
+                title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
+                systemImage: "dot.radiowaves.left.and.right"
             ) {
                 toggleFavorite()
                 closeAviActions()
@@ -10747,15 +10845,20 @@ private struct StationDetailSheet: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("stationDetail.play")
 
-                signalIconButton(systemImage: isFavorite ? "heart.fill" : "heart", action: toggleFavorite)
+                signalIconButton(
+                    systemImage: "dot.radiowaves.left.and.right",
+                    accessibilityLabel: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
+                    isSelected: isFavorite,
+                    action: toggleFavorite
+                )
 
                 if let homepageURL {
-                    signalIconButton(systemImage: "safari") {
+                    signalIconButton(systemImage: "safari", accessibilityLabel: L10n.string("player.menu.openWebsite")) {
                         browserDestination = BrowserDestination(url: homepageURL)
                     }
                 }
 
-                signalIconButton(systemImage: "clock.arrow.circlepath") {
+                signalIconButton(systemImage: "clock.arrow.circlepath", accessibilityLabel: L10n.string("player.menu.stationHistory")) {
                     openStationHistory(station)
                 }
             }
@@ -10813,19 +10916,26 @@ private struct StationDetailSheet: View {
             .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    private func signalIconButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func signalIconButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        isSelected: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
+                .symbolRenderingMode(systemImage == "dot.radiowaves.left.and.right" ? .hierarchical : .monochrome)
                 .font(.system(size: 16, weight: .black))
-                .foregroundStyle(TuneAVTheme.textPrimary)
+                .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
                 .frame(width: 46, height: 46)
-                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(isSelected ? TuneAVTheme.highlight.opacity(0.14) : TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.32) : TuneAVTheme.borderSubtle, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var activeSignalTitle: String {

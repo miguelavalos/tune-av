@@ -122,6 +122,8 @@
 "player.discovery.saveShort" = "Speichern";
 "player.discovery.saved" = "In Musik gespeichert";
 "player.discovery.savedShort" = "Gespeichert";
+"player.discovery.ignore" = "Ignorieren";
+"player.discovery.ignoredHint" = "Avi speichert es vorerst nicht.";
 "player.discovery.removed" = "Aus Musik entfernt";
 "player.discovery.removedShort" = "Entfernt";
 "player.discovery.share" = "Entdeckung teilen";
@@ -148,6 +150,9 @@
 "player.menu.copyStreamURL" = "Stream-URL kopieren";
 "player.menu.openWebsite" = "Sender-Website";
 "player.station.websiteShort" = "Sender";
+"player.station.save" = "Radio speichern";
+"player.station.savedShort" = "Radio gespeichert";
+"player.station.unsave" = "Gespeichertes Radio entfernen";
 "player.menu.removeFavorite" = "Aus Meine Sammlung entfernen";
 "player.menu.searchStation" = "Im Web suchen";
 "player.menu.stationHistory" = "Mein Verlauf bei diesem Sender";

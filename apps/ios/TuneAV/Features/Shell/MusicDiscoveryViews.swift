@@ -14,8 +14,8 @@ struct DiscoveryTrackCard: View {
     let openLyrics: () -> Void
     let openAppleMusic: () -> Void
     let openSpotify: () -> Void
-    let hideAction: () -> Void
-    let removeAction: () -> Void
+    let hideAction: (() -> Void)?
+    let removeAction: (() -> Void)?
     @State private var aviActionsPage = 0
 
     private var aviActionsID: String {
@@ -167,23 +167,27 @@ struct DiscoveryTrackCard: View {
                     toggleSaved()
                     closeAviActions()
                 }
-                AviListActionButton(
-                    title: L10n.string("player.discovery.hide"),
-                    systemImage: "eye.slash",
-                    role: .destructive,
-                    accessibilityIdentifier: "discoveryTrack.hide.\(discovery.discoveryID)"
-                ) {
-                    hideAction()
-                    closeAviActions()
+                if let hideAction {
+                    AviListActionButton(
+                        title: L10n.string("player.discovery.hide"),
+                        systemImage: "eye.slash",
+                        role: .destructive,
+                        accessibilityIdentifier: "discoveryTrack.hide.\(discovery.discoveryID)"
+                    ) {
+                        hideAction()
+                        closeAviActions()
+                    }
                 }
-                AviListActionButton(
-                    title: L10n.string("player.discovery.remove"),
-                    systemImage: "trash",
-                    role: .destructive,
-                    accessibilityIdentifier: "discoveryTrack.remove.\(discovery.discoveryID)"
-                ) {
-                    removeAction()
-                    closeAviActions()
+                if let removeAction {
+                    AviListActionButton(
+                        title: L10n.string("player.discovery.remove"),
+                        systemImage: "trash",
+                        role: .destructive,
+                        accessibilityIdentifier: "discoveryTrack.remove.\(discovery.discoveryID)"
+                    ) {
+                        removeAction()
+                        closeAviActions()
+                    }
                 }
                 AviListActionButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "info.circle") {
                     openTrackInfo()

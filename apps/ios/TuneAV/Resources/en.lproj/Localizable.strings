@@ -122,6 +122,8 @@
 "player.discovery.saveShort" = "Save";
 "player.discovery.saved" = "Saved to Music";
 "player.discovery.savedShort" = "Saved";
+"player.discovery.ignore" = "Ignore";
+"player.discovery.ignoredHint" = "Avi will leave it out for now.";
 "player.discovery.removed" = "Removed from Music";
 "player.discovery.removedShort" = "Removed";
 "player.discovery.share" = "Share discovery";
@@ -148,6 +150,9 @@
 "player.menu.copyStreamURL" = "Copy stream URL";
 "player.menu.openWebsite" = "Station website";
 "player.station.websiteShort" = "Station";
+"player.station.save" = "Save radio";
+"player.station.savedShort" = "Saved radio";
+"player.station.unsave" = "Remove saved radio";
 "player.menu.removeFavorite" = "Remove from My Collection";
 "player.menu.searchStation" = "Search on web";
 "player.menu.stationHistory" = "My history on this station";
