@@ -1105,10 +1105,8 @@ struct NowPlayingView: View {
             playerFeedbackRow(for: station, compact: compact)
                 .padding(.top, compact ? 2 : 4)
 
-            if libraryStore.feedback(for: station) != nil {
-                playerDiscoveryDecisionRow(for: station, compact: compact)
-                    .padding(.top, compact ? 2 : 0)
-            }
+            playerDiscoveryDecisionRow(for: station, compact: compact)
+                .padding(.top, compact ? 2 : 0)
         }
         .frame(width: contentWidth, alignment: .leading)
         .frame(minHeight: minHeight, alignment: .topLeading)

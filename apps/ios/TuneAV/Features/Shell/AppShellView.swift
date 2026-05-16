@@ -4507,12 +4507,6 @@ private struct AviScreen: View {
 
     private func fullPlayerFeedbackBlock(for station: Station) -> some View {
         let selectedFeedback = focusedPrimaryFeedback(for: station)
-        let isCurrentSongSaved = libraryStore.isSavedDiscoveredTrack(
-            title: currentTrackTitle,
-            artist: currentTrackArtist,
-            station: station
-        )
-
         return VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                     Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
@@ -4545,7 +4539,6 @@ private struct AviScreen: View {
 
             fullPlayerFeedbackFollowUp(
                 feedback: selectedFeedback,
-                isCurrentSongSaved: isCurrentSongSaved,
                 station: station
             )
         }
@@ -4619,12 +4612,9 @@ private struct AviScreen: View {
     @ViewBuilder
     private func fullPlayerFeedbackFollowUp(
         feedback: TuneAVStationFeedback?,
-        isCurrentSongSaved: Bool,
         station: Station
     ) -> some View {
-        if feedback == .liked && hasCurrentSongContext {
-            fullPlayerFeedbackDecisionRow(station: station)
-        } else if hasCurrentSongContext && isCurrentSongSaved {
+        if hasCurrentSongContext {
             fullPlayerFeedbackDecisionRow(station: station)
         } else if feedback != nil {
             fullPlayerFeedbackInfoRow(
