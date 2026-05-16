@@ -4649,12 +4649,32 @@ private struct AviScreen: View {
         VStack(alignment: .leading, spacing: 6) {
             if aviDiscoveryDecision == .ignored {
                 fullPlayerFeedbackInfoRow(
-                    title: L10n.string("player.discovery.ignore"),
-                    subtitle: L10n.string("player.discovery.ignoredHint"),
+                    title: L10n.string("player.discovery.noSave"),
+                    subtitle: L10n.string("player.discovery.noSaveHint"),
                     systemImage: "xmark",
                     isAction: false
                 )
                 .accessibilityIdentifier("avi.fullPlayer.discoveryIgnored")
+            } else if isCurrentTrackSaved(for: station) {
+                HStack(spacing: 8) {
+                    fullPlayerFeedbackInfoRow(
+                        title: L10n.string("player.discovery.savedShort"),
+                        subtitle: L10n.string("player.discovery.savedHintShort"),
+                        systemImage: "bookmark.fill",
+                        isAction: false
+                    )
+
+                    fullPlayerFeedbackCompactActionButton(
+                        title: L10n.string("player.discovery.unsaveShort"),
+                        systemImage: "bookmark.slash",
+                        accessibilityIdentifier: "avi.fullPlayer.unsaveSong"
+                    ) {
+                        let didToggle = saveAviCurrentDiscovery(for: station)
+                        if didToggle {
+                            aviDiscoveryDecision = .removed
+                        }
+                    }
+                }
             } else {
                 HStack(spacing: 8) {
                     fullPlayerFeedbackDecisionButton(
@@ -4670,7 +4690,7 @@ private struct AviScreen: View {
                     }
 
                     fullPlayerFeedbackDecisionButton(
-                        title: L10n.string("player.discovery.ignore"),
+                        title: L10n.string("player.discovery.noSave"),
                         systemImage: "xmark",
                         isSelected: false,
                         accessibilityIdentifier: "avi.fullPlayer.ignoreSong"
@@ -4691,6 +4711,31 @@ private struct AviScreen: View {
             }
         }
         .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
+    }
+
+    private func fullPlayerFeedbackCompactActionButton(
+        title: String,
+        systemImage: String,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 12, weight: .black))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(width: 96, height: 38)
+                .background(TuneAVTheme.shellBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     private func fullPlayerFeedbackDecisionButton(
@@ -5531,7 +5576,7 @@ private struct AviScreen: View {
     }
 
     private func currentTrackSaveActionTitle(for station: Station) -> String {
-        isCurrentTrackSaved(for: station) ? L10n.string("player.discovery.unsave") : L10n.string("shell.avi.actions.saveSong")
+        isCurrentTrackSaved(for: station) ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")
     }
 
     private func currentTrackSaveActionSystemImage(for station: Station) -> String {

@@ -710,7 +710,49 @@ struct NowPlayingView: View {
     private func discoveryDecisionRow(for station: Station, compact: Bool) -> some View {
         if hasDiscoverableTrack {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 7) {
+                if discoveryDecision == .ignored {
+                    Text(L10n.string("player.discovery.noSaveHint"))
+                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .accessibilityIdentifier("player.discovery.decisionHint")
+                } else if isCurrentTrackSaved {
+                    HStack(spacing: 8) {
+                        Label(L10n.string("player.discovery.savedShort"), systemImage: "bookmark.fill")
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Button {
+                            let didToggle = saveCurrentDiscovery(for: station)
+                            if didToggle {
+                                showAviReaction(.saved)
+                            }
+                        } label: {
+                            Label(L10n.string("player.discovery.unsaveShort"), systemImage: "bookmark.slash")
+                                .font(.system(size: compact ? 11 : 12, weight: .black))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .frame(width: compact ? 88 : 96)
+                                .frame(height: compact ? 38 : 42)
+                                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.string("player.discovery.unsaveShort"))
+                        .accessibilityIdentifier("player.discovery.unsaveDecision")
+                    }
+                } else {
+                    HStack(spacing: 7) {
                     PlayerFeedbackReactionButton(
                         reaction: .save,
                         accessibilityLabel: currentTrackSaveActionTitle,
@@ -740,27 +782,28 @@ struct NowPlayingView: View {
 
                     PlayerFeedbackReactionButton(
                         reaction: .clear,
-                        accessibilityLabel: L10n.string("player.discovery.ignore"),
+                        accessibilityLabel: L10n.string("player.discovery.noSave"),
                         accessibilityIdentifier: "player.discovery.ignoreDecision",
                         action: ignoreCurrentDiscovery
                     ) {
-                        Label(L10n.string("player.discovery.ignore"), systemImage: "xmark")
+                        Label(L10n.string("player.discovery.noSave"), systemImage: "xmark")
                             .font(.system(size: compact ? 11 : 12, weight: .black))
                             .labelStyle(.titleAndIcon)
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
-                            .foregroundStyle(discoveryDecision == .ignored ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .foregroundStyle(TuneAVTheme.textPrimary)
                             .frame(maxWidth: .infinity)
                             .frame(height: compact ? 38 : 42)
-                            .background(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.82) : TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.46) : TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                                    .stroke(TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
                             }
                     }
                 }
+                }
 
-                if let discoveryDecision {
+                if let discoveryDecision, discoveryDecision != .ignored && discoveryDecision != .saved {
                     Text(discoveryDecision.localizedHint)
                         .font(.system(size: compact ? 10 : 11, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
@@ -1123,7 +1166,49 @@ struct NowPlayingView: View {
     private func playerDiscoveryDecisionRow(for station: Station, compact: Bool) -> some View {
         if hasDiscoverableTrack {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
+                if discoveryDecision == .ignored {
+                    Text(L10n.string("player.discovery.noSaveHint"))
+                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .accessibilityIdentifier("player.discovery.decisionHint")
+                } else if isCurrentTrackSaved {
+                    HStack(spacing: 8) {
+                        Label(L10n.string("player.discovery.savedShort"), systemImage: "bookmark.fill")
+                            .font(.system(size: compact ? 11 : 12, weight: .black))
+                            .labelStyle(.titleAndIcon)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Button {
+                            let didToggle = saveCurrentDiscovery(for: station)
+                            if didToggle {
+                                showAviReaction(.saved)
+                            }
+                        } label: {
+                            Label(L10n.string("player.discovery.unsaveShort"), systemImage: "bookmark.slash")
+                                .font(.system(size: compact ? 11 : 12, weight: .black))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .frame(width: compact ? 88 : 96)
+                                .frame(height: compact ? 32 : 36)
+                                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.string("player.discovery.unsaveShort"))
+                        .accessibilityIdentifier("player.discovery.unsaveDecision")
+                    }
+                } else {
+                    HStack(spacing: 8) {
                     Button {
                         let didToggle = saveCurrentDiscovery(for: station)
                         if didToggle {
@@ -1153,29 +1238,30 @@ struct NowPlayingView: View {
                     .accessibilityIdentifier("player.discovery.saveDecision")
 
                     Button(action: ignoreCurrentDiscovery) {
-                        Label(L10n.string("player.discovery.ignore"), systemImage: "xmark")
+                        Label(L10n.string("player.discovery.noSave"), systemImage: "xmark")
                             .font(.system(size: compact ? 11 : 12, weight: .black))
                             .labelStyle(.titleAndIcon)
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
-                            .foregroundStyle(discoveryDecision == .ignored ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                            .foregroundStyle(TuneAVTheme.textPrimary)
                             .frame(maxWidth: .infinity)
                             .frame(height: compact ? 32 : 36)
                             .background(
-                                discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.82) : TuneAVTheme.elevatedSurface,
+                                TuneAVTheme.elevatedSurface,
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                             )
                             .overlay {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(discoveryDecision == .ignored ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
                             }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.string("player.discovery.ignore"))
+                    .accessibilityLabel(L10n.string("player.discovery.noSave"))
                     .accessibilityIdentifier("player.discovery.ignoreDecision")
                 }
+                }
 
-                if let discoveryDecision {
+                if let discoveryDecision, discoveryDecision != .ignored && discoveryDecision != .saved {
                     Text(discoveryDecision.localizedHint)
                         .font(.system(size: compact ? 10 : 11, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
@@ -1801,7 +1887,7 @@ struct NowPlayingView: View {
     }
 
     private var currentTrackSaveActionTitle: String {
-        isCurrentTrackSaved ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")
+        isCurrentTrackSaved ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")
     }
 
     private var currentTrackSaveActionSystemImage: String {
