@@ -4414,14 +4414,12 @@ private struct AviScreen: View {
             )
 
             HStack(spacing: 10) {
-                fullPlayerAviActionButton(
-                    title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
-                    systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
-                    accessibilityIdentifier: hasCurrentSongContext ? "avi.fullPlayer.saveSong" : "avi.fullPlayer.saveRadio"
-                ) {
-                    if hasCurrentSongContext {
-                        saveAviCurrentDiscovery(for: station)
-                    } else {
+                if !hasCurrentSongContext {
+                    fullPlayerAviActionButton(
+                        title: stationSaveActionTitle(for: station),
+                        systemImage: stationSaveActionSystemImage,
+                        accessibilityIdentifier: "avi.fullPlayer.saveRadio"
+                    ) {
                         showAviReaction(.liked)
                         toggleFavorite(station)
                     }
@@ -4648,13 +4646,26 @@ private struct AviScreen: View {
     private func fullPlayerFeedbackDecisionRow(station: Station) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if aviDiscoveryDecision == .ignored {
-                fullPlayerFeedbackInfoRow(
-                    title: L10n.string("player.discovery.noSave"),
-                    subtitle: L10n.string("player.discovery.noSaveHint"),
-                    systemImage: "xmark",
-                    isAction: false
-                )
-                .accessibilityIdentifier("avi.fullPlayer.discoveryIgnored")
+                HStack(spacing: 8) {
+                    fullPlayerFeedbackInfoRow(
+                        title: L10n.string("player.discovery.noSave"),
+                        subtitle: L10n.string("player.discovery.noSaveHint"),
+                        systemImage: "xmark",
+                        isAction: false
+                    )
+                    .accessibilityIdentifier("avi.fullPlayer.discoveryIgnored")
+
+                    fullPlayerFeedbackCompactActionButton(
+                        title: L10n.string("player.discovery.saveShort"),
+                        systemImage: "bookmark",
+                        accessibilityIdentifier: "avi.fullPlayer.saveAfterNoSave"
+                    ) {
+                        let didToggle = saveAviCurrentDiscovery(for: station)
+                        if didToggle {
+                            aviDiscoveryDecision = .saved
+                        }
+                    }
+                }
             } else if isCurrentTrackSaved(for: station) {
                 HStack(spacing: 8) {
                     fullPlayerFeedbackInfoRow(
@@ -5283,18 +5294,16 @@ private struct AviScreen: View {
                             openAviStationSearch(for: station)
                         }
                     }
-                    AviCommandButton(
-                        title: hasCurrentSongContext && isNowPlayingFullPlayer ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
-                        systemImage: hasCurrentSongContext && isNowPlayingFullPlayer ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
-                        accessibilityIdentifier: hasCurrentSongContext && isNowPlayingFullPlayer ? "avi.actions.saveSong" : "avi.actions.saveRadio"
-                    ) {
-                        if hasCurrentSongContext && isNowPlayingFullPlayer {
-                            saveAviCurrentDiscovery(for: station)
-                        } else {
+                    if !(hasCurrentSongContext && isNowPlayingFullPlayer) {
+                        AviCommandButton(
+                            title: stationSaveActionTitle(for: station),
+                            systemImage: stationSaveActionSystemImage,
+                            accessibilityIdentifier: "avi.actions.saveRadio"
+                        ) {
                             showAviReaction(.liked)
                             toggleFavorite(station)
+                            closeAviActions()
                         }
-                        closeAviActions()
                     }
                     AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
                         showStationDetails(station, [station])

@@ -430,11 +430,6 @@ struct NowPlayingView: View {
                     openArtistFromAviOffer()
                     closeAviOptions()
                 })
-                actions.append(AviOrbitAction(id: "save", title: currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage) {
-                    _ = saveCurrentDiscovery(for: station)
-                    showAviReaction(.saved)
-                    closeAviOptions()
-                })
             } else {
                 actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play"), systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
                     showAviReaction(audioPlayer.isPlaying ? .thinking : .newTrack)
@@ -711,12 +706,39 @@ struct NowPlayingView: View {
         if hasDiscoverableTrack {
             VStack(alignment: .leading, spacing: 6) {
                 if discoveryDecision == .ignored {
-                    Text(L10n.string("player.discovery.noSaveHint"))
-                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .accessibilityIdentifier("player.discovery.decisionHint")
+                    HStack(spacing: 8) {
+                        Text(L10n.string("player.discovery.noSaveHint"))
+                            .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("player.discovery.decisionHint")
+
+                        Button {
+                            let didToggle = saveCurrentDiscovery(for: station)
+                            if didToggle {
+                                showAviReaction(.saved)
+                            }
+                        } label: {
+                            Label(L10n.string("player.discovery.saveShort"), systemImage: "bookmark")
+                                .font(.system(size: compact ? 11 : 12, weight: .black))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .frame(width: compact ? 88 : 96)
+                                .frame(height: compact ? 38 : 42)
+                                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(TuneAVTheme.borderStrong.opacity(0.72), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.string("player.discovery.saveShort"))
+                        .accessibilityIdentifier("player.discovery.saveAfterNoSave")
+                    }
                 } else if isCurrentTrackSaved {
                     HStack(spacing: 8) {
                         Label(L10n.string("player.discovery.savedShort"), systemImage: "bookmark.fill")
@@ -848,11 +870,6 @@ struct NowPlayingView: View {
                     Button(trackArtistActionTitle, systemImage: "person.crop.circle") {
                         showAviReaction(.curious)
                         openArtistFromAviOffer()
-                    }
-
-                    Button(currentTrackSaveActionTitle, systemImage: currentTrackSaveActionSystemImage) {
-                        _ = saveCurrentDiscovery(for: station)
-                        showAviReaction(.saved)
                     }
 
                     Button(L10n.string("player.discovery.appleMusic"), systemImage: "music.note") {
@@ -1167,12 +1184,39 @@ struct NowPlayingView: View {
         if hasDiscoverableTrack {
             VStack(alignment: .leading, spacing: 6) {
                 if discoveryDecision == .ignored {
-                    Text(L10n.string("player.discovery.noSaveHint"))
-                        .font(.system(size: compact ? 10 : 11, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .accessibilityIdentifier("player.discovery.decisionHint")
+                    HStack(spacing: 8) {
+                        Text(L10n.string("player.discovery.noSaveHint"))
+                            .font(.system(size: compact ? 10 : 11, weight: .semibold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("player.discovery.decisionHint")
+
+                        Button {
+                            let didToggle = saveCurrentDiscovery(for: station)
+                            if didToggle {
+                                showAviReaction(.saved)
+                            }
+                        } label: {
+                            Label(L10n.string("player.discovery.saveShort"), systemImage: "bookmark")
+                                .font(.system(size: compact ? 11 : 12, weight: .black))
+                                .labelStyle(.titleAndIcon)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+                                .foregroundStyle(TuneAVTheme.textPrimary)
+                                .frame(width: compact ? 88 : 96)
+                                .frame(height: compact ? 32 : 36)
+                                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.string("player.discovery.saveShort"))
+                        .accessibilityIdentifier("player.discovery.saveAfterNoSave")
+                    }
                 } else if isCurrentTrackSaved {
                     HStack(spacing: 8) {
                         Label(L10n.string("player.discovery.savedShort"), systemImage: "bookmark.fill")
