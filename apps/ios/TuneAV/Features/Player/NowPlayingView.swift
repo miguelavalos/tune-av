@@ -430,6 +430,14 @@ struct NowPlayingView: View {
                     openArtistFromAviOffer()
                     closeAviOptions()
                 })
+                actions.append(AviOrbitAction(id: "youtube", title: L10n.string("player.discovery.youtubeShort"), systemImage: "play.rectangle") {
+                    openExternalSearch(.youtubeSearch, destination: .youtube)
+                    closeAviOptions()
+                })
+                actions.append(AviOrbitAction(id: "apple", title: L10n.string("player.discovery.appleMusicShort"), systemImage: "music.note") {
+                    openExternalSearch(.appleMusicSearch, destination: .appleMusic)
+                    closeAviOptions()
+                })
             } else {
                 actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play"), systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
                     showAviReaction(audioPlayer.isPlaying ? .thinking : .newTrack)
@@ -456,22 +464,21 @@ struct NowPlayingView: View {
                 }
                 closeAviOptions()
             })
-            actions.append(AviOrbitAction(id: "more", title: L10n.string("common.more"), systemImage: "ellipsis") {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                    aviOptionLayer = .more
-                }
-            })
+            if hasDiscoverableTrack {
+                actions.append(AviOrbitAction(id: "more", title: L10n.string("common.more"), systemImage: "ellipsis") {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                        aviOptionLayer = .more
+                    }
+                })
+            }
 
             return actions
         }
 
         return [
-            AviOrbitAction(id: "apple", title: L10n.string("player.discovery.appleMusicShort"), systemImage: "music.note") {
-                openExternalSearch(.appleMusicSearch, destination: .appleMusic)
-                closeAviOptions()
-            },
-            AviOrbitAction(id: "youtube", title: L10n.string("player.discovery.youtubeShort"), systemImage: "play.rectangle") {
-                openExternalSearch(.youtubeSearch, destination: .youtube)
+            AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play"), systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
+                showAviReaction(audioPlayer.isPlaying ? .thinking : .newTrack)
+                audioPlayer.togglePlayback()
                 closeAviOptions()
             },
             AviOrbitAction(id: "detail", title: L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
@@ -507,7 +514,7 @@ struct NowPlayingView: View {
                     .font(.system(size: 12, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
 
-                Text(aviOptionLayer == .primary ? L10n.string("player.avi.ask") : L10n.string("player.avi.moreWithAvi"))
+                Text(aviOptionLayer == .primary ? L10n.string("player.avi.ask") : L10n.string("shell.common.radio"))
                     .font(.system(size: 13, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
             }

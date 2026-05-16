@@ -5217,14 +5217,18 @@ private struct AviScreen: View {
     }
 
     private func aviActionsPanel(for station: Station) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let hasSongStep = hasCurrentSongContext && isNowPlayingFullPlayer
+        let pageCount = hasSongStep ? 2 : 1
+        let lastPage = pageCount - 1
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(aviActionsPageTitle)
                         .font(.system(size: 14, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
 
-                    Text(L10n.string("shell.avi.actions.page", aviActionsPage + 1, 3))
+                    Text(L10n.string("shell.avi.actions.page", min(aviActionsPage, lastPage) + 1, pageCount))
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                 }
@@ -5245,12 +5249,12 @@ private struct AviScreen: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(aviActionsPage == 0)
-                    .opacity(aviActionsPage == 0 ? 0.34 : 1)
+                    .opacity(pageCount == 1 || aviActionsPage == 0 ? 0.34 : 1)
                     .accessibilityLabel(L10n.string("shell.avi.actions.previousOptions"))
 
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
-                            aviActionsPage = min(2, aviActionsPage + 1)
+                            aviActionsPage = min(lastPage, aviActionsPage + 1)
                             isEditingRadioFeedback = false
                         }
                     } label: {
@@ -5260,8 +5264,8 @@ private struct AviScreen: View {
                             .background(TuneAVTheme.cardSurface, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(aviActionsPage == 2)
-                    .opacity(aviActionsPage == 2 ? 0.34 : 1)
+                    .disabled(aviActionsPage >= lastPage)
+                    .opacity(pageCount == 1 || aviActionsPage >= lastPage ? 0.34 : 1)
                     .accessibilityLabel(L10n.string("shell.avi.actions.moreOptions"))
                 }
                 .foregroundStyle(TuneAVTheme.textSecondary)
@@ -5281,50 +5285,10 @@ private struct AviScreen: View {
             }
 
             VStack(spacing: 7) {
-                if aviActionsPage == 0 {
-                    AviCommandButton(
-                        title: hasCurrentSongContext && isNowPlayingFullPlayer ? L10n.string("shell.avi.actions.searchLyrics") : L10n.string("shell.avi.actions.searchPublicInfo"),
-                        systemImage: hasCurrentSongContext && isNowPlayingFullPlayer ? "text.quote" : "info.circle",
-                        accessibilityIdentifier: hasCurrentSongContext && isNowPlayingFullPlayer ? "avi.actions.lyrics" : "avi.actions.radioInfo"
-                    ) {
+                if hasSongStep && aviActionsPage == 0 {
+                    AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics") {
                         showAviReaction(.curious)
-                        if hasCurrentSongContext && isNowPlayingFullPlayer {
-                            openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                        } else {
-                            openAviStationSearch(for: station)
-                        }
-                    }
-                    if !(hasCurrentSongContext && isNowPlayingFullPlayer) {
-                        AviCommandButton(
-                            title: stationSaveActionTitle(for: station),
-                            systemImage: stationSaveActionSystemImage,
-                            accessibilityIdentifier: "avi.actions.saveRadio"
-                        ) {
-                            showAviReaction(.liked)
-                            toggleFavorite(station)
-                            closeAviActions()
-                        }
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
-                        showStationDetails(station, [station])
-                        closeAviActions()
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web") {
-                        showAviReaction(.curious)
-                        if let url = station.resolvedHomepageURL {
-                            browserDestination = BrowserDestination(url: url)
-                        } else {
-                            openAviStationSearch(for: station)
-                        }
-                    }
-                } else if aviActionsPage == 1 {
-                    if isNowPlayingFullPlayer && hasCurrentSongContext {
-                        AviCommandButton(title: L10n.string("shell.avi.actions.radioFeedback"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioFeedback") {
-                            withAnimation(.snappy(duration: 0.2)) {
-                                isEditingRadioFeedback = true
-                                aviActionsPage = 2
-                            }
-                        }
+                        openAviSearch(for: station, destination: .web, suffix: "lyrics")
                     }
                     AviCommandButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube") {
                         showAviReaction(.curious)
@@ -5338,28 +5302,56 @@ private struct AviScreen: View {
                         showAviReaction(.curious)
                         openAviArtistSearch()
                     }
+                } else if isEditingRadioFeedback {
+                    AviCommandButton(title: L10n.string("feedback.liked"), systemImage: "hand.thumbsup.fill", accessibilityIdentifier: "avi.actions.feedback.liked") {
+                        setStationFeedback(station, .liked)
+                        closeAviActions()
+                    }
+                    AviCommandButton(title: L10n.string("feedback.notForMe"), systemImage: "minus.circle.fill", accessibilityIdentifier: "avi.actions.feedback.notForMe") {
+                        setStationFeedback(station, .notForMe)
+                        closeAviActions()
+                    }
+                    AviCommandButton(title: L10n.string("feedback.disliked"), systemImage: "hand.thumbsdown.fill", accessibilityIdentifier: "avi.actions.feedback.disliked") {
+                        setStationFeedback(station, .disliked)
+                        closeAviActions()
+                    }
+                    AviCommandButton(title: L10n.string("shell.avi.actions.feedback.clear"), systemImage: "xmark.circle", accessibilityIdentifier: "avi.actions.feedback.clear") {
+                        setStationFeedback(station, nil)
+                        closeAviActions()
+                    }
+                } else {
+                    AviCommandButton(title: L10n.string("shell.avi.actions.radioFeedback"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioFeedback") {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            isEditingRadioFeedback = true
+                        }
+                    }
+                    AviCommandButton(
+                        title: stationSaveActionTitle(for: station),
+                        systemImage: stationSaveActionSystemImage,
+                        accessibilityIdentifier: "avi.actions.saveRadio"
+                    ) {
+                        showAviReaction(.liked)
+                        toggleFavorite(station)
+                        closeAviActions()
+                    }
+                    AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
+                        showStationDetails(station, [station])
+                        closeAviActions()
+                    }
                     if !isFocusedStationActive {
                         AviCommandButton(title: L10n.string("shell.avi.actions.playRadio"), systemImage: "play.fill", accessibilityIdentifier: "avi.actions.playRadio") {
                             openPlayer()
                             closeAviActions()
                         }
-                    }
-                } else {
-                    AviCommandButton(title: L10n.string("feedback.liked"), systemImage: "hand.thumbsup.fill", accessibilityIdentifier: "avi.actions.feedback.liked") {
-                        setAviMenuFeedback(.liked, for: station)
-                        closeAviActions()
-                    }
-                    AviCommandButton(title: L10n.string("feedback.notForMe"), systemImage: "minus.circle.fill", accessibilityIdentifier: "avi.actions.feedback.notForMe") {
-                        setAviMenuFeedback(.notForMe, for: station)
-                        closeAviActions()
-                    }
-                    AviCommandButton(title: L10n.string("feedback.disliked"), systemImage: "hand.thumbsdown.fill", accessibilityIdentifier: "avi.actions.feedback.disliked") {
-                        setAviMenuFeedback(.disliked, for: station)
-                        closeAviActions()
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.feedback.clear"), systemImage: "xmark.circle", accessibilityIdentifier: "avi.actions.feedback.clear") {
-                        setAviMenuFeedback(nil, for: station)
-                        closeAviActions()
+                    } else {
+                        AviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web") {
+                            showAviReaction(.curious)
+                            if let url = station.resolvedHomepageURL {
+                                browserDestination = BrowserDestination(url: url)
+                            } else {
+                                openAviStationSearch(for: station)
+                            }
+                        }
                     }
                 }
             }
@@ -5378,17 +5370,13 @@ private struct AviScreen: View {
     }
 
     private var aviActionsPageTitle: String {
-        switch aviActionsPage {
-        case 0:
-            return L10n.string("shell.avi.actions.ask")
-        case 1:
-            return L10n.string("player.avi.moreWithAvi")
-        default:
-            if isNowPlayingFullPlayer && hasCurrentSongContext && !isEditingRadioFeedback {
-                return L10n.string("shell.avi.actions.songFeedback")
-            }
+        if isEditingRadioFeedback {
             return L10n.string("shell.avi.actions.radioFeedback")
         }
+        if isNowPlayingFullPlayer && hasCurrentSongContext && aviActionsPage == 0 {
+            return L10n.string("shell.avi.actions.songFeedback")
+        }
+        return L10n.string("shell.common.radio")
     }
 
     private func setAviMenuFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
