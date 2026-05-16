@@ -35,16 +35,12 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         showDiscoveryHistory(in: app)
 
         let discoveryID = "m83-midnight-city-groove-salad"
-        let saveButton = app.buttons["discoveryTrack.save.\(discoveryID)"].firstMatch
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
-        saveButton.tap()
+        toggleDiscoverySaved(discoveryID, in: app)
 
         showSavedSongs(in: app)
         XCTAssertTrue(app.staticTexts["Midnight City"].waitForExistence(timeout: 5))
 
-        let unsaveButton = app.buttons["discoveryTrack.save.\(discoveryID)"].firstMatch
-        XCTAssertTrue(unsaveButton.waitForExistence(timeout: 5))
-        unsaveButton.tap()
+        toggleDiscoverySaved(discoveryID, in: app)
 
         XCTAssertFalse(app.staticTexts["Midnight City"].exists)
     }
@@ -170,6 +166,42 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         saveButton.tap()
     }
 
+    func testFullPlayerAviReactsAndSettlesWhenLikingSong() {
+        let title = "Avi Reaction UI \(UUID().uuidString.prefix(8))"
+        let app = launchApp(
+            preferredTab: "player",
+            extraEnvironment: [
+                "TUNEAV_DEMO_MODE": "1",
+                "TUNEAV_UI_TESTS_DISABLE_LIBRARY_SEED": "1",
+                "TUNEAV_UI_TEST_TRACK_ARTIST": "Radiohead",
+                "TUNEAV_UI_TEST_TRACK_TITLE": title,
+            ]
+        )
+
+        let aviEmotion = app.descendants(matching: .any)["avi.fullPlayer.header"].firstMatch
+        if !aviEmotion.waitForExistence(timeout: 2) {
+            openFullPlayerFromMiniPlayer(in: app)
+        }
+        XCTAssertTrue(aviEmotion.waitForExistence(timeout: 5))
+
+        let clearButton = app.descendants(matching: .any)["stationFeedback.clear"].firstMatch
+        if clearButton.exists && clearButton.isHittable {
+            clearButton.tap()
+        }
+
+        let likeButton = app.descendants(matching: .any)["stationFeedback.liked"].firstMatch
+        XCTAssertTrue(likeButton.waitForExistence(timeout: 5))
+        likeButton.tap()
+
+        let reactionPredicate = NSPredicate(format: "value CONTAINS %@", "reaction:AviV2TuneLiked")
+        expectation(for: reactionPredicate, evaluatedWith: aviEmotion)
+        waitForExpectations(timeout: 2)
+
+        let settledPredicate = NSPredicate(format: "value CONTAINS %@", "static:AviV2TuneLiked")
+        expectation(for: settledPredicate, evaluatedWith: aviEmotion)
+        waitForExpectations(timeout: 6)
+    }
+
     func testAviTrackActionsHandleLongMetadataAndCollapse() {
         let app = launchApp(
             preferredTab: "player",
@@ -187,7 +219,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(app.buttons["avi.actions.lyrics"].exists)
         XCTAssertFalse(app.buttons["avi.actions.saveRadio"].exists)
 
-        app.buttons["avi.actions.toggle"].tap()
+        app.descendants(matching: .any)["avi.actions.close"].firstMatch.tap()
 
         XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
     }
@@ -285,15 +317,24 @@ final class DiscoveriesUITests: TuneAVUITestCase {
     }
 
     private func openAviActions(in app: XCUIApplication, timeout: TimeInterval = 5) {
-        let toggle = app.buttons["avi.actions.toggle"].firstMatch
+        let toggle = app.descendants(matching: .any)["avi.actions.toggle"].firstMatch
+        if !toggle.waitForExistence(timeout: 2) {
+            openFullPlayerFromMiniPlayer(in: app)
+        }
         XCTAssertTrue(toggle.waitForExistence(timeout: timeout))
         toggle.tap()
 
-        XCTAssertTrue(app.buttons["avi.actions.history"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.descendants(matching: .any)["avi.actions.history"].waitForExistence(timeout: timeout))
+    }
+
+    private func openFullPlayerFromMiniPlayer(in app: XCUIApplication, timeout: TimeInterval = 5) {
+        let miniPlayer = app.descendants(matching: .any)["miniPlayer.container"].firstMatch
+        XCTAssertTrue(miniPlayer.waitForExistence(timeout: timeout))
+        miniPlayer.tap()
     }
 
     private func showDiscoveryHistory(in app: XCUIApplication) {
-        if app.staticTexts["Historial reciente"].firstMatch.exists {
+        if app.buttons["music.history.all"].firstMatch.exists {
             return
         }
 
@@ -314,13 +355,30 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(app.otherElements["music.section.discoveries"].firstMatch.waitForExistence(timeout: 5))
     }
 
+    private func toggleDiscoverySaved(_ discoveryID: String, in app: XCUIApplication) {
+        let menuButton = app.buttons["discoveryTrack.menu.\(discoveryID)"].firstMatch
+        XCTAssertTrue(menuButton.waitForExistence(timeout: 5))
+        menuButton.tap()
+
+        let saveButton = app.descendants(matching: .any)["discoveryTrack.save.\(discoveryID)"].firstMatch
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        saveButton.tap()
+    }
+
     private func openMusicOverview(in app: XCUIApplication) {
         if app.buttons["music.overview.songs"].firstMatch.exists {
             return
         }
 
-        let backButton = app.buttons["music.detail.back"].firstMatch
-        XCTAssertTrue(backButton.waitForExistence(timeout: 5))
-        backButton.tap()
+        let overviewButton = app.buttons["music.overview"].firstMatch
+        if overviewButton.waitForExistence(timeout: 2) {
+            overviewButton.tap()
+        } else {
+            let backButton = app.buttons["music.detail.header.back"].firstMatch
+            XCTAssertTrue(backButton.waitForExistence(timeout: 5))
+            backButton.tap()
+        }
+
+        XCTAssertTrue(app.buttons["music.overview.songs"].firstMatch.waitForExistence(timeout: 5))
     }
 }

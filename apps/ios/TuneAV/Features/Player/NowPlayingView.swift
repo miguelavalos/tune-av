@@ -16,6 +16,10 @@ struct NowPlayingView: View {
     @State private var verticalDragOffset: CGFloat = 0
     @State private var browserDestination: BrowserDestination?
     @State private var aviReaction: PlayerAviReaction?
+    @State private var aviReactionStartedAt = Date.distantPast
+    @State private var aviReactionToken = UUID()
+    @State private var lastAutomaticAviReactionIdentity = ""
+    @State private var lastAutomaticAviReactionAt = Date.distantPast
     @State private var isShowingAviOptions = false
     @State private var aviOptionLayer: AviOptionLayer = .primary
 
@@ -135,14 +139,41 @@ struct NowPlayingView: View {
             isFavorite: libraryStore.isFavorite(station),
             homepageURL: homepageURL,
             onSetStationFeedback: { feedback in setFeedback(feedback, for: station) },
-            onSaveDiscovery: { saveCurrentDiscovery(for: station) },
-            onOpenAppleMusic: { openExternalSearch(.appleMusicSearch, destination: .appleMusic) },
-            onOpenYouTube: { openExternalSearch(.youtubeSearch, destination: .youtube) },
-            onOpenLyrics: { openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics") },
-            onOpenArtist: { openArtistSearch(destination: .web, feature: .webSearch) },
-            onOpenStationSearch: { openStationSearch(for: station) },
-            onTogglePlayback: audioPlayer.togglePlayback,
-            onToggleFavorite: { toggleFavorite(station) },
+            onSaveDiscovery: {
+                let didSave = saveCurrentDiscovery(for: station)
+                if didSave {
+                    showAviReaction(.saved)
+                }
+                return didSave
+            },
+            onOpenAppleMusic: {
+                showAviReaction(.curious)
+                openExternalSearch(.appleMusicSearch, destination: .appleMusic)
+            },
+            onOpenYouTube: {
+                showAviReaction(.curious)
+                openExternalSearch(.youtubeSearch, destination: .youtube)
+            },
+            onOpenLyrics: {
+                showAviReaction(.curious)
+                openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
+            },
+            onOpenArtist: {
+                showAviReaction(.curious)
+                openArtistSearch(destination: .web, feature: .webSearch)
+            },
+            onOpenStationSearch: {
+                showAviReaction(.curious)
+                openStationSearch(for: station)
+            },
+            onTogglePlayback: {
+                showAviReaction(audioPlayer.isPlaying ? .thinking : .newTrack)
+                audioPlayer.togglePlayback()
+            },
+            onToggleFavorite: {
+                showAviReaction(.liked)
+                toggleFavorite(station)
+            },
             onOpenWebsite: { url in browserDestination = BrowserDestination(url: url) }
         )
         .id(station.id)
@@ -286,6 +317,7 @@ struct NowPlayingView: View {
                     PlayerAviBody(
                         emotion: playerAviEmotion,
                         reactionEmotion: aviReaction?.emotion,
+                        reactionStartedAt: aviReaction == nil ? nil : aviReactionStartedAt,
                         size: compact ? 88 : 98,
                         offsetForEmotion: playerAviBodyOffset(for:)
                     )
@@ -368,10 +400,10 @@ struct NowPlayingView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("player.avi.stage")
-        .onChange(of: currentTrackIdentity) { _, _ in
-            aviReaction = nil
+        .onChange(of: currentTrackIdentity) { _, nextIdentity in
             isShowingAviOptions = false
             aviOptionLayer = .primary
+            showAviReactionForCurrentTrackChange(identity: nextIdentity)
         }
     }
 
@@ -385,10 +417,12 @@ struct NowPlayingView: View {
 
             if hasDiscoverableTrack {
                 actions.append(AviOrbitAction(id: "lyrics", title: L10n.string("player.discovery.lyricsShort"), systemImage: "text.quote") {
+                    showAviReaction(.curious)
                     openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
                     closeAviOptions()
                 })
                 actions.append(AviOrbitAction(id: "artist", title: L10n.string("player.discovery.artistShort"), systemImage: "person.crop.circle") {
+                    showAviReaction(.curious)
                     openArtistFromAviOffer()
                     closeAviOptions()
                 })
@@ -399,14 +433,17 @@ struct NowPlayingView: View {
                 })
             } else {
                 actions.append(AviOrbitAction(id: "playPause", title: audioPlayer.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play"), systemImage: audioPlayer.isPlaying ? "pause.fill" : "play.fill") {
+                    showAviReaction(audioPlayer.isPlaying ? .thinking : .newTrack)
                     audioPlayer.togglePlayback()
                     closeAviOptions()
                 })
                 actions.append(AviOrbitAction(id: "favorite", title: L10n.string("player.avi.action.favorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                    showAviReaction(.liked)
                     toggleFavorite(station)
                     closeAviOptions()
                 })
                 actions.append(AviOrbitAction(id: "detail", title: L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
+                    showAviReaction(.curious)
                     stationHistoryAction(station)
                     closeAviOptions()
                 })
@@ -690,10 +727,12 @@ struct NowPlayingView: View {
             Menu {
                 if hasDiscoverableTrack {
                     Button(L10n.string("player.discovery.lyrics"), systemImage: "text.quote") {
+                        showAviReaction(.curious)
                         openExternalSearch(.lyricsSearch, destination: .web, suffix: "lyrics")
                     }
 
                     Button(trackArtistActionTitle, systemImage: "person.crop.circle") {
+                        showAviReaction(.curious)
                         openArtistFromAviOffer()
                     }
 
@@ -703,15 +742,18 @@ struct NowPlayingView: View {
                     }
 
                     Button(L10n.string("player.discovery.appleMusic"), systemImage: "music.note") {
+                        showAviReaction(.curious)
                         openExternalSearch(.appleMusicSearch, destination: .appleMusic)
                     }
 
                     Button(L10n.string("player.discovery.youtube"), systemImage: "play.rectangle") {
+                        showAviReaction(.curious)
                         openExternalSearch(.youtubeSearch, destination: .youtube)
                     }
                 }
 
                 Button(homepageURL == nil ? L10n.string("player.menu.searchStation") : L10n.string("player.menu.openWebsite"), systemImage: homepageURL == nil ? "magnifyingglass" : "safari") {
+                    showAviReaction(.curious)
                     if let homepageURL {
                         browserDestination = BrowserDestination(url: homepageURL)
                     } else {
@@ -720,10 +762,12 @@ struct NowPlayingView: View {
                 }
 
                 Button(libraryStore.isFavorite(station) ? L10n.string("player.menu.removeFavorite") : L10n.string("player.menu.addFavorite"), systemImage: libraryStore.isFavorite(station) ? "heart.fill" : "heart") {
+                    showAviReaction(.liked)
                     toggleFavorite(station)
                 }
 
                 Button(L10n.string("player.avi.action.detail"), systemImage: "info.circle") {
+                    showAviReaction(.curious)
                     stationHistoryAction(station)
                 }
             } label: {
@@ -822,22 +866,65 @@ struct NowPlayingView: View {
     }
 
     private func showAviReaction(_ reaction: PlayerAviReaction) {
+        if let current = aviReaction, current.priority > reaction.priority {
+            return
+        }
+
+        let token = UUID()
         aviReaction = reaction
+        aviReactionStartedAt = Date()
+        aviReactionToken = token
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(900))
-            guard aviReaction == reaction else { return }
+            try? await Task.sleep(for: .milliseconds(reaction.durationMilliseconds))
+            guard aviReactionToken == token else { return }
             aviReaction = nil
         }
+    }
+
+    private func showAviReactionForCurrentTrackChange(identity: String) {
+        guard !identity.isEmpty, audioPlayer.isPlaying else {
+            aviReaction = nil
+            lastAutomaticAviReactionIdentity = ""
+            return
+        }
+
+        guard identity != lastAutomaticAviReactionIdentity else { return }
+
+        let reaction: PlayerAviReaction
+        switch libraryStore.feedbackForDiscoveredTrack(
+            title: audioPlayer.currentTrackTitle,
+            artist: audioPlayer.currentTrackArtist
+        ) {
+        case .liked:
+            reaction = .recognizedTrack
+        case .disliked:
+            reaction = .disliked
+        case .notForMe:
+            reaction = .notForMe
+        case nil:
+            reaction = isCurrentTrackSaved ? .recognizedTrack : .newTrack
+        }
+
+        let now = Date()
+        if reaction.usesAutomaticCooldown,
+           now.timeIntervalSince(lastAutomaticAviReactionAt) < PlayerAviReaction.automaticCooldown {
+            lastAutomaticAviReactionIdentity = identity
+            return
+        }
+
+        lastAutomaticAviReactionIdentity = identity
+        lastAutomaticAviReactionAt = now
+        showAviReaction(reaction)
     }
 
     private func showAviReaction(for feedback: TuneAVStationFeedback) {
         switch feedback {
         case .liked:
-            showAviReaction(.happy)
+            showAviReaction(.liked)
         case .disliked:
-            showAviReaction(.thinking)
+            showAviReaction(.disliked)
         case .notForMe:
-            showAviReaction(.curious)
+            showAviReaction(.notForMe)
         }
     }
 
@@ -1354,9 +1441,9 @@ struct NowPlayingView: View {
 
     private var currentTrackIdentity: String {
         [
+            audioPlayer.currentStation?.id,
             TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
-            TuneAVText.normalizedValue(audioPlayer.currentTrackArtist),
-            audioPlayer.currentTrackArtworkURL?.absoluteString
+            TuneAVText.normalizedValue(audioPlayer.currentTrackArtist)
         ]
         .compactMap { $0 }
         .joined(separator: "|")
@@ -1431,11 +1518,11 @@ struct NowPlayingView: View {
         switch emotion {
         case .warning:
             return CGSize(width: -3, height: 0)
-        case .thinking, .focused:
+        case .thinking, .focused, .curious:
             return CGSize(width: -4, height: 1)
-        case .listening, .happy, .celebrate, .surprised:
+        case .listening, .happy, .liked, .saved, .celebrate, .surprised:
             return CGSize(width: 4, height: -2)
-        case .sleep:
+        case .calm, .sleep:
             return CGSize(width: 2, height: 1)
         case .dislike:
             return CGSize(width: -2, height: 0)
@@ -1684,6 +1771,7 @@ private struct PlayerAviBody: View {
 
     let emotion: TuneAVAviEmotion
     let reactionEmotion: TuneAVAviEmotion?
+    let reactionStartedAt: Date?
     let size: CGFloat
     let offsetForEmotion: (TuneAVAviEmotion) -> CGSize
 
@@ -1693,11 +1781,13 @@ private struct PlayerAviBody: View {
     init(
         emotion: TuneAVAviEmotion,
         reactionEmotion: TuneAVAviEmotion?,
+        reactionStartedAt: Date?,
         size: CGFloat,
         offsetForEmotion: @escaping (TuneAVAviEmotion) -> CGSize
     ) {
         self.emotion = emotion
         self.reactionEmotion = reactionEmotion
+        self.reactionStartedAt = reactionStartedAt
         self.size = size
         self.offsetForEmotion = offsetForEmotion
         _displayedEmotion = State(initialValue: emotion)
@@ -1712,22 +1802,26 @@ private struct PlayerAviBody: View {
     }
 
     private var frames: [String] {
-        guard !reduceMotion else { return [activeEmotion.fullBodyAssetName] }
+        guard reactionEmotion != nil, !reduceMotion else { return [activeEmotion.fullBodyAssetName] }
         return PlayerAviFrameLoopFrames.frames(for: activeEmotion)
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: PlayerAviFrameLoopFrames.frameDuration)) { timeline in
-            let frameIndex = PlayerAviFrameLoopFrames.frameIndex(
-                at: timeline.date,
-                frameCount: frames.count
-            )
+        Group {
+            if reactionEmotion != nil, !reduceMotion {
+                TimelineView(.periodic(from: .now, by: PlayerAviFrameLoopFrames.frameDuration)) { timeline in
+                    let elapsed = reactionStartedAt.map { timeline.date.timeIntervalSince($0) } ?? 0
+                    let frameIndex = PlayerAviFrameLoopFrames.frameIndex(
+                        elapsed: elapsed,
+                        frameCount: frames.count
+                    )
 
-            Image(frames[frameIndex])
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-                .offset(offset)
+                    aviImage(named: frames[frameIndex])
+                        .modifier(PlayerAviReactionMotion(emotion: activeEmotion, elapsed: elapsed))
+                }
+            } else {
+                aviImage(named: activeEmotion.fullBodyAssetName)
+            }
         }
         .frame(width: size, height: size)
         .clipped()
@@ -1743,6 +1837,14 @@ private struct PlayerAviBody: View {
         .task(id: emotion) {
             await adoptWhenAllowed(emotion)
         }
+    }
+
+    private func aviImage(named assetName: String) -> some View {
+        Image(assetName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .offset(offset)
     }
 
     private func adopt(_ candidate: TuneAVAviEmotion) {
@@ -1779,32 +1881,42 @@ private struct PlayerAviBody: View {
 
 private enum PlayerAviFrameLoopFrames {
     static let frameDuration: TimeInterval = 1.0 / 12.0
+    private static let listeningIdleFrames = availableFrames(for: "AviTuneListeningIdle", count: 20)
+    private static let happyReactFrames = availableFrames(for: "AviTuneHappyReact", count: 20)
+    private static let savedFrames = availableFrames(for: "AviTuneSaved", count: 20)
+    private static let curiousFrames = availableFrames(for: "AviTuneCurious", count: 20)
+    private static let thinkingFrames = availableFrames(for: "AviTuneThinking", count: 20)
+    private static let dislikeFrames = availableFrames(for: "AviTuneDislike", count: 20)
+    private static let surprisedFrames = availableFrames(for: "AviTuneSurprised", count: 20)
+    private static let calmIdleFrames = availableFrames(for: "AviTuneCalmIdle", count: 20)
+    private static let sleepIdleFrames = availableFrames(for: "AviTuneSleepIdle", count: 20)
 
-    static func frameIndex(at date: Date, frameCount: Int) -> Int {
+    static func frameIndex(elapsed: TimeInterval, frameCount: Int) -> Int {
         guard frameCount > 1 else { return 0 }
-        let tick = Int((date.timeIntervalSinceReferenceDate / frameDuration).rounded(.down))
-        return abs(tick) % frameCount
+        let tick = Int((max(0, elapsed) / frameDuration).rounded(.down))
+        return tick % frameCount
     }
 
     static func frames(for emotion: TuneAVAviEmotion) -> [String] {
-        availableFrames(for: productionAnimationName(for: emotion), count: 20)
-            ?? [emotion.fullBodyAssetName]
-    }
-
-    private static func productionAnimationName(for emotion: TuneAVAviEmotion) -> String {
         switch emotion {
         case .neutral, .listening, .focused:
-            return "AviTuneListeningIdle"
-        case .happy, .celebrate:
-            return "AviTuneHappyReact"
+            return listeningIdleFrames ?? [emotion.fullBodyAssetName]
+        case .happy, .liked, .celebrate:
+            return happyReactFrames ?? [emotion.fullBodyAssetName]
+        case .saved:
+            return savedFrames ?? happyReactFrames ?? [emotion.fullBodyAssetName]
+        case .curious:
+            return curiousFrames ?? surprisedFrames ?? [emotion.fullBodyAssetName]
         case .thinking:
-            return "AviTuneThinking"
+            return thinkingFrames ?? [emotion.fullBodyAssetName]
         case .dislike, .warning:
-            return "AviTuneDislike"
+            return dislikeFrames ?? [emotion.fullBodyAssetName]
         case .surprised:
-            return "AviTuneSurprised"
+            return surprisedFrames ?? [emotion.fullBodyAssetName]
+        case .calm:
+            return calmIdleFrames ?? sleepIdleFrames ?? [emotion.fullBodyAssetName]
         case .sleep:
-            return "AviTuneSleepIdle"
+            return sleepIdleFrames ?? [emotion.fullBodyAssetName]
         }
     }
 
@@ -1814,6 +1926,63 @@ private enum PlayerAviFrameLoopFrames {
         return existing.count >= 2 ? existing : nil
     }
 
+}
+
+private struct PlayerAviReactionMotion: ViewModifier {
+    let emotion: TuneAVAviEmotion
+    let elapsed: TimeInterval
+
+    func body(content: Content) -> some View {
+        let values = motionValues
+        content
+            .scaleEffect(values.scale)
+            .rotationEffect(.degrees(values.rotation))
+            .offset(x: values.x, y: values.y)
+    }
+
+    private var motionValues: (scale: CGFloat, rotation: Double, x: CGFloat, y: CGFloat) {
+        let progress = min(max(elapsed / 1.2, 0), 1)
+        let envelope = CGFloat(max(0, 1 - progress))
+        let wave = CGFloat(sin(elapsed * .pi * 5))
+
+        switch emotion {
+        case .celebrate, .happy, .liked, .saved:
+            return (
+                scale: 1 + (0.035 * envelope * abs(wave)),
+                rotation: Double(2.8 * envelope * wave),
+                x: 0,
+                y: -3.5 * envelope * abs(wave)
+            )
+        case .surprised:
+            return (
+                scale: 1 + (0.055 * envelope * abs(wave)),
+                rotation: Double(-1.8 * envelope * wave),
+                x: 0,
+                y: -2.5 * envelope * abs(wave)
+            )
+        case .thinking, .focused, .curious:
+            return (
+                scale: 1,
+                rotation: Double(1.8 * envelope * CGFloat(sin(elapsed * .pi * 3))),
+                x: 1.6 * envelope * CGFloat(sin(elapsed * .pi * 2)),
+                y: 0
+            )
+        case .dislike, .warning:
+            return (
+                scale: 1,
+                rotation: Double(-2.2 * envelope * abs(wave)),
+                x: 0,
+                y: 1.8 * envelope * abs(wave)
+            )
+        case .neutral, .listening, .calm, .sleep:
+            return (
+                scale: 1 + (0.02 * envelope * abs(wave)),
+                rotation: 0,
+                x: 0,
+                y: -1.5 * envelope * abs(wave)
+            )
+        }
+    }
 }
 
 private struct PlayerSignalDeck: View {
@@ -2053,19 +2222,73 @@ private enum PlayerRatingTarget {
 }
 
 private enum PlayerAviReaction: Equatable {
-    case happy
+    case newTrack
+    case recognizedTrack
+    case liked
     case thinking
     case curious
     case saved
+    case disliked
+    case notForMe
+    case warning
+
+    static let automaticCooldown: TimeInterval = 10
 
     var emotion: TuneAVAviEmotion {
         switch self {
-        case .happy, .saved:
+        case .liked, .recognizedTrack:
             return .celebrate
+        case .saved:
+            return .saved
+        case .newTrack:
+            return .surprised
         case .thinking:
             return .thinking
         case .curious:
-            return .surprised
+            return .curious
+        case .disliked, .notForMe:
+            return .dislike
+        case .warning:
+            return .warning
+        }
+    }
+
+    var durationMilliseconds: Int {
+        switch self {
+        case .newTrack:
+            return 1800
+        case .curious, .thinking:
+            return 2200
+        case .disliked, .notForMe:
+            return 2200
+        case .liked, .recognizedTrack, .saved:
+            return 3200
+        case .warning:
+            return 2600
+        }
+    }
+
+    var priority: Int {
+        switch self {
+        case .warning:
+            return 100
+        case .liked, .saved, .disliked, .notForMe:
+            return 80
+        case .recognizedTrack:
+            return 70
+        case .thinking, .curious:
+            return 60
+        case .newTrack:
+            return 30
+        }
+    }
+
+    var usesAutomaticCooldown: Bool {
+        switch self {
+        case .newTrack:
+            return true
+        case .recognizedTrack, .liked, .thinking, .curious, .saved, .disliked, .notForMe, .warning:
+            return false
         }
     }
 }

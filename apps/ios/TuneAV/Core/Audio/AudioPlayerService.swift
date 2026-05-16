@@ -587,6 +587,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     private func updateTrackMetadata(from events: [TuneAVStreamMetadataEvent]) async {
         guard !events.isEmpty else { return }
+        guard !shouldPreserveUITestTrackMetadata else { return }
 
         var resolvedTitle = currentTrackTitle
         var resolvedArtist = currentTrackArtist
@@ -672,6 +673,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     private func applyFallbackTrack(_ track: NowPlayingTrack, for station: Station) {
         guard currentStation?.id == station.id else { return }
+        guard !shouldPreserveUITestTrackMetadata else { return }
         guard currentTrackSource != .stream else { return }
 
         let normalizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(track.artist)
@@ -691,6 +693,14 @@ final class AudioPlayerService: NSObject, ObservableObject {
         persistCurrentNowPlayingState()
         resolveArtworkForCurrentTrack()
         updateNowPlayingInfo()
+    }
+
+    private var shouldPreserveUITestTrackMetadata: Bool {
+        TuneAVUITestEnvironment.current.isEnabled &&
+            (
+                TuneAVLaunchContext.current.uiTestTrackTitle != nil ||
+                TuneAVLaunchContext.current.uiTestTrackArtist != nil
+            )
     }
 
     private func resolveArtworkForCurrentTrack() {

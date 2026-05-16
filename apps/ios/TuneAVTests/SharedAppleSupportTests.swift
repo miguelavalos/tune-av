@@ -2295,7 +2295,20 @@ final class SharedAppleSupportTests: XCTestCase {
                 feedback: nil,
                 stationDiscoveryCount: 4
             ),
-            .happy
+            .saved
+        )
+        XCTAssertEqual(
+            TuneAVAviEmotionResolver.playerEmotion(
+                for: station,
+                isPlaying: true,
+                isLoading: false,
+                hasFailure: false,
+                hasDiscoverableTrack: true,
+                isCurrentTrackSaved: false,
+                feedback: .liked,
+                stationDiscoveryCount: 4
+            ),
+            .liked
         )
     }
 
@@ -2328,7 +2341,7 @@ final class SharedAppleSupportTests: XCTestCase {
                 feedback: nil,
                 stationDiscoveryCount: 2
             ),
-            .celebrate
+            .happy
         )
         XCTAssertEqual(
             TuneAVAviEmotionResolver.playerEmotion(
@@ -2354,20 +2367,27 @@ final class SharedAppleSupportTests: XCTestCase {
                 feedback: nil,
                 stationDiscoveryCount: 0
             ),
-            .sleep
+            .calm
         )
     }
 
     func testAviScreenEmotionsResolveDefaultAndActionStates() {
         XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: true, hasResults: false, query: "bbc", discoveryMode: .allRadio), .thinking)
         XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: false, hasResults: false, query: "bbc", discoveryMode: .allRadio), .surprised)
-        XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: false, hasResults: true, query: "bbc", discoveryMode: .music), .focused)
+        XCTAssertEqual(TuneAVAviEmotionResolver.searchEmotion(isLoading: false, hasResults: true, query: "bbc", discoveryMode: .music), .curious)
         XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 0, recentCount: 0, isFiltering: false), .thinking)
-        XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 2, recentCount: 0, isFiltering: false), .happy)
+        XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 2, recentCount: 0, isFiltering: false), .liked)
         XCTAssertEqual(TuneAVAviEmotionResolver.libraryEmotion(favoriteCount: 2, recentCount: 1, isFiltering: true), .focused)
         XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 0, savedDiscoveryCount: 0, artistCount: 0), .listening)
-        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 1, artistCount: 1), .happy)
-        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 3, artistCount: 1), .celebrate)
+        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 1, artistCount: 1), .saved)
+        XCTAssertEqual(TuneAVAviEmotionResolver.musicEmotion(visibleDiscoveryCount: 3, savedDiscoveryCount: 3, artistCount: 1), .happy)
+    }
+
+    func testAviEmotionAssetsCoverStaticReactionStates() {
+        XCTAssertEqual(TuneAVAviEmotion.liked.assetName, "AviV2TuneLiked")
+        XCTAssertEqual(TuneAVAviEmotion.saved.assetName, "AviV2TuneSaved")
+        XCTAssertEqual(TuneAVAviEmotion.curious.assetName, "AviV2TuneCurious")
+        XCTAssertEqual(TuneAVAviEmotion.calm.assetName, "AviV2TuneCalm")
     }
 
     func testAviEmotionStabilityDelaysLowPriorityChanges() {

@@ -285,10 +285,14 @@ enum TuneAVAviEmotion: Equatable {
     case listening
     case focused
     case happy
+    case liked
+    case saved
+    case curious
     case celebrate
     case surprised
     case thinking
     case warning
+    case calm
     case sleep
     case dislike
 
@@ -302,6 +306,12 @@ enum TuneAVAviEmotion: Equatable {
             return "AviV2TuneFocused"
         case .happy:
             return "AviV2TuneHappy"
+        case .liked:
+            return "AviV2TuneLiked"
+        case .saved:
+            return "AviV2TuneSaved"
+        case .curious:
+            return "AviV2TuneCurious"
         case .celebrate:
             return "AviV2TuneCelebrate"
         case .surprised:
@@ -310,6 +320,8 @@ enum TuneAVAviEmotion: Equatable {
             return "AviV2Thinking"
         case .warning:
             return "AviV2Warning"
+        case .calm:
+            return "AviV2TuneCalm"
         case .sleep:
             return "AviV2Sleep"
         case .dislike:
@@ -332,11 +344,11 @@ enum TuneAVAviEmotion: Equatable {
             return 4
         case .thinking:
             return 3
-        case .celebrate, .dislike:
+        case .celebrate, .saved, .liked, .dislike:
             return 2
-        case .surprised, .happy:
+        case .surprised, .curious, .happy:
             return 1
-        case .neutral, .listening, .focused, .sleep:
+        case .neutral, .listening, .focused, .calm, .sleep:
             return 0
         }
     }
@@ -381,7 +393,7 @@ enum TuneAVAviEmotionResolver {
             return emotion(for: feedback)
         }
         if isCurrentTrackSaved {
-            return .happy
+            return .saved
         }
         if isPlaying, hasDiscoverableTrack {
             return stationDiscoveryCount == 0 ? .surprised : energeticEmotion(for: station)
@@ -397,7 +409,7 @@ enum TuneAVAviEmotionResolver {
             return ambientEmotion(for: currentStation)
         }
         if favoriteCount > 0 {
-            return .happy
+            return .liked
         }
         if recentCount > 0 {
             return .focused
@@ -414,7 +426,7 @@ enum TuneAVAviEmotionResolver {
         }
         switch discoveryMode {
         case .music:
-            return .focused
+            return .curious
         case .allRadio:
             return .neutral
         }
@@ -428,7 +440,7 @@ enum TuneAVAviEmotionResolver {
             return .thinking
         }
         if favoriteCount > 0 {
-            return .happy
+            return .liked
         }
         return .neutral
     }
@@ -438,10 +450,10 @@ enum TuneAVAviEmotionResolver {
             return .listening
         }
         if savedDiscoveryCount >= 3 || artistCount >= 3 {
-            return .celebrate
+            return .happy
         }
         if savedDiscoveryCount > 0 {
-            return .happy
+            return .saved
         }
         return .focused
     }
@@ -474,9 +486,9 @@ enum TuneAVAviEmotionResolver {
     static func emotion(for feedback: TuneAVStationFeedback) -> TuneAVAviEmotion {
         switch feedback {
         case .liked:
-            return .celebrate
+            return .liked
         case .notForMe:
-            return .thinking
+            return .dislike
         case .disliked:
             return .dislike
         }
@@ -485,7 +497,7 @@ enum TuneAVAviEmotionResolver {
     private static func energeticEmotion(for station: Station) -> TuneAVAviEmotion {
         let tokens = Set(stationEmotionTokens(for: station))
         if !tokens.isDisjoint(with: ["dance", "electronic", "house", "techno", "hits", "charts", "pop", "party"]) {
-            return .celebrate
+            return .happy
         }
         if !tokens.isDisjoint(with: ["rock", "alternative", "metal", "hip-hop", "hiphop", "latin", "reggae"]) {
             return .happy
@@ -499,7 +511,7 @@ enum TuneAVAviEmotionResolver {
     private static func ambientEmotion(for station: Station) -> TuneAVAviEmotion {
         let tokens = Set(stationEmotionTokens(for: station))
         if !tokens.isDisjoint(with: ["ambient", "chill", "chillout", "classical", "instrumental"]) {
-            return .sleep
+            return .calm
         }
         if !tokens.isDisjoint(with: ["jazz", "blues", "soul", "folk", "country"]) {
             return .listening
