@@ -679,6 +679,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let normalizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(track.artist)
         guard let normalizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(track.title, artist: normalizedArtist) else { return }
         guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(normalizedTitle, stationName: station.name) else { return }
+        guard !TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction(normalizedTitle) else { return }
 
         let resolvedArtist = TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(normalizedArtist, stationName: station.name)
             ? nil

@@ -164,11 +164,14 @@ final class SharedAppleSupportTests: XCTestCase {
     func testTrackMetadataParserKeepsApostrophesInsideStreamTitleWrapper() {
         let titleApostrophe = TuneAVTrackMetadataParser.parse("StreamTitle='Artist - Let's go';")
         let artistApostrophe = TuneAVTrackMetadataParser.parse("StreamTitle='Guns N' Roses - Sweet Child O' Mine';")
+        let contractionApostrophe = TuneAVTrackMetadataParser.parse("StreamTitle='Bon Jovi - We Weren't Born To Follow';")
 
         XCTAssertEqual(titleApostrophe.artist, "Artist")
         XCTAssertEqual(titleApostrophe.title, "Let's go")
         XCTAssertEqual(artistApostrophe.artist, "Guns N' Roses")
         XCTAssertEqual(artistApostrophe.title, "Sweet Child O' Mine")
+        XCTAssertEqual(contractionApostrophe.artist, "Bon Jovi")
+        XCTAssertEqual(contractionApostrophe.title, "We Weren't Born To Follow")
     }
 
     func testTrackMetadataParserHandlesQuotedAndEscapedStreamTitleWrappers() {
