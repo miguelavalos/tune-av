@@ -599,6 +599,9 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
             if commonKey == "title" || identifier.contains("title") || identifier.contains("streamtitle") {
                 let parsed = TuneAVTrackMetadataParser.parse(value)
+                guard !TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction(parsed.title) else {
+                    continue
+                }
                 resolvedTitle = parsed.title ?? resolvedTitle
                 resolvedArtist = parsed.artist ?? resolvedArtist
                 if parsed.title != nil || parsed.artist != nil {
@@ -622,6 +625,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
         if TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(resolvedTitle, stationName: currentStation?.name) {
             resolvedTitle = nil
             resolvedArtist = nil
+        } else if TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction(resolvedTitle) {
+            resolvedTitle = nil
+            resolvedArtist = nil
+            resolvedFromStream = false
         } else if TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(resolvedArtist, stationName: currentStation?.name) {
             resolvedArtist = nil
         }
@@ -631,6 +638,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
             persistCurrentNowPlayingState()
             resolveArtworkForCurrentTrack()
             updateNowPlayingInfo()
+        }
+
+        if !resolvedFromStream, currentTrackSource == .stream {
+            currentTrackSource = nil
         }
     }
 

@@ -181,6 +181,13 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(escaped.title, "It's Alright")
     }
 
+    func testTrackMetadataParserIdentifiesLikelyContractionTruncation() {
+        XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("Someday I"))
+        XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("We Don"))
+        XCTAssertFalse(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("I Still Haven't Found What I'm Looking For"))
+        XCTAssertFalse(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("Radio Song"))
+    }
+
     func testTrackMetadataParserIdentifiesStationNamesAsNotSongs() {
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("Rock FM", stationName: "ROCK FM"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeStationName("CityBeat", stationName: "CityBeat Mainstream Radio"))
@@ -1152,6 +1159,14 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(track?.artist, "Artist")
         XCTAssertEqual(track?.title, "Let's go")
+    }
+
+    func testNowPlayingMetadataKeepsApostropheInBonJoviTitle() {
+        let bytes = Array("StreamTitle='Bon Jovi - Someday I'll Be Saturday Night';StreamUrl='';\0\0".utf8)
+        let track = TuneAVNowPlayingMetadata.parseICYMetadata(bytes)
+
+        XCTAssertEqual(track?.artist, "Bon Jovi")
+        XCTAssertEqual(track?.title, "Someday I'll Be Saturday Night")
     }
 
     func testNowPlayingMetadataReadsCaseInsensitiveIntervalHeader() {

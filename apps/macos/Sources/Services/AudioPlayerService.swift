@@ -499,6 +499,9 @@ final class AudioPlayerService: ObservableObject {
 
             if commonKey == "title" || identifier.contains("title") || identifier.contains("streamtitle") {
                 let parsed = TuneAVTrackMetadataParser.parse(value)
+                guard !TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction(parsed.title) else {
+                    continue
+                }
                 resolvedTitle = parsed.title ?? resolvedTitle
                 resolvedArtist = parsed.artist ?? resolvedArtist
                 if parsed.title != nil || parsed.artist != nil {
@@ -522,11 +525,19 @@ final class AudioPlayerService: ObservableObject {
         if TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(resolvedTitle, stationName: currentStation?.name) {
             resolvedTitle = nil
             resolvedArtist = nil
+        } else if TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction(resolvedTitle) {
+            resolvedTitle = nil
+            resolvedArtist = nil
+            resolvedFromStream = false
         } else if TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(resolvedArtist, stationName: currentStation?.name) {
             resolvedArtist = nil
         }
 
         applyTrackMetadata(title: resolvedTitle, artist: resolvedArtist)
+
+        if !resolvedFromStream, currentTrackSource == .stream {
+            currentTrackSource = nil
+        }
     }
 
     private func applyFallbackTrack(_ track: NowPlayingTrack, for station: Station) {

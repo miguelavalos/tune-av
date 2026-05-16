@@ -440,6 +440,40 @@ enum TuneAVTrackMetadataParser {
         return false
     }
 
+    static func titleLooksLikeTruncatedContraction(_ title: String?) -> Bool {
+        guard let title = sanitizeMetadataField(title) else { return false }
+
+        let folded = title
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        let normalized = folded
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let lastToken = normalized.split(separator: " ").last.map(String.init) else { return false }
+
+        let truncatedContractionPrefixes: Set<String> = [
+            "i",
+            "don",
+            "doesn",
+            "didn",
+            "can",
+            "couldn",
+            "won",
+            "wouldn",
+            "shouldn",
+            "isn",
+            "aren",
+            "wasn",
+            "weren",
+            "hasn",
+            "haven",
+            "hadn",
+            "ain"
+        ]
+
+        return truncatedContractionPrefixes.contains(lastToken)
+    }
+
     private static func containsBroadcastContextToken(_ tokens: [String]) -> Bool {
         let stationContextTokens: Set<String> = [
             "radio",
