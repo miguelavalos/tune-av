@@ -2381,6 +2381,23 @@ private enum AviScreenReaction: Equatable {
     }
 }
 
+private enum AviDiscoveryDecision {
+    case saved
+    case removed
+    case ignored
+
+    var localizedHint: String {
+        switch self {
+        case .saved:
+            return L10n.string("player.avi.feedback.savedHint")
+        case .removed:
+            return L10n.string("player.discovery.removed")
+        case .ignored:
+            return L10n.string("player.discovery.ignoredHint")
+        }
+    }
+}
+
 private struct AviStableEmotionImage: View {
     enum AssetVariant {
         case head
@@ -2535,6 +2552,7 @@ private struct AviScreen: View {
     @State private var aviReaction: AviScreenReaction?
     @State private var aviReactionStartedAt = Date.distantPast
     @State private var aviReactionToken = UUID()
+    @State private var aviDiscoveryDecision: AviDiscoveryDecision?
     @State private var lastAutomaticAviReactionIdentity = ""
     @State private var lastAutomaticAviReactionAt = Date.distantPast
     @State private var visibleArtistSongLimit = artistDetailPageSize
@@ -2581,6 +2599,7 @@ private struct AviScreen: View {
             }
         }
         .onChange(of: currentSongIdentity) { _, nextIdentity in
+            aviDiscoveryDecision = nil
             resetTransientAviUI()
             showAviReactionForCurrentSongChange(identity: nextIdentity)
         }
@@ -4606,19 +4625,9 @@ private struct AviScreen: View {
         station: Station
     ) -> some View {
         if feedback == .liked && hasCurrentSongContext {
-            fullPlayerFeedbackSaveAction(
-                title: currentTrackSaveActionTitle(for: station),
-                subtitle: isCurrentSongSaved ? L10n.string("player.avi.feedback.savedHint") : L10n.string("player.avi.feedback.saveHint"),
-                systemImage: currentTrackSaveActionSystemImage(for: station),
-                station: station
-            )
+            fullPlayerFeedbackDecisionRow(station: station)
         } else if hasCurrentSongContext && isCurrentSongSaved {
-            fullPlayerFeedbackSaveAction(
-                title: currentTrackSaveActionTitle(for: station),
-                subtitle: L10n.string("player.avi.feedback.savedHint"),
-                systemImage: currentTrackSaveActionSystemImage(for: station),
-                station: station
-            )
+            fullPlayerFeedbackDecisionRow(station: station)
         } else if feedback != nil {
             fullPlayerFeedbackInfoRow(
                 title: L10n.string("player.avi.feedback.tuned"),
@@ -4636,46 +4645,82 @@ private struct AviScreen: View {
         }
     }
 
-    private func fullPlayerFeedbackSaveAction(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        station: Station
-    ) -> some View {
-        Button {
-            saveAviCurrentDiscovery(for: station)
-        } label: {
-            HStack(spacing: 9) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .black))
-                    .frame(width: 28, height: 28)
-                    .background(TuneAVTheme.brandBlack.opacity(0.12), in: Circle())
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .black))
-                        .lineLimit(1)
-
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.brandBlack.opacity(0.72))
-                        .lineLimit(1)
+    private func fullPlayerFeedbackDecisionRow(station: Station) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                fullPlayerFeedbackDecisionButton(
+                    title: currentTrackSaveActionTitle(for: station),
+                    systemImage: currentTrackSaveActionSystemImage(for: station),
+                    isSelected: isCurrentTrackSaved(for: station),
+                    accessibilityIdentifier: "avi.fullPlayer.saveSong"
+                ) {
+                    let didToggle = saveAviCurrentDiscovery(for: station)
+                    if didToggle {
+                        aviDiscoveryDecision = isCurrentTrackSaved(for: station) ? .saved : .removed
+                    }
                 }
 
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .black))
+                fullPlayerFeedbackDecisionButton(
+                    title: L10n.string("player.discovery.ignore"),
+                    systemImage: "xmark",
+                    isSelected: aviDiscoveryDecision == .ignored,
+                    accessibilityIdentifier: "avi.fullPlayer.ignoreSong"
+                ) {
+                    aviDiscoveryDecision = .ignored
+                    showAviReaction(.notForMe)
+                }
             }
-            .foregroundStyle(TuneAVTheme.brandBlack)
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            if let aviDiscoveryDecision {
+                Text(aviDiscoveryDecision.localizedHint)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .accessibilityIdentifier("avi.fullPlayer.discoveryDecisionHint")
+            }
+        }
+        .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
+    }
+
+    private func fullPlayerFeedbackDecisionButton(
+        title: String,
+        systemImage: String,
+        isSelected: Bool,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 12, weight: .black))
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 38)
+                .background {
+                    fullPlayerFeedbackDecisionButtonBackground(isSelected: isSelected)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
-        .accessibilityIdentifier("avi.fullPlayer.saveSong")
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    @ViewBuilder
+    private func fullPlayerFeedbackDecisionButtonBackground(isSelected: Bool) -> some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(TuneAVTheme.highlight)
+        } else {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(TuneAVTheme.shellBackground)
+        }
     }
 
     private func fullPlayerFeedbackInfoRow(
