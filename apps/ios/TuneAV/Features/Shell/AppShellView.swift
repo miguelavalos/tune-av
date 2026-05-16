@@ -4647,37 +4647,47 @@ private struct AviScreen: View {
 
     private func fullPlayerFeedbackDecisionRow(station: Station) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                fullPlayerFeedbackDecisionButton(
-                    title: currentTrackSaveActionTitle(for: station),
-                    systemImage: currentTrackSaveActionSystemImage(for: station),
-                    isSelected: isCurrentTrackSaved(for: station),
-                    accessibilityIdentifier: "avi.fullPlayer.saveSong"
-                ) {
-                    let didToggle = saveAviCurrentDiscovery(for: station)
-                    if didToggle {
-                        aviDiscoveryDecision = isCurrentTrackSaved(for: station) ? .saved : .removed
+            if aviDiscoveryDecision == .ignored {
+                fullPlayerFeedbackInfoRow(
+                    title: L10n.string("player.discovery.ignore"),
+                    subtitle: L10n.string("player.discovery.ignoredHint"),
+                    systemImage: "xmark",
+                    isAction: false
+                )
+                .accessibilityIdentifier("avi.fullPlayer.discoveryIgnored")
+            } else {
+                HStack(spacing: 8) {
+                    fullPlayerFeedbackDecisionButton(
+                        title: currentTrackSaveActionTitle(for: station),
+                        systemImage: currentTrackSaveActionSystemImage(for: station),
+                        isSelected: isCurrentTrackSaved(for: station),
+                        accessibilityIdentifier: "avi.fullPlayer.saveSong"
+                    ) {
+                        let didToggle = saveAviCurrentDiscovery(for: station)
+                        if didToggle {
+                            aviDiscoveryDecision = isCurrentTrackSaved(for: station) ? .saved : .removed
+                        }
+                    }
+
+                    fullPlayerFeedbackDecisionButton(
+                        title: L10n.string("player.discovery.ignore"),
+                        systemImage: "xmark",
+                        isSelected: false,
+                        accessibilityIdentifier: "avi.fullPlayer.ignoreSong"
+                    ) {
+                        aviDiscoveryDecision = .ignored
+                        showAviReaction(.notForMe)
                     }
                 }
 
-                fullPlayerFeedbackDecisionButton(
-                    title: L10n.string("player.discovery.ignore"),
-                    systemImage: "xmark",
-                    isSelected: aviDiscoveryDecision == .ignored,
-                    accessibilityIdentifier: "avi.fullPlayer.ignoreSong"
-                ) {
-                    aviDiscoveryDecision = .ignored
-                    showAviReaction(.notForMe)
+                if let aviDiscoveryDecision {
+                    Text(aviDiscoveryDecision.localizedHint)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .accessibilityIdentifier("avi.fullPlayer.discoveryDecisionHint")
                 }
-            }
-
-            if let aviDiscoveryDecision {
-                Text(aviDiscoveryDecision.localizedHint)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                    .accessibilityIdentifier("avi.fullPlayer.discoveryDecisionHint")
             }
         }
         .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
