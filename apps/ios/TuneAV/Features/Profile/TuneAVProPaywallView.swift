@@ -26,11 +26,13 @@ struct TuneAVProPaywallView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        paywallBenefit("heart.text.square", "paywall.benefit.library")
-                        paywallBenefit("icloud", "paywall.benefit.sync")
-                        paywallBenefit("sparkles", "paywall.benefit.avi")
-                        paywallBenefit("radio", "paywall.benefit.discovery")
+                    paywallAviScene
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        paywallBenefit("sparkles", titleKey: "paywall.benefit.avi.title", detailKey: "paywall.benefit.avi")
+                        paywallBenefit("heart.text.square", titleKey: "paywall.benefit.library.title", detailKey: "paywall.benefit.library")
+                        paywallBenefit("icloud", titleKey: "paywall.benefit.sync.title", detailKey: "paywall.benefit.sync")
+                        paywallBenefit("radio", titleKey: "paywall.benefit.discovery.title", detailKey: "paywall.benefit.discovery")
                     }
 
                     VStack(spacing: 12) {
@@ -99,6 +101,40 @@ struct TuneAVProPaywallView: View {
         }
     }
 
+    private var paywallAviScene: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image("AviV2HeadNeutral")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 58, height: 58)
+                .padding(8)
+                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
+                }
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(L10n.string("paywall.scene.title"))
+                    .font(.system(size: 16, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(L10n.string("paywall.scene.detail"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(TuneAVTheme.highlight.opacity(0.18), lineWidth: 1)
+        }
+    }
+
     private var primaryButtonTitle: String {
         if accessController.isSubscriptionOperationInProgress {
             return L10n.string("paywall.purchase.loading")
@@ -124,17 +160,32 @@ struct TuneAVProPaywallView: View {
         }
     }
 
-    private func paywallBenefit(_ systemImage: String, _ key: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+    private func paywallBenefit(_ systemImage: String, titleKey: String, detailKey: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Image(systemName: systemImage)
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 28)
+                .frame(width: 34, height: 34)
+                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
-            Text(L10n.string(key))
-                .font(.system(size: 15, weight: .semibold))
+            Text(L10n.string(titleKey))
+                .font(.system(size: 14, weight: .black))
                 .foregroundStyle(TuneAVTheme.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+
+            Text(L10n.string(detailKey))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .lineSpacing(1)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
+        .padding(12)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.58), lineWidth: 1)
         }
     }
 
