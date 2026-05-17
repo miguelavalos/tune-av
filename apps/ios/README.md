@@ -29,5 +29,9 @@ Optional account-connected behavior:
 
 - Development language is English and base strings live in `TuneAV/Resources/en.lproj/Localizable.strings`
 - Spanish strings live in `TuneAV/Resources/es.lproj/Localizable.strings`
+- All user-visible default copy must be English in `en.lproj` first, then translated in the other locale files
+- Do not hardcode user-visible SwiftUI copy in Swift files; use localization keys for `Text`, `Button`, `Label`, navigation titles, sheet titles, empty states, cards, alerts, accessibility labels, and paywall copy
+- Swift code, comments, identifiers, and localization keys must be English
+- Hardcoded Swift strings are only acceptable for non-visible technical values such as SF Symbols, accessibility identifiers, persistence keys, cache keys, asset names, debug messages, test fixtures, and external provider data shown as returned
 - No extra `InfoPlist.strings` are needed right now because the visible app name stays `Tune AV` across locales and the current build has no localized permission prompts
 - Dynamic catalog content such as station names, countries, languages, tags, and external metadata is shown as returned by the provider and is not translated by the app

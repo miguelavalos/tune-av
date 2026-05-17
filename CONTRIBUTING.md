@@ -23,6 +23,15 @@ Please avoid proposing changes that assume access to private backend systems or 
 4. Do not commit local config, secrets, or generated files.
 5. Keep login, Pro, backend, signing, and release config outside this repository.
 
+## Localization Rules
+
+- The development language is English.
+- All user-visible default copy must live in `apps/ios/TuneAV/Resources/en.lproj/Localizable.strings`.
+- Translations must live in the matching locale files under `apps/ios/TuneAV/Resources/*.lproj/Localizable.strings`.
+- Do not hardcode user-visible SwiftUI text in Swift files, including `Text`, `Button`, `Label`, navigation titles, sheet titles, empty states, cards, alerts, accessibility labels, and paywall copy.
+- Swift code, comments, identifiers, and string keys must be English.
+- Hardcoded strings in Swift are only acceptable for non-visible technical values such as SF Symbols, accessibility identifiers, persistence keys, cache keys, asset names, debug messages, test fixtures, and external provider data shown as returned.
+
 ## Pull Requests
 
 - Use clear commit messages.
