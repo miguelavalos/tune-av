@@ -11085,6 +11085,8 @@ private struct HomeStationPresentation {
 }
 
 private struct HomeTuningDeskHero: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let station: Station
     let presentation: HomeStationPresentation
     let isFavorite: Bool
@@ -11153,7 +11155,7 @@ private struct HomeTuningDeskHero: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(presentation.title)
                     .font(.system(size: 29, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .foregroundStyle(heroTitleColor)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
 
@@ -11166,7 +11168,7 @@ private struct HomeTuningDeskHero: View {
             if let primaryLine = presentation.primaryLine {
                 Text(primaryLine)
                     .font(.system(size: presentation.tier == .rich ? 15 : 14, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .foregroundStyle(heroSecondaryColor)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -11174,7 +11176,7 @@ private struct HomeTuningDeskHero: View {
             if let secondaryLine = presentation.secondaryLine {
                 Text(secondaryLine)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.78))
+                    .foregroundStyle(heroSecondaryColor.opacity(0.78))
                     .lineLimit(1)
             }
 
@@ -11204,7 +11206,7 @@ private struct HomeTuningDeskHero: View {
                 TuneAVSavedStationIcon(isSaved: isFavorite, size: 18)
                     .frame(width: 50, height: 50)
                     .background(
-                        isFavorite ? TuneAVTheme.highlight.opacity(0.18) : Color.white.opacity(0.74),
+                        isFavorite ? TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.28 : 0.18) : heroControlSurface,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                     )
                     .overlay {
@@ -11219,12 +11221,12 @@ private struct HomeTuningDeskHero: View {
             Button(action: detailsAction) {
                 Image(systemName: "info.circle")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.brandGraphite)
+                    .foregroundStyle(heroControlIconColor)
                     .frame(width: 50, height: 50)
-                    .background(Color.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(heroControlSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
+                            .stroke(heroControlStroke, lineWidth: 1)
                     }
             }
             .buttonStyle(.plain)
@@ -11243,7 +11245,7 @@ private struct HomeTuningDeskHero: View {
                 isAnimationActive: false
             )
             .scaleEffect(1.18)
-            .opacity(0.18)
+            .opacity(colorScheme == .dark ? 0.16 : 0.18)
             .blur(radius: 1.8)
             .offset(x: -84, y: 52)
             .allowsHitTesting(false)
@@ -11253,28 +11255,25 @@ private struct HomeTuningDeskHero: View {
             shape
                 .fill(
                     LinearGradient(
-                        colors: [
-                            Color(red: 0.99, green: 0.97, blue: 0.91),
-                            Color(red: 0.96, green: 0.94, blue: 0.87)
-                        ],
+                        colors: heroBackgroundColors,
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .opacity(0.9)
+                .opacity(colorScheme == .dark ? 0.96 : 0.9)
 
             ZStack(alignment: .bottomTrailing) {
                 Image("AviOnboardingHeroStatic")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 250)
-                    .opacity(0.16)
+                    .opacity(colorScheme == .dark ? 0.1 : 0.16)
                     .offset(x: 56, y: 34)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
 
                 HomeDeskSketchBackdrop()
-                    .foregroundStyle(TuneAVTheme.highlight.opacity(0.14))
+                    .foregroundStyle(TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.22 : 0.14))
                     .padding(.bottom, 112)
                     .padding(.trailing, 12)
             }
@@ -11283,9 +11282,47 @@ private struct HomeTuningDeskHero: View {
         }
         .overlay {
             shape
-                .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
+                .stroke(heroBorderColor, lineWidth: 1)
         }
         .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 18, y: 8)
+    }
+
+    private var heroBackgroundColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(red: 0.13, green: 0.16, blue: 0.14),
+                Color(red: 0.09, green: 0.11, blue: 0.10)
+            ]
+        }
+
+        return [
+            Color(red: 0.99, green: 0.97, blue: 0.91),
+            Color(red: 0.96, green: 0.94, blue: 0.87)
+        ]
+    }
+
+    private var heroTitleColor: Color {
+        colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite
+    }
+
+    private var heroSecondaryColor: Color {
+        colorScheme == .dark ? TuneAVTheme.textSecondary : TuneAVTheme.neutral600
+    }
+
+    private var heroControlSurface: Color {
+        colorScheme == .dark ? Color.white.opacity(0.14) : Color.white.opacity(0.74)
+    }
+
+    private var heroControlIconColor: Color {
+        colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite
+    }
+
+    private var heroControlStroke: Color {
+        colorScheme == .dark ? Color.white.opacity(0.12) : TuneAVTheme.brandGraphite.opacity(0.12)
+    }
+
+    private var heroBorderColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.08) : TuneAVTheme.brandGraphite.opacity(0.12)
     }
 
     private var playIconName: String {

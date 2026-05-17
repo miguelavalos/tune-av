@@ -437,6 +437,13 @@ git diff --check
 plutil -lint apps/ios/TuneAV/Resources/*.lproj/Localizable.strings
 ```
 
+## Branding And Dark Mode Notes
+
+- `OnboardingWordmark` must provide light and dark variants in both iOS and macOS asset catalogs. The app header uses that shared asset, so a single light-only PNG will lose contrast on dark shell backgrounds.
+- Current public app catalogs carry the Tune AV dark wordmark variant: radio + `Tune` in off-white, `AV` in brand green. This must stay aligned with `private/avalsys-suite/docs/branding/assets` so web, iOS, and macOS receive the same Tune AV light/dark logo family.
+- Home hero cards should not combine a light paper surface with dynamic dark-mode text. In dark mode the hero uses a dark radio surface; in light mode it keeps the warmer paper treatment.
+- When new branding assets are regenerated, update public consumers together: iOS `OnboardingWordmark`, macOS `OnboardingWordmark`, app icons/marks if affected, and any web/CDN paths declared in the private branding manifest.
+
 ## Open Questions
 
 - Should Search automatically switch to `All radio` when the query is clearly non-music?
