@@ -5574,8 +5574,8 @@ private struct AviScreen: View {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
 
-    private func stationSaveActionSystemImage(for station: Station) -> String {
-        libraryStore.isFavorite(station) ? "bookmark.slash" : "bookmark"
+    private func stationSaveActionSystemImage(for _: Station) -> String {
+        "dot.radiowaves.left.and.right"
     }
 
     private func focusedSignalActions(for station: Station) -> some View {
@@ -10612,7 +10612,7 @@ private struct StationListActionRow: View {
         AviRowActionsPanel(close: closeAviActions) {
             AviRowActionButton(
                 title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
-                systemImage: isFavorite ? "bookmark.slash" : "bookmark"
+                systemImage: "dot.radiowaves.left.and.right"
             ) {
                 toggleFavorite()
                 closeAviActions()
@@ -10933,7 +10933,7 @@ private struct StationDetailSheet: View {
                 .accessibilityIdentifier("stationDetail.play")
 
                 signalIconButton(
-                    systemImage: isFavorite ? "bookmark.slash" : "bookmark",
+                    systemImage: "dot.radiowaves.left.and.right",
                     accessibilityLabel: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                     isSelected: isFavorite,
                     action: toggleFavorite
