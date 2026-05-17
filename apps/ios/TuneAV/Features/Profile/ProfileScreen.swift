@@ -46,6 +46,9 @@ struct ProfileScreen: View {
         }
         .shellScreenScrollBehavior()
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .overlay(alignment: .top) {
+            profileTopSafeAreaShield
+        }
         .alert(clearLibraryAlertTitle, isPresented: $isShowingClearLocalDataAlert) {
             Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {}
             Button(clearLibraryConfirmTitle, role: .destructive) {
@@ -73,6 +76,16 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isShowingProPaywall) {
             TuneAVProPaywallView()
                 .environmentObject(accessController)
+        }
+    }
+
+    private var profileTopSafeAreaShield: some View {
+        GeometryReader { proxy in
+            TuneAVTheme.shellBackground
+                .frame(height: proxy.safeAreaInsets.top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
         }
     }
 
@@ -215,16 +228,16 @@ struct ProfileScreen: View {
                 title: accessController.accountIsAvailable
                     ? L10n.string("profile.pro.signIn")
                     : L10n.string("profile.account.connectUnavailable"),
+                accessibilityID: "profile.pro.signIn",
                 action: { startSignInFlow(true) }
             )
             .disabled(!accessController.accountIsAvailable)
-            .accessibilityIdentifier("profile.pro.signIn")
         case .signedInFree:
             ProfilePrimaryButton(
                 title: L10n.string("profile.pro.viewOffer"),
+                accessibilityID: "profile.pro.viewOffer",
                 action: { isShowingProPaywall = true }
             )
-            .accessibilityIdentifier("profile.pro.viewOffer")
         case .signedInPro:
             ProfileSecondaryButton(
                 title: L10n.string("profile.pro.manage"),
@@ -241,10 +254,10 @@ struct ProfileScreen: View {
                 title: accessController.accountIsAvailable
                     ? L10n.string("profile.account.connect")
                     : L10n.string("profile.account.connectUnavailable"),
+                accessibilityID: "profile.account.connect",
                 action: { startSignInFlow(true) }
             )
             .disabled(!accessController.accountIsAvailable)
-            .accessibilityIdentifier("profile.account.connect")
         } else {
             ProfileSecondaryButton(
                 title: isSigningOut
@@ -869,6 +882,7 @@ struct ProfileScreen: View {
 
 private struct ProfilePrimaryButton: View {
     let title: String
+    let accessibilityID: String
     let action: () -> Void
 
     var body: some View {
@@ -884,6 +898,7 @@ private struct ProfilePrimaryButton: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityID)
     }
 }
 

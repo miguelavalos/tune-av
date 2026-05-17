@@ -9,6 +9,7 @@
     "ios:config:prod": "./scripts/generate-ios-local-xcconfig.sh --env prod",
     "ios:check:dev": "./scripts/check-ios-runtime-config.sh --env dev",
     "ios:check:prod": "./scripts/check-ios-runtime-config.sh --env prod",
+    "ios:release-config:hygiene": "./scripts/check-ios-release-config-hygiene.sh --env prod --configuration Release",
     "ios:install:dev": "./scripts/install-ios-device.sh --env dev",
     "ios:install:prod": "./scripts/install-ios-device.sh --env prod",
     "ios:tests": "cd apps/ios && xcodebuild test -project TuneAV.xcodeproj -scheme TuneAV -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -only-testing:TuneAVTests CODE_SIGNING_ALLOWED=NO",

@@ -92,7 +92,7 @@ development_team="$(read_optional_config AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 if [ -z "$development_team" ]; then
   development_team="\$(inherited)"
 fi
-premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-com.avalsys.tuneav.pro.monthly}"
+premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
 revenuecat_public_api_key="$(read_optional_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-default}"

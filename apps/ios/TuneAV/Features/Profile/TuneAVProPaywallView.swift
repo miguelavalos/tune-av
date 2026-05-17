@@ -72,9 +72,11 @@ struct TuneAVProPaywallView: View {
                     HStack(spacing: 18) {
                         if let termsURL = AppConfig.termsURL {
                             Button(L10n.string("paywall.terms")) { openURL(termsURL) }
+                                .accessibilityIdentifier("paywall.terms")
                         }
                         if let privacyURL = AppConfig.privacyURL {
                             Button(L10n.string("paywall.privacy")) { openURL(privacyURL) }
+                                .accessibilityIdentifier("paywall.privacy")
                         }
                     }
                     .font(.system(size: 13, weight: .semibold))
@@ -82,6 +84,7 @@ struct TuneAVProPaywallView: View {
                 }
                 .padding(24)
             }
+            .accessibilityIdentifier("paywall.sheet")
             .background(TuneAVTheme.shellBackground.ignoresSafeArea())
             .navigationTitle(L10n.string("paywall.navigationTitle"))
             .navigationBarTitleDisplayMode(.inline)

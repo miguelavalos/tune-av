@@ -12,17 +12,17 @@
         "canManagePlan": false
       },
       "limits": {
-        "favoriteStations": 10,
-        "recentStations": 30,
-        "discoveredTracks": 75,
-        "savedTracks": 50,
-        "aviActionsPerDay": 10,
-        "lyricsSearchesPerDay": 10,
-        "webSearchesPerDay": 10,
-        "youtubeSearchesPerDay": 10,
-        "appleMusicSearchesPerDay": 10,
-        "spotifySearchesPerDay": 10,
-        "discoverySharesPerDay": 10
+        "favoriteStations": 5,
+        "recentStations": 15,
+        "discoveredTracks": 25,
+        "savedTracks": 10,
+        "aviActionsPerDay": 5,
+        "lyricsSearchesPerDay": 5,
+        "webSearchesPerDay": 5,
+        "youtubeSearchesPerDay": 5,
+        "appleMusicSearchesPerDay": 5,
+        "spotifySearchesPerDay": 5,
+        "discoverySharesPerDay": 5
       }
     },
     "signedInFree": {
@@ -35,17 +35,17 @@
         "canManagePlan": true
       },
       "limits": {
-        "favoriteStations": 25,
-        "recentStations": 80,
-        "discoveredTracks": 200,
-        "savedTracks": 100,
-        "aviActionsPerDay": 20,
-        "lyricsSearchesPerDay": 20,
-        "webSearchesPerDay": 20,
-        "youtubeSearchesPerDay": 20,
-        "appleMusicSearchesPerDay": 20,
-        "spotifySearchesPerDay": 20,
-        "discoverySharesPerDay": 20
+        "favoriteStations": 15,
+        "recentStations": 50,
+        "discoveredTracks": 100,
+        "savedTracks": 50,
+        "aviActionsPerDay": 15,
+        "lyricsSearchesPerDay": 15,
+        "webSearchesPerDay": 15,
+        "youtubeSearchesPerDay": 15,
+        "appleMusicSearchesPerDay": 15,
+        "spotifySearchesPerDay": 15,
+        "discoverySharesPerDay": 15
       }
     },
     "signedInPro": {

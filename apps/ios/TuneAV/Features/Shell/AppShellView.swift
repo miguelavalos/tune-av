@@ -2854,18 +2854,14 @@ private struct AviScreen: View {
                             .frame(height: 0)
                             .id("avi.detail.top")
 
-                        if !accessController.capabilities.canAccessPremiumFeatures && focusedDetailIsEmpty {
-                            aviPreviewContent
-                        } else {
-                            aviContextHeader
+                        aviContextHeader
 
-                            if focusedDetailIsEmpty {
-                                aviLandingContent
-                            } else if let activeMusicDetail {
-                                focusedMusicExperience(activeMusicDetail)
-                            } else {
-                                focusedSignalExperience
-                            }
+                        if focusedDetailIsEmpty {
+                            aviLandingContent
+                        } else if let activeMusicDetail {
+                            focusedMusicExperience(activeMusicDetail)
+                        } else {
+                            focusedSignalExperience
                         }
                     }
                     .shellScreenContentPadding(bottom: aviScrollBottomPadding)
@@ -3219,6 +3215,7 @@ private struct AviScreen: View {
                 recommendationPanel
             }
             aviListeningSignals
+            aviFreeAccessSupport
         } else {
             aviCommandCenter
             if topRecommendation != nil {
@@ -3228,6 +3225,18 @@ private struct AviScreen: View {
                 quickActions
             }
             localSignals
+            aviFreeAccessSupport
+        }
+    }
+
+    @ViewBuilder
+    private var aviFreeAccessSupport: some View {
+        if !accessController.capabilities.canAccessPremiumFeatures {
+            VStack(alignment: .leading, spacing: 12) {
+                aviPreviewActions
+                aviPreviewCapabilities
+            }
+            .accessibilityIdentifier("avi.freeAccess.support")
         }
     }
 

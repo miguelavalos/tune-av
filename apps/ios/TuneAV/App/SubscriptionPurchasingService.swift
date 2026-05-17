@@ -78,6 +78,35 @@ final class NoopTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     }
 }
 
+@MainActor
+final class UITestTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
+    func prepare(for user: AccountUser?) async throws {
+        guard user != nil else {
+            throw TuneAVSubscriptionPurchaseError.missingAccountUser
+        }
+    }
+
+    func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
+        try await prepare(for: user)
+        return TuneAVSubscriptionOffer(
+            identifier: "$rc_monthly",
+            productIdentifier: "tuneav_pro_monthly",
+            localizedTitle: "Tune AV Pro",
+            localizedPrice: "$4.99"
+        )
+    }
+
+    func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
+        try await prepare(for: user)
+        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
+    }
+
+    func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
+        try await prepare(for: user)
+        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
+    }
+}
+
 #if canImport(RevenueCat)
 @MainActor
 final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {

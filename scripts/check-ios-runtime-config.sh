@@ -158,13 +158,19 @@ redacted_revenuecat_key=""
 if [ -n "$revenuecat_public_api_key" ]; then
   redacted_revenuecat_key="${revenuecat_public_api_key:0:8}...${#revenuecat_public_api_key}"
 fi
+redacted_development_team="unknown"
+if [ -n "$development_team" ] && [ "$development_team" != '$(inherited)' ]; then
+  redacted_development_team="${development_team:0:3}...${#development_team}"
+elif [ -n "$development_team" ]; then
+  redacted_development_team="$development_team"
+fi
 
 cat <<EOF
 Tune AV iOS runtime config ($env_name)
   configuration: $configuration
   product bundle: $product_bundle_identifier
   tune bundle: $tuneav_bundle_identifier
-  development team: ${development_team:-unknown}
+  development team: $redacted_development_team
   Account AV API: $api_base_url
   Account AV management: $management_url
   publishable key: $redacted_key

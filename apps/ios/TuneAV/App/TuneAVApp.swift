@@ -18,7 +18,13 @@ struct TuneAVApp: App {
         let persistenceController = launchContext.isUITesting ? PersistenceController(inMemory: true) : PersistenceController.shared
         self.persistenceController = persistenceController
         _libraryStore = StateObject(wrappedValue: LibraryStore(container: persistenceController.container))
-        _accessController = StateObject(wrappedValue: AccessController())
+        _accessController = StateObject(
+            wrappedValue: AccessController(
+                subscriptionPurchasing: TuneAVUITestEnvironment.current.shouldUseSubscriptionPurchasingStub
+                    ? UITestTuneAVSubscriptionPurchasing()
+                    : RevenueCatTuneAVSubscriptionPurchasing()
+            )
+        )
     }
 
     var body: some Scene {

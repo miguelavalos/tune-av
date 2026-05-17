@@ -99,6 +99,10 @@ struct TuneAVUITestEnvironment {
         return environment["TUNEAV_UI_TEST_ACCOUNT_DELETION"]
     }
 
+    var shouldUseSubscriptionPurchasingStub: Bool {
+        isEnabled && environment["TUNEAV_UI_TEST_SUBSCRIPTION_STUB"] == "1"
+    }
+
     static let accountUserId = "ui-test-user"
     static let accountUserDisplayName = "UI Test User"
     static let accountUserEmailAddress = "ui-test@example.test"
