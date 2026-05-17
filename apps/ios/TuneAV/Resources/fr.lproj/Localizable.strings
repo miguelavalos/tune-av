@@ -690,6 +690,7 @@
 "shell.avi.actions.askShort" = "Demander Avi";
 "shell.avi.actions.closeOptions" = "Fermer les options d'Avi";
 "shell.avi.actions.feedback.clear" = "Supprimer le feedback";
+"shell.avi.actions.findRelatedRadios" = "Trouver des radios liées";
 "shell.avi.actions.history" = "Montre-moi l'historique";
 "shell.avi.actions.historyShort" = "Historique";
 "shell.avi.actions.moreOptions" = "Plus d'options";

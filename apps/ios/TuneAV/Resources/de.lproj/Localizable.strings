@@ -690,6 +690,7 @@
 "shell.avi.actions.askShort" = "Avi fragen";
 "shell.avi.actions.closeOptions" = "Avi-Optionen schließen";
 "shell.avi.actions.feedback.clear" = "Feedback entfernen";
+"shell.avi.actions.findRelatedRadios" = "Ähnliche Radios finden";
 "shell.avi.actions.history" = "Verlauf anzeigen";
 "shell.avi.actions.historyShort" = "Verlauf";
 "shell.avi.actions.moreOptions" = "Weitere Optionen";

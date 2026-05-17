@@ -2869,7 +2869,7 @@ private struct AviScreen: View {
     private var focusedSignalExperience: some View {
         if let focusedStation {
             if !isNowPlayingFullPlayer {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 12) {
                     focusedRadioSummaryCard(for: focusedStation)
                     focusedRadioStats(for: focusedStation)
                     focusedAviServices(for: focusedStation)
@@ -2991,11 +2991,11 @@ private struct AviScreen: View {
                 toggleDiscoverySaved(discovery)
             }
             AviCommandButton(
-                title: L10n.string("shell.avi.actions.searchArtist"),
-                systemImage: "person.crop.circle",
-                accessibilityIdentifier: "avi.command.primary.music.artist"
+                title: L10n.string("shell.avi.actions.searchLyrics"),
+                systemImage: "text.quote",
+                accessibilityIdentifier: "avi.command.primary.music.lyrics"
             ) {
-                openExternalSearch(query: discovery.artistDisplayText)
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
@@ -3005,11 +3005,11 @@ private struct AviScreen: View {
                 openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
             }
             AviCommandButton(
-                title: L10n.string("tab.music"),
-                systemImage: "music.note.list",
-                accessibilityIdentifier: "avi.command.primary.music.library"
+                title: L10n.string("shell.avi.actions.searchArtist"),
+                systemImage: "person.crop.circle",
+                accessibilityIdentifier: "avi.command.primary.music.artist"
             ) {
-                openLibrary()
+                openExternalSearch(query: discovery.artistDisplayText)
             }
         case .artist(let summary):
             AviCommandButton(
@@ -3020,14 +3020,14 @@ private struct AviScreen: View {
                 openExternalSearch(query: summary.name)
             }
             AviCommandButton(
-                title: L10n.string("tab.music"),
-                systemImage: "music.note.list",
-                accessibilityIdentifier: "avi.command.primary.artist.library"
+                title: L10n.string("shell.avi.actions.searchYouTube"),
+                systemImage: "play.rectangle",
+                accessibilityIdentifier: "avi.command.primary.artist.youtube"
             ) {
-                openLibrary()
+                openExternalSearch(query: summary.name, destination: .youtube)
             }
             AviCommandButton(
-                title: L10n.string("tab.search"),
+                title: L10n.string("shell.avi.actions.findRelatedRadios"),
                 systemImage: "magnifyingglass",
                 accessibilityIdentifier: "avi.command.primary.artist.searchRadio"
             ) {
@@ -3260,7 +3260,7 @@ private struct AviScreen: View {
     }
 
     private func focusedTrackInfo(_ discovery: DiscoveredTrack) -> some View {
-        return VStack(alignment: .leading, spacing: 18) {
+        return VStack(alignment: .leading, spacing: 12) {
             focusedTrackSummaryCard(discovery)
             focusedTrackStats(discovery)
             focusedMusicAviServices(for: .track(discovery))
@@ -3295,9 +3295,9 @@ private struct AviScreen: View {
     }
 
     private func focusedTrackSummaryCard(_ discovery: DiscoveredTrack) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                discoveryArtwork(discovery, size: 74)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                discoveryArtwork(discovery, size: 62)
                     .overlay(alignment: .topLeading) {
                         if let feedback = libraryStore.feedback(for: discovery) {
                             feedbackStatusBadge(feedback, size: 24)
@@ -3305,9 +3305,9 @@ private struct AviScreen: View {
                         }
                     }
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(discovery.title)
-                        .font(.system(size: 21, weight: .black, design: .rounded))
+                        .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
@@ -3325,13 +3325,13 @@ private struct AviScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
+        .padding(12)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
     }
 
     private func focusedTrackStats(_ discovery: DiscoveredTrack) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             ArtistStatPill(
                 title: L10n.string("shell.avi.music.artist.label"),
                 value: discovery.artistDisplayText,
@@ -3353,7 +3353,7 @@ private struct AviScreen: View {
     }
 
     private func focusedArtistInfo(_ summary: DiscoveryArtistSummary) -> some View {
-        return VStack(alignment: .leading, spacing: 18) {
+        return VStack(alignment: .leading, spacing: 12) {
             focusedArtistArticle(summary)
         }
     }
@@ -3363,7 +3363,7 @@ private struct AviScreen: View {
         let savedSongs = discoveries.filter(\.isMarkedInteresting)
         let stationCount = artistStationSummaries(for: summary).count
 
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 12) {
             focusedArtistSummaryCard(summary, discoveries: discoveries)
             focusedArtistStats(summary, savedSongsCount: savedSongs.count, stationCount: stationCount)
             focusedMusicAviServices(for: .artist(summary))
@@ -3373,13 +3373,13 @@ private struct AviScreen: View {
     }
 
     private func focusedArtistSummaryCard(_ summary: DiscoveryArtistSummary, discoveries: [DiscoveredTrack]) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                artistArtwork(summary, size: 74)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                artistArtwork(summary, size: 62)
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(summary.name)
-                        .font(.system(size: 21, weight: .black, design: .rounded))
+                        .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
@@ -3399,13 +3399,13 @@ private struct AviScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
+        .padding(12)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
     }
 
     private func focusedArtistStats(_ summary: DiscoveryArtistSummary, savedSongsCount: Int, stationCount: Int) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             ArtistStatPill(
                 title: L10n.string("shell.avi.music.artist.savedSongs"),
                 value: "\(savedSongsCount)",
@@ -3467,7 +3467,7 @@ private struct AviScreen: View {
                 }
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 46)
                 .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -3478,7 +3478,7 @@ private struct AviScreen: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
             }
         }
-        .padding(14)
+        .padding(10)
         .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -3517,7 +3517,7 @@ private struct AviScreen: View {
                 }
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 46)
                 .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -3528,7 +3528,7 @@ private struct AviScreen: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
             }
         }
-        .padding(14)
+        .padding(10)
         .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -4008,13 +4008,13 @@ private struct AviScreen: View {
     private func focusedRadioSummaryCard(for station: Station) -> some View {
         let stationDiscoveries = focusedStationDiscoveries(for: station)
 
-        return VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                StationArtworkView(station: station, size: 74)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                StationArtworkView(station: station, size: 62)
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(station.name)
-                        .font(.system(size: 21, weight: .black, design: .rounded))
+                        .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
@@ -4039,9 +4039,9 @@ private struct AviScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
+        .padding(12)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
     }
 
     private func focusedRadioStats(for station: Station) -> some View {
@@ -4049,7 +4049,7 @@ private struct AviScreen: View {
         let latestDate = stationDiscoveries.first?.playedAt.formatted(date: .numeric, time: .omitted)
             ?? L10n.string("shell.avi.music.feedback.empty")
 
-        return HStack(spacing: 8) {
+        return HStack(spacing: 7) {
             ArtistStatPill(
                 title: L10n.string("shell.library.discoveries.title"),
                 value: "\(stationDiscoveries.count)",
@@ -5389,7 +5389,7 @@ private struct AviScreen: View {
     }
 
     private var aviActionsPanelHeight: CGFloat {
-        274
+        246
     }
 
     private func aviActionsPanel(for station: Station) -> some View {
@@ -5460,7 +5460,7 @@ private struct AviScreen: View {
                 .accessibilityIdentifier("avi.actions.close")
             }
 
-            VStack(spacing: 7) {
+            VStack(spacing: 6) {
                 if hasSongStep && aviActionsPage == 0 {
                     AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics") {
                         showAviReaction(.curious)
@@ -5533,7 +5533,7 @@ private struct AviScreen: View {
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
-        .padding(13)
+        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: aviActionsPanelHeight, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -6601,7 +6601,7 @@ private struct AviPreviewSecondaryButton: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 34, height: 34)
+                    .frame(width: 32, height: 32)
                     .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
                 Text(title)
@@ -6613,7 +6613,7 @@ private struct AviPreviewSecondaryButton: View {
                     .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 90)
+            .frame(height: 84)
             .padding(.horizontal, 10)
             .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
@@ -6803,7 +6803,7 @@ private struct AviCommandButton: View {
                     .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 44)
+            .frame(height: 40)
             .padding(.horizontal, 10)
             .background(TuneAVTheme.cardSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
             .overlay {
@@ -6973,13 +6973,13 @@ private struct ArtistStatPill: View {
     let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 5) {
             Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .black))
+                .font(.system(size: 11, weight: .black))
                 .foregroundStyle(TuneAVTheme.highlight)
 
             Text(value)
-                .font(.system(size: 17, weight: .black, design: .rounded))
+                .font(.system(size: 15, weight: .black, design: .rounded))
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -6991,11 +6991,11 @@ private struct ArtistStatPill: View {
                 .minimumScaleFactor(0.72)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .frame(height: 88, alignment: .topLeading)
-        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(10)
+        .frame(height: 68, alignment: .topLeading)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(TuneAVTheme.borderSubtle.opacity(0.68), lineWidth: 1)
         }
     }

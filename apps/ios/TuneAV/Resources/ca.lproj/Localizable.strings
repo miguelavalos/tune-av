@@ -690,6 +690,7 @@
 "shell.avi.actions.askShort" = "Demana a Avi";
 "shell.avi.actions.closeOptions" = "Tancar opcions d'Avi";
 "shell.avi.actions.feedback.clear" = "Treure feedback";
+"shell.avi.actions.findRelatedRadios" = "Cercar ràdios relacionades";
 "shell.avi.actions.history" = "Ensenya'm l'historial";
 "shell.avi.actions.historyShort" = "Historial";
 "shell.avi.actions.moreOptions" = "Més opcions";
