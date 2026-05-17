@@ -251,24 +251,10 @@ enum TuneAVAccessPolicy {
         switch accessMode {
         case "guest":
             TuneAVAccessLimitValues(
-                favoriteStations: 3,
-                recentStations: 8,
-                discoveredTracks: 10,
-                savedTracks: 25,
-                aviActionsPerDay: 3,
-                lyricsSearchesPerDay: 3,
-                webSearchesPerDay: 3,
-                youtubeSearchesPerDay: 3,
-                appleMusicSearchesPerDay: 3,
-                spotifySearchesPerDay: 3,
-                discoverySharesPerDay: 3
-            )
-        case "signedInFree":
-            TuneAVAccessLimitValues(
                 favoriteStations: 10,
-                recentStations: 20,
-                discoveredTracks: 25,
-                savedTracks: 100,
+                recentStations: 30,
+                discoveredTracks: 75,
+                savedTracks: 50,
                 aviActionsPerDay: 10,
                 lyricsSearchesPerDay: 10,
                 webSearchesPerDay: 10,
@@ -276,6 +262,20 @@ enum TuneAVAccessPolicy {
                 appleMusicSearchesPerDay: 10,
                 spotifySearchesPerDay: 10,
                 discoverySharesPerDay: 10
+            )
+        case "signedInFree":
+            TuneAVAccessLimitValues(
+                favoriteStations: 75,
+                recentStations: 150,
+                discoveredTracks: 500,
+                savedTracks: 250,
+                aviActionsPerDay: 50,
+                lyricsSearchesPerDay: 50,
+                webSearchesPerDay: 50,
+                youtubeSearchesPerDay: 50,
+                appleMusicSearchesPerDay: 50,
+                spotifySearchesPerDay: 50,
+                discoverySharesPerDay: 50
             )
         case "signedInPro":
             TuneAVAccessLimitValues(
