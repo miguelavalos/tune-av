@@ -2081,6 +2081,28 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertGreaterThan(ranked[0].rank.score, ranked[1].rank.score)
     }
 
+    func testLocalRecommendationScorerRanksRelatedStationsByDirectSimilarity() {
+        let base = recommendationStation(id: "base", tags: "jazz, soul", countryCode: "ES")
+        let tagMatch = recommendationStation(id: "tag", tags: "soul, ambient", countryCode: "FR")
+        let countryMatch = recommendationStation(id: "country", tags: "news", countryCode: "ES")
+        let unrelated = recommendationStation(id: "unrelated", tags: "sports", countryCode: "DE")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let related = scorer.relatedStations(to: base, candidates: [unrelated, countryMatch, tagMatch, base])
+
+        XCTAssertEqual(Array(related.map(\.station.id).prefix(2)), [tagMatch.id, countryMatch.id])
+        XCTAssertTrue(related[0].rank.reasons.contains(.relatedTag))
+        XCTAssertTrue(related[1].rank.reasons.contains(.relatedCountry))
+    }
+
     func testLocalRecommendationScorerSuppressesNegativeFeedbackFromRankedStations() {
         let liked = recommendationStation(id: "liked", tags: "jazz")
         let notForMe = recommendationStation(id: "not-for-me", tags: "jazz")

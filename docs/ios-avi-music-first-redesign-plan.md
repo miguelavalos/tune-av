@@ -339,6 +339,25 @@ Current direction:
 - Radio detail: continue supporting richer actions because the user is already inside the radio context.
 - Future song and artist detail pages should follow the radio detail pattern: basic entry from the list, richer organized actions in detail.
 
+### Current Avi Interaction Contract
+
+The active iOS implementation keeps Avi contextual, while making the context explicit:
+
+- The global Avi footer button opens Avi for the current live signal when audio is playing.
+- The global Avi footer button opens the general Avi landing state when no current signal exists.
+- A small waveform badge on the Avi footer button indicates that Avi has active audio context.
+- Avi actions inside station cards or station detail remain scoped to that station.
+- The current Avi player surface keeps playback source, previous, play/pause, next, and close-signal controls in one control row.
+- Closing the active signal clears playback and returns the user to the prior screen when possible, otherwise Home.
+
+Related radios are now a real Avi action, not just a Search shortcut:
+
+- Avi first ranks locally available candidates against the base station.
+- Similarity uses shared tags/genres, country, language, existing recommendation signals, and user feedback.
+- The base station is excluded and stations with negative feedback are suppressed.
+- If local candidates are thin, Avi queries the station service with the base station's primary tag, country, and language.
+- Results render in Avi with a reason such as similar genre, same country, or same language.
+
 ## Implementation Phases
 
 ### Phase 1: Product Structure And Shared Mode

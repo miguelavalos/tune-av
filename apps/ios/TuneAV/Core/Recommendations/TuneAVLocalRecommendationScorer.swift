@@ -28,6 +28,9 @@ struct TuneAVLocalRecommendationScorer {
         case timeOfDay
         case currentCountryPreference
         case directoryMomentum
+        case relatedTag
+        case relatedCountry
+        case relatedLanguage
     }
 
     let currentStation: Station?
@@ -251,6 +254,51 @@ struct TuneAVLocalRecommendationScorer {
             }
     }
 
+    func relatedStations(to baseStation: Station, candidates: [Station]) -> [(station: Station, rank: Rank)] {
+        let baseTags = Self.normalizedTags(baseStation)
+        let baseCountryCode = Self.sanitizedCountryCode(baseStation)
+        let baseLanguage = baseStation.language.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        return candidates
+            .filter { $0.id != baseStation.id }
+            .filter { !isSuppressedByFeedback($0) }
+            .map { station in
+                var rank = rank(station)
+                var relatedScore = 0
+                var relatedReasons: [Reason] = []
+                let candidateTags = Self.normalizedTags(station)
+
+                if !baseTags.isEmpty, !candidateTags.isDisjoint(with: baseTags) {
+                    relatedScore += 16
+                    relatedReasons.append(.relatedTag)
+                }
+
+                if let baseCountryCode, Self.sanitizedCountryCode(station) == baseCountryCode {
+                    relatedScore += 7
+                    relatedReasons.append(.relatedCountry)
+                }
+
+                let candidateLanguage = station.language.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                if !baseLanguage.isEmpty, !candidateLanguage.isEmpty, candidateLanguage == baseLanguage {
+                    relatedScore += 5
+                    relatedReasons.append(.relatedLanguage)
+                }
+
+                rank = Rank(
+                    score: rank.score + relatedScore,
+                    reasons: uniqueReasons(relatedReasons + rank.reasons)
+                )
+                return (station: station, rank: rank)
+            }
+            .filter { $0.rank.score > 0 }
+            .sorted { first, second in
+                if first.rank.score == second.rank.score {
+                    return first.station.name.localizedCaseInsensitiveCompare(second.station.name) == .orderedAscending
+                }
+                return first.rank.score > second.rank.score
+            }
+    }
+
     static func localizedSummary(for reason: Reason?) -> String? {
         guard let reason else { return nil }
 
@@ -289,6 +337,12 @@ struct TuneAVLocalRecommendationScorer {
             return L10n.string("recommendations.reason.currentCountryPreference")
         case .directoryMomentum:
             return L10n.string("recommendations.reason.directoryMomentum")
+        case .relatedTag:
+            return L10n.string("recommendations.reason.relatedTag")
+        case .relatedCountry:
+            return L10n.string("recommendations.reason.relatedCountry")
+        case .relatedLanguage:
+            return L10n.string("recommendations.reason.relatedLanguage")
         }
     }
 
