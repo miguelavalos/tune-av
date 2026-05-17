@@ -348,6 +348,16 @@ struct AppShellView: View {
                 openDiscoveryStation: { discovery in
                     openDiscoveryStation(discovery)
                 },
+                openAccount: {
+                    profileMode = .account
+                    selectedTab = .profile
+                },
+                startSignIn: {
+                    startSignInFlow(true)
+                },
+                openProPaywall: {
+                    isShowingProPaywall = true
+                },
                 closeFocusedDetail: closeFocusedAviDetail
             )
         case .library:
@@ -2540,6 +2550,9 @@ private struct AviScreen: View {
     let showStationDetails: (Station, [Station]) -> Void
     let openDiscoveryInfo: (DiscoveredTrack) -> Void
     let openDiscoveryStation: (DiscoveredTrack) -> Void
+    let openAccount: () -> Void
+    let startSignIn: () -> Void
+    let openProPaywall: () -> Void
     let closeFocusedDetail: () -> Void
     @State private var isShowingAviActions = false
     @State private var isShowingMoreAviActions = false
@@ -2559,6 +2572,7 @@ private struct AviScreen: View {
     @State private var visibleArtistStationLimit = artistDetailPageSize
     @State private var visibleFocusedRadioHistoryLimit = artistDetailPageSize
     @State private var openArtistDetailAviActionsID: String?
+    @State private var isShowingPlanComparison = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -2571,7 +2585,9 @@ private struct AviScreen: View {
 
                         aviContextHeader
 
-                        if focusedDetailIsEmpty {
+                        if !accessController.capabilities.canAccessPremiumFeatures {
+                            aviPreviewContent
+                        } else if focusedDetailIsEmpty {
                             aviLandingContent
                         } else if let activeMusicDetail {
                             focusedMusicExperience(activeMusicDetail)
@@ -2590,6 +2606,13 @@ private struct AviScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
+        }
+        .sheet(isPresented: $isShowingPlanComparison) {
+            AviPlanComparisonSheet(
+                accessMode: accessController.accessMode,
+                onPrimaryAction: primaryAviPreviewAction,
+                onDismiss: { isShowingPlanComparison = false }
+            )
         }
         .overlay {
             if isShowingArtworkZoom, let focusedStation {
@@ -2612,6 +2635,151 @@ private struct AviScreen: View {
             openArtistDetailAviActionsID = nil
         }
         .accessibilityIdentifier("avi.screen")
+    }
+
+    private var aviPreviewContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            aviPreviewHero
+            aviPreviewCurrentContext
+            aviPreviewActions
+            aviPreviewCapabilities
+        }
+        .accessibilityIdentifier("avi.preview")
+    }
+
+    private var aviPreviewHero: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 14) {
+                aviHeroImage(width: 72)
+                    .padding(8)
+                    .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("Avi Pro")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .textCase(.uppercase)
+
+                    Text("Un vistazo a Avi")
+                        .font(.system(size: 29, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+
+                    Text("Avi analiza lo que suena, conecta canciones con radios y convierte tus señales en recomendaciones. La experiencia completa se desbloquea con Pro.")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(18)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
+        }
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 14, y: 8)
+    }
+
+    private var aviPreviewCurrentContext: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Ahora mismo")
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .textCase(.uppercase)
+
+            HStack(spacing: 12) {
+                Image(systemName: currentStation == nil ? "sparkles" : "waveform")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 42, height: 42)
+                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(aviPreviewContextTitle)
+                        .font(.system(size: 17, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(2)
+
+                    Text(aviPreviewContextDetail)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(3)
+                }
+            }
+        }
+        .padding(16)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.62), lineWidth: 1)
+        }
+    }
+
+    private var aviPreviewCapabilities: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            AviPreviewCapabilityRow(systemImage: "text.quote", title: "Contexto musical", detail: "Letras, artista y búsquedas conectadas con lo que está sonando.")
+            AviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: "Señales de radio", detail: "Historial, emisoras relacionadas y señales públicas en un solo sitio.")
+            AviPreviewCapabilityRow(systemImage: "sparkles", title: "Recomendaciones", detail: "Avi usa tus guardados, recientes y feedback para proponer qué escuchar después.")
+        }
+        .padding(16)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var aviPreviewActions: some View {
+        VStack(spacing: 10) {
+            AviCommandButton(
+                title: accessController.accessMode == .guest ? "Conectar cuenta" : "Ver Tune AV Pro",
+                systemImage: accessController.accessMode == .guest ? "person.crop.circle.badge.plus" : "sparkles",
+                accessibilityIdentifier: "avi.preview.primary",
+                action: primaryAviPreviewAction
+            )
+
+            AviCommandButton(
+                title: "Comparar capas",
+                systemImage: "rectangle.3.group",
+                accessibilityIdentifier: "avi.preview.compare"
+            ) {
+                isShowingPlanComparison = true
+            }
+
+            AviCommandButton(
+                title: "Seguir explorando radios",
+                systemImage: "magnifyingglass",
+                accessibilityIdentifier: "avi.preview.search",
+                action: openSearch
+            )
+        }
+    }
+
+    private var aviPreviewContextTitle: String {
+        if let currentTrackTitle, let currentTrackArtist {
+            return "\(currentTrackTitle) - \(currentTrackArtist)"
+        }
+        if let currentStation {
+            return currentStation.name
+        }
+        return "Avi espera una señal"
+    }
+
+    private var aviPreviewContextDetail: String {
+        if currentTrackTitle != nil {
+            return "Con Pro, Avi abre contexto, acciones y recomendaciones alrededor de esta canción."
+        }
+        if currentStation != nil {
+            return "Con Pro, Avi analiza esta radio y mantiene a mano sus acciones avanzadas."
+        }
+        return "Reproduce una radio para ver cómo Avi conecta música, feedback y descubrimiento."
+    }
+
+    private func primaryAviPreviewAction() {
+        if accessController.accessMode == .guest {
+            startSignIn()
+        } else {
+            openProPaywall()
+        }
     }
 
     private var activeMusicDetail: SelectedMusicAviDetail? {
@@ -6335,6 +6503,169 @@ private struct AviSignalActionChip: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct AviPreviewCapabilityRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .frame(width: 34, height: 34)
+                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct AviPlanComparisonSheet: View {
+    let accessMode: AccessMode
+    let onPrimaryAction: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Planes")
+                            .font(.system(size: 12, weight: .black))
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .textCase(.uppercase)
+
+                        Text("Qué incluye cada capa")
+                            .font(.system(size: 28, weight: .black, design: .rounded))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+
+                        Text("Invitado sirve para probar Tune AV. Cuenta gratis amplía la biblioteca local. Pro desbloquea Avi completo, sincronización y límites altos.")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    VStack(spacing: 12) {
+                        planCard(
+                            title: "Invitado",
+                            isCurrent: accessMode == .guest,
+                            rows: [
+                                "10 radios guardadas",
+                                "50 canciones guardadas",
+                                "75 canciones descubiertas",
+                                "10 acciones Avi al día",
+                                "Sin sincronización"
+                            ]
+                        )
+
+                        planCard(
+                            title: "Cuenta gratis",
+                            isCurrent: accessMode == .signedInFree,
+                            rows: [
+                                "75 radios guardadas",
+                                "250 canciones guardadas",
+                                "500 canciones descubiertas",
+                                "50 acciones Avi al día",
+                                "Sin sincronización"
+                            ]
+                        )
+
+                        planCard(
+                            title: "Tune AV Pro",
+                            isCurrent: accessMode == .signedInPro,
+                            isHighlighted: true,
+                            rows: [
+                                "Avi completo",
+                                "500 radios guardadas",
+                                "1000 canciones guardadas",
+                                "1000 canciones descubiertas",
+                                "Acciones Avi sin límite diario",
+                                "Sincronización"
+                            ]
+                        )
+                    }
+
+                    Button {
+                        onDismiss()
+                        onPrimaryAction()
+                    } label: {
+                        Text(accessMode == .guest ? "Conectar cuenta" : "Ver Tune AV Pro")
+                            .font(.system(size: 16, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textInverse)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .accessibilityIdentifier("avi.planComparison.primary")
+                }
+                .padding(22)
+            }
+            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+            .navigationTitle("Planes")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar", action: onDismiss)
+                }
+            }
+        }
+    }
+
+    private func planCard(title: String, isCurrent: Bool, isHighlighted: Bool = false, rows: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Spacer()
+
+                if isCurrent {
+                    Text("Actual")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textInverse)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(TuneAVTheme.highlight, in: Capsule(style: .continuous))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(rows, id: \.self) { row in
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .frame(width: 18)
+
+                        Text(row)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(isHighlighted ? TuneAVTheme.highlight.opacity(0.08) : TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(isHighlighted ? TuneAVTheme.highlight.opacity(0.36) : TuneAVTheme.borderSubtle.opacity(0.64), lineWidth: 1)
+        }
     }
 }
 
