@@ -745,6 +745,7 @@
 "shell.avi.plans.subtitle" = "You can start without an account, save more when you sign in, and keep Avi with you with Pro.";
 "shell.avi.plans.title" = "What each plan includes";
 "shell.avi.preview.compare" = "Compare plans";
+"shell.avi.preview.capabilities" = "What Avi can do";
 "shell.avi.preview.current" = "What Avi sees now";
 "shell.avi.preview.detail" = "Avi helps you understand what is playing, find context, and discover what to listen to next. With Pro, Avi is always available.";
 "shell.avi.preview.emptyDetail" = "Play a radio to see how Avi connects music, feedback, and discovery.";

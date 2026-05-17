@@ -2638,119 +2638,137 @@ private struct AviScreen: View {
     }
 
     private var aviPreviewContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             aviPreviewHero
             aviPreviewCurrentContext
             aviPreviewActions
             aviPreviewCapabilities
         }
+        .padding(.bottom, 96)
         .accessibilityIdentifier("avi.preview")
     }
 
     private var aviPreviewHero: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.string("shell.avi.preview.eyebrow"))
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .textCase(.uppercase)
+
+                Text(L10n.string("shell.avi.preview.title"))
+                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+
+                Text(L10n.string("shell.avi.preview.detail"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineSpacing(1.5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            aviHeroImage(width: 74)
+                .padding(8)
+                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+        }
+    }
+
+    private var aviPreviewCurrentContext: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(L10n.string("shell.avi.preview.current"))
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .textCase(.uppercase)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "sparkles")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+
             HStack(alignment: .top, spacing: 14) {
-                aviHeroImage(width: 72)
-                    .padding(8)
-                    .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+                Image(systemName: currentStation == nil ? "sparkles" : "waveform")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 50, height: 50)
+                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(L10n.string("shell.avi.preview.eyebrow"))
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .textCase(.uppercase)
-
-                    Text(L10n.string("shell.avi.preview.title"))
-                        .font(.system(size: 29, weight: .black, design: .rounded))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(aviPreviewContextTitle)
+                        .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.78)
+                        .minimumScaleFactor(0.82)
 
-                    Text(L10n.string("shell.avi.preview.detail"))
+                    Text(aviPreviewContextDetail)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineSpacing(1)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(18)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
-        }
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 14, y: 8)
-    }
-
-    private var aviPreviewCurrentContext: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.string("shell.avi.preview.current"))
-                .font(.system(size: 13, weight: .black))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .textCase(.uppercase)
-
-            HStack(spacing: 12) {
-                Image(systemName: currentStation == nil ? "sparkles" : "waveform")
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 42, height: 42)
-                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(aviPreviewContextTitle)
-                        .font(.system(size: 17, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(2)
-
-                    Text(aviPreviewContextDetail)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(3)
-                }
-            }
-        }
-        .padding(16)
-        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle.opacity(0.62), lineWidth: 1)
+                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
         }
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 16, y: 8)
     }
 
     private var aviPreviewCapabilities: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 13) {
+            Text(L10n.string("shell.avi.preview.capabilities"))
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .textCase(.uppercase)
+
             AviPreviewCapabilityRow(systemImage: "text.quote", title: L10n.string("shell.avi.preview.music.title"), detail: L10n.string("shell.avi.preview.music.detail"))
+            Divider().overlay(TuneAVTheme.borderSubtle.opacity(0.45))
             AviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: L10n.string("shell.avi.preview.radio.title"), detail: L10n.string("shell.avi.preview.radio.detail"))
+            Divider().overlay(TuneAVTheme.borderSubtle.opacity(0.45))
             AviPreviewCapabilityRow(systemImage: "sparkles", title: L10n.string("shell.avi.preview.recommendations.title"), detail: L10n.string("shell.avi.preview.recommendations.detail"))
         }
-        .padding(16)
+        .padding(18)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.5), lineWidth: 1)
+        }
     }
 
     private var aviPreviewActions: some View {
-        VStack(spacing: 10) {
-            AviCommandButton(
+        VStack(spacing: 12) {
+            AviPreviewPrimaryButton(
                 title: accessController.accessMode == .guest ? L10n.string("shell.avi.preview.primary.guest") : L10n.string("shell.avi.preview.primary.pro"),
                 systemImage: accessController.accessMode == .guest ? "person.crop.circle.badge.plus" : "sparkles",
                 accessibilityIdentifier: "avi.preview.primary",
                 action: primaryAviPreviewAction
             )
 
-            AviCommandButton(
-                title: L10n.string("shell.avi.preview.compare"),
-                systemImage: "rectangle.3.group",
-                accessibilityIdentifier: "avi.preview.compare"
-            ) {
-                isShowingPlanComparison = true
-            }
+            HStack(spacing: 10) {
+                AviPreviewSecondaryButton(
+                    title: L10n.string("shell.avi.preview.compare"),
+                    systemImage: "rectangle.3.group",
+                    accessibilityIdentifier: "avi.preview.compare"
+                ) {
+                    isShowingPlanComparison = true
+                }
 
-            AviCommandButton(
-                title: L10n.string("shell.avi.preview.search"),
-                systemImage: "magnifyingglass",
-                accessibilityIdentifier: "avi.preview.search",
-                action: openSearch
-            )
+                AviPreviewSecondaryButton(
+                    title: L10n.string("shell.avi.preview.search"),
+                    systemImage: "magnifyingglass",
+                    accessibilityIdentifier: "avi.preview.search",
+                    action: openSearch
+                )
+            }
         }
     }
 
@@ -6531,6 +6549,81 @@ private struct AviPreviewCapabilityRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+}
+
+private struct AviPreviewPrimaryButton: View {
+    let title: String
+    let systemImage: String
+    let accessibilityIdentifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .black))
+                    .frame(width: 34, height: 34)
+                    .background(TuneAVTheme.textInverse.opacity(0.16), in: Circle())
+
+                Text(title)
+                    .font(.system(size: 16, weight: .black))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .black))
+            }
+            .foregroundStyle(TuneAVTheme.textInverse)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 56)
+            .padding(.horizontal, 14)
+            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: TuneAVTheme.highlight.opacity(0.24), radius: 12, y: 7)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+}
+
+private struct AviPreviewSecondaryButton: View {
+    let title: String
+    let systemImage: String
+    let accessibilityIdentifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .frame(width: 34, height: 34)
+                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+
+                Text(title)
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 90)
+            .padding(.horizontal, 10)
+            .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle.opacity(0.5), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 
