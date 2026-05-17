@@ -2655,18 +2655,18 @@ private struct AviScreen: View {
                     .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
 
                 VStack(alignment: .leading, spacing: 7) {
-                    Text("Tune AV Pro")
+                    Text(L10n.string("shell.avi.preview.eyebrow"))
                         .font(.system(size: 12, weight: .black))
                         .foregroundStyle(TuneAVTheme.highlight)
                         .textCase(.uppercase)
 
-                    Text("Conoce a Avi")
+                    Text(L10n.string("shell.avi.preview.title"))
                         .font(.system(size: 29, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
-                    Text("Avi te ayuda a entender lo que suena, encontrar contexto y descubrir qué escuchar después. Con Pro está siempre disponible.")
+                    Text(L10n.string("shell.avi.preview.detail"))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2685,7 +2685,7 @@ private struct AviScreen: View {
 
     private var aviPreviewCurrentContext: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Lo que Avi ve ahora")
+            Text(L10n.string("shell.avi.preview.current"))
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(TuneAVTheme.highlight)
                 .textCase(.uppercase)
@@ -2720,9 +2720,9 @@ private struct AviScreen: View {
 
     private var aviPreviewCapabilities: some View {
         VStack(alignment: .leading, spacing: 10) {
-            AviPreviewCapabilityRow(systemImage: "text.quote", title: "Contexto musical", detail: "Letras, artista y búsquedas conectadas con lo que está sonando.")
-            AviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: "Señales de radio", detail: "Historial, emisoras relacionadas y señales públicas en un solo sitio.")
-            AviPreviewCapabilityRow(systemImage: "sparkles", title: "Recomendaciones", detail: "Avi usa tus guardados, recientes y feedback para proponer qué escuchar después.")
+            AviPreviewCapabilityRow(systemImage: "text.quote", title: L10n.string("shell.avi.preview.music.title"), detail: L10n.string("shell.avi.preview.music.detail"))
+            AviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: L10n.string("shell.avi.preview.radio.title"), detail: L10n.string("shell.avi.preview.radio.detail"))
+            AviPreviewCapabilityRow(systemImage: "sparkles", title: L10n.string("shell.avi.preview.recommendations.title"), detail: L10n.string("shell.avi.preview.recommendations.detail"))
         }
         .padding(16)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -2731,14 +2731,14 @@ private struct AviScreen: View {
     private var aviPreviewActions: some View {
         VStack(spacing: 10) {
             AviCommandButton(
-                title: accessController.accessMode == .guest ? "Conectar cuenta" : "Ver Tune AV Pro",
+                title: accessController.accessMode == .guest ? L10n.string("shell.avi.preview.primary.guest") : L10n.string("shell.avi.preview.primary.pro"),
                 systemImage: accessController.accessMode == .guest ? "person.crop.circle.badge.plus" : "sparkles",
                 accessibilityIdentifier: "avi.preview.primary",
                 action: primaryAviPreviewAction
             )
 
             AviCommandButton(
-                title: "Comparar planes",
+                title: L10n.string("shell.avi.preview.compare"),
                 systemImage: "rectangle.3.group",
                 accessibilityIdentifier: "avi.preview.compare"
             ) {
@@ -2746,7 +2746,7 @@ private struct AviScreen: View {
             }
 
             AviCommandButton(
-                title: "Explorar radios",
+                title: L10n.string("shell.avi.preview.search"),
                 systemImage: "magnifyingglass",
                 accessibilityIdentifier: "avi.preview.search",
                 action: openSearch
@@ -2761,17 +2761,17 @@ private struct AviScreen: View {
         if let currentStation {
             return currentStation.name
         }
-        return "Avi espera una señal"
+        return L10n.string("shell.avi.preview.emptyTitle")
     }
 
     private var aviPreviewContextDetail: String {
         if currentTrackTitle != nil {
-            return "Con Pro, Avi abre contexto, acciones y recomendaciones alrededor de esta canción."
+            return L10n.string("shell.avi.preview.songDetail")
         }
         if currentStation != nil {
-            return "Con Pro, Avi analiza esta radio y mantiene a mano sus acciones avanzadas."
+            return L10n.string("shell.avi.preview.radioDetail")
         }
-        return "Reproduce una radio para ver cómo Avi conecta música, feedback y descubrimiento."
+        return L10n.string("shell.avi.preview.emptyDetail")
     }
 
     private func primaryAviPreviewAction() {
@@ -3065,7 +3065,7 @@ private struct AviScreen: View {
     private var defaultAviPrimaryCommands: some View {
         if currentStation != nil {
             AviCommandButton(
-                title: "Ver lo que suena",
+                title: L10n.string("shell.avi.action.nowPlaying"),
                 systemImage: "waveform",
                 accessibilityIdentifier: "avi.command.primary.currentPlayer"
             ) {
@@ -3104,7 +3104,7 @@ private struct AviScreen: View {
     private var aviCurrentSignalCard: some View {
         if currentStation != nil {
             VStack(alignment: .leading, spacing: 10) {
-                Text("SEÑAL ACTUAL")
+                Text(L10n.string("shell.avi.currentSignal"))
                     .font(.system(size: 11, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
@@ -3187,21 +3187,21 @@ private struct AviScreen: View {
 
     private var aviListeningSignals: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Avi está usando")
+            Text(L10n.string("shell.avi.signals.using"))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
 
             if hasCurrentSongContext {
                 AviSignalRow(
-                    title: "Tema detectado",
-                    detail: currentTrackArtist.map { "Puede guardar, buscar contexto y ajustar gustos con \($0)." } ?? "Puede guardar y usar este tema para afinar recomendaciones.",
+                    title: L10n.string("shell.avi.signals.currentSong.title"),
+                    detail: currentTrackArtist.map { L10n.string("shell.avi.signals.currentSong.detailWithArtist", $0) } ?? L10n.string("shell.avi.signals.currentSong.detail"),
                     systemImage: "music.note",
                     accessibilityIdentifier: "avi.signals.currentSong"
                 )
             } else if let currentStation {
                 AviSignalRow(
-                    title: "Radio en directo",
-                    detail: "Está leyendo \(currentStation.name) aunque todavía no haya datos claros de canción.",
+                    title: L10n.string("shell.avi.signals.currentRadio.title"),
+                    detail: L10n.string("shell.avi.signals.currentRadio.detail", currentStation.name),
                     systemImage: "dot.radiowaves.left.and.right",
                     accessibilityIdentifier: "avi.signals.currentRadio"
                 )
@@ -3209,7 +3209,7 @@ private struct AviScreen: View {
 
             if let recommendation = topRecommendation {
                 AviSignalRow(
-                    title: "Siguiente propuesta",
+                    title: L10n.string("shell.avi.signals.next.title"),
                     detail: "\(recommendation.station.name): \(recommendation.reason)",
                     systemImage: "sparkles",
                     accessibilityIdentifier: "avi.signals.nextRecommendation"
@@ -3218,7 +3218,7 @@ private struct AviScreen: View {
 
             AviSignalRow(
                 title: L10n.string("shell.avi.signals.feedback.title"),
-                detail: feedbackSignalCount == 0 ? "Todavía no hay feedback suficiente; los botones de gusto tienen más peso ahora." : L10n.plural(singular: "shell.avi.signals.feedback.count.one", plural: "shell.avi.signals.feedback.count.other", count: feedbackSignalCount, feedbackSignalCount),
+                detail: feedbackSignalCount == 0 ? L10n.string("shell.avi.signals.feedback.emptyDetail") : L10n.plural(singular: "shell.avi.signals.feedback.count.one", plural: "shell.avi.signals.feedback.count.other", count: feedbackSignalCount, feedbackSignalCount),
                 systemImage: "hand.thumbsup",
                 accessibilityIdentifier: "avi.signals.feedback"
             )
@@ -3880,7 +3880,7 @@ private struct AviScreen: View {
             if let currentTrackTitle {
                 return currentTrackTitle
             }
-            return "Sintonizando \(currentStation.name)"
+            return L10n.string("shell.avi.command.tuning", currentStation.name)
         }
         return L10n.string("shell.avi.mood.ready")
     }
@@ -3911,7 +3911,7 @@ private struct AviScreen: View {
                     .compactMap { $0 }
                     .joined(separator: " · ")
             }
-            return "Avi está leyendo la señal de \(currentStation.name)."
+            return L10n.string("shell.avi.command.readingSignal", currentStation.name)
         }
         return L10n.string("shell.avi.detail.ready")
     }
@@ -3932,14 +3932,14 @@ private struct AviScreen: View {
         }
 
         if let currentTrackArtist {
-            return "\(currentTrackArtist) en \(currentStation.name). Avi ya puede guardar la canción, buscar contexto o ajustar recomendaciones."
+            return L10n.string("shell.avi.currentSignal.artistDetail", currentTrackArtist, currentStation.name)
         }
 
         if let currentTrackTitle {
-            return "\(currentTrackTitle) está entrando por \(currentStation.name). Avi está esperando más datos del tema."
+            return L10n.string("shell.avi.currentSignal.titleDetail", currentTrackTitle, currentStation.name)
         }
 
-        return "\(currentStation.name) está en directo. Avi puede recomendar radios cercanas y guardar esta señal."
+        return L10n.string("shell.avi.currentSignal.radioDetail", currentStation.name)
     }
 
     private var aviContextMeta: String {
@@ -5328,7 +5328,7 @@ private struct AviScreen: View {
         if isFocusedStationActive, let currentTrackArtist {
             return "\(currentTrackArtist) · \(station.name)"
         }
-        return station.primaryDetailLine.isEmpty ? "Radio pública · lista para explorar" : station.primaryDetailLine
+        return station.primaryDetailLine.isEmpty ? L10n.string("shell.avi.radioPublicFallback") : station.primaryDetailLine
     }
 
     private func signalInfoTitle(for station: Station) -> String {
@@ -6544,16 +6544,16 @@ private struct AviPlanComparisonSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Planes")
+                        Text(L10n.string("shell.avi.plans.eyebrow"))
                             .font(.system(size: 12, weight: .black))
                             .foregroundStyle(TuneAVTheme.highlight)
                             .textCase(.uppercase)
 
-                        Text("Qué incluye cada plan")
+                        Text(L10n.string("shell.avi.plans.title"))
                             .font(.system(size: 28, weight: .black, design: .rounded))
                             .foregroundStyle(TuneAVTheme.textPrimary)
 
-                        Text("Puedes empezar sin cuenta, guardar más al iniciar sesión y tener a Avi siempre contigo con Pro.")
+                        Text(L10n.string("shell.avi.plans.subtitle"))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -6561,40 +6561,40 @@ private struct AviPlanComparisonSheet: View {
 
                     VStack(spacing: 12) {
                         planCard(
-                            title: "Invitado",
+                            title: L10n.string("shell.avi.plans.guest"),
                             isCurrent: accessMode == .guest,
                             rows: [
-                                "10 radios guardadas",
-                                "50 canciones guardadas",
-                                "75 canciones descubiertas",
-                                "10 consultas a Avi al día",
-                                "Guardado solo en este dispositivo"
+                                L10n.string("shell.avi.plans.guest.radios"),
+                                L10n.string("shell.avi.plans.guest.songs"),
+                                L10n.string("shell.avi.plans.guest.discoveries"),
+                                L10n.string("shell.avi.plans.guest.avi"),
+                                L10n.string("shell.avi.plans.localOnly")
                             ]
                         )
 
                         planCard(
-                            title: "Cuenta gratis",
+                            title: L10n.string("shell.avi.plans.free"),
                             isCurrent: accessMode == .signedInFree,
                             rows: [
-                                "75 radios guardadas",
-                                "250 canciones guardadas",
-                                "500 canciones descubiertas",
-                                "50 consultas a Avi al día",
-                                "Guardado solo en este dispositivo"
+                                L10n.string("shell.avi.plans.free.radios"),
+                                L10n.string("shell.avi.plans.free.songs"),
+                                L10n.string("shell.avi.plans.free.discoveries"),
+                                L10n.string("shell.avi.plans.free.avi"),
+                                L10n.string("shell.avi.plans.localOnly")
                             ]
                         )
 
                         planCard(
-                            title: "Tune AV Pro",
+                            title: L10n.string("shell.avi.plans.pro"),
                             isCurrent: accessMode == .signedInPro,
                             isHighlighted: true,
                             rows: [
-                                "Avi siempre disponible",
-                                "500 radios guardadas",
-                                "1000 canciones guardadas",
-                                "1000 canciones descubiertas",
-                                "Consultas a Avi sin límite diario",
-                                "Sincronización entre dispositivos"
+                                L10n.string("shell.avi.plans.pro.avi"),
+                                L10n.string("shell.avi.plans.pro.radios"),
+                                L10n.string("shell.avi.plans.pro.songs"),
+                                L10n.string("shell.avi.plans.pro.discoveries"),
+                                L10n.string("shell.avi.plans.pro.requests"),
+                                L10n.string("shell.avi.plans.pro.sync")
                             ]
                         )
                     }
@@ -6603,7 +6603,7 @@ private struct AviPlanComparisonSheet: View {
                         onDismiss()
                         onPrimaryAction()
                     } label: {
-                        Text(accessMode == .guest ? "Conectar cuenta" : "Ver Tune AV Pro")
+                            Text(accessMode == .guest ? L10n.string("shell.avi.preview.primary.guest") : L10n.string("shell.avi.preview.primary.pro"))
                             .font(.system(size: 16, weight: .black))
                             .foregroundStyle(TuneAVTheme.textInverse)
                             .frame(maxWidth: .infinity)
@@ -6615,11 +6615,11 @@ private struct AviPlanComparisonSheet: View {
                 .padding(22)
             }
             .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-            .navigationTitle("Planes")
+            .navigationTitle(L10n.string("shell.avi.plans.eyebrow"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar", action: onDismiss)
+                    Button(L10n.string("shell.avi.plans.close"), action: onDismiss)
                 }
             }
         }
@@ -6635,7 +6635,7 @@ private struct AviPlanComparisonSheet: View {
                 Spacer()
 
                 if isCurrent {
-                    Text("Actual")
+                    Text(L10n.string("shell.avi.plans.current"))
                         .font(.system(size: 11, weight: .black))
                         .foregroundStyle(TuneAVTheme.textInverse)
                         .padding(.horizontal, 10)
@@ -10592,10 +10592,10 @@ private struct StationCompactCard: View {
                 stationFeedback == nil ? recommendationInsight : nil,
                 compactGenreLine,
                 contextFallbackLine,
-                "Señal sugerida"
+                L10n.string("shell.stationDetail.suggestedSignal")
             ],
             excluding: [compactPrimaryLine, compactStationContext]
-        ) ?? "Señal sugerida"
+        ) ?? L10n.string("shell.stationDetail.suggestedSignal")
     }
 
     private var compactMetadataContextLine: String {
@@ -11357,7 +11357,7 @@ private struct StationDetailSheet: View {
     }
 
     private var activeSignalTitle: String {
-        TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) ?? "Avi está escuchando esta señal."
+        TuneAVText.normalizedValue(audioPlayer.currentTrackTitle) ?? L10n.string("shell.stationDetail.activeSignalFallback")
     }
 
     private var activeSignalSubtitle: String {
