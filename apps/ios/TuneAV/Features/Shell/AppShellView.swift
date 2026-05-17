@@ -2585,7 +2585,7 @@ private struct AviScreen: View {
 
                         aviContextHeader
 
-                        if !accessController.capabilities.canAccessPremiumFeatures {
+                        if !accessController.capabilities.canAccessPremiumFeatures && focusedDetailIsEmpty {
                             aviPreviewContent
                         } else if focusedDetailIsEmpty {
                             aviLandingContent
@@ -2655,18 +2655,18 @@ private struct AviScreen: View {
                     .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
 
                 VStack(alignment: .leading, spacing: 7) {
-                    Text("Avi Pro")
+                    Text("Tune AV Pro")
                         .font(.system(size: 12, weight: .black))
                         .foregroundStyle(TuneAVTheme.highlight)
                         .textCase(.uppercase)
 
-                    Text("Un vistazo a Avi")
+                    Text("Conoce a Avi")
                         .font(.system(size: 29, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
-                    Text("Avi analiza lo que suena, conecta canciones con radios y convierte tus señales en recomendaciones. La experiencia completa se desbloquea con Pro.")
+                    Text("Avi te ayuda a entender lo que suena, encontrar contexto y descubrir qué escuchar después. Con Pro está siempre disponible.")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2685,7 +2685,7 @@ private struct AviScreen: View {
 
     private var aviPreviewCurrentContext: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Ahora mismo")
+            Text("Lo que Avi ve ahora")
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(TuneAVTheme.highlight)
                 .textCase(.uppercase)
@@ -2738,7 +2738,7 @@ private struct AviScreen: View {
             )
 
             AviCommandButton(
-                title: "Comparar capas",
+                title: "Comparar planes",
                 systemImage: "rectangle.3.group",
                 accessibilityIdentifier: "avi.preview.compare"
             ) {
@@ -2746,7 +2746,7 @@ private struct AviScreen: View {
             }
 
             AviCommandButton(
-                title: "Seguir explorando radios",
+                title: "Explorar radios",
                 systemImage: "magnifyingglass",
                 accessibilityIdentifier: "avi.preview.search",
                 action: openSearch
@@ -5742,8 +5742,8 @@ private struct AviScreen: View {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
 
-    private func stationSaveActionSystemImage(for _: Station) -> String {
-        "dot.radiowaves.left.and.right"
+    private func stationSaveActionSystemImage(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? "bookmark.slash" : "bookmark"
     }
 
     private func focusedSignalActions(for station: Station) -> some View {
@@ -6549,11 +6549,11 @@ private struct AviPlanComparisonSheet: View {
                             .foregroundStyle(TuneAVTheme.highlight)
                             .textCase(.uppercase)
 
-                        Text("Qué incluye cada capa")
+                        Text("Qué incluye cada plan")
                             .font(.system(size: 28, weight: .black, design: .rounded))
                             .foregroundStyle(TuneAVTheme.textPrimary)
 
-                        Text("Invitado sirve para probar Tune AV. Cuenta gratis amplía la biblioteca local. Pro desbloquea Avi completo, sincronización y límites altos.")
+                        Text("Puedes empezar sin cuenta, guardar más al iniciar sesión y tener a Avi siempre contigo con Pro.")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -6567,8 +6567,8 @@ private struct AviPlanComparisonSheet: View {
                                 "10 radios guardadas",
                                 "50 canciones guardadas",
                                 "75 canciones descubiertas",
-                                "10 acciones Avi al día",
-                                "Sin sincronización"
+                                "10 consultas a Avi al día",
+                                "Guardado solo en este dispositivo"
                             ]
                         )
 
@@ -6579,8 +6579,8 @@ private struct AviPlanComparisonSheet: View {
                                 "75 radios guardadas",
                                 "250 canciones guardadas",
                                 "500 canciones descubiertas",
-                                "50 acciones Avi al día",
-                                "Sin sincronización"
+                                "50 consultas a Avi al día",
+                                "Guardado solo en este dispositivo"
                             ]
                         )
 
@@ -6589,12 +6589,12 @@ private struct AviPlanComparisonSheet: View {
                             isCurrent: accessMode == .signedInPro,
                             isHighlighted: true,
                             rows: [
-                                "Avi completo",
+                                "Avi siempre disponible",
                                 "500 radios guardadas",
                                 "1000 canciones guardadas",
                                 "1000 canciones descubiertas",
-                                "Acciones Avi sin límite diario",
-                                "Sincronización"
+                                "Consultas a Avi sin límite diario",
+                                "Sincronización entre dispositivos"
                             ]
                         )
                     }
@@ -10943,7 +10943,7 @@ private struct StationListActionRow: View {
         AviRowActionsPanel(close: closeAviActions) {
             AviRowActionButton(
                 title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
-                systemImage: "dot.radiowaves.left.and.right"
+                systemImage: isFavorite ? "bookmark.slash" : "bookmark"
             ) {
                 toggleFavorite()
                 closeAviActions()
@@ -11264,7 +11264,7 @@ private struct StationDetailSheet: View {
                 .accessibilityIdentifier("stationDetail.play")
 
                 signalIconButton(
-                    systemImage: "dot.radiowaves.left.and.right",
+                    systemImage: isFavorite ? "bookmark.slash" : "bookmark",
                     accessibilityLabel: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                     isSelected: isFavorite,
                     action: toggleFavorite

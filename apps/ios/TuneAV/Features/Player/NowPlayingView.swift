@@ -1947,8 +1947,8 @@ struct NowPlayingView: View {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
 
-    private func stationSaveActionSystemImage(for _: Station) -> String {
-        "dot.radiowaves.left.and.right"
+    private func stationSaveActionSystemImage(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? "bookmark.slash" : "bookmark"
     }
 
     private func openExternalSearch(
@@ -2458,12 +2458,7 @@ private struct PlayerSignalDeck: View {
             }
 
             Section("Radio") {
-                Button(action: onToggleFavorite) {
-                    Label(
-                        isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
-                        systemImage: "dot.radiowaves.left.and.right"
-                    )
-                }
+                Button(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"), action: onToggleFavorite)
 
                 if let homepageURL {
                     Button(L10n.string("player.menu.openWebsite")) {
