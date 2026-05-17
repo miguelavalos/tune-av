@@ -50,6 +50,10 @@ bun run ios:check:prod
 `Local.xcconfig` is generated output. Do not edit it by hand and do not reuse it
 after switching environments; regenerate it through the scripts.
 
+Public source must not hardcode private backend endpoints. See
+`docs/public-config-policy.md` before changing runtime configuration scripts or
+native backend defaults.
+
 ## Current signing setup
 
 - Xcode project: `apps/ios/TuneAV.xcodeproj`
