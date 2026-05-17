@@ -9,6 +9,8 @@ struct DiscoveryTrackCard: View {
     var showsSaveButton = true
     @Binding var openAviActionsID: String?
     let openTrackInfo: () -> Void
+    let openArtistInfo: () -> Void
+    let openStationInfo: () -> Void
     let toggleSaved: () -> Void
     let openYouTube: () -> Void
     let openLyrics: () -> Void
@@ -167,30 +169,16 @@ struct DiscoveryTrackCard: View {
                     toggleSaved()
                     closeAviActions()
                 }
-                if let hideAction {
-                    AviListActionButton(
-                        title: L10n.string("player.discovery.hide"),
-                        systemImage: "eye.slash",
-                        role: .destructive,
-                        accessibilityIdentifier: "discoveryTrack.hide.\(discovery.discoveryID)"
-                    ) {
-                        hideAction()
-                        closeAviActions()
-                    }
-                }
-                if let removeAction {
-                    AviListActionButton(
-                        title: L10n.string("player.discovery.remove"),
-                        systemImage: "trash",
-                        role: .destructive,
-                        accessibilityIdentifier: "discoveryTrack.remove.\(discovery.discoveryID)"
-                    ) {
-                        removeAction()
-                        closeAviActions()
-                    }
-                }
-                AviListActionButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "info.circle") {
+                AviListActionButton(title: L10n.string("shell.music.discovery.openTrackInfo.action"), systemImage: "info.circle") {
                     openTrackInfo()
+                    closeAviActions()
+                }
+                AviListActionButton(title: L10n.string("player.artist.view"), systemImage: "person.crop.circle") {
+                    openArtistInfo()
+                    closeAviActions()
+                }
+                AviListActionButton(title: L10n.string("shell.music.discovery.openStation.action"), systemImage: "dot.radiowaves.left.and.right") {
+                    openStationInfo()
                     closeAviActions()
                 }
             } else {
@@ -901,6 +889,8 @@ struct DiscoveryArtistRow: View {
     let summary: DiscoveryArtistSummary
     @Binding var openAviActionsID: String?
     let openArtist: () -> Void
+    let openArtistSongs: () -> Void
+    let openArtistRadios: () -> Void
     let openYouTube: () -> Void
     let openAppleMusic: () -> Void
     let openSpotify: () -> Void
@@ -1011,18 +1001,29 @@ struct DiscoveryArtistRow: View {
     private var aviActionsPanel: some View {
         AviListActionsPanel(
             page: aviActionsPage,
-            pageCount: 1,
+            pageCount: 2,
             previous: { withAnimation(.snappy(duration: 0.18)) { aviActionsPage = max(0, aviActionsPage - 1) } },
-            next: { },
+            next: { withAnimation(.snappy(duration: 0.18)) { aviActionsPage = min(1, aviActionsPage + 1) } },
             close: closeAviActions
         ) {
-            AviListActionButton(title: L10n.string("shell.music.artist.viewSongs"), systemImage: "info.circle") {
-                openArtist()
-                closeAviActions()
+            if aviActionsPage == 0 {
+                AviListActionButton(title: L10n.string("shell.music.artist.openDetails"), systemImage: "info.circle") {
+                    openArtist()
+                    closeAviActions()
+                }
+                AviListActionButton(title: L10n.string("shell.music.artist.viewSavedSongs"), systemImage: "music.note.list") {
+                    openArtistSongs()
+                    closeAviActions()
+                }
+                AviListActionButton(title: L10n.string("shell.avi.music.artist.radios"), systemImage: "dot.radiowaves.left.and.right") {
+                    openArtistRadios()
+                    closeAviActions()
+                }
+            } else {
+                AviListActionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
+                AviListActionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
+                AviListActionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
             }
-            AviListActionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
-            AviListActionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
-            AviListActionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
         }
     }
 
