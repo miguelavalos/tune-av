@@ -748,8 +748,8 @@
 "shell.avi.preview.compare" = "Compare plans";
 "shell.avi.preview.capabilities" = "Useful when listening";
 "shell.avi.preview.current" = "Listening with Avi";
-"shell.avi.preview.detail" = "Avi adds a helpful layer around live radio: context for what is playing, quick actions, and gentler discovery prompts.";
-"shell.avi.preview.emptyDetail" = "Play a radio and Avi will surface simple actions around the signal.";
+"shell.avi.preview.detail" = "A friendly layer for live radio: quick context, useful links, and small discovery hints while you listen.";
+"shell.avi.preview.emptyDetail" = "Start a radio to unlock song and station actions.";
 "shell.avi.preview.emptyTitle" = "Avi is waiting for a signal";
 "shell.avi.preview.eyebrow" = "Tune AV Pro";
 "shell.avi.preview.music.detail" = "Open lyrics, artist searches, and music links from the current track.";
@@ -763,7 +763,7 @@
 "shell.avi.preview.recommendations.title" = "Discovery hints";
 "shell.avi.preview.search" = "Explore radios";
 "shell.avi.preview.songDetail" = "Avi can open context and quick actions around this song.";
-"shell.avi.preview.title" = "Meet Avi";
+"shell.avi.preview.title" = "Avi";
 "shell.avi.radioPublicFallback" = "Public radio · ready to explore";
 "shell.avi.signals.currentRadio.detail" = "Reading %@ even though clear song data is not available yet.";
 "shell.avi.signals.currentRadio.title" = "Live radio";

@@ -746,8 +746,8 @@
 "shell.avi.preview.compare" = "Comparar planes";
 "shell.avi.preview.capabilities" = "Útil mientras escuchas";
 "shell.avi.preview.current" = "Escuchando con Avi";
-"shell.avi.preview.detail" = "Avi añade una capa útil sobre la radio en directo: contexto de lo que suena, acciones rápidas y pequeñas pistas para descubrir.";
-"shell.avi.preview.emptyDetail" = "Reproduce una radio y Avi mostrará acciones sencillas alrededor de la señal.";
+"shell.avi.preview.detail" = "Una capa amable para la radio en directo: contexto rápido, enlaces útiles y pequeñas pistas mientras escuchas.";
+"shell.avi.preview.emptyDetail" = "Pon una radio para activar acciones de canción y emisora.";
 "shell.avi.preview.emptyTitle" = "Avi espera una señal";
 "shell.avi.preview.eyebrow" = "Tune AV Pro";
 "shell.avi.preview.music.detail" = "Abre letras, búsquedas de artista y enlaces musicales desde el tema actual.";
@@ -761,7 +761,7 @@
 "shell.avi.preview.recommendations.title" = "Pistas de descubrimiento";
 "shell.avi.preview.search" = "Explorar radios";
 "shell.avi.preview.songDetail" = "Avi puede abrir contexto y acciones rápidas alrededor de esta canción.";
-"shell.avi.preview.title" = "Conoce a Avi";
+"shell.avi.preview.title" = "Avi";
 "shell.avi.radioPublicFallback" = "Radio pública · lista para explorar";
 "shell.avi.signals.currentRadio.detail" = "Está leyendo %@ aunque todavía no haya datos claros de canción.";
 "shell.avi.signals.currentRadio.title" = "Radio en directo";

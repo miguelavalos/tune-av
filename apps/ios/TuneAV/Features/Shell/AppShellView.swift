@@ -622,6 +622,14 @@ struct AppShellView: View {
         accessController.capabilities.canAccessPremiumFeatures
     }
 
+    private func runProAviAction(_ action: () -> Void) {
+        guard accessController.capabilities.canAccessPremiumFeatures else {
+            isShowingProPaywall = true
+            return
+        }
+        action()
+    }
+
     private func recordCurrentTrackDiscovery() {
         guard
             let station = audioPlayer.currentStation,
@@ -1509,20 +1517,9 @@ private struct AppShellFooterAviButton: View {
                         .padding(4)
                 }
 
-                Image("AviV2HeadNeutral")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 48, height: 48)
-                    .scaleEffect(1.38)
-                    .offset(y: 4)
-                    .clipShape(Circle())
+                AviFooterGlyph(isSelected: isSelected)
+                    .frame(width: 46, height: 46)
                     .padding(8)
-                    .background(TuneAVTheme.highlight.opacity(isSelected ? 0.16 : 0.08), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(TuneAVTheme.highlight.opacity(isSelected ? 0.28 : 0.12), lineWidth: 1)
-                    }
-                    .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.22 : 0.06), radius: 7, y: 2)
             }
             .frame(width: 62, height: 62)
             .contentShape(Circle())
@@ -1530,6 +1527,59 @@ private struct AppShellFooterAviButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.avi.title"))
         .accessibilityIdentifier("tab.avi")
+    }
+}
+
+private struct AviFooterGlyph: View {
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(isSelected ? TuneAVTheme.highlight : TuneAVTheme.highlight.opacity(0.12))
+                .overlay {
+                    Circle()
+                        .stroke(TuneAVTheme.highlight.opacity(isSelected ? 0.5 : 0.2), lineWidth: 1)
+                }
+                .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.22 : 0.06), radius: 7, y: 2)
+
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .fill(isSelected ? TuneAVTheme.textInverse.opacity(0.96) : TuneAVTheme.elevatedSurface)
+                .frame(width: 32, height: 28)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .stroke(isSelected ? TuneAVTheme.textInverse.opacity(0.55) : TuneAVTheme.highlight.opacity(0.28), lineWidth: 1)
+                }
+                .shadow(color: TuneAVTheme.softShadow.opacity(isSelected ? 0.1 : 0.16), radius: 5, y: 2)
+
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(TuneAVTheme.brandGraphite)
+                .frame(width: 23, height: 14)
+                .overlay(alignment: .topLeading) {
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.28))
+                        .frame(width: 7, height: 2)
+                        .padding(.top, 3)
+                        .padding(.leading, 5)
+                }
+
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(TuneAVTheme.highlight)
+                    .frame(width: 4, height: 4)
+
+                Circle()
+                    .fill(TuneAVTheme.highlight)
+                    .frame(width: 4, height: 4)
+            }
+            .offset(y: -0.5)
+
+            Capsule(style: .continuous)
+                .fill(isSelected ? TuneAVTheme.textInverse.opacity(0.9) : TuneAVTheme.highlight.opacity(0.55))
+                .frame(width: 12, height: 3)
+                .offset(y: 18)
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -2583,16 +2633,18 @@ private struct AviScreen: View {
                             .frame(height: 0)
                             .id("avi.detail.top")
 
-                        aviContextHeader
-
                         if !accessController.capabilities.canAccessPremiumFeatures && focusedDetailIsEmpty {
                             aviPreviewContent
-                        } else if focusedDetailIsEmpty {
-                            aviLandingContent
-                        } else if let activeMusicDetail {
-                            focusedMusicExperience(activeMusicDetail)
                         } else {
-                            focusedSignalExperience
+                            aviContextHeader
+
+                            if focusedDetailIsEmpty {
+                                aviLandingContent
+                            } else if let activeMusicDetail {
+                                focusedMusicExperience(activeMusicDetail)
+                            } else {
+                                focusedSignalExperience
+                            }
                         }
                     }
                     .shellScreenContentPadding(bottom: aviScrollBottomPadding)
@@ -2638,7 +2690,7 @@ private struct AviScreen: View {
     }
 
     private var aviPreviewContent: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             aviPreviewHero
             aviPreviewCurrentContext
             aviPreviewActions
@@ -2649,38 +2701,47 @@ private struct AviScreen: View {
     }
 
     private var aviPreviewHero: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L10n.string("shell.avi.preview.eyebrow"))
-                    .font(.system(size: 12, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.string("shell.avi.preview.eyebrow"))
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .textCase(.uppercase)
 
-                Text(L10n.string("shell.avi.preview.title"))
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
+                    Text(L10n.string("shell.avi.preview.title"))
+                        .font(.system(size: 32, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(L10n.string("shell.avi.preview.detail"))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineSpacing(1.5)
-                    .fixedSize(horizontal: false, vertical: true)
+                aviHeroImage(width: 62)
+                    .padding(7)
+                    .background(TuneAVTheme.highlight.opacity(0.09), in: Circle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            aviHeroImage(width: 74)
-                .padding(8)
-                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
+            Text(L10n.string("shell.avi.preview.detail"))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(18)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.45), lineWidth: 1)
+        }
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.12), radius: 14, y: 7)
     }
 
     private var aviPreviewCurrentContext: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(L10n.string("shell.avi.preview.current"))
-                    .font(.system(size: 12, weight: .black))
+                    .font(.system(size: 11, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
 
@@ -2691,22 +2752,22 @@ private struct AviScreen: View {
                     .foregroundStyle(TuneAVTheme.highlight)
             }
 
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
                 Image(systemName: currentStation == nil ? "sparkles" : "waveform")
-                    .font(.system(size: 22, weight: .black))
+                    .font(.system(size: 17, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 50, height: 50)
+                    .frame(width: 38, height: 38)
                     .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(aviPreviewContextTitle)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .font(.system(size: 17, weight: .black, design: .rounded))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.82)
 
                     Text(aviPreviewContextDetail)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                         .lineSpacing(1)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2714,19 +2775,18 @@ private struct AviScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(18)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(14)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(TuneAVTheme.highlight.opacity(0.18), lineWidth: 1)
         }
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 16, y: 8)
     }
 
     private var aviPreviewCapabilities: some View {
-        VStack(alignment: .leading, spacing: 13) {
+        VStack(alignment: .leading, spacing: 11) {
             Text(L10n.string("shell.avi.preview.capabilities"))
-                .font(.system(size: 12, weight: .black))
+                .font(.system(size: 11, weight: .black))
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .textCase(.uppercase)
 
@@ -2736,10 +2796,10 @@ private struct AviScreen: View {
             Divider().overlay(TuneAVTheme.borderSubtle.opacity(0.45))
             AviPreviewCapabilityRow(systemImage: "sparkles", title: L10n.string("shell.avi.preview.recommendations.title"), detail: L10n.string("shell.avi.preview.recommendations.detail"))
         }
-        .padding(18)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(14)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(TuneAVTheme.borderSubtle.opacity(0.5), lineWidth: 1)
         }
     }
@@ -2798,6 +2858,22 @@ private struct AviScreen: View {
         } else {
             openProPaywall()
         }
+    }
+
+    private func runProAviAction(_ action: () -> Void) {
+        guard accessController.capabilities.canAccessPremiumFeatures else {
+            openProPaywall()
+            return
+        }
+        action()
+    }
+
+    private func runProAviActionOutsideFullPlayer(_ action: () -> Void) {
+        guard isNowPlayingFullPlayer || accessController.capabilities.canAccessPremiumFeatures else {
+            openProPaywall()
+            return
+        }
+        action()
     }
 
     private var activeMusicDetail: SelectedMusicAviDetail? {
@@ -2943,7 +3019,9 @@ private struct AviScreen: View {
             systemImage: isFocusedStationActive ? "waveform" : "play.fill",
             accessibilityIdentifier: "avi.command.primary.listen"
         ) {
-            openPlayer()
+            runProAviActionOutsideFullPlayer {
+                openPlayer()
+            }
         }
 
         AviCommandButton(
@@ -2952,7 +3030,9 @@ private struct AviScreen: View {
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
         ) {
             if hasCurrentSongContext {
-                saveAviCurrentDiscovery(for: station)
+                runProAviActionOutsideFullPlayer {
+                    saveAviCurrentDiscovery(for: station)
+                }
             } else {
                 toggleFavorite(station)
             }
@@ -2963,10 +3043,12 @@ private struct AviScreen: View {
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: "avi.command.primary.search"
         ) {
-            if hasCurrentSongContext {
-                openAviSearch(for: station, destination: .web, suffix: "lyrics")
-            } else {
-                openAviStationSearch(for: station)
+            runProAviActionOutsideFullPlayer {
+                if hasCurrentSongContext {
+                    openAviSearch(for: station, destination: .web, suffix: "lyrics")
+                } else {
+                    openAviStationSearch(for: station)
+                }
             }
         }
 
@@ -2975,7 +3057,9 @@ private struct AviScreen: View {
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
-            showStationDetails(station, [station])
+            runProAviActionOutsideFullPlayer {
+                showStationDetails(station, [station])
+            }
         }
     }
 
@@ -2988,28 +3072,36 @@ private struct AviScreen: View {
                 systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
                 accessibilityIdentifier: "avi.command.primary.music.save"
             ) {
-                toggleDiscoverySaved(discovery)
+                runProAviActionOutsideFullPlayer {
+                    toggleDiscoverySaved(discovery)
+                }
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.searchLyrics"),
                 systemImage: "text.quote",
                 accessibilityIdentifier: "avi.command.primary.music.lyrics"
             ) {
-                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                runProAviActionOutsideFullPlayer {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                }
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.music.youtube"
             ) {
-                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                runProAviActionOutsideFullPlayer {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                }
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.searchArtist"),
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.music.artist"
             ) {
-                openExternalSearch(query: discovery.artistDisplayText)
+                runProAviActionOutsideFullPlayer {
+                    openExternalSearch(query: discovery.artistDisplayText)
+                }
             }
         case .artist(let summary):
             AviCommandButton(
@@ -3017,21 +3109,27 @@ private struct AviScreen: View {
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.artist.search"
             ) {
-                openExternalSearch(query: summary.name)
+                runProAviActionOutsideFullPlayer {
+                    openExternalSearch(query: summary.name)
+                }
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.artist.youtube"
             ) {
-                openExternalSearch(query: summary.name, destination: .youtube)
+                runProAviActionOutsideFullPlayer {
+                    openExternalSearch(query: summary.name, destination: .youtube)
+                }
             }
             AviCommandButton(
                 title: L10n.string("shell.avi.actions.findRelatedRadios"),
                 systemImage: "magnifyingglass",
                 accessibilityIdentifier: "avi.command.primary.artist.searchRadio"
             ) {
-                openSearch()
+                runProAviActionOutsideFullPlayer {
+                    openSearch()
+                }
             }
         }
     }
@@ -3043,7 +3141,9 @@ private struct AviScreen: View {
             systemImage: "waveform",
             accessibilityIdentifier: "avi.command.primary.currentPlayer"
         ) {
-            openPlayer()
+            runProAviActionOutsideFullPlayer {
+                openPlayer()
+            }
         }
 
         AviCommandButton(
@@ -3052,7 +3152,9 @@ private struct AviScreen: View {
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
         ) {
             if hasCurrentSongContext {
-                saveAviCurrentDiscovery(for: station)
+                runProAviActionOutsideFullPlayer {
+                    saveAviCurrentDiscovery(for: station)
+                }
             } else {
                 toggleFavorite(station)
             }
@@ -3063,10 +3165,12 @@ private struct AviScreen: View {
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.searchLyrics" : "avi.command.primary.searchRadio"
         ) {
-            if hasCurrentSongContext {
-                openAviSearch(for: station, destination: .web, suffix: "lyrics")
-            } else {
-                openAviStationSearch(for: station)
+            runProAviActionOutsideFullPlayer {
+                if hasCurrentSongContext {
+                    openAviSearch(for: station, destination: .web, suffix: "lyrics")
+                } else {
+                    openAviStationSearch(for: station)
+                }
             }
         }
 
@@ -3075,7 +3179,9 @@ private struct AviScreen: View {
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
-            showStationDetails(station, [station])
+            runProAviActionOutsideFullPlayer {
+                showStationDetails(station, [station])
+            }
         }
     }
 
@@ -3556,16 +3662,24 @@ private struct AviScreen: View {
                         openTrackInfo: { nestedMusicDetail = .track(discovery) },
                         toggleSaved: { toggleDiscoverySaved(discovery) },
                         openYouTube: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                            }
                         },
                         openLyrics: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                            }
                         },
                         openAppleMusic: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
+                            }
                         },
                         openSpotify: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
+                            }
                         },
                         hideAction: nil,
                         removeAction: nil
@@ -4091,16 +4205,24 @@ private struct AviScreen: View {
                         openTrackInfo: { nestedMusicDetail = .track(discovery) },
                         toggleSaved: { toggleDiscoverySaved(discovery) },
                         openYouTube: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                            }
                         },
                         openLyrics: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                            }
                         },
                         openAppleMusic: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
+                            }
                         },
                         openSpotify: {
-                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
+                            runProAviAction {
+                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
+                            }
                         },
                         hideAction: nil,
                         removeAction: nil
@@ -5511,21 +5633,27 @@ private struct AviScreen: View {
                         closeAviActions()
                     }
                     AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
-                        showStationDetails(station, [station])
-                        closeAviActions()
+                        runProAviActionOutsideFullPlayer {
+                            showStationDetails(station, [station])
+                            closeAviActions()
+                        }
                     }
                     if !isFocusedStationActive {
                         AviCommandButton(title: L10n.string("shell.avi.actions.playRadio"), systemImage: "play.fill", accessibilityIdentifier: "avi.actions.playRadio") {
-                            openPlayer()
-                            closeAviActions()
+                            runProAviActionOutsideFullPlayer {
+                                openPlayer()
+                                closeAviActions()
+                            }
                         }
                     } else {
                         AviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web") {
-                            showAviReaction(.curious)
-                            if let url = station.resolvedHomepageURL {
-                                browserDestination = BrowserDestination(url: url)
-                            } else {
-                                openAviStationSearch(for: station)
+                            runProAviActionOutsideFullPlayer {
+                                showAviReaction(.curious)
+                                if let url = station.resolvedHomepageURL {
+                                    browserDestination = BrowserDestination(url: url)
+                                } else {
+                                    openAviStationSearch(for: station)
+                                }
                             }
                         }
                     }
@@ -5773,20 +5901,26 @@ private struct AviScreen: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     AviSignalActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
-                        if isFocusedStationActive && hasCurrentSongContext {
-                            openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                        } else {
-                            openAviStationSearch(for: station)
+                        runProAviActionOutsideFullPlayer {
+                            if isFocusedStationActive && hasCurrentSongContext {
+                                openAviSearch(for: station, destination: .web, suffix: "lyrics")
+                            } else {
+                                openAviStationSearch(for: station)
+                            }
                         }
                     }
                     AviSignalActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
-                        showStationDetails(station, [station])
+                        runProAviActionOutsideFullPlayer {
+                            showStationDetails(station, [station])
+                        }
                     }
                     AviSignalActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
-                        if let url = station.resolvedHomepageURL {
-                            browserDestination = BrowserDestination(url: url)
-                        } else {
-                            openAviStationSearch(for: station)
+                        runProAviActionOutsideFullPlayer {
+                            if let url = station.resolvedHomepageURL {
+                                browserDestination = BrowserDestination(url: url)
+                            } else {
+                                openAviStationSearch(for: station)
+                            }
                         }
                     }
                     if isFocusedStationActive {
@@ -6532,18 +6666,18 @@ private struct AviPreviewCapabilityRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
+                .font(.system(size: 13, weight: .black))
                 .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 34, height: 34)
+                .frame(width: 30, height: 30)
                 .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 15, weight: .black))
+                    .font(.system(size: 14, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
 
                 Text(detail)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -6563,7 +6697,7 @@ private struct AviPreviewPrimaryButton: View {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .black))
-                    .frame(width: 34, height: 34)
+                    .frame(width: 30, height: 30)
                     .background(TuneAVTheme.textInverse.opacity(0.16), in: Circle())
 
                 Text(title)
@@ -6578,9 +6712,9 @@ private struct AviPreviewPrimaryButton: View {
             }
             .foregroundStyle(TuneAVTheme.textInverse)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 56)
+            .frame(height: 52)
             .padding(.horizontal, 14)
-            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .shadow(color: TuneAVTheme.highlight.opacity(0.24), radius: 12, y: 7)
         }
         .buttonStyle(.plain)
@@ -6601,7 +6735,7 @@ private struct AviPreviewSecondaryButton: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 30, height: 30)
                     .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
                 Text(title)
@@ -6613,11 +6747,11 @@ private struct AviPreviewSecondaryButton: View {
                     .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 84)
+            .frame(height: 76)
             .padding(.horizontal, 10)
-            .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(TuneAVTheme.borderSubtle.opacity(0.5), lineWidth: 1)
             }
         }
@@ -9062,6 +9196,14 @@ private struct MusicScreen: View {
     let removeDiscovery: (DiscoveredTrack) -> Void
     let clearDiscoveries: () -> Void
 
+    private func runProAviAction(_ action: () -> Void) {
+        guard accessController.capabilities.canAccessPremiumFeatures else {
+            accessController.presentUpgradePrompt(for: .aviAction)
+            return
+        }
+        action()
+    }
+
     var body: some View {
         let snapshot = musicDerivedState
         let showsOverview = isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil
@@ -9297,10 +9439,10 @@ private struct MusicScreen: View {
                     trackFeedback: { discovery in trackFeedback(discovery) },
                     openTrackInfo: { discovery in openDiscoveryInfo(discovery, nil) },
                     toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-                    openYouTube: { discovery in openDiscoverySearch(discovery, suffix: nil, youtube: true) },
-                    openLyrics: { discovery in openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) },
-                    openAppleMusic: { discovery in openAppleMusicSearch(discovery) },
-                    openSpotify: { discovery in openSpotifySearch(discovery) },
+                    openYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
+                    openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
+                    openAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
+                    openSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
                     hideAction: hideDiscoveryWithUndo(_:),
                     removeAction: { discovery in removeDiscovery(discovery) }
                 )
@@ -9320,9 +9462,9 @@ private struct MusicScreen: View {
                 MusicArtistCompactCarousel(
                     artists: artists,
                     openArtistInfo: { artist in openArtistInfo(artist, nil) },
-                    openYouTube: { artist in openArtistSearch(artist, youtube: true) },
-                    openAppleMusic: openAppleMusicArtistSearch(_:),
-                    openSpotify: openSpotifyArtistSearch(_:)
+                    openYouTube: { artist in runProAviAction { openArtistSearch(artist, youtube: true) } },
+                    openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist) } },
+                    openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist) } }
                 )
             }
         }
@@ -9348,9 +9490,9 @@ private struct MusicScreen: View {
                                 summary: artist,
                                 openAviActionsID: $openMusicAviActionsID,
                                 openArtist: { openArtistInfo(artist, musicMode) },
-                                openYouTube: { openArtistSearch(artist.name, youtube: true) },
-                                openAppleMusic: { openAppleMusicArtistSearch(artist.name) },
-                                openSpotify: { openSpotifyArtistSearch(artist.name) }
+                                openYouTube: { runProAviAction { openArtistSearch(artist.name, youtube: true) } },
+                                openAppleMusic: { runProAviAction { openAppleMusicArtistSearch(artist.name) } },
+                                openSpotify: { runProAviAction { openSpotifyArtistSearch(artist.name) } }
                             )
                             .zIndex(openMusicAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(snapshot.visibleArtistSummariesForMode.count - index))
                         }
@@ -9381,10 +9523,10 @@ private struct MusicScreen: View {
                     openAviActionsID: $openMusicAviActionsID,
                     openTrackInfo: { openDiscoveryInfo(discovery, musicMode) },
                     toggleSaved: { toggleDiscoverySaved(discovery) },
-                    openYouTube: { openDiscoverySearch(discovery, suffix: nil, youtube: true) },
-                    openLyrics: { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) },
-                    openAppleMusic: { openAppleMusicSearch(discovery) },
-                    openSpotify: { openSpotifySearch(discovery) },
+                    openYouTube: { runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
+                    openLyrics: { runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
+                    openAppleMusic: { runProAviAction { openAppleMusicSearch(discovery) } },
+                    openSpotify: { runProAviAction { openSpotifySearch(discovery) } },
                     hideAction: { hideDiscoveryWithUndo(discovery) },
                     removeAction: { removeDiscovery(discovery) }
                 )
