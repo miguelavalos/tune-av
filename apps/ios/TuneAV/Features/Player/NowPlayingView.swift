@@ -812,7 +812,7 @@ struct NowPlayingView: View {
                     PlayerFeedbackReactionButton(
                         reaction: .clear,
                         accessibilityLabel: L10n.string("player.discovery.noSave"),
-                        accessibilityIdentifier: "player.discovery.ignoreDecision",
+                        accessibilityIdentifier: "player.discovery.noSaveDecision",
                         action: ignoreCurrentDiscovery
                     ) {
                         Label(L10n.string("player.discovery.noSave"), systemImage: "xmark")
@@ -1306,7 +1306,7 @@ struct NowPlayingView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.string("player.discovery.noSave"))
-                    .accessibilityIdentifier("player.discovery.ignoreDecision")
+                    .accessibilityIdentifier("player.discovery.noSaveDecision")
                 }
                 }
 
@@ -1947,8 +1947,8 @@ struct NowPlayingView: View {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
 
-    private func stationSaveActionSystemImage(for _: Station) -> String {
-        "dot.radiowaves.left.and.right"
+    private func stationSaveActionSystemImage(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? "bookmark.slash" : "bookmark"
     }
 
     private func openExternalSearch(
@@ -2450,9 +2450,6 @@ private struct PlayerSignalDeck: View {
         Menu {
             if hasSongContext {
                 Section("Song") {
-                    Button(isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")) {
-                        _ = onSaveDiscovery()
-                    }
                     Button(L10n.string("player.discovery.appleMusic"), action: onOpenAppleMusic)
                     Button(L10n.string("player.discovery.lyrics"), action: onOpenLyrics)
                     Button(L10n.string("player.discovery.youtube"), action: onOpenYouTube)
@@ -2536,7 +2533,7 @@ private enum PlayerDiscoveryDecision {
         case .removed:
             return L10n.string("player.discovery.removed")
         case .ignored:
-            return L10n.string("player.discovery.ignoredHint")
+            return L10n.string("player.discovery.noSaveHint")
         }
     }
 }
@@ -3094,7 +3091,7 @@ private struct FlippingPlayerArtwork: View {
             }
         }
 
-        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.saveShort")
+        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")
     }
 
     private var discoveryButtonAccessibilityLabel: String {
@@ -3107,7 +3104,7 @@ private struct FlippingPlayerArtwork: View {
             }
         }
 
-        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save")
+        return isCurrentTrackDiscovered ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.save")
     }
 
     private var discoveryFeedbackAccessibilityValue: String {

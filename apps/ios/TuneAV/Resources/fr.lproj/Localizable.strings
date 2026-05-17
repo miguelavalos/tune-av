@@ -132,7 +132,7 @@
 "player.discovery.share" = "Partager la découverte";
 "player.discovery.shareShort" = "Partager";
 "player.discovery.shareText" = "J'ai découvert \"%@\" de %@ sur %@ avec Tune AV.";
-"player.discovery.unsave" = "Retirer des découvertes enregistrées";
+"player.discovery.unsave" = "Retirer de Musique";
 "player.discovery.unsaveShort" = "Retirer";
 "player.discovery.spotify" = "Rechercher sur Spotify";
 "player.discovery.stateNew" = "Découverte";

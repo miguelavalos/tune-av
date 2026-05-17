@@ -132,7 +132,7 @@
 "player.discovery.share" = "Comparteix descobriment";
 "player.discovery.shareShort" = "Comparteix";
 "player.discovery.shareText" = "He descobert \"%@\" de %@ a %@ amb Tune AV.";
-"player.discovery.unsave" = "Treu de desades";
+"player.discovery.unsave" = "Treu de Música";
 "player.discovery.unsaveShort" = "Treu";
 "player.discovery.spotify" = "Cerca a Spotify";
 "player.discovery.stateNew" = "Descobriment";

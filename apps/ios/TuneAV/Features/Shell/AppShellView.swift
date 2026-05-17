@@ -2393,7 +2393,7 @@ private enum AviDiscoveryDecision {
         case .removed:
             return L10n.string("player.discovery.removed")
         case .ignored:
-            return L10n.string("player.discovery.ignoredHint")
+            return L10n.string("player.discovery.noSaveHint")
         }
     }
 }
@@ -2762,7 +2762,7 @@ private struct AviScreen: View {
 
         AviCommandButton(
             title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
-            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
+            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage(for: station),
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
         ) {
             if hasCurrentSongContext {
@@ -2798,7 +2798,7 @@ private struct AviScreen: View {
         switch detail {
         case .track(let discovery):
             AviCommandButton(
-                title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("shell.avi.actions.saveSong"),
+                title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort"),
                 systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
                 accessibilityIdentifier: "avi.command.primary.music.save"
             ) {
@@ -2862,7 +2862,7 @@ private struct AviScreen: View {
 
         AviCommandButton(
             title: hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station),
-            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage,
+            systemImage: hasCurrentSongContext ? currentTrackSaveActionSystemImage(for: station) : stationSaveActionSystemImage(for: station),
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.saveSong" : "avi.command.primary.saveRadio"
         ) {
             if hasCurrentSongContext {
@@ -4417,7 +4417,7 @@ private struct AviScreen: View {
                 if !hasCurrentSongContext {
                     fullPlayerAviActionButton(
                         title: stationSaveActionTitle(for: station),
-                        systemImage: stationSaveActionSystemImage,
+                        systemImage: stationSaveActionSystemImage(for: station),
                         accessibilityIdentifier: "avi.fullPlayer.saveRadio"
                     ) {
                         showAviReaction(.liked)
@@ -4643,7 +4643,7 @@ private struct AviScreen: View {
                         systemImage: "xmark",
                         isAction: false
                     )
-                    .accessibilityIdentifier("avi.fullPlayer.discoveryIgnored")
+                    .accessibilityIdentifier("avi.fullPlayer.discoveryNoSave")
 
                     fullPlayerFeedbackCompactActionButton(
                         title: L10n.string("player.discovery.saveShort"),
@@ -4694,7 +4694,7 @@ private struct AviScreen: View {
                         title: L10n.string("player.discovery.noSave"),
                         systemImage: "xmark",
                         isSelected: false,
-                        accessibilityIdentifier: "avi.fullPlayer.ignoreSong"
+                        accessibilityIdentifier: "avi.fullPlayer.noSaveSong"
                     ) {
                         aviDiscoveryDecision = .ignored
                         showAviReaction(.notForMe)
@@ -5317,7 +5317,7 @@ private struct AviScreen: View {
                     }
                     AviCommandButton(
                         title: stationSaveActionTitle(for: station),
-                        systemImage: stationSaveActionSystemImage,
+                        systemImage: stationSaveActionSystemImage(for: station),
                         accessibilityIdentifier: "avi.actions.saveRadio"
                     ) {
                         showAviReaction(.liked)
@@ -5574,8 +5574,8 @@ private struct AviScreen: View {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
 
-    private var stationSaveActionSystemImage: String {
-        "dot.radiowaves.left.and.right"
+    private func stationSaveActionSystemImage(for station: Station) -> String {
+        libraryStore.isFavorite(station) ? "bookmark.slash" : "bookmark"
     }
 
     private func focusedSignalActions(for station: Station) -> some View {
@@ -5608,7 +5608,7 @@ private struct AviScreen: View {
                             stopPlayback()
                         }
                     }
-                    AviSignalActionChip(title: stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage) {
+                    AviSignalActionChip(title: stationSaveActionTitle(for: station), systemImage: stationSaveActionSystemImage(for: station)) {
                         toggleFavorite(station)
                     }
                     AviSignalActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {
@@ -10612,7 +10612,7 @@ private struct StationListActionRow: View {
         AviRowActionsPanel(close: closeAviActions) {
             AviRowActionButton(
                 title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
-                systemImage: "dot.radiowaves.left.and.right"
+                systemImage: isFavorite ? "bookmark.slash" : "bookmark"
             ) {
                 toggleFavorite()
                 closeAviActions()
@@ -10933,7 +10933,7 @@ private struct StationDetailSheet: View {
                 .accessibilityIdentifier("stationDetail.play")
 
                 signalIconButton(
-                    systemImage: "dot.radiowaves.left.and.right",
+                    systemImage: isFavorite ? "bookmark.slash" : "bookmark",
                     accessibilityLabel: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                     isSelected: isFavorite,
                     action: toggleFavorite

@@ -107,7 +107,7 @@ struct DiscoveryTrackCard: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save"))
+        .accessibilityLabel(discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.save"))
         .accessibilityIdentifier("discoveryTrack.save.\(discovery.discoveryID)")
     }
 
@@ -160,7 +160,7 @@ struct DiscoveryTrackCard: View {
         ) {
             if aviActionsPage == 0 {
                 AviListActionButton(
-                    title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsave") : L10n.string("player.discovery.save"),
+                    title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort"),
                     systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
                     accessibilityIdentifier: "discoveryTrack.save.\(discovery.discoveryID)"
                 ) {
