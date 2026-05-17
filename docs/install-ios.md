@@ -35,10 +35,10 @@ Use `-- --device <UDID>` when more than one physical iPhone is connected.
 The installer fails if the resolved Xcode settings do not match the selected
 environment.
 
-| Environment | Bundle | Account API | Account management |
-| --- | --- | --- | --- |
-| `dev` | `com.avalsys.tuneav.dev` | `https://api-account-av-preview.avalsys.com` | `https://account-av-preview.avalsys.com` |
-| `prod` | `com.avalsys.tuneav` | `https://api-account-av.avalsys.com` | `https://account-av.avalsys.com` |
+| Environment | Bundle | Account configuration |
+| --- | --- | --- |
+| `dev` | `com.avalsys.tuneav.dev` | Generated from local private config |
+| `prod` | `com.avalsys.tuneav` | Generated from local private config |
 
 Before building manually, run the same preflight:
 

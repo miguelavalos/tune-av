@@ -52,8 +52,8 @@ struct TuneAVStationService {
 
     init(
         session: URLSession = TuneAVURLSessions.catalog,
-        avalsysBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/search")!,
-        avalsysPopularBaseURL: URL? = URL(string: "https://api-account-av-preview.avalsys.com/v1/tune/stations/popular")!,
+        avalsysBaseURL: URL? = TuneAVStationService.defaultAVALSYSBaseURL(path: "/v1/tune/stations/search"),
+        avalsysPopularBaseURL: URL? = TuneAVStationService.defaultAVALSYSBaseURL(path: "/v1/tune/stations/popular"),
         radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
         fallbacks: TuneAVStationFallbacks = .english,
         invalidResponseMessage: String = "The station service returned an invalid response.",
@@ -68,6 +68,13 @@ struct TuneAVStationService {
         self.invalidResponseMessage = invalidResponseMessage
         self.backendGate = backendGate
         self.responseCache = responseCache
+    }
+
+    static func defaultAVALSYSBaseURL(path: String) -> URL? {
+        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
+            return nil
+        }
+        return baseURL.appending(path: path)
     }
 
     func searchStations(filters: TuneAVStationSearchFilters) async throws -> [Station] {

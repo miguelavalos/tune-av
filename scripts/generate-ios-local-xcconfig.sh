@@ -59,14 +59,10 @@ fi
 
 profile="local"
 bundle_identifier="com.avalsys.tuneav.dev"
-api_base_url="https://api-account-av-preview.avalsys.com"
-management_url="https://account-av-preview.avalsys.com"
 
 if [ "$env_name" = "prod" ]; then
   profile="production"
   bundle_identifier="com.avalsys.tuneav"
-  api_base_url="https://api-account-av.avalsys.com"
-  management_url="https://account-av.avalsys.com"
 fi
 
 eval "$("$suite_root/scripts/resolve-infisical-bootstrap-env.sh" "$profile")"
@@ -88,6 +84,34 @@ read_optional_config() {
   "$varlock_bin" printenv --path "$suite_root/services/api" "$name" 2>/dev/null || true
 }
 
+api_base_url="${VITE_ACCOUNTAV_API_BASE_URL:-}"
+if [ -z "$api_base_url" ]; then
+  api_base_url="$("$varlock_bin" printenv --path "$suite_root/apps/account-av" VITE_ACCOUNTAV_API_BASE_URL)"
+fi
+if [ -z "$api_base_url" ]; then
+  echo "Missing VITE_ACCOUNTAV_API_BASE_URL for profile $profile." >&2
+  exit 1
+fi
+if [ "$env_name" = "prod" ] && printf '%s' "$api_base_url" | rg -q '127\.0\.0\.1|localhost|preview|\.dev'; then
+  echo "Production VITE_ACCOUNTAV_API_BASE_URL must be provided by private config or the environment." >&2
+  exit 1
+fi
+management_url="$(read_optional_config ACCOUNTAV_MANAGEMENT_URL)"
+if [ -z "$management_url" ]; then
+  management_url="$(node -e '
+const input = process.argv[1];
+try {
+  const url = new URL(input);
+  url.hostname = url.hostname.replace(/^api-/, "");
+  url.pathname = "";
+  url.search = "";
+  url.hash = "";
+  console.log(url.toString().replace(/\/$/, ""));
+} catch {
+  process.exit(1);
+}
+' "$api_base_url")"
+fi
 development_team="$(read_optional_config AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 if [ -z "$development_team" ]; then
   development_team="\$(inherited)"

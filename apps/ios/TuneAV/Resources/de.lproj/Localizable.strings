@@ -869,6 +869,8 @@
 "shell.stationDetail.playRadio" = "Dieses Radio abspielen";
 "shell.stationInfo.publicFallback" = "Eine Zusammenfassung des Signals, seines öffentlichen Kontexts und hilfreicher Details für deine Auswahl.";
 "shell.stationInfo.publicSignal" = "Öffentliches Signal";
+"shell.stationInfo.pending" = "Ausstehend";
+"shell.stationInfo.notProcessed" = "Avi hat dieses Radio noch nicht verarbeitet.";
 "shell.stationInfo.summary" = "Zusammenfassung";
 "shell.stationInfo.title" = "Radio-Info";
 "subscription.error.cancelled" = "Kauf abgebrochen.";

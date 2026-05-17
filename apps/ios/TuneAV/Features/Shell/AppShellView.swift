@@ -895,6 +895,7 @@ struct AppShellView: View {
             queueSource: queueSource,
             queueStations: queueStations
         )
+        refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         selectedTab = .avi
     }
 
@@ -911,6 +912,7 @@ struct AppShellView: View {
             queueSource: .singleStation,
             queueStations: [resolvedStation]
         )
+        refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         isAviNowPlayingFullPlayer = true
         selectedTab = .avi
     }
@@ -935,6 +937,7 @@ struct AppShellView: View {
                 queueSource: audioPlayer.playbackQueue.source,
                 queueStations: queue
             )
+            refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
             isAviNowPlayingFullPlayer = true
         }
 
@@ -1008,6 +1011,7 @@ struct AppShellView: View {
             queueSource: audioPlayer.playbackQueue.source,
             queueStations: enrichedStations(queue)
         )
+        refreshSelectedStationEnrichmentIfNeeded(currentStation)
     }
 
     private func openStationHistory(_ station: Station) {
@@ -1048,6 +1052,35 @@ struct AppShellView: View {
         }
 
         libraryStore.rememberStationSnapshots(stations)
+    }
+
+    private func refreshSelectedStationEnrichmentIfNeeded(_ station: Station) {
+        guard !launchContext.isUITesting else { return }
+        let resolvedStation = enrichedStation(station)
+        guard resolvedStation.enrichmentRank < 12 else { return }
+
+        Task {
+            await refreshSelectedStationEnrichment(station)
+        }
+    }
+
+    private func refreshSelectedStationEnrichment(_ station: Station) async {
+        do {
+            let results = try await stationService.searchStations(
+                filters: .init(
+                    query: station.name,
+                    country: station.country,
+                    countryCode: station.countryCode ?? "",
+                    language: station.language,
+                    limit: 5
+                )
+            )
+            guard let enrichedMatch = results.bestBackendMatch(for: station) else { return }
+            guard !Task.isCancelled else { return }
+            rememberBackendStations([enrichedMatch])
+        } catch {
+            return
+        }
     }
 
     private func refreshLibraryStationEnrichment() async {
@@ -5693,7 +5726,7 @@ private struct AviScreen: View {
 
                 Spacer()
 
-                Text(L10n.string("shell.stationInfo.summary"))
+                Text(stationInfoBadgeTitle(for: station))
                     .font(.system(size: 12, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .padding(.horizontal, 10)
@@ -5701,13 +5734,80 @@ private struct AviScreen: View {
                     .background(TuneAVTheme.highlight.opacity(0.1), in: Capsule(style: .continuous))
             }
 
-            Text(defaultPublicSignalInfo(for: station))
+            stationInfoContent(for: station)
+        }
+        .padding(16)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func stationInfoContent(for station: Station) -> some View {
+        if let editorial = station.editorial, let summary = stationInfoSummary(for: editorial) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(summary)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                let badges = stationInfoBadges(for: editorial)
+                if !badges.isEmpty {
+                    WrapTagsRow(tags: badges, highlighted: true)
+                }
+
+                if let profile = editorial.discoveryProfile {
+                    stationInfoDiscoverySnapshot(profile)
+                }
+
+                let contextTags = stationInfoContextTags(for: editorial)
+                if !contextTags.isEmpty {
+                    WrapTagsRow(tags: contextTags)
+                }
+            }
+        } else {
+            Text(L10n.string("shell.stationInfo.notProcessed"))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+
+    private func stationInfoDiscoverySnapshot(_ profile: StationDiscoveryProfile) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.string("shell.stationDetail.discovery.score"))
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .textCase(.uppercase)
+
+                    Text(stationInfoDiscoveryScoreLabel(profile.musicDiscoveryScore))
+                        .font(.system(size: 18, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                }
+
+                Spacer(minLength: 12)
+
+                Text("\(profile.musicDiscoveryScore)")
+                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .monospacedDigit()
+            }
+
+            VStack(spacing: 8) {
+                StationInfoMetricRow(title: L10n.string("shell.stationDetail.discovery.music"), level: profile.musicLevel)
+                StationInfoMetricRow(title: L10n.string("shell.stationDetail.discovery.speech"), level: profile.speechLevel)
+                StationInfoMetricRow(title: L10n.string("shell.stationDetail.discovery.news"), level: profile.newsLevel)
+                StationInfoMetricRow(title: L10n.string("shell.stationDetail.discovery.sports"), level: profile.sportsLevel)
+                StationInfoMetricRow(title: L10n.string("shell.stationDetail.discovery.ads"), level: profile.adLoad)
+            }
+
+        }
+        .padding(12)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.72), lineWidth: 1)
+        }
     }
 
     private func focusedRadioQuickActions(for station: Station) -> some View {
@@ -5934,6 +6034,82 @@ private struct AviScreen: View {
         return details.isEmpty
             ? L10n.string("shell.stationInfo.publicFallback")
             : details.joined(separator: " · ")
+    }
+
+    private func stationInfoBadgeTitle(for station: Station) -> String {
+        station.editorial.flatMap(stationInfoSummary(for:)) != nil
+            ? L10n.string("shell.stationInfo.summary")
+            : L10n.string("shell.stationInfo.pending")
+    }
+
+    private func stationInfoSummary(for editorial: StationEditorial) -> String? {
+        let summary = editorial.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        return summary.isEmpty ? nil : summary
+    }
+
+    private func stationInfoBadges(for editorial: StationEditorial) -> [String] {
+        var badges = [
+            stationInfoLocalizedPrimaryFormat(editorial.primaryFormat),
+            stationInfoLocalizedIntensity("music", value: editorial.musicIntensity),
+            stationInfoLocalizedIntensity("speech", value: editorial.speechIntensity)
+        ].compactMap { $0 }
+
+        for format in editorial.secondaryFormats.prefix(2) {
+            let label = L10n.genreLabel(for: format)
+            guard !label.isEmpty, !badges.contains(where: { $0.localizedCaseInsensitiveCompare(label) == .orderedSame }) else {
+                continue
+            }
+            badges.append(label)
+        }
+
+        return badges
+    }
+
+    private func stationInfoContextTags(for editorial: StationEditorial) -> [String] {
+        let profileTags = editorial.discoveryProfile.map { $0.genres + $0.moods } ?? []
+        return (profileTags + editorial.programming + editorial.languages)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .reduce(into: [String]()) { result, tag in
+                guard result.count < 6 else { return }
+                guard !result.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame }) else { return }
+                result.append(L10n.genreLabel(for: tag))
+            }
+    }
+
+    private func stationInfoLocalizedPrimaryFormat(_ format: String) -> String? {
+        switch format {
+        case "music": return L10n.string("shell.stationDetail.editorial.format.music")
+        case "newsTalk": return L10n.string("shell.stationDetail.editorial.format.newsTalk")
+        case "sports": return L10n.string("shell.stationDetail.editorial.format.sports")
+        case "mixed": return L10n.string("shell.stationDetail.editorial.format.mixed")
+        case "community": return L10n.string("shell.stationDetail.editorial.format.community")
+        case "religious": return L10n.string("shell.stationDetail.editorial.format.religious")
+        default: return nil
+        }
+    }
+
+    private func stationInfoLocalizedIntensity(_ kind: String, value: String) -> String? {
+        switch (kind, value) {
+        case ("music", "low"): return L10n.string("shell.stationDetail.editorial.music.low")
+        case ("music", "medium"): return L10n.string("shell.stationDetail.editorial.music.medium")
+        case ("music", "high"): return L10n.string("shell.stationDetail.editorial.music.high")
+        case ("speech", "low"): return L10n.string("shell.stationDetail.editorial.speech.low")
+        case ("speech", "medium"): return L10n.string("shell.stationDetail.editorial.speech.medium")
+        case ("speech", "high"): return L10n.string("shell.stationDetail.editorial.speech.high")
+        default: return nil
+        }
+    }
+
+    private func stationInfoDiscoveryScoreLabel(_ score: Int) -> String {
+        switch score {
+        case 75...100:
+            return L10n.string("shell.stationDetail.discovery.scoreHigh")
+        case 40..<75:
+            return L10n.string("shell.stationDetail.discovery.scoreMedium")
+        default:
+            return L10n.string("shell.stationDetail.discovery.scoreLow")
+        }
     }
 
     private func stationTagList(for station: Station) -> [String] {
@@ -12692,6 +12868,64 @@ private struct StationFeedbackButton: View {
         .accessibilityLabel(title)
         .accessibilityValue(isSelected ? L10n.string("common.selected") : "")
         .accessibilityIdentifier("stationFeedback.\(feedback.rawValue)")
+    }
+}
+
+private struct StationInfoMetricRow: View {
+    let title: String
+    let level: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(width: 74, alignment: .leading)
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(TuneAVTheme.elevatedSurface)
+
+                    Capsule()
+                        .fill(metricColor.opacity(0.84))
+                        .frame(width: max(8, proxy.size.width * metricProgress))
+                }
+            }
+            .frame(height: 8)
+
+            Text(localizedLevel)
+                .font(.system(size: 11, weight: .black))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .frame(width: 56, alignment: .trailing)
+        }
+    }
+
+    private var metricProgress: CGFloat {
+        switch level {
+        case "high": return 1
+        case "medium": return 0.6
+        case "low": return 0.28
+        default: return 0.12
+        }
+    }
+
+    private var metricColor: Color {
+        switch level {
+        case "high": return TuneAVTheme.highlight
+        case "medium": return TuneAVTheme.highlight.opacity(0.72)
+        case "low": return TuneAVTheme.textSecondary.opacity(0.52)
+        default: return TuneAVTheme.borderStrong
+        }
+    }
+
+    private var localizedLevel: String {
+        switch level {
+        case "high": return L10n.string("shell.stationDetail.discovery.level.high")
+        case "medium": return L10n.string("shell.stationDetail.discovery.level.medium")
+        case "low": return L10n.string("shell.stationDetail.discovery.level.low")
+        default: return L10n.string("shell.stationDetail.discovery.level.unknown")
+        }
     }
 }
 

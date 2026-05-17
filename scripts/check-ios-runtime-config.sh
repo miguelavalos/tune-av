@@ -130,8 +130,8 @@ done
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
-  [ "$api_base_url" = "https://api-account-av.avalsys.com" ] || fail "prod API URL mismatch: $api_base_url"
-  [ "$management_url" = "https://account-av.avalsys.com" ] || fail "prod management URL mismatch: $management_url"
+  [[ "$api_base_url" == https://* ]] || fail "prod API URL must use https"
+  [[ "$management_url" == https://* ]] || fail "prod management URL must use https"
   [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after signed-in backend smoke and App Privacy update"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if printf '%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
@@ -140,8 +140,8 @@ if [ "$env_name" = "prod" ]; then
 else
   [ "$product_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev bundle must be com.avalsys.tuneav.dev, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.dev"
-  [ "$api_base_url" = "https://api-account-av-preview.avalsys.com" ] || fail "dev API URL mismatch: $api_base_url"
-  [ "$management_url" = "https://account-av-preview.avalsys.com" ] || fail "dev management URL mismatch: $management_url"
+  [[ "$api_base_url" == https://* ]] || fail "dev API URL must use https"
+  [[ "$management_url" == https://* ]] || fail "dev management URL must use https"
   [[ "$listening_analytics_uploads" == "0" || "$listening_analytics_uploads" == "1" ]] || fail "dev TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must be 0 or 1"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi

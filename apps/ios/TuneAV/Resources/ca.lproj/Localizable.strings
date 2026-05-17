@@ -869,6 +869,8 @@
 "shell.stationDetail.playRadio" = "Reproduir aquesta ràdio";
 "shell.stationInfo.publicFallback" = "Resum del senyal, el seu context públic i dades útils per decidir si encaixa amb tu.";
 "shell.stationInfo.publicSignal" = "Senyal públic";
+"shell.stationInfo.pending" = "Pendent";
+"shell.stationInfo.notProcessed" = "Avi encara no ha processat aquesta ràdio.";
 "shell.stationInfo.summary" = "Resum";
 "shell.stationInfo.title" = "Info ràdio";
 "subscription.error.cancelled" = "Compra cancel·lada.";
