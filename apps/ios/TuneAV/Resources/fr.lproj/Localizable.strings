@@ -723,10 +723,10 @@
 "shell.avi.plans.current" = "Actuel";
 "shell.avi.plans.eyebrow" = "Formules";
 "shell.avi.plans.free" = "Compte gratuit";
-"shell.avi.plans.free.avi" = "50 requêtes Avi par jour";
-"shell.avi.plans.free.discoveries" = "500 chansons découvertes";
-"shell.avi.plans.free.radios" = "75 radios enregistrées";
-"shell.avi.plans.free.songs" = "250 chansons enregistrées";
+"shell.avi.plans.free.avi" = "20 requêtes Avi par jour";
+"shell.avi.plans.free.discoveries" = "200 chansons découvertes";
+"shell.avi.plans.free.radios" = "25 radios enregistrées";
+"shell.avi.plans.free.songs" = "100 chansons enregistrées";
 "shell.avi.plans.guest" = "Invité";
 "shell.avi.plans.guest.avi" = "10 requêtes Avi par jour";
 "shell.avi.plans.guest.discoveries" = "75 chansons découvertes";

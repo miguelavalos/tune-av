@@ -725,10 +725,10 @@
 "shell.avi.plans.current" = "Current";
 "shell.avi.plans.eyebrow" = "Plans";
 "shell.avi.plans.free" = "Free account";
-"shell.avi.plans.free.avi" = "50 Avi requests per day";
-"shell.avi.plans.free.discoveries" = "500 discovered songs";
-"shell.avi.plans.free.radios" = "75 saved radios";
-"shell.avi.plans.free.songs" = "250 saved songs";
+"shell.avi.plans.free.avi" = "20 Avi requests per day";
+"shell.avi.plans.free.discoveries" = "200 discovered songs";
+"shell.avi.plans.free.radios" = "25 saved radios";
+"shell.avi.plans.free.songs" = "100 saved songs";
 "shell.avi.plans.guest" = "Guest";
 "shell.avi.plans.guest.avi" = "10 Avi requests per day";
 "shell.avi.plans.guest.discoveries" = "75 discovered songs";

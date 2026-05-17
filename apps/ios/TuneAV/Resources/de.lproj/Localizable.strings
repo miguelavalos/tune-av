@@ -723,10 +723,10 @@
 "shell.avi.plans.current" = "Aktuell";
 "shell.avi.plans.eyebrow" = "Tarife";
 "shell.avi.plans.free" = "Kostenloses Konto";
-"shell.avi.plans.free.avi" = "50 Avi-Anfragen pro Tag";
-"shell.avi.plans.free.discoveries" = "500 entdeckte Songs";
-"shell.avi.plans.free.radios" = "75 gespeicherte Radios";
-"shell.avi.plans.free.songs" = "250 gespeicherte Songs";
+"shell.avi.plans.free.avi" = "20 Avi-Anfragen pro Tag";
+"shell.avi.plans.free.discoveries" = "200 entdeckte Songs";
+"shell.avi.plans.free.radios" = "25 gespeicherte Radios";
+"shell.avi.plans.free.songs" = "100 gespeicherte Songs";
 "shell.avi.plans.guest" = "Gast";
 "shell.avi.plans.guest.avi" = "10 Avi-Anfragen pro Tag";
 "shell.avi.plans.guest.discoveries" = "75 entdeckte Songs";

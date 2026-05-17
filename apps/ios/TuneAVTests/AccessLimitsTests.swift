@@ -25,27 +25,10 @@ final class AccessLimitsTests: XCTestCase {
     func testGuestLimitsAllowSmallLocalPreviewOnly() {
         let limits = AccessLimits.forMode(.guest)
 
-        XCTAssertEqual(limits.favoriteStations, 3)
-        XCTAssertEqual(limits.recentStations, 8)
-        XCTAssertEqual(limits.discoveredTracks, 10)
-        XCTAssertEqual(limits.savedTracks, 3)
-        XCTAssertEqual(limits.aviActionsPerDay, 3)
-        XCTAssertEqual(limits.lyricsSearchesPerDay, 3)
-        XCTAssertEqual(limits.webSearchesPerDay, 3)
-        XCTAssertEqual(limits.youtubeSearchesPerDay, 3)
-        XCTAssertEqual(limits.appleMusicSearchesPerDay, 3)
-        XCTAssertEqual(limits.spotifySearchesPerDay, 3)
-        XCTAssertEqual(limits.discoverySharesPerDay, 3)
-    }
-
-    func testSignedInFreeLimitsAreHigherAndBackendEnabledButCloudSyncLocalOnly() {
-        let limits = AccessLimits.forMode(.signedInFree)
-        let capabilities = AccessCapabilities.forMode(.signedInFree)
-
         XCTAssertEqual(limits.favoriteStations, 10)
-        XCTAssertEqual(limits.recentStations, 20)
-        XCTAssertEqual(limits.discoveredTracks, 25)
-        XCTAssertEqual(limits.savedTracks, 10)
+        XCTAssertEqual(limits.recentStations, 30)
+        XCTAssertEqual(limits.discoveredTracks, 75)
+        XCTAssertEqual(limits.savedTracks, 50)
         XCTAssertEqual(limits.aviActionsPerDay, 10)
         XCTAssertEqual(limits.lyricsSearchesPerDay, 10)
         XCTAssertEqual(limits.webSearchesPerDay, 10)
@@ -53,6 +36,23 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(limits.appleMusicSearchesPerDay, 10)
         XCTAssertEqual(limits.spotifySearchesPerDay, 10)
         XCTAssertEqual(limits.discoverySharesPerDay, 10)
+    }
+
+    func testSignedInFreeLimitsAreHigherAndBackendEnabledButCloudSyncLocalOnly() {
+        let limits = AccessLimits.forMode(.signedInFree)
+        let capabilities = AccessCapabilities.forMode(.signedInFree)
+
+        XCTAssertEqual(limits.favoriteStations, 25)
+        XCTAssertEqual(limits.recentStations, 80)
+        XCTAssertEqual(limits.discoveredTracks, 200)
+        XCTAssertEqual(limits.savedTracks, 100)
+        XCTAssertEqual(limits.aviActionsPerDay, 20)
+        XCTAssertEqual(limits.lyricsSearchesPerDay, 20)
+        XCTAssertEqual(limits.webSearchesPerDay, 20)
+        XCTAssertEqual(limits.youtubeSearchesPerDay, 20)
+        XCTAssertEqual(limits.appleMusicSearchesPerDay, 20)
+        XCTAssertEqual(limits.spotifySearchesPerDay, 20)
+        XCTAssertEqual(limits.discoverySharesPerDay, 20)
         XCTAssertTrue(capabilities.isSignedIn)
         XCTAssertTrue(capabilities.isLocalOnly)
         XCTAssertTrue(capabilities.canUseBackend)
@@ -343,11 +343,11 @@ final class AccessLimitsTests: XCTestCase {
         )
 
         XCTAssertTrue(controller.canUseDailyFeature(.lyricsSearch))
-        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 3)
+        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 10)
 
-        controller.recordDailyFeatureUse(.lyricsSearch)
-        controller.recordDailyFeatureUse(.lyricsSearch)
-        controller.recordDailyFeatureUse(.lyricsSearch)
+        for _ in 0..<10 {
+            controller.recordDailyFeatureUse(.lyricsSearch)
+        }
 
         XCTAssertFalse(controller.canUseDailyFeature(.lyricsSearch))
         XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 0)
@@ -365,12 +365,12 @@ final class AccessLimitsTests: XCTestCase {
         )
 
         controller.recordDailyFeatureUse(.youtubeSearch)
-        XCTAssertEqual(controller.dailyLimitState(for: .youtubeSearch).remaining, 2)
+        XCTAssertEqual(controller.dailyLimitState(for: .youtubeSearch).remaining, 9)
 
         currentDate = fixedDate("2026-05-01T10:00:00Z")
 
         XCTAssertTrue(controller.canUseDailyFeature(.youtubeSearch))
-        XCTAssertEqual(controller.dailyLimitState(for: .youtubeSearch).remaining, 3)
+        XCTAssertEqual(controller.dailyLimitState(for: .youtubeSearch).remaining, 10)
     }
 
     @MainActor
@@ -391,11 +391,12 @@ final class AccessLimitsTests: XCTestCase {
         ]
 
         for feature in musicActions {
-            XCTAssertEqual(controller.dailyLimitState(for: feature).remaining, 3)
+            XCTAssertEqual(controller.dailyLimitState(for: feature).remaining, 10)
         }
 
-        controller.recordDailyFeatureUse(.lyricsSearch)
-        controller.recordDailyFeatureUse(.lyricsSearch)
+        for _ in 0..<9 {
+            controller.recordDailyFeatureUse(.lyricsSearch)
+        }
         controller.recordDailyFeatureUse(.youtubeSearch)
 
         XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 0)
@@ -421,10 +422,10 @@ final class AccessLimitsTests: XCTestCase {
         controller.recordDailyFeatureUse(.lyricsSearch, usageKey: lyricsURL)
         controller.recordDailyFeatureUse(.lyricsSearch, usageKey: "  \(lyricsURL.uppercased())  ")
 
-        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 2)
+        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 9)
 
         controller.recordDailyFeatureUse(.lyricsSearch, usageKey: "https://www.google.com/search?q=other%20song%20lyrics")
-        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 1)
+        XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 8)
     }
 
     @MainActor
@@ -440,7 +441,14 @@ final class AccessLimitsTests: XCTestCase {
         let usageKeys = [
             usedURL,
             "https://www.google.com/search?q=artist%20song%202%20lyrics",
-            "https://www.youtube.com/results?search_query=artist%20song"
+            "https://www.youtube.com/results?search_query=artist%20song",
+            "https://www.google.com/search?q=artist%20song%203%20lyrics",
+            "https://www.google.com/search?q=artist%20song%204%20lyrics",
+            "https://www.google.com/search?q=artist%20song%205%20lyrics",
+            "https://www.google.com/search?q=artist%20song%206%20lyrics",
+            "https://www.google.com/search?q=artist%20song%207%20lyrics",
+            "https://www.google.com/search?q=artist%20song%208%20lyrics",
+            "https://www.google.com/search?q=artist%20song%209%20lyrics"
         ]
 
         for usageKey in usageKeys {
@@ -462,11 +470,11 @@ final class AccessLimitsTests: XCTestCase {
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
         )
 
-        controller.presentUpgradePrompt(for: .youtubeSearch, currentUsage: 3)
+        controller.presentUpgradePrompt(for: .youtubeSearch, currentUsage: 10)
 
         XCTAssertEqual(controller.upgradePrompt?.feature, .youtubeSearch)
         XCTAssertEqual(controller.upgradePrompt?.title, L10n.string("limits.upgrade.youtube.title"))
-        XCTAssertEqual(controller.upgradePrompt?.message, L10n.string("limits.upgrade.aviAction.message", 3))
+        XCTAssertEqual(controller.upgradePrompt?.message, L10n.string("limits.upgrade.aviAction.message", 10))
     }
 
     @MainActor
