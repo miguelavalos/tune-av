@@ -81,7 +81,7 @@
 "limits.upgrade.lyrics.title" = "Liedtext-Suchen sind begrenzt";
 "limits.upgrade.notNow" = "Nicht jetzt";
 "limits.upgrade.profile" = "Pro im Profil ansehen";
-"limits.upgrade.savedTracks.message" = "Du hast in diesem Modus %d Songs gespeichert. Pro schaltet eine tiefere Musikbibliothek und Sync frei.";
+"limits.upgrade.savedTracks.message" = "Dieser Plan erlaubt %d gespeicherte Songs. Wenn du mehr speichern willst, prüfe deine Kontooptionen. Pro erhöht das Limit auf 1000 Songs und fügt Sync hinzu.";
 "limits.upgrade.savedTracks.title" = "Limit für gespeicherte Songs erreicht";
 "limits.upgrade.spotify.message" = "Du hast die heutigen %d Spotify-Suchen genutzt. Pro hält Musiksuchen ohne tägliche Limits des lokalen Modus verfügbar.";
 "limits.upgrade.spotify.title" = "Spotify-Suchen sind begrenzt";

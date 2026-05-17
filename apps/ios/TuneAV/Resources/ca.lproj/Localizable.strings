@@ -81,7 +81,7 @@
 "limits.upgrade.lyrics.title" = "Les cerques de lletres són limitades";
 "limits.upgrade.notNow" = "Ara no";
 "limits.upgrade.profile" = "Veure Pro al Perfil";
-"limits.upgrade.savedTracks.message" = "Has desat %d cançons en aquest mode. Pro desbloqueja una biblioteca musical més àmplia i sincronització.";
+"limits.upgrade.savedTracks.message" = "Aquest pla et permet desar %d cançons. Per desar-ne més, revisa les opcions del compte. Pro amplia el límit a 1000 cançons i afegeix sincronització.";
 "limits.upgrade.savedTracks.title" = "Límit de cançons desades assolit";
 "limits.upgrade.spotify.message" = "Has fet servir les %d cerques de Spotify d'avui. Pro manté les cerques musicals disponibles sense límits diaris del mode local.";
 "limits.upgrade.spotify.title" = "Les cerques a Spotify són limitades";

@@ -81,7 +81,7 @@
 "limits.upgrade.lyrics.title" = "Les recherches de paroles sont limitées";
 "limits.upgrade.notNow" = "Pas maintenant";
 "limits.upgrade.profile" = "Voir Pro dans le profil";
-"limits.upgrade.savedTracks.message" = "Vous avez enregistré %d titres dans ce mode. Pro débloque une bibliothèque musicale plus profonde et la synchronisation.";
+"limits.upgrade.savedTracks.message" = "Cette formule permet d'enregistrer %d titres. Pour en enregistrer plus, consultez les options de compte. Pro porte la limite à 1000 titres et ajoute la synchronisation.";
 "limits.upgrade.savedTracks.title" = "Limite de titres enregistrés atteinte";
 "limits.upgrade.spotify.message" = "Vous avez utilisé les %d recherches Spotify du jour. Pro garde les recherches musicales disponibles sans limites quotidiennes du mode local.";
 "limits.upgrade.spotify.title" = "Les recherches Spotify sont limitées";

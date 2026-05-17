@@ -81,7 +81,7 @@
 "limits.upgrade.lyrics.title" = "Lyrics searches are limited";
 "limits.upgrade.notNow" = "Not now";
 "limits.upgrade.profile" = "Open Profile";
-"limits.upgrade.savedTracks.message" = "You have saved %d songs in this mode. Pro unlocks a deeper music library and cloud sync.";
+"limits.upgrade.savedTracks.message" = "This plan lets you save %d songs. To save more, review your account options. Pro raises the limit to 1000 songs and adds cloud sync.";
 "limits.upgrade.savedTracks.title" = "Saved songs limit reached";
 "limits.upgrade.spotify.message" = "You have used today's %d Spotify searches. Pro keeps music lookups available without daily local-mode limits.";
 "limits.upgrade.spotify.title" = "Spotify searches are limited";

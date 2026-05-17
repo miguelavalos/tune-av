@@ -81,7 +81,7 @@
 "limits.upgrade.lyrics.title" = "Las búsquedas de letras son limitadas";
 "limits.upgrade.notNow" = "Ahora no";
 "limits.upgrade.profile" = "Abrir perfil";
-"limits.upgrade.savedTracks.message" = "Has guardado %d canciones en este modo. Pro desbloquea una biblioteca musical más amplia y sincronización.";
+"limits.upgrade.savedTracks.message" = "Este plan permite guardar %d canciones. Para guardar más, revisa tus opciones de cuenta. Pro amplía el límite a 1000 canciones y añade sincronización.";
 "limits.upgrade.savedTracks.title" = "Límite de canciones guardadas alcanzado";
 "limits.upgrade.spotify.message" = "Has usado las %d búsquedas de Spotify de hoy. Pro mantiene las búsquedas musicales disponibles sin límites diarios del modo local.";
 "limits.upgrade.spotify.title" = "Las búsquedas en Spotify son limitadas";
