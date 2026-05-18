@@ -787,7 +787,11 @@ struct AppShellView: View {
             case .detail:
                 showStationDetails(station, queueSource: .homeRecents, queue: [station])
             case .player:
-                openNowPlayingFullPlayer(station)
+                if audioPlayer.currentStation?.id == station.id {
+                    openNowPlayingFullPlayer(station)
+                } else {
+                    showStationDetails(station, queueSource: .homeRecents, queue: [station])
+                }
             }
             return
         }
@@ -4478,6 +4482,9 @@ private struct AviScreen: View {
     }
 
     private var fullPlayerAviHeadline: String {
+        guard isFocusedStationActive else {
+            return L10n.string("shell.avi.mood.ready")
+        }
         return L10n.string("shell.avi.mood.vibing")
     }
 
@@ -6738,6 +6745,9 @@ private struct AviScreen: View {
     }
 
     private var aviPrimaryLine: String {
+        guard focusedStation != nil || currentStation != nil else {
+            return L10n.string("shell.avi.detail.ready")
+        }
         if isFocusedStationActive, currentTrackTitle != nil {
             return L10n.string("shell.avi.primary.reacting")
         }
