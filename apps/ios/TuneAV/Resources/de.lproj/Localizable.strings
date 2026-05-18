@@ -999,7 +999,7 @@
 "profile.preferences.clearUnstableWarnings.title" = "Warnungen fuer instabile Streams";
 "profile.preferences.keepScreenAwake.detail" = "Hält dieses Gerät wach, solange Tune AV geöffnet ist.";
 "profile.preferences.keepScreenAwake.title" = "Bildschirm aktiv halten";
-"profile.preferences.openLastStation.detail" = "Öffnet beim Start von Tune AV die zuletzt gespielte Radioseite, ohne Autoplay.";
+"profile.preferences.openLastStation.detail" = "Öffnet beim Start von Tune AV den zuletzt gespielten Sender im Player, ohne Autoplay.";
 "profile.preferences.openLastStation.title" = "Letztes Radio öffnen";
 "profile.preferences.sleepTimer.minutes" = "%d Min.";
 "profile.preferences.sleepTimer.off" = "Aus";

@@ -999,7 +999,7 @@
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";
 "profile.preferences.keepScreenAwake.detail" = "Manté aquest dispositiu actiu mentre Tune AV és oberta.";
 "profile.preferences.keepScreenAwake.title" = "Mantenir pantalla activa";
-"profile.preferences.openLastStation.detail" = "Obre el detall de l'última emissora en iniciar Tune AV, sense reproducció automàtica.";
+"profile.preferences.openLastStation.detail" = "Obre l'última emissora al reproductor en iniciar Tune AV, sense reproducció automàtica.";
 "profile.preferences.openLastStation.title" = "Obrir última emissora";
 "profile.preferences.sleepTimer.minutes" = "%d min";
 "profile.preferences.sleepTimer.off" = "Desactivat";

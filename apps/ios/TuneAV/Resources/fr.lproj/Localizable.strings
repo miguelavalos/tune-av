@@ -999,7 +999,7 @@
 "profile.preferences.clearUnstableWarnings.title" = "Avertissements de flux instables";
 "profile.preferences.keepScreenAwake.detail" = "Garde cet appareil éveillé pendant que Tune AV est ouverte.";
 "profile.preferences.keepScreenAwake.title" = "Garder l'écran éveillé";
-"profile.preferences.openLastStation.detail" = "Ouvre le détail de la dernière radio au lancement de Tune AV, sans lecture automatique.";
+"profile.preferences.openLastStation.detail" = "Ouvre la dernière radio dans le lecteur au lancement de Tune AV, sans lecture automatique.";
 "profile.preferences.openLastStation.title" = "Ouvrir la dernière radio";
 "profile.preferences.sleepTimer.minutes" = "%d min";
 "profile.preferences.sleepTimer.off" = "Désactivé";

@@ -261,7 +261,7 @@
 "profile.preferences.clearUnstableWarnings.title" = "Unstable stream warnings";
 "profile.preferences.keepScreenAwake.detail" = "Keep this device awake while Tune AV is open.";
 "profile.preferences.keepScreenAwake.title" = "Keep screen awake";
-"profile.preferences.openLastStation.detail" = "Open the last played radio detail when Tune AV starts, without autoplay.";
+"profile.preferences.openLastStation.detail" = "Open the last played radio in the player when Tune AV starts, without autoplay.";
 "profile.preferences.openLastStation.title" = "Open last radio";
 "profile.preferences.theme.dark" = "Dark";
 "profile.preferences.theme.detail" = "Choose whether Tune AV follows the system appearance or always uses a fixed theme on this device.";
