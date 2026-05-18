@@ -343,6 +343,7 @@ struct AppShellView: View {
                 currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
                 isPlaying: audioPlayer.isPlaying,
                 isLoading: audioPlayer.isLoading,
+                activeSleepTimerMinutes: audioPlayer.activeSleepTimerMinutes,
                 canCyclePlaybackQueue: audioPlayer.canCyclePlaybackQueue,
                 playbackQueueSource: audioPlayer.playbackQueue.source,
                 playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
@@ -379,6 +380,7 @@ struct AppShellView: View {
                 stopPlayback: {
                     requestStopPlaybackConfirmation()
                 },
+                setSleepTimer: audioPlayer.setSleepTimer(minutes:),
                 playPrevious: audioPlayer.playPreviousInQueue,
                 playNext: audioPlayer.playNextInQueue,
                 playStation: { station, queue in
@@ -1848,6 +1850,8 @@ private struct AviExpandedFooterPlayerView: View {
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                sleepTimerMenu
             }
 
             HStack(spacing: 14) {
@@ -2076,6 +2080,53 @@ private struct AviExpandedFooterPlayerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
         .accessibilityIdentifier("avi.footerPlayer.closeSignal")
+    }
+
+    private var sleepTimerMenu: some View {
+        Menu {
+            ForEach(sleepTimerOptions, id: \.self) { minutes in
+                Button {
+                    audioPlayer.setSleepTimer(minutes: minutes)
+                } label: {
+                    Label(
+                        sleepTimerOptionTitle(for: minutes),
+                        systemImage: audioPlayer.activeSleepTimerMinutes == minutes ? "checkmark" : "timer"
+                    )
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .font(.system(size: 12, weight: .black))
+
+                Text(sleepTimerOptionTitle(for: audioPlayer.activeSleepTimerMinutes))
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .foregroundStyle(TuneAVTheme.textPrimary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+            .contentShape(Capsule())
+        }
+        .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
+        .accessibilityIdentifier("avi.footerPlayer.sleepTimer")
+    }
+
+    private var sleepTimerOptions: [Int?] {
+        [nil, 15, 30, 45, 60]
+    }
+
+    private func sleepTimerOptionTitle(for minutes: Int?) -> String {
+        guard let minutes else {
+            return L10n.string("profile.preferences.sleepTimer.off")
+        }
+        return L10n.string("profile.preferences.sleepTimer.minutes", minutes)
     }
 
     private var queueSwitchOptions: [AviQueueSwitchOption] {
@@ -2945,6 +2996,7 @@ private struct AviScreen: View {
     let currentTrackArtworkURL: URL?
     let isPlaying: Bool
     let isLoading: Bool
+    let activeSleepTimerMinutes: Int?
     let canCyclePlaybackQueue: Bool
     let playbackQueueSource: AudioPlayerService.PlaybackQueue.Source
     let playbackQueueStations: [Station]
@@ -2963,6 +3015,7 @@ private struct AviScreen: View {
     let openLibrary: () -> Void
     let openPlayer: () -> Void
     let stopPlayback: () -> Void
+    let setSleepTimer: (Int?) -> Void
     let playPrevious: () -> Void
     let playNext: () -> Void
     let playStation: (Station, [Station]) -> Void
@@ -4783,6 +4836,17 @@ private struct AviScreen: View {
 
     private func focusedListeningDock(for station: Station) -> some View {
         VStack(spacing: 12) {
+            HStack {
+                Text(L10n.string("shell.common.playingNow"))
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                aviSleepTimerMenu
+            }
+
             HStack(spacing: 14) {
                 Button {
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
@@ -4878,6 +4942,53 @@ private struct AviScreen: View {
         .shadow(color: TuneAVTheme.glassShadow.opacity(0.7), radius: 8, y: 2)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("player.dock")
+    }
+
+    private var aviSleepTimerMenu: some View {
+        Menu {
+            ForEach(sleepTimerOptions, id: \.self) { minutes in
+                Button {
+                    setSleepTimer(minutes)
+                } label: {
+                    Label(
+                        sleepTimerOptionTitle(for: minutes),
+                        systemImage: activeSleepTimerMinutes == minutes ? "checkmark" : "timer"
+                    )
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .font(.system(size: 12, weight: .black))
+
+                Text(sleepTimerOptionTitle(for: activeSleepTimerMinutes))
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .foregroundStyle(TuneAVTheme.textPrimary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+            .contentShape(Capsule())
+        }
+        .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
+        .accessibilityIdentifier("avi.controls.sleepTimer")
+    }
+
+    private var sleepTimerOptions: [Int?] {
+        [nil, 15, 30, 45, 60]
+    }
+
+    private func sleepTimerOptionTitle(for minutes: Int?) -> String {
+        guard let minutes else {
+            return L10n.string("profile.preferences.sleepTimer.off")
+        }
+        return L10n.string("profile.preferences.sleepTimer.minutes", minutes)
     }
 
     private func queueDockButton(
