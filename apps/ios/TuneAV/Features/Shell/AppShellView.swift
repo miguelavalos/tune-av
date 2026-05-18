@@ -439,6 +439,9 @@ struct AppShellView: View {
                 startSignInAction: {
                     startSignInFlow(true)
                 },
+                openSearchAction: {
+                    selectedTab = .search
+                },
                 playStation: playStation,
                 toggleFavorite: toggleFavorite(_:),
                 showStationDetails: { station, queueSource, queue, mode, showsOverview in
@@ -8860,6 +8863,7 @@ private struct LibraryScreen: View {
     let stationFeedback: [String: TuneAVStationFeedback]
     let openAccountAction: () -> Void
     let startSignInAction: () -> Void
+    let openSearchAction: () -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?, RadioLibraryMode?, Bool?) -> Void
@@ -8999,38 +9003,38 @@ private struct LibraryScreen: View {
                 )
             }
 
-            if derivedState.hasRadioOverviewContent {
-                RadioOverviewMetricGrid {
-                    RadioOverviewMetricCard(
-                        title: L10n.string("shell.library.overview.saved"),
-                        value: summary?.radio.cards.saved.count ?? favorites.count,
-                        systemImage: "dot.radiowaves.left.and.right",
-                        tint: TuneAVTheme.highlight,
-                        action: { openMode(.saved) }
-                    )
-                    RadioOverviewMetricCard(
-                        title: L10n.string("shell.library.overview.recent"),
-                        value: summary?.radio.cards.recent.count ?? recents.count,
-                        systemImage: "clock.fill",
-                        tint: Color(red: 0.17, green: 0.52, blue: 0.96),
-                        action: { openMode(.recent) }
-                    )
-                    RadioOverviewMetricCard(
-                        title: L10n.string("shell.library.overview.tuned"),
-                        value: summary?.radio.cards.tuned.count ?? stationFeedback.count,
-                        systemImage: "slider.horizontal.3",
-                        tint: Color(red: 0.95, green: 0.48, blue: 0.18),
-                        action: { openMode(.tuned) }
-                    )
-                    RadioOverviewMetricCard(
-                        title: L10n.string("shell.library.overview.musicStationsShort"),
-                        value: derivedState.musicStationCount,
-                        systemImage: "music.note.list",
-                        tint: Color(red: 0.54, green: 0.43, blue: 0.90),
-                        action: { openMode(.music) }
-                    )
-                }
+            RadioOverviewMetricGrid {
+                RadioOverviewMetricCard(
+                    title: L10n.string("shell.library.overview.saved"),
+                    value: summary?.radio.cards.saved.count ?? favorites.count,
+                    systemImage: "dot.radiowaves.left.and.right",
+                    tint: TuneAVTheme.highlight,
+                    action: { openMode(.saved) }
+                )
+                RadioOverviewMetricCard(
+                    title: L10n.string("shell.library.overview.recent"),
+                    value: summary?.radio.cards.recent.count ?? recents.count,
+                    systemImage: "clock.fill",
+                    tint: Color(red: 0.17, green: 0.52, blue: 0.96),
+                    action: { openMode(.recent) }
+                )
+                RadioOverviewMetricCard(
+                    title: L10n.string("shell.library.overview.tuned"),
+                    value: summary?.radio.cards.tuned.count ?? stationFeedback.count,
+                    systemImage: "slider.horizontal.3",
+                    tint: Color(red: 0.95, green: 0.48, blue: 0.18),
+                    action: { openMode(.tuned) }
+                )
+                RadioOverviewMetricCard(
+                    title: L10n.string("shell.library.overview.musicStationsShort"),
+                    value: derivedState.musicStationCount,
+                    systemImage: "music.note.list",
+                    tint: Color(red: 0.54, green: 0.43, blue: 0.90),
+                    action: { openMode(.music) }
+                )
+            }
 
+            if derivedState.hasRadioOverviewContent {
                 radioOverviewSectionIfNeeded(
                     stations: derivedState.overviewFavoriteStations,
                     title: L10n.string("shell.library.overview.saved"),
@@ -9066,7 +9070,10 @@ private struct LibraryScreen: View {
             } else {
                 EmptyLibraryState(
                     title: L10n.string("shell.library.overview.empty"),
-                    detail: L10n.string("shell.library.overview.empty.detail")
+                    detail: L10n.string("shell.library.overview.empty.detail"),
+                    actionTitle: L10n.string("shell.music.overview.empty.action"),
+                    actionSystemImage: "magnifyingglass",
+                    action: openSearchAction
                 )
             }
         }
