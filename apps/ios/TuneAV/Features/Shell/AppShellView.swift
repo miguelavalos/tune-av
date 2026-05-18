@@ -2213,58 +2213,74 @@ private struct AppShellArtworkZoomOverlay: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(.black.opacity(0.42))
+                .fill(.black.opacity(0.76))
                 .ignoresSafeArea()
                 .onTapGesture(perform: dismiss)
 
-            VStack(spacing: 14) {
-                artwork
-                    .shadow(color: .black.opacity(0.28), radius: 28, y: 18)
+            GeometryReader { proxy in
+                let artworkSize = min(proxy.size.width - 8, 372)
+                let captionWidth = min(artworkSize, 360)
 
-                VStack(spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                VStack(spacing: 12) {
+                    artwork(size: artworkSize)
+                        .shadow(color: .black.opacity(0.46), radius: 32, y: 18)
 
-                    Text(subtitle)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    VStack(spacing: 7) {
+                        Text(title)
+                            .font(.system(size: 27, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text(subtitle)
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.white.opacity(0.92))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.74)
+                    }
+                    .frame(width: captionWidth - 28)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 15)
+                    .background(.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(.white.opacity(0.24), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.52), radius: 22, y: 12)
                 }
-                .frame(maxWidth: 280)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 4)
             }
-            .padding(20)
         }
         .accessibilityIdentifier("avi.footerPlayer.artworkZoomOverlay")
     }
 
     @ViewBuilder
-    private var artwork: some View {
+    private func artwork(size: CGFloat) -> some View {
         if let artworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: 268, scale: displayScale) {
-                StationArtworkView(station: station, size: 268)
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                StationArtworkView(station: station, size: size)
             }
-            .frame(width: 268, height: 268)
-            .clipShape(artworkShape)
+            .frame(width: size, height: size)
+            .clipShape(artworkShape(size: size))
             .overlay {
-                artworkShape
+                artworkShape(size: size)
                     .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
         } else {
             StationArtworkView(
                 station: station,
-                size: 268,
+                size: size,
                 animationOverlay: .none,
                 isAnimationActive: false
             )
         }
     }
 
-    private var artworkShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 268), style: .continuous)
+    private func artworkShape(size: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 }
 
@@ -5106,7 +5122,7 @@ private struct AviScreen: View {
     private func artworkZoomOverlay(for station: Station) -> some View {
         ZStack {
             Rectangle()
-                .fill(.black.opacity(0.42))
+                .fill(.black.opacity(0.76))
                 .ignoresSafeArea()
                 .onTapGesture {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
@@ -5114,26 +5130,42 @@ private struct AviScreen: View {
                     }
             }
 
-            VStack(spacing: 14) {
-                currentArtwork(for: station, size: 268)
-                    .shadow(color: .black.opacity(0.28), radius: 28, y: 18)
+            GeometryReader { proxy in
+                let artworkSize = min(proxy.size.width - 8, 372)
+                let captionWidth = min(artworkSize, 360)
 
-                VStack(spacing: 4) {
-                    Text(currentTrackTitle ?? station.name)
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                VStack(spacing: 12) {
+                    currentArtwork(for: station, size: artworkSize)
+                        .shadow(color: .black.opacity(0.46), radius: 32, y: 18)
 
-                    Text(currentTrackArtist ?? station.name)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    VStack(spacing: 7) {
+                        Text(currentTrackTitle ?? station.name)
+                            .font(.system(size: 27, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text(currentTrackArtist ?? station.name)
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.white.opacity(0.92))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.74)
+                    }
+                    .frame(width: captionWidth - 28)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 15)
+                    .background(.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(.white.opacity(0.24), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.52), radius: 22, y: 12)
                 }
-                .frame(maxWidth: 280)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 4)
             }
-            .padding(20)
         }
         .accessibilityIdentifier("avi.nowPlaying.artworkZoomOverlay")
     }
