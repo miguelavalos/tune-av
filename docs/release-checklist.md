@@ -1,6 +1,7 @@
-# Release Checklist
+# iOS Release Checklist
 
-Use this checklist before creating a public GitHub release.
+Use this checklist before creating a public GitHub release or App Store build
+from the public Tune AV iOS repository.
 
 ## Repository Hygiene
 
@@ -30,11 +31,10 @@ Use this checklist before creating a public GitHub release.
 
    Private validation details belong outside the public repository.
 
-2. Generate Xcode projects when `project.yml` changes:
+2. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
    ```bash
    cd apps/ios && xcodegen generate
-   cd ../macos && xcodegen generate
    ```
 
 3. Run iOS unit tests:
@@ -48,15 +48,9 @@ Use this checklist before creating a public GitHub release.
      CODE_SIGNING_ALLOWED=NO
    ```
 
-4. Run macOS tests:
-
-   ```bash
-   cd apps/macos
-   xcodebuild test -project TuneAVMac.xcodeproj \
-     -scheme TuneAVMac \
-     -destination 'platform=macOS' \
-     CODE_SIGNING_ALLOWED=NO
-   ```
+4. Run targeted UI tests when the release changes shell navigation, limits,
+   playback queue, search, Profile, purchase/restore, account deletion, or
+   discovery behavior.
 
 ## Public Release
 
@@ -67,4 +61,6 @@ Use this checklist before creating a public GitHub release.
 
 ## Private Operations
 
-Store portal plans, provider setup, signing steps, production config, service smoke tests, implementation plans, and review-response material belong outside this public repository.
+Store portal plans, provider setup, signing steps, production config, service
+smoke tests, implementation plans, and review-response material belong outside
+this public repository.

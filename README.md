@@ -2,9 +2,12 @@
 
 Open-source native product repo for Tune AV.
 
-This repository contains the active Tune AV iOS and macOS clients together with shared Apple-domain code, local playback, persistence flows, and public app configuration. Non-public operational and planning material lives outside this repository.
+This repository contains the active Tune AV iOS client, shared Apple-domain code,
+local playback, persistence flows, and public app configuration. Non-public
+operational, signing, backend, subscription-dashboard, and release-evidence
+material lives outside this repository.
 
-The current product targets are `iOS` and `macOS`.
+The app to treat as current is `apps/ios`.
 
 ## License
 
@@ -17,9 +20,9 @@ apps/
   ios/      SwiftUI iOS app
   macos/    SwiftUI macOS app for Mac App Store distribution
 docs/
+  ios-current-state.md
   ios-animation-performance.md
   install-ios.md
-  install-macos.md
   release-checklist.md
 shared/
   apple/     Swift Modules and Apple-domain shared code
@@ -31,15 +34,19 @@ shared/
 - local-first listening experience
 - favorites, recents, and on-device settings
 - optional account UI surfaces
-- iOS and macOS projects and Xcode configuration
+- iOS project and public Xcode configuration
+- secondary macOS files retained for future/parity work
 
 ## Current state
 
-- `apps/ios` is the submitted first App Store client
-- `apps/macos` is active again and targets Mac App Store parity with iOS
+- `apps/ios` is the current Tune AV app
 - `shared/apple` is the shared Swift implementation root for Apple-domain behavior
 - `shared/contracts` is reserved for platform-neutral contracts when a non-Apple consumer exists
 - the repo keeps user library storage local by default
+- account, subscription, analytics, and cloud-sync behavior is optional and configuration-gated
+
+Use [docs/ios-current-state.md](docs/ios-current-state.md) as the public source
+of truth for the current iOS app.
 
 ## Local Setup
 
@@ -52,12 +59,8 @@ shared/
 
 The tracked debug configuration uses neutral defaults and optional `Local.xcconfig` overrides.
 
-### macOS
-
-1. Install repo tooling:
-   `bun install`
-2. If your local build needs signing or account values, create `apps/macos/Config/Local.xcconfig` outside git.
-3. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode and run the `TuneAVMac` scheme.
+macOS files may exist in the repository, but macOS is secondary to the iOS app
+for the current documentation and release flow.
 
 ## Local Secrets
 
@@ -70,7 +73,7 @@ This public repo does not carry private bootstrap examples or generated local co
 
 Run `bun run config:hygiene` before pushing config-related changes.
 
-See [docs/install-ios.md](docs/install-ios.md) and [docs/install-macos.md](docs/install-macos.md) for setup details.
+See [docs/install-ios.md](docs/install-ios.md) for setup details.
 
 For playback-adjacent UI work, follow [docs/ios-animation-performance.md](docs/ios-animation-performance.md).
 
@@ -93,4 +96,5 @@ For playback-adjacent UI work, follow [docs/ios-animation-performance.md](docs/i
 - Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Security policy: [SECURITY.md](SECURITY.md)
 - Support policy: [SUPPORT.md](SUPPORT.md)
+- Current iOS state: [docs/ios-current-state.md](docs/ios-current-state.md)
 - Release checklist: [docs/release-checklist.md](docs/release-checklist.md)

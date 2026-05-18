@@ -2,6 +2,9 @@
 
 SwiftUI iOS app for Tune AV.
 
+Use [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
+current public state document for the iOS app.
+
 ## Local Config
 
 1. From the repo root, run `bun install`.
@@ -21,8 +24,12 @@ Optional account-connected behavior:
 - shared internal access model with local and signed-in states
 - onboarding with `Skip for now`
 - local-first shell that works without sign-in
+- Home, Search, Avi, Library, Music, and Profile tabs
+- music-first station discovery with an explicit all-radio mode
 - Radios and Music use overview screens with lightweight section previews, plus dedicated detail pages for long lists, search, and sorting
 - Radio surfaces contain only radios; Music surfaces contain songs and artists
+- optional RevenueCat monthly Pro purchase/restore flow when configured
+- Pro cloud sync and backend-backed summary/analytics only when Account AV backend config is available
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 
 ## Localization
