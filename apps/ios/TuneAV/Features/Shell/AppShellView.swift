@@ -779,14 +779,14 @@ struct AppShellView: View {
     }
 
     private func restoreLastOpenedStationOnLaunch() {
-        if let stationID = libraryStore.settings.lastOpenedStationID,
-           let station = libraryStore.station(for: stationID) {
-            selectStationForLaunchAndOpenPlayer(station)
+        if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
+            selectStationForLaunchAndOpenPlayer(lastStation)
             return
         }
 
-        if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
-            selectStationForLaunchAndOpenPlayer(lastStation)
+        if let stationID = libraryStore.settings.lastOpenedStationID,
+           let station = libraryStore.station(for: stationID) {
+            selectStationForLaunchAndOpenPlayer(station)
         }
     }
 
