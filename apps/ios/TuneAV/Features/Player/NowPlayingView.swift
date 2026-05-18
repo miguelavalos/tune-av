@@ -1431,7 +1431,7 @@ struct NowPlayingView: View {
     }
 
     private func statusRow(contentWidth: CGFloat) -> some View {
-        HStack {
+        HStack(spacing: 8) {
             if audioPlayer.isLoading {
                 loadingStatusPill
             }
@@ -1439,8 +1439,70 @@ struct NowPlayingView: View {
             if let sleepTimerDescription = audioPlayer.sleepTimerDescription {
                 statusPill(text: sleepTimerDescription)
             }
+
+            if let autoSkipNotice = audioPlayer.autoSkipNotice {
+                Button {
+                    audioPlayer.clearAutoSkipNotice()
+                } label: {
+                    statusPill(text: autoSkipNotice)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(autoSkipNotice)
+                .accessibilityIdentifier("player.status.autoSkip")
+            }
+
+            Spacer(minLength: 8)
+
+            sleepTimerMenu
         }
         .frame(width: contentWidth, alignment: .leading)
+    }
+
+    private var sleepTimerMenu: some View {
+        Menu {
+            ForEach(sleepTimerOptions, id: \.self) { minutes in
+                Button {
+                    audioPlayer.setSleepTimer(minutes: minutes)
+                } label: {
+                    Label(
+                        sleepTimerOptionTitle(for: minutes),
+                        systemImage: audioPlayer.activeSleepTimerMinutes == minutes ? "checkmark" : "timer"
+                    )
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .font(.caption.weight(.bold))
+
+                Text(sleepTimerOptionTitle(for: audioPlayer.activeSleepTimerMinutes))
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(TuneAVTheme.textPrimary)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(TuneAVTheme.elevatedSurface, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+            .contentShape(Capsule())
+        }
+        .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
+        .accessibilityIdentifier("player.sleepTimer.menu")
+    }
+
+    private var sleepTimerOptions: [Int?] {
+        [nil, 15, 30, 45, 60]
+    }
+
+    private func sleepTimerOptionTitle(for minutes: Int?) -> String {
+        guard let minutes else {
+            return L10n.string("profile.preferences.sleepTimer.off")
+        }
+        return L10n.string("profile.preferences.sleepTimer.minutes", minutes)
     }
 
     private var loadingStatusPill: some View {
@@ -1477,12 +1539,47 @@ struct NowPlayingView: View {
     }
 
     private var retrySection: some View {
-        Button(L10n.string("player.retry"), action: audioPlayer.retry)
-            .buttonStyle(.borderedProminent)
-            .tint(TuneAVTheme.highlight)
-            .opacity(audioPlayer.hasFailure ? 1 : 0)
-            .disabled(!audioPlayer.hasFailure)
-            .accessibilityHidden(!audioPlayer.hasFailure)
+        VStack(spacing: 10) {
+            Button(L10n.string("player.retry"), action: audioPlayer.retry)
+                .buttonStyle(.borderedProminent)
+                .tint(TuneAVTheme.highlight)
+                .accessibilityIdentifier("player.failure.retry")
+
+            if audioPlayer.shouldSuggestFailureRecovery {
+                Text(L10n.string("player.failure.recovery.message"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("player.failure.recovery.message")
+
+                HStack(spacing: 10) {
+                    if canCycleStations {
+                        Button {
+                            playNextStation()
+                        } label: {
+                            Label(L10n.string("player.failure.recovery.next"), systemImage: "forward.fill")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(TuneAVTheme.highlight)
+                        .accessibilityIdentifier("player.failure.recovery.next")
+                    }
+
+                    Button(role: .destructive) {
+                        clearFailedStation()
+                    } label: {
+                        Label(L10n.string("player.failure.recovery.clear"), systemImage: "xmark.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("player.failure.recovery.clear")
+                }
+                .font(.caption.weight(.bold))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .opacity(audioPlayer.hasFailure ? 1 : 0)
+        .disabled(!audioPlayer.hasFailure)
+        .accessibilityHidden(!audioPlayer.hasFailure)
     }
 
     private func optionsMenu(for station: Station) -> some View {
@@ -1775,7 +1872,7 @@ struct NowPlayingView: View {
     }
 
     private var shouldShowStatusRow: Bool {
-        audioPlayer.sleepTimerDescription != nil
+        audioPlayer.sleepTimerDescription != nil || audioPlayer.autoSkipNotice != nil
     }
 
     private var playerAviEmotion: TuneAVAviEmotion {
@@ -2038,18 +2135,16 @@ struct NowPlayingView: View {
     private func playNextStation() {
         guard canCycleStations else { return }
         audioPlayer.playNextInQueue()
-        recordCurrentPlayback()
     }
 
     private func playPreviousStation() {
         guard canCycleStations else { return }
         audioPlayer.playPreviousInQueue()
-        recordCurrentPlayback()
     }
 
-    private func recordCurrentPlayback() {
-        guard let station = audioPlayer.currentStation else { return }
-        libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
+    private func clearFailedStation() {
+        audioPlayer.stopAndClearCurrentStation()
+        dismiss()
     }
 
     private func resetHorizontalDrag() {

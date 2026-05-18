@@ -27,7 +27,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
     @Published private(set) var currentStation: Station?
     @Published private(set) var status: PlaybackStatus = .idle
     @Published private(set) var sleepTimerDescription: String?
+    @Published private(set) var activeSleepTimerMinutes: Int?
+    @Published private(set) var autoSkipNotice: String?
     @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var consecutiveFailureCount = 0
+    @Published private(set) var temporarilyUnstableStationIDs: Set<String> = []
+    @Published private(set) var currentNetworkIsExpensive = false
     @Published private var currentTrackMetadata = CurrentTrackMetadata()
     @Published private(set) var playbackQueue: PlaybackQueue = .init(source: .singleStation, stations: [])
 
@@ -58,6 +63,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
         return false
     }
 
+    var shouldSuggestFailureRecovery: Bool {
+        hasFailure && consecutiveFailureCount >= 2
+    }
+
     private var player: AVPlayer?
     private var playerItemStatusObserver: NSKeyValueObservation?
     private var timeControlStatusObserver: NSKeyValueObservation?
@@ -74,6 +83,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var metadataDelegate: TuneAVStreamMetadataDelegate?
     private let sleepTimerController = TuneAVSleepTimerController()
     private var loadingTimeoutTask: Task<Void, Never>?
+    private var autoSkipNoticeTask: Task<Void, Never>?
     private var nowPlayingPollingTask: Task<Void, Never>?
     private var artworkResolutionTask: Task<Void, Never>?
     private var nowPlayingArtworkTask: Task<Void, Never>?
@@ -119,9 +129,19 @@ final class AudioPlayerService: NSObject, ObservableObject {
         sleepTimerDescription = description
     }
 
+    private func setAutoSkipNotice(_ notice: String?) {
+        guard autoSkipNotice != notice else { return }
+        autoSkipNotice = notice
+    }
+
     private func setLastErrorMessage(_ message: String?) {
         guard lastErrorMessage != message else { return }
         lastErrorMessage = message
+    }
+
+    private func setConsecutiveFailureCount(_ count: Int) {
+        guard consecutiveFailureCount != count else { return }
+        consecutiveFailureCount = count
     }
 
     override init() {
@@ -162,6 +182,9 @@ final class AudioPlayerService: NSObject, ObservableObject {
             return
         }
 
+        if currentStation?.id != station.id {
+            setConsecutiveFailureCount(0)
+        }
         resetTransientStateForNewPlayback()
         userRequestedPlayback = true
         setCurrentStation(station)
@@ -232,6 +255,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         persistCurrentNowPlayingState()
         loadingTimeoutTask?.cancel()
         loadingTimeoutTask = nil
+        autoSkipNoticeTask?.cancel()
+        autoSkipNoticeTask = nil
         nowPlayingPollingTask?.cancel()
         nowPlayingPollingTask = nil
         artworkResolutionTask?.cancel()
@@ -249,6 +274,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         currentTrackSource = nil
         setStatus(.idle)
         setLastErrorMessage(nil)
+        setAutoSkipNotice(nil)
+        setConsecutiveFailureCount(0)
         setCurrentTrackIdentity(title: nil, artist: nil)
         setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         nowPlayingArtworkImage = nil
@@ -279,6 +306,18 @@ final class AudioPlayerService: NSObject, ObservableObject {
         play(station: TuneAVPlaybackQueueLogic.nextStation(in: resolvedQueue), queue: playbackQueue)
     }
 
+    @discardableResult
+    func playNextStableInQueue() -> Bool {
+        guard let resolvedQueue = resolvedPlaybackQueue() else { return false }
+        guard let station = TuneAVPlaybackQueueLogic.nextStation(
+            in: resolvedQueue,
+            excluding: temporarilyUnstableStationIDs
+        ) else { return false }
+
+        play(station: station, queue: playbackQueue)
+        return true
+    }
+
     func playPreviousInQueue() {
         guard let resolvedQueue = resolvedPlaybackQueue() else { return }
 
@@ -286,10 +325,14 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     func setSleepTimer(minutes: Int?) {
+        activeSleepTimerMinutes = minutes
         sleepTimerController.setTimer(
             minutes: minutes,
             setDescription: { [weak self] description in self?.setSleepTimerDescription(description) },
-            onFire: { [weak self] in self?.stop() }
+            onFire: { [weak self] in
+                self?.activeSleepTimerMinutes = nil
+                self?.stop()
+            }
         )
     }
 
@@ -300,8 +343,48 @@ final class AudioPlayerService: NSObject, ObservableObject {
         )
     }
 
+    func showAutoSkipNotice(for station: Station) {
+        setAutoSkipNotice(L10n.string("audio.autoSkip.skipped", station.name))
+        scheduleAutoSkipNoticeDismissal()
+    }
+
+    func showAutoSkipBlockedNotice() {
+        setAutoSkipNotice(L10n.string("audio.autoSkip.noStableStation"))
+        scheduleAutoSkipNoticeDismissal()
+    }
+
+    func clearAutoSkipNotice() {
+        autoSkipNoticeTask?.cancel()
+        autoSkipNoticeTask = nil
+        setAutoSkipNotice(nil)
+    }
+
+    private func scheduleAutoSkipNoticeDismissal() {
+        autoSkipNoticeTask?.cancel()
+        autoSkipNoticeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.clearAutoSkipNotice()
+            }
+        }
+    }
+
     func isCurrent(_ station: Station) -> Bool {
         currentStation?.id == station.id
+    }
+
+    func isTemporarilyUnstable(_ station: Station) -> Bool {
+        temporarilyUnstableStationIDs.contains(station.id)
+    }
+
+    func dismissTemporaryInstabilityWarning(for station: Station) {
+        temporarilyUnstableStationIDs.remove(station.id)
+    }
+
+    func clearTemporaryInstabilityWarnings() {
+        temporarilyUnstableStationIDs.removeAll()
+        clearAutoSkipNotice()
     }
 
     private var playbackQueueStations: [Station] {
@@ -324,6 +407,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
         return PlaybackQueue(source: queue.source, stations: stations)
     }
 
+    private func markCurrentStationTemporarilyUnstableIfNeeded() {
+        guard consecutiveFailureCount >= 2, let stationID = currentStation?.id else { return }
+        temporarilyUnstableStationIDs.insert(stationID)
+    }
+
+    private func clearTemporaryInstability(for station: Station?) {
+        guard let station else { return }
+        temporarilyUnstableStationIDs.remove(station.id)
+    }
+
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
@@ -341,6 +434,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 case .readyToPlay:
                     self.loadingTimeoutTask?.cancel()
                     self.loadingTimeoutTask = nil
+                    self.setConsecutiveFailureCount(0)
+                    self.clearTemporaryInstability(for: self.currentStation)
                     if self.player?.timeControlStatus == .playing {
                         self.setStatus(.playing)
                     }
@@ -363,6 +458,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 case .playing:
                     self.loadingTimeoutTask?.cancel()
                     self.loadingTimeoutTask = nil
+                    self.setConsecutiveFailureCount(0)
+                    self.clearTemporaryInstability(for: self.currentStation)
                     self.setStatus(.playing)
                 case .paused:
                     if case .loading = self.status { break }
@@ -441,6 +538,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         artworkResolutionTask = nil
         nowPlayingArtworkTask?.cancel()
         nowPlayingArtworkTask = nil
+        setConsecutiveFailureCount(consecutiveFailureCount + 1)
+        markCurrentStationTemporarilyUnstableIfNeeded()
         setStatus(.failed(message))
         setLastErrorMessage(message)
         player?.pause()
@@ -459,6 +558,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private func handleNetworkPathUpdate(_ path: NWPath) {
         let previousStatus = lastNetworkPathStatus
         lastNetworkPathStatus = path.status
+        currentNetworkIsExpensive = path.isExpensive
 
         let isRecoverablePlaybackState: Bool
         switch status {

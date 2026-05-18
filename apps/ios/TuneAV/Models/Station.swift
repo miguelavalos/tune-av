@@ -83,6 +83,36 @@ extension Station {
         return badges
     }
 
+    func userSignalBadges(hasNowPlaying: Bool = false, isTemporarilyUnstable: Bool = false) -> [String] {
+        var badges: [String] = []
+
+        if isTemporarilyUnstable {
+            badges.append(L10n.string("station.quality.unstable"))
+        }
+
+        if hasNowPlaying || editorial?.discoveryProfile?.metadataQuality == "high" || hasExtendedInfo == true {
+            badges.append(L10n.string("station.quality.songInfo"))
+        }
+
+        if hasSSLError == true {
+            badges.append(L10n.string("station.quality.mayLag"))
+        } else if let qualityScore {
+            if qualityScore >= 72 {
+                badges.append(L10n.string("station.quality.goodSignal"))
+            } else if qualityScore < 42 {
+                badges.append(L10n.string("station.quality.mayLag"))
+            }
+        } else if let lastCheckOKAt, !lastCheckOKAt.isEmpty {
+            badges.append(L10n.string("station.quality.goodSignal"))
+        }
+
+        if badges.isEmpty, bitrate != nil || codec != nil || isHLS == true {
+            badges.append(L10n.string("station.quality.basicStream"))
+        }
+
+        return Array(badges.prefix(2))
+    }
+
 }
 
 private extension Station {
@@ -363,7 +393,13 @@ final class AppSettings {
     var preferredLanguage: String
     var preferredTag: String
     var lastPlayedStationID: String?
+    var lastOpenedStationID: String?
+    var lastOpenedStationPresentation: String?
     var sleepTimerMinutes: Int?
+    var keepScreenAwake: Bool = false
+    var warnBeforeCellularPlayback: Bool = false
+    var openLastStationOnLaunch: Bool = false
+    var autoSkipUnstableStreams: Bool = false
     var updatedAt: Date
 
     init(
@@ -371,14 +407,26 @@ final class AppSettings {
         preferredLanguage: String = "",
         preferredTag: String = "",
         lastPlayedStationID: String? = nil,
+        lastOpenedStationID: String? = nil,
+        lastOpenedStationPresentation: String? = nil,
         sleepTimerMinutes: Int? = nil,
+        keepScreenAwake: Bool = false,
+        warnBeforeCellularPlayback: Bool = false,
+        openLastStationOnLaunch: Bool = false,
+        autoSkipUnstableStreams: Bool = false,
         updatedAt: Date = .now
     ) {
         self.preferredCountry = preferredCountry
         self.preferredLanguage = preferredLanguage
         self.preferredTag = preferredTag
         self.lastPlayedStationID = lastPlayedStationID
+        self.lastOpenedStationID = lastOpenedStationID
+        self.lastOpenedStationPresentation = lastOpenedStationPresentation
         self.sleepTimerMinutes = sleepTimerMinutes
+        self.keepScreenAwake = keepScreenAwake
+        self.warnBeforeCellularPlayback = warnBeforeCellularPlayback
+        self.openLastStationOnLaunch = openLastStationOnLaunch
+        self.autoSkipUnstableStreams = autoSkipUnstableStreams
         self.updatedAt = updatedAt
     }
 }

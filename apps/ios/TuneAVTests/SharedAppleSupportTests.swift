@@ -1736,6 +1736,32 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: resolved).id, "second")
     }
 
+    func testPlaybackQueueLogicFindsNextStationExcludingUnstableStations() throws {
+        let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
+        let first = Station(id: "first", name: "First", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/first")
+        let second = Station(id: "second", name: "Second", country: "Germany", language: "German", tags: "rock", streamURL: "https://example.com/second")
+        let third = Station(id: "third", name: "Third", country: "Italy", language: "Italian", tags: "news", streamURL: "https://example.com/third")
+        let resolved = try XCTUnwrap(TuneAVPlaybackQueueLogic.resolvedQueue(stations: [current, first, second, third], currentStation: current))
+
+        XCTAssertEqual(
+            TuneAVPlaybackQueueLogic.nextStation(in: resolved, excluding: ["first", "second"])?.id,
+            "third"
+        )
+        XCTAssertNil(TuneAVPlaybackQueueLogic.nextStation(in: resolved, excluding: ["first", "second", "third"]))
+    }
+
+    func testPlaybackQueueLogicWrapsWhenFindingNextStableStation() throws {
+        let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
+        let first = Station(id: "first", name: "First", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/first")
+        let second = Station(id: "second", name: "Second", country: "Germany", language: "German", tags: "rock", streamURL: "https://example.com/second")
+        let resolved = try XCTUnwrap(TuneAVPlaybackQueueLogic.resolvedQueue(stations: [first, second, current], currentStation: current))
+
+        XCTAssertEqual(
+            TuneAVPlaybackQueueLogic.nextStation(in: resolved, excluding: ["first"])?.id,
+            "second"
+        )
+    }
+
     func testAudioPlaybackPolicyRetriesOnlyAfterRequestedNetworkRecovery() {
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.loadingTimeoutSeconds, .seconds(12))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackInitialDelay, .seconds(4))

@@ -6,17 +6,37 @@ struct ProfileScreen: View {
         case settings
     }
 
+    fileprivate enum LocalDataClearTarget: Identifiable {
+        case favorites
+        case recents
+        case discoveries
+        case settings
+        case all
+
+        var id: String {
+            switch self {
+            case .favorites: "favorites"
+            case .recents: "recents"
+            case .discoveries: "discoveries"
+            case .settings: "settings"
+            case .all: "all"
+            }
+        }
+    }
+
     @EnvironmentObject private var accessController: AccessController
+    @EnvironmentObject private var audioPlayer: AudioPlayerService
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var themeController: AppThemeController
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.openURL) private var openExternalURL
 
     let mode: Mode
     let startSignInFlow: (Bool) -> Void
     let bottomContentPadding: CGFloat
 
     @State private var isClearingLocalData = false
-    @State private var isShowingClearLocalDataAlert = false
+    @State private var isShowingLocalDataActions = false
     @State private var isSigningOut = false
     @State private var signOutErrorMessage = ""
     @State private var isShowingSignOutError = false
@@ -49,19 +69,6 @@ struct ProfileScreen: View {
         .overlay(alignment: .top) {
             profileTopSafeAreaShield
         }
-        .alert(clearLibraryAlertTitle, isPresented: $isShowingClearLocalDataAlert) {
-            Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {}
-            Button(clearLibraryConfirmTitle, role: .destructive) {
-                isClearingLocalData = true
-                libraryStore.clearLocalData(propagatesToCloud: shouldClearSyncedLibrary)
-                if accessController.accessMode == .guest {
-                    startSignInFlow(false)
-                }
-                isClearingLocalData = false
-            }
-        } message: {
-            Text(clearLibraryAlertMessage)
-        }
         .alert(L10n.string("profile.alert.signOutFailed.title"), isPresented: $isShowingSignOutError) {
             Button(L10n.string("profile.alert.close"), role: .cancel) {}
         } message: {
@@ -76,6 +83,17 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isShowingProPaywall) {
             TuneAVProPaywallView()
                 .environmentObject(accessController)
+        }
+        .sheet(isPresented: $isShowingLocalDataActions) {
+            LocalDataManagementSheet(
+                clearAllTitle: localDataClearAllActionTitle,
+                alertTitle: clearLibraryAlertTitle(for:),
+                alertMessage: clearLibraryAlertMessage(for:),
+                confirmTitle: clearLibraryConfirmTitle(for:),
+                onConfirmTarget: performClearLocalData
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
     }
 
@@ -306,6 +324,47 @@ struct ProfileScreen: View {
             )
 
             themeSelector
+
+            Divider()
+                .overlay(TuneAVTheme.borderSubtle)
+
+            SettingsToggleRow(
+                systemImage: "iphone.gen3.radiowaves.left.and.right",
+                title: L10n.string("profile.preferences.keepScreenAwake.title"),
+                detail: L10n.string("profile.preferences.keepScreenAwake.detail"),
+                isOn: keepScreenAwakeSelection
+            )
+
+            SettingsToggleRow(
+                systemImage: "antenna.radiowaves.left.and.right",
+                title: L10n.string("profile.preferences.cellularWarning.title"),
+                detail: L10n.string("profile.preferences.cellularWarning.detail"),
+                isOn: cellularWarningSelection
+            )
+
+            SettingsToggleRow(
+                systemImage: "clock.arrow.circlepath",
+                title: L10n.string("profile.preferences.openLastStation.title"),
+                detail: L10n.string("profile.preferences.openLastStation.detail"),
+                isOn: openLastStationSelection
+            )
+
+            SettingsToggleRow(
+                systemImage: "forward.end.fill",
+                title: L10n.string("profile.preferences.autoSkipUnstableStreams.title"),
+                detail: L10n.string("profile.preferences.autoSkipUnstableStreams.detail"),
+                isOn: autoSkipUnstableStreamsSelection
+            )
+
+            if !audioPlayer.temporarilyUnstableStationIDs.isEmpty {
+                SettingsActionRow(
+                    systemImage: "checkmark.circle",
+                    title: L10n.string("profile.preferences.clearUnstableWarnings.title"),
+                    detail: L10n.string("profile.preferences.clearUnstableWarnings.detail", audioPlayer.temporarilyUnstableStationIDs.count),
+                    actionTitle: L10n.string("profile.preferences.clearUnstableWarnings.action"),
+                    action: audioPlayer.clearTemporaryInstabilityWarnings
+                )
+            }
         }
         .padding(22)
         .background(profileCardBackground)
@@ -361,8 +420,8 @@ struct ProfileScreen: View {
             ProfileDangerButton(
                 title: isClearingLocalData
                     ? clearLibraryLoadingTitle
-                    : clearLibraryActionTitle,
-                action: { isShowingClearLocalDataAlert = true }
+                    : L10n.string("profile.actions.manageLocalData"),
+                action: { isShowingLocalDataActions = true }
             )
             .disabled(isClearingLocalData)
         }
@@ -377,7 +436,7 @@ struct ProfileScreen: View {
             count: count,
             count
         )
-        guard let limit else { return base }
+        guard let limit, count <= limit else { return base }
         return L10n.string("profile.local.limit.used", base, count, limit)
     }
 
@@ -545,26 +604,67 @@ struct ProfileScreen: View {
             : L10n.string("profile.actions.clearData")
     }
 
+    private var localDataClearAllActionTitle: String {
+        shouldClearSyncedLibrary
+            ? L10n.string("profile.actions.clearAllSyncedLibrary")
+            : L10n.string("profile.actions.clearAllLocalData")
+    }
+
     private var clearLibraryLoadingTitle: String {
         shouldClearSyncedLibrary
             ? L10n.string("profile.actions.clearingSyncedLibrary")
             : L10n.string("profile.actions.clearingData")
     }
 
-    private var clearLibraryAlertTitle: String {
-        shouldClearSyncedLibrary
+    private func clearLibraryAlertTitle(for target: LocalDataClearTarget) -> String {
+        switch target {
+        case .favorites:
+            return L10n.string("profile.alert.clearFavorites.title")
+        case .recents:
+            return L10n.string("profile.alert.clearRecents.title")
+        case .discoveries:
+            return L10n.string("profile.alert.clearDiscoveries.title")
+        case .settings:
+            return L10n.string("profile.alert.resetSettings.title")
+        case .all:
+            break
+        }
+
+        return shouldClearSyncedLibrary
             ? L10n.string("profile.alert.clearSyncedLibrary.title")
             : L10n.string("profile.alert.clearData.title")
     }
 
-    private var clearLibraryAlertMessage: String {
-        shouldClearSyncedLibrary
+    private func clearLibraryAlertMessage(for target: LocalDataClearTarget) -> String {
+        switch target {
+        case .favorites:
+            return L10n.string("profile.alert.clearFavorites.message")
+        case .recents:
+            return L10n.string("profile.alert.clearRecents.message")
+        case .discoveries:
+            return L10n.string("profile.alert.clearDiscoveries.message")
+        case .settings:
+            return L10n.string("profile.alert.resetSettings.message")
+        case .all:
+            break
+        }
+
+        return shouldClearSyncedLibrary
             ? L10n.string("profile.alert.clearSyncedLibrary.message")
             : L10n.string("profile.alert.clearData.message")
     }
 
-    private var clearLibraryConfirmTitle: String {
-        shouldClearSyncedLibrary
+    private func clearLibraryConfirmTitle(for target: LocalDataClearTarget) -> String {
+        switch target {
+        case .favorites, .recents, .discoveries:
+            return L10n.string("profile.alert.clearData.confirm")
+        case .settings:
+            return L10n.string("profile.alert.resetSettings.confirm")
+        case .all:
+            break
+        }
+
+        return shouldClearSyncedLibrary
             ? L10n.string("profile.alert.clearSyncedLibrary.confirm")
             : L10n.string("profile.alert.clearData.confirm")
     }
@@ -655,6 +755,34 @@ struct ProfileScreen: View {
         Binding(
             get: { themeController.currentTheme },
             set: { themeController.select($0) }
+        )
+    }
+
+    private var keepScreenAwakeSelection: Binding<Bool> {
+        Binding(
+            get: { libraryStore.settings.keepScreenAwake },
+            set: { libraryStore.setKeepScreenAwake($0) }
+        )
+    }
+
+    private var cellularWarningSelection: Binding<Bool> {
+        Binding(
+            get: { libraryStore.settings.warnBeforeCellularPlayback },
+            set: { libraryStore.setWarnBeforeCellularPlayback($0) }
+        )
+    }
+
+    private var openLastStationSelection: Binding<Bool> {
+        Binding(
+            get: { libraryStore.settings.openLastStationOnLaunch },
+            set: { libraryStore.setOpenLastStationOnLaunch($0) }
+        )
+    }
+
+    private var autoSkipUnstableStreamsSelection: Binding<Bool> {
+        Binding(
+            get: { libraryStore.settings.autoSkipUnstableStreams },
+            set: { libraryStore.setAutoSkipUnstableStreams($0) }
         )
     }
 
@@ -786,6 +914,31 @@ struct ProfileScreen: View {
         }
     }
 
+    private func performClearLocalData(_ target: LocalDataClearTarget) {
+        guard isClearingLocalData == false else { return }
+        isClearingLocalData = true
+        clearLocalData(target)
+        if accessController.accessMode == .guest && target == .all {
+            startSignInFlow(false)
+        }
+        isClearingLocalData = false
+    }
+
+    private func clearLocalData(_ target: LocalDataClearTarget) {
+        switch target {
+        case .favorites:
+            libraryStore.clearFavorites(propagatesToCloud: shouldClearSyncedLibrary)
+        case .recents:
+            libraryStore.clearRecents(propagatesToCloud: shouldClearSyncedLibrary)
+        case .discoveries:
+            libraryStore.clearDiscoveries(propagatesToCloud: shouldClearSyncedLibrary)
+        case .settings:
+            libraryStore.resetSettings()
+        case .all:
+            libraryStore.clearLocalData(propagatesToCloud: shouldClearSyncedLibrary)
+        }
+    }
+
     private var preferredGenreLabel: String {
         let preferredTag = libraryStore.settings.preferredTag
         guard !preferredTag.isEmpty else {
@@ -848,7 +1001,11 @@ struct ProfileScreen: View {
 
     private func open(_ url: URL?) {
         guard let url else { return }
-        browserDestination = BrowserDestination(url: url)
+        if url.isTuneAVWebURL {
+            browserDestination = BrowserDestination(url: url)
+        } else {
+            openExternalURL(url)
+        }
     }
 
     private var accountDeletionViewModel: AccountDeletionViewModel {
@@ -877,6 +1034,229 @@ struct ProfileScreen: View {
         }
 
         isSigningOut = false
+    }
+}
+
+private struct LocalDataManagementSheet: View {
+    let clearAllTitle: String
+    let alertTitle: (ProfileScreen.LocalDataClearTarget) -> String
+    let alertMessage: (ProfileScreen.LocalDataClearTarget) -> String
+    let confirmTitle: (ProfileScreen.LocalDataClearTarget) -> String
+    let onConfirmTarget: (ProfileScreen.LocalDataClearTarget) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var pendingTarget: ProfileScreen.LocalDataClearTarget?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L10n.string("profile.localDataSheet.title"))
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+
+                        Text(L10n.string("profile.localDataSheet.subtitle"))
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    maintenanceGroup(
+                        title: L10n.string("profile.localDataSheet.partialTitle"),
+                        rows: [
+                            maintenanceRow(
+                                systemImage: "heart.text.square",
+                                title: L10n.string("profile.actions.clearFavorites"),
+                                detail: L10n.string("profile.alert.clearFavorites.message"),
+                                target: .favorites
+                            ),
+                            maintenanceRow(
+                                systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+                                title: L10n.string("profile.actions.clearRecents"),
+                                detail: L10n.string("profile.alert.clearRecents.message"),
+                                target: .recents
+                            ),
+                            maintenanceRow(
+                                systemImage: "music.note.list",
+                                title: L10n.string("profile.actions.clearDiscoveries"),
+                                detail: L10n.string("profile.alert.clearDiscoveries.message"),
+                                target: .discoveries
+                            ),
+                            maintenanceRow(
+                                systemImage: "slider.horizontal.3",
+                                title: L10n.string("profile.actions.resetSettings"),
+                                detail: L10n.string("profile.alert.resetSettings.message"),
+                                target: .settings
+                            )
+                        ]
+                    )
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(L10n.string("profile.localDataSheet.dangerTitle"))
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                            .textCase(.uppercase)
+
+                        Button {
+                            pendingTarget = .all
+                        } label: {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .frame(width: 22)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(clearAllTitle)
+                                        .font(.system(size: 15, weight: .bold))
+
+                                    Text(L10n.string("profile.alert.clearData.message"))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer(minLength: 12)
+                            }
+                            .foregroundStyle(Color(red: 0.84, green: 0.16, blue: 0.22))
+                            .padding(16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(Color(red: 0.84, green: 0.16, blue: 0.22).opacity(0.07))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .stroke(Color(red: 0.84, green: 0.16, blue: 0.22).opacity(0.18), lineWidth: 1)
+                                    }
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 22)
+                .padding(.bottom, 28)
+            }
+            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.string("profile.alert.clearData.cancel")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .alert(
+            pendingTarget.map(alertTitle) ?? "",
+            isPresented: pendingTargetIsPresented
+        ) {
+            Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {
+                pendingTarget = nil
+            }
+            Button(pendingTarget.map(confirmTitle) ?? "", role: .destructive) {
+                guard let target = pendingTarget else { return }
+                onConfirmTarget(target)
+                pendingTarget = nil
+                dismiss()
+            }
+        } message: {
+            if let pendingTarget {
+                Text(alertMessage(pendingTarget))
+            }
+        }
+    }
+
+    private func maintenanceGroup(title: String, rows: [LocalDataMaintenanceRow]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .textCase(.uppercase)
+
+            VStack(spacing: 0) {
+                ForEach(rows) { row in
+                    Button {
+                        pendingTarget = row.target
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: row.systemImage)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(TuneAVTheme.highlight)
+                                .frame(width: 22)
+                                .padding(.top, 2)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(row.title)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                                Text(row.detail)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(TuneAVTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer(minLength: 12)
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
+                                .padding(.top, 4)
+                        }
+                        .padding(16)
+                    }
+                    .buttonStyle(.plain)
+
+                    if row.id != rows.last?.id {
+                        Divider()
+                            .overlay(TuneAVTheme.borderSubtle)
+                            .padding(.leading, 50)
+                    }
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(TuneAVTheme.mutedSurface)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                    }
+            )
+        }
+    }
+
+    private func maintenanceRow(
+        systemImage: String,
+        title: String,
+        detail: String,
+        target: ProfileScreen.LocalDataClearTarget
+    ) -> LocalDataMaintenanceRow {
+        LocalDataMaintenanceRow(
+            systemImage: systemImage,
+            title: title,
+            detail: detail,
+            target: target
+        )
+    }
+
+    private var pendingTargetIsPresented: Binding<Bool> {
+        Binding(
+            get: { pendingTarget != nil },
+            set: { if !$0 { pendingTarget = nil } }
+        )
+    }
+}
+
+private struct LocalDataMaintenanceRow: Identifiable {
+    let id = UUID()
+    let systemImage: String
+    let title: String
+    let detail: String
+    let target: ProfileScreen.LocalDataClearTarget
+}
+
+private extension URL {
+    var isTuneAVWebURL: Bool {
+        guard let scheme = scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
     }
 }
 
@@ -1009,6 +1389,91 @@ private struct ProfileActionRow: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct SettingsToggleRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(TuneAVTheme.mutedSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
+    }
+}
+
+private struct SettingsActionRow: View {
+    let systemImage: String
+    let title: String
+    let detail: String
+    let actionTitle: String
+    let action: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            Button(actionTitle, action: action)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(TuneAVTheme.highlight)
+                .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(TuneAVTheme.mutedSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
     }
 }
 

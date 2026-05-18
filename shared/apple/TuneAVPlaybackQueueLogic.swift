@@ -45,6 +45,22 @@ enum TuneAVPlaybackQueueLogic {
         return resolvedQueue.stations[resolvedIndex]
     }
 
+    static func nextStation(
+        in resolvedQueue: ResolvedQueue,
+        excluding excludedStationIDs: Set<String>
+    ) -> Station? {
+        guard resolvedQueue.stations.count > 1 else { return nil }
+
+        for offset in 1..<resolvedQueue.stations.count {
+            let index = (resolvedQueue.currentIndex + offset) % resolvedQueue.stations.count
+            let station = resolvedQueue.stations[index]
+            guard !excludedStationIDs.contains(station.id) else { continue }
+            return station
+        }
+
+        return nil
+    }
+
     static func previousStation(in resolvedQueue: ResolvedQueue) -> Station {
         let previousIndex = resolvedQueue.currentIndex == resolvedQueue.stations.startIndex
             ? resolvedQueue.stations.index(before: resolvedQueue.stations.endIndex)

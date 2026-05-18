@@ -65,6 +65,9 @@ struct RootView: View {
             await refreshLibrarySync()
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
+        .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
+            updateIdleTimer(for: scenePhase)
+        }
         .onChange(of: accessController.accessMode) { _, _ in
             authOptionsArePresented = false
 
@@ -187,7 +190,7 @@ struct RootView: View {
     }
 
     private func updateIdleTimer(for phase: ScenePhase) {
-        UIApplication.shared.isIdleTimerDisabled = phase == .active
+        UIApplication.shared.isIdleTimerDisabled = phase == .active && libraryStore.settings.keepScreenAwake
     }
 
     private func showInitialSplashIfNeeded() async {

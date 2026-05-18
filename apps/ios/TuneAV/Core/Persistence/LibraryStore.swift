@@ -508,6 +508,99 @@ final class LibraryStore: ObservableObject {
         saveAndRefresh(.settings)
     }
 
+    func setKeepScreenAwake(_ isEnabled: Bool) {
+        guard settings.keepScreenAwake != isEnabled else { return }
+        settings.keepScreenAwake = isEnabled
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func setWarnBeforeCellularPlayback(_ isEnabled: Bool) {
+        guard settings.warnBeforeCellularPlayback != isEnabled else { return }
+        settings.warnBeforeCellularPlayback = isEnabled
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func setOpenLastStationOnLaunch(_ isEnabled: Bool) {
+        guard settings.openLastStationOnLaunch != isEnabled else { return }
+        settings.openLastStationOnLaunch = isEnabled
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func setAutoSkipUnstableStreams(_ isEnabled: Bool) {
+        guard settings.autoSkipUnstableStreams != isEnabled else { return }
+        settings.autoSkipUnstableStreams = isEnabled
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func rememberOpenedStation(_ station: Station, presentation: String) {
+        guard settings.lastOpenedStationID != station.id || settings.lastOpenedStationPresentation != presentation else { return }
+        settings.lastOpenedStationID = station.id
+        settings.lastOpenedStationPresentation = presentation
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func clearOpenedStationPresentation() {
+        guard settings.lastOpenedStationPresentation != nil else { return }
+        settings.lastOpenedStationPresentation = nil
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func clearFavorites(propagatesToCloud: Bool = false) {
+        for favorite in favorites {
+            if propagatesToCloud {
+                rememberFavoriteDeletion(for: Station(favorite: favorite))
+            }
+            context.delete(favorite)
+        }
+        saveAndRefresh(.favorites)
+    }
+
+    func clearRecents(propagatesToCloud: Bool = false) {
+        for recent in recents {
+            if propagatesToCloud {
+                rememberRecentDeletion(for: Station(recent: recent))
+            }
+            context.delete(recent)
+        }
+        settings.lastPlayedStationID = nil
+        settings.lastOpenedStationID = nil
+        settings.lastOpenedStationPresentation = nil
+        settings.updatedAt = .now
+        saveAndRefresh(.recentsAndSettings)
+    }
+
+    func clearDiscoveries(propagatesToCloud: Bool = false) {
+        for discovery in discoveries {
+            if propagatesToCloud {
+                rememberDiscoveryDeletion(for: discovery)
+            }
+            context.delete(discovery)
+        }
+        saveAndRefresh(.discoveries)
+    }
+
+    func resetSettings() {
+        settings.preferredCountry = ""
+        settings.preferredLanguage = ""
+        settings.preferredTag = ""
+        settings.lastPlayedStationID = nil
+        settings.lastOpenedStationID = nil
+        settings.lastOpenedStationPresentation = nil
+        settings.sleepTimerMinutes = nil
+        settings.keepScreenAwake = false
+        settings.warnBeforeCellularPlayback = false
+        settings.openLastStationOnLaunch = false
+        settings.autoSkipUnstableStreams = false
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
     func clearLocalData(propagatesToCloud: Bool = false) {
         for favorite in favorites {
             if propagatesToCloud {
@@ -540,7 +633,13 @@ final class LibraryStore: ObservableObject {
         settings.preferredLanguage = ""
         settings.preferredTag = ""
         settings.lastPlayedStationID = nil
+        settings.lastOpenedStationID = nil
+        settings.lastOpenedStationPresentation = nil
         settings.sleepTimerMinutes = nil
+        settings.keepScreenAwake = false
+        settings.warnBeforeCellularPlayback = false
+        settings.openLastStationOnLaunch = false
+        settings.autoSkipUnstableStreams = false
         settings.updatedAt = .now
 
         saveAndRefresh()
@@ -1030,7 +1129,13 @@ final class LibraryStore: ObservableObject {
                 preferredLanguage: settings.preferredLanguage,
                 preferredTag: settings.preferredTag,
                 lastPlayedStationID: settings.lastPlayedStationID,
-                sleepTimerMinutes: settings.sleepTimerMinutes,
+                lastOpenedStationID: settings.lastOpenedStationID,
+                lastOpenedStationPresentation: settings.lastOpenedStationPresentation,
+                sleepTimerMinutes: nil,
+                keepScreenAwake: settings.keepScreenAwake,
+                warnBeforeCellularPlayback: settings.warnBeforeCellularPlayback,
+                openLastStationOnLaunch: settings.openLastStationOnLaunch,
+                autoSkipUnstableStreams: settings.autoSkipUnstableStreams,
                 updatedAt: TuneAVAppDataService.isoString(from: settings.updatedAt)
             )
         )
@@ -1128,7 +1233,13 @@ final class LibraryStore: ObservableObject {
         settings.preferredLanguage = snapshot.settings.preferredLanguage
         settings.preferredTag = snapshot.settings.preferredTag
         settings.lastPlayedStationID = snapshot.settings.lastPlayedStationID
-        settings.sleepTimerMinutes = snapshot.settings.sleepTimerMinutes
+        settings.lastOpenedStationID = snapshot.settings.lastOpenedStationID
+        settings.lastOpenedStationPresentation = snapshot.settings.lastOpenedStationPresentation
+        settings.sleepTimerMinutes = nil
+        settings.keepScreenAwake = snapshot.settings.keepScreenAwake
+        settings.warnBeforeCellularPlayback = snapshot.settings.warnBeforeCellularPlayback
+        settings.openLastStationOnLaunch = snapshot.settings.openLastStationOnLaunch
+        settings.autoSkipUnstableStreams = snapshot.settings.autoSkipUnstableStreams
         settings.updatedAt = Self.date(from: snapshot.settings.updatedAt)
 
         try? context.save()

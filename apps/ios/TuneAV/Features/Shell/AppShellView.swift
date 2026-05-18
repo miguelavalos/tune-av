@@ -2,6 +2,18 @@ import SwiftUI
 import UIKit
 
 struct AppShellView: View {
+    private struct PendingPlayback: Identifiable {
+        let id = UUID()
+        let station: Station
+        let queueSource: AudioPlayerService.PlaybackQueue.Source
+        let queue: [Station]?
+    }
+
+    private enum LastOpenedStationPresentation: String {
+        case detail
+        case player
+    }
+
     let launchContext: LaunchContext
     let startSignInFlow: (Bool) -> Void
 
@@ -46,8 +58,11 @@ struct AppShellView: View {
     @State private var didBootstrap = false
     @State private var profileMode: ProfileScreen.Mode = .settings
     @State private var listeningSession: ActiveListeningSession?
+    @State private var lastConfirmedPlaybackStationID: String?
     @State private var isShowingProPaywall = false
     @State private var isShowingFooterArtworkZoom = false
+    @State private var pendingCellularPlayback: PendingPlayback?
+    @State private var isConfirmingStopPlayback = false
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
@@ -121,8 +136,7 @@ struct AppShellView: View {
                                 isShowingFooterArtworkZoom = true
                             }
                         } stopPlayback: {
-                            audioPlayer.stopAndClearCurrentStation()
-                            closeFocusedAviDetail(fallbackTab: .home)
+                            requestStopPlaybackConfirmation()
                         } playStationFromQueue: { station, source, queue in
                             playStation(station, queueSource: source, queue: queue)
                         }
@@ -188,6 +202,27 @@ struct AppShellView: View {
             TuneAVProPaywallView()
                 .environmentObject(accessController)
         }
+        .alert(L10n.string("settings.cellularPlayback.alert.title"), isPresented: pendingCellularPlaybackIsPresented) {
+            Button(L10n.string("common.cancel"), role: .cancel) {
+                pendingCellularPlayback = nil
+            }
+            Button(L10n.string("settings.cellularPlayback.alert.play")) {
+                if let pending = pendingCellularPlayback {
+                    playStationAfterCellularCheck(pending.station, queueSource: pending.queueSource, queue: pending.queue)
+                }
+                pendingCellularPlayback = nil
+            }
+        } message: {
+            Text(L10n.string("settings.cellularPlayback.alert.message"))
+        }
+        .alert(L10n.string("player.stopPlayback.alert.title"), isPresented: $isConfirmingStopPlayback) {
+            Button(L10n.string("common.cancel"), role: .cancel) {}
+            Button(L10n.string("player.stopPlayback.alert.stop"), role: .destructive) {
+                stopPlaybackAndCloseSignal()
+            }
+        } message: {
+            Text(L10n.string("player.stopPlayback.alert.message"))
+        }
         .task {
             await bootstrapIfNeeded()
         }
@@ -208,8 +243,11 @@ struct AppShellView: View {
             refreshHomePresentation()
         }
         .onChange(of: audioPlayer.currentStation?.id) { previousStationID, stationID in
-            guard stationID != nil, let station = audioPlayer.currentStation else { return }
-            libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
+            if stationID == nil {
+                lastConfirmedPlaybackStationID = nil
+                return
+            }
+            guard let station = audioPlayer.currentStation else { return }
             syncAviActiveSignalIfNeeded(previousStationID: previousStationID, currentStation: station)
         }
         .onChange(of: audioPlayer.status) { oldStatus, newStatus in
@@ -339,8 +377,7 @@ struct AppShellView: View {
                     }
                 },
                 stopPlayback: {
-                    audioPlayer.stopAndClearCurrentStation()
-                    closeFocusedAviDetail(fallbackTab: .home)
+                    requestStopPlaybackConfirmation()
                 },
                 playPrevious: audioPlayer.playPreviousInQueue,
                 playNext: audioPlayer.playNextInQueue,
@@ -699,7 +736,6 @@ struct AppShellView: View {
         guard !didBootstrap else { return }
         didBootstrap = true
 
-        audioPlayer.setSleepTimer(minutes: libraryStore.settings.sleepTimerMinutes)
         seedUITestDataIfNeeded()
 
         if let preferredTab = launchContext.preferredTab {
@@ -723,6 +759,8 @@ struct AppShellView: View {
             }
         } else if launchContext.preferredSearchQuery != nil {
             selectedTab = .search
+        } else if libraryStore.settings.openLastStationOnLaunch {
+            restoreLastOpenedStationOnLaunch()
         }
 
         if let demoStation = launchContext.demoStation {
@@ -735,6 +773,25 @@ struct AppShellView: View {
 
         if launchContext.isUITesting, let feature = launchContext.uiTestUpgradePromptFeature {
             accessController.presentUpgradePrompt(for: feature)
+        }
+    }
+
+    private func restoreLastOpenedStationOnLaunch() {
+        if let stationID = libraryStore.settings.lastOpenedStationID,
+           let presentationValue = libraryStore.settings.lastOpenedStationPresentation,
+           let presentation = LastOpenedStationPresentation(rawValue: presentationValue),
+           let station = libraryStore.station(for: stationID) {
+            switch presentation {
+            case .detail:
+                showStationDetails(station, queueSource: .homeRecents, queue: [station])
+            case .player:
+                openNowPlayingFullPlayer(station)
+            }
+            return
+        }
+
+        if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
+            showStationDetails(lastStation, queueSource: .homeRecents, queue: [lastStation])
         }
     }
 
@@ -775,6 +832,30 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
+        guard shouldPlayImmediatelyOnCurrentNetwork else {
+            pendingCellularPlayback = PendingPlayback(station: station, queueSource: queueSource, queue: queue)
+            return
+        }
+
+        playStationAfterCellularCheck(station, queueSource: queueSource, queue: queue)
+    }
+
+    private var shouldPlayImmediatelyOnCurrentNetwork: Bool {
+        !libraryStore.settings.warnBeforeCellularPlayback || !audioPlayer.currentNetworkIsExpensive
+    }
+
+    private var pendingCellularPlaybackIsPresented: Binding<Bool> {
+        Binding(
+            get: { pendingCellularPlayback != nil },
+            set: { if !$0 { pendingCellularPlayback = nil } }
+        )
+    }
+
+    private func playStationAfterCellularCheck(
+        _ station: Station,
+        queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
+        queue: [Station]? = nil
+    ) {
         let resolvedStation = enrichedStation(station)
         let resolvedQueue = enrichedStations(queue ?? [resolvedStation])
         let playbackQueue = AudioPlayerService.PlaybackQueue(
@@ -783,6 +864,16 @@ struct AppShellView: View {
         )
         audioPlayer.play(station: resolvedStation, queue: playbackQueue)
         beginListeningSession(for: resolvedStation, source: queueSource)
+    }
+
+    private func requestStopPlaybackConfirmation() {
+        guard audioPlayer.currentStation != nil else { return }
+        isConfirmingStopPlayback = true
+    }
+
+    private func stopPlaybackAndCloseSignal() {
+        audioPlayer.stopAndClearCurrentStation()
+        closeFocusedAviDetail(fallbackTab: .home)
     }
 
     private func beginListeningSession(for station: Station, source: AudioPlayerService.PlaybackQueue.Source) {
@@ -809,7 +900,12 @@ struct AppShellView: View {
             flushListeningSession(endedReason: "app_closed")
         case .failed:
             flushListeningSession(endedReason: "stream_error")
+            autoSkipUnstableStreamIfNeeded()
         case .playing:
+            if let station = audioPlayer.currentStation {
+                recordConfirmedPlaybackIfNeeded(station)
+            }
+
             if listeningSession == nil, let station = audioPlayer.currentStation {
                 listeningSession = ActiveListeningSession(
                     station: station,
@@ -820,6 +916,28 @@ struct AppShellView: View {
             }
         case .loading:
             break
+        }
+    }
+
+    private func recordConfirmedPlaybackIfNeeded(_ station: Station) {
+        guard lastConfirmedPlaybackStationID != station.id else { return }
+        libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
+        lastConfirmedPlaybackStationID = station.id
+    }
+
+    private func autoSkipUnstableStreamIfNeeded() {
+        guard libraryStore.settings.autoSkipUnstableStreams else { return }
+        guard audioPlayer.shouldSuggestFailureRecovery, audioPlayer.canCyclePlaybackQueue else { return }
+        let skippedStation = audioPlayer.currentStation
+        guard audioPlayer.playNextStableInQueue() else {
+            audioPlayer.showAutoSkipBlockedNotice()
+            return
+        }
+        if let skippedStation {
+            audioPlayer.showAutoSkipNotice(for: skippedStation)
+        }
+        if let station = audioPlayer.currentStation {
+            beginListeningSession(for: station, source: audioPlayer.playbackQueue.source)
         }
     }
 
@@ -895,6 +1013,7 @@ struct AppShellView: View {
             queueSource: queueSource,
             queueStations: queueStations
         )
+        libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.detail.rawValue)
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         selectedTab = .avi
     }
@@ -912,6 +1031,7 @@ struct AppShellView: View {
             queueSource: .singleStation,
             queueStations: [resolvedStation]
         )
+        libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         isAviNowPlayingFullPlayer = true
         selectedTab = .avi
@@ -937,6 +1057,7 @@ struct AppShellView: View {
                 queueSource: audioPlayer.playbackQueue.source,
                 queueStations: queue
             )
+            libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
             refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
             isAviNowPlayingFullPlayer = true
         }
@@ -978,6 +1099,7 @@ struct AppShellView: View {
         selectedStationDetail = nil
         selectedMusicAviDetail = nil
         isAviNowPlayingFullPlayer = false
+        libraryStore.clearOpenedStationPresentation()
 
         if let aviReturnTab {
             if aviReturnTab == .library {
@@ -11914,6 +12036,8 @@ private struct StationCompactCard: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
+
+                stationQualityBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: StationCompactMetrics.artworkSize, alignment: .center)
@@ -11958,6 +12082,21 @@ private struct StationCompactCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"))
         .accessibilityIdentifier("stationRow.favorite.\(station.id)")
+    }
+
+    private func stationQualityBadges(hasNowPlaying: Bool) -> some View {
+        HStack(spacing: 5) {
+            ForEach(station.userSignalBadges(hasNowPlaying: hasNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
+                Text(badge)
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .lineLimit(1)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(TuneAVTheme.highlight.opacity(0.1), in: Capsule())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func normalizedMetadata(_ value: String?) -> String? {
@@ -12070,7 +12209,10 @@ private struct StationListActionRow: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.86)
 
-                feedbackBadgeIfNeeded
+                HStack(spacing: 6) {
+                    feedbackBadgeIfNeeded
+                    stationQualityBadges
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
@@ -12100,6 +12242,20 @@ private struct StationListActionRow: View {
             StationFeedbackBadge(feedback: stationFeedback, size: 20, fontSize: 9)
                 .accessibilityLabel(stationFeedback.localizedState)
                 .accessibilityIdentifier("stationRow.feedback.\(station.id)")
+        }
+    }
+
+    private var stationQualityBadges: some View {
+        HStack(spacing: 5) {
+            ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
+                Text(badge)
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .lineLimit(1)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(TuneAVTheme.highlight.opacity(0.1), in: Capsule())
+            }
         }
     }
 
@@ -12566,6 +12722,27 @@ private struct StationDetailSheet: View {
 
     @ViewBuilder
     private var profileContent: some View {
+        let userSignalBadges = station.userSignalBadges(
+            hasNowPlaying: isActive && !activeSignalSubtitle.isEmpty,
+            isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)
+        )
+        if !userSignalBadges.isEmpty {
+            DetailSection(title: L10n.string("shell.stationDetail.section.quality")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    WrapTagsRow(tags: userSignalBadges, highlighted: true)
+
+                    Text(audioPlayer.isTemporarilyUnstable(station) ? L10n.string("shell.stationDetail.quality.unstableDetail") : L10n.string("shell.stationDetail.quality.detail"))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if audioPlayer.isTemporarilyUnstable(station) {
+                        unstableStationRecoveryActions
+                    }
+                }
+            }
+        }
+
         if let editorial = station.editorial {
             DetailSection(title: L10n.string("shell.stationDetail.section.editorial")) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -12658,6 +12835,70 @@ private struct StationDetailSheet: View {
                     }
                 }
             }
+        }
+    }
+
+    private var unstableStationRecoveryActions: some View {
+        HStack(spacing: 10) {
+            Button {
+                if audioPlayer.isCurrent(station) && audioPlayer.hasFailure {
+                    audioPlayer.retry()
+                } else {
+                    playAction()
+                }
+            } label: {
+                Label(L10n.string("shell.stationDetail.quality.tryAgain"), systemImage: "arrow.clockwise")
+                    .font(.system(size: 13, weight: .black))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(TuneAVTheme.brandBlack)
+            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityIdentifier("stationDetail.quality.tryAgain")
+
+            if audioPlayer.canCyclePlaybackQueue {
+                Button {
+                    audioPlayer.playNextInQueue()
+                } label: {
+                    Label(L10n.string("shell.stationDetail.quality.tryNext"), systemImage: "forward.fill")
+                        .font(.system(size: 13, weight: .black))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(TuneAVTheme.highlight)
+                .background(TuneAVTheme.highlight.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityIdentifier("stationDetail.quality.tryNext")
+            }
+
+            if let homepageURL {
+                Button {
+                    browserDestination = BrowserDestination(url: homepageURL)
+                } label: {
+                    Image(systemName: "safari")
+                        .font(.system(size: 15, weight: .black))
+                        .frame(width: 42, height: 42)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityLabel(L10n.string("player.menu.openWebsite"))
+                .accessibilityIdentifier("stationDetail.quality.website")
+            }
+
+            Button {
+                audioPlayer.dismissTemporaryInstabilityWarning(for: station)
+            } label: {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 15, weight: .black))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(TuneAVTheme.textPrimary)
+            .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .accessibilityLabel(L10n.string("shell.stationDetail.quality.dismissWarning"))
+            .accessibilityIdentifier("stationDetail.quality.dismissWarning")
         }
     }
 
