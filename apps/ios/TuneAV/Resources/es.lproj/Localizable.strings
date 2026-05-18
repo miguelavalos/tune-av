@@ -99,7 +99,7 @@
 "player.stopPlayback.alert.stop" = "Detener radio";
 "player.stopPlayback.alert.title" = "¿Detener la radio actual?";
 "player.failure.recovery.clear" = "Limpiar";
-"player.failure.recovery.message" = "Este stream sigue fallando. Prueba la siguiente radio o quitalo del reproductor.";
+"player.failure.recovery.message" = "Este stream sigue fallando. Prueba la siguiente radio o quítalo del reproductor.";
 "player.failure.recovery.next" = "Siguiente radio";
 "player.empty" = "Elige una emisora en Inicio o Buscar para empezar la reproducción.";
 "player.avi.detail.error" = "Avi ha perdido la señal. Inténtalo de nuevo o pasa a otra emisora.";
@@ -257,7 +257,7 @@
 "profile.preferences.autoSkipUnstableStreams.detail" = "Cuando un stream siga fallando y haya cola, pasar automáticamente a la siguiente radio.";
 "profile.preferences.autoSkipUnstableStreams.title" = "Saltar streams inestables";
 "profile.preferences.clearUnstableWarnings.action" = "Limpiar";
-"profile.preferences.clearUnstableWarnings.detail" = "%d marcadas en esta sesion.";
+"profile.preferences.clearUnstableWarnings.detail" = "%d marcadas en esta sesión.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";
 "profile.preferences.keepScreenAwake.detail" = "Mantiene este dispositivo activo mientras Tune AV está abierta.";
 "profile.preferences.keepScreenAwake.title" = "Mantener pantalla activa";
@@ -276,7 +276,7 @@
 "profile.preferences.sleepTimer.minutes" = "%d min";
 "profile.preferences.sleepTimer.off" = "Desactivado";
 "profile.preferences.sleepTimer.title" = "Temporizador de apagado";
-"profile.preferences.subtitle" = "Elige como se muestra Tune AV en este dispositivo.";
+"profile.preferences.subtitle" = "Elige cómo se muestra Tune AV en este dispositivo.";
 "profile.preferences.title" = "Preferencias de la app";
 "profile.local.storagePolicy.local" = "En este modo tus datos de escucha se quedan en este dispositivo.";
 "profile.local.storagePolicy.remote" = "Las funciones premium pueden añadir continuidad conectada a tu cuenta.";
@@ -670,7 +670,7 @@
 "shell.stationDetail.section.technical" = "Técnico";
 "shell.stationDetail.section.quality" = "Calidad de escucha";
 "shell.stationDetail.quality.detail" = "Estas pistas salen de comprobaciones del stream, metadatos de la emisora e información de canción cuando Tune AV puede leerla.";
-"shell.stationDetail.quality.unstableDetail" = "Esta radio ha tenido fallos repetidos de stream en esta sesion. Tune AV quitara el aviso cuando vuelva a reproducirse bien.";
+"shell.stationDetail.quality.unstableDetail" = "Esta radio ha tenido fallos repetidos de stream en esta sesión. Tune AV quitará el aviso cuando vuelva a reproducirse bien.";
 "shell.stationDetail.quality.tryAgain" = "Reintentar";
 "shell.stationDetail.quality.tryNext" = "Probar siguiente";
 "shell.stationDetail.quality.dismissWarning" = "Quitar aviso";
