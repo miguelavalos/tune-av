@@ -99,6 +99,15 @@ The destination above is an example. Use `xcodebuild -showdestinations` or
 Xcode's Devices window and replace the name/OS with an installed simulator when
 the local Xcode image set differs.
 
+Latest local verification known to the maintainers, run on 2026-05-18:
+
+- `TuneAVTests`: 139 tests, 0 failures on `iPhone 17 / iOS 26.5`.
+- `ProfileUITests`: 8 tests, 0 failures on `iPhone 17 / iOS 26.5`.
+
+These checks prove repository behavior only. They do not prove App Store
+Connect processing, live StoreKit subscription availability, RevenueCat
+dashboard mapping, webhook delivery, or App Review metadata.
+
 Signed device installs should use:
 
 ```bash

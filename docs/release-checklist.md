@@ -48,6 +48,10 @@ from the public Tune AV iOS repository.
      CODE_SIGNING_ALLOWED=NO
    ```
 
+   The simulator destination is an example. Replace it with an installed
+   destination from `xcodebuild -showdestinations` when the local Xcode runtime
+   set differs.
+
 4. Run targeted UI tests when the release changes shell navigation, limits,
    playback queue, search, Profile, purchase/restore, account deletion, or
    discovery behavior.
@@ -64,3 +68,9 @@ from the public Tune AV iOS repository.
 Store portal plans, provider setup, signing steps, production config, service
 smoke tests, implementation plans, and review-response material belong outside
 this public repository.
+
+Before App Review, the private release owner must separately confirm App Store
+Connect build processing, internal-only TestFlight assignment, live subscription
+availability, RevenueCat mapping/webhooks, real-device TestFlight smoke, sandbox
+purchase/restore/reconciliation, App Privacy answers, review notes, and
+submitted-build screenshots.
