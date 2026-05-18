@@ -94,7 +94,6 @@
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
 		E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
-		ECFFC2CAD29EFB619C344B16 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C5E3510BC0EF497380454A /* NowPlayingView.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
@@ -203,7 +202,6 @@
 		B8A8A74CF9078AA2D12F7466 /* TuneAVSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSplashView.swift; sourceTree = "<group>"; };
 		B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCollectionRules.swift; sourceTree = "<group>"; };
 		B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppleSupportTests.swift; sourceTree = "<group>"; };
-		B9C5E3510BC0EF497380454A /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		B9E6B173571331D31167D9AC /* InAppBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppBrowserView.swift; sourceTree = "<group>"; };
 		BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellSearch.swift; sourceTree = "<group>"; };
 		BD95C0068EC297AAD27DFCAD /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
@@ -333,7 +331,6 @@
 			isa = PBXGroup;
 			children = (
 				1773ECAD10F9A4F50D563770 /* Auth */,
-				EC186538D1FBDE69F7044C30 /* Player */,
 				AA012379CF977AC043A1EF00 /* Profile */,
 				402469ABC80FF3C48B9D8B82 /* Shell */,
 			);
@@ -492,14 +489,6 @@
 				2F3B0A0CD1FAD19F963C5732 /* TuneAVUITestCase.swift */,
 			);
 			path = TuneAVUITests;
-			sourceTree = "<group>";
-		};
-		EC186538D1FBDE69F7044C30 /* Player */ = {
-			isa = PBXGroup;
-			children = (
-				B9C5E3510BC0EF497380454A /* NowPlayingView.swift */,
-			);
-			path = Player;
 			sourceTree = "<group>";
 		};
 		ED86072AE11B7B8FAD2ACECB /* Config */ = {
@@ -668,7 +657,6 @@
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,
 				7B0060FA0D191CE8C1500F8D /* MiniPlayerView.swift in Sources */,
 				0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */,
-				ECFFC2CAD29EFB619C344B16 /* NowPlayingView.swift in Sources */,
 				8E261DF063D5C71FEC90152D /* PersistenceController.swift in Sources */,
 				3B63D88278E41045F3E5950D /* ProfileScreen.swift in Sources */,
 				772107B947DC7AFE8F717983 /* RootView.swift in Sources */,

@@ -270,65 +270,6 @@ private struct DiscoveryHero: View {
     }
 }
 
-private struct OnboardingPaperScene: View {
-    let compact: Bool
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.58),
-                            Color(red: 0.96, green: 0.91, blue: 0.78).opacity(0.32)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            VStack(spacing: compact ? 8 : 10) {
-                Image("AviV2TuneHeadphones")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: compact ? 132 : 156, height: compact ? 132 : 156)
-                    .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 14, y: 8)
-
-                HStack(spacing: 7) {
-                    ForEach(Array([18.0, 30.0, 24.0, 38.0, 20.0].enumerated()), id: \.offset) { index, height in
-                        Capsule(style: .continuous)
-                            .fill(index == 3 ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.2))
-                            .frame(width: 7, height: compact ? height * 0.76 : height)
-                    }
-                }
-                .padding(.bottom, compact ? 12 : 16)
-            }
-            .padding(.top, compact ? 14 : 20)
-
-            Image("OnboardingWordmark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: compact ? 76 : 88, height: compact ? 43 : 50)
-                .opacity(0.9)
-                .padding(.top, 18)
-                .padding(.leading, 18)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .frame(maxWidth: compact ? 246 : 292)
-        .frame(height: compact ? 214 : 252)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.white.opacity(0.38))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
-                }
-        )
-        .shadow(color: TuneAVTheme.brandGraphite.opacity(0.08), radius: 18, y: 10)
-        .accessibilityLabel(L10n.string("auth.avi.accessibilityLabel"))
-    }
-}
-
 private struct BrandHeaderBadge: View {
     var body: some View {
         HStack {
@@ -339,69 +280,6 @@ private struct BrandHeaderBadge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tune AV")
-    }
-}
-
-private struct RadioNotebookGlyph: View {
-    let compact: Bool
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(TuneAVTheme.brandGraphite)
-                .frame(width: compact ? 110 : 126, height: compact ? 92 : 106)
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.24), radius: 12, y: 8)
-
-            VStack(spacing: 9) {
-                HStack(spacing: 8) {
-                    Image(systemName: "dot.radiowaves.left.and.right")
-                        .font(.system(size: compact ? 20 : 24, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.highlight)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Capsule().fill(Color.white.opacity(0.75)).frame(width: 36, height: 4)
-                        Capsule().fill(Color.white.opacity(0.36)).frame(width: 26, height: 4)
-                    }
-                }
-
-                HStack(alignment: .bottom, spacing: 7) {
-                    ForEach(Array([18.0, 34.0, 24.0, 42.0].enumerated()), id: \.offset) { index, height in
-                        Capsule(style: .continuous)
-                            .fill(index == 3 ? TuneAVTheme.highlight : Color.white.opacity(0.32))
-                            .frame(width: 7, height: compact ? height * 0.78 : height)
-                    }
-                }
-            }
-
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                .padding(8)
-        }
-    }
-}
-
-private struct AviGuideBadge: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(TuneAVTheme.highlight)
-                .frame(width: 68, height: 68)
-
-            Circle()
-                .fill(Color(red: 0.97, green: 0.94, blue: 0.84))
-                .frame(width: 52, height: 52)
-
-            HStack(spacing: 8) {
-                Circle().fill(TuneAVTheme.brandGraphite).frame(width: 6, height: 6)
-                Circle().fill(TuneAVTheme.brandGraphite).frame(width: 6, height: 6)
-            }
-            .offset(y: -4)
-
-            Capsule(style: .continuous)
-                .fill(TuneAVTheme.brandGraphite.opacity(0.72))
-                .frame(width: 22, height: 5)
-                .offset(y: 10)
-        }
     }
 }
 
@@ -566,65 +444,6 @@ private struct AviSheetPeekCompanion: View {
             .shadow(color: TuneAVTheme.brandGraphite.opacity(0.1), radius: 8, y: 5)
             .offset(y: -5)
         .frame(width: 140, height: 110)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct AuthPanelArtwork: View {
-    var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            LinearGradient(
-                colors: [
-                    TuneAVTheme.highlight.opacity(0.24),
-                    Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.72)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            Image("AviV2Thinking")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 132, height: 132)
-                .padding(.trailing, 18)
-                .padding(.bottom, 4)
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 10, y: 6)
-
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.0),
-                    Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.44)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 144)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(TuneAVTheme.brandGraphite.opacity(0.1), lineWidth: 1)
-        }
-        .accessibilityLabel(L10n.string("auth.avi.accessibilityLabel"))
-    }
-}
-
-private struct CompactNotebookHeader: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(TuneAVTheme.brandGraphite)
-                .frame(width: 62, height: 62)
-
-            Image(systemName: "book.closed.fill")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(TuneAVTheme.highlight)
-
-            AviGuideBadge()
-                .scaleEffect(0.46)
-                .offset(x: 30, y: -18)
-        }
         .accessibilityHidden(true)
     }
 }
@@ -795,81 +614,6 @@ private struct OnboardingBackdrop: View {
     }
 }
 
-private struct SignalRings: View {
-    let size: CGFloat
-
-    var body: some View {
-        ZStack {
-            ForEach([0.56, 0.82, 1.06], id: \.self) { scale in
-                Circle()
-                    .stroke(TuneAVTheme.highlight.opacity(scale == 0.82 ? 0.12 : 0.06), lineWidth: 1.5)
-                    .frame(width: size * scale, height: size * scale)
-            }
-
-            ForEach([-1.0, 1.0], id: \.self) { direction in
-                VStack(spacing: 10) {
-                    ForEach([68.0, 96.0], id: \.self) { bar in
-                        Capsule(style: .continuous)
-                            .fill(TuneAVTheme.highlight.opacity(0.1))
-                            .frame(width: 2, height: bar)
-                    }
-                }
-                .offset(x: direction * size * 0.43)
-            }
-
-            VStack(spacing: 14) {
-                Image(systemName: "dot.radiowaves.left.and.right")
-                    .font(.system(size: 34, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.highlight)
-
-                HStack(spacing: 12) {
-                    ForEach(Array([0.18, 0.34, 0.22].enumerated()), id: \.offset) { index, height in
-                        Capsule(style: .continuous)
-                            .fill(index == 2 ? TuneAVTheme.highlight : Color.white.opacity(0.28))
-                            .frame(width: 8, height: size * height)
-                    }
-                }
-                .frame(height: size * 0.42)
-            }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 20)
-            .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(TuneAVTheme.brandBlack.opacity(0.56))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    }
-            )
-        }
-    }
-}
-
-private struct EqualizerRails: View {
-    var body: some View {
-        HStack {
-            EqualizerColumn()
-            Spacer()
-            EqualizerColumn()
-        }
-        .padding(.horizontal, 112)
-    }
-}
-
-private struct EqualizerColumn: View {
-    private let heights: [CGFloat] = [54, 110, 72]
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 18) {
-            ForEach(Array(heights.enumerated()), id: \.offset) { index, height in
-                Capsule(style: .continuous)
-                    .fill(index == 1 ? TuneAVTheme.highlight.opacity(0.08) : Color.white.opacity(0.04))
-                    .frame(width: 2, height: height)
-            }
-        }
-    }
-}
-
 private struct CurvedWave: Shape {
     var offset: CGFloat = 0
 
@@ -881,17 +625,6 @@ private struct CurvedWave: Shape {
             control1: CGPoint(x: rect.width * 0.25, y: rect.height * 0.12 - offset),
             control2: CGPoint(x: rect.width * 0.75, y: rect.height * 0.18 - offset)
         )
-        return path
-    }
-}
-
-private struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.closeSubpath()
         return path
     }
 }
