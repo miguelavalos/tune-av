@@ -366,7 +366,14 @@ extension Station {
     }
 
     var displayArtworkURL: URL? {
-        nil
+        guard
+            let url = TuneAVText.normalizedValue(artwork?.url),
+            let resolvedURL = URL(string: url)
+        else {
+            return nil
+        }
+
+        return resolvedURL
     }
 
     var displayArtworkUsesFaviconProxy: Bool {

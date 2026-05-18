@@ -384,7 +384,7 @@ struct StationArtworkView: View {
         animationDuration: TimeInterval? = nil
     ) {
         self.init(
-            artworkURL: nil,
+            artworkURL: station.displayArtworkURL,
             fallbackText: station.initials,
             fallbackSeed: station.id,
             fallbackArtwork: station.fallbackArtwork,

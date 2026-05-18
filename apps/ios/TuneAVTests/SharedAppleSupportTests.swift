@@ -1834,6 +1834,29 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(station.displayArtworkUsesFaviconProxy)
     }
 
+    func testStationDisplayArtworkURLReturnsGeneratedBackendArtwork() {
+        let station = Station(
+            id: "radiobob-women-of-rock",
+            name: "RADIO BOB! Women Of Rock",
+            country: "Germany",
+            countryCode: "DE",
+            language: "German",
+            tags: "rock",
+            streamURL: "https://streams.radiobob.de/womenofrock/mp3-192/homepage/",
+            artwork: StationArtwork(
+                status: "generated",
+                url: " https://cdn.avalsys.com/apps-av/tune-av/station-artwork/radiobob/women-of-rock/generated-av-v1-1024.jpg ",
+                version: "generated-av-v1-1024-jpeg-q84"
+            )
+        )
+
+        XCTAssertEqual(
+            station.displayArtworkURL?.absoluteString,
+            "https://cdn.avalsys.com/apps-av/tune-av/station-artwork/radiobob/women-of-rock/generated-av-v1-1024.jpg"
+        )
+        XCTAssertFalse(station.displayArtworkUsesFaviconProxy)
+    }
+
     func testStationFallbackArtworkSelectionIsDeterministic() {
         let station = Station(
             id: "stable-station-id",
