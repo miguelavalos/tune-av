@@ -121,6 +121,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(description, L10n.string("audio.sleep.inMinutes", 5))
         XCTAssertFalse(didFire)
+        XCTAssertEqual(controller.remainingMinutes(), 5)
 
         controller.clearNoticeIfIdle(isIdle: false, setDescription: { description = $0 })
         XCTAssertEqual(description, L10n.string("audio.sleep.inMinutes", 5))

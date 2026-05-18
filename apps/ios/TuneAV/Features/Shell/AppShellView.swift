@@ -344,6 +344,7 @@ struct AppShellView: View {
                 isPlaying: audioPlayer.isPlaying,
                 isLoading: audioPlayer.isLoading,
                 activeSleepTimerMinutes: audioPlayer.activeSleepTimerMinutes,
+                activeSleepTimerRemainingMinutes: audioPlayer.activeSleepTimerRemainingMinutes,
                 canCyclePlaybackQueue: audioPlayer.canCyclePlaybackQueue,
                 playbackQueueSource: audioPlayer.playbackQueue.source,
                 playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
@@ -2095,27 +2096,36 @@ private struct AviExpandedFooterPlayerView: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "timer")
-                    .font(.system(size: 12, weight: .black))
-
-                Text(sleepTimerOptionTitle(for: audioPlayer.activeSleepTimerMinutes))
-                    .font(.system(size: 12, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-            .foregroundStyle(TuneAVTheme.textPrimary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-            .contentShape(Capsule())
+            sleepTimerMenuLabel(remainingMinutes: audioPlayer.activeSleepTimerRemainingMinutes)
         }
         .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
+        .accessibilityValue(sleepTimerOptionTitle(for: audioPlayer.activeSleepTimerMinutes))
         .accessibilityIdentifier("avi.footerPlayer.sleepTimer")
+    }
+
+    private func sleepTimerMenuLabel(remainingMinutes: Int?) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "timer")
+                .font(.system(size: 13, weight: .black))
+
+            if let remainingMinutes {
+                Text("\(remainingMinutes) min")
+                    .font(.system(size: 12, weight: .black))
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+        }
+        .foregroundStyle(TuneAVTheme.textPrimary)
+        .frame(width: 70, height: 34)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .contentShape(Capsule())
+        .transaction { transaction in
+            transaction.animation = nil
+        }
     }
 
     private var sleepTimerOptions: [Int?] {
@@ -2965,6 +2975,7 @@ private struct AviScreen: View {
     let isPlaying: Bool
     let isLoading: Bool
     let activeSleepTimerMinutes: Int?
+    let activeSleepTimerRemainingMinutes: Int?
     let canCyclePlaybackQueue: Bool
     let playbackQueueSource: AudioPlayerService.PlaybackQueue.Source
     let playbackQueueStations: [Station]
@@ -4928,27 +4939,36 @@ private struct AviScreen: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "timer")
-                    .font(.system(size: 12, weight: .black))
-
-                Text(sleepTimerOptionTitle(for: activeSleepTimerMinutes))
-                    .font(.system(size: 12, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-            .foregroundStyle(TuneAVTheme.textPrimary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-            .contentShape(Capsule())
+            sleepTimerMenuLabel(remainingMinutes: activeSleepTimerRemainingMinutes)
         }
         .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
+        .accessibilityValue(sleepTimerOptionTitle(for: activeSleepTimerMinutes))
         .accessibilityIdentifier("avi.controls.sleepTimer")
+    }
+
+    private func sleepTimerMenuLabel(remainingMinutes: Int?) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "timer")
+                .font(.system(size: 13, weight: .black))
+
+            if let remainingMinutes {
+                Text("\(remainingMinutes) min")
+                    .font(.system(size: 12, weight: .black))
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+        }
+        .foregroundStyle(TuneAVTheme.textPrimary)
+        .frame(width: 70, height: 34)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .contentShape(Capsule())
+        .transaction { transaction in
+            transaction.animation = nil
+        }
     }
 
     private var sleepTimerOptions: [Int?] {

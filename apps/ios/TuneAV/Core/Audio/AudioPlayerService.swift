@@ -28,6 +28,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     @Published private(set) var status: PlaybackStatus = .idle
     @Published private(set) var sleepTimerDescription: String?
     @Published private(set) var activeSleepTimerMinutes: Int?
+    @Published private(set) var activeSleepTimerRemainingMinutes: Int?
     @Published private(set) var autoSkipNotice: String?
     @Published private(set) var lastErrorMessage: String?
     @Published private(set) var consecutiveFailureCount = 0
@@ -83,6 +84,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var metadataDelegate: TuneAVStreamMetadataDelegate?
     private let sleepTimerController = TuneAVSleepTimerController()
     private var loadingTimeoutTask: Task<Void, Never>?
+    private var sleepTimerRemainingTask: Task<Void, Never>?
     private var autoSkipNoticeTask: Task<Void, Never>?
     private var nowPlayingPollingTask: Task<Void, Never>?
     private var artworkResolutionTask: Task<Void, Never>?
@@ -350,14 +352,21 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
     func setSleepTimer(minutes: Int?) {
         activeSleepTimerMinutes = minutes
+        sleepTimerRemainingTask?.cancel()
+        sleepTimerRemainingTask = nil
+        activeSleepTimerRemainingMinutes = minutes
         sleepTimerController.setTimer(
             minutes: minutes,
             setDescription: { [weak self] description in self?.setSleepTimerDescription(description) },
             onFire: { [weak self] in
                 self?.activeSleepTimerMinutes = nil
+                self?.activeSleepTimerRemainingMinutes = nil
+                self?.sleepTimerRemainingTask?.cancel()
+                self?.sleepTimerRemainingTask = nil
                 self?.stop()
             }
         )
+        startSleepTimerRemainingUpdatesIfNeeded()
     }
 
     func clearSleepTimerNotice() {
@@ -365,6 +374,33 @@ final class AudioPlayerService: NSObject, ObservableObject {
             isIdle: status == .idle,
             setDescription: { [weak self] description in self?.setSleepTimerDescription(description) }
         )
+    }
+
+    private func startSleepTimerRemainingUpdatesIfNeeded() {
+        guard activeSleepTimerMinutes != nil else {
+            activeSleepTimerRemainingMinutes = nil
+            return
+        }
+
+        updateSleepTimerRemainingMinutes()
+        sleepTimerRemainingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self?.updateSleepTimerRemainingMinutes()
+                }
+            }
+        }
+    }
+
+    private func updateSleepTimerRemainingMinutes() {
+        guard activeSleepTimerMinutes != nil else {
+            activeSleepTimerRemainingMinutes = nil
+            return
+        }
+
+        activeSleepTimerRemainingMinutes = sleepTimerController.remainingMinutes()
     }
 
     func showAutoSkipNotice(for station: Station) {

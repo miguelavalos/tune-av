@@ -27,6 +27,13 @@ final class TuneAVSleepTimerController {
         }
     }
 
+    func remainingMinutes(now: Date = Date()) -> Int? {
+        guard let endDate else { return nil }
+        let remainingSeconds = endDate.timeIntervalSince(now)
+        guard remainingSeconds > 0 else { return 0 }
+        return max(1, Int(ceil(remainingSeconds / 60)))
+    }
+
     func clearNoticeIfIdle(isIdle: Bool, setDescription: (String?) -> Void) {
         guard isIdle else { return }
         setDescription(nil)
