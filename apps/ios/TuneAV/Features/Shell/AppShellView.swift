@@ -780,21 +780,21 @@ struct AppShellView: View {
 
     private func restoreLastOpenedStationOnLaunch() {
         if let stationID = libraryStore.settings.lastOpenedStationID,
-           let presentationValue = libraryStore.settings.lastOpenedStationPresentation,
-           let presentation = LastOpenedStationPresentation(rawValue: presentationValue),
            let station = libraryStore.station(for: stationID) {
-            switch presentation {
-            case .detail:
-                showStationDetails(station, queueSource: .homeRecents, queue: [station])
-            case .player:
-                openNowPlayingFullPlayer(station)
-            }
+            selectStationForLaunchAndOpenPlayer(station)
             return
         }
 
         if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
-            openNowPlayingFullPlayer(lastStation)
+            selectStationForLaunchAndOpenPlayer(lastStation)
         }
+    }
+
+    private func selectStationForLaunchAndOpenPlayer(_ station: Station) {
+        let resolvedStation = enrichedStation(station)
+        let queue = AudioPlayerService.PlaybackQueue(source: .singleStation, stations: [resolvedStation])
+        audioPlayer.select(station: resolvedStation, queue: queue)
+        openNowPlayingFullPlayer(resolvedStation)
     }
 
     private func seedUITestDataIfNeeded() {

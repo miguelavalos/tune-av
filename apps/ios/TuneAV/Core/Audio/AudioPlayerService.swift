@@ -202,6 +202,30 @@ final class AudioPlayerService: NSObject, ObservableObject {
         updateNowPlayingInfo()
     }
 
+    func select(station: Station, queue: PlaybackQueue? = nil) {
+        if case .playing = status {
+            stop()
+        } else if case .loading = status {
+            stop()
+        }
+
+        if currentStation?.id != station.id {
+            setConsecutiveFailureCount(0)
+        }
+
+        setCurrentStation(station)
+        restoreCachedNowPlaying(for: station)
+        setPlaybackQueue(sanitizedPlaybackQueue(
+            queue ?? PlaybackQueue(source: .singleStation, stations: [station]),
+            currentStationID: station.id
+        ))
+        userRequestedPlayback = false
+        setStatus(.paused)
+        setLastErrorMessage(nil)
+        setAutoSkipNotice(nil)
+        updateNowPlayingInfo()
+    }
+
     func togglePlayback() {
         switch status {
         case .playing:
