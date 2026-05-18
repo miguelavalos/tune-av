@@ -1872,7 +1872,7 @@ struct NowPlayingView: View {
     }
 
     private var shouldShowStatusRow: Bool {
-        audioPlayer.sleepTimerDescription != nil || audioPlayer.autoSkipNotice != nil
+        audioPlayer.currentStation != nil || audioPlayer.sleepTimerDescription != nil || audioPlayer.autoSkipNotice != nil
     }
 
     private var playerAviEmotion: TuneAVAviEmotion {
