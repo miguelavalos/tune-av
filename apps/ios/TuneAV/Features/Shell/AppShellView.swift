@@ -787,17 +787,13 @@ struct AppShellView: View {
             case .detail:
                 showStationDetails(station, queueSource: .homeRecents, queue: [station])
             case .player:
-                if audioPlayer.currentStation?.id == station.id {
-                    openNowPlayingFullPlayer(station)
-                } else {
-                    showStationDetails(station, queueSource: .homeRecents, queue: [station])
-                }
+                openNowPlayingFullPlayer(station)
             }
             return
         }
 
         if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
-            showStationDetails(lastStation, queueSource: .homeRecents, queue: [lastStation])
+            openNowPlayingFullPlayer(lastStation)
         }
     }
 
@@ -6751,7 +6747,7 @@ private struct AviScreen: View {
         if isFocusedStationActive, currentTrackTitle != nil {
             return L10n.string("shell.avi.primary.reacting")
         }
-        return isFocusedStationActive ? L10n.string("shell.avi.primary.reading") : L10n.string("shell.avi.primary.reviewing")
+        return isFocusedStationActive ? L10n.string("shell.avi.primary.reading") : L10n.string("player.avi.detail.neutral")
     }
 
     private var primaryFocusedActionTitle: String {
