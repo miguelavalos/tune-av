@@ -642,6 +642,137 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testStationServiceDeduplicatesAVALSYSStationVariantsAndPrefersArtwork() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+
+            let body = #"""
+            {
+              "stations": [
+                {
+                  "id": "st-classic-plain",
+                  "name": "Classic Vinyl HD",
+                  "country": "United States",
+                  "countryCode": "US",
+                  "state": null,
+                  "language": "English",
+                  "languageCodes": ["en"],
+                  "tags": "classic,vinyl",
+                  "streamURL": "https://icecast.walmradio.com:8443/classic_alt",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": null,
+                  "votes": 1,
+                  "clickCount": 1,
+                  "clickTrend": 0,
+                  "isHLS": false,
+                  "hasExtendedInfo": true,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st-classic-plain",
+                  "category": "music",
+                  "visibility": "public",
+                  "qualityScore": 88,
+                  "enrichmentStatus": "localOnly",
+                  "artwork": { "status": "none", "url": null, "version": null },
+                  "editorial": null
+                },
+                {
+                  "id": "st-classic-artwork",
+                  "name": "Classic Vinyl HD",
+                  "country": "United States",
+                  "countryCode": "US",
+                  "state": null,
+                  "language": "English",
+                  "languageCodes": ["en"],
+                  "tags": "classic,vinyl",
+                  "streamURL": "https://icecast.walmradio.com:8443/classic",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "MP3",
+                  "homepageURL": null,
+                  "votes": 1,
+                  "clickCount": 1,
+                  "clickTrend": 0,
+                  "isHLS": false,
+                  "hasExtendedInfo": true,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st-classic-artwork",
+                  "category": "music",
+                  "visibility": "public",
+                  "qualityScore": 99,
+                  "enrichmentStatus": "enriched",
+                  "artwork": {
+                    "status": "generated",
+                    "url": "https://cdn.avalsys.com/apps-av/tune-av/station-artwork/radiobrowser/classic-vinyl-hd/2026-05-18-v1-classic-vinyl-hd.jpg",
+                    "version": "2026-05-18-v1-classic-vinyl-hd"
+                  },
+                  "editorial": null
+                },
+                {
+                  "id": "st-classic-opus",
+                  "name": "Classic Vinyl HD Opus",
+                  "country": "United States",
+                  "countryCode": "US",
+                  "state": null,
+                  "language": "English",
+                  "languageCodes": ["en"],
+                  "tags": "classic,vinyl,opus",
+                  "streamURL": "https://icecast.walmradio.com:8443/classic_opus",
+                  "faviconURL": null,
+                  "bitrate": 128,
+                  "codec": "OPUS",
+                  "homepageURL": null,
+                  "votes": 1,
+                  "clickCount": 1,
+                  "clickTrend": 0,
+                  "isHLS": false,
+                  "hasExtendedInfo": true,
+                  "hasSSLError": false,
+                  "lastCheckOKAt": null,
+                  "geoLatitude": null,
+                  "geoLongitude": null,
+                  "canonicalStationId": "st-classic-opus",
+                  "category": "music",
+                  "visibility": "public",
+                  "qualityScore": 92,
+                  "enrichmentStatus": "localOnly",
+                  "artwork": { "status": "none", "url": null, "version": null },
+                  "editorial": null
+                }
+              ],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-18T18:30:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            backendGate: makeBackendGate(),
+            responseCache: TuneAVStationResponseCache(maxAge: -1)
+        )
+
+        let stations = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "classic vin", limit: 12)
+        )
+
+        XCTAssertEqual(stations.map(\.id), ["st-classic-artwork"])
+        XCTAssertEqual(
+            stations.first?.displayArtworkURL?.absoluteString,
+            "https://cdn.avalsys.com/apps-av/tune-av/station-artwork/radiobrowser/classic-vinyl-hd/2026-05-18-v1-classic-vinyl-hd.jpg"
+        )
+    }
+
     func testStationServiceUsesPopularEndpointBeforeSearchFallback() async throws {
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.path, "/v1/tune/stations/popular")

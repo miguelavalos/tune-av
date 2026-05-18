@@ -171,7 +171,7 @@ struct TuneAVStationService {
         let cacheKey = "avalsys|\(url.absoluteString)"
         return try await responseCache.stations(for: cacheKey) {
             let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url, timeoutInterval: 4)
-            return applyExactTagFilterIfNeeded(response.resolvedStations, tag: filters.tag, limit: filters.limit)
+            return applyExactTagFilterIfNeeded(deduplicatedStations(response.resolvedStations), tag: filters.tag, limit: filters.limit)
         }
     }
 
@@ -198,7 +198,7 @@ struct TuneAVStationService {
         return try await responseCache.stations(for: cacheKey) {
             let stations = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
             let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
-            return applyExactTagFilterIfNeeded(resolvedStations, tag: filters.tag, limit: filters.limit)
+            return applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit)
         }
     }
 
@@ -229,6 +229,32 @@ struct TuneAVStationService {
 
         if !exactTagMatches.isEmpty {
             return Array(exactTagMatches.prefix(limit))
+        }
+
+        return resolvedStations
+    }
+
+    private func deduplicatedStations(_ stations: [Station]) -> [Station] {
+        var resolvedStations: [Station] = []
+        var indexesByKey: [String: Int] = [:]
+
+        for station in stations {
+            let keys = station.stationResultIdentityKeys
+            if let existingIndex = keys.compactMap({ indexesByKey[$0] }).min() {
+                if station.stationResultPreferenceRank > resolvedStations[existingIndex].stationResultPreferenceRank {
+                    resolvedStations[existingIndex] = station
+                    for key in keys {
+                        indexesByKey[key] = existingIndex
+                    }
+                }
+                continue
+            }
+
+            let nextIndex = resolvedStations.count
+            resolvedStations.append(station)
+            for key in keys {
+                indexesByKey[key] = nextIndex
+            }
         }
 
         return resolvedStations
@@ -577,6 +603,64 @@ private struct TuneAVStationDTO: Decodable {
 }
 
 private extension Station {
+    var stationResultIdentityKeys: [String] {
+        var keys: [String] = [id]
+
+        if let canonicalStationId {
+            keys.append(canonicalStationId)
+        }
+
+        if let streamKey = stationResultURLKey(streamURL) {
+            keys.append("stream:\(streamKey)")
+        }
+
+        if let homepageURL, let homepageKey = stationResultURLKey(homepageURL) {
+            keys.append("homepage:\(homepageKey)")
+        }
+
+        let nameKey = stationResultNameKey
+        if !nameKey.isEmpty {
+            keys.append("name:\(countryCode ?? ""):\(nameKey)")
+        }
+
+        return keys
+    }
+
+    var stationResultPreferenceRank: Int {
+        var rank = qualityScore ?? 0
+        if enrichmentStatus == "enriched" { rank += 60 }
+        else if enrichmentStatus != nil { rank += 10 }
+        if let artwork, artwork.status != "none" || artwork.url != nil { rank += 30 }
+        if editorial != nil { rank += 40 }
+        if canonicalStationId != nil { rank += 5 }
+        return rank
+    }
+
+    var stationResultNameKey: String {
+        let normalized = name
+            .lowercased()
+            .replacingOccurrences(of: #"\bon\s+[a-z0-9.-]+\.[a-z]{2,}\b"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"\b(?:hd|hq|opus|aac|mp3|stream|radio)\b"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return normalized
+    }
+
+    func stationResultURLKey(_ rawURL: String) -> String? {
+        guard
+            let url = URL(string: rawURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return nil
+        }
+
+        components.query = nil
+        components.fragment = nil
+        return components.url?.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    }
+
     func matchesTag(_ rawTag: String) -> Bool {
         let requestedTag = normalizedTagToken(rawTag)
         guard !requestedTag.isEmpty else { return false }

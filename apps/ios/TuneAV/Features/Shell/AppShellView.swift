@@ -1155,7 +1155,11 @@ struct AppShellView: View {
     }
 
     private func enrichedStation(_ station: Station) -> Station {
-        guard let cachedStation = enrichedStationsByID[station.id] else { return station }
+        let cachedStation = station.enrichmentLookupKeys
+            .compactMap { enrichedStationsByID[$0] }
+            .max { $0.enrichmentRank < $1.enrichmentRank }
+
+        guard let cachedStation else { return station }
         guard cachedStation.hasBackendEnrichment else { return station }
         guard !station.hasBackendEnrichment || cachedStation.enrichmentRank >= station.enrichmentRank else { return station }
         return cachedStation
@@ -1171,9 +1175,11 @@ struct AppShellView: View {
         var nextEnrichedStationsByID = enrichedStationsByID
 
         for station in stations where station.hasBackendEnrichment {
-            let current = nextEnrichedStationsByID[station.id]
-            guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
-            nextEnrichedStationsByID[station.id] = station
+            for key in station.enrichmentLookupKeys {
+                let current = nextEnrichedStationsByID[key]
+                guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
+                nextEnrichedStationsByID[key] = station
+            }
         }
         if nextEnrichedStationsByID != enrichedStationsByID {
             enrichedStationsByID = nextEnrichedStationsByID
@@ -1457,6 +1463,56 @@ struct AppShellView: View {
 }
 
 private extension Station {
+    var enrichmentLookupKeys: [String] {
+        var keys: [String] = []
+
+        appendEnrichmentIDKeys(id, to: &keys)
+        if let canonicalStationId {
+            appendEnrichmentIDKeys(canonicalStationId, to: &keys)
+        }
+
+        if let streamKey = normalizedEnrichmentURLKey(streamURL) {
+            keys.append("stream:\(streamKey)")
+        }
+
+        if let homepageURL, let homepageKey = normalizedEnrichmentURLKey(homepageURL) {
+            keys.append("homepage:\(homepageKey)")
+        }
+
+        return keys
+    }
+
+    private func appendEnrichmentIDKeys(_ rawID: String, to keys: inout [String]) {
+        let trimmedID = rawID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedID.isEmpty else { return }
+
+        keys.append("id:\(trimmedID)")
+
+        if trimmedID.hasPrefix("st_rb_") {
+            let radioBrowserID = String(trimmedID.dropFirst("st_rb_".count)).replacingOccurrences(of: "_", with: "-")
+            if radioBrowserID != trimmedID {
+                keys.append("id:\(radioBrowserID)")
+            }
+        } else if trimmedID.contains("-") {
+            keys.append("id:st_rb_\(trimmedID.replacingOccurrences(of: "-", with: "_"))")
+        }
+    }
+
+    private func normalizedEnrichmentURLKey(_ rawURL: String) -> String? {
+        guard
+            let url = URL(string: rawURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return nil
+        }
+
+        components.query = nil
+        components.fragment = nil
+        return components.url?.absoluteString
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            .lowercased()
+    }
+
     var hasBackendEnrichment: Bool {
         canonicalStationId != nil ||
             category != nil ||
