@@ -376,6 +376,63 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(station.editorial?.discoveryProfile?.notIdealFor, ["discovering songs", "continuous music"])
     }
 
+    @MainActor
+    func testAppDataUserSummaryRequestPreservesQueryItems() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+            XCTAssertEqual(request.url?.path, "/v1/tune/me/summary")
+            XCTAssertEqual(self.queryValue("limit", in: request.url), "12")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "x-appsav-app-id"), "tuneav")
+
+            let body = #"""
+            {
+              "generatedAt": "2026-05-18T10:00:00Z",
+              "period": "week",
+              "limit": 12,
+              "accessMode": "signedInPro",
+              "radio": {
+                "cards": {
+                  "saved": { "count": 1 },
+                  "recent": { "count": 2 },
+                  "topWeek": { "count": 3 },
+                  "tuned": { "count": 4 }
+                }
+              },
+              "music": {
+                "cards": {
+                  "songs": { "count": 5 },
+                  "artists": { "count": 6 },
+                  "radios": { "count": 7 },
+                  "history": { "count": 8 }
+                }
+              }
+            }
+            """#.data(using: .utf8)!
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, body)
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession()
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+
+        let summary = try await service.fetchUserSummary(limit: 12)
+
+        XCTAssertEqual(summary.limit, 12)
+        XCTAssertEqual(summary.radio.cards.saved.count, 1)
+        XCTAssertEqual(summary.music.cards.history.count, 8)
+    }
+
     func testStationServiceUsesAVALSYSResponse() async throws {
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.host, "api.test")

@@ -95,6 +95,10 @@ xcodebuild -project apps/ios/TuneAV.xcodeproj \
   build
 ```
 
+The destination above is an example. Use `xcodebuild -showdestinations` or
+Xcode's Devices window and replace the name/OS with an installed simulator when
+the local Xcode image set differs.
+
 Signed device installs should use:
 
 ```bash

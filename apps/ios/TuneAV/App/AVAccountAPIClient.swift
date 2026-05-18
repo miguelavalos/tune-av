@@ -28,21 +28,24 @@ enum AVAccountAPIClientError: LocalizedError {
 @MainActor
 final class AVAccountAPIClient {
     private let getToken: () async throws -> String?
+    private let baseURLProvider: () -> URL?
     private let urlSession: URLSession
     private let decoder: JSONDecoder
 
     init(
         getToken: @escaping () async throws -> String?,
+        baseURLProvider: @escaping () -> URL? = { AppConfig.avAccountAPIBaseURL },
         urlSession: URLSession = TuneAVURLSessions.account,
         decoder: JSONDecoder = JSONDecoder()
     ) {
         self.getToken = getToken
+        self.baseURLProvider = baseURLProvider
         self.urlSession = urlSession
         self.decoder = decoder
     }
 
     func isConfigured() -> Bool {
-        AppConfig.avAccountAPIBaseURL != nil
+        baseURLProvider() != nil
     }
 
     func fetchMeAccess() async throws -> MeAccessResponse {
@@ -85,12 +88,11 @@ final class AVAccountAPIClient {
             throw AVAccountAPIClientError.missingToken
         }
 
-        guard let baseURL = AppConfig.avAccountAPIBaseURL else {
+        guard let baseURL = baseURLProvider() else {
             throw AVAccountAPIClientError.missingBaseURL
         }
 
-        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let url = baseURL.appending(path: sanitizedPath)
+        let url = Self.url(baseURL: baseURL, path: path)
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -113,6 +115,19 @@ final class AVAccountAPIClient {
         }
 
         return data
+    }
+
+    private static func url(baseURL: URL, path: String) -> URL {
+        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let pathAndQuery = sanitizedPath.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let url = baseURL.appending(path: String(pathAndQuery.first ?? ""))
+        guard pathAndQuery.count == 2,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+
+        components.percentEncodedQuery = String(pathAndQuery[1])
+        return components.url ?? url
     }
 }
 
