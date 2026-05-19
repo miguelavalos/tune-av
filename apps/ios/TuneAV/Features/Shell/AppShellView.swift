@@ -4035,34 +4035,14 @@ struct AviScreen: View {
                 feedbackLabel: libraryStore.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
             )
             focusedMusicAviServices(for: .track(discovery))
-            focusedTrackArticle(discovery)
+            AviFocusedTrackArticle(
+                artistName: discovery.artistDisplayText,
+                stationName: discovery.stationName,
+                lastSeenLabel: discovery.playedAt.formatted(date: .abbreviated, time: .shortened),
+                feedbackLabel: libraryStore.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
+            )
             trackStationsBlock(discovery)
         }
-    }
-
-    private func focusedTrackArticle(_ discovery: DiscoveredTrack) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(L10n.string("shell.stationInfo.title"))
-                .font(.system(size: 17, weight: .black))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                AviSignalInfoLine(title: L10n.string("shell.avi.music.artist.label"), value: discovery.artistDisplayText)
-                AviSignalInfoLine(title: L10n.string("shell.avi.music.station"), value: discovery.stationName)
-                AviSignalInfoLine(title: L10n.string("shell.avi.music.lastSeen"), value: discovery.playedAt.formatted(date: .abbreviated, time: .shortened))
-                AviSignalInfoLine(
-                    title: L10n.string("shell.avi.music.feedback"),
-                    value: libraryStore.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
-                )
-                AviSignalInfoLine(
-                    title: L10n.string("shell.stationInfo.summary"),
-                    value: L10n.string("shell.avi.music.track.future")
-                )
-            }
-        }
-        .padding(16)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
     }
 
     private func focusedTrackSummaryCard(_ discovery: DiscoveredTrack) -> some View {
@@ -4112,15 +4092,19 @@ struct AviScreen: View {
         let savedSongs = discoveries.filter(\.isMarkedInteresting)
         let stationCount = artistStationSummaries(for: summary).count
 
-        return VStack(alignment: .leading, spacing: 12) {
+        return AviFocusedArtistArticle {
             focusedArtistSummaryCard(summary, discoveries: discoveries)
+        } stats: {
             AviFocusedArtistStats(
                 savedSongsCount: savedSongs.count,
                 stationCount: stationCount,
                 latestSeenLabel: latestDiscovery(for: summary)?.playedAt.formatted(date: .numeric, time: .omitted) ?? L10n.string("shell.avi.music.feedback.empty")
             )
+        } services: {
             focusedMusicAviServices(for: .artist(summary))
+        } savedSongs: {
             artistSavedSongsBlock(summary, savedSongs: savedSongs)
+        } stations: {
             artistStationsBlock(summary)
         }
     }
@@ -8281,6 +8265,53 @@ private struct AviFocusedArtistStats: View {
                 value: latestSeenLabel,
                 systemImage: "clock.fill"
             )
+        }
+    }
+}
+
+private struct AviFocusedTrackArticle: View {
+    let artistName: String
+    let stationName: String
+    let lastSeenLabel: String
+    let feedbackLabel: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(L10n.string("shell.stationInfo.title"))
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+
+            VStack(alignment: .leading, spacing: 10) {
+                AviSignalInfoLine(title: L10n.string("shell.avi.music.artist.label"), value: artistName)
+                AviSignalInfoLine(title: L10n.string("shell.avi.music.station"), value: stationName)
+                AviSignalInfoLine(title: L10n.string("shell.avi.music.lastSeen"), value: lastSeenLabel)
+                AviSignalInfoLine(title: L10n.string("shell.avi.music.feedback"), value: feedbackLabel)
+                AviSignalInfoLine(
+                    title: L10n.string("shell.stationInfo.summary"),
+                    value: L10n.string("shell.avi.music.track.future")
+                )
+            }
+        }
+        .padding(16)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
+    }
+}
+
+private struct AviFocusedArtistArticle<SummaryCard: View, Stats: View, Services: View, SavedSongs: View, Stations: View>: View {
+    @ViewBuilder let summaryCard: () -> SummaryCard
+    @ViewBuilder let stats: () -> Stats
+    @ViewBuilder let services: () -> Services
+    @ViewBuilder let savedSongs: () -> SavedSongs
+    @ViewBuilder let stations: () -> Stations
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            summaryCard()
+            stats()
+            services()
+            savedSongs()
+            stations()
         }
     }
 }
