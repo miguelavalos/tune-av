@@ -1092,9 +1092,7 @@ struct AppShellView: View {
             selectedStationDetail = aviStationDetail(
                 station: resolvedStation,
                 queueSource: audioPlayer.playbackQueue.source,
-                queue: audioPlayer.playbackQueue.stations.isEmpty
-                    ? [resolvedStation]
-                    : audioPlayer.playbackQueue.stations
+                queue: currentPlaybackQueue(fallbackStation: resolvedStation)
             )
             libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
             refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
@@ -1186,6 +1184,12 @@ struct AppShellView: View {
         )
     }
 
+    private func currentPlaybackQueue(fallbackStation: Station) -> [Station] {
+        audioPlayer.playbackQueue.stations.isEmpty
+            ? [fallbackStation]
+            : audioPlayer.playbackQueue.stations
+    }
+
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
         guard selectedTab == .avi else { return }
         if isAviNowPlayingFullPlayer {
@@ -1193,9 +1197,7 @@ struct AppShellView: View {
             selectedStationDetail = aviStationDetail(
                 station: resolvedStation,
                 queueSource: audioPlayer.playbackQueue.source,
-                queue: audioPlayer.playbackQueue.stations.isEmpty
-                    ? [resolvedStation]
-                    : audioPlayer.playbackQueue.stations
+                queue: currentPlaybackQueue(fallbackStation: resolvedStation)
             )
             refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
             return
@@ -1204,13 +1206,10 @@ struct AppShellView: View {
         guard let previousStationID else { return }
         guard selectedStationDetail?.station.id == previousStationID else { return }
 
-        let queue = audioPlayer.playbackQueue.stations.isEmpty
-            ? [currentStation]
-            : audioPlayer.playbackQueue.stations
         selectedStationDetail = aviStationDetail(
             station: currentStation,
             queueSource: audioPlayer.playbackQueue.source,
-            queue: queue
+            queue: currentPlaybackQueue(fallbackStation: currentStation)
         )
         refreshSelectedStationEnrichmentIfNeeded(currentStation)
     }
