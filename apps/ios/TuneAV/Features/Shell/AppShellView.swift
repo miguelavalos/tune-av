@@ -82,6 +82,13 @@ struct AppShellView: View {
         )
     }
 
+    private var aviStationDetailBuilder: AviStationDetailBuilder {
+        AviStationDetailBuilder(
+            enrichStation: enrichedStation,
+            enrichStations: enrichedStations
+        )
+    }
+
     init(
         launchContext: LaunchContext = .current,
         startSignInFlow: @escaping (Bool) -> Void = { _ in }
@@ -1164,17 +1171,18 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source,
         queue: [Station]
     ) -> SelectedStationDetail {
-        SelectedStationDetail(
-            station: enrichedStation(station),
+        aviStationDetailBuilder.detail(
+            station: station,
             queueSource: queueSource,
-            queueStations: enrichedStations(queue)
+            queue: queue
         )
     }
 
     private func currentPlaybackQueue(fallbackStation: Station) -> [Station] {
-        audioPlayer.playbackQueue.stations.isEmpty
-            ? [fallbackStation]
-            : audioPlayer.playbackQueue.stations
+        aviStationDetailBuilder.playbackQueue(
+            stations: audioPlayer.playbackQueue.stations,
+            fallbackStation: fallbackStation
+        )
     }
 
     @discardableResult
@@ -1655,16 +1663,6 @@ private struct CachedStationNowPlaying {
 
     var isFresh: Bool {
         Date().timeIntervalSince(fetchedAt) < 300
-    }
-}
-
-private struct SelectedStationDetail: Identifiable {
-    let station: Station
-    let queueSource: AudioPlayerService.PlaybackQueue.Source
-    let queueStations: [Station]
-
-    var id: String {
-        station.id
     }
 }
 
