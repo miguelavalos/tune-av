@@ -269,45 +269,7 @@ struct AppShellView: View {
     private var currentScreen: some View {
         switch selectedTab {
         case .home:
-            let stations = enrichedStations(homeSnapshot.stations)
-            let recentStations = enrichedStations(homeSnapshot.recentStations)
-            let favoriteStations = enrichedStations(homeSnapshot.favoriteStations)
-
-            HomeScreen(
-                stations: stations,
-                isLoading: homeIsLoading,
-                errorMessage: homeErrorMessage,
-                recentStations: recentStations,
-                favoriteStations: favoriteStations,
-                lastPlayedStation: lastPlayedStation.map(enrichedStation),
-                discoveries: libraryStore.discoveries,
-                stationFeedback: libraryStore.stationFeedback,
-                feedContext: homeSnapshot.feedContext,
-                preferredTag: libraryStore.settings.preferredTag,
-                preferredCountryCode: libraryStore.settings.preferredCountry,
-                bottomContentPadding: shellScrollBottomPadding,
-                favoriteStationIDs: favoriteStationIDs,
-                nowPlayingTracks: stationNowPlayingTracks,
-                openAvi: {
-                    openContextualAvi()
-                },
-                openSearchTag: { tag in
-                    searchQuery = ""
-                    searchCountryCode = nil
-                    searchTag = tag
-                    searchDiscoveryMode = .music
-                    selectedTab = .search
-                },
-                refreshHome: refreshHomePresentationAndFeed,
-                playStation: playStation,
-                toggleFavorite: toggleFavorite(_:),
-                setStationFeedback: { station, feedback in
-                    libraryStore.setFeedback(feedback, for: station)
-                },
-                showStationDetails: { station, queueSource, queue in
-                    showStationDetails(station, queueSource: queueSource, queue: queue)
-                }
-            )
+            homeScreen
         case .search:
             let visibleSearchResults = searchResults.isEmpty
                 ? searchFallbackStations(for: searchRequest)
@@ -503,6 +465,48 @@ struct AppShellView: View {
                 bottomContentPadding: shellScrollBottomPadding
             )
         }
+    }
+
+    private var homeScreen: some View {
+        let stations = enrichedStations(homeSnapshot.stations)
+        let recentStations = enrichedStations(homeSnapshot.recentStations)
+        let favoriteStations = enrichedStations(homeSnapshot.favoriteStations)
+
+        return HomeScreen(
+            stations: stations,
+            isLoading: homeIsLoading,
+            errorMessage: homeErrorMessage,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            lastPlayedStation: lastPlayedStation.map(enrichedStation),
+            discoveries: libraryStore.discoveries,
+            stationFeedback: libraryStore.stationFeedback,
+            feedContext: homeSnapshot.feedContext,
+            preferredTag: libraryStore.settings.preferredTag,
+            preferredCountryCode: libraryStore.settings.preferredCountry,
+            bottomContentPadding: shellScrollBottomPadding,
+            favoriteStationIDs: favoriteStationIDs,
+            nowPlayingTracks: stationNowPlayingTracks,
+            openAvi: openContextualAvi,
+            openSearchTag: openHomeSearchTag(_:),
+            refreshHome: refreshHomePresentationAndFeed,
+            playStation: playStation,
+            toggleFavorite: toggleFavorite(_:),
+            setStationFeedback: { station, feedback in
+                libraryStore.setFeedback(feedback, for: station)
+            },
+            showStationDetails: { station, queueSource, queue in
+                showStationDetails(station, queueSource: queueSource, queue: queue)
+            }
+        )
+    }
+
+    private func openHomeSearchTag(_ tag: String) {
+        searchQuery = ""
+        searchCountryCode = nil
+        searchTag = tag
+        searchDiscoveryMode = .music
+        selectedTab = .search
     }
 
 
