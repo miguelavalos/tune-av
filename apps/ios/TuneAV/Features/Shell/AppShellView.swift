@@ -8217,7 +8217,10 @@ private struct HomeScreen: View {
     var body: some View {
         let derivedState = homeDerivedState
         let featuredState = homeFeaturedState
-        let heroStation = featuredState.station
+        let heroContentState = homeHeroContentState(
+            derivedState: derivedState,
+            featuredState: featuredState
+        )
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -8231,16 +8234,7 @@ private struct HomeScreen: View {
                     openAvi: openAvi
                 )
                 HomeHeroContent(
-                    isLoading: isLoading,
-                    hasPopularStations: !derivedState.displayedPopularStations.isEmpty,
-                    errorMessage: errorMessage,
-                    station: heroStation,
-                    presentation: heroStation.map { homePresentation(for: $0, source: featuredState.source) },
-                    isFavorite: heroStation.map { favoriteStationIDs.contains($0.id) } ?? false,
-                    isCurrentStation: heroStation.map(audioPlayer.isCurrent) ?? false,
-                    isPlaying: heroStation.map { audioPlayer.isCurrent($0) && audioPlayer.isPlaying } ?? false,
-                    isStationLoading: heroStation.map { audioPlayer.isCurrent($0) && audioPlayer.isLoading } ?? false,
-                    stationFeedback: heroStation.flatMap { stationFeedback[$0.id] },
+                    state: heroContentState,
                     playAction: playHeroStation,
                     favoriteAction: toggleFavorite,
                     feedbackAction: setHeroFeedback,
@@ -8264,6 +8258,27 @@ private struct HomeScreen: View {
         .refreshable {
             await refreshHome()
         }
+    }
+
+    private func homeHeroContentState(
+        derivedState: HomeDerivedState,
+        featuredState: HomeFeaturedStationState
+    ) -> HomeHeroContentState {
+        let station = featuredState.station
+        let isCurrentStation = station.map(audioPlayer.isCurrent) ?? false
+
+        return HomeHeroContentState(
+            isLoading: isLoading,
+            hasPopularStations: !derivedState.displayedPopularStations.isEmpty,
+            errorMessage: errorMessage,
+            station: station,
+            presentation: station.map { homePresentation(for: $0, source: featuredState.source) },
+            isFavorite: station.map { favoriteStationIDs.contains($0.id) } ?? false,
+            isCurrentStation: isCurrentStation,
+            isPlaying: isCurrentStation && audioPlayer.isPlaying,
+            isStationLoading: isCurrentStation && audioPlayer.isLoading,
+            stationFeedback: station.flatMap { stationFeedback[$0.id] }
+        )
     }
 
     private func homePresentation(for station: Station, source: HomeFeaturedStationSource?) -> HomeStationPresentation {
@@ -8380,7 +8395,7 @@ private struct HomeHeaderContent: View {
     }
 }
 
-private struct HomeHeroContent: View {
+private struct HomeHeroContentState {
     let isLoading: Bool
     let hasPopularStations: Bool
     let errorMessage: String?
@@ -8391,6 +8406,10 @@ private struct HomeHeroContent: View {
     let isPlaying: Bool
     let isStationLoading: Bool
     let stationFeedback: TuneAVStationFeedback?
+}
+
+private struct HomeHeroContent: View {
+    let state: HomeHeroContentState
     let playAction: (Station) -> Void
     let favoriteAction: (Station) -> Void
     let feedbackAction: (TuneAVStationFeedback, Station) -> Void
@@ -8398,22 +8417,22 @@ private struct HomeHeroContent: View {
 
     @ViewBuilder
     var body: some View {
-        if isLoading && station == nil && !hasPopularStations {
+        if state.isLoading && state.station == nil && !state.hasPopularStations {
             StationCardSkeletonGroup()
-        } else if let errorMessage {
+        } else if let errorMessage = state.errorMessage {
             EmptyLibraryState(
                 title: L10n.string("shell.home.error.title"),
                 detail: errorMessage
             )
-        } else if let station, let presentation {
+        } else if let station = state.station, let presentation = state.presentation {
             HomeTuningDeskHero(
                 station: station,
                 presentation: presentation,
-                isFavorite: isFavorite,
-                isCurrentStation: isCurrentStation,
-                isPlaying: isPlaying,
-                isLoading: isStationLoading,
-                stationFeedback: stationFeedback,
+                isFavorite: state.isFavorite,
+                isCurrentStation: state.isCurrentStation,
+                isPlaying: state.isPlaying,
+                isLoading: state.isStationLoading,
+                stationFeedback: state.stationFeedback,
                 playAction: { playAction(station) },
                 favoriteAction: { favoriteAction(station) },
                 feedbackAction: { feedbackAction($0, station) },
