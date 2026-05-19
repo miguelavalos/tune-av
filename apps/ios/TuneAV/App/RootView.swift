@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import OSLog
 
 struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -14,6 +15,7 @@ struct RootView: View {
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
 
+    private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
     private let launchContext = LaunchContext.current
     private let initialHomeFeed = AppShellHomeFeed(
         stationService: StationService(),
@@ -65,7 +67,9 @@ struct RootView: View {
                 cancelScheduledLibrarySync()
                 return
             }
-            await accessController.syncFromAccountProvider()
+            await measureStartupOperation("access_sync") {
+                await accessController.syncFromAccountProvider()
+            }
             scheduleLibrarySync(after: .milliseconds(350))
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
@@ -158,7 +162,9 @@ struct RootView: View {
             }
 
             guard !Task.isCancelled else { return }
-            await refreshLibrarySync()
+            await measureStartupOperation("library_sync") {
+                await refreshLibrarySync()
+            }
             guard !Task.isCancelled else { return }
             librarySyncTask = nil
         }
@@ -228,6 +234,7 @@ struct RootView: View {
         }
 
         hasShownSplashThisLaunch = true
+        let startedAt = Date()
         isShowingSplash = true
         try? await Task.sleep(for: .milliseconds(1650))
 
@@ -236,11 +243,25 @@ struct RootView: View {
                 isShowingSplash = false
             }
         }
+        logStartupOperation("splash", startedAt: startedAt)
     }
 
     private func prefetchInitialHomeFeedIfNeeded() async {
         guard !launchContext.isUITesting else { return }
-        await initialHomeFeed.prefetchInitialFeed()
+        await measureStartupOperation("home_prefetch") {
+            await initialHomeFeed.prefetchInitialFeed()
+        }
+    }
+
+    private func measureStartupOperation(_ name: String, operation: () async -> Void) async {
+        let startedAt = Date()
+        await operation()
+        logStartupOperation(name, startedAt: startedAt)
+    }
+
+    private func logStartupOperation(_ name: String, startedAt: Date) {
+        let durationMilliseconds = Int(Date().timeIntervalSince(startedAt) * 1_000)
+        startupLogger.info("Startup operation completed name=\(name, privacy: .public) duration_ms=\(durationMilliseconds, privacy: .public)")
     }
 }
 
