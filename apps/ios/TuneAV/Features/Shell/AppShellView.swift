@@ -1543,7 +1543,7 @@ struct AppShellView: View {
     }
 }
 
-private struct AviReturnContext {
+struct AviReturnContext {
     let tab: AppShellTab
     let radioMode: RadioLibraryMode?
     let radioOverview: Bool?
@@ -9267,7 +9267,7 @@ private struct LibraryScreen: View {
     }
 }
 
-private enum RadioLibraryMode: String, CaseIterable, Identifiable {
+enum RadioLibraryMode: String, CaseIterable, Identifiable {
     case saved
     case recent
     case tuned
@@ -9749,7 +9749,7 @@ private extension View {
     }
 }
 
-private enum MusicContentMode: String, CaseIterable, Identifiable {
+enum MusicContentMode: String, CaseIterable, Identifiable {
     case songs
     case artists
     case top

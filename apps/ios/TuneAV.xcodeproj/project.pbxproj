@@ -71,6 +71,7 @@
 		8F263B120926F737D7EDD17F /* TuneAVTrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0417E3D522BA4E2564ADF9 /* TuneAVTrackArtworkService.swift */; };
 		9155A0A9591DFD0CDAC69A51 /* StationSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3353F73F03318E692C99BA07 /* StationSection.swift */; };
 		945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E6B173571331D31167D9AC /* InAppBrowserView.swift */; };
+		A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */; };
 		A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */; };
 		A4196DEA7C036793524034C2 /* SubscriptionPurchasingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AC473434C326DBD6A3A0C8 /* SubscriptionPurchasingService.swift */; };
 		A4A3A42AE74C29105A13D4D0 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBFD2CD6810AE58E6B99DE14 /* AudioPlayerService.swift */; };
@@ -256,6 +257,7 @@
 		E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviPickStationSelector.swift; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
 		E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDiscoveryTagBuilder.swift; sourceTree = "<group>"; };
+		EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReturnContextTests.swift; sourceTree = "<group>"; };
 		EBFD2CD6810AE58E6B99DE14 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppTheme.swift; sourceTree = "<group>"; };
 		EDD2AD3365E308FA6A45AE9C /* AccountDeletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionViewModel.swift; sourceTree = "<group>"; };
@@ -301,6 +303,7 @@
 			children = (
 				9123677EFD411D6E6506AB24 /* AccessLimitsTests.swift */,
 				AC56032BF991BF606EDC6911 /* AccountDeletionViewModelTests.swift */,
+				EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */,
 				09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */,
 				B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */,
 			);
@@ -686,6 +689,7 @@
 			files = (
 				3999ACCE46F815BC19A27F16 /* AccessLimitsTests.swift in Sources */,
 				C01D6D0D97D384604F8D7651 /* AccountDeletionViewModelTests.swift in Sources */,
+				A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */,
 				570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */,
 				E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */,
 			);
