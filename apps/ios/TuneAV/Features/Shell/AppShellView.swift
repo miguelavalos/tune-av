@@ -8588,12 +8588,12 @@ private struct HomeScreen: View {
     }
 
     private func displayedPopularStations(displayedRecentStations: [Station], displayedFavoriteStations: [Station]) -> [Station] {
-        let excludedIDs = Set(displayedRecentStations.map(\.id) + displayedFavoriteStations.map(\.id))
-
-        let candidates = filteredStationsExcludingFeatured(from: stations)
-            .filter { !excludedIDs.contains($0.id) }
-
-        return recommendationScorer.rankedStations(candidates).map(\.station)
+        HomePopularStationSelector.select(
+            from: filteredStationsExcludingFeatured(from: stations),
+            excludingRecentStations: displayedRecentStations,
+            favoriteStations: displayedFavoriteStations,
+            scorer: recommendationScorer
+        )
     }
 
     private func displayedAroundYouStations(displayedPopularStations: [Station], displayedAviPickStations: [Station]) -> [Station] {
