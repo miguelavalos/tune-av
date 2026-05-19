@@ -10,10 +10,9 @@ final class HomeUITests: TuneAVUITestCase {
         let stationRow = recentsFavoritesSection.descendants(matching: .other)["stationRow.bbc-radio-1"].firstMatch
 
         XCTAssertTrue(recentsFavoritesSection.waitForExistence(timeout: 5))
-        XCTAssertTrue(favoriteButton.exists)
         XCTAssertTrue(stationRow.exists)
 
-        favoriteButton.tap()
+        tapWhenHittable(of: favoriteButton, scrollView: app.scrollViews.firstMatch)
 
         XCTAssertTrue(app.buttons["tab.search"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab.music"].exists)

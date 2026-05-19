@@ -29,4 +29,26 @@ class TuneAVUITestCase: XCTestCase {
         }
         return app
     }
+
+    func tapWhenHittable(
+        of element: XCUIElement,
+        scrollView: XCUIElement? = nil,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), file: file, line: line)
+
+        if !element.isHittable {
+            scrollView?.swipeUp()
+        }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while !element.isHittable, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+
+        XCTAssertTrue(element.isHittable, file: file, line: line)
+        element.tap()
+    }
 }
