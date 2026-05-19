@@ -14,6 +14,14 @@ struct AppShellView: View {
         case player
     }
 
+    private struct AviReturnContext {
+        let tab: AppShellTab
+        let radioMode: RadioLibraryMode?
+        let radioOverview: Bool?
+        let musicMode: MusicContentMode?
+        let musicOverview: Bool?
+    }
+
     let launchContext: LaunchContext
     let startSignInFlow: (Bool) -> Void
 
@@ -40,11 +48,7 @@ struct AppShellView: View {
     @State private var selectedMusicAviDetail: SelectedMusicAviDetail?
     @State private var isAviNowPlayingFullPlayer = false
     @State private var isAviActionPanelOpen = false
-    @State private var aviReturnTab: AppShellTab?
-    @State private var aviReturnRadioMode: RadioLibraryMode?
-    @State private var aviReturnShowsRadioOverview: Bool?
-    @State private var aviReturnMusicMode: MusicContentMode?
-    @State private var aviReturnShowsMusicOverview: Bool?
+    @State private var aviReturnContext: AviReturnContext?
     @State private var requestedRadioMode: RadioLibraryMode?
     @State private var requestedRadioOverview: Bool?
     @State private var requestedMusicMode: MusicContentMode?
@@ -1130,9 +1134,9 @@ struct AppShellView: View {
         isAviNowPlayingFullPlayer = false
         libraryStore.clearOpenedStationPresentation()
 
-        if let aviReturnTab {
-            restoreAviReturnContext(for: aviReturnTab)
-            selectedTab = aviReturnTab
+        if let aviReturnContext {
+            restoreAviReturnContext(aviReturnContext)
+            selectedTab = aviReturnContext.tab
             clearAviReturnContext()
         } else if let fallbackTab {
             selectedTab = fallbackTab
@@ -1145,29 +1149,33 @@ struct AppShellView: View {
         musicMode: MusicContentMode? = nil,
         musicOverview: Bool? = nil
     ) {
-        aviReturnTab = selectedTab == .avi ? aviReturnTab : selectedTab
-        aviReturnRadioMode = selectedTab == .library ? radioMode : nil
-        aviReturnShowsRadioOverview = selectedTab == .library ? radioOverview : nil
-        aviReturnMusicMode = selectedTab == .music ? musicMode : nil
-        aviReturnShowsMusicOverview = selectedTab == .music ? musicOverview : nil
+        let returnTab = selectedTab == .avi ? aviReturnContext?.tab : selectedTab
+        guard let returnTab else {
+            aviReturnContext = nil
+            return
+        }
+
+        aviReturnContext = AviReturnContext(
+            tab: returnTab,
+            radioMode: selectedTab == .library ? radioMode : nil,
+            radioOverview: selectedTab == .library ? radioOverview : nil,
+            musicMode: selectedTab == .music ? musicMode : nil,
+            musicOverview: selectedTab == .music ? musicOverview : nil
+        )
     }
 
-    private func restoreAviReturnContext(for tab: AppShellTab) {
-        if tab == .library {
-            requestedRadioMode = aviReturnRadioMode
-            requestedRadioOverview = aviReturnShowsRadioOverview
-        } else if tab == .music {
-            requestedMusicMode = aviReturnMusicMode
-            requestedMusicOverview = aviReturnShowsMusicOverview
+    private func restoreAviReturnContext(_ context: AviReturnContext) {
+        if context.tab == .library {
+            requestedRadioMode = context.radioMode
+            requestedRadioOverview = context.radioOverview
+        } else if context.tab == .music {
+            requestedMusicMode = context.musicMode
+            requestedMusicOverview = context.musicOverview
         }
     }
 
     private func clearAviReturnContext() {
-        aviReturnTab = nil
-        aviReturnRadioMode = nil
-        aviReturnShowsRadioOverview = nil
-        aviReturnMusicMode = nil
-        aviReturnShowsMusicOverview = nil
+        aviReturnContext = nil
     }
 
     private func aviStationDetail(
