@@ -118,6 +118,7 @@
 		E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */; };
 		EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
+		EE2125B595BCC833804CA2AB /* AppShellView+Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */; };
 		F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
@@ -213,6 +214,7 @@
 		7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMusicLibraryLogic.swift; sourceTree = "<group>"; };
 		750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRefreshUITests.swift; sourceTree = "<group>"; };
 		78E26A38B7BC6D3D3963CC70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Screens.swift"; sourceTree = "<group>"; };
 		7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		7B2B3D1DEB4D5796B1320027 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationArtworkView.swift; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 				FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */,
 				458EF57C362E247FF5234C69 /* AppShellTab.swift */,
 				008936263180E93620BF3D42 /* AppShellView.swift */,
+				799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
 				B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */,
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
@@ -733,6 +736,7 @@
 				D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */,
 				F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */,
 				3F9A20636CE17A83BFE8E8C4 /* AppShellTab.swift in Sources */,
+				EE2125B595BCC833804CA2AB /* AppShellView+Screens.swift in Sources */,
 				84FB8B926DB0F482FDB09F9D /* AppShellView.swift in Sources */,
 				A4A3A42AE74C29105A13D4D0 /* AudioPlayerService.swift in Sources */,
 				A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */,

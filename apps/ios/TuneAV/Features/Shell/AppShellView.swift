@@ -288,7 +288,7 @@ struct AppShellView: View {
         let recentStations = enrichedStations(homeSnapshot.recentStations)
         let favoriteStations = enrichedStations(homeSnapshot.favoriteStations)
 
-        return HomeScreen(
+        return makeHomeScreen(
             stations: stations,
             isLoading: homeIsLoading,
             errorMessage: homeErrorMessage,
@@ -326,7 +326,7 @@ struct AppShellView: View {
     }
 
     private var searchScreen: some View {
-        SearchScreen(
+        makeSearchScreen(
             query: $searchQuery,
             activeTag: $searchTag,
             selectedCountryCode: $searchCountryCode,
@@ -360,7 +360,7 @@ struct AppShellView: View {
     }
 
     private var libraryScreen: some View {
-        LibraryScreen(
+        makeLibraryScreen(
             favorites: enrichedFavoriteStations,
             recents: enrichedRecentStations,
             discoveries: libraryStore.discoveries,
@@ -397,7 +397,7 @@ struct AppShellView: View {
     }
 
     private var musicScreen: some View {
-        MusicScreen(
+        makeMusicScreen(
             discoveries: libraryStore.discoveries,
             summary: libraryStore.userSummary,
             historyStationFilter: $musicHistoryStationFilter,
@@ -444,7 +444,7 @@ struct AppShellView: View {
     }
 
     private var profileScreen: some View {
-        ProfileScreen(
+        makeProfileScreen(
             mode: profileMode,
             startSignInFlow: startSignInFlow,
             bottomContentPadding: shellScrollBottomPadding
@@ -8253,7 +8253,7 @@ private struct ArtistStatPill: View {
     }
 }
 
-private struct HomeScreen: View {
+struct HomeScreen: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
 
     let stations: [Station]
@@ -8507,7 +8507,7 @@ private struct HomeRecommendationSections: View {
     }
 }
 
-private struct SearchScreen: View {
+struct SearchScreen: View {
     @Binding var query: String
     @Binding var activeTag: String?
     @Binding var selectedCountryCode: String?
@@ -8695,7 +8695,7 @@ private struct SearchScreen: View {
     }
 }
 
-private struct LibraryScreen: View {
+struct LibraryScreen: View {
     private static let pageSize = 40
     private static let overviewLimit = 12
 
@@ -9932,7 +9932,7 @@ private struct MusicDetailHeader: View {
     }
 }
 
-private struct MusicScreen: View {
+struct MusicScreen: View {
     private static let pageSize = 40
     private static let overviewLimit = 12
 
