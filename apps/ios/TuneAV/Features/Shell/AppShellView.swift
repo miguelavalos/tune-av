@@ -1419,8 +1419,11 @@ struct AppShellView: View {
 
     private func refreshHomePresentationAndFeed() async {
         refreshHomePresentation()
+        let hadCachedFeed = homeFeed.cachedResult(preferredTag: libraryStore.settings.preferredTag) != nil
         await refreshHomeFeed()
-        await refreshHomeFeed(forceRemote: true)
+        if hadCachedFeed {
+            await refreshHomeFeed(forceRemote: true)
+        }
     }
 
     private func loadSearchResults() async {

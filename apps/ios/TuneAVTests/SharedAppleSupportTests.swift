@@ -1657,6 +1657,38 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertNil(cache.load(for: key, now: Date(timeIntervalSince1970: 1_061)))
     }
 
+    @MainActor
+    func testHomeFeedPrefetchWarmsCacheWithoutImmediateRefresh() async {
+        let suiteName = "tuneav.homeFeedPrefetch.tests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+            TuneAVTestURLProtocol.requestHandler = nil
+        }
+
+        var requestCount = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestCount += 1
+
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                self.radioBrowserFallbackBody(id: "prefetch-ser")
+            )
+        }
+
+        let feed = AppShellHomeFeed(
+            stationService: StationService(session: testURLSession()),
+            localizedCountryName: { $0 },
+            resolvedDeviceCountryCode: { "ES" },
+            cache: HomeFeedCache(userDefaults: userDefaults, maxAge: 60)
+        )
+
+        await feed.prefetchInitialFeed(limit: 12)
+
+        XCTAssertEqual(requestCount, 1)
+        XCTAssertEqual(feed.cachedResult(limit: 12)?.stations.map(\.id), ["prefetch-ser"])
+    }
+
     func testSearchRequestNormalizesKeyAndMode() {
         let direct = AppShellSearchRequest(query: "  nova  ", tag: " jazz ", countryCode: " es ")
         let worldwide = AppShellSearchRequest(query: "   ", tag: nil, countryCode: nil)

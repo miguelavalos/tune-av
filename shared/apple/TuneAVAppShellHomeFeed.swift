@@ -44,7 +44,6 @@ struct AppShellHomeFeed {
     @MainActor
     func prefetchInitialFeed(preferredTag: String = "", limit: Int = Self.defaultFeedLimit) async {
         _ = try? await load(preferredTag: preferredTag, limit: limit)
-        _ = try? await refresh(preferredTag: preferredTag, limit: limit)
     }
 
     @MainActor
