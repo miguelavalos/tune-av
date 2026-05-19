@@ -2684,6 +2684,31 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), ["candidate"])
     }
 
+    func testHomePopularSelectorExcludesFeaturedStationBeforeRanking() {
+        let recent = recommendationStation(id: "recent", tags: "news")
+        let featured = recommendationStation(id: "featured", tags: "news")
+        let candidate = recommendationStation(id: "candidate", tags: "news")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let selected = HomePopularStationSelector.select(
+            from: [featured, candidate],
+            excludingFeaturedID: featured.id,
+            excludingRecentStations: [],
+            favoriteStations: [],
+            scorer: scorer
+        )
+
+        XCTAssertEqual(selected.map(\.id), ["candidate"])
+    }
+
     func testHomePopularSelectorReturnsScorerRankedOrder() {
         let recent = recommendationStation(id: "recent", tags: "news")
         let matchingTag = recommendationStation(id: "matching-tag", tags: "news")

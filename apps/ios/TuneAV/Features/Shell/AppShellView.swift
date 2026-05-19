@@ -8532,9 +8532,12 @@ private struct HomeScreen: View {
     private var homeDerivedState: DerivedState {
         let displayedRecentStations = displayedRecentStations
         let displayedFavoriteStations = displayedFavoriteStations
-        let displayedPopularStations = displayedPopularStations(
-            displayedRecentStations: displayedRecentStations,
-            displayedFavoriteStations: displayedFavoriteStations
+        let displayedPopularStations = HomePopularStationSelector.select(
+            from: stations,
+            excludingFeaturedID: featuredStationID,
+            excludingRecentStations: displayedRecentStations,
+            favoriteStations: displayedFavoriteStations,
+            scorer: recommendationScorer
         )
         let displayedAviPickStations = HomeAviPickStationSelector.select(
             from: displayedPopularStations,
@@ -8579,15 +8582,6 @@ private struct HomeScreen: View {
 
     private var displayedFavoriteStations: [Station] {
         HomePersonalStationSelector.select(from: favoriteStations, excludingFeaturedID: featuredStationID, limit: 6)
-    }
-
-    private func displayedPopularStations(displayedRecentStations: [Station], displayedFavoriteStations: [Station]) -> [Station] {
-        HomePopularStationSelector.select(
-            from: filteredStationsExcludingFeatured(from: stations),
-            excludingRecentStations: displayedRecentStations,
-            favoriteStations: displayedFavoriteStations,
-            scorer: recommendationScorer
-        )
     }
 
     private func displayedAroundYouStations(displayedPopularStations: [Station], displayedAviPickStations: [Station]) -> [Station] {
