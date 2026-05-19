@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IOS_DIR="$ROOT_DIR/apps/ios"
+DERIVED_DATA_PATH="${TUNEAV_IOS_DERIVED_DATA_PATH:-$ROOT_DIR/.derived-data/ios-ci}"
 
 device_id="$(xcrun simctl list devices available | awk '
   /iPhone 16 \(/ {
@@ -24,5 +25,6 @@ xcodebuild test \
   -project TuneAV.xcodeproj \
   -scheme TuneAV \
   -destination "platform=iOS Simulator,id=$device_id" \
+  -derivedDataPath "$DERIVED_DATA_PATH" \
   -only-testing:TuneAVTests \
   CODE_SIGNING_ALLOWED=NO
