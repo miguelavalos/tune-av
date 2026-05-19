@@ -69,6 +69,7 @@
 		A4A3A42AE74C29105A13D4D0 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBFD2CD6810AE58E6B99DE14 /* AudioPlayerService.swift */; };
 		A85E21A4D8B01574008347D6 /* PlayerQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */; };
 		A95724EA97E8A8EC9F6ECC56 /* TuneAVUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F3B0A0CD1FAD19F963C5732 /* TuneAVUITestCase.swift */; };
+		A95AE547512AF2AA0023032F /* HomeAviPickStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */; };
 		A9C7CF8352325D492B036270 /* TuneAVLibraryStationLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */; };
 		ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */; };
 		AFDCD0652B5EE4BF1D8623BF /* TuneAVAccountDeletionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */; };
@@ -231,6 +232,7 @@
 		D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviBrief.swift; sourceTree = "<group>"; };
 		DA32EAF81A20F877B3162053 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
 		DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
+		E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviPickStationSelector.swift; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
 		EBFD2CD6810AE58E6B99DE14 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppTheme.swift; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 				008936263180E93620BF3D42 /* AppShellView.swift */,
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
 				D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */,
+				E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
@@ -675,6 +678,7 @@
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
 				5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */,
 				FF79C327A739AFD202471187 /* HomeAviBrief.swift in Sources */,
+				A95AE547512AF2AA0023032F /* HomeAviPickStationSelector.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,

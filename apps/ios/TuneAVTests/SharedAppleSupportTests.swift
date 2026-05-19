@@ -2635,6 +2635,31 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), [second.id, third.id])
     }
 
+    func testHomeAviPickSelectorPreservesRankedOrderAndLimit() {
+        let stations = [
+            recommendationStation(id: "first", tags: "news"),
+            recommendationStation(id: "second", tags: "jazz"),
+            recommendationStation(id: "third", tags: "pop"),
+            recommendationStation(id: "fourth", tags: "rock"),
+            recommendationStation(id: "fifth", tags: "ambient")
+        ]
+
+        let selected = HomeAviPickStationSelector.select(from: stations, limit: 4)
+
+        XCTAssertEqual(selected.map(\.id), ["first", "second", "third", "fourth"])
+    }
+
+    func testHomeAviPickSelectorReturnsAllStationsWhenUnderLimit() {
+        let stations = [
+            recommendationStation(id: "first", tags: "news"),
+            recommendationStation(id: "second", tags: "jazz")
+        ]
+
+        let selected = HomeAviPickStationSelector.select(from: stations, limit: 4)
+
+        XCTAssertEqual(selected.map(\.id), ["first", "second"])
+    }
+
     func testHomeMoodGenreTagBuilderUsesCatalogOrderAndLocalizedTitles() {
         let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: [])
 

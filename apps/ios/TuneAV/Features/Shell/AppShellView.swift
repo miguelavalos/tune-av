@@ -8536,7 +8536,10 @@ private struct HomeScreen: View {
             displayedRecentStations: displayedRecentStations,
             displayedFavoriteStations: displayedFavoriteStations
         )
-        let displayedAviPickStations = Array(displayedPopularStations.prefix(4))
+        let displayedAviPickStations = HomeAviPickStationSelector.select(
+            from: displayedPopularStations,
+            limit: 4
+        )
         let displayedAroundYouStations = displayedAroundYouStations(
             displayedPopularStations: displayedPopularStations,
             displayedAviPickStations: displayedAviPickStations
