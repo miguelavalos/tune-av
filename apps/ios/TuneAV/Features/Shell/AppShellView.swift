@@ -21,6 +21,18 @@ struct AppShellView: View {
         let musicMode: MusicContentMode?
         let musicOverview: Bool?
 
+        var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
+            guard tab == .library else { return nil }
+
+            return (radioMode, radioOverview)
+        }
+
+        var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
+            guard tab == .music else { return nil }
+
+            return (musicMode, musicOverview)
+        }
+
         static func captured(
             selectedTab: AppShellTab,
             existingContext: AviReturnContext?,
@@ -1180,12 +1192,12 @@ struct AppShellView: View {
     }
 
     private func restoreAviReturnContext(_ context: AviReturnContext) {
-        if context.tab == .library {
-            requestedRadioMode = context.radioMode
-            requestedRadioOverview = context.radioOverview
-        } else if context.tab == .music {
-            requestedMusicMode = context.musicMode
-            requestedMusicOverview = context.musicOverview
+        if let request = context.radioReturnRequest {
+            requestedRadioMode = request.mode
+            requestedRadioOverview = request.overview
+        } else if let request = context.musicReturnRequest {
+            requestedMusicMode = request.mode
+            requestedMusicOverview = request.overview
         }
     }
 
