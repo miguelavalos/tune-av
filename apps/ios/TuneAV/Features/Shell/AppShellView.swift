@@ -271,30 +271,7 @@ struct AppShellView: View {
         case .home:
             homeScreen
         case .search:
-            let visibleSearchResults = searchResults.isEmpty
-                ? searchFallbackStations(for: searchRequest)
-                : searchResults
-            let results = enrichedStations(visibleSearchResults)
-
-            SearchScreen(
-                query: $searchQuery,
-                activeTag: $searchTag,
-                selectedCountryCode: $searchCountryCode,
-                discoveryMode: $searchDiscoveryMode,
-                results: results,
-                isLoading: searchIsLoading,
-                errorMessage: searchErrorMessage,
-                tags: genreTags,
-                bottomContentPadding: shouldHideFooterPlayer ? 176 : shellScrollBottomPadding,
-                favoriteStationIDs: favoriteStationIDs,
-                nowPlayingTracks: stationNowPlayingTracks,
-                stationFeedback: libraryStore.stationFeedback,
-                playStation: playStation,
-                toggleFavorite: toggleFavorite(_:),
-                showStationDetails: { station, queueSource, queue in
-                    showStationDetails(station, queueSource: queueSource, queue: queue)
-                }
-            )
+            searchScreen
         case .avi:
             aviScreen
         case .library:
@@ -419,6 +396,40 @@ struct AppShellView: View {
         selectedTab = .search
     }
 
+    private var searchScreen: some View {
+        SearchScreen(
+            query: $searchQuery,
+            activeTag: $searchTag,
+            selectedCountryCode: $searchCountryCode,
+            discoveryMode: $searchDiscoveryMode,
+            results: enrichedStations(visibleSearchResults),
+            isLoading: searchIsLoading,
+            errorMessage: searchErrorMessage,
+            tags: genreTags,
+            bottomContentPadding: shouldHideFooterPlayer ? 176 : shellScrollBottomPadding,
+            favoriteStationIDs: favoriteStationIDs,
+            nowPlayingTracks: stationNowPlayingTracks,
+            stationFeedback: libraryStore.stationFeedback,
+            playStation: playStation,
+            toggleFavorite: toggleFavorite(_:),
+            showStationDetails: showSearchStationDetails(_:queueSource:queue:)
+        )
+    }
+
+    private var visibleSearchResults: [Station] {
+        searchResults.isEmpty
+            ? searchFallbackStations(for: searchRequest)
+            : searchResults
+    }
+
+    private func showSearchStationDetails(
+        _ station: Station,
+        queueSource: TuneAVPlaybackQueueSource,
+        queue: [Station]?
+    ) {
+        showStationDetails(station, queueSource: queueSource, queue: queue)
+    }
+
     private var aviScreen: some View {
         let focusedStation = selectedStationDetail.map { enrichedStation($0.station) }
         let stations = enrichedStations(homeSnapshot.stations)
@@ -524,7 +535,6 @@ struct AppShellView: View {
     private func openProPaywall() {
         isShowingProPaywall = true
     }
-
 
     private var favoriteStations: [Station] {
         libraryStore.favoriteStations()
