@@ -278,6 +278,14 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     func stop() {
+        stop(preservingPlaybackContext: false)
+    }
+
+    private func stopForSleepTimer() {
+        stop(preservingPlaybackContext: true)
+    }
+
+    private func stop(preservingPlaybackContext: Bool) {
         persistCurrentNowPlayingState()
         loadingTimeoutTask?.cancel()
         loadingTimeoutTask = nil
@@ -306,7 +314,9 @@ final class AudioPlayerService: NSObject, ObservableObject {
         setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
-        setPlaybackQueue(.init(source: .singleStation, stations: []))
+        if !preservingPlaybackContext {
+            setPlaybackQueue(.init(source: .singleStation, stations: []))
+        }
         lastNowPlayingInfoSignature = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
@@ -363,7 +373,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 self?.activeSleepTimerRemainingMinutes = nil
                 self?.sleepTimerRemainingTask?.cancel()
                 self?.sleepTimerRemainingTask = nil
-                self?.stop()
+                self?.stopForSleepTimer()
             }
         )
         startSleepTimerRemainingUpdatesIfNeeded()
