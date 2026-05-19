@@ -101,6 +101,7 @@
 		E5F0639AD50A6DDD7F572BEF /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32EAF81A20F877B3162053 /* TuneAVStation.swift */; };
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
 		E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */; };
+		EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
 		F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
@@ -137,6 +138,7 @@
 		09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
 		0A2443197B44A3463AFABCB5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		12A3B12BBA94111AA7B04163 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
+		157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendationInsightBuilder.swift; sourceTree = "<group>"; };
 		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1713B09701E9777A700FA782 /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
 		198A05B4515ED79560A09DEF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				B135CD41FF02BCEE0886119A /* HomePopularStationSelector.swift */,
 				4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */,
+				157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
@@ -689,6 +692,7 @@
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				BE7141C88E632BC3C4214CEE /* HomePopularStationSelector.swift in Sources */,
 				594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */,
+				EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,

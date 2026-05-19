@@ -8555,16 +8555,10 @@ private struct HomeScreen: View {
             .map { $0.lowercased() }
         let moodGenreTags = moodGenreTags(visibleDiscoveryTags: visibleDiscoveryTags)
         let scorer = recommendationScorer
-        let recommendationInsights = Dictionary(
-            (displayedAviPickStations + displayedAroundYouStations).map { station in
-                (
-                    station.id,
-                    TuneAVLocalRecommendationScorer.localizedSummary(
-                        for: scorer.rank(station).primaryReason
-                    ) ?? L10n.string("shell.avi.recommendation.reasonFallback")
-                )
-            },
-            uniquingKeysWith: { current, _ in current }
+        let recommendationInsights = HomeRecommendationInsightBuilder.build(
+            aviPickStations: displayedAviPickStations,
+            aroundYouStations: displayedAroundYouStations,
+            scorer: scorer
         )
 
         return DerivedState(

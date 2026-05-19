@@ -2747,6 +2747,62 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), ["first", "second", "third"])
     }
 
+    func testHomeRecommendationInsightBuilderUsesLocalizedPrimaryReason() {
+        let recent = recommendationStation(id: "recent", tags: "news")
+        let candidate = recommendationStation(id: "candidate", tags: "news", countryCode: "ES")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let insights = HomeRecommendationInsightBuilder.build(
+            aviPickStations: [candidate],
+            aroundYouStations: [],
+            scorer: scorer
+        )
+
+        XCTAssertEqual(
+            insights[candidate.id],
+            TuneAVLocalRecommendationScorer.localizedSummary(for: .recentTag)
+        )
+    }
+
+    func testHomeRecommendationInsightBuilderKeepsFirstInsightForDuplicatesAndFallsBack() {
+        let fallbackStation = recommendationStation(id: "fallback", tags: "", countryCode: "ES")
+        let duplicate = recommendationStation(id: "duplicate", tags: "", countryCode: "ES")
+        let recent = recommendationStation(id: "recent", tags: "news")
+        let duplicateWithReason = recommendationStation(id: "duplicate", tags: "news", countryCode: "ES")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [recent],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: ""
+        )
+
+        let insights = HomeRecommendationInsightBuilder.build(
+            aviPickStations: [fallbackStation, duplicate],
+            aroundYouStations: [duplicateWithReason],
+            scorer: scorer
+        )
+
+        XCTAssertEqual(
+            insights[fallbackStation.id],
+            L10n.string("shell.avi.recommendation.reasonFallback")
+        )
+        XCTAssertEqual(
+            insights[duplicate.id],
+            L10n.string("shell.avi.recommendation.reasonFallback")
+        )
+    }
+
     func testHomeMoodGenreTagBuilderUsesCatalogOrderAndLocalizedTitles() {
         let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: [])
 
