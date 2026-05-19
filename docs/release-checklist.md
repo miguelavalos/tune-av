@@ -77,6 +77,21 @@ Before creating the archive for review:
 5. Recreate screenshots from the exact build attached to App Store Connect after
    any meaningful UI, localization, entitlement, or paywall change.
 
+## App Transport Security
+
+Tune AV declares `NSAllowsArbitraryLoads` because live radio catalogs can include
+playable HTTP stream URLs that are not under AVALSYS control. Keep this exception
+limited by app behavior:
+
+- Account AV, Support AV, legal, and open-source URLs must resolve to HTTPS
+  except localhost loopback during development.
+- The in-app browser must reject remote HTTP pages; use HTTPS for web content.
+- Remote HTTP should be treated as playback-only stream input for `AVPlayer`,
+  not as a general networking policy.
+- Before App Review, confirm review notes explain the radio-stream compatibility
+  reason for ATS broad loading and that authenticated/backend traffic remains
+  HTTPS-only.
+
 ## Public Release
 
 1. Update `CHANGELOG.md`.

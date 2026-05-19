@@ -1257,8 +1257,7 @@ private struct LocalDataMaintenanceRow: Identifiable {
 
 private extension URL {
     var isTuneAVWebURL: Bool {
-        guard let scheme = scheme?.lowercased() else { return false }
-        return scheme == "http" || scheme == "https"
+        isSupportedTuneAVBrowserURL
     }
 }
 
