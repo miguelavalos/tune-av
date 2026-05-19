@@ -20,6 +20,26 @@ struct AppShellView: View {
         let radioOverview: Bool?
         let musicMode: MusicContentMode?
         let musicOverview: Bool?
+
+        static func captured(
+            selectedTab: AppShellTab,
+            existingContext: AviReturnContext?,
+            radioMode: RadioLibraryMode?,
+            radioOverview: Bool?,
+            musicMode: MusicContentMode?,
+            musicOverview: Bool?
+        ) -> AviReturnContext? {
+            let returnTab = selectedTab == .avi ? existingContext?.tab : selectedTab
+            guard let returnTab else { return nil }
+
+            return AviReturnContext(
+                tab: returnTab,
+                radioMode: selectedTab == .library ? radioMode : nil,
+                radioOverview: selectedTab == .library ? radioOverview : nil,
+                musicMode: selectedTab == .music ? musicMode : nil,
+                musicOverview: selectedTab == .music ? musicOverview : nil
+            )
+        }
     }
 
     let launchContext: LaunchContext
@@ -1149,18 +1169,13 @@ struct AppShellView: View {
         musicMode: MusicContentMode? = nil,
         musicOverview: Bool? = nil
     ) {
-        let returnTab = selectedTab == .avi ? aviReturnContext?.tab : selectedTab
-        guard let returnTab else {
-            aviReturnContext = nil
-            return
-        }
-
-        aviReturnContext = AviReturnContext(
-            tab: returnTab,
-            radioMode: selectedTab == .library ? radioMode : nil,
-            radioOverview: selectedTab == .library ? radioOverview : nil,
-            musicMode: selectedTab == .music ? musicMode : nil,
-            musicOverview: selectedTab == .music ? musicOverview : nil
+        aviReturnContext = AviReturnContext.captured(
+            selectedTab: selectedTab,
+            existingContext: aviReturnContext,
+            radioMode: radioMode,
+            radioOverview: radioOverview,
+            musicMode: musicMode,
+            musicOverview: musicOverview
         )
     }
 
