@@ -14,46 +14,6 @@ struct AppShellView: View {
         case player
     }
 
-    private struct AviReturnContext {
-        let tab: AppShellTab
-        let radioMode: RadioLibraryMode?
-        let radioOverview: Bool?
-        let musicMode: MusicContentMode?
-        let musicOverview: Bool?
-
-        var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
-            guard tab == .library else { return nil }
-
-            return (radioMode, radioOverview)
-        }
-
-        var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
-            guard tab == .music else { return nil }
-
-            return (musicMode, musicOverview)
-        }
-
-        static func captured(
-            selectedTab: AppShellTab,
-            existingContext: AviReturnContext?,
-            radioMode: RadioLibraryMode?,
-            radioOverview: Bool?,
-            musicMode: MusicContentMode?,
-            musicOverview: Bool?
-        ) -> AviReturnContext? {
-            let returnTab = selectedTab == .avi ? existingContext?.tab : selectedTab
-            guard let returnTab else { return nil }
-
-            return AviReturnContext(
-                tab: returnTab,
-                radioMode: selectedTab == .library ? radioMode : nil,
-                radioOverview: selectedTab == .library ? radioOverview : nil,
-                musicMode: selectedTab == .music ? musicMode : nil,
-                musicOverview: selectedTab == .music ? musicOverview : nil
-            )
-        }
-    }
-
     let launchContext: LaunchContext
     let startSignInFlow: (Bool) -> Void
 
@@ -1579,6 +1539,46 @@ struct AppShellView: View {
         station.hasResolvedCountry(
             unknownCountryValues: Station.unknownCountryValues,
             locale: L10n.locale
+        )
+    }
+}
+
+private struct AviReturnContext {
+    let tab: AppShellTab
+    let radioMode: RadioLibraryMode?
+    let radioOverview: Bool?
+    let musicMode: MusicContentMode?
+    let musicOverview: Bool?
+
+    var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
+        guard tab == .library else { return nil }
+
+        return (radioMode, radioOverview)
+    }
+
+    var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
+        guard tab == .music else { return nil }
+
+        return (musicMode, musicOverview)
+    }
+
+    static func captured(
+        selectedTab: AppShellTab,
+        existingContext: AviReturnContext?,
+        radioMode: RadioLibraryMode?,
+        radioOverview: Bool?,
+        musicMode: MusicContentMode?,
+        musicOverview: Bool?
+    ) -> AviReturnContext? {
+        let returnTab = selectedTab == .avi ? existingContext?.tab : selectedTab
+        guard let returnTab else { return nil }
+
+        return AviReturnContext(
+            tab: returnTab,
+            radioMode: selectedTab == .library ? radioMode : nil,
+            radioOverview: selectedTab == .library ? radioOverview : nil,
+            musicMode: selectedTab == .music ? musicMode : nil,
+            musicOverview: selectedTab == .music ? musicOverview : nil
         )
     }
 }
