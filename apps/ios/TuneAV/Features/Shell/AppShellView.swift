@@ -1131,13 +1131,7 @@ struct AppShellView: View {
         libraryStore.clearOpenedStationPresentation()
 
         if let aviReturnTab {
-            if aviReturnTab == .library {
-                requestedRadioMode = aviReturnRadioMode
-                requestedRadioOverview = aviReturnShowsRadioOverview
-            } else if aviReturnTab == .music {
-                requestedMusicMode = aviReturnMusicMode
-                requestedMusicOverview = aviReturnShowsMusicOverview
-            }
+            restoreAviReturnContext(for: aviReturnTab)
             selectedTab = aviReturnTab
             clearAviReturnContext()
         } else if let fallbackTab {
@@ -1156,6 +1150,16 @@ struct AppShellView: View {
         aviReturnShowsRadioOverview = selectedTab == .library ? radioOverview : nil
         aviReturnMusicMode = selectedTab == .music ? musicMode : nil
         aviReturnShowsMusicOverview = selectedTab == .music ? musicOverview : nil
+    }
+
+    private func restoreAviReturnContext(for tab: AppShellTab) {
+        if tab == .library {
+            requestedRadioMode = aviReturnRadioMode
+            requestedRadioOverview = aviReturnShowsRadioOverview
+        } else if tab == .music {
+            requestedMusicMode = aviReturnMusicMode
+            requestedMusicOverview = aviReturnShowsMusicOverview
+        }
     }
 
     private func clearAviReturnContext() {
