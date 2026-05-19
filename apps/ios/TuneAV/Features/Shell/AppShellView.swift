@@ -1056,11 +1056,10 @@ struct AppShellView: View {
         isAviNowPlayingFullPlayer = false
         selectedMusicAviDetail = nil
         let resolvedStation = enrichedStation(station)
-        let queueStations = enrichedStations(queue ?? [resolvedStation])
-        selectedStationDetail = SelectedStationDetail(
+        selectedStationDetail = aviStationDetail(
             station: resolvedStation,
             queueSource: queueSource,
-            queueStations: queueStations
+            queue: queue ?? [resolvedStation]
         )
         libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.detail.rawValue)
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
@@ -1071,10 +1070,10 @@ struct AppShellView: View {
         captureAviReturnContext()
         selectedMusicAviDetail = nil
         let resolvedStation = enrichedStation(station)
-        selectedStationDetail = SelectedStationDetail(
+        selectedStationDetail = aviStationDetail(
             station: resolvedStation,
             queueSource: .singleStation,
-            queueStations: [resolvedStation]
+            queue: [resolvedStation]
         )
         libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
@@ -1090,13 +1089,12 @@ struct AppShellView: View {
 
         if let currentStation = audioPlayer.currentStation {
             let resolvedStation = enrichedStation(currentStation)
-            let queue = audioPlayer.playbackQueue.stations.isEmpty
-                ? [resolvedStation]
-                : enrichedStations(audioPlayer.playbackQueue.stations)
-            selectedStationDetail = SelectedStationDetail(
+            selectedStationDetail = aviStationDetail(
                 station: resolvedStation,
                 queueSource: audioPlayer.playbackQueue.source,
-                queueStations: queue
+                queue: audioPlayer.playbackQueue.stations.isEmpty
+                    ? [resolvedStation]
+                    : audioPlayer.playbackQueue.stations
             )
             libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
             refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
@@ -1176,17 +1174,28 @@ struct AppShellView: View {
         aviReturnShowsMusicOverview = nil
     }
 
+    private func aviStationDetail(
+        station: Station,
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        queue: [Station]
+    ) -> SelectedStationDetail {
+        SelectedStationDetail(
+            station: enrichedStation(station),
+            queueSource: queueSource,
+            queueStations: enrichedStations(queue)
+        )
+    }
+
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
         guard selectedTab == .avi else { return }
         if isAviNowPlayingFullPlayer {
             let resolvedStation = enrichedStation(currentStation)
-            let queue = audioPlayer.playbackQueue.stations.isEmpty
-                ? [resolvedStation]
-                : enrichedStations(audioPlayer.playbackQueue.stations)
-            selectedStationDetail = SelectedStationDetail(
+            selectedStationDetail = aviStationDetail(
                 station: resolvedStation,
                 queueSource: audioPlayer.playbackQueue.source,
-                queueStations: queue
+                queue: audioPlayer.playbackQueue.stations.isEmpty
+                    ? [resolvedStation]
+                    : audioPlayer.playbackQueue.stations
             )
             refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
             return
@@ -1198,10 +1207,10 @@ struct AppShellView: View {
         let queue = audioPlayer.playbackQueue.stations.isEmpty
             ? [currentStation]
             : audioPlayer.playbackQueue.stations
-        selectedStationDetail = SelectedStationDetail(
-            station: enrichedStation(currentStation),
+        selectedStationDetail = aviStationDetail(
+            station: currentStation,
             queueSource: audioPlayer.playbackQueue.source,
-            queueStations: enrichedStations(queue)
+            queue: queue
         )
         refreshSelectedStationEnrichmentIfNeeded(currentStation)
     }
