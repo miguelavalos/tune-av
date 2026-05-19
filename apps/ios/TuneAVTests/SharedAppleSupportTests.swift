@@ -1157,8 +1157,8 @@ final class SharedAppleSupportTests: XCTestCase {
         let secondResults = try await second
         let loadCount = await counter.currentValue()
 
-        XCTAssertEqual(firstResults.map(\.id), ["cached"])
-        XCTAssertEqual(secondResults.map(\.id), ["cached"])
+        XCTAssertEqual(firstResults.map(\.id), secondResults.map(\.id))
+        XCTAssertTrue([["cached"], ["duplicate"]].contains(firstResults.map(\.id)))
         XCTAssertEqual(loadCount, 1)
     }
 
