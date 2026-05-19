@@ -8214,16 +8214,9 @@ private struct HomeScreen: View {
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     @State private var browserDestination: BrowserDestination?
 
-    private enum FeaturedSource {
-        case current
-        case lastPlayed
-        case recent
-        case favorite
-        case popular
-    }
-
     var body: some View {
         let derivedState = homeDerivedState
+        let featuredState = homeFeaturedState
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -8258,17 +8251,17 @@ private struct HomeScreen: View {
                     LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
                 }
 
-                if isLoading && heroStation == nil && derivedState.displayedPopularStations.isEmpty {
+                if isLoading && featuredState.station == nil && derivedState.displayedPopularStations.isEmpty {
                     StationCardSkeletonGroup()
                 } else if let errorMessage {
                     EmptyLibraryState(
                         title: L10n.string("shell.home.error.title"),
                         detail: errorMessage
                     )
-                } else if let heroStation {
+                } else if let heroStation = featuredState.station {
                     HomeTuningDeskHero(
                         station: heroStation,
-                        presentation: homePresentation(for: heroStation),
+                        presentation: homePresentation(for: heroStation, source: featuredState.source),
                         isFavorite: favoriteStationIDs.contains(heroStation.id),
                         isCurrentStation: audioPlayer.isCurrent(heroStation),
                         isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
@@ -8371,8 +8364,7 @@ private struct HomeScreen: View {
         return cleanedFeaturedDetail(station.country)
     }
 
-    private func homePresentation(for station: Station) -> HomeStationPresentation {
-        let source = heroSource
+    private func homePresentation(for station: Station, source: HomeFeaturedStationSource?) -> HomeStationPresentation {
         let currentTrack = currentTrackLine(for: station)
         let context = stationContextLine(for: station)
         let label = heroLabel(for: source, station: station)
@@ -8441,7 +8433,8 @@ private struct HomeScreen: View {
         if audioPlayer.isCurrent(station) {
             audioPlayer.togglePlayback()
         } else {
-            playStation(station, featuredQueueSource, featuredQueueStations)
+            let featuredState = homeFeaturedState
+            playStation(station, featuredState.queueSource, featuredState.queueStations)
         }
     }
 
@@ -8455,10 +8448,11 @@ private struct HomeScreen: View {
     }
 
     private func showHeroDetails(_ station: Station) {
-        showStationDetails(station, featuredQueueSource, featuredQueueStations)
+        let featuredState = homeFeaturedState
+        showStationDetails(station, featuredState.queueSource, featuredState.queueStations)
     }
 
-    private func heroLabel(for source: FeaturedSource?, station: Station) -> String {
+    private func heroLabel(for source: HomeFeaturedStationSource?, station: Station) -> String {
         if audioPlayer.isCurrent(station) {
             return L10n.string("shell.liveNow.title")
         }
@@ -8473,7 +8467,7 @@ private struct HomeScreen: View {
         case .current:
             return L10n.string("shell.liveNow.title")
         case .popular, .none:
-            return featuredLabel
+            return featuredLabel(for: source)
         }
     }
 
@@ -8482,52 +8476,17 @@ private struct HomeScreen: View {
     }
 
     private var shouldShowLiveNowPanel: Bool {
-        audioPlayer.currentStation == nil && !hasPersonalActivity && heroStation == nil
+        audioPlayer.currentStation == nil && !hasPersonalActivity && homeFeaturedState.station == nil
     }
 
-    private var heroSource: FeaturedSource? {
-        if audioPlayer.currentStation != nil {
-            return .current
-        }
-        return featuredSource
-    }
-
-    private var heroStation: Station? {
-        audioPlayer.currentStation ?? featuredStation
-    }
-
-    private var featuredSource: FeaturedSource? {
-        if lastPlayedStation != nil {
-            return .lastPlayed
-        }
-        if !favoriteStations.isEmpty {
-            return .favorite
-        }
-        if !stations.isEmpty {
-            return .popular
-        }
-        return nil
-    }
-
-    private var featuredStation: Station? {
-        switch featuredSource {
-        case .current:
-            return audioPlayer.currentStation
-        case .lastPlayed:
-            return lastPlayedStation
-        case .recent:
-            return nil
-        case .favorite:
-            return favoriteStations.first
-        case .popular:
-            return stations.first
-        case .none:
-            return nil
-        }
-    }
-
-    private var featuredStationID: String? {
-        heroStation?.id
+    private var homeFeaturedState: HomeFeaturedStationState {
+        HomeFeaturedStationBuilder.build(
+            currentStation: audioPlayer.currentStation,
+            lastPlayedStation: lastPlayedStation,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            stations: stations
+        )
     }
 
     private var homeDerivedState: HomeDerivedState {
@@ -8541,69 +8500,17 @@ private struct HomeScreen: View {
             feedContext: feedContext,
             preferredTag: preferredTag,
             preferredCountryCode: preferredCountryCode,
-            featuredStationID: featuredStationID
+            featuredStationID: homeFeaturedState.stationID
         )
     }
 
-    private var featuredQueueSource: AudioPlayerService.PlaybackQueue.Source {
-        switch heroSource {
-        case .current:
-            return .singleStation
-        case .lastPlayed:
-            return lastPlayedQueueSource
-        case .recent:
-            return .homeRecents
-        case .favorite:
-            return .homeFavorites
-        case .popular, .none:
-            return .homeDiscovery
-        }
-    }
-
-    private var featuredQueueStations: [Station] {
-        switch heroSource {
-        case .current:
-            return audioPlayer.currentStation.map { [$0] } ?? []
-        case .lastPlayed:
-            return lastPlayedQueueStations
-        case .recent:
-            return recentStations
-        case .favorite:
-            return favoriteStations
-        case .popular, .none:
-            return stations
-        }
-    }
-
-    private var lastPlayedQueueSource: AudioPlayerService.PlaybackQueue.Source {
-        guard let lastPlayedStation else { return .singleStation }
-        if favoriteStations.contains(where: { $0.id == lastPlayedStation.id }), favoriteStations.count > 1 {
-            return .homeFavorites
-        }
-        if recentStations.contains(where: { $0.id == lastPlayedStation.id }), recentStations.count > 1 {
-            return .homeRecents
-        }
-        return lastPlayedQueueStations.count > 1 ? .homeRecents : .singleStation
-    }
-
-    private var lastPlayedQueueStations: [Station] {
-        guard let lastPlayedStation else { return [] }
-        if favoriteStations.contains(where: { $0.id == lastPlayedStation.id }), favoriteStations.count > 1 {
-            return favoriteStations
-        }
-        if recentStations.contains(where: { $0.id == lastPlayedStation.id }), recentStations.count > 1 {
-            return recentStations
-        }
-        return AppShellNowPlayingPreviews.uniqueStations([lastPlayedStation] + favoriteStations + recentStations + stations)
-    }
-
     private func filteredStationsExcludingFeatured(from stations: [Station]) -> [Station] {
-        guard let featuredStationID else { return stations }
+        guard let featuredStationID = homeFeaturedState.stationID else { return stations }
         return stations.filter { $0.id != featuredStationID }
     }
 
-    private var featuredLabel: String {
-        switch featuredSource {
+    private func featuredLabel(for source: HomeFeaturedStationSource?) -> String {
+        switch source {
         case .recent:
             return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
         case .favorite:

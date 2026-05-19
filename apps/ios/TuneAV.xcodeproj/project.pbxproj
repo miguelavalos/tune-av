@@ -89,6 +89,7 @@
 		BE7141C88E632BC3C4214CEE /* HomePopularStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B135CD41FF02BCEE0886119A /* HomePopularStationSelector.swift */; };
 		BF8C80B81C7F2ED5AC3D540B /* AccountDeletionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99668EA286936B4217A4DA02 /* AccountDeletionScreen.swift */; };
 		C01D6D0D97D384604F8D7651 /* AccountDeletionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC56032BF991BF606EDC6911 /* AccountDeletionViewModelTests.swift */; };
+		C199AD1593FBF97BD0D39231 /* HomeFeaturedStationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */; };
 		C251B301DC91D6E149165562 /* TuneAVLaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A59E1F744BB8D10605B28B /* TuneAVLaunchContext.swift */; };
 		CBFA20E7AA1D0A3393D3C587 /* TuneAVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */; };
 		CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */; };
@@ -245,6 +246,7 @@
 		DA32EAF81A20F877B3162053 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
 		DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
 		E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodSuggestionBuilder.swift; sourceTree = "<group>"; };
+		E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeaturedStationBuilder.swift; sourceTree = "<group>"; };
 		E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviPickStationSelector.swift; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
 		E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDiscoveryTagBuilder.swift; sourceTree = "<group>"; };
@@ -311,6 +313,7 @@
 				E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */,
 				0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */,
 				E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */,
+				E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */,
@@ -702,6 +705,7 @@
 				A95AE547512AF2AA0023032F /* HomeAviPickStationSelector.swift in Sources */,
 				53C0BDDB8DE64709781948DE /* HomeDerivedStateBuilder.swift in Sources */,
 				AF019C179E67E7961F2F9D3A /* HomeDiscoveryTagBuilder.swift in Sources */,
+				C199AD1593FBF97BD0D39231 /* HomeFeaturedStationBuilder.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				3C962943456FE4780AB75913 /* HomeMoodSuggestionBuilder.swift in Sources */,

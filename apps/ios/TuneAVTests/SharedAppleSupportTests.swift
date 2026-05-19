@@ -3002,6 +3002,87 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertNotNil(state.recommendationInsights[aviPick.id])
     }
 
+    func testHomeFeaturedStationBuilderPrioritizesCurrentLastFavoriteThenPopular() {
+        let current = recommendationStation(id: "current", tags: "news")
+        let lastPlayed = recommendationStation(id: "last-played", tags: "jazz")
+        let favorite = recommendationStation(id: "favorite", tags: "rock")
+        let popular = recommendationStation(id: "popular", tags: "pop")
+
+        let currentState = HomeFeaturedStationBuilder.build(
+            currentStation: current,
+            lastPlayedStation: lastPlayed,
+            recentStations: [lastPlayed],
+            favoriteStations: [favorite],
+            stations: [popular]
+        )
+        XCTAssertEqual(currentState.source, .current)
+        XCTAssertEqual(currentState.station?.id, current.id)
+        XCTAssertEqual(currentState.queueSource, .singleStation)
+        XCTAssertEqual(currentState.queueStations.map(\.id), [current.id])
+
+        let lastPlayedState = HomeFeaturedStationBuilder.build(
+            currentStation: nil,
+            lastPlayedStation: lastPlayed,
+            recentStations: [lastPlayed],
+            favoriteStations: [favorite],
+            stations: [popular]
+        )
+        XCTAssertEqual(lastPlayedState.source, .lastPlayed)
+        XCTAssertEqual(lastPlayedState.station?.id, lastPlayed.id)
+
+        let favoriteState = HomeFeaturedStationBuilder.build(
+            currentStation: nil,
+            lastPlayedStation: nil,
+            recentStations: [],
+            favoriteStations: [favorite],
+            stations: [popular]
+        )
+        XCTAssertEqual(favoriteState.source, .favorite)
+        XCTAssertEqual(favoriteState.station?.id, favorite.id)
+        XCTAssertEqual(favoriteState.queueSource, .homeFavorites)
+        XCTAssertEqual(favoriteState.queueStations.map(\.id), [favorite.id])
+
+        let popularState = HomeFeaturedStationBuilder.build(
+            currentStation: nil,
+            lastPlayedStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            stations: [popular]
+        )
+        XCTAssertEqual(popularState.source, .popular)
+        XCTAssertEqual(popularState.station?.id, popular.id)
+        XCTAssertEqual(popularState.queueSource, .homeDiscovery)
+        XCTAssertEqual(popularState.queueStations.map(\.id), [popular.id])
+    }
+
+    func testHomeFeaturedStationBuilderUsesLastPlayedQueueContext() {
+        let lastPlayed = recommendationStation(id: "last-played", tags: "jazz")
+        let otherFavorite = recommendationStation(id: "other-favorite", tags: "rock")
+        let otherRecent = recommendationStation(id: "other-recent", tags: "pop")
+        let popular = recommendationStation(id: "popular", tags: "news")
+
+        let favoriteState = HomeFeaturedStationBuilder.build(
+            currentStation: nil,
+            lastPlayedStation: lastPlayed,
+            recentStations: [lastPlayed, otherRecent],
+            favoriteStations: [lastPlayed, otherFavorite],
+            stations: [popular]
+        )
+        XCTAssertEqual(favoriteState.source, .lastPlayed)
+        XCTAssertEqual(favoriteState.queueSource, .homeFavorites)
+        XCTAssertEqual(favoriteState.queueStations.map(\.id), [lastPlayed.id, otherFavorite.id])
+
+        let fallbackState = HomeFeaturedStationBuilder.build(
+            currentStation: nil,
+            lastPlayedStation: lastPlayed,
+            recentStations: [lastPlayed],
+            favoriteStations: [lastPlayed],
+            stations: [popular]
+        )
+        XCTAssertEqual(fallbackState.queueSource, .homeRecents)
+        XCTAssertEqual(fallbackState.queueStations.map(\.id), [lastPlayed.id, popular.id])
+    }
+
     func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
         let station = recommendationStation(id: "pop", tags: "pop, hits")
 
