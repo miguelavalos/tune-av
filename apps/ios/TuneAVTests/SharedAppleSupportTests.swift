@@ -1925,6 +1925,10 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: resolved).id, "second")
     }
 
+    func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
+        XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
+    }
+
     func testPlaybackQueueLogicFindsNextStationExcludingUnstableStations() throws {
         let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
         let first = Station(id: "first", name: "First", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/first")

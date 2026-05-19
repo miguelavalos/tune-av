@@ -3996,6 +3996,7 @@ private struct AviScreen: View {
             }
 
             StationFeedbackControl(
+                feedbackIdentity: "track:\(discovery.discoveryID)",
                 selectedFeedback: libraryStore.feedback(for: discovery),
                 selectFeedback: { feedback in
                     let nextFeedback = libraryStore.feedback(for: discovery) == feedback ? nil : feedback
@@ -5374,6 +5375,7 @@ private struct AviScreen: View {
             }
 
             StationFeedbackControl(
+                feedbackIdentity: focusedPrimaryFeedbackIdentity(for: station),
                 selectedFeedback: focusedPrimaryFeedback(for: station),
                 selectFeedback: { feedback in
                     setFocusedPrimaryFeedback(feedback, for: station)
@@ -5441,6 +5443,7 @@ private struct AviScreen: View {
             .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
             StationFeedbackControl(
+                feedbackIdentity: focusedPrimaryFeedbackIdentity(for: station),
                 selectedFeedback: focusedPrimaryFeedback(for: station),
                 selectFeedback: { feedback in
                     let currentFeedback = focusedPrimaryFeedback(for: station)
@@ -6016,6 +6019,13 @@ private struct AviScreen: View {
         return stationFeedback[station.id]
     }
 
+    private func focusedPrimaryFeedbackIdentity(for station: Station) -> String {
+        if isNowPlayingFullPlayer && hasCurrentSongContext {
+            return "track:\(currentSongIdentity)"
+        }
+        return "station:\(station.id)"
+    }
+
     private func setFocusedPrimaryFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
         if isNowPlayingFullPlayer && hasCurrentSongContext {
             setCurrentTrackFeedback(feedback)
@@ -6161,6 +6171,7 @@ private struct AviScreen: View {
             }
 
             StationFeedbackControl(
+                feedbackIdentity: "station:\(station.id)",
                 selectedFeedback: stationFeedback[station.id],
                 selectFeedback: { feedback in
                     let nextFeedback = stationFeedback[station.id] == feedback ? nil : feedback
@@ -6298,6 +6309,7 @@ private struct AviScreen: View {
                 }
 
                 StationFeedbackControl(
+                    feedbackIdentity: "station:\(focusedStation.id)",
                     selectedFeedback: stationFeedback[focusedStation.id],
                     selectFeedback: { feedback in
                         let nextFeedback = stationFeedback[focusedStation.id] == feedback ? nil : feedback
@@ -7024,6 +7036,7 @@ private struct AviScreen: View {
                 }
 
                 StationFeedbackControl(
+                    feedbackIdentity: "station:\(recommendation.station.id)",
                     selectedFeedback: stationFeedback[recommendation.station.id],
                     selectFeedback: { feedback in
                         let nextFeedback = stationFeedback[recommendation.station.id] == feedback ? nil : feedback
@@ -7372,6 +7385,7 @@ private struct AviRecommendationRow: View {
             }
 
             AviCompactFeedbackControl(
+                feedbackIdentity: "station:\(station.id)",
                 selectedFeedback: selectedFeedback,
                 selectFeedback: feedbackAction,
                 clearFeedback: clearFeedback
@@ -7430,13 +7444,14 @@ private struct AviRelatedStationRow: View {
 }
 
 private struct AviCompactFeedbackControl: View {
+    var feedbackIdentity: String = "aviFeedback"
     let selectedFeedback: TuneAVStationFeedback?
     let selectFeedback: (TuneAVStationFeedback) -> Void
     var clearFeedback: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 7) {
-            ForEach(TuneAVStationFeedback.allCases, id: \.self) { feedback in
+            ForEach(TuneAVStationFeedback.displayOrder, id: \.self) { feedback in
                 Button {
                     selectFeedback(feedback)
                 } label: {
@@ -7462,6 +7477,7 @@ private struct AviCompactFeedbackControl: View {
         .opacity(selectedFeedback == nil ? 1 : 0)
         .disabled(selectedFeedback != nil)
         .accessibilityHidden(selectedFeedback != nil)
+        .id(feedbackIdentity)
         .accessibilityIdentifier("avi.recommendation.feedback")
     }
 }
@@ -11377,6 +11393,7 @@ private struct HomeTuningDeskHero: View {
                 deskControls
 
                 AviCompactFeedbackControl(
+                    feedbackIdentity: "station:\(station.id)",
                     selectedFeedback: stationFeedback,
                     selectFeedback: feedbackAction,
                     clearFeedback: {
@@ -12434,6 +12451,7 @@ private struct AviRowActionButton: View {
 }
 
 private struct StationFeedbackControl: View {
+    var feedbackIdentity: String = "stationFeedback"
     let selectedFeedback: TuneAVStationFeedback?
     let selectFeedback: (TuneAVStationFeedback) -> Void
     let clearFeedback: () -> Void
@@ -12498,6 +12516,7 @@ private struct StationFeedbackControl: View {
             .frame(height: 38)
         }
         .frame(height: 72, alignment: .top)
+        .id(feedbackIdentity)
         .accessibilityIdentifier("stationFeedback.control")
     }
 }
