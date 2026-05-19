@@ -8220,7 +8220,15 @@ private struct HomeScreen: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                homeHeader
+                HomeHeaderContent(
+                    statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label),
+                    liveNowStatus: audioPlayer.status.label,
+                    currentStation: audioPlayer.currentStation,
+                    recentCount: recentStations.count,
+                    favoriteCount: favoriteStations.count,
+                    showsLiveNowPanel: shouldShowLiveNowPanel,
+                    openAvi: openAvi
+                )
                 homeHeroContent(derivedState: derivedState, featuredState: featuredState)
                 homeRecommendationSections(derivedState: derivedState)
             }
@@ -8230,41 +8238,6 @@ private struct HomeScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
-        }
-    }
-
-    private var homeHeader: some View {
-        Group {
-            ShellBrandHeader(
-                statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label)
-            )
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L10n.string("shell.home.title"))
-                    .font(.system(size: 30, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(L10n.string("shell.home.subtitle"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HomeAviBrief(
-                currentStation: audioPlayer.currentStation,
-                recentCount: recentStations.count,
-                favoriteCount: favoriteStations.count,
-                emotion: TuneAVAviEmotionResolver.homeEmotion(
-                    currentStation: audioPlayer.currentStation,
-                    recentCount: recentStations.count,
-                    favoriteCount: favoriteStations.count
-                ),
-                openAvi: openAvi
-            )
-
-            if shouldShowLiveNowPanel {
-                LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
-            }
         }
     }
 
@@ -8438,6 +8411,47 @@ private struct HomeScreen: View {
         )
     }
 
+}
+
+private struct HomeHeaderContent: View {
+    let statusTitle: String
+    let liveNowStatus: String
+    let currentStation: Station?
+    let recentCount: Int
+    let favoriteCount: Int
+    let showsLiveNowPanel: Bool
+    let openAvi: () -> Void
+
+    var body: some View {
+        ShellBrandHeader(statusTitle: statusTitle)
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.string("shell.home.title"))
+                .font(.system(size: 30, weight: .black))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+
+            Text(L10n.string("shell.home.subtitle"))
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        HomeAviBrief(
+            currentStation: currentStation,
+            recentCount: recentCount,
+            favoriteCount: favoriteCount,
+            emotion: TuneAVAviEmotionResolver.homeEmotion(
+                currentStation: currentStation,
+                recentCount: recentCount,
+                favoriteCount: favoriteCount
+            ),
+            openAvi: openAvi
+        )
+
+        if showsLiveNowPanel {
+            LiveNowPanel(currentStation: currentStation, status: liveNowStatus)
+        }
+    }
 }
 
 private struct SearchScreen: View {
