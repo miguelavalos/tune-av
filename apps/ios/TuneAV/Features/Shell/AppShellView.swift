@@ -8246,7 +8246,16 @@ private struct HomeScreen: View {
                     feedbackAction: setHeroFeedback,
                     detailsAction: showHeroDetails
                 )
-                homeRecommendationSections(derivedState: derivedState)
+                HomeRecommendationSections(
+                    derivedState: derivedState,
+                    favoriteStationIDs: favoriteStationIDs,
+                    nowPlayingTracks: nowPlayingTracks,
+                    stationFeedback: stationFeedback,
+                    openSearchTag: openSearchTag,
+                    playStation: playStation,
+                    toggleFavorite: toggleFavorite,
+                    showStationDetails: showStationDetails
+                )
             }
             .shellScreenContentPadding(bottom: bottomContentPadding)
         }
@@ -8254,74 +8263,6 @@ private struct HomeScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
-        }
-    }
-
-    @ViewBuilder
-    private func homeRecommendationSections(derivedState: HomeDerivedState) -> some View {
-        if !derivedState.moodGenreTags.isEmpty {
-            HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
-        }
-
-        if !derivedState.displayedAviPickStations.isEmpty {
-            homeStationCarouselSection(
-                title: L10n.string("shell.home.aviPicks.title"),
-                subtitle: L10n.string("shell.home.aviPicks.subtitle"),
-                accessibilityIdentifier: "home.section.aviPicks",
-                stations: derivedState.displayedAviPickStations,
-                queueSource: .homeDiscovery,
-                stationInsight: { derivedState.recommendationInsights[$0.id] }
-            )
-        }
-
-        if !derivedState.displayedAroundYouStations.isEmpty {
-            homeStationCarouselSection(
-                title: L10n.string("shell.home.aroundYou.title"),
-                subtitle: L10n.string("shell.home.aroundYou.subtitle"),
-                accessibilityIdentifier: "home.section.aroundYou",
-                stations: derivedState.displayedAroundYouStations,
-                queueSource: .homeDiscovery,
-                stationInsight: { derivedState.recommendationInsights[$0.id] }
-            )
-        }
-
-        if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
-            homeStationCarouselSection(
-                title: L10n.string("shell.home.recentsFavorites.title"),
-                subtitle: L10n.string("shell.home.recentsFavorites.subtitle"),
-                accessibilityIdentifier: "home.section.recentsFavorites",
-                stations: derivedState.displayedRecentAndFavoriteStations,
-                queueSource: .homeRecents,
-                stationInsight: { station in stationFeedback[station.id]?.localizedState }
-            )
-        }
-    }
-
-    private func homeStationCarouselSection(
-        title: String,
-        subtitle: String,
-        accessibilityIdentifier: String,
-        stations: [Station],
-        queueSource: AudioPlayerService.PlaybackQueue.Source,
-        stationInsight: @escaping (Station) -> String?
-    ) -> some View {
-        StationSection(
-            title: title,
-            subtitle: subtitle,
-            accessibilityIdentifier: accessibilityIdentifier
-        ) {
-            StationCompactCarousel(
-                stations: stations,
-                favoriteStationIDs: favoriteStationIDs,
-                nowPlayingTracks: nowPlayingTracks,
-                stationInsight: stationInsight,
-                stationFeedback: stationFeedback,
-                queueSource: queueSource,
-                queueStations: stations,
-                playStation: playStation,
-                toggleFavorite: toggleFavorite,
-                showStationDetails: showStationDetails
-            )
         }
     }
 
@@ -8482,6 +8423,85 @@ private struct HomeHeroContent: View {
             EmptyLibraryState(
                 title: L10n.string("shell.home.empty.title"),
                 detail: L10n.string("shell.home.empty.detail")
+            )
+        }
+    }
+}
+
+private struct HomeRecommendationSections: View {
+    let derivedState: HomeDerivedState
+    let favoriteStationIDs: Set<String>
+    let nowPlayingTracks: [String: NowPlayingTrack]
+    let stationFeedback: [String: TuneAVStationFeedback]
+    let openSearchTag: (String) -> Void
+    let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
+    let toggleFavorite: (Station) -> Void
+    let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
+
+    @ViewBuilder
+    var body: some View {
+        if !derivedState.moodGenreTags.isEmpty {
+            HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
+        }
+
+        if !derivedState.displayedAviPickStations.isEmpty {
+            homeStationCarouselSection(
+                title: L10n.string("shell.home.aviPicks.title"),
+                subtitle: L10n.string("shell.home.aviPicks.subtitle"),
+                accessibilityIdentifier: "home.section.aviPicks",
+                stations: derivedState.displayedAviPickStations,
+                queueSource: .homeDiscovery,
+                stationInsight: { derivedState.recommendationInsights[$0.id] }
+            )
+        }
+
+        if !derivedState.displayedAroundYouStations.isEmpty {
+            homeStationCarouselSection(
+                title: L10n.string("shell.home.aroundYou.title"),
+                subtitle: L10n.string("shell.home.aroundYou.subtitle"),
+                accessibilityIdentifier: "home.section.aroundYou",
+                stations: derivedState.displayedAroundYouStations,
+                queueSource: .homeDiscovery,
+                stationInsight: { derivedState.recommendationInsights[$0.id] }
+            )
+        }
+
+        if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
+            homeStationCarouselSection(
+                title: L10n.string("shell.home.recentsFavorites.title"),
+                subtitle: L10n.string("shell.home.recentsFavorites.subtitle"),
+                accessibilityIdentifier: "home.section.recentsFavorites",
+                stations: derivedState.displayedRecentAndFavoriteStations,
+                queueSource: .homeRecents,
+                stationInsight: { station in stationFeedback[station.id]?.localizedState }
+            )
+        }
+    }
+
+    private func homeStationCarouselSection(
+        title: String,
+        subtitle: String,
+        accessibilityIdentifier: String,
+        stations: [Station],
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        stationInsight: @escaping (Station) -> String?
+    ) -> some View {
+        StationSection(
+            title: title,
+            subtitle: subtitle,
+            accessibilityIdentifier: accessibilityIdentifier
+        ) {
+            StationCompactCarousel(
+                stations: stations,
+                favoriteStationIDs: favoriteStationIDs,
+                nowPlayingTracks: nowPlayingTracks,
+                stationInsight: stationInsight,
+                stationFeedback: stationFeedback,
+                queueSource: queueSource,
+                queueStations: stations,
+                playStation: playStation,
+                toggleFavorite: toggleFavorite,
+                showStationDetails: showStationDetails
             )
         }
     }
