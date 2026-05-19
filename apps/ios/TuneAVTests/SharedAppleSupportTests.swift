@@ -2747,6 +2747,38 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), ["first", "second", "third"])
     }
 
+    func testHomePersonalStationSelectorExcludesFeaturedStationBeforeLimit() {
+        let stations = [
+            recommendationStation(id: "featured", tags: "news"),
+            recommendationStation(id: "first", tags: "jazz"),
+            recommendationStation(id: "second", tags: "pop")
+        ]
+
+        let selected = HomePersonalStationSelector.select(
+            from: stations,
+            excludingFeaturedID: "featured",
+            limit: 2
+        )
+
+        XCTAssertEqual(selected.map(\.id), ["first", "second"])
+    }
+
+    func testHomePersonalStationSelectorKeepsOrderAndAppliesLimit() {
+        let stations = [
+            recommendationStation(id: "first", tags: "news"),
+            recommendationStation(id: "second", tags: "jazz"),
+            recommendationStation(id: "third", tags: "pop")
+        ]
+
+        let selected = HomePersonalStationSelector.select(
+            from: stations,
+            excludingFeaturedID: nil,
+            limit: 2
+        )
+
+        XCTAssertEqual(selected.map(\.id), ["first", "second"])
+    }
+
     func testHomeRecommendationInsightBuilderUsesLocalizedPrimaryReason() {
         let recent = recommendationStation(id: "recent", tags: "news")
         let candidate = recommendationStation(id: "candidate", tags: "news", countryCode: "ES")

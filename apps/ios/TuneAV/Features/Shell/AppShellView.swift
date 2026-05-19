@@ -8574,11 +8574,11 @@ private struct HomeScreen: View {
     }
 
     private var displayedRecentStations: [Station] {
-        Array(filteredStationsExcludingFeatured(from: recentStations).prefix(6))
+        HomePersonalStationSelector.select(from: recentStations, excludingFeaturedID: featuredStationID, limit: 6)
     }
 
     private var displayedFavoriteStations: [Station] {
-        Array(filteredStationsExcludingFeatured(from: favoriteStations).prefix(6))
+        HomePersonalStationSelector.select(from: favoriteStations, excludingFeaturedID: featuredStationID, limit: 6)
     }
 
     private func displayedPopularStations(displayedRecentStations: [Station], displayedFavoriteStations: [Station]) -> [Station] {
