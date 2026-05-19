@@ -12,11 +12,11 @@ enum AppConfig {
     }
 
     static var supportBaseURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "SUPPORTAV_BASE_URL")
+        TuneAVBundleConfig.urlValue(for: "SUPPORTAV_BASE_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var avAccountAPIBaseURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL")
+        TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var isListeningAnalyticsUploadEnabled: Bool {
@@ -24,7 +24,7 @@ enum AppConfig {
     }
 
     static var accountManagementURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
+        TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var deleteAccountURL: URL? {
@@ -35,15 +35,15 @@ enum AppConfig {
     }
 
     static var termsURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_TERMS_URL")
+        TuneAVBundleConfig.urlValue(for: "TUNEAV_TERMS_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var privacyURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_PRIVACY_URL")
+        TuneAVBundleConfig.urlValue(for: "TUNEAV_PRIVACY_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var openSourceURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_OPEN_SOURCE_URL")
+        TuneAVBundleConfig.urlValue(for: "TUNEAV_OPEN_SOURCE_URL", requireSupportedAVAccountBaseURL: true)
     }
 
     static var revenueCatPublicAPIKey: String? {
