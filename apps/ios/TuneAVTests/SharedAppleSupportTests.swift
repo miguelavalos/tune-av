@@ -3133,6 +3133,87 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testHomeContentStateBuilderBuildsHeaderState() {
+        let station = recommendationStation(id: "current", tags: "pop")
+
+        let emptyState = HomeContentStateBuilder.headerState(
+            isLoading: false,
+            currentStation: nil,
+            playbackStatusLabel: "Playing",
+            recentCount: 0,
+            favoriteCount: 0,
+            hasPersonalActivity: false,
+            featuredStation: nil
+        )
+        XCTAssertEqual(emptyState.statusTitle, L10n.string("shell.status.live"))
+        XCTAssertEqual(emptyState.liveNowStatus, "Playing")
+        XCTAssertTrue(emptyState.showsLiveNowPanel)
+
+        let loadingState = HomeContentStateBuilder.headerState(
+            isLoading: true,
+            currentStation: station,
+            playbackStatusLabel: "Playing",
+            recentCount: 2,
+            favoriteCount: 3,
+            hasPersonalActivity: true,
+            featuredStation: station
+        )
+        XCTAssertEqual(loadingState.statusTitle, L10n.string("shell.status.refreshing"))
+        XCTAssertEqual(loadingState.currentStation?.id, station.id)
+        XCTAssertEqual(loadingState.recentCount, 2)
+        XCTAssertEqual(loadingState.favoriteCount, 3)
+        XCTAssertFalse(loadingState.showsLiveNowPanel)
+    }
+
+    func testHomeContentStateBuilderBuildsHeroState() {
+        let station = recommendationStation(id: "hero", tags: "pop")
+        let presentation = HomeStationPresentation(
+            tier: .fallback,
+            label: "Featured",
+            title: station.name,
+            primaryLine: "Pop",
+            secondaryLine: nil,
+            badges: []
+        )
+
+        let currentState = HomeContentStateBuilder.heroState(
+            isLoading: false,
+            displayedPopularStations: [station],
+            errorMessage: nil,
+            featuredStation: station,
+            presentation: presentation,
+            isFavorite: true,
+            isCurrentStation: true,
+            isPlaying: true,
+            isStationLoading: true,
+            stationFeedback: .liked
+        )
+        XCTAssertTrue(currentState.hasPopularStations)
+        XCTAssertEqual(currentState.station?.id, station.id)
+        XCTAssertEqual(currentState.presentation?.title, station.name)
+        XCTAssertTrue(currentState.isFavorite)
+        XCTAssertTrue(currentState.isPlaying)
+        XCTAssertTrue(currentState.isStationLoading)
+        XCTAssertEqual(currentState.stationFeedback, .liked)
+
+        let nonCurrentState = HomeContentStateBuilder.heroState(
+            isLoading: true,
+            displayedPopularStations: [],
+            errorMessage: "Offline",
+            featuredStation: station,
+            presentation: presentation,
+            isFavorite: false,
+            isCurrentStation: false,
+            isPlaying: true,
+            isStationLoading: true,
+            stationFeedback: nil
+        )
+        XCTAssertFalse(nonCurrentState.hasPopularStations)
+        XCTAssertEqual(nonCurrentState.errorMessage, "Offline")
+        XCTAssertFalse(nonCurrentState.isPlaying)
+        XCTAssertFalse(nonCurrentState.isStationLoading)
+    }
+
     func testHomeStationPresentationBuilderUsesCurrentTrackAsRichHero() {
         let station = recommendationStation(id: "hero", tags: "pop, hits", countryCode: "ES")
 

@@ -8258,21 +8258,14 @@ private struct HomeScreen: View {
 
     private func homeHeaderContentState(featuredState: HomeFeaturedStationState) -> HomeHeaderContentState {
         let currentStation = audioPlayer.currentStation
-        let statusTitle = if isLoading {
-            L10n.string("shell.status.refreshing")
-        } else if currentStation == nil {
-            L10n.string("shell.status.live")
-        } else {
-            audioPlayer.status.label
-        }
-
-        return HomeHeaderContentState(
-            statusTitle: statusTitle,
-            liveNowStatus: audioPlayer.status.label,
+        return HomeContentStateBuilder.headerState(
+            isLoading: isLoading,
             currentStation: currentStation,
+            playbackStatusLabel: audioPlayer.status.label,
             recentCount: recentStations.count,
             favoriteCount: favoriteStations.count,
-            showsLiveNowPanel: currentStation == nil && !hasPersonalActivity && featuredState.station == nil
+            hasPersonalActivity: hasPersonalActivity,
+            featuredStation: featuredState.station
         )
     }
 
@@ -8283,16 +8276,16 @@ private struct HomeScreen: View {
         let station = featuredState.station
         let isCurrentStation = station.map(audioPlayer.isCurrent) ?? false
 
-        return HomeHeroContentState(
+        return HomeContentStateBuilder.heroState(
             isLoading: isLoading,
-            hasPopularStations: !derivedState.displayedPopularStations.isEmpty,
+            displayedPopularStations: derivedState.displayedPopularStations,
             errorMessage: errorMessage,
-            station: station,
+            featuredStation: station,
             presentation: station.map { homePresentation(for: $0, source: featuredState.source) },
             isFavorite: station.map { favoriteStationIDs.contains($0.id) } ?? false,
             isCurrentStation: isCurrentStation,
-            isPlaying: isCurrentStation && audioPlayer.isPlaying,
-            isStationLoading: isCurrentStation && audioPlayer.isLoading,
+            isPlaying: audioPlayer.isPlaying,
+            isStationLoading: audioPlayer.isLoading,
             stationFeedback: station.flatMap { stationFeedback[$0.id] }
         )
     }
@@ -8366,15 +8359,6 @@ private struct HomeScreen: View {
 
 }
 
-private struct HomeHeaderContentState {
-    let statusTitle: String
-    let liveNowStatus: String
-    let currentStation: Station?
-    let recentCount: Int
-    let favoriteCount: Int
-    let showsLiveNowPanel: Bool
-}
-
 private struct HomeHeaderContent: View {
     let state: HomeHeaderContentState
     let openAvi: () -> Void
@@ -8409,19 +8393,6 @@ private struct HomeHeaderContent: View {
             LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
         }
     }
-}
-
-private struct HomeHeroContentState {
-    let isLoading: Bool
-    let hasPopularStations: Bool
-    let errorMessage: String?
-    let station: Station?
-    let presentation: HomeStationPresentation?
-    let isFavorite: Bool
-    let isCurrentStation: Bool
-    let isPlaying: Bool
-    let isStationLoading: Bool
-    let stationFeedback: TuneAVStationFeedback?
 }
 
 private struct HomeHeroContent: View {
