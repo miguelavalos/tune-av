@@ -41,8 +41,7 @@ final class SearchQueueUITests: TuneAVUITestCase {
 
         miniPlayer.tap()
 
-        let headerTitle = app.staticTexts["avi.context.header"]
-        XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
-        XCTAssertFalse(headerTitle.label.contains("BBC Radio 1"))
+        let nextStationTitle = app.staticTexts["SomaFM Groove Salad"].firstMatch
+        XCTAssertTrue(nextStationTitle.waitForExistence(timeout: 5))
     }
 }

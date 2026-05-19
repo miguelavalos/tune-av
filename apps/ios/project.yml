@@ -52,6 +52,8 @@ targets:
       Release: Config/Release.xcconfig
     sources:
       - path: TuneAV
+        excludes:
+          - Tools/**
       - path: ../../shared/apple
     dependencies:
       - package: AccountAV
