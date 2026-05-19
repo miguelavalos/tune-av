@@ -8227,30 +8227,24 @@ private struct HomeScreen: View {
     @State private var browserDestination: BrowserDestination?
 
     var body: some View {
-        let featuredState = homeFeaturedState
-        let derivedState = homeDerivedState(featuredState: featuredState)
-        let headerContentState = homeHeaderContentState(featuredState: featuredState)
-        let heroContentState = homeHeroContentState(
-            derivedState: derivedState,
-            featuredState: featuredState
-        )
+        let screenState = homeScreenState
         let heroActionRouter = homeHeroActionRouter
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HomeHeaderContent(
-                    state: headerContentState,
+                    state: screenState.headerContentState,
                     openAvi: openAvi
                 )
                 HomeHeroContent(
-                    state: heroContentState,
-                    playAction: { heroActionRouter.play($0, featuredState: featuredState) },
+                    state: screenState.heroContentState,
+                    playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
                     favoriteAction: toggleFavorite,
                     feedbackAction: heroActionRouter.setFeedback,
-                    detailsAction: { heroActionRouter.showDetails($0, featuredState: featuredState) }
+                    detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
                 )
                 HomeRecommendationSections(
-                    derivedState: derivedState,
+                    derivedState: screenState.derivedState,
                     favoriteStationIDs: favoriteStationIDs,
                     nowPlayingTracks: nowPlayingTracks,
                     stationFeedback: stationFeedback,
@@ -8269,48 +8263,27 @@ private struct HomeScreen: View {
         }
     }
 
-    private func homeHeaderContentState(featuredState: HomeFeaturedStationState) -> HomeHeaderContentState {
-        let currentStation = audioPlayer.currentStation
-        return HomeContentStateBuilder.headerState(
+    private var homeScreenState: HomeScreenState {
+        HomeScreenStateBuilder.build(
+            stations: stations,
             isLoading: isLoading,
-            currentStation: currentStation,
-            playbackStatusLabel: audioPlayer.status.label,
-            recentCount: recentStations.count,
-            favoriteCount: favoriteStations.count,
-            hasPersonalActivity: hasPersonalActivity,
-            featuredStation: featuredState.station
-        )
-    }
-
-    private func homeHeroContentState(
-        derivedState: HomeDerivedState,
-        featuredState: HomeFeaturedStationState
-    ) -> HomeHeroContentState {
-        let station = featuredState.station
-        let isCurrentStation = station.map(audioPlayer.isCurrent) ?? false
-
-        return HomeContentStateBuilder.heroState(
-            isLoading: isLoading,
-            displayedPopularStations: derivedState.displayedPopularStations,
             errorMessage: errorMessage,
-            featuredStation: station,
-            presentation: station.map { homePresentation(for: $0, source: featuredState.source) },
-            isFavorite: station.map { favoriteStationIDs.contains($0.id) } ?? false,
-            isCurrentStation: isCurrentStation,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            lastPlayedStation: lastPlayedStation,
+            discoveries: discoveries,
+            stationFeedback: stationFeedback,
+            feedContext: feedContext,
+            preferredTag: preferredTag,
+            preferredCountryCode: preferredCountryCode,
+            favoriteStationIDs: favoriteStationIDs,
+            currentStation: audioPlayer.currentStation,
+            playbackStatusLabel: audioPlayer.status.label,
+            isCurrentStation: audioPlayer.isCurrent(_:),
             isPlaying: audioPlayer.isPlaying,
             isStationLoading: audioPlayer.isLoading,
-            stationFeedback: station.flatMap { stationFeedback[$0.id] }
-        )
-    }
-
-    private func homePresentation(for station: Station, source: HomeFeaturedStationSource?) -> HomeStationPresentation {
-        HomeStationPresentationBuilder.build(
-            station: station,
-            source: source,
-            isCurrentStation: audioPlayer.isCurrent(station),
             currentTrackTitle: audioPlayer.currentTrackTitle,
-            currentTrackArtist: audioPlayer.currentTrackArtist,
-            feedContext: feedContext
+            currentTrackArtist: audioPlayer.currentTrackArtist
         )
     }
 
@@ -8322,35 +8295,6 @@ private struct HomeScreen: View {
             showStationDetails: showStationDetails,
             currentFeedback: { stationFeedback[$0.id] },
             setStationFeedback: setStationFeedback
-        )
-    }
-
-    private var hasPersonalActivity: Bool {
-        !recentStations.isEmpty || !favoriteStations.isEmpty
-    }
-
-    private var homeFeaturedState: HomeFeaturedStationState {
-        HomeFeaturedStationBuilder.build(
-            currentStation: audioPlayer.currentStation,
-            lastPlayedStation: lastPlayedStation,
-            recentStations: recentStations,
-            favoriteStations: favoriteStations,
-            stations: stations
-        )
-    }
-
-    private func homeDerivedState(featuredState: HomeFeaturedStationState) -> HomeDerivedState {
-        HomeDerivedStateBuilder.build(
-            stations: stations,
-            recentStations: recentStations,
-            favoriteStations: favoriteStations,
-            currentStation: audioPlayer.currentStation,
-            discoveries: discoveries,
-            stationFeedback: stationFeedback,
-            feedContext: feedContext,
-            preferredTag: preferredTag,
-            preferredCountryCode: preferredCountryCode,
-            featuredStationID: featuredState.stationID
         )
     }
 
