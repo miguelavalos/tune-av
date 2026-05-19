@@ -8306,62 +8306,64 @@ private struct HomeScreen: View {
         }
 
         if !derivedState.displayedAviPickStations.isEmpty {
-            StationSection(
+            homeStationCarouselSection(
                 title: L10n.string("shell.home.aviPicks.title"),
                 subtitle: L10n.string("shell.home.aviPicks.subtitle"),
-                accessibilityIdentifier: "home.section.aviPicks"
-            ) {
-                StationCompactCarousel(
-                    stations: derivedState.displayedAviPickStations,
-                    favoriteStationIDs: favoriteStationIDs,
-                    nowPlayingTracks: nowPlayingTracks,
-                    stationInsight: { derivedState.recommendationInsights[$0.id] },
-                    stationFeedback: stationFeedback,
-                    queueSource: .homeDiscovery,
-                    queueStations: derivedState.displayedAviPickStations,
-                    playStation: playStation,
-                    toggleFavorite: toggleFavorite,
-                    showStationDetails: showStationDetails
-                )
-            }
+                accessibilityIdentifier: "home.section.aviPicks",
+                stations: derivedState.displayedAviPickStations,
+                queueSource: .homeDiscovery,
+                stationInsight: { derivedState.recommendationInsights[$0.id] }
+            )
         }
 
         if !derivedState.displayedAroundYouStations.isEmpty {
-            StationSection(
+            homeStationCarouselSection(
                 title: L10n.string("shell.home.aroundYou.title"),
                 subtitle: L10n.string("shell.home.aroundYou.subtitle"),
-                accessibilityIdentifier: "home.section.aroundYou"
-            ) {
-                StationCompactCarousel(
-                    stations: derivedState.displayedAroundYouStations,
-                    favoriteStationIDs: favoriteStationIDs,
-                    nowPlayingTracks: nowPlayingTracks,
-                    stationInsight: { derivedState.recommendationInsights[$0.id] },
-                    stationFeedback: stationFeedback,
-                    queueSource: .homeDiscovery,
-                    queueStations: derivedState.displayedAroundYouStations,
-                    playStation: playStation,
-                    toggleFavorite: toggleFavorite,
-                    showStationDetails: showStationDetails
-                )
-            }
+                accessibilityIdentifier: "home.section.aroundYou",
+                stations: derivedState.displayedAroundYouStations,
+                queueSource: .homeDiscovery,
+                stationInsight: { derivedState.recommendationInsights[$0.id] }
+            )
         }
 
         if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
-            StationSection(title: L10n.string("shell.home.recentsFavorites.title"), subtitle: L10n.string("shell.home.recentsFavorites.subtitle"), accessibilityIdentifier: "home.section.recentsFavorites") {
-                StationCompactCarousel(
-                    stations: derivedState.displayedRecentAndFavoriteStations,
-                    favoriteStationIDs: favoriteStationIDs,
-                    nowPlayingTracks: nowPlayingTracks,
-                    stationInsight: { station in stationFeedback[station.id]?.localizedState },
-                    stationFeedback: stationFeedback,
-                    queueSource: .homeRecents,
-                    queueStations: derivedState.displayedRecentAndFavoriteStations,
-                    playStation: playStation,
-                    toggleFavorite: toggleFavorite,
-                    showStationDetails: showStationDetails
-                )
-            }
+            homeStationCarouselSection(
+                title: L10n.string("shell.home.recentsFavorites.title"),
+                subtitle: L10n.string("shell.home.recentsFavorites.subtitle"),
+                accessibilityIdentifier: "home.section.recentsFavorites",
+                stations: derivedState.displayedRecentAndFavoriteStations,
+                queueSource: .homeRecents,
+                stationInsight: { station in stationFeedback[station.id]?.localizedState }
+            )
+        }
+    }
+
+    private func homeStationCarouselSection(
+        title: String,
+        subtitle: String,
+        accessibilityIdentifier: String,
+        stations: [Station],
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        stationInsight: @escaping (Station) -> String?
+    ) -> some View {
+        StationSection(
+            title: title,
+            subtitle: subtitle,
+            accessibilityIdentifier: accessibilityIdentifier
+        ) {
+            StationCompactCarousel(
+                stations: stations,
+                favoriteStationIDs: favoriteStationIDs,
+                nowPlayingTracks: nowPlayingTracks,
+                stationInsight: stationInsight,
+                stationFeedback: stationFeedback,
+                queueSource: queueSource,
+                queueStations: stations,
+                playStation: playStation,
+                toggleFavorite: toggleFavorite,
+                showStationDetails: showStationDetails
+            )
         }
     }
 
