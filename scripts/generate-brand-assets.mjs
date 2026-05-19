@@ -95,7 +95,6 @@ console.log(JSON.stringify({
   preserved: [
     "AppIcon",
     "BrandMark",
-    "OnboardingHero",
   ],
   rebranded: "OnboardingWordmark",
 }, null, 2));
