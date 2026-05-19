@@ -10,6 +10,8 @@ enum TuneAVStationFeedback: String, Codable, CaseIterable {
     case disliked
     case notForMe
 
+    static let displayOrder: [TuneAVStationFeedback] = [.liked, .notForMe, .disliked]
+
     var localizedState: String {
         switch self {
         case .liked:
