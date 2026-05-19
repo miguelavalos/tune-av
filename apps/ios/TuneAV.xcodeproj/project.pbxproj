@@ -31,6 +31,7 @@
 		3C962943456FE4780AB75913 /* HomeMoodSuggestionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */; };
 		3F9A20636CE17A83BFE8E8C4 /* AppShellTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458EF57C362E247FF5234C69 /* AppShellTab.swift */; };
 		4313B398CF2F95B8E38D6106 /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */; };
+		449BEE1D1AC9DFA1B312EEFD /* HomeHeroActionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */; };
 		45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */; };
 		4C8FB23CB0922016ED1592C0 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
@@ -242,6 +243,7 @@
 		CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
 		CEEA3DEF80C8A67124C60474 /* TuneAVLibraryTombstone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryTombstone.swift; sourceTree = "<group>"; };
 		D1B460F9081126180579CEE3 /* TuneAVAccessLimitPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessLimitPolicy.swift; sourceTree = "<group>"; };
+		D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionBuilder.swift; sourceTree = "<group>"; };
 		D3DF0889936876263303726A /* TuneAVLibrarySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibrarySync.swift; sourceTree = "<group>"; };
 		D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerQueueUITests.swift; sourceTree = "<group>"; };
 		D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviBrief.swift; sourceTree = "<group>"; };
@@ -316,6 +318,7 @@
 				0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */,
 				E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */,
 				E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */,
+				D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */,
@@ -709,6 +712,7 @@
 				53C0BDDB8DE64709781948DE /* HomeDerivedStateBuilder.swift in Sources */,
 				AF019C179E67E7961F2F9D3A /* HomeDiscoveryTagBuilder.swift in Sources */,
 				C199AD1593FBF97BD0D39231 /* HomeFeaturedStationBuilder.swift in Sources */,
+				449BEE1D1AC9DFA1B312EEFD /* HomeHeroActionBuilder.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				3C962943456FE4780AB75913 /* HomeMoodSuggestionBuilder.swift in Sources */,

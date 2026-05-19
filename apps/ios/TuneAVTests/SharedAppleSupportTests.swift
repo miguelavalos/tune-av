@@ -3083,6 +3083,56 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(fallbackState.queueStations.map(\.id), [lastPlayed.id, popular.id])
     }
 
+    func testHomeHeroActionBuilderResolvesPlaybackAndDetailsQueueContext() {
+        let hero = recommendationStation(id: "hero", tags: "pop")
+        let queued = recommendationStation(id: "queued", tags: "rock")
+        let state = HomeFeaturedStationState(
+            station: hero,
+            source: .favorite,
+            queueSource: .homeFavorites,
+            queueStations: [hero, queued]
+        )
+
+        switch HomeHeroActionBuilder.playbackAction(isCurrentStation: false, featuredState: state) {
+        case .play(let queueSource, let queueStations):
+            XCTAssertEqual(queueSource, .homeFavorites)
+            XCTAssertEqual(queueStations.map(\.id), [hero.id, queued.id])
+        case .toggleCurrent:
+            XCTFail("Expected hero playback to use the featured queue")
+        }
+
+        switch HomeHeroActionBuilder.detailsAction(featuredState: state) {
+        case .show(let queueSource, let queueStations):
+            XCTAssertEqual(queueSource, .homeFavorites)
+            XCTAssertEqual(queueStations.map(\.id), [hero.id, queued.id])
+        }
+    }
+
+    func testHomeHeroActionBuilderTogglesCurrentPlaybackAndFeedback() {
+        let hero = recommendationStation(id: "hero", tags: "pop")
+        let state = HomeFeaturedStationState(
+            station: hero,
+            source: .current,
+            queueSource: .singleStation,
+            queueStations: [hero]
+        )
+
+        switch HomeHeroActionBuilder.playbackAction(isCurrentStation: true, featuredState: state) {
+        case .toggleCurrent:
+            break
+        case .play:
+            XCTFail("Expected current hero playback to toggle the active station")
+        }
+
+        XCTAssertNil(
+            HomeHeroActionBuilder.toggledFeedback(currentFeedback: .liked, selectedFeedback: .liked)
+        )
+        XCTAssertEqual(
+            HomeHeroActionBuilder.toggledFeedback(currentFeedback: .disliked, selectedFeedback: .liked),
+            .liked
+        )
+    }
+
     func testHomeStationPresentationBuilderUsesCurrentTrackAsRichHero() {
         let station = recommendationStation(id: "hero", tags: "pop, hits", countryCode: "ES")
 

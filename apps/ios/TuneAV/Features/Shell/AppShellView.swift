@@ -8268,7 +8268,7 @@ private struct HomeScreen: View {
                         isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
                         stationFeedback: stationFeedback[heroStation.id],
                         playAction: { playHeroStation(heroStation) },
-                        favoriteAction: { toggleHeroFavorite(heroStation) },
+                        favoriteAction: { toggleFavorite(heroStation) },
                         feedbackAction: { setHeroFeedback($0, for: heroStation) },
                         detailsAction: { showHeroDetails(heroStation) }
                     )
@@ -8364,26 +8364,30 @@ private struct HomeScreen: View {
     }
 
     private func playHeroStation(_ station: Station) {
-        if audioPlayer.isCurrent(station) {
+        switch HomeHeroActionBuilder.playbackAction(
+            isCurrentStation: audioPlayer.isCurrent(station),
+            featuredState: homeFeaturedState
+        ) {
+        case .toggleCurrent:
             audioPlayer.togglePlayback()
-        } else {
-            let featuredState = homeFeaturedState
-            playStation(station, featuredState.queueSource, featuredState.queueStations)
+        case .play(let queueSource, let queueStations):
+            playStation(station, queueSource, queueStations)
         }
     }
 
-    private func toggleHeroFavorite(_ station: Station) {
-        toggleFavorite(station)
-    }
-
     private func setHeroFeedback(_ feedback: TuneAVStationFeedback, for station: Station) {
-        let nextFeedback = stationFeedback[station.id] == feedback ? nil : feedback
+        let nextFeedback = HomeHeroActionBuilder.toggledFeedback(
+            currentFeedback: stationFeedback[station.id],
+            selectedFeedback: feedback
+        )
         setStationFeedback(station, nextFeedback)
     }
 
     private func showHeroDetails(_ station: Station) {
-        let featuredState = homeFeaturedState
-        showStationDetails(station, featuredState.queueSource, featuredState.queueStations)
+        switch HomeHeroActionBuilder.detailsAction(featuredState: homeFeaturedState) {
+        case .show(let queueSource, let queueStations):
+            showStationDetails(station, queueSource, queueStations)
+        }
     }
 
     private var hasPersonalActivity: Bool {
