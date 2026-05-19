@@ -22,7 +22,11 @@ class TuneAVUITestCase: XCTestCase {
             app.launchEnvironment[key] = value
         }
 
+        app.terminate()
         app.launch()
+        addTeardownBlock {
+            app.terminate()
+        }
         return app
     }
 }
