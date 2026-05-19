@@ -8543,9 +8543,13 @@ private struct HomeScreen: View {
             from: displayedPopularStations,
             limit: 4
         )
-        let displayedAroundYouStations = displayedAroundYouStations(
-            displayedPopularStations: displayedPopularStations,
-            displayedAviPickStations: displayedAviPickStations
+        let displayedAroundYouStations = HomeAroundYouStationSelector.select(
+            from: displayedPopularStations,
+            aviPickStations: displayedAviPickStations,
+            preferredCountryCode: preferredCountryCode,
+            currentCountryCode: audioPlayer.currentStation?.countryCode,
+            fallbackStartOffset: 4,
+            limit: 6
         )
         let displayedRecentAndFavoriteStations = HomeRecentFavoriteStationSelector.select(
             recentStations: displayedRecentStations,
@@ -8582,24 +8586,6 @@ private struct HomeScreen: View {
 
     private var displayedFavoriteStations: [Station] {
         HomePersonalStationSelector.select(from: favoriteStations, excludingFeaturedID: featuredStationID, limit: 6)
-    }
-
-    private func displayedAroundYouStations(displayedPopularStations: [Station], displayedAviPickStations: [Station]) -> [Station] {
-        let preferredCountry = TuneAVCountry.sanitizedCode(preferredCountryCode)
-        let currentCountry = TuneAVCountry.sanitizedCode(audioPlayer.currentStation?.countryCode)
-        let country = preferredCountry ?? currentCountry
-
-        guard let country else {
-            return Array(displayedPopularStations.dropFirst(4).prefix(6))
-        }
-
-        let aviPickIDs = Set(displayedAviPickStations.map(\.id))
-        return HomeAroundYouStationSelector.select(
-            from: displayedPopularStations,
-            excluding: aviPickIDs,
-            countryCode: country,
-            limit: 6
-        )
     }
 
     private func moodGenreTags(visibleDiscoveryTags: [String]) -> [HomeMoodGenreSuggestion] {

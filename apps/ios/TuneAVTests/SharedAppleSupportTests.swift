@@ -2635,6 +2635,42 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), [second.id, third.id])
     }
 
+    func testHomeAroundYouSelectorUsesPreferredCountryBeforeCurrentCountry() {
+        let aviPick = recommendationStation(id: "avi-pick", tags: "news", countryCode: "ES")
+        let currentCountryMatch = recommendationStation(id: "current-country", tags: "jazz", countryCode: "US")
+        let preferredCountryMatch = recommendationStation(id: "preferred-country", tags: "pop", countryCode: "ES")
+
+        let selected = HomeAroundYouStationSelector.select(
+            from: [aviPick, currentCountryMatch, preferredCountryMatch],
+            aviPickStations: [aviPick],
+            preferredCountryCode: "ES",
+            currentCountryCode: "US",
+            fallbackStartOffset: 1,
+            limit: 6
+        )
+
+        XCTAssertEqual(selected.map(\.id), [preferredCountryMatch.id])
+    }
+
+    func testHomeAroundYouSelectorFallsBackAfterAviPicksWhenNoCountryIsAvailable() {
+        let stations = [
+            recommendationStation(id: "first", tags: "news"),
+            recommendationStation(id: "second", tags: "jazz"),
+            recommendationStation(id: "third", tags: "pop")
+        ]
+
+        let selected = HomeAroundYouStationSelector.select(
+            from: stations,
+            aviPickStations: [stations[0]],
+            preferredCountryCode: nil,
+            currentCountryCode: nil,
+            fallbackStartOffset: 1,
+            limit: 1
+        )
+
+        XCTAssertEqual(selected.map(\.id), [stations[1].id])
+    }
+
     func testHomeAviPickSelectorPreservesRankedOrderAndLimit() {
         let stations = [
             recommendationStation(id: "first", tags: "news"),
