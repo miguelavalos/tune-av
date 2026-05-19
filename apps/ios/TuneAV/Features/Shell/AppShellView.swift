@@ -8217,6 +8217,7 @@ private struct HomeScreen: View {
     var body: some View {
         let derivedState = homeDerivedState
         let featuredState = homeFeaturedState
+        let heroStation = featuredState.station
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -8229,7 +8230,22 @@ private struct HomeScreen: View {
                     showsLiveNowPanel: shouldShowLiveNowPanel,
                     openAvi: openAvi
                 )
-                homeHeroContent(derivedState: derivedState, featuredState: featuredState)
+                HomeHeroContent(
+                    isLoading: isLoading,
+                    hasPopularStations: !derivedState.displayedPopularStations.isEmpty,
+                    errorMessage: errorMessage,
+                    station: heroStation,
+                    presentation: heroStation.map { homePresentation(for: $0, source: featuredState.source) },
+                    isFavorite: heroStation.map { favoriteStationIDs.contains($0.id) } ?? false,
+                    isCurrentStation: heroStation.map(audioPlayer.isCurrent) ?? false,
+                    isPlaying: heroStation.map { audioPlayer.isCurrent($0) && audioPlayer.isPlaying } ?? false,
+                    isStationLoading: heroStation.map { audioPlayer.isCurrent($0) && audioPlayer.isLoading } ?? false,
+                    stationFeedback: heroStation.flatMap { stationFeedback[$0.id] },
+                    playAction: playHeroStation,
+                    favoriteAction: toggleFavorite,
+                    feedbackAction: setHeroFeedback,
+                    detailsAction: showHeroDetails
+                )
                 homeRecommendationSections(derivedState: derivedState)
             }
             .shellScreenContentPadding(bottom: bottomContentPadding)
@@ -8238,37 +8254,6 @@ private struct HomeScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
-        }
-    }
-
-    @ViewBuilder
-    private func homeHeroContent(derivedState: HomeDerivedState, featuredState: HomeFeaturedStationState) -> some View {
-        if isLoading && featuredState.station == nil && derivedState.displayedPopularStations.isEmpty {
-            StationCardSkeletonGroup()
-        } else if let errorMessage {
-            EmptyLibraryState(
-                title: L10n.string("shell.home.error.title"),
-                detail: errorMessage
-            )
-        } else if let heroStation = featuredState.station {
-            HomeTuningDeskHero(
-                station: heroStation,
-                presentation: homePresentation(for: heroStation, source: featuredState.source),
-                isFavorite: favoriteStationIDs.contains(heroStation.id),
-                isCurrentStation: audioPlayer.isCurrent(heroStation),
-                isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
-                isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
-                stationFeedback: stationFeedback[heroStation.id],
-                playAction: { playHeroStation(heroStation) },
-                favoriteAction: { toggleFavorite(heroStation) },
-                feedbackAction: { setHeroFeedback($0, for: heroStation) },
-                detailsAction: { showHeroDetails(heroStation) }
-            )
-        } else {
-            EmptyLibraryState(
-                title: L10n.string("shell.home.empty.title"),
-                detail: L10n.string("shell.home.empty.detail")
-            )
         }
     }
 
@@ -8450,6 +8435,54 @@ private struct HomeHeaderContent: View {
 
         if showsLiveNowPanel {
             LiveNowPanel(currentStation: currentStation, status: liveNowStatus)
+        }
+    }
+}
+
+private struct HomeHeroContent: View {
+    let isLoading: Bool
+    let hasPopularStations: Bool
+    let errorMessage: String?
+    let station: Station?
+    let presentation: HomeStationPresentation?
+    let isFavorite: Bool
+    let isCurrentStation: Bool
+    let isPlaying: Bool
+    let isStationLoading: Bool
+    let stationFeedback: TuneAVStationFeedback?
+    let playAction: (Station) -> Void
+    let favoriteAction: (Station) -> Void
+    let feedbackAction: (TuneAVStationFeedback, Station) -> Void
+    let detailsAction: (Station) -> Void
+
+    @ViewBuilder
+    var body: some View {
+        if isLoading && station == nil && !hasPopularStations {
+            StationCardSkeletonGroup()
+        } else if let errorMessage {
+            EmptyLibraryState(
+                title: L10n.string("shell.home.error.title"),
+                detail: errorMessage
+            )
+        } else if let station, let presentation {
+            HomeTuningDeskHero(
+                station: station,
+                presentation: presentation,
+                isFavorite: isFavorite,
+                isCurrentStation: isCurrentStation,
+                isPlaying: isPlaying,
+                isLoading: isStationLoading,
+                stationFeedback: stationFeedback,
+                playAction: { playAction(station) },
+                favoriteAction: { favoriteAction(station) },
+                feedbackAction: { feedbackAction($0, station) },
+                detailsAction: { detailsAction(station) }
+            )
+        } else {
+            EmptyLibraryState(
+                title: L10n.string("shell.home.empty.title"),
+                detail: L10n.string("shell.home.empty.detail")
+            )
         }
     }
 }
