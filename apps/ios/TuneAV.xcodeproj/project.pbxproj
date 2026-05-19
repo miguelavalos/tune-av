@@ -21,6 +21,7 @@
 		2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */; };
 		2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */; };
 		2F65C8472D88CA7FBAFE52BF /* AccessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE496FF33E54B703864FACD2 /* AccessController.swift */; };
+		318ED69750E46FB124579702 /* StationCompactCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */; };
 		35E62D1CAA5B80E2C3B64C47 /* TuneAVServiceAliases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */; };
 		3877DDCA2949E2A26FB0AA8E /* TuneAVSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A8A74CF9078AA2D12F7466 /* TuneAVSplashView.swift */; };
 		3999ACCE46F815BC19A27F16 /* AccessLimitsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9123677EFD411D6E6506AB24 /* AccessLimitsTests.swift */; };
@@ -208,6 +209,7 @@
 		C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVURLSupport.swift; sourceTree = "<group>"; };
 		C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
+		C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationCompactCarousel.swift; sourceTree = "<group>"; };
 		CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueueUITests.swift; sourceTree = "<group>"; };
 		CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVNowPlayingService.swift; sourceTree = "<group>"; };
 		CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
+				C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */,
 			);
 			path = Shell;
 			sourceTree = "<group>";
@@ -662,6 +665,7 @@
 				772107B947DC7AFE8F717983 /* RootView.swift in Sources */,
 				E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */,
 				B41F6E43939C9E5746B866B2 /* Station.swift in Sources */,
+				318ED69750E46FB124579702 /* StationCompactCarousel.swift in Sources */,
 				A4196DEA7C036793524034C2 /* SubscriptionPurchasingService.swift in Sources */,
 				151635FADD47D1B88D07889F /* TuneAVAccessClient.swift in Sources */,
 				8493FD9C156E55EC743944EA /* TuneAVAccessLimitPolicy.swift in Sources */,
