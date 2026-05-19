@@ -703,9 +703,17 @@ struct TuneAVRemoteArtworkImage<Placeholder: View>: View {
 actor TuneAVArtworkImagePipeline {
     static let shared = TuneAVArtworkImagePipeline()
 
+    private struct FailedLookup {
+        let expiresAt: Date
+    }
+
+    private static let maxArtworkResponseBytes = 5 * 1024 * 1024
+    private static let failedLookupTTL: TimeInterval = 60
+
     private let session: URLSession
     private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
     private var inFlight: [String: Task<TuneAVPlatformImage?, Never>] = [:]
+    private var failedLookups: [String: FailedLookup] = [:]
 
     init(session: URLSession = TuneAVURLSessions.artwork) {
         self.session = session
@@ -717,6 +725,12 @@ actor TuneAVArtworkImagePipeline {
         let key = cacheKey(url: url, maxPixelSize: maxPixelSize)
         if let cached = cache.object(forKey: key as NSString)?.image {
             return Image(platformImage: cached)
+        }
+        if let failedLookup = failedLookups[key] {
+            if failedLookup.expiresAt > Date() {
+                return nil
+            }
+            failedLookups[key] = nil
         }
 
         if let task = inFlight[key] {
@@ -731,17 +745,21 @@ actor TuneAVArtworkImagePipeline {
         let loadedImage = await task.value
         inFlight[key] = nil
         if let loadedImage {
+            failedLookups[key] = nil
             cache.setObject(
                 TuneAVPlatformImageBox(loadedImage),
                 forKey: key as NSString,
                 cost: maxPixelSize * maxPixelSize * 4
             )
+        } else {
+            failedLookups[key] = FailedLookup(expiresAt: Date().addingTimeInterval(Self.failedLookupTTL))
         }
         return loadedImage.map(Image.init(platformImage:))
     }
 
     func clearMemoryCache() {
         cache.removeAllObjects()
+        failedLookups.removeAll()
     }
 
     private func cacheKey(url: URL, maxPixelSize: Int) -> String {
@@ -750,9 +768,19 @@ actor TuneAVArtworkImagePipeline {
 
     private static func loadImage(from url: URL, maxPixelSize: Int, session: URLSession) async -> TuneAVPlatformImage? {
         do {
-            let (data, response) = try await session.data(from: url)
+            var request = URLRequest(url: url)
+            request.setValue("image/avif,image/webp,image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
+            request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
+
+            let (data, response) = try await session.data(for: request)
             guard !Task.isCancelled else { return nil }
             guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                return nil
+            }
+            if httpResponse.expectedContentLength > Self.maxArtworkResponseBytes {
+                return nil
+            }
+            guard data.count <= Self.maxArtworkResponseBytes else {
                 return nil
             }
             return downsampleImage(data: data, maxPixelSize: maxPixelSize)

@@ -2124,6 +2124,57 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(station.displayArtworkUsesFaviconProxy)
     }
 
+    func testArtworkImagePipelineCachesFailedLookupsBriefly() async {
+        let pipeline = TuneAVArtworkImagePipeline(session: testURLSession())
+        await pipeline.clearMemoryCache()
+
+        var requestCount = 0
+        var requestedAcceptHeader: String?
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestCount += 1
+            requestedAcceptHeader = request.value(forHTTPHeaderField: "Accept")
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!,
+                Data()
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let url = URL(string: "https://cdn.test/artwork/failing.jpg")!
+        let firstImage = await pipeline.image(from: url, maxPixelSize: 128)
+        let secondImage = await pipeline.image(from: url, maxPixelSize: 128)
+
+        XCTAssertNil(firstImage)
+        XCTAssertNil(secondImage)
+        XCTAssertEqual(requestCount, 1)
+        XCTAssertEqual(requestedAcceptHeader, "image/avif,image/webp,image/*,*/*;q=0.8")
+    }
+
+    func testArtworkImagePipelineRejectsOversizedResponses() async {
+        let pipeline = TuneAVArtworkImagePipeline(session: testURLSession())
+        await pipeline.clearMemoryCache()
+
+        var requestCount = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            requestCount += 1
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Length": "\(6 * 1024 * 1024)"]
+                )!,
+                Data("not decoded".utf8)
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let image = await pipeline.image(from: URL(string: "https://cdn.test/artwork/huge.jpg")!, maxPixelSize: 128)
+
+        XCTAssertNil(image)
+        XCTAssertEqual(requestCount, 1)
+    }
+
     func testStationFallbackArtworkSelectionIsDeterministic() {
         let station = Station(
             id: "stable-station-id",
