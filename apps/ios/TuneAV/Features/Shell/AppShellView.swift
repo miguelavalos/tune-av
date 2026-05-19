@@ -8504,11 +8504,6 @@ private struct HomeScreen: View {
         )
     }
 
-    private func filteredStationsExcludingFeatured(from stations: [Station]) -> [Station] {
-        guard let featuredStationID = homeFeaturedState.stationID else { return stations }
-        return stations.filter { $0.id != featuredStationID }
-    }
-
     private func featuredLabel(for source: HomeFeaturedStationSource?) -> String {
         switch source {
         case .recent:
@@ -8531,38 +8526,6 @@ private struct HomeScreen: View {
             return countryName.uppercased(with: .current)
         case .popularWorldwide:
             return L10n.string("shell.home.featured.popular").uppercased(with: .current)
-        }
-    }
-
-    private var sectionTitle: String {
-        if hasPersonalActivity {
-            return L10n.string("shell.home.section.freshPicks.title")
-        }
-
-        switch feedContext {
-        case .preferredGenre(let tag):
-            return L10n.string("shell.home.section.topGenre.title", L10n.genreLabel(for: tag))
-        case .popularInCountry(let countryCode):
-            let countryName = L10n.countryName(for: countryCode)
-            return L10n.string("shell.home.section.popularCountry.title", countryName)
-        case .popularWorldwide:
-            return L10n.string("shell.home.section.popularWorldwide.title")
-        }
-    }
-
-    private var sectionSubtitle: String {
-        if hasPersonalActivity {
-            return L10n.string("shell.home.section.freshPicks.subtitle")
-        }
-
-        switch feedContext {
-        case .preferredGenre:
-            return L10n.string("shell.home.section.topGenre.subtitle")
-        case .popularInCountry(let countryCode):
-            let countryName = L10n.countryName(for: countryCode)
-            return L10n.string("shell.home.section.popularCountry.subtitle", countryName)
-        case .popularWorldwide:
-            return L10n.string("shell.home.section.popularWorldwide.subtitle")
         }
     }
 }
