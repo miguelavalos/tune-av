@@ -2935,6 +2935,37 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(suggestions.map(\.tag), TuneAVMusicGenreCatalog.visibleTags)
     }
 
+    func testHomeMoodSuggestionBuilderBuildsCatalogSuggestionsFromStationTags() {
+        let stations = [
+            recommendationStation(id: "first", tags: "News, Jazz"),
+            recommendationStation(id: "second", tags: "Rock")
+        ]
+
+        let suggestions = HomeMoodSuggestionBuilder.build(from: stations, stationLimit: 8)
+
+        XCTAssertEqual(suggestions.map(\.tag), TuneAVMusicGenreCatalog.visibleTags)
+        XCTAssertEqual(
+            suggestions.map(\.title),
+            TuneAVMusicGenreCatalog.visibleTags.map { L10n.genreLabel(for: $0).capitalized(with: L10n.locale) }
+        )
+    }
+
+    func testHomeMoodSuggestionBuilderAppliesStationLimitBeforeBuildingSuggestions() {
+        let stations = [
+            recommendationStation(id: "first", tags: "News, Jazz"),
+            recommendationStation(id: "second", tags: "Rock"),
+            recommendationStation(id: "third", tags: "Pop")
+        ]
+
+        let limitedTags = HomeDiscoveryTagBuilder.build(from: Array(stations.prefix(2)), stationLimit: 8)
+        let suggestions = HomeMoodSuggestionBuilder.build(from: stations, stationLimit: 2)
+
+        XCTAssertEqual(
+            suggestions,
+            HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: limitedTags)
+        )
+    }
+
     func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
         let station = recommendationStation(id: "pop", tags: "pop, hits")
 

@@ -8556,11 +8556,10 @@ private struct HomeScreen: View {
             favoriteStations: displayedFavoriteStations,
             limit: 8
         )
-        let visibleDiscoveryTags = HomeDiscoveryTagBuilder.build(
+        let moodGenreTags = HomeMoodSuggestionBuilder.build(
             from: displayedPopularStations,
             stationLimit: 8
         )
-        let moodGenreTags = moodGenreTags(visibleDiscoveryTags: visibleDiscoveryTags)
         let scorer = recommendationScorer
         let recommendationInsights = HomeRecommendationInsightBuilder.build(
             aviPickStations: displayedAviPickStations,
@@ -8586,10 +8585,6 @@ private struct HomeScreen: View {
 
     private var displayedFavoriteStations: [Station] {
         HomePersonalStationSelector.select(from: favoriteStations, excludingFeaturedID: featuredStationID, limit: 6)
-    }
-
-    private func moodGenreTags(visibleDiscoveryTags: [String]) -> [HomeMoodGenreSuggestion] {
-        HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: visibleDiscoveryTags)
     }
 
     private var recommendationScorer: TuneAVLocalRecommendationScorer {
