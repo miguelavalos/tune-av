@@ -275,42 +275,7 @@ struct AppShellView: View {
         case .avi:
             aviScreen
         case .library:
-            let favorites = enrichedFavoriteStations
-            let recents = enrichedRecentStations
-
-            LibraryScreen(
-                favorites: favorites,
-                recents: recents,
-                discoveries: libraryStore.discoveries,
-                summary: libraryStore.userSummary,
-                requestedMode: $requestedRadioMode,
-                requestedOverview: $requestedRadioOverview,
-                bottomContentPadding: shellScrollBottomPadding,
-                favoriteStationIDs: favoriteStationIDs,
-                nowPlayingTracks: stationNowPlayingTracks,
-                stationFeedback: libraryStore.stationFeedback,
-                openAccountAction: {
-                    profileMode = .account
-                    selectedTab = .profile
-                },
-                startSignInAction: {
-                    startSignInFlow(true)
-                },
-                openSearchAction: {
-                    selectedTab = .search
-                },
-                playStation: playStation,
-                toggleFavorite: toggleFavorite(_:),
-                showStationDetails: { station, queueSource, queue, mode, showsOverview in
-                    showStationDetails(
-                        station,
-                        queueSource: queueSource,
-                        queue: queue,
-                        returnRadioMode: mode,
-                        returnRadioOverview: showsOverview
-                    )
-                }
-            )
+            libraryScreen
         case .music:
             MusicScreen(
                 discoveries: libraryStore.discoveries,
@@ -428,6 +393,43 @@ struct AppShellView: View {
         queue: [Station]?
     ) {
         showStationDetails(station, queueSource: queueSource, queue: queue)
+    }
+
+    private var libraryScreen: some View {
+        LibraryScreen(
+            favorites: enrichedFavoriteStations,
+            recents: enrichedRecentStations,
+            discoveries: libraryStore.discoveries,
+            summary: libraryStore.userSummary,
+            requestedMode: $requestedRadioMode,
+            requestedOverview: $requestedRadioOverview,
+            bottomContentPadding: shellScrollBottomPadding,
+            favoriteStationIDs: favoriteStationIDs,
+            nowPlayingTracks: stationNowPlayingTracks,
+            stationFeedback: libraryStore.stationFeedback,
+            openAccountAction: openAccountProfile,
+            startSignInAction: startAviSignIn,
+            openSearchAction: openSearchTab,
+            playStation: playStation,
+            toggleFavorite: toggleFavorite(_:),
+            showStationDetails: showLibraryStationDetails(_:queueSource:queue:returnRadioMode:returnRadioOverview:)
+        )
+    }
+
+    private func showLibraryStationDetails(
+        _ station: Station,
+        queueSource: TuneAVPlaybackQueueSource,
+        queue: [Station]?,
+        returnRadioMode: RadioLibraryMode?,
+        returnRadioOverview: Bool?
+    ) {
+        showStationDetails(
+            station,
+            queueSource: queueSource,
+            queue: queue,
+            returnRadioMode: returnRadioMode,
+            returnRadioOverview: returnRadioOverview
+        )
     }
 
     private var aviScreen: some View {
