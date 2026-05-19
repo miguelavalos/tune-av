@@ -1021,7 +1021,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
             artworkURL: cachedState.artworkURL,
             artistURL: cachedState.artistURL
         ))
+        restoreCachedNowPlayingArtworkImage(for: cachedState.artworkURL)
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
+    }
+
+    private func restoreCachedNowPlayingArtworkImage(for artworkURL: URL?) {
+        guard let artworkURL else { return }
+        guard let cachedImage = Self.nowPlayingArtworkImageCache.object(forKey: artworkURL as NSURL) else { return }
+
+        nowPlayingArtworkSourceURL = artworkURL
+        nowPlayingArtworkImage = cachedImage
     }
 
     private func rememberCachedNowPlayingStationID(_ stationID: String) {
