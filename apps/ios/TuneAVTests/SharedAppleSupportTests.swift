@@ -2966,6 +2966,42 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testHomeDerivedStateBuilderBuildsSectionStateAndExcludesFeaturedPersonalStations() {
+        let featured = recommendationStation(id: "featured", tags: "news", countryCode: "ES")
+        let recent = recommendationStation(id: "recent", tags: "jazz", countryCode: "ES")
+        let favorite = recommendationStation(id: "favorite", tags: "rock", countryCode: "ES")
+        let aviPick = recommendationStation(id: "avi-pick", tags: "pop", countryCode: "ES")
+        let aroundYou = recommendationStation(id: "around-you", tags: "ambient", countryCode: "ES")
+        let other = recommendationStation(id: "other", tags: "talk", countryCode: "US")
+
+        let state = HomeDerivedStateBuilder.build(
+            stations: [featured, recent, favorite, aviPick, aroundYou, other],
+            recentStations: [featured, recent],
+            favoriteStations: [favorite],
+            currentStation: nil,
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "",
+            preferredCountryCode: "ES",
+            featuredStationID: featured.id,
+            aviPickLimit: 1,
+            aroundYouLimit: 2
+        )
+
+        XCTAssertEqual(state.displayedRecentStations.map(\.id), [recent.id])
+        XCTAssertEqual(state.displayedFavoriteStations.map(\.id), [favorite.id])
+        XCTAssertFalse(state.displayedPopularStations.map(\.id).contains(featured.id))
+        XCTAssertFalse(state.displayedPopularStations.map(\.id).contains(recent.id))
+        XCTAssertFalse(state.displayedPopularStations.map(\.id).contains(favorite.id))
+        XCTAssertEqual(state.displayedAviPickStations.map(\.id), [aroundYou.id])
+        XCTAssertEqual(state.displayedAroundYouStations.map(\.id), [aviPick.id])
+        XCTAssertEqual(state.displayedRecentAndFavoriteStations.map(\.id), [recent.id, favorite.id])
+        XCTAssertEqual(state.moodGenreTags.map(\.tag), TuneAVMusicGenreCatalog.visibleTags)
+        XCTAssertNotNil(state.recommendationInsights[aroundYou.id])
+        XCTAssertNotNil(state.recommendationInsights[aviPick.id])
+    }
+
     func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
         let station = recommendationStation(id: "pop", tags: "pop, hits")
 

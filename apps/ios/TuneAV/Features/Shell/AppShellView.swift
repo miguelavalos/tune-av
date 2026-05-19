@@ -8222,17 +8222,6 @@ private struct HomeScreen: View {
         case popular
     }
 
-    private struct DerivedState {
-        let displayedRecentStations: [Station]
-        let displayedFavoriteStations: [Station]
-        let displayedPopularStations: [Station]
-        let displayedAviPickStations: [Station]
-        let displayedAroundYouStations: [Station]
-        let displayedRecentAndFavoriteStations: [Station]
-        let moodGenreTags: [HomeMoodGenreSuggestion]
-        let recommendationInsights: [String: String]
-    }
-
     var body: some View {
         let derivedState = homeDerivedState
 
@@ -8529,74 +8518,18 @@ private struct HomeScreen: View {
         heroStation?.id
     }
 
-    private var homeDerivedState: DerivedState {
-        let displayedRecentStations = displayedRecentStations
-        let displayedFavoriteStations = displayedFavoriteStations
-        let displayedPopularStations = HomePopularStationSelector.select(
-            from: stations,
-            excludingFeaturedID: featuredStationID,
-            excludingRecentStations: displayedRecentStations,
-            favoriteStations: displayedFavoriteStations,
-            scorer: recommendationScorer
-        )
-        let displayedAviPickStations = HomeAviPickStationSelector.select(
-            from: displayedPopularStations,
-            limit: 4
-        )
-        let displayedAroundYouStations = HomeAroundYouStationSelector.select(
-            from: displayedPopularStations,
-            aviPickStations: displayedAviPickStations,
-            preferredCountryCode: preferredCountryCode,
-            currentCountryCode: audioPlayer.currentStation?.countryCode,
-            fallbackStartOffset: 4,
-            limit: 6
-        )
-        let displayedRecentAndFavoriteStations = HomeRecentFavoriteStationSelector.select(
-            recentStations: displayedRecentStations,
-            favoriteStations: displayedFavoriteStations,
-            limit: 8
-        )
-        let moodGenreTags = HomeMoodSuggestionBuilder.build(
-            from: displayedPopularStations,
-            stationLimit: 8
-        )
-        let scorer = recommendationScorer
-        let recommendationInsights = HomeRecommendationInsightBuilder.build(
-            aviPickStations: displayedAviPickStations,
-            aroundYouStations: displayedAroundYouStations,
-            scorer: scorer
-        )
-
-        return DerivedState(
-            displayedRecentStations: displayedRecentStations,
-            displayedFavoriteStations: displayedFavoriteStations,
-            displayedPopularStations: displayedPopularStations,
-            displayedAviPickStations: displayedAviPickStations,
-            displayedAroundYouStations: displayedAroundYouStations,
-            displayedRecentAndFavoriteStations: displayedRecentAndFavoriteStations,
-            moodGenreTags: moodGenreTags,
-            recommendationInsights: recommendationInsights
-        )
-    }
-
-    private var displayedRecentStations: [Station] {
-        HomePersonalStationSelector.select(from: recentStations, excludingFeaturedID: featuredStationID, limit: 6)
-    }
-
-    private var displayedFavoriteStations: [Station] {
-        HomePersonalStationSelector.select(from: favoriteStations, excludingFeaturedID: featuredStationID, limit: 6)
-    }
-
-    private var recommendationScorer: TuneAVLocalRecommendationScorer {
-        TuneAVLocalRecommendationScorer(
-            currentStation: audioPlayer.currentStation,
+    private var homeDerivedState: HomeDerivedState {
+        HomeDerivedStateBuilder.build(
+            stations: stations,
             recentStations: recentStations,
             favoriteStations: favoriteStations,
+            currentStation: audioPlayer.currentStation,
             discoveries: discoveries,
             stationFeedback: stationFeedback,
             feedContext: feedContext,
             preferredTag: preferredTag,
-            currentCountryCode: preferredCountryCode
+            preferredCountryCode: preferredCountryCode,
+            featuredStationID: featuredStationID
         )
     }
 
