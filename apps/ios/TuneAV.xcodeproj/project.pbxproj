@@ -105,6 +105,7 @@
 		FA0801A605B9E3AB0847B0AD /* StationDetailQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */; };
 		FDC09EEB954564744391453A /* LaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06624915894913972B482E00 /* LaunchContext.swift */; };
 		FE83DD4717512AC9A7FB7A96 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 78E26A38B7BC6D3D3963CC70 /* Assets.xcassets */; };
+		FF79C327A739AFD202471187 /* HomeAviBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -221,6 +222,7 @@
 		D1B460F9081126180579CEE3 /* TuneAVAccessLimitPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessLimitPolicy.swift; sourceTree = "<group>"; };
 		D3DF0889936876263303726A /* TuneAVLibrarySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibrarySync.swift; sourceTree = "<group>"; };
 		D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerQueueUITests.swift; sourceTree = "<group>"; };
+		D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviBrief.swift; sourceTree = "<group>"; };
 		DA32EAF81A20F877B3162053 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
 		DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 				FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */,
 				458EF57C362E247FF5234C69 /* AppShellTab.swift */,
 				008936263180E93620BF3D42 /* AppShellView.swift */,
+				D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
@@ -661,6 +664,7 @@
 				A4A3A42AE74C29105A13D4D0 /* AudioPlayerService.swift in Sources */,
 				A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */,
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
+				FF79C327A739AFD202471187 /* HomeAviBrief.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,
