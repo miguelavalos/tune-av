@@ -277,39 +277,7 @@ struct AppShellView: View {
         case .library:
             libraryScreen
         case .music:
-            MusicScreen(
-                discoveries: libraryStore.discoveries,
-                summary: libraryStore.userSummary,
-                historyStationFilter: $musicHistoryStationFilter,
-                requestedMusicMode: $requestedMusicMode,
-                requestedMusicOverview: $requestedMusicOverview,
-                bottomContentPadding: shellScrollBottomPadding,
-                openDiscoveryStation: openDiscoveryStation(_:),
-                openDiscoveryStationInfo: openDiscoveryStationInfo(_:),
-                openDiscoveryInfo: { discovery, mode in
-                    openDiscoveryInfo(discovery, returnMusicMode: mode)
-                },
-                openArtistInfo: { artist, mode in
-                    openArtistInfo(artist, returnMusicMode: mode)
-                },
-                stationArtworkURL: { _ in nil },
-                trackFeedback: { discovery in libraryStore.feedback(for: discovery) },
-                openSearchAction: {
-                    selectedTab = .search
-                },
-                openAccountAction: {
-                    profileMode = .account
-                    selectedTab = .profile
-                },
-                startSignInAction: {
-                    startSignInFlow(true)
-                },
-                toggleDiscoverySaved: toggleDiscoverySaved(_:),
-                hideDiscovery: libraryStore.hideDiscovery(_:),
-                restoreDiscovery: libraryStore.restoreDiscovery(_:),
-                removeDiscovery: libraryStore.removeDiscovery(_:),
-                clearDiscoveries: libraryStore.clearDiscoveries
-            )
+            musicScreen
         case .profile:
             ProfileScreen(
                 mode: profileMode,
@@ -430,6 +398,53 @@ struct AppShellView: View {
             returnRadioMode: returnRadioMode,
             returnRadioOverview: returnRadioOverview
         )
+    }
+
+    private var musicScreen: some View {
+        MusicScreen(
+            discoveries: libraryStore.discoveries,
+            summary: libraryStore.userSummary,
+            historyStationFilter: $musicHistoryStationFilter,
+            requestedMusicMode: $requestedMusicMode,
+            requestedMusicOverview: $requestedMusicOverview,
+            bottomContentPadding: shellScrollBottomPadding,
+            openDiscoveryStation: openDiscoveryStation(_:),
+            openDiscoveryStationInfo: openDiscoveryStationInfo(_:),
+            openDiscoveryInfo: openMusicDiscoveryInfo(_:returnMusicMode:),
+            openArtistInfo: openMusicArtistInfo(_:returnMusicMode:),
+            stationArtworkURL: musicStationArtworkURL(_:),
+            trackFeedback: musicTrackFeedback(_:),
+            openSearchAction: openSearchTab,
+            openAccountAction: openAccountProfile,
+            startSignInAction: startAviSignIn,
+            toggleDiscoverySaved: toggleDiscoverySaved(_:),
+            hideDiscovery: libraryStore.hideDiscovery(_:),
+            restoreDiscovery: libraryStore.restoreDiscovery(_:),
+            removeDiscovery: libraryStore.removeDiscovery(_:),
+            clearDiscoveries: libraryStore.clearDiscoveries
+        )
+    }
+
+    private func openMusicDiscoveryInfo(
+        _ discovery: DiscoveredTrack,
+        returnMusicMode: MusicContentMode?
+    ) {
+        openDiscoveryInfo(discovery, returnMusicMode: returnMusicMode)
+    }
+
+    private func openMusicArtistInfo(
+        _ artist: DiscoveryArtistSummary,
+        returnMusicMode: MusicContentMode?
+    ) {
+        openArtistInfo(artist, returnMusicMode: returnMusicMode)
+    }
+
+    private func musicStationArtworkURL(_ discovery: DiscoveredTrack) -> URL? {
+        nil
+    }
+
+    private func musicTrackFeedback(_ discovery: DiscoveredTrack) -> TuneAVStationFeedback? {
+        libraryStore.feedback(for: discovery)
     }
 
     private var aviScreen: some View {
