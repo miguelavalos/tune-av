@@ -457,7 +457,7 @@ struct AppShellView: View {
         let recentStations = enrichedRecentStations
         let favoriteStations = enrichedFavoriteStations
 
-        return AviScreen(
+        return makeAviScreen(
             currentStation: audioPlayer.currentStation,
             focusedStation: focusedStation,
             isFocusedStationActive: focusedStation.map(audioPlayer.isCurrent(_:)) ?? false,
@@ -1777,20 +1777,6 @@ private struct AviQueueSwitcherSheet: View {
             }
         }
         .presentationDetents([.medium])
-    }
-}
-
-private enum SelectedMusicAviDetail: Identifiable {
-    case track(DiscoveredTrack)
-    case artist(DiscoveryArtistSummary)
-
-    var id: String {
-        switch self {
-        case .track(let discovery):
-            return "track-\(discovery.discoveryID)"
-        case .artist(let summary):
-            return "artist-\(summary.id)"
-        }
     }
 }
 
@@ -3163,7 +3149,7 @@ private func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: i
     return currentVisibility
 }
 
-private struct AviScreen: View {
+struct AviScreen: View {
     private static let artistDetailPageSize = 12
 
     @Environment(\.displayScale) private var displayScale
