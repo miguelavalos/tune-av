@@ -8610,12 +8610,7 @@ private struct HomeScreen: View {
     }
 
     private func moodGenreTags(visibleDiscoveryTags: [String]) -> [HomeMoodGenreSuggestion] {
-        TuneAVMusicGenreCatalog.visibleTags.map { tag in
-            HomeMoodGenreSuggestion(
-                tag: tag,
-                title: L10n.genreLabel(for: tag).capitalized(with: L10n.locale)
-            )
-        }
+        HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: visibleDiscoveryTags)
     }
 
     private var recommendationScorer: TuneAVLocalRecommendationScorer {

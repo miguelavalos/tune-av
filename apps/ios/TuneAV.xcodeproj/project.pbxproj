@@ -99,6 +99,7 @@
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
 		E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
+		F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
@@ -166,6 +167,7 @@
 		513BDBDAF4D86F1F9B65A11D /* TuneAVUpgradePromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUpgradePromptContent.swift; sourceTree = "<group>"; };
 		58F44C547C4ADED911C85197 /* account-av */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "account-av"; path = "../../../account-av"; sourceTree = SOURCE_ROOT; };
 		5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
+		5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodGenreTagBuilder.swift; sourceTree = "<group>"; };
 		605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSleepTimerController.swift; sourceTree = "<group>"; };
 		60E377A482C9F747CDD7B4E0 /* TuneAVLocalRecommendationScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLocalRecommendationScorer.swift; sourceTree = "<group>"; };
 		631EDD19FB5AEBFAF5EFD9B2 /* Station.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Station.swift; sourceTree = "<group>"; };
@@ -291,6 +293,7 @@
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
 				D7FC3A60E0E69F2CC1CA449F /* HomeAviBrief.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
+				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
@@ -673,6 +676,7 @@
 				5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */,
 				FF79C327A739AFD202471187 /* HomeAviBrief.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
+				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,

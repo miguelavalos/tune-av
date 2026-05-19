@@ -2635,6 +2635,22 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), [second.id, third.id])
     }
 
+    func testHomeMoodGenreTagBuilderUsesCatalogOrderAndLocalizedTitles() {
+        let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: [])
+
+        XCTAssertEqual(suggestions.map(\.tag), TuneAVMusicGenreCatalog.visibleTags)
+        XCTAssertEqual(
+            suggestions.map(\.title),
+            TuneAVMusicGenreCatalog.visibleTags.map { L10n.genreLabel(for: $0).capitalized(with: L10n.locale) }
+        )
+    }
+
+    func testHomeMoodGenreTagBuilderKeepsStableCatalogWhenDiscoveryTagsChange() {
+        let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: ["ambient", "unknown", "rock"])
+
+        XCTAssertEqual(suggestions.map(\.tag), TuneAVMusicGenreCatalog.visibleTags)
+    }
+
     func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
         let station = recommendationStation(id: "pop", tags: "pop, hits")
 
