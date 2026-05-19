@@ -8220,128 +8220,9 @@ private struct HomeScreen: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(
-                    statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label)
-                )
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L10n.string("shell.home.title"))
-                        .font(.system(size: 30, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(L10n.string("shell.home.subtitle"))
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HomeAviBrief(
-                    currentStation: audioPlayer.currentStation,
-                    recentCount: recentStations.count,
-                    favoriteCount: favoriteStations.count,
-                    emotion: TuneAVAviEmotionResolver.homeEmotion(
-                        currentStation: audioPlayer.currentStation,
-                        recentCount: recentStations.count,
-                        favoriteCount: favoriteStations.count
-                    ),
-                    openAvi: openAvi
-                )
-
-                if shouldShowLiveNowPanel {
-                    LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
-                }
-
-                if isLoading && featuredState.station == nil && derivedState.displayedPopularStations.isEmpty {
-                    StationCardSkeletonGroup()
-                } else if let errorMessage {
-                    EmptyLibraryState(
-                        title: L10n.string("shell.home.error.title"),
-                        detail: errorMessage
-                    )
-                } else if let heroStation = featuredState.station {
-                    HomeTuningDeskHero(
-                        station: heroStation,
-                        presentation: homePresentation(for: heroStation, source: featuredState.source),
-                        isFavorite: favoriteStationIDs.contains(heroStation.id),
-                        isCurrentStation: audioPlayer.isCurrent(heroStation),
-                        isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
-                        isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
-                        stationFeedback: stationFeedback[heroStation.id],
-                        playAction: { playHeroStation(heroStation) },
-                        favoriteAction: { toggleFavorite(heroStation) },
-                        feedbackAction: { setHeroFeedback($0, for: heroStation) },
-                        detailsAction: { showHeroDetails(heroStation) }
-                    )
-
-                } else {
-                    EmptyLibraryState(
-                        title: L10n.string("shell.home.empty.title"),
-                        detail: L10n.string("shell.home.empty.detail")
-                    )
-                }
-
-                if !derivedState.moodGenreTags.isEmpty {
-                    HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
-                }
-
-                if !derivedState.displayedAviPickStations.isEmpty {
-                    StationSection(
-                        title: L10n.string("shell.home.aviPicks.title"),
-                        subtitle: L10n.string("shell.home.aviPicks.subtitle"),
-                        accessibilityIdentifier: "home.section.aviPicks"
-                    ) {
-                        StationCompactCarousel(
-                            stations: derivedState.displayedAviPickStations,
-                            favoriteStationIDs: favoriteStationIDs,
-                            nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: { derivedState.recommendationInsights[$0.id] },
-                            stationFeedback: stationFeedback,
-                            queueSource: .homeDiscovery,
-                            queueStations: derivedState.displayedAviPickStations,
-                            playStation: playStation,
-                            toggleFavorite: toggleFavorite,
-                            showStationDetails: showStationDetails
-                        )
-                    }
-                }
-
-                if !derivedState.displayedAroundYouStations.isEmpty {
-                    StationSection(
-                        title: L10n.string("shell.home.aroundYou.title"),
-                        subtitle: L10n.string("shell.home.aroundYou.subtitle"),
-                        accessibilityIdentifier: "home.section.aroundYou"
-                    ) {
-                        StationCompactCarousel(
-                            stations: derivedState.displayedAroundYouStations,
-                            favoriteStationIDs: favoriteStationIDs,
-                            nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: { derivedState.recommendationInsights[$0.id] },
-                            stationFeedback: stationFeedback,
-                            queueSource: .homeDiscovery,
-                            queueStations: derivedState.displayedAroundYouStations,
-                            playStation: playStation,
-                            toggleFavorite: toggleFavorite,
-                            showStationDetails: showStationDetails
-                        )
-                    }
-                }
-
-                if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
-                    StationSection(title: L10n.string("shell.home.recentsFavorites.title"), subtitle: L10n.string("shell.home.recentsFavorites.subtitle"), accessibilityIdentifier: "home.section.recentsFavorites") {
-                        StationCompactCarousel(
-                            stations: derivedState.displayedRecentAndFavoriteStations,
-                            favoriteStationIDs: favoriteStationIDs,
-                            nowPlayingTracks: nowPlayingTracks,
-                            stationInsight: { station in stationFeedback[station.id]?.localizedState },
-                            stationFeedback: stationFeedback,
-                            queueSource: .homeRecents,
-                            queueStations: derivedState.displayedRecentAndFavoriteStations,
-                            playStation: playStation,
-                            toggleFavorite: toggleFavorite,
-                            showStationDetails: showStationDetails
-                        )
-                    }
-                }
+                homeHeader
+                homeHeroContent(derivedState: derivedState, featuredState: featuredState)
+                homeRecommendationSections(derivedState: derivedState)
             }
             .shellScreenContentPadding(bottom: bottomContentPadding)
         }
@@ -8349,6 +8230,138 @@ private struct HomeScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
+        }
+    }
+
+    private var homeHeader: some View {
+        Group {
+            ShellBrandHeader(
+                statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label)
+            )
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.string("shell.home.title"))
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(L10n.string("shell.home.subtitle"))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HomeAviBrief(
+                currentStation: audioPlayer.currentStation,
+                recentCount: recentStations.count,
+                favoriteCount: favoriteStations.count,
+                emotion: TuneAVAviEmotionResolver.homeEmotion(
+                    currentStation: audioPlayer.currentStation,
+                    recentCount: recentStations.count,
+                    favoriteCount: favoriteStations.count
+                ),
+                openAvi: openAvi
+            )
+
+            if shouldShowLiveNowPanel {
+                LiveNowPanel(currentStation: audioPlayer.currentStation, status: audioPlayer.status.label)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func homeHeroContent(derivedState: HomeDerivedState, featuredState: HomeFeaturedStationState) -> some View {
+        if isLoading && featuredState.station == nil && derivedState.displayedPopularStations.isEmpty {
+            StationCardSkeletonGroup()
+        } else if let errorMessage {
+            EmptyLibraryState(
+                title: L10n.string("shell.home.error.title"),
+                detail: errorMessage
+            )
+        } else if let heroStation = featuredState.station {
+            HomeTuningDeskHero(
+                station: heroStation,
+                presentation: homePresentation(for: heroStation, source: featuredState.source),
+                isFavorite: favoriteStationIDs.contains(heroStation.id),
+                isCurrentStation: audioPlayer.isCurrent(heroStation),
+                isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
+                isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
+                stationFeedback: stationFeedback[heroStation.id],
+                playAction: { playHeroStation(heroStation) },
+                favoriteAction: { toggleFavorite(heroStation) },
+                feedbackAction: { setHeroFeedback($0, for: heroStation) },
+                detailsAction: { showHeroDetails(heroStation) }
+            )
+        } else {
+            EmptyLibraryState(
+                title: L10n.string("shell.home.empty.title"),
+                detail: L10n.string("shell.home.empty.detail")
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func homeRecommendationSections(derivedState: HomeDerivedState) -> some View {
+        if !derivedState.moodGenreTags.isEmpty {
+            HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
+        }
+
+        if !derivedState.displayedAviPickStations.isEmpty {
+            StationSection(
+                title: L10n.string("shell.home.aviPicks.title"),
+                subtitle: L10n.string("shell.home.aviPicks.subtitle"),
+                accessibilityIdentifier: "home.section.aviPicks"
+            ) {
+                StationCompactCarousel(
+                    stations: derivedState.displayedAviPickStations,
+                    favoriteStationIDs: favoriteStationIDs,
+                    nowPlayingTracks: nowPlayingTracks,
+                    stationInsight: { derivedState.recommendationInsights[$0.id] },
+                    stationFeedback: stationFeedback,
+                    queueSource: .homeDiscovery,
+                    queueStations: derivedState.displayedAviPickStations,
+                    playStation: playStation,
+                    toggleFavorite: toggleFavorite,
+                    showStationDetails: showStationDetails
+                )
+            }
+        }
+
+        if !derivedState.displayedAroundYouStations.isEmpty {
+            StationSection(
+                title: L10n.string("shell.home.aroundYou.title"),
+                subtitle: L10n.string("shell.home.aroundYou.subtitle"),
+                accessibilityIdentifier: "home.section.aroundYou"
+            ) {
+                StationCompactCarousel(
+                    stations: derivedState.displayedAroundYouStations,
+                    favoriteStationIDs: favoriteStationIDs,
+                    nowPlayingTracks: nowPlayingTracks,
+                    stationInsight: { derivedState.recommendationInsights[$0.id] },
+                    stationFeedback: stationFeedback,
+                    queueSource: .homeDiscovery,
+                    queueStations: derivedState.displayedAroundYouStations,
+                    playStation: playStation,
+                    toggleFavorite: toggleFavorite,
+                    showStationDetails: showStationDetails
+                )
+            }
+        }
+
+        if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
+            StationSection(title: L10n.string("shell.home.recentsFavorites.title"), subtitle: L10n.string("shell.home.recentsFavorites.subtitle"), accessibilityIdentifier: "home.section.recentsFavorites") {
+                StationCompactCarousel(
+                    stations: derivedState.displayedRecentAndFavoriteStations,
+                    favoriteStationIDs: favoriteStationIDs,
+                    nowPlayingTracks: nowPlayingTracks,
+                    stationInsight: { station in stationFeedback[station.id]?.localizedState },
+                    stationFeedback: stationFeedback,
+                    queueSource: .homeRecents,
+                    queueStations: derivedState.displayedRecentAndFavoriteStations,
+                    playStation: playStation,
+                    toggleFavorite: toggleFavorite,
+                    showStationDetails: showStationDetails
+                )
+            }
         }
     }
 
