@@ -8353,7 +8353,7 @@ private struct HomeScreen: View {
             feedContext: feedContext,
             preferredTag: preferredTag,
             preferredCountryCode: preferredCountryCode,
-            featuredStationID: homeFeaturedState.stationID
+            featuredStationID: featuredState.stationID
         )
     }
 
