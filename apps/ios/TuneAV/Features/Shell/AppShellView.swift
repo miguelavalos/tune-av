@@ -8274,19 +8274,10 @@ private struct HomeScreen: View {
                         isPlaying: audioPlayer.isCurrent(heroStation) && audioPlayer.isPlaying,
                         isLoading: audioPlayer.isCurrent(heroStation) && audioPlayer.isLoading,
                         stationFeedback: stationFeedback[heroStation.id],
-                        playAction: {
-                            if audioPlayer.isCurrent(heroStation) {
-                                audioPlayer.togglePlayback()
-                            } else {
-                                playStation(heroStation, featuredQueueSource, featuredQueueStations)
-                            }
-                        },
-                        favoriteAction: { toggleFavorite(heroStation) },
-                        feedbackAction: { feedback in
-                            let nextFeedback = stationFeedback[heroStation.id] == feedback ? nil : feedback
-                            setStationFeedback(heroStation, nextFeedback)
-                        },
-                        detailsAction: { showStationDetails(heroStation, featuredQueueSource, featuredQueueStations) }
+                        playAction: { playHeroStation(heroStation) },
+                        favoriteAction: { toggleHeroFavorite(heroStation) },
+                        feedbackAction: { setHeroFeedback($0, for: heroStation) },
+                        detailsAction: { showHeroDetails(heroStation) }
                     )
 
                 } else {
@@ -8444,6 +8435,27 @@ private struct HomeScreen: View {
         }
 
         return nil
+    }
+
+    private func playHeroStation(_ station: Station) {
+        if audioPlayer.isCurrent(station) {
+            audioPlayer.togglePlayback()
+        } else {
+            playStation(station, featuredQueueSource, featuredQueueStations)
+        }
+    }
+
+    private func toggleHeroFavorite(_ station: Station) {
+        toggleFavorite(station)
+    }
+
+    private func setHeroFeedback(_ feedback: TuneAVStationFeedback, for station: Station) {
+        let nextFeedback = stationFeedback[station.id] == feedback ? nil : feedback
+        setStationFeedback(station, nextFeedback)
+    }
+
+    private func showHeroDetails(_ station: Station) {
+        showStationDetails(station, featuredQueueSource, featuredQueueStations)
     }
 
     private func heroLabel(for source: FeaturedSource?, station: Station) -> String {
