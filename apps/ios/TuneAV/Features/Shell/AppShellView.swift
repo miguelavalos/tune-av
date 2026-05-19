@@ -8217,6 +8217,7 @@ private struct HomeScreen: View {
     var body: some View {
         let derivedState = homeDerivedState
         let featuredState = homeFeaturedState
+        let headerContentState = homeHeaderContentState(featuredState: featuredState)
         let heroContentState = homeHeroContentState(
             derivedState: derivedState,
             featuredState: featuredState
@@ -8225,12 +8226,7 @@ private struct HomeScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HomeHeaderContent(
-                    statusTitle: isLoading ? L10n.string("shell.status.refreshing") : (audioPlayer.currentStation == nil ? L10n.string("shell.status.live") : audioPlayer.status.label),
-                    liveNowStatus: audioPlayer.status.label,
-                    currentStation: audioPlayer.currentStation,
-                    recentCount: recentStations.count,
-                    favoriteCount: favoriteStations.count,
-                    showsLiveNowPanel: shouldShowLiveNowPanel,
+                    state: headerContentState,
                     openAvi: openAvi
                 )
                 HomeHeroContent(
@@ -8258,6 +8254,26 @@ private struct HomeScreen: View {
         .refreshable {
             await refreshHome()
         }
+    }
+
+    private func homeHeaderContentState(featuredState: HomeFeaturedStationState) -> HomeHeaderContentState {
+        let currentStation = audioPlayer.currentStation
+        let statusTitle = if isLoading {
+            L10n.string("shell.status.refreshing")
+        } else if currentStation == nil {
+            L10n.string("shell.status.live")
+        } else {
+            audioPlayer.status.label
+        }
+
+        return HomeHeaderContentState(
+            statusTitle: statusTitle,
+            liveNowStatus: audioPlayer.status.label,
+            currentStation: currentStation,
+            recentCount: recentStations.count,
+            favoriteCount: favoriteStations.count,
+            showsLiveNowPanel: currentStation == nil && !hasPersonalActivity && featuredState.station == nil
+        )
     }
 
     private func homeHeroContentState(
@@ -8323,10 +8339,6 @@ private struct HomeScreen: View {
         !recentStations.isEmpty || !favoriteStations.isEmpty
     }
 
-    private var shouldShowLiveNowPanel: Bool {
-        audioPlayer.currentStation == nil && !hasPersonalActivity && homeFeaturedState.station == nil
-    }
-
     private var homeFeaturedState: HomeFeaturedStationState {
         HomeFeaturedStationBuilder.build(
             currentStation: audioPlayer.currentStation,
@@ -8354,17 +8366,21 @@ private struct HomeScreen: View {
 
 }
 
-private struct HomeHeaderContent: View {
+private struct HomeHeaderContentState {
     let statusTitle: String
     let liveNowStatus: String
     let currentStation: Station?
     let recentCount: Int
     let favoriteCount: Int
     let showsLiveNowPanel: Bool
+}
+
+private struct HomeHeaderContent: View {
+    let state: HomeHeaderContentState
     let openAvi: () -> Void
 
     var body: some View {
-        ShellBrandHeader(statusTitle: statusTitle)
+        ShellBrandHeader(statusTitle: state.statusTitle)
 
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.string("shell.home.title"))
@@ -8378,19 +8394,19 @@ private struct HomeHeaderContent: View {
         }
 
         HomeAviBrief(
-            currentStation: currentStation,
-            recentCount: recentCount,
-            favoriteCount: favoriteCount,
+            currentStation: state.currentStation,
+            recentCount: state.recentCount,
+            favoriteCount: state.favoriteCount,
             emotion: TuneAVAviEmotionResolver.homeEmotion(
-                currentStation: currentStation,
-                recentCount: recentCount,
-                favoriteCount: favoriteCount
+                currentStation: state.currentStation,
+                recentCount: state.recentCount,
+                favoriteCount: state.favoriteCount
             ),
             openAvi: openAvi
         )
 
-        if showsLiveNowPanel {
-            LiveNowPanel(currentStation: currentStation, status: liveNowStatus)
+        if state.showsLiveNowPanel {
+            LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
         }
     }
 }
