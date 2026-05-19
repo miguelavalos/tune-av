@@ -132,6 +132,7 @@ enum MacAppConfig {
 
     static var supportURL: URL? {
         TuneAVBundleConfig.supportURL(
+            explicitURL: urlValue(for: "SUPPORTAV_BASE_URL"),
             email: TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL")
         )
     }

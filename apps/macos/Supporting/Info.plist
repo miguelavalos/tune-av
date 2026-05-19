@@ -37,6 +37,8 @@
 	<string>$(TUNEAV_APP_IDENTIFIER_PREFIX)</string>
 	<key>TUNEAV_SUPPORT_EMAIL</key>
 	<string>$(TUNEAV_SUPPORT_EMAIL)</string>
+	<key>SUPPORTAV_BASE_URL</key>
+	<string>$(SUPPORTAV_BASE_URL)</string>
 	<key>ACCOUNTAV_API_BASE_URL</key>
 	<string>$(ACCOUNTAV_API_BASE_URL)</string>
 	<key>ACCOUNTAV_MANAGEMENT_URL</key>

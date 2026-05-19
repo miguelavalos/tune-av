@@ -18,6 +18,7 @@ Optional account-connected behavior:
 - private configuration can enable signed-in client behavior
 - subscription builds can set `TUNEAV_REVENUECAT_PUBLIC_API_KEY`, `TUNEAV_REVENUECAT_OFFERING_ID`, and `TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID` in `Config/Local.xcconfig`
 - public docs should avoid non-public operational details, private endpoints, and implementation plans
+- support builds can set `SUPPORTAV_BASE_URL` to open the Support AV web surface from Profile; `TUNEAV_SUPPORT_EMAIL` remains the fallback contact route
 
 ## Current app shape
 

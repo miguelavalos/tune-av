@@ -84,16 +84,42 @@ read_optional_config() {
   "$varlock_bin" printenv --path "$suite_root/services/api" "$name" 2>/dev/null || true
 }
 
-api_base_url="${VITE_ACCOUNTAV_API_BASE_URL:-}"
+read_support_base_url() {
+  local value="${SUPPORTAV_BASE_URL:-}"
+  if [ -n "$value" ]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  value="$("$varlock_bin" printenv --path "$suite_root/apps/support-av" SUPPORTAV_BASE_URL 2>/dev/null || true)"
+  if [ -n "$value" ]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  if [ "$env_name" = "prod" ]; then
+    printf '%s' "https://support-av.avalsys.com"
+  else
+    printf '%s' "https://support-av-preview.avalsys.com"
+  fi
+}
+
+api_base_url="${ACCOUNTAV_API_BASE_URL:-${VITE_ACCOUNTAV_API_BASE_URL:-}}"
 if [ -z "$api_base_url" ]; then
-  api_base_url="$("$varlock_bin" printenv --path "$suite_root/apps/account-av" VITE_ACCOUNTAV_API_BASE_URL)"
+  api_base_url="$(read_optional_config ACCOUNTAV_API_BASE_URL)"
 fi
 if [ -z "$api_base_url" ]; then
-  echo "Missing VITE_ACCOUNTAV_API_BASE_URL for profile $profile." >&2
+  api_base_url="$("$varlock_bin" printenv --path "$suite_root/apps/account-av" VITE_ACCOUNTAV_API_BASE_URL 2>/dev/null || true)"
+fi
+if [ "$env_name" = "prod" ] && printf '%s' "$api_base_url" | rg -q '127\.0\.0\.1|localhost|preview|\.dev'; then
+  api_base_url="$(read_optional_config ACCOUNTAV_API_BASE_URL)"
+fi
+if [ -z "$api_base_url" ]; then
+  echo "Missing ACCOUNTAV_API_BASE_URL or VITE_ACCOUNTAV_API_BASE_URL for profile $profile." >&2
   exit 1
 fi
 if [ "$env_name" = "prod" ] && printf '%s' "$api_base_url" | rg -q '127\.0\.0\.1|localhost|preview|\.dev'; then
-  echo "Production VITE_ACCOUNTAV_API_BASE_URL must be provided by private config or the environment." >&2
+  echo "Production ACCOUNTAV_API_BASE_URL must be provided by private config or the environment." >&2
   exit 1
 fi
 management_url="$(read_optional_config ACCOUNTAV_MANAGEMENT_URL)"
@@ -118,6 +144,7 @@ if [ -z "$development_team" ]; then
 fi
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
+support_base_url="$(read_support_base_url)"
 revenuecat_public_api_key="$(read_optional_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-default}"
 revenuecat_monthly_package_id="${TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:-\$rc_monthly}"
@@ -158,6 +185,7 @@ AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
 TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
 TUNEAV_SUPPORT_EMAIL = $support_email
+SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = $listening_analytics_uploads
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$management_url")

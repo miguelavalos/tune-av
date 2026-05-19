@@ -95,6 +95,7 @@ tuneav_bundle_identifier="$(setting TUNEAV_BUNDLE_IDENTIFIER)"
 api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
+support_base_url="$(setting SUPPORTAV_BASE_URL)"
 listening_analytics_uploads="$(setting TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)"
 delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
 terms_url="$(setting TUNEAV_TERMS_URL)"
@@ -132,6 +133,9 @@ if [ "$env_name" = "prod" ]; then
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
   [[ "$api_base_url" == https://* ]] || fail "prod API URL must use https"
   [[ "$management_url" == https://* ]] || fail "prod management URL must use https"
+  if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
+    [[ "$support_base_url" == https://* ]] || fail "prod support URL must use https"
+  fi
   [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after signed-in backend smoke and App Privacy update"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if printf '%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
@@ -149,6 +153,9 @@ fi
 for url in "$api_base_url" "$management_url" "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
   [[ "$url" == https://* ]] || fail "URL did not resolve as https://*: $url"
 done
+if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
+  [[ "$support_base_url" == https://* ]] || fail "URL did not resolve as https://*: $support_base_url"
+fi
 
 redacted_key=""
 if [ -n "$publishable_key" ]; then
@@ -173,6 +180,7 @@ Tune AV iOS runtime config ($env_name)
   development team: $redacted_development_team
   Account AV API: $api_base_url
   Account AV management: $management_url
+  Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key
   RevenueCat key: $redacted_revenuecat_key
   RevenueCat offering: $revenuecat_offering_id

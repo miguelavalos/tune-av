@@ -11,6 +11,10 @@ enum AppConfig {
         TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL")
     }
 
+    static var supportBaseURL: URL? {
+        TuneAVBundleConfig.urlValue(for: "SUPPORTAV_BASE_URL")
+    }
+
     static var avAccountAPIBaseURL: URL? {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL")
     }
@@ -55,7 +59,7 @@ enum AppConfig {
     }
 
     static var supportURL: URL? {
-        TuneAVBundleConfig.supportURL(email: supportEmail)
+        TuneAVBundleConfig.supportURL(explicitURL: supportBaseURL, email: supportEmail)
     }
 
     static var isAVAccountAvailable: Bool {

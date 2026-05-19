@@ -63,7 +63,10 @@ enum TuneAVBundleConfig {
         return components.url
     }
 
-    static func supportURL(email: String?) -> URL? {
+    static func supportURL(explicitURL: URL?, email: String?) -> URL? {
+        if let explicitURL {
+            return explicitURL
+        }
         guard let email else { return nil }
         let encodedSubject = "Tune AV Support".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Tune%20AV%20Support"
         return URL(string: "mailto:\(email)?subject=\(encodedSubject)")
