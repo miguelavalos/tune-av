@@ -8215,8 +8215,8 @@ private struct HomeScreen: View {
     @State private var browserDestination: BrowserDestination?
 
     var body: some View {
-        let derivedState = homeDerivedState
         let featuredState = homeFeaturedState
+        let derivedState = homeDerivedState(featuredState: featuredState)
         let headerContentState = homeHeaderContentState(featuredState: featuredState)
         let heroContentState = homeHeroContentState(
             derivedState: derivedState,
@@ -8231,10 +8231,10 @@ private struct HomeScreen: View {
                 )
                 HomeHeroContent(
                     state: heroContentState,
-                    playAction: playHeroStation,
+                    playAction: { playHeroStation($0, featuredState: featuredState) },
                     favoriteAction: toggleFavorite,
                     feedbackAction: setHeroFeedback,
-                    detailsAction: showHeroDetails
+                    detailsAction: { showHeroDetails($0, featuredState: featuredState) }
                 )
                 HomeRecommendationSections(
                     derivedState: derivedState,
@@ -8308,10 +8308,10 @@ private struct HomeScreen: View {
         )
     }
 
-    private func playHeroStation(_ station: Station) {
+    private func playHeroStation(_ station: Station, featuredState: HomeFeaturedStationState) {
         switch HomeHeroActionBuilder.playbackAction(
             isCurrentStation: audioPlayer.isCurrent(station),
-            featuredState: homeFeaturedState
+            featuredState: featuredState
         ) {
         case .toggleCurrent:
             audioPlayer.togglePlayback()
@@ -8328,8 +8328,8 @@ private struct HomeScreen: View {
         setStationFeedback(station, nextFeedback)
     }
 
-    private func showHeroDetails(_ station: Station) {
-        switch HomeHeroActionBuilder.detailsAction(featuredState: homeFeaturedState) {
+    private func showHeroDetails(_ station: Station, featuredState: HomeFeaturedStationState) {
+        switch HomeHeroActionBuilder.detailsAction(featuredState: featuredState) {
         case .show(let queueSource, let queueStations):
             showStationDetails(station, queueSource, queueStations)
         }
@@ -8349,7 +8349,7 @@ private struct HomeScreen: View {
         )
     }
 
-    private var homeDerivedState: HomeDerivedState {
+    private func homeDerivedState(featuredState: HomeFeaturedStationState) -> HomeDerivedState {
         HomeDerivedStateBuilder.build(
             stations: stations,
             recentStations: recentStations,
