@@ -13,6 +13,7 @@
     "ios:install:dev": "./scripts/install-ios-device.sh --env dev",
     "ios:install:prod": "./scripts/install-ios-device.sh --env prod",
     "ios:ci": "./scripts/ios-ci-test.sh",
+    "ios:size-report": "./scripts/report-ios-app-size.sh",
     "ios:ui-smoke": "./scripts/run-ios-ui-tests.sh",
     "ios:tests": "cd apps/ios && xcodebuild test -project TuneAV.xcodeproj -scheme TuneAV -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -only-testing:TuneAVTests CODE_SIGNING_ALLOWED=NO",
     "macos:tests": "cd apps/macos && xcodebuild test -project TuneAVMac.xcodeproj -scheme TuneAVMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO"
