@@ -12,6 +12,7 @@ struct RootView: View {
     @State private var hasShownSplashThisLaunch = false
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
+    @State private var librarySyncTask: Task<Void, Never>?
 
     private let launchContext = LaunchContext.current
     private let initialHomeFeed = AppShellHomeFeed(
@@ -60,9 +61,12 @@ struct RootView: View {
         }
         .task(id: scenePhase) {
             updateIdleTimer(for: scenePhase)
-            guard scenePhase == .active else { return }
+            guard scenePhase == .active else {
+                cancelScheduledLibrarySync()
+                return
+            }
             await accessController.syncFromAccountProvider()
-            await refreshLibrarySync()
+            scheduleLibrarySync(after: .milliseconds(350))
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
         .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
@@ -75,6 +79,7 @@ struct RootView: View {
                 automaticGuestOnboardingIsPresented = false
                 isShowingAccountOnboarding = false
             } else {
+                cancelScheduledLibrarySync()
                 libraryStore.setAppDataService(nil)
                 libraryStore.setBackendService(nil)
                 clearTuneBackendService()
@@ -139,6 +144,29 @@ struct RootView: View {
         libraryStore.setAppDataService(appDataService)
         await libraryStore.refreshUserSummary()
         await libraryStore.refreshCloudLibraryIfNeeded()
+    }
+
+    private func scheduleLibrarySync(after delay: Duration? = nil) {
+        librarySyncTask?.cancel()
+        librarySyncTask = Task { @MainActor in
+            if let delay {
+                do {
+                    try await Task.sleep(for: delay)
+                } catch {
+                    return
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+            await refreshLibrarySync()
+            guard !Task.isCancelled else { return }
+            librarySyncTask = nil
+        }
+    }
+
+    private func cancelScheduledLibrarySync() {
+        librarySyncTask?.cancel()
+        librarySyncTask = nil
     }
 
     private func refreshTuneBackendService() async {
