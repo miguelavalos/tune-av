@@ -279,11 +279,7 @@ struct AppShellView: View {
         case .music:
             musicScreen
         case .profile:
-            ProfileScreen(
-                mode: profileMode,
-                startSignInFlow: startSignInFlow,
-                bottomContentPadding: shellScrollBottomPadding
-            )
+            profileScreen
         }
     }
 
@@ -445,6 +441,14 @@ struct AppShellView: View {
 
     private func musicTrackFeedback(_ discovery: DiscoveredTrack) -> TuneAVStationFeedback? {
         libraryStore.feedback(for: discovery)
+    }
+
+    private var profileScreen: some View {
+        ProfileScreen(
+            mode: profileMode,
+            startSignInFlow: startSignInFlow,
+            bottomContentPadding: shellScrollBottomPadding
+        )
     }
 
     private var aviScreen: some View {
