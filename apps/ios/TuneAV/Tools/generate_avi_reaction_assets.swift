@@ -45,6 +45,7 @@ private let packs: [AviReactionAssetPack] = [
 ]
 
 private let frameCount = 20
+private let reactionFramePixelSize = 256
 private let fileManager = FileManager.default
 private let toolURL = URL(fileURLWithPath: #filePath)
 private let toolsURL = toolURL.deletingLastPathComponent()
@@ -122,6 +123,19 @@ private func normalizeImageSet(_ assetName: String, image: NSImage) throws {
     }
     try write(image, to: imageSetURL.appendingPathComponent("\(assetName).png"))
     try writeContentsJSON(for: assetName, in: imageSetURL)
+}
+
+private func resized(_ image: NSImage, width: Int, height: Int) -> NSImage {
+    let next = NSImage(size: CGSize(width: width, height: height))
+    next.lockFocus()
+    image.draw(
+        in: CGRect(x: 0, y: 0, width: width, height: height),
+        from: CGRect(origin: .zero, size: image.size),
+        operation: .copy,
+        fraction: 1
+    )
+    next.unlockFocus()
+    return next
 }
 
 private func drawImage(_ cgImage: CGImage, in context: CGContext, size: CGSize, scale: CGFloat, rotation: CGFloat, x: CGFloat, y: CGFloat) {
@@ -290,7 +304,11 @@ for pack in packs {
     let source = try cgImage(for: pack.sourceAsset)
     for frame in 0..<frameCount {
         let frameName = "\(pack.prefix)\(String(format: "%03d", frame))"
-        let image = renderFrame(source: source, kind: pack.kind, frame: frame)
+        let image = resized(
+            renderFrame(source: source, kind: pack.kind, frame: frame),
+            width: reactionFramePixelSize,
+            height: reactionFramePixelSize
+        )
         try normalizeImageSet(frameName, image: image)
         if [0, 5, 10, 15].contains(frame) {
             contactSheetSamples.append((name: frameName, image: image))
