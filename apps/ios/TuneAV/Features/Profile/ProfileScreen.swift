@@ -81,7 +81,9 @@ struct ProfileScreen: View {
             AccountDeletionScreen(viewModel: accountDeletionViewModel)
         }
         .sheet(isPresented: $isShowingProPaywall) {
-            TuneAVProPaywallView()
+            TuneAVProPaywallView {
+                startSignInFlow(true)
+            }
                 .environmentObject(accessController)
         }
         .sheet(isPresented: $isShowingLocalDataActions) {

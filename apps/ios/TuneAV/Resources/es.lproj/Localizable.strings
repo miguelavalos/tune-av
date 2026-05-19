@@ -788,6 +788,7 @@
 "shell.avi.actions.radioFeedback" = "Feedback de radio";
 "shell.avi.actions.saveRadio" = "Guarda la radio";
 "shell.avi.actions.saveSong" = "Guarda la canción";
+"shell.avi.actions.aboutSong" = "Sobre esta canción";
 "shell.avi.actions.searchAppleMusic" = "Busca en Apple Music";
 "shell.avi.actions.searchArtist" = "Busca artista";
 "shell.avi.actions.searchLyrics" = "Busca la letra";
@@ -995,7 +996,7 @@
 "paywall.purchase.price" = "Continuar por %@";
 "paywall.restore" = "Restaurar compras";
 "paywall.restore.loading" = "Restaurando…";
-"paywall.scene.detail" = "Avi puede recordar más radios y canciones, mantener acciones disponibles y llevar tu biblioteca entre dispositivos.";
+"paywall.scene.detail" = "Más radios, canciones y acciones de Avi en todos tus dispositivos.";
 "paywall.scene.title" = "Más memoria para Avi";
 "paywall.status.purchasePending" = "Compra recibida. Tune AV desbloqueará Pro cuando se actualice el acceso de tu cuenta.";
 "paywall.status.restorePending" = "Restauración completada. Si tu App Store tiene una suscripción activa para esta cuenta, Tune AV desbloqueará Pro cuando Apps AV confirme el acceso.";

@@ -7,6 +7,11 @@ This project follows semantic versioning once public releases begin.
 ## Unreleased
 
 - Track post-submission work for the next release after the iOS 1.0 App Review submission.
+- Redesign the iOS full player around fixed-height Avi feedback, larger artwork, stable text truncation, and controls that do not shift between stations.
+- Keep the full player in portrait orientation and hide the mini-player while the full player is visible.
+- Preserve the active playback queue when resuming the last-played station from Home so Favorites/Recents lists keep next/previous behavior.
+- Fix duplicate recent-station ranking so repeated recent entries cannot crash the library flow.
+- Redesign the Tune AV Pro paywall so the primary purchase or sign-in action is visible before the benefit grid, with localized compact copy.
 - Add a temporary backend health gate for station discovery so repeated AVALSYS outages back off locally and fall back without hammering the backend.
 - Make Avi's visible emotion state adapt to the active screen, player state, radio metadata, discovered songs, feedback, saved tracks, and loading/error states.
 - Refresh the redesigned iOS app shell tests for Avi, search, profile account mode, warning-based account deletion, queue playback, limits, and discovery flows.

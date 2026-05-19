@@ -724,6 +724,7 @@
 "shell.avi.actions.radioFeedback" = "Feedback de ràdio";
 "shell.avi.actions.saveRadio" = "Desa la ràdio";
 "shell.avi.actions.saveSong" = "Desa la cançó";
+"shell.avi.actions.aboutSong" = "Sobre aquesta cançó";
 "shell.avi.actions.searchAppleMusic" = "Cerca a Apple Music";
 "shell.avi.actions.searchArtist" = "Cerca artista";
 "shell.avi.actions.searchLyrics" = "Cerca la lletra";
@@ -926,7 +927,7 @@
 "paywall.benefit.discovery.title" = "Millor descobriment";
 "paywall.benefit.library.title" = "Biblioteca més gran";
 "paywall.benefit.sync.title" = "Cloud Sync";
-"paywall.scene.detail" = "Més memòria per a ràdios, cançons i accions d'Avi.";
+"paywall.scene.detail" = "Més ràdios, cançons i accions d'Avi a tots els dispositius.";
 "paywall.scene.title" = "Tune AV Pro";
 "shell.accessibility.closeSignal" = "Tancar senyal";
 "shell.avi.plans.free.subtitle" = "Per a la teva memòria de ràdio diària";

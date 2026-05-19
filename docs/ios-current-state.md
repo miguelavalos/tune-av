@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-05-18
+Date: 2026-05-19
 
 This is the public source of truth for the current Tune AV iOS app. It describes
 what exists in this repository without exposing private backend, signing, or
@@ -18,7 +18,14 @@ Current app shape:
 - Home, Search, Avi, Library, Music, and Profile shell tabs;
 - music-first station discovery with an explicit all-radio mode;
 - contextual Avi surfaces in Home, player, music, limits, and Profile/Pro flows;
+- portrait-only iPhone full player with fixed-size Avi feedback, larger artwork,
+  stable title truncation, artwork/text zoom for full metadata, and no mini-player
+  overlay while the full player is open;
+- last-played queue restoration so resuming from Home can preserve Favorites or
+  Recents next/previous behavior when that was the active context;
 - RevenueCat purchase/restore boundary for monthly Tune AV Pro when configured;
+- Tune AV Pro paywall that shows sign-in first for Guest users and purchase or
+  restore actions for signed-in users when configured;
 - backend-backed access refresh, user summary, listening analytics, and cloud
   library sync only when the signed-in/configured runtime supports them;
 - account deletion entry point and local data clearing from Profile.
@@ -99,10 +106,15 @@ The destination above is an example. Use `xcodebuild -showdestinations` or
 Xcode's Devices window and replace the name/OS with an installed simulator when
 the local Xcode image set differs.
 
-Latest local verification known to the maintainers, run on 2026-05-18:
+Latest full local verification known to the maintainers, run on 2026-05-18:
 
 - `TuneAVTests`: 139 tests, 0 failures on `iPhone 17 / iOS 26.5`.
 - `ProfileUITests`: 8 tests, 0 failures on `iPhone 17 / iOS 26.5`.
+
+Latest focused local verification known to the maintainers, run on 2026-05-19:
+
+- Release simulator build/run on `iPhone 17 / iOS 26.5` after full-player,
+  paywall, queue-resume, and duplicate-recents fixes.
 
 These checks prove repository behavior only. They do not prove App Store
 Connect processing, live StoreKit subscription availability, RevenueCat
@@ -123,4 +135,8 @@ install, and launch the app.
 - keep screenshots and public App Store copy aligned with the shipped iOS build;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
+- complete App Review evidence outside the public repository: Xcode/SDK upload
+  gate, third-party SDK privacy manifests/signatures, App Privacy answers,
+  subscription sandbox lifecycle, real-device smoke, review notes, and final
+  screenshots;
 - keep macOS documentation secondary until macOS is actively being released.

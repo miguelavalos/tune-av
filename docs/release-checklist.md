@@ -23,7 +23,11 @@ from the public Tune AV iOS repository.
 
 ## Build Verification
 
-1. For any signed local install, use the guarded preflight before building:
+1. Confirm the local archive toolchain matches Apple's current upload gate. For
+   App Store uploads created on or after 2026-04-28, build with Xcode 26 and
+   the iOS 26 SDK or later.
+
+2. For any signed local install, use the guarded preflight before building:
 
    ```bash
    bun run ios:check:prod
@@ -31,13 +35,13 @@ from the public Tune AV iOS repository.
 
    Private validation details belong outside the public repository.
 
-2. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
+3. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
    ```bash
    cd apps/ios && xcodegen generate
    ```
 
-3. Run iOS unit tests:
+4. Run iOS unit tests:
 
    ```bash
    cd apps/ios
@@ -52,9 +56,26 @@ from the public Tune AV iOS repository.
    destination from `xcodebuild -showdestinations` when the local Xcode runtime
    set differs.
 
-4. Run targeted UI tests when the release changes shell navigation, limits,
+5. Run targeted UI tests when the release changes shell navigation, limits,
    playback queue, search, Profile, purchase/restore, account deletion, or
    discovery behavior.
+
+## App Review Readiness
+
+Before creating the archive for review:
+
+1. Confirm the submitted build is iPhone-only and uses the intended orientation
+   policy.
+2. Confirm App Privacy answers match the submitted build, including purchases,
+   optional account data, cloud sync, and listening analytics when enabled.
+3. Confirm third-party SDK privacy manifests and signatures are present where
+   Apple requires them, especially for subscription, account, analytics, or
+   phone/auth dependencies.
+4. Smoke-test Guest playback, sign-in, Profile, Tune AV Pro paywall, restore,
+   account deletion, full player, background audio, search, favorites, recents,
+   and last-played queue resume.
+5. Recreate screenshots from the exact build attached to App Store Connect after
+   any meaningful UI, localization, entitlement, or paywall change.
 
 ## Public Release
 
@@ -72,5 +93,5 @@ this public repository.
 Before App Review, the private release owner must separately confirm App Store
 Connect build processing, internal-only TestFlight assignment, live subscription
 availability, RevenueCat mapping/webhooks, real-device TestFlight smoke, sandbox
-purchase/restore/reconciliation, App Privacy answers, review notes, and
-submitted-build screenshots.
+purchase/restore/reconciliation, SDK privacy/signature evidence, App Privacy
+answers, review notes, and submitted-build screenshots.

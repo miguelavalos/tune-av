@@ -39,6 +39,7 @@ struct AppShellView: View {
     @State private var selectedStationDetail: SelectedStationDetail?
     @State private var selectedMusicAviDetail: SelectedMusicAviDetail?
     @State private var isAviNowPlayingFullPlayer = false
+    @State private var isAviActionPanelOpen = false
     @State private var aviReturnTab: AppShellTab?
     @State private var aviReturnRadioMode: RadioLibraryMode?
     @State private var aviReturnShowsRadioOverview: Bool?
@@ -101,6 +102,7 @@ struct AppShellView: View {
             hasFooterPlayer: audioPlayer.currentStation != nil,
             hasAviActiveContext: hasAviActiveContext,
             footerBackdropHeight: shellFooterBackdropHeight,
+            footerPlayerTabSpacing: shellFooterPlayerTabSpacing,
             searchAction: {
                 selectedTab = .search
             },
@@ -121,7 +123,7 @@ struct AppShellView: View {
             },
             footerPlayer: {
                 if let station = audioPlayer.currentStation {
-                    if selectedTab == .avi && isAviShowingCurrentStation {
+                    if isAviFullPlayerActive && !isAviActionPanelOpen {
                         AviExpandedFooterPlayerView(
                             station: station,
                             playbackQueueSource: audioPlayer.playbackQueue.source,
@@ -136,7 +138,7 @@ struct AppShellView: View {
                                 isShowingFooterArtworkZoom = true
                             }
                         } stopPlayback: {
-                            requestStopPlaybackConfirmation()
+                            stopPlaybackAndCloseSignal()
                         } playStationFromQueue: { station, source, queue in
                             playStation(station, queueSource: source, queue: queue)
                         }
@@ -199,7 +201,9 @@ struct AppShellView: View {
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isShowingProPaywall) {
-            TuneAVProPaywallView()
+            TuneAVProPaywallView {
+                startSignInFlow(true)
+            }
                 .environmentObject(accessController)
         }
         .alert(L10n.string("settings.cellularPlayback.alert.title"), isPresented: pendingCellularPlaybackIsPresented) {
@@ -354,6 +358,7 @@ struct AppShellView: View {
                 discoveries: libraryStore.discoveries,
                 focusedMusicDetail: selectedMusicAviDetail,
                 isNowPlayingFullPlayer: isAviNowPlayingFullPlayer,
+                isActionPanelOpen: $isAviActionPanelOpen,
                 stationFeedback: libraryStore.stationFeedback,
                 feedContext: homeSnapshot.feedContext,
                 preferredTag: libraryStore.settings.preferredTag,
@@ -379,7 +384,7 @@ struct AppShellView: View {
                     }
                 },
                 stopPlayback: {
-                    requestStopPlaybackConfirmation()
+                    stopPlaybackAndCloseSignal()
                 },
                 setSleepTimer: audioPlayer.setSleepTimer(minutes:),
                 playPrevious: audioPlayer.playPreviousInQueue,
@@ -509,8 +514,12 @@ struct AppShellView: View {
         return selectedStation.id == currentStation.id
     }
 
+    private var isAviFullPlayerActive: Bool {
+        selectedTab == .avi && isAviNowPlayingFullPlayer && audioPlayer.currentStation != nil
+    }
+
     private var shouldHideFooterPlayer: Bool {
-        selectedTab == .avi && isAviShowingCurrentStation
+        isAviFullPlayerActive
     }
 
     private var hasAviActiveContext: Bool {
@@ -555,14 +564,24 @@ struct AppShellView: View {
         if audioPlayer.currentStation == nil {
             return 176
         }
-        return selectedTab == .avi && isAviShowingCurrentStation ? 330 : 224
+        if isAviFullPlayerActive && isAviActionPanelOpen {
+            return 186
+        }
+        return isAviFullPlayerActive ? 500 : 224
     }
 
     private var shellFooterBackdropHeight: CGFloat {
         if audioPlayer.currentStation == nil {
             return 142
         }
-        return selectedTab == .avi && isAviShowingCurrentStation ? 330 : 210
+        if isAviFullPlayerActive && isAviActionPanelOpen {
+            return 156
+        }
+        return isAviFullPlayerActive ? 500 : 210
+    }
+
+    private var shellFooterPlayerTabSpacing: CGFloat {
+        10
     }
 
     private var stationNowPlayingRequestKey: String {
@@ -796,9 +815,34 @@ struct AppShellView: View {
 
     private func selectStationForLaunchAndOpenPlayer(_ station: Station) {
         let resolvedStation = enrichedStation(station)
-        let queue = AudioPlayerService.PlaybackQueue(source: .singleStation, stations: [resolvedStation])
+        let queue = restoredPlaybackQueue(for: resolvedStation)
         audioPlayer.select(station: resolvedStation, queue: queue)
         openNowPlayingFullPlayer(resolvedStation)
+    }
+
+    private func restoredPlaybackQueue(for station: Station) -> AudioPlayerService.PlaybackQueue {
+        let favorites = enrichedFavoriteStations
+        if favorites.contains(where: { $0.id == station.id }), favorites.count > 1 {
+            return AudioPlayerService.PlaybackQueue(source: .libraryFavorites, stations: favorites)
+        }
+
+        let recents = enrichedRecentStations
+        if recents.contains(where: { $0.id == station.id }), recents.count > 1 {
+            return AudioPlayerService.PlaybackQueue(source: .libraryRecents, stations: recents)
+        }
+
+        let fallbackQueue = uniquePlaybackStations([station] + favorites + recents + enrichedStations(homeSnapshot.stations))
+        return AudioPlayerService.PlaybackQueue(
+            source: fallbackQueue.count > 1 ? .homeRecents : .singleStation,
+            stations: fallbackQueue
+        )
+    }
+
+    private func uniquePlaybackStations(_ stations: [Station]) -> [Station] {
+        var seenIDs = Set<String>()
+        return stations.filter { station in
+            seenIDs.insert(station.id).inserted
+        }
     }
 
     private func seedUITestDataIfNeeded() {
@@ -1128,6 +1172,20 @@ struct AppShellView: View {
 
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
         guard selectedTab == .avi else { return }
+        if isAviNowPlayingFullPlayer {
+            let resolvedStation = enrichedStation(currentStation)
+            let queue = audioPlayer.playbackQueue.stations.isEmpty
+                ? [resolvedStation]
+                : enrichedStations(audioPlayer.playbackQueue.stations)
+            selectedStationDetail = SelectedStationDetail(
+                station: resolvedStation,
+                queueSource: audioPlayer.playbackQueue.source,
+                queueStations: queue
+            )
+            refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
+            return
+        }
+
         guard let previousStationID else { return }
         guard selectedStationDetail?.station.id == previousStationID else { return }
 
@@ -1673,6 +1731,7 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
     let hasFooterPlayer: Bool
     let hasAviActiveContext: Bool
     let footerBackdropHeight: CGFloat
+    let footerPlayerTabSpacing: CGFloat
     let searchAction: () -> Void
     let aviAction: () -> Void
     let selectTab: (AppShellTab) -> Void
@@ -1707,7 +1766,7 @@ private struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
             .frame(height: footerBackdropHeight)
             .allowsHitTesting(false)
 
-            VStack(spacing: 10) {
+            VStack(spacing: footerPlayerTabSpacing) {
                 footerPlayer()
 
                 HStack(spacing: 18) {
@@ -1901,90 +1960,27 @@ private struct AviExpandedFooterPlayerView: View {
     @State private var isShowingQueueSwitcher = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(L10n.string("shell.common.playingNow"))
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .textCase(.uppercase)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                sleepTimerMenu
+        VStack(spacing: 10) {
+            Button(action: showArtworkZoom) {
+                artwork
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
+            .accessibilityIdentifier("avi.footerPlayer.artworkZoom")
 
-            HStack(spacing: 14) {
-                Button(action: showArtworkZoom) {
-                    artwork
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
-                .accessibilityIdentifier("avi.footerPlayer.artworkZoom")
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(station.name)
-                        .font(.system(size: 17, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    Text(artistLine)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(trackArtworkExists ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    Text(titleLine)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.88))
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(action: showArtworkZoom) {
+                metadataText
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
+            .accessibilityIdentifier("avi.footerPlayer.textZoom")
 
-            HStack(spacing: 18) {
-                Spacer(minLength: 0)
-
-                queueSourceButton
-
-                queueButton(systemImage: "backward.fill", accessibilityIdentifier: "avi.footerPlayer.previous") {
-                    audioPlayer.playPreviousInQueue()
-                }
-
-                Button {
-                    audioPlayer.togglePlayback()
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(audioPlayer.isPlaying ? TuneAVTheme.brandGraphite : TuneAVTheme.highlight)
-
-                        if audioPlayer.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(width: 62, height: 62)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("avi.footerPlayer.playPause")
-
-                queueButton(systemImage: "forward.fill", accessibilityIdentifier: "avi.footerPlayer.next") {
-                    audioPlayer.playNextInQueue()
-                }
-
-                closeSignalButton
-
-                Spacer(minLength: 0)
-            }
+            controlsRow
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(height: 360)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(TuneAVTheme.cardSurface)
@@ -2015,23 +2011,95 @@ private struct AviExpandedFooterPlayerView: View {
         }
     }
 
+    private var controlsRow: some View {
+        HStack(spacing: 10) {
+            queueSourceButton
+
+            queueButton(systemImage: "backward.fill", accessibilityIdentifier: "avi.footerPlayer.previous") {
+                audioPlayer.playPreviousInQueue()
+            }
+
+            playPauseButton
+
+            queueButton(systemImage: "forward.fill", accessibilityIdentifier: "avi.footerPlayer.next") {
+                audioPlayer.playNextInQueue()
+            }
+
+            sleepTimerMenu
+        }
+        .frame(height: 72)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var playPauseButton: some View {
+        Button {
+            audioPlayer.togglePlayback()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(audioPlayer.isPlaying ? TuneAVTheme.brandGraphite : TuneAVTheme.highlight)
+
+                if audioPlayer.isLoading {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(width: 72, height: 72)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("avi.footerPlayer.playPause")
+    }
+
+    private var metadataText: some View {
+        VStack(alignment: .center, spacing: 4) {
+            Text(station.name)
+                .font(.system(size: 21, weight: .black, design: .rounded))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .truncationMode(.tail)
+                .frame(height: 50, alignment: .center)
+
+            Text(artistLine)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(trackArtworkExists ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Text(titleLine)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.88))
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .frame(maxWidth: .infinity, minHeight: 84, maxHeight: 84, alignment: .center)
+        .contentShape(Rectangle())
+    }
+
     @ViewBuilder
     private var artwork: some View {
         ZStack(alignment: .topLeading) {
             if let artworkURL = audioPlayer.currentTrackArtworkURL {
-                TuneAVRemoteArtworkImage(url: artworkURL, size: 72, scale: displayScale) {
-                    StationArtworkView(station: station, size: 72)
+                TuneAVRemoteArtworkImage(url: artworkURL, size: 152, scale: displayScale) {
+                    StationArtworkView(station: station, size: 152)
                 }
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 72), style: .continuous))
+                .frame(width: 152, height: 152)
+                .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152), style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 72), style: .continuous)
+                    RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152), style: .continuous)
                         .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
                 }
             } else {
                 StationArtworkView(
                     station: station,
-                    size: 72,
+                    size: 152,
                     animationOverlay: .none,
                     isAnimationActive: false
                 )
@@ -2041,7 +2109,7 @@ private struct AviExpandedFooterPlayerView: View {
                 Image(systemName: feedback.systemImage)
                     .font(.system(size: 10, weight: .black))
                     .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 26, height: 26)
                     .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
                     .overlay {
                         Circle()
@@ -2092,9 +2160,9 @@ private struct AviExpandedFooterPlayerView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(audioPlayer.canCyclePlaybackQueue ? TuneAVTheme.textSecondary : TuneAVTheme.textSecondary.opacity(0.28))
-                .frame(width: 48, height: 48)
+                .frame(width: 54, height: 54)
                 .background(.ultraThinMaterial.opacity(audioPlayer.canCyclePlaybackQueue ? 1 : 0.45), in: Circle())
                 .overlay {
                     Circle()
@@ -2111,9 +2179,9 @@ private struct AviExpandedFooterPlayerView: View {
             isShowingQueueSwitcher = true
         } label: {
             Image(systemName: "list.bullet")
-                .font(.system(size: 17, weight: .black))
+                .font(.system(size: 18, weight: .black))
             .foregroundStyle(TuneAVTheme.textSecondary)
-            .frame(width: 48, height: 48)
+            .frame(width: 54, height: 54)
             .background(.ultraThinMaterial.opacity(1), in: Circle())
             .overlay {
                 Circle()
@@ -2123,23 +2191,6 @@ private struct AviExpandedFooterPlayerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.queue.current", playbackQueueSource.displayTitle))
         .accessibilityIdentifier("avi.footerPlayer.queue")
-    }
-
-    private var closeSignalButton: some View {
-        Button(action: stopPlayback) {
-            Image(systemName: "power")
-                .font(.system(size: 17, weight: .black))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .frame(width: 48, height: 48)
-                .background(.ultraThinMaterial.opacity(1), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(0.12), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
-        .accessibilityIdentifier("avi.footerPlayer.closeSignal")
     }
 
     private var sleepTimerMenu: some View {
@@ -2163,25 +2214,28 @@ private struct AviExpandedFooterPlayerView: View {
     }
 
     private func sleepTimerMenuLabel(remainingMinutes: Int?) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: "timer")
-                .font(.system(size: 13, weight: .black))
-
+        ZStack {
+            Circle()
+                .fill(.ultraThinMaterial.opacity(1))
+            VStack(spacing: 1) {
+                Image(systemName: "timer")
+                    .font(.system(size: remainingMinutes == nil ? 18 : 15, weight: .black))
             if let remainingMinutes {
                 Text("\(remainingMinutes) min")
-                    .font(.system(size: 12, weight: .black))
+                    .font(.system(size: 8, weight: .black))
                     .monospacedDigit()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
             }
         }
-        .foregroundStyle(TuneAVTheme.textPrimary)
-        .frame(width: 70, height: 34)
-        .background(.ultraThinMaterial, in: Capsule())
+        .foregroundStyle(TuneAVTheme.textSecondary)
+        .frame(width: 54, height: 54)
         .overlay {
-            Capsule()
-                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            Circle()
+                .stroke(.white.opacity(0.12), lineWidth: 1)
         }
-        .contentShape(Capsule())
+        .contentShape(Circle())
         .transaction { transaction in
             transaction.animation = nil
         }
@@ -2466,22 +2520,29 @@ private struct FullPlayerAviHeader: View {
                     .font(.system(size: 11, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
+                    .lineLimit(1)
+                    .frame(height: 13)
 
                 Text(title)
                     .font(.system(size: 25, weight: .black, design: .rounded))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .truncationMode(.tail)
+                    .frame(height: 30)
 
                 Text(summary)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                    .truncationMode(.tail)
+                    .frame(height: 34, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 2)
+        .frame(height: 96)
         .accessibilityElement(children: .contain)
         .accessibilityValue(accessibilityState)
         .accessibilityIdentifier("avi.fullPlayer.header")
@@ -3060,6 +3121,7 @@ private struct AviScreen: View {
     let discoveries: [DiscoveredTrack]
     let focusedMusicDetail: SelectedMusicAviDetail?
     let isNowPlayingFullPlayer: Bool
+    @Binding var isActionPanelOpen: Bool
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
     let preferredTag: String
@@ -3109,28 +3171,46 @@ private struct AviScreen: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Color.clear
-                            .frame(height: 0)
-                            .id("avi.detail.top")
+            if isNowPlayingFullPlayer {
+                VStack(alignment: .leading, spacing: 16) {
+                    aviContextHeader
 
-                        aviContextHeader
-
-                        if focusedDetailIsEmpty {
-                            aviLandingContent
-                        } else if let activeMusicDetail {
-                            focusedMusicExperience(activeMusicDetail)
-                        } else {
+                    if focusedDetailIsEmpty {
+                        aviLandingContent
+                    } else if let activeMusicDetail {
+                        focusedMusicExperience(activeMusicDetail)
+                    } else {
                             focusedSignalExperience
-                        }
                     }
-                    .shellScreenContentPadding(bottom: aviScrollBottomPadding)
                 }
-                .shellScreenScrollBehavior()
-                .onChange(of: activeDetailScrollID) { _, _ in
-                    scrollToDetailTop(proxy)
+                .padding(.horizontal, shellScreenHorizontalPadding)
+                .padding(.top, shellScreenTopPadding + 18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Color.clear
+                                .frame(height: 0)
+                                .id("avi.detail.top")
+
+                            aviContextHeader
+
+                            if focusedDetailIsEmpty {
+                                aviLandingContent
+                            } else if let activeMusicDetail {
+                                focusedMusicExperience(activeMusicDetail)
+                            } else {
+                                focusedSignalExperience
+                            }
+                        }
+                        .shellScreenContentPadding(bottom: aviScrollBottomPadding)
+                    }
+                    .shellScreenScrollBehavior()
+                    .onChange(of: activeDetailScrollID) { _, _ in
+                        scrollToDetailTop(proxy)
+                    }
                 }
             }
         }
@@ -3165,6 +3245,12 @@ private struct AviScreen: View {
             resetTransientAviUI()
             showAviReactionForCurrentSongChange(identity: nextIdentity)
         }
+        .onChange(of: isShowingAviActions) { _, isShowing in
+            isActionPanelOpen = isShowing && isNowPlayingFullPlayer
+        }
+        .onChange(of: isNowPlayingFullPlayer) { _, isFullPlayer in
+            isActionPanelOpen = isFullPlayer && isShowingAviActions
+        }
         .onChange(of: focusedMusicDetail?.id) { _, _ in
             nestedMusicDetail = nil
             resetArtistDetailLimits()
@@ -3172,6 +3258,9 @@ private struct AviScreen: View {
         .onChange(of: focusedStation?.id) { _, _ in
             visibleFocusedRadioHistoryLimit = Self.artistDetailPageSize
             openArtistDetailAviActionsID = nil
+        }
+        .onDisappear {
+            isActionPanelOpen = false
         }
         .accessibilityIdentifier("avi.screen")
     }
@@ -3517,8 +3606,7 @@ private struct AviScreen: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 10) {
-                    fullPlayerAviOptionsBlock(for: focusedStation)
-                    fullPlayerFeedbackBlock(for: focusedStation)
+                    fullPlayerAviSignalBlock(for: focusedStation)
                     relatedStationsPanel
                 }
             }
@@ -4530,6 +4618,7 @@ private struct AviScreen: View {
                 }
             }
         }
+        .frame(height: isNowPlayingFullPlayer ? 96 : nil, alignment: .center)
     }
 
     private var focusedDetailTypeTitle: String {
@@ -5488,84 +5577,76 @@ private struct AviScreen: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    private func fullPlayerAviOptionsBlock(for station: Station) -> some View {
+    private func fullPlayerAviSignalBlock(for station: Station) -> some View {
         ZStack(alignment: .topLeading) {
             if isShowingAviActions {
                 aviActionsPanel(for: station)
                     .transition(.opacity)
             } else {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(L10n.string("shell.avi.actions.ask"))
-                            .font(.system(size: 11, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .textCase(.uppercase)
-
-                        Text(aviPrimaryLine)
-                            .font(.system(size: 18, weight: .black, design: .rounded))
-                            .foregroundStyle(TuneAVTheme.textPrimary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.82)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Button {
-                        withAnimation(.snappy(duration: 0.22)) {
-                            isShowingAviActions = true
-                            aviActionsPage = 0
-                            isShowingMoreAviActions = false
-                            isShowingFeedbackPicker = false
-                            isEditingRadioFeedback = false
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 14, weight: .black))
-                            Text(L10n.string("player.avi.moreWithAvi"))
-                                .font(.system(size: 15, weight: .black))
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 12, weight: .black))
-                        }
-                        .foregroundStyle(TuneAVTheme.brandBlack)
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("avi.actions.toggle")
-                }
+                fullPlayerAviSignalSummary(for: station)
                 .transition(.opacity)
             }
         }
-        .padding(18)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 316 : 168, alignment: .top)
+        .frame(height: isShowingAviActions ? 438 : 172, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.18), lineWidth: 1)
+                .stroke(TuneAVTheme.highlight.opacity(isShowingAviActions ? 0.22 : 0.38), lineWidth: isShowingAviActions ? 1 : 1.5)
         }
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 12, y: 6)
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
     }
 
-    private func fullPlayerFeedbackBlock(for station: Station) -> some View {
+    private func fullPlayerAviSignalSummary(for station: Station) -> some View {
         let selectedFeedback = focusedPrimaryFeedback(for: station)
-        return VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                    Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .textCase(.uppercase)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 10) {
+                Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .textCase(.uppercase)
+                    .lineLimit(1)
 
-                    Text(isNowPlayingFullPlayer && hasCurrentSongContext ? L10n.string("player.avi.feedback.songQuestion") : L10n.string("player.avi.feedback.radioQuestion"))
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                Spacer(minLength: 8)
+
+                Button {
+                    openFullPlayerAviActions()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 12, weight: .black))
+                        Text(L10n.string("player.avi.moreWithAvi"))
+                            .font(.system(size: 12, weight: .black))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .black))
+                    }
+                    .foregroundStyle(TuneAVTheme.brandBlack)
+                    .padding(.horizontal, 10)
+                    .frame(height: 32)
+                    .background(TuneAVTheme.highlight, in: Capsule(style: .continuous))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(TuneAVTheme.brandBlack.opacity(0.08), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("avi.actions.toggle")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 32)
+
+            Text(isNowPlayingFullPlayer && hasCurrentSongContext ? L10n.string("player.avi.feedback.songQuestion") : L10n.string("player.avi.feedback.radioQuestion"))
+                .font(.system(size: 17, weight: .black, design: .rounded))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 22)
 
             fullPlayerFeedbackPicker(
                 selectedFeedback: selectedFeedback,
@@ -5581,21 +5662,25 @@ private struct AviScreen: View {
                     setFocusedPrimaryFeedback(nil, for: station)
                 }
             )
+            .frame(height: 38)
 
             fullPlayerFeedbackFollowUp(
                 feedback: selectedFeedback,
                 station: station
             )
+            .frame(height: 38)
         }
-        .padding(18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: 172, alignment: .top)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle.opacity(0.68), lineWidth: 1)
+    }
+
+    private func openFullPlayerAviActions() {
+        withAnimation(.snappy(duration: 0.22)) {
+            isShowingAviActions = true
+            aviActionsPage = 0
+            isShowingMoreAviActions = false
+            isShowingFeedbackPicker = false
+            isEditingRadioFeedback = false
         }
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
     }
 
     @ViewBuilder
@@ -6454,7 +6539,7 @@ private struct AviScreen: View {
     }
 
     private var aviActionsPanelHeight: CGFloat {
-        274
+        356
     }
 
     private func aviActionsPanel(for station: Station) -> some View {
@@ -6466,7 +6551,7 @@ private struct AviScreen: View {
         let pageCount = hasSongStep ? 2 : 1
         let lastPage = pageCount - 1
 
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(aviActionsPageTitle)
@@ -6529,7 +6614,7 @@ private struct AviScreen: View {
                 .accessibilityIdentifier("avi.actions.close")
             }
 
-            VStack(spacing: 6) {
+            VStack(spacing: 5) {
                 if hasSongStep && aviActionsPage == 0 {
                     AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics") {
                         showAviReaction(.curious)
@@ -6584,22 +6669,23 @@ private struct AviScreen: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .top)
+
+            if isNowPlayingFullPlayer && isFocusedStationActive {
+                AviCloseSignalPanelButton {
+                    closeAviActions()
+                    stopPlayback()
+                }
+            }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: aviActionsPanelHeight, alignment: .top)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .background(TuneAVTheme.elevatedSurface.opacity(0.96), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.2), lineWidth: 1)
-        }
-        .shadow(color: TuneAVTheme.glassShadow, radius: 28, y: 14)
+        .background(TuneAVTheme.elevatedSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var aviActionsPageTitle: String {
         if isNowPlayingFullPlayer && hasCurrentSongContext && aviActionsPage == 0 {
-            return L10n.string("shell.avi.actions.songFeedback")
+            return L10n.string("shell.avi.actions.aboutSong")
         }
         return L10n.string("shell.common.radio")
     }
@@ -8068,9 +8154,9 @@ private struct AviCommandButton: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 14, weight: .black))
+                    .font(.system(size: 13, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 28, height: 28)
                     .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
 
                 Text(title)
@@ -8087,7 +8173,7 @@ private struct AviCommandButton: View {
                     .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 40)
+            .frame(height: 36)
             .padding(.horizontal, 10)
             .background(TuneAVTheme.cardSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
             .overlay {
@@ -8098,6 +8184,39 @@ private struct AviCommandButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(title)
         .modifier(OptionalAccessibilityIdentifier(accessibilityIdentifier))
+    }
+}
+
+private struct AviCloseSignalPanelButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(TuneAVTheme.textSecondary.opacity(0.1), in: Circle())
+
+                Text(L10n.string("shell.accessibility.closeSignal"))
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 38)
+            .background(TuneAVTheme.cardSurface.opacity(0.7), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle.opacity(0.38), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
+        .accessibilityIdentifier("avi.actions.closeSignal")
     }
 }
 
@@ -8565,14 +8684,15 @@ private struct HomeScreen: View {
         let moodGenreTags = moodGenreTags(visibleDiscoveryTags: visibleDiscoveryTags)
         let scorer = recommendationScorer
         let recommendationInsights = Dictionary(
-            uniqueKeysWithValues: (displayedAviPickStations + displayedAroundYouStations).map { station in
+            (displayedAviPickStations + displayedAroundYouStations).map { station in
                 (
                     station.id,
                     TuneAVLocalRecommendationScorer.localizedSummary(
                         for: scorer.rank(station).primaryReason
                     ) ?? L10n.string("shell.avi.recommendation.reasonFallback")
                 )
-            }
+            },
+            uniquingKeysWith: { current, _ in current }
         )
 
         return DerivedState(
@@ -8649,7 +8769,7 @@ private struct HomeScreen: View {
         case .current:
             return .singleStation
         case .lastPlayed:
-            return .homeRecents
+            return lastPlayedQueueSource
         case .recent:
             return .homeRecents
         case .favorite:
@@ -8664,7 +8784,7 @@ private struct HomeScreen: View {
         case .current:
             return audioPlayer.currentStation.map { [$0] } ?? []
         case .lastPlayed:
-            return [lastPlayedStation].compactMap { $0 }
+            return lastPlayedQueueStations
         case .recent:
             return recentStations
         case .favorite:
@@ -8672,6 +8792,28 @@ private struct HomeScreen: View {
         case .popular, .none:
             return stations
         }
+    }
+
+    private var lastPlayedQueueSource: AudioPlayerService.PlaybackQueue.Source {
+        guard let lastPlayedStation else { return .singleStation }
+        if favoriteStations.contains(where: { $0.id == lastPlayedStation.id }), favoriteStations.count > 1 {
+            return .homeFavorites
+        }
+        if recentStations.contains(where: { $0.id == lastPlayedStation.id }), recentStations.count > 1 {
+            return .homeRecents
+        }
+        return lastPlayedQueueStations.count > 1 ? .homeRecents : .singleStation
+    }
+
+    private var lastPlayedQueueStations: [Station] {
+        guard let lastPlayedStation else { return [] }
+        if favoriteStations.contains(where: { $0.id == lastPlayedStation.id }), favoriteStations.count > 1 {
+            return favoriteStations
+        }
+        if recentStations.contains(where: { $0.id == lastPlayedStation.id }), recentStations.count > 1 {
+            return recentStations
+        }
+        return AppShellNowPlayingPreviews.uniqueStations([lastPlayedStation] + favoriteStations + recentStations + stations)
     }
 
     private func filteredStationsExcludingFeatured(from stations: [Station]) -> [Station] {
@@ -9343,7 +9485,7 @@ private struct LibraryScreen: View {
     }
 
     private var recentRanksByStationID: [String: Int] {
-        Dictionary(uniqueKeysWithValues: recents.enumerated().map { index, station in (station.id, index) })
+        Dictionary(recents.enumerated().map { index, station in (station.id, index) }, uniquingKeysWith: min)
     }
 
     private func lastListenedSort(_ first: Station, _ second: Station, recentRanks: [String: Int]) -> Bool {

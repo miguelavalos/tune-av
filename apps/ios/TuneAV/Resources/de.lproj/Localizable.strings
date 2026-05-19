@@ -724,6 +724,7 @@
 "shell.avi.actions.radioFeedback" = "Radio-Feedback";
 "shell.avi.actions.saveRadio" = "Radio speichern";
 "shell.avi.actions.saveSong" = "Song speichern";
+"shell.avi.actions.aboutSong" = "Über diesen Song";
 "shell.avi.actions.searchAppleMusic" = "In Apple Music suchen";
 "shell.avi.actions.searchArtist" = "Künstler suchen";
 "shell.avi.actions.searchLyrics" = "Songtext suchen";
@@ -926,7 +927,7 @@
 "paywall.benefit.discovery.title" = "Bessere Entdeckung";
 "paywall.benefit.library.title" = "Größere Mediathek";
 "paywall.benefit.sync.title" = "Cloud Sync";
-"paywall.scene.detail" = "Mehr Speicher für Radios, Songs und Avi-Aktionen.";
+"paywall.scene.detail" = "Mehr Radios, Songs und Avi-Aktionen auf deinen Geräten.";
 "paywall.scene.title" = "Tune AV Pro";
 "shell.accessibility.closeSignal" = "Signal schließen";
 "shell.avi.plans.free.subtitle" = "Für dein tägliches Radiogedächtnis";

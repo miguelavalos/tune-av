@@ -28,7 +28,9 @@ Optional account-connected behavior:
 - music-first station discovery with an explicit all-radio mode
 - Radios and Music use overview screens with lightweight section previews, plus dedicated detail pages for long lists, search, and sorting
 - Radio surfaces contain only radios; Music surfaces contain songs and artists
+- full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
 - optional RevenueCat monthly Pro purchase/restore flow when configured
+- Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
 - Pro cloud sync and backend-backed summary/analytics only when Account AV backend config is available
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 
