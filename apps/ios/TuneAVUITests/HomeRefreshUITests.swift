@@ -17,7 +17,7 @@ final class HomeRefreshUITests: TuneAVUITestCase {
         XCTAssertTrue(recentsFavoriteButton.exists)
         XCTAssertTrue(favoritesRow.exists)
 
-        recentsFavoriteButton.tap()
+        tapWhenHittable(of: recentsFavoriteButton, scrollView: app.scrollViews.firstMatch)
 
         XCTAssertTrue(favoritesRow.waitForNonExistence(timeout: 5))
 

@@ -11916,7 +11916,7 @@ private enum StationCompactMetrics {
     static let cardWidth: CGFloat = 258
     static let cardHeight: CGFloat = 112
     static let artworkSize: CGFloat = 82
-    static let favoriteButtonSize: CGFloat = 30
+    static let favoriteButtonSize: CGFloat = 44
     static let playBadgeSize: CGFloat = 36
     static let textLineHeight: CGFloat = 13
 }
@@ -12127,7 +12127,6 @@ private struct StationCompactCard: View {
                 .accessibilityIdentifier("stationRow.play.\(station.id)")
 
                 favoriteButton
-                    .padding(6)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -12202,6 +12201,7 @@ private struct StationCompactCard: View {
                 }
         }
         .buttonStyle(.plain)
+        .contentShape(Circle())
         .accessibilityLabel(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"))
         .accessibilityIdentifier("stationRow.favorite.\(station.id)")
     }
