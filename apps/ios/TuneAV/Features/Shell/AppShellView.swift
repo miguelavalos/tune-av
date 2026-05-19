@@ -296,97 +296,7 @@ struct AppShellView: View {
                 }
             )
         case .avi:
-            let focusedStation = selectedStationDetail.map { enrichedStation($0.station) }
-            let focusedQueueStations = selectedStationDetail.map { enrichedStations($0.queueStations) }
-            let focusedQueueSource = selectedStationDetail?.queueSource ?? .singleStation
-            let stations = enrichedStations(homeSnapshot.stations)
-            let recentStations = enrichedRecentStations
-            let favoriteStations = enrichedFavoriteStations
-
-            AviScreen(
-                currentStation: audioPlayer.currentStation,
-                focusedStation: focusedStation,
-                isFocusedStationActive: focusedStation.map(audioPlayer.isCurrent(_:)) ?? false,
-                currentTrackTitle: TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
-                currentTrackArtist: TuneAVText.normalizedValue(audioPlayer.currentTrackArtist),
-                currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
-                isPlaying: audioPlayer.isPlaying,
-                isLoading: audioPlayer.isLoading,
-                activeSleepTimerMinutes: audioPlayer.activeSleepTimerMinutes,
-                activeSleepTimerRemainingMinutes: audioPlayer.activeSleepTimerRemainingMinutes,
-                canCyclePlaybackQueue: audioPlayer.canCyclePlaybackQueue,
-                playbackQueueSource: audioPlayer.playbackQueue.source,
-                playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
-                stations: stations,
-                recentStations: recentStations,
-                favoriteStations: favoriteStations,
-                discoveries: libraryStore.discoveries,
-                focusedMusicDetail: selectedMusicAviDetail,
-                isNowPlayingFullPlayer: isAviNowPlayingFullPlayer,
-                isActionPanelOpen: $isAviActionPanelOpen,
-                stationFeedback: libraryStore.stationFeedback,
-                feedContext: homeSnapshot.feedContext,
-                preferredTag: libraryStore.settings.preferredTag,
-                preferredCountryCode: libraryStore.settings.preferredCountry,
-                bottomContentPadding: shellScrollBottomPadding,
-                openSearch: {
-                    selectedTab = .search
-                },
-                openLibrary: {
-                    selectedTab = .library
-                },
-                openPlayer: {
-                    if let focusedStation, audioPlayer.isCurrent(focusedStation) {
-                        audioPlayer.togglePlayback()
-                    } else if let focusedStation {
-                        playStation(
-                            focusedStation,
-                            queueSource: focusedQueueSource,
-                            queue: focusedQueueStations ?? [focusedStation]
-                        )
-                    } else if let currentStation = audioPlayer.currentStation {
-                        openNowPlayingFullPlayer(currentStation)
-                    }
-                },
-                stopPlayback: {
-                    stopPlaybackAndCloseSignal()
-                },
-                setSleepTimer: audioPlayer.setSleepTimer(minutes:),
-                playPrevious: audioPlayer.playPreviousInQueue,
-                playNext: audioPlayer.playNextInQueue,
-                playStation: { station, queue in
-                    playStation(station, queueSource: .homeDiscovery, queue: queue)
-                },
-                playStationFromQueue: { station, source, queue in
-                    playStation(station, queueSource: source, queue: queue)
-                },
-                toggleFavorite: toggleFavorite(_:),
-                setStationFeedback: { station, feedback in
-                    libraryStore.setFeedback(feedback, for: station)
-                },
-                showStationDetails: { station, queue in
-                    showStationDetails(station, queueSource: .homeDiscovery, queue: queue)
-                },
-                openDiscoveryInfo: { discovery in
-                    openDiscoveryInfo(discovery)
-                },
-                openDiscoveryStation: { discovery in
-                    openDiscoveryStation(discovery)
-                },
-                openAccount: {
-                    profileMode = .account
-                    selectedTab = .profile
-                },
-                startSignIn: {
-                    startSignInFlow(true)
-                },
-                openProPaywall: {
-                    isShowingProPaywall = true
-                },
-                closeFocusedDetail: {
-                    closeFocusedAviDetail()
-                }
-            )
+            aviScreen
         case .library:
             let favorites = enrichedFavoriteStations
             let recents = enrichedRecentStations
@@ -507,6 +417,112 @@ struct AppShellView: View {
         searchTag = tag
         searchDiscoveryMode = .music
         selectedTab = .search
+    }
+
+    private var aviScreen: some View {
+        let focusedStation = selectedStationDetail.map { enrichedStation($0.station) }
+        let stations = enrichedStations(homeSnapshot.stations)
+        let recentStations = enrichedRecentStations
+        let favoriteStations = enrichedFavoriteStations
+
+        return AviScreen(
+            currentStation: audioPlayer.currentStation,
+            focusedStation: focusedStation,
+            isFocusedStationActive: focusedStation.map(audioPlayer.isCurrent(_:)) ?? false,
+            currentTrackTitle: TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
+            currentTrackArtist: TuneAVText.normalizedValue(audioPlayer.currentTrackArtist),
+            currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
+            isPlaying: audioPlayer.isPlaying,
+            isLoading: audioPlayer.isLoading,
+            activeSleepTimerMinutes: audioPlayer.activeSleepTimerMinutes,
+            activeSleepTimerRemainingMinutes: audioPlayer.activeSleepTimerRemainingMinutes,
+            canCyclePlaybackQueue: audioPlayer.canCyclePlaybackQueue,
+            playbackQueueSource: audioPlayer.playbackQueue.source,
+            playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
+            stations: stations,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations,
+            discoveries: libraryStore.discoveries,
+            focusedMusicDetail: selectedMusicAviDetail,
+            isNowPlayingFullPlayer: isAviNowPlayingFullPlayer,
+            isActionPanelOpen: $isAviActionPanelOpen,
+            stationFeedback: libraryStore.stationFeedback,
+            feedContext: homeSnapshot.feedContext,
+            preferredTag: libraryStore.settings.preferredTag,
+            preferredCountryCode: libraryStore.settings.preferredCountry,
+            bottomContentPadding: shellScrollBottomPadding,
+            openSearch: openSearchTab,
+            openLibrary: openLibraryTab,
+            openPlayer: openAviPlayer,
+            stopPlayback: stopPlaybackAndCloseSignal,
+            setSleepTimer: audioPlayer.setSleepTimer(minutes:),
+            playPrevious: audioPlayer.playPreviousInQueue,
+            playNext: audioPlayer.playNextInQueue,
+            playStation: playAviDiscoveryStation(_:queue:),
+            playStationFromQueue: playStation(_:queueSource:queue:),
+            toggleFavorite: toggleFavorite(_:),
+            setStationFeedback: { station, feedback in
+                libraryStore.setFeedback(feedback, for: station)
+            },
+            showStationDetails: showAviStationDetails(_:queue:),
+            openDiscoveryInfo: { discovery in
+                openDiscoveryInfo(discovery)
+            },
+            openDiscoveryStation: openDiscoveryStation(_:),
+            openAccount: openAccountProfile,
+            startSignIn: startAviSignIn,
+            openProPaywall: openProPaywall,
+            closeFocusedDetail: {
+                closeFocusedAviDetail()
+            }
+        )
+    }
+
+    private func openSearchTab() {
+        selectedTab = .search
+    }
+
+    private func openLibraryTab() {
+        selectedTab = .library
+    }
+
+    private func openAviPlayer() {
+        let focusedStation = selectedStationDetail.map { enrichedStation($0.station) }
+        let focusedQueueStations = selectedStationDetail.map { enrichedStations($0.queueStations) }
+        let focusedQueueSource = selectedStationDetail?.queueSource ?? .singleStation
+
+        if let focusedStation, audioPlayer.isCurrent(focusedStation) {
+            audioPlayer.togglePlayback()
+        } else if let focusedStation {
+            playStation(
+                focusedStation,
+                queueSource: focusedQueueSource,
+                queue: focusedQueueStations ?? [focusedStation]
+            )
+        } else if let currentStation = audioPlayer.currentStation {
+            openNowPlayingFullPlayer(currentStation)
+        }
+    }
+
+    private func playAviDiscoveryStation(_ station: Station, queue: [Station]) {
+        playStation(station, queueSource: .homeDiscovery, queue: queue)
+    }
+
+    private func showAviStationDetails(_ station: Station, queue: [Station]) {
+        showStationDetails(station, queueSource: .homeDiscovery, queue: queue)
+    }
+
+    private func openAccountProfile() {
+        profileMode = .account
+        selectedTab = .profile
+    }
+
+    private func startAviSignIn() {
+        startSignInFlow(true)
+    }
+
+    private func openProPaywall() {
+        isShowingProPaywall = true
     }
 
 
