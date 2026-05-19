@@ -3083,6 +3083,45 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(fallbackState.queueStations.map(\.id), [lastPlayed.id, popular.id])
     }
 
+    func testHomeStationPresentationBuilderUsesCurrentTrackAsRichHero() {
+        let station = recommendationStation(id: "hero", tags: "pop, hits", countryCode: "ES")
+
+        let presentation = HomeStationPresentationBuilder.build(
+            station: station,
+            source: .current,
+            isCurrentStation: true,
+            currentTrackTitle: "Current Song",
+            currentTrackArtist: "Current Artist",
+            feedContext: .popularWorldwide
+        )
+
+        XCTAssertEqual(presentation.tier, .rich)
+        XCTAssertEqual(presentation.label, L10n.string("shell.liveNow.title"))
+        XCTAssertEqual(presentation.title, station.name)
+        XCTAssertEqual(presentation.primaryLine, "Current Artist · Current Song")
+        XCTAssertEqual(presentation.secondaryLine, "🇪🇸 \(L10n.countryName(for: "ES")) · English")
+        XCTAssertEqual(presentation.badges, ["Pop"])
+    }
+
+    func testHomeStationPresentationBuilderFallsBackToContextAndFeedLabel() {
+        let station = recommendationStation(id: "popular", tags: "ambient", countryCode: "FR")
+
+        let presentation = HomeStationPresentationBuilder.build(
+            station: station,
+            source: .popular,
+            isCurrentStation: false,
+            currentTrackTitle: "Ignored Song",
+            currentTrackArtist: "Ignored Artist",
+            feedContext: .popularInCountry("FR")
+        )
+
+        XCTAssertEqual(presentation.tier, .fallback)
+        XCTAssertEqual(presentation.label, L10n.countryName(for: "FR").uppercased(with: .current))
+        XCTAssertEqual(presentation.primaryLine, "🇫🇷 \(L10n.countryName(for: "FR")) · English")
+        XCTAssertNil(presentation.secondaryLine)
+        XCTAssertTrue(presentation.badges.isEmpty)
+    }
+
     func testAviPlayerEmotionPrioritizesFailureLoadingFeedbackAndSavedTrack() {
         let station = recommendationStation(id: "pop", tags: "pop, hits")
 

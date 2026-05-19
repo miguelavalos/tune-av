@@ -8352,81 +8352,15 @@ private struct HomeScreen: View {
         }
     }
 
-    private func cleanedFeaturedDetail(_ value: String?) -> String? {
-        TuneAVText.normalizedValue(value, excluding: Station.unknownDetailValues, locale: L10n.locale)
-    }
-
-    private func localizedCountryName(for station: Station) -> String? {
-        if let countryCode = TuneAVCountry.sanitizedCode(station.countryCode) {
-            return L10n.countryName(for: countryCode)
-        }
-
-        return cleanedFeaturedDetail(station.country)
-    }
-
     private func homePresentation(for station: Station, source: HomeFeaturedStationSource?) -> HomeStationPresentation {
-        let currentTrack = currentTrackLine(for: station)
-        let context = stationContextLine(for: station)
-        let label = heroLabel(for: source, station: station)
-        let hasReliableProgramData = currentTrack != nil
-        let badges = hasReliableProgramData ? [stationCategoryLabel(for: station)].compactMap { $0 }.prefix(2).map { $0 } : []
-
-        return HomeStationPresentation(
-            tier: hasReliableProgramData ? .rich : .fallback,
-            label: label,
-            title: station.name,
-            primaryLine: currentTrack ?? context,
-            secondaryLine: currentTrack == nil ? nil : context,
-            badges: badges
+        HomeStationPresentationBuilder.build(
+            station: station,
+            source: source,
+            isCurrentStation: audioPlayer.isCurrent(station),
+            currentTrackTitle: audioPlayer.currentTrackTitle,
+            currentTrackArtist: audioPlayer.currentTrackArtist,
+            feedContext: feedContext
         )
-    }
-
-    private func currentTrackLine(for station: Station) -> String? {
-        guard audioPlayer.isCurrent(station) else { return nil }
-        guard let title = TuneAVDisplayMetadata.normalized(audioPlayer.currentTrackTitle) else { return nil }
-        guard !TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(title, stationName: station.name) else { return nil }
-
-        if
-            let artist = TuneAVDisplayMetadata.normalized(audioPlayer.currentTrackArtist),
-            !TuneAVTrackMetadataParser.artistLooksLikeBroadcastMetadata(artist, stationName: station.name)
-        {
-            return "\(artist) · \(title)"
-        }
-
-        return title
-    }
-
-    private func stationContextLine(for station: Station) -> String? {
-        let country = localizedCountryName(for: station).map { country in
-            if let flag = station.flagEmoji {
-                return "\(flag) \(country)"
-            }
-            return country
-        }
-        let language = cleanedFeaturedDetail(station.language)
-        let values = [country, language]
-            .compactMap { $0 }
-            .reduce(into: [String]()) { result, value in
-                guard !result.contains(where: { $0.localizedCaseInsensitiveCompare(value) == .orderedSame }) else { return }
-                result.append(value)
-            }
-
-        guard !values.isEmpty else { return nil }
-        return values.prefix(2).joined(separator: " · ")
-    }
-
-    private func stationCategoryLabel(for station: Station) -> String? {
-        let tags = station.tags
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        let preferredTags = ["music", "pop", "rock", "jazz", "news", "talk", "sports", "classical", "electronic", "latin", "ambient", "country"]
-        if let tag = tags.first(where: { tag in preferredTags.contains { tag.localizedCaseInsensitiveContains($0) } }) {
-            return tag.capitalized(with: L10n.locale)
-        }
-
-        return nil
     }
 
     private func playHeroStation(_ station: Station) {
@@ -8450,25 +8384,6 @@ private struct HomeScreen: View {
     private func showHeroDetails(_ station: Station) {
         let featuredState = homeFeaturedState
         showStationDetails(station, featuredState.queueSource, featuredState.queueStations)
-    }
-
-    private func heroLabel(for source: HomeFeaturedStationSource?, station: Station) -> String {
-        if audioPlayer.isCurrent(station) {
-            return L10n.string("shell.liveNow.title")
-        }
-
-        switch source {
-        case .favorite:
-            return L10n.string("shell.home.favorites.title")
-        case .lastPlayed:
-            return L10n.string("shell.home.featured.continueListening")
-        case .recent:
-            return L10n.string("shell.home.recents.title")
-        case .current:
-            return L10n.string("shell.liveNow.title")
-        case .popular, .none:
-            return featuredLabel(for: source)
-        }
     }
 
     private var hasPersonalActivity: Bool {
@@ -8504,30 +8419,6 @@ private struct HomeScreen: View {
         )
     }
 
-    private func featuredLabel(for source: HomeFeaturedStationSource?) -> String {
-        switch source {
-        case .recent:
-            return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
-        case .favorite:
-            return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
-        case .current:
-            return L10n.string("shell.liveNow.title").uppercased(with: .current)
-        case .lastPlayed:
-            return L10n.string("shell.home.featured.continueListening").uppercased(with: .current)
-        case .popular, .none:
-            break
-        }
-
-        switch feedContext {
-        case .preferredGenre:
-            return L10n.string("shell.home.featured.frontPage").uppercased(with: .current)
-        case .popularInCountry(let countryCode):
-            let countryName = L10n.countryName(for: countryCode)
-            return countryName.uppercased(with: .current)
-        case .popularWorldwide:
-            return L10n.string("shell.home.featured.popular").uppercased(with: .current)
-        }
-    }
 }
 
 private struct SearchScreen: View {
@@ -11144,20 +11035,6 @@ private extension TuneAVCountry {
     static var all: [TuneAVCountry] {
         all(localizedName: L10n.countryName(for:))
     }
-}
-
-private struct HomeStationPresentation {
-    enum Tier {
-        case rich
-        case fallback
-    }
-
-    let tier: Tier
-    let label: String
-    let title: String
-    let primaryLine: String?
-    let secondaryLine: String?
-    let badges: [String]
 }
 
 private struct HomeTuningDeskHero: View {

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */; };
 		0BEFD1AF0CCEFF38FA4AED12 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */; };
 		0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */; };
 		0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD95C0068EC297AAD27DFCAD /* AppConfig.swift */; };
@@ -201,6 +202,7 @@
 		7B2B3D1DEB4D5796B1320027 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationArtworkView.swift; sourceTree = "<group>"; };
 		7E72DA3D66622D24493F5809 /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
+		815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStationPresentationBuilder.swift; sourceTree = "<group>"; };
 		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
@@ -321,6 +323,7 @@
 				B135CD41FF02BCEE0886119A /* HomePopularStationSelector.swift */,
 				4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */,
 				157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */,
+				815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
@@ -713,6 +716,7 @@
 				BE7141C88E632BC3C4214CEE /* HomePopularStationSelector.swift in Sources */,
 				594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */,
 				EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */,
+				00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,
