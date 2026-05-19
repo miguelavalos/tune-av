@@ -1056,6 +1056,49 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(stations.map(\.id), ["popular-fallback"])
     }
 
+    func testPopularStationsRevalidatesExpiredAVALSYSCacheWithETag() async throws {
+        var ifNoneMatchHeaders: [String?] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            ifNoneMatchHeaders.append(request.value(forHTTPHeaderField: "If-None-Match"))
+
+            if ifNoneMatchHeaders.count == 1 {
+                return (
+                    HTTPURLResponse(
+                        url: request.url!,
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: ["ETag": "\"popular-etag\""]
+                    )!,
+                    self.avalsysSearchBody(id: "popular-etag")
+                )
+            }
+
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 304, httpVersion: nil, headerFields: nil)!,
+                Data()
+            )
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
+            backendGate: makeBackendGate(),
+            responseCache: TuneAVStationResponseCache(maxAge: -1)
+        )
+
+        let firstStations = try await service.popularStations(
+            filters: TuneAVStationSearchFilters(query: "", countryCode: "ES", locale: "es", limit: 5)
+        )
+        let revalidatedStations = try await service.popularStations(
+            filters: TuneAVStationSearchFilters(query: "", countryCode: "ES", locale: "es", limit: 5)
+        )
+
+        XCTAssertEqual(firstStations.map(\.id), ["popular-etag"])
+        XCTAssertEqual(revalidatedStations.map(\.id), ["popular-etag"])
+        XCTAssertEqual(ifNoneMatchHeaders, [nil, "\"popular-etag\""])
+    }
+
     func testStationServiceRetriesAVALSYSAfterTemporaryBlockExpiresAndResetsOnSuccess() async throws {
         var requestedHosts: [String] = []
         let clock = MutableTestDate(Date(timeIntervalSince1970: 1_000))
@@ -1100,14 +1143,14 @@ final class SharedAppleSupportTests: XCTestCase {
         let cache = TuneAVStationResponseCache(maxAge: 60)
         let counter = AsyncCounter()
 
-        async let first = cache.stations(for: "same-request") {
+        async let first = cache.stations(for: "same-request") { _ in
             await counter.increment()
             try await Task.sleep(for: .milliseconds(50))
-            return [Station(id: "cached", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/cached")]
+            return .updated([Station(id: "cached", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/cached")], etag: nil)
         }
-        async let second = cache.stations(for: "same-request") {
+        async let second = cache.stations(for: "same-request") { _ in
             await counter.increment()
-            return [Station(id: "duplicate", name: "Duplicate", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/duplicate")]
+            return .updated([Station(id: "duplicate", name: "Duplicate", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/duplicate")], etag: nil)
         }
 
         let firstResults = try await first
@@ -1123,13 +1166,13 @@ final class SharedAppleSupportTests: XCTestCase {
         let cache = TuneAVStationResponseCache(maxAge: -1)
         let counter = AsyncCounter()
 
-        let first = try await cache.stations(for: "expiring-request") {
+        let first = try await cache.stations(for: "expiring-request") { _ in
             let count = await counter.increment()
-            return [Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")]
+            return .updated([Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")], etag: nil)
         }
-        let second = try await cache.stations(for: "expiring-request") {
+        let second = try await cache.stations(for: "expiring-request") { _ in
             let count = await counter.increment()
-            return [Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")]
+            return .updated([Station(id: "cached-\(count)", name: "Cached", country: "Spain", language: "Spanish", tags: "music", streamURL: "https://example.com/\(count)")], etag: nil)
         }
         let loadCount = await counter.currentValue()
 

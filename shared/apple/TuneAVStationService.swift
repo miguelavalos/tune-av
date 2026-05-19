@@ -169,9 +169,20 @@ struct TuneAVStationService {
         }
 
         let cacheKey = "avalsys|\(url.absoluteString)"
-        return try await responseCache.stations(for: cacheKey) {
-            let response = try await decodedResponse(TuneAVStationSearchResponseDTO.self, url: url, timeoutInterval: 4)
-            return applyExactTagFilterIfNeeded(deduplicatedStations(response.resolvedStations), tag: filters.tag, limit: filters.limit)
+        return try await responseCache.stations(for: cacheKey) { etag in
+            let response = try await decodedResponse(
+                TuneAVStationSearchResponseDTO.self,
+                url: url,
+                timeoutInterval: 4,
+                etag: etag
+            )
+            switch response {
+            case .notModified:
+                return .notModified
+            case .value(let dto, let etag):
+                let stations = applyExactTagFilterIfNeeded(deduplicatedStations(dto.resolvedStations), tag: filters.tag, limit: filters.limit)
+                return .updated(stations, etag: etag)
+            }
         }
     }
 
@@ -195,27 +206,41 @@ struct TuneAVStationService {
         }
 
         let cacheKey = "radioBrowser|\(url.absoluteString)"
-        return try await responseCache.stations(for: cacheKey) {
-            let stations = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
+        return try await responseCache.stations(for: cacheKey) { _ in
+            let response = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
+            guard case .value(let stations, _) = response else {
+                throw ServiceError.invalidResponse(invalidResponseMessage)
+            }
             let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
-            return applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit)
+            return .updated(applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit), etag: nil)
         }
     }
 
-    private func decodedResponse<T: Decodable>(_ type: T.Type, url: URL, timeoutInterval: TimeInterval = 15) async throws -> T {
+    private func decodedResponse<T: Decodable>(
+        _ type: T.Type,
+        url: URL,
+        timeoutInterval: TimeInterval = 15,
+        etag: String? = nil
+    ) async throws -> TuneAVDecodedResponse<T> {
         var request = URLRequest(url: url)
         request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
         request.timeoutInterval = timeoutInterval
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ServiceError.invalidResponse(invalidResponseMessage)
         }
+        if httpResponse.statusCode == 304 {
+            return .notModified
+        }
         guard 200..<300 ~= httpResponse.statusCode else {
             throw ServiceError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        return try JSONDecoder().decode(type, from: data)
+        return .value(try JSONDecoder().decode(type, from: data), etag: httpResponse.value(forHTTPHeaderField: "ETag"))
     }
 
     private func applyExactTagFilterIfNeeded(_ resolvedStations: [Station], tag: String, limit: Int) -> [Station] {
@@ -261,64 +286,88 @@ struct TuneAVStationService {
     }
 }
 
+private enum TuneAVDecodedResponse<T> {
+    case value(T, etag: String?)
+    case notModified
+}
+
 actor TuneAVStationResponseCache {
     static let shared = TuneAVStationResponseCache()
 
     private struct Entry {
         let stations: [Station]
+        let etag: String?
         let cachedAt: Date
+    }
+
+    enum LoadResult {
+        case updated([Station], etag: String?)
+        case notModified
     }
 
     private let maxAge: TimeInterval
     private let maxEntries: Int
     private var entries: [String: Entry] = [:]
-    private var inFlightRequests: [String: Task<[Station], Error>] = [:]
+    private var inFlightRequests: [String: Task<LoadResult, Error>] = [:]
 
     init(maxAge: TimeInterval = 120, maxEntries: Int = 80) {
         self.maxAge = maxAge
         self.maxEntries = maxEntries
     }
 
-    func stations(for key: String, load: @escaping @Sendable () async throws -> [Station]) async throws -> [Station] {
+    func stations(for key: String, load: @escaping @Sendable (String?) async throws -> LoadResult) async throws -> [Station] {
         if let cached = cachedStations(for: key) {
             return cached
         }
         if let inFlightRequest = inFlightRequests[key] {
-            return try await inFlightRequest.value
+            return try resolveLoadResult(try await inFlightRequest.value, staleEntry: entries[key], key: key)
         }
 
+        let staleEntry = entries[key]
         let task = Task {
-            try await load()
+            try await load(staleEntry?.etag)
         }
         inFlightRequests[key] = task
 
         do {
-            let stations = try await task.value
+            let result = try await task.value
             inFlightRequests[key] = nil
-            save(stations, for: key)
-            return stations
+            return try resolveLoadResult(result, staleEntry: staleEntry, key: key)
         } catch {
             inFlightRequests[key] = nil
             throw error
         }
     }
 
+    private func resolveLoadResult(_ result: LoadResult, staleEntry: Entry?, key: String) throws -> [Station] {
+        switch result {
+        case .updated(let stations, let etag):
+            save(stations, etag: etag, for: key)
+            return stations
+        case .notModified:
+            guard let staleEntry else {
+                throw TuneAVStationService.ServiceError.invalidResponse("Station cache revalidation returned without a cached response.")
+            }
+            save(staleEntry.stations, etag: staleEntry.etag, for: key)
+            return staleEntry.stations
+        }
+    }
+
     private func cachedStations(for key: String, now: Date = .now) -> [Station]? {
         guard let entry = entries[key] else { return nil }
         guard now.timeIntervalSince(entry.cachedAt) <= maxAge else {
-            entries[key] = nil
             return nil
         }
         return entry.stations
     }
 
-    private func save(_ stations: [Station], for key: String, now: Date = .now) {
+    private func save(_ stations: [Station], etag: String?, for key: String, now: Date = .now) {
         removeExpiredEntries(now: now)
         if entries.count >= maxEntries,
            let oldestKey = entries.min(by: { $0.value.cachedAt < $1.value.cachedAt })?.key {
             entries[oldestKey] = nil
         }
-        entries[key] = Entry(stations: stations, cachedAt: now)
+        entries[key] = Entry(stations: stations, etag: etag, cachedAt: now)
     }
 
     private func removeExpiredEntries(now: Date) {
