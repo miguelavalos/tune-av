@@ -4062,39 +4062,10 @@ struct AviScreen: View {
     }
 
     private func focusedTrackSummaryCard(_ discovery: DiscoveredTrack) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                discoveryArtwork(discovery, size: 62)
-                    .overlay(alignment: .topLeading) {
-                        if let feedback = libraryStore.feedback(for: discovery) {
-                            feedbackStatusBadge(feedback, size: 24)
-                                .offset(x: -5, y: -5)
-                        }
-                    }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(discovery.title)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-
-                    Text("\(discovery.artistDisplayText) · \(discovery.stationName)")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
-
-                    Text("\(L10n.string("shell.avi.music.lastSeen")) · \(discovery.playedAt.formatted(date: .numeric, time: .omitted))")
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .padding(12)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
+        AviFocusedTrackSummaryCard(
+            discovery: discovery,
+            feedback: libraryStore.feedback(for: discovery)
+        )
     }
 
     private func focusedTrackQuickActions(_ discovery: DiscoveredTrack) -> some View {
@@ -4209,35 +4180,11 @@ struct AviScreen: View {
     }
 
     private func focusedArtistSummaryCard(_ summary: DiscoveryArtistSummary, discoveries: [DiscoveredTrack]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                artistArtwork(summary, size: 62)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(summary.name)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-
-                    Text(artistSummaryLine(summary))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
-
-                    if let latestDiscovery = latestDiscovery(for: summary) {
-                        Text("\(L10n.string("shell.avi.music.latestSong")) · \(latestDiscovery.title)")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .lineLimit(1)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .padding(12)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
+        AviFocusedArtistSummaryCard(
+            summary: summary,
+            summaryLine: artistSummaryLine(summary),
+            latestDiscoveryTitle: latestDiscovery(for: summary)?.title
+        )
     }
 
     private func focusedArtistStats(_ summary: DiscoveryArtistSummary, savedSongsCount: Int, stationCount: Int) -> some View {
@@ -8236,6 +8183,157 @@ private struct ArtistStatPill: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(TuneAVTheme.borderSubtle.opacity(0.68), lineWidth: 1)
         }
+    }
+}
+
+private struct AviFocusedTrackSummaryCard: View {
+    @Environment(\.displayScale) private var displayScale
+
+    let discovery: DiscoveredTrack
+    let feedback: TuneAVStationFeedback?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                artwork
+                    .overlay(alignment: .topLeading) {
+                        if let feedback {
+                            TuneAVFeedbackBadge(feedback: feedback, size: 24)
+                                .offset(x: -5, y: -5)
+                        }
+                    }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(discovery.title)
+                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+
+                    Text("\(discovery.artistDisplayText) · \(discovery.stationName)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(2)
+
+                    Text("\(L10n.string("shell.avi.music.lastSeen")) · \(discovery.playedAt.formatted(date: .numeric, time: .omitted))")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(12)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        let size: CGFloat = 62
+        if let artworkURL = discovery.resolvedArtworkURL ?? discovery.resolvedStationArtworkURL {
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                AviMusicArtworkFallback(systemImage: "music.note", size: size)
+            }
+            .frame(width: size, height: size)
+            .clipShape(AviMusicArtworkShape(size: size))
+            .overlay {
+                AviMusicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+        } else {
+            AviMusicArtworkFallback(systemImage: "music.note", size: size)
+        }
+    }
+}
+
+private struct AviFocusedArtistSummaryCard: View {
+    @Environment(\.displayScale) private var displayScale
+
+    let summary: DiscoveryArtistSummary
+    let summaryLine: String
+    let latestDiscoveryTitle: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                artwork
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(summary.name)
+                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+
+                    Text(summaryLine)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .lineLimit(2)
+
+                    if let latestDiscoveryTitle {
+                        Text("\(L10n.string("shell.avi.music.latestSong")) · \(latestDiscoveryTitle)")
+                            .font(.system(size: 12, weight: .black))
+                            .foregroundStyle(TuneAVTheme.highlight)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(12)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        let size: CGFloat = 62
+        if let artworkURL = summary.displayArtworkURL {
+            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+            }
+            .frame(width: size, height: size)
+            .clipShape(AviMusicArtworkShape(size: size))
+            .overlay {
+                AviMusicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+        } else {
+            AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+        }
+    }
+}
+
+private struct AviMusicArtworkFallback: View {
+    let systemImage: String
+    let size: CGFloat
+
+    var body: some View {
+        AviMusicArtworkShape(size: size)
+            .fill(TuneAVTheme.mutedSurface)
+            .frame(width: size, height: size)
+            .overlay {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .overlay {
+                AviMusicArtworkShape(size: size)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+    }
+}
+
+private struct AviMusicArtworkShape: Shape {
+    let size: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        RoundedRectangle(
+            cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size),
+            style: .continuous
+        )
+        .path(in: rect)
     }
 }
 
