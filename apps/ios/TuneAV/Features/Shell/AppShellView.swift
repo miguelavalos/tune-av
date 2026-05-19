@@ -4029,7 +4029,11 @@ struct AviScreen: View {
         return VStack(alignment: .leading, spacing: 12) {
             focusedTrackSummaryCard(discovery)
             focusedTrackQuickActions(discovery)
-            focusedTrackStats(discovery)
+            AviFocusedTrackStats(
+                artistName: discovery.artistDisplayText,
+                stationName: discovery.stationName,
+                feedbackLabel: libraryStore.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
+            )
             focusedMusicAviServices(for: .track(discovery))
             focusedTrackArticle(discovery)
             trackStationsBlock(discovery)
@@ -4097,28 +4101,6 @@ struct AviScreen: View {
         )
     }
 
-    private func focusedTrackStats(_ discovery: DiscoveredTrack) -> some View {
-        HStack(spacing: 7) {
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.artist.label"),
-                value: discovery.artistDisplayText,
-                systemImage: "person.fill"
-            )
-
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.station"),
-                value: discovery.stationName,
-                systemImage: "dot.radiowaves.left.and.right"
-            )
-
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.feedback"),
-                value: libraryStore.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty"),
-                systemImage: "heart.fill"
-            )
-        }
-    }
-
     private func focusedArtistInfo(_ summary: DiscoveryArtistSummary) -> some View {
         return VStack(alignment: .leading, spacing: 12) {
             focusedArtistArticle(summary)
@@ -4132,7 +4114,11 @@ struct AviScreen: View {
 
         return VStack(alignment: .leading, spacing: 12) {
             focusedArtistSummaryCard(summary, discoveries: discoveries)
-            focusedArtistStats(summary, savedSongsCount: savedSongs.count, stationCount: stationCount)
+            AviFocusedArtistStats(
+                savedSongsCount: savedSongs.count,
+                stationCount: stationCount,
+                latestSeenLabel: latestDiscovery(for: summary)?.playedAt.formatted(date: .numeric, time: .omitted) ?? L10n.string("shell.avi.music.feedback.empty")
+            )
             focusedMusicAviServices(for: .artist(summary))
             artistSavedSongsBlock(summary, savedSongs: savedSongs)
             artistStationsBlock(summary)
@@ -4145,28 +4131,6 @@ struct AviScreen: View {
             summaryLine: artistSummaryLine(summary),
             latestDiscoveryTitle: latestDiscovery(for: summary)?.title
         )
-    }
-
-    private func focusedArtistStats(_ summary: DiscoveryArtistSummary, savedSongsCount: Int, stationCount: Int) -> some View {
-        HStack(spacing: 7) {
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.artist.savedSongs"),
-                value: "\(savedSongsCount)",
-                systemImage: "bookmark.fill"
-            )
-
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.artist.radios"),
-                value: "\(stationCount)",
-                systemImage: "dot.radiowaves.left.and.right"
-            )
-
-            ArtistStatPill(
-                title: L10n.string("shell.avi.music.lastSeen"),
-                value: latestDiscovery(for: summary)?.playedAt.formatted(date: .numeric, time: .omitted) ?? L10n.string("shell.avi.music.feedback.empty"),
-                systemImage: "clock.fill"
-            )
-        }
     }
 
     private func artistSummaryLine(_ summary: DiscoveryArtistSummary) -> String {
@@ -8261,6 +8225,62 @@ private struct AviFocusedArtistSummaryCard: View {
             }
         } else {
             AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+        }
+    }
+}
+
+private struct AviFocusedTrackStats: View {
+    let artistName: String
+    let stationName: String
+    let feedbackLabel: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.artist.label"),
+                value: artistName,
+                systemImage: "person.fill"
+            )
+
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.station"),
+                value: stationName,
+                systemImage: "dot.radiowaves.left.and.right"
+            )
+
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.feedback"),
+                value: feedbackLabel,
+                systemImage: "heart.fill"
+            )
+        }
+    }
+}
+
+private struct AviFocusedArtistStats: View {
+    let savedSongsCount: Int
+    let stationCount: Int
+    let latestSeenLabel: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.artist.savedSongs"),
+                value: "\(savedSongsCount)",
+                systemImage: "bookmark.fill"
+            )
+
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.artist.radios"),
+                value: "\(stationCount)",
+                systemImage: "dot.radiowaves.left.and.right"
+            )
+
+            ArtistStatPill(
+                title: L10n.string("shell.avi.music.lastSeen"),
+                value: latestSeenLabel,
+                systemImage: "clock.fill"
+            )
         }
     }
 }
