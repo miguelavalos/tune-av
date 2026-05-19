@@ -40,7 +40,7 @@ struct AppShellView: View {
     @State private var selectedMusicAviDetail: SelectedMusicAviDetail?
     @State private var isAviNowPlayingFullPlayer = false
     @State private var isAviActionPanelOpen = false
-    @State private var aviReturnContext: AviReturnContext?
+    @State private var aviReturnCoordinator = AviReturnCoordinator()
     @State private var requestedRadioMode: RadioLibraryMode?
     @State private var requestedRadioOverview: Bool?
     @State private var requestedMusicMode: MusicContentMode?
@@ -1126,10 +1126,9 @@ struct AppShellView: View {
         isAviNowPlayingFullPlayer = false
         libraryStore.clearOpenedStationPresentation()
 
-        if let aviReturnContext {
-            restoreAviReturnContext(aviReturnContext)
-            selectedTab = aviReturnContext.tab
-            clearAviReturnContext()
+        if let request = aviReturnCoordinator.consumeRestoreRequest() {
+            restoreAviReturnRequest(request)
+            selectedTab = request.tab
         } else if let fallbackTab {
             selectedTab = fallbackTab
         }
@@ -1141,9 +1140,8 @@ struct AppShellView: View {
         musicMode: MusicContentMode? = nil,
         musicOverview: Bool? = nil
     ) {
-        aviReturnContext = AviReturnContext.captured(
+        aviReturnCoordinator.capture(
             selectedTab: selectedTab,
-            existingContext: aviReturnContext,
             radioMode: radioMode,
             radioOverview: radioOverview,
             musicMode: musicMode,
@@ -1151,18 +1149,14 @@ struct AppShellView: View {
         )
     }
 
-    private func restoreAviReturnContext(_ context: AviReturnContext) {
-        if let request = context.radioReturnRequest {
+    private func restoreAviReturnRequest(_ restoreRequest: AviReturnRestoreRequest) {
+        if let request = restoreRequest.radioReturnRequest {
             requestedRadioMode = request.mode
             requestedRadioOverview = request.overview
-        } else if let request = context.musicReturnRequest {
+        } else if let request = restoreRequest.musicReturnRequest {
             requestedMusicMode = request.mode
             requestedMusicOverview = request.overview
         }
-    }
-
-    private func clearAviReturnContext() {
-        aviReturnContext = nil
     }
 
     private func aviStationDetail(
@@ -1570,16 +1564,73 @@ struct AviReturnContext {
         musicMode: MusicContentMode?,
         musicOverview: Bool?
     ) -> AviReturnContext? {
-        let returnTab = selectedTab == .avi ? existingContext?.tab : selectedTab
-        guard let returnTab else { return nil }
+        if selectedTab == .avi {
+            return existingContext
+        }
 
         return AviReturnContext(
-            tab: returnTab,
+            tab: selectedTab,
             radioMode: selectedTab == .library ? radioMode : nil,
             radioOverview: selectedTab == .library ? radioOverview : nil,
             musicMode: selectedTab == .music ? musicMode : nil,
             musicOverview: selectedTab == .music ? musicOverview : nil
         )
+    }
+}
+
+struct AviReturnRestoreRequest {
+    let tab: AppShellTab
+    let radioMode: RadioLibraryMode?
+    let radioOverview: Bool?
+    let musicMode: MusicContentMode?
+    let musicOverview: Bool?
+
+    var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
+        guard tab == .library else { return nil }
+
+        return (radioMode, radioOverview)
+    }
+
+    var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
+        guard tab == .music else { return nil }
+
+        return (musicMode, musicOverview)
+    }
+
+    init(context: AviReturnContext) {
+        tab = context.tab
+        radioMode = context.radioMode
+        radioOverview = context.radioOverview
+        musicMode = context.musicMode
+        musicOverview = context.musicOverview
+    }
+}
+
+struct AviReturnCoordinator {
+    private(set) var context: AviReturnContext?
+
+    mutating func capture(
+        selectedTab: AppShellTab,
+        radioMode: RadioLibraryMode?,
+        radioOverview: Bool?,
+        musicMode: MusicContentMode?,
+        musicOverview: Bool?
+    ) {
+        context = AviReturnContext.captured(
+            selectedTab: selectedTab,
+            existingContext: context,
+            radioMode: radioMode,
+            radioOverview: radioOverview,
+            musicMode: musicMode,
+            musicOverview: musicOverview
+        )
+    }
+
+    mutating func consumeRestoreRequest() -> AviReturnRestoreRequest? {
+        guard let context else { return nil }
+
+        self.context = nil
+        return AviReturnRestoreRequest(context: context)
     }
 }
 

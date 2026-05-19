@@ -60,8 +60,8 @@ final class AviReturnContextTests: XCTestCase {
         XCTAssertEqual(context.tab, .library)
 
         let request = try XCTUnwrap(context.radioReturnRequest)
-        XCTAssertNil(request.mode)
-        XCTAssertNil(request.overview)
+        XCTAssertEqual(request.mode, .tuned)
+        XCTAssertEqual(request.overview, true)
         XCTAssertNil(context.musicReturnRequest)
     }
 
@@ -74,5 +74,53 @@ final class AviReturnContextTests: XCTestCase {
             musicMode: .songs,
             musicOverview: true
         ))
+    }
+
+    func testCoordinatorConsumesAndClearsRadioRestoreRequest() throws {
+        var coordinator = AviReturnCoordinator()
+        coordinator.capture(
+            selectedTab: .library,
+            radioMode: .tuned,
+            radioOverview: true,
+            musicMode: .songs,
+            musicOverview: false
+        )
+
+        let restoreRequest = try XCTUnwrap(coordinator.consumeRestoreRequest())
+        XCTAssertEqual(restoreRequest.tab, .library)
+
+        let radioRequest = try XCTUnwrap(restoreRequest.radioReturnRequest)
+        XCTAssertEqual(radioRequest.mode, .tuned)
+        XCTAssertEqual(radioRequest.overview, true)
+        XCTAssertNil(restoreRequest.musicReturnRequest)
+        XCTAssertNil(coordinator.context)
+        XCTAssertNil(coordinator.consumeRestoreRequest())
+    }
+
+    func testCoordinatorKeepsOriginalReturnContextWhenCapturingFromAvi() throws {
+        var coordinator = AviReturnCoordinator()
+        coordinator.capture(
+            selectedTab: .music,
+            radioMode: nil,
+            radioOverview: nil,
+            musicMode: .top,
+            musicOverview: false
+        )
+
+        coordinator.capture(
+            selectedTab: .avi,
+            radioMode: .saved,
+            radioOverview: true,
+            musicMode: .songs,
+            musicOverview: true
+        )
+
+        let restoreRequest = try XCTUnwrap(coordinator.consumeRestoreRequest())
+        XCTAssertEqual(restoreRequest.tab, .music)
+
+        let musicRequest = try XCTUnwrap(restoreRequest.musicReturnRequest)
+        XCTAssertEqual(musicRequest.mode, .top)
+        XCTAssertEqual(musicRequest.overview, false)
+        XCTAssertNil(restoreRequest.radioReturnRequest)
     }
 }
