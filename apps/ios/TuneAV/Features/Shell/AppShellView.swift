@@ -8234,6 +8234,7 @@ private struct HomeScreen: View {
             derivedState: derivedState,
             featuredState: featuredState
         )
+        let heroActionRouter = homeHeroActionRouter
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -8243,10 +8244,10 @@ private struct HomeScreen: View {
                 )
                 HomeHeroContent(
                     state: heroContentState,
-                    playAction: { playHeroStation($0, featuredState: featuredState) },
+                    playAction: { heroActionRouter.play($0, featuredState: featuredState) },
                     favoriteAction: toggleFavorite,
-                    feedbackAction: setHeroFeedback,
-                    detailsAction: { showHeroDetails($0, featuredState: featuredState) }
+                    feedbackAction: heroActionRouter.setFeedback,
+                    detailsAction: { heroActionRouter.showDetails($0, featuredState: featuredState) }
                 )
                 HomeRecommendationSections(
                     derivedState: derivedState,
@@ -8313,31 +8314,15 @@ private struct HomeScreen: View {
         )
     }
 
-    private func playHeroStation(_ station: Station, featuredState: HomeFeaturedStationState) {
-        switch HomeHeroActionBuilder.playbackAction(
-            isCurrentStation: audioPlayer.isCurrent(station),
-            featuredState: featuredState
-        ) {
-        case .toggleCurrent:
-            audioPlayer.togglePlayback()
-        case .play(let queueSource, let queueStations):
-            playStation(station, queueSource, queueStations)
-        }
-    }
-
-    private func setHeroFeedback(_ feedback: TuneAVStationFeedback, for station: Station) {
-        let nextFeedback = HomeHeroActionBuilder.toggledFeedback(
-            currentFeedback: stationFeedback[station.id],
-            selectedFeedback: feedback
+    private var homeHeroActionRouter: HomeHeroActionRouter {
+        HomeHeroActionRouter(
+            isCurrentStation: audioPlayer.isCurrent(_:),
+            togglePlayback: audioPlayer.togglePlayback,
+            playStation: playStation,
+            showStationDetails: showStationDetails,
+            currentFeedback: { stationFeedback[$0.id] },
+            setStationFeedback: setStationFeedback
         )
-        setStationFeedback(station, nextFeedback)
-    }
-
-    private func showHeroDetails(_ station: Station, featuredState: HomeFeaturedStationState) {
-        switch HomeHeroActionBuilder.detailsAction(featuredState: featuredState) {
-        case .show(let queueSource, let queueStations):
-            showStationDetails(station, queueSource, queueStations)
-        }
     }
 
     private var hasPersonalActivity: Bool {

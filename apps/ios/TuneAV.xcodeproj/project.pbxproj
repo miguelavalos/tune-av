@@ -35,7 +35,9 @@
 		4313B398CF2F95B8E38D6106 /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */; };
 		449BEE1D1AC9DFA1B312EEFD /* HomeHeroActionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */; };
 		45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */; };
+		47205EF3DFF8BC5AD51C7190 /* HomeHeroActionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */; };
 		4C8FB23CB0922016ED1592C0 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
+		52F63407C3660C485A435BC3 /* HomeHeroActionRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */; };
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
 		53A7832073531879C19477E4 /* HomePersonalStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */; };
 		53C0BDDB8DE64709781948DE /* HomeDerivedStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */; };
@@ -159,6 +161,7 @@
 		22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviStationDetailBuilderTests.swift; sourceTree = "<group>"; };
 		24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementService.swift; sourceTree = "<group>"; };
 		277016C3BDB94A39E13DA224 /* TuneAVAccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessPolicy.swift; sourceTree = "<group>"; };
+		277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouterTests.swift; sourceTree = "<group>"; };
 		27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReturnCoordinator.swift; sourceTree = "<group>"; };
 		2B9B7F56042C625D2BBC6C8D /* StationListActionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationListActionRow.swift; sourceTree = "<group>"; };
 		2DD1D5DB93174C34E51A3031 /* TuneAV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuneAV.entitlements; sourceTree = "<group>"; };
@@ -211,6 +214,7 @@
 		7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationArtworkView.swift; sourceTree = "<group>"; };
 		7E72DA3D66622D24493F5809 /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
 		815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStationPresentationBuilder.swift; sourceTree = "<group>"; };
+		84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouter.swift; sourceTree = "<group>"; };
 		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
@@ -311,6 +315,7 @@
 				AC56032BF991BF606EDC6911 /* AccountDeletionViewModelTests.swift */,
 				EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */,
 				22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */,
+				277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */,
 				09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */,
 				B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */,
 			);
@@ -334,6 +339,7 @@
 				E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */,
 				E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */,
 				D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */,
+				84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
 				E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */,
@@ -700,6 +706,7 @@
 				C01D6D0D97D384604F8D7651 /* AccountDeletionViewModelTests.swift in Sources */,
 				A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */,
 				04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */,
+				52F63407C3660C485A435BC3 /* HomeHeroActionRouterTests.swift in Sources */,
 				570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */,
 				E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */,
 			);
@@ -733,6 +740,7 @@
 				AF019C179E67E7961F2F9D3A /* HomeDiscoveryTagBuilder.swift in Sources */,
 				C199AD1593FBF97BD0D39231 /* HomeFeaturedStationBuilder.swift in Sources */,
 				449BEE1D1AC9DFA1B312EEFD /* HomeHeroActionBuilder.swift in Sources */,
+				47205EF3DFF8BC5AD51C7190 /* HomeHeroActionRouter.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
 				3C962943456FE4780AB75913 /* HomeMoodSuggestionBuilder.swift in Sources */,
