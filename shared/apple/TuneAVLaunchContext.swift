@@ -2,6 +2,7 @@ import Foundation
 
 struct TuneAVLaunchContext {
     enum Tab: String {
+        case home
         case search
         case library
         case music

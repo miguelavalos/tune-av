@@ -4,6 +4,7 @@ import XCTest
 final class HomeRefreshUITests: TuneAVUITestCase {
     func testPullToRefreshPreservesFavoriteToggleState() {
         let app = launchApp(
+            preferredTab: "home",
             extraEnvironment: [
                 "TUNEAV_UI_TESTS_LOCAL_DISCOVERY": "1",
             ]

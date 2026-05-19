@@ -772,6 +772,8 @@ struct AppShellView: View {
 
         if let preferredTab = launchContext.preferredTab {
             switch preferredTab {
+            case .home:
+                selectedTab = .home
             case .search:
                 selectedTab = .search
             case .library:

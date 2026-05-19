@@ -10,6 +10,8 @@ enum AppShellTab: Equatable {
 
     init(_ preferredTab: LaunchContext.Tab?, preferredSearchQuery: String?) {
         switch preferredTab {
+        case .home:
+            self = .home
         case .search:
             self = .search
         case .library:
