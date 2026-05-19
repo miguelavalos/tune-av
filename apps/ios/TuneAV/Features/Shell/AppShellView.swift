@@ -8549,10 +8549,10 @@ private struct HomeScreen: View {
             favoriteStations: displayedFavoriteStations,
             limit: 8
         )
-        let visibleDiscoveryTags = displayedPopularStations
-            .prefix(8)
-            .flatMap(\.normalizedTags)
-            .map { $0.lowercased() }
+        let visibleDiscoveryTags = HomeDiscoveryTagBuilder.build(
+            from: displayedPopularStations,
+            stationLimit: 8
+        )
         let moodGenreTags = moodGenreTags(visibleDiscoveryTags: visibleDiscoveryTags)
         let scorer = recommendationScorer
         let recommendationInsights = HomeRecommendationInsightBuilder.build(

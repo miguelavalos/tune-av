@@ -2803,6 +2803,29 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testHomeDiscoveryTagBuilderFlattensTagsAndLowercasesValues() {
+        let stations = [
+            recommendationStation(id: "first", tags: "News, Jazz"),
+            recommendationStation(id: "second", tags: "Rock")
+        ]
+
+        let tags = HomeDiscoveryTagBuilder.build(from: stations, stationLimit: 8)
+
+        XCTAssertEqual(tags, ["news", "jazz", "rock"])
+    }
+
+    func testHomeDiscoveryTagBuilderAppliesStationLimitBeforeFlattening() {
+        let stations = [
+            recommendationStation(id: "first", tags: "News, Jazz"),
+            recommendationStation(id: "second", tags: "Rock"),
+            recommendationStation(id: "third", tags: "Pop")
+        ]
+
+        let tags = HomeDiscoveryTagBuilder.build(from: stations, stationLimit: 2)
+
+        XCTAssertEqual(tags, ["news", "jazz", "rock"])
+    }
+
     func testHomeMoodGenreTagBuilderUsesCatalogOrderAndLocalizedTitles() {
         let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: [])
 
