@@ -108,6 +108,7 @@
 		CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */; };
 		D0F4865A251C1F99784D6491 /* TuneAVBundleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */; };
 		D2528A14030A3AF11F0F76B9 /* TuneAVSavedStationIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88BE8A291767D3B19DB2920 /* TuneAVSavedStationIcon.swift */; };
+		D2D820E882973BFB3D6ABF87 /* StationInfoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3218F25D3DD328B1F69801C /* StationInfoViews.swift */; };
 		D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */; };
 		D3A7E73AF8A4D548E0D389C2 /* TuneAVSharedTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */; };
 		D3C9265273CD8D459FC07D83 /* TuneAVAppDataSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */; };
@@ -239,6 +240,7 @@
 		9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePersonalStationSelector.swift; sourceTree = "<group>"; };
 		9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeUITests.swift; sourceTree = "<group>"; };
 		A20097A1515219B62D4EC2C9 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
+		A3218F25D3DD328B1F69801C /* StationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationInfoViews.swift; sourceTree = "<group>"; };
 		A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDetailQueueUITests.swift; sourceTree = "<group>"; };
 		A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
 		A712F782B9CC6A3143D2B122 /* AVAccountAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAccountAPIClient.swift; sourceTree = "<group>"; };
@@ -370,6 +372,7 @@
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
 				C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */,
 				BA8E8B23A59D452594D47639 /* StationFeedbackControls.swift */,
+				A3218F25D3DD328B1F69801C /* StationInfoViews.swift */,
 				2B9B7F56042C625D2BBC6C8D /* StationListActionRow.swift */,
 				3353F73F03318E692C99BA07 /* StationSection.swift */,
 			);
@@ -784,6 +787,7 @@
 				B41F6E43939C9E5746B866B2 /* Station.swift in Sources */,
 				318ED69750E46FB124579702 /* StationCompactCarousel.swift in Sources */,
 				0DD089160B30C3F849586063 /* StationFeedbackControls.swift in Sources */,
+				D2D820E882973BFB3D6ABF87 /* StationInfoViews.swift in Sources */,
 				36040C60BCA1FB2664A6A0EC /* StationListActionRow.swift in Sources */,
 				9155A0A9591DFD0CDAC69A51 /* StationSection.swift in Sources */,
 				A4196DEA7C036793524034C2 /* SubscriptionPurchasingService.swift in Sources */,
