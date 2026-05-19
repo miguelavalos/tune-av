@@ -33,6 +33,7 @@
 		4C8FB23CB0922016ED1592C0 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
 		570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */; };
+		594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */; };
 		5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */; };
 		5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B77C435B56B564DDAC2DE52 /* UITestAccountDeletionAPI.swift */; };
 		60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */; };
@@ -161,6 +162,7 @@
 		47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSharedTheme.swift; sourceTree = "<group>"; };
 		47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVBundleConfig.swift; sourceTree = "<group>"; };
+		4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecentFavoriteStationSelector.swift; sourceTree = "<group>"; };
 		4FD0A67AA9366F52644BCFA5 /* HomeEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEmptyStateUITests.swift; sourceTree = "<group>"; };
 		502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthOnboardingView.swift; sourceTree = "<group>"; };
 		5066BF0197AA106B6FE9A2E3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 				E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */,
 				1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */,
 				5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */,
+				4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
@@ -681,6 +684,7 @@
 				A95AE547512AF2AA0023032F /* HomeAviPickStationSelector.swift in Sources */,
 				ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */,
 				F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */,
+				594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,

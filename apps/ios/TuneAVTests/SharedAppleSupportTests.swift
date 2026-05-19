@@ -2660,6 +2660,45 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selected.map(\.id), ["first", "second"])
     }
 
+    func testHomeRecentFavoriteSelectorPreservesRecentThenFavoriteOrderAndDeduplicates() {
+        let recent = [
+            recommendationStation(id: "recent", tags: "news"),
+            recommendationStation(id: "shared", tags: "jazz")
+        ]
+        let favorites = [
+            recommendationStation(id: "shared", tags: "jazz"),
+            recommendationStation(id: "favorite", tags: "pop")
+        ]
+
+        let selected = HomeRecentFavoriteStationSelector.select(
+            recentStations: recent,
+            favoriteStations: favorites,
+            limit: 8
+        )
+
+        XCTAssertEqual(selected.map(\.id), ["recent", "shared", "favorite"])
+    }
+
+    func testHomeRecentFavoriteSelectorAppliesLimitAfterDeduplication() {
+        let recent = [
+            recommendationStation(id: "first", tags: "news"),
+            recommendationStation(id: "second", tags: "jazz"),
+            recommendationStation(id: "third", tags: "pop")
+        ]
+        let favorites = [
+            recommendationStation(id: "third", tags: "pop"),
+            recommendationStation(id: "fourth", tags: "rock")
+        ]
+
+        let selected = HomeRecentFavoriteStationSelector.select(
+            recentStations: recent,
+            favoriteStations: favorites,
+            limit: 3
+        )
+
+        XCTAssertEqual(selected.map(\.id), ["first", "second", "third"])
+    }
+
     func testHomeMoodGenreTagBuilderUsesCatalogOrderAndLocalizedTitles() {
         let suggestions = HomeMoodGenreTagBuilder.build(visibleDiscoveryTags: [])
 

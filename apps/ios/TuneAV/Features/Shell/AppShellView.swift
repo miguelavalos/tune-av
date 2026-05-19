@@ -8544,8 +8544,10 @@ private struct HomeScreen: View {
             displayedPopularStations: displayedPopularStations,
             displayedAviPickStations: displayedAviPickStations
         )
-        let displayedRecentAndFavoriteStations = Array(
-            AppShellNowPlayingPreviews.uniqueStations(displayedRecentStations + displayedFavoriteStations).prefix(8)
+        let displayedRecentAndFavoriteStations = HomeRecentFavoriteStationSelector.select(
+            recentStations: displayedRecentStations,
+            favoriteStations: displayedFavoriteStations,
+            limit: 8
         )
         let visibleDiscoveryTags = displayedPopularStations
             .prefix(8)
