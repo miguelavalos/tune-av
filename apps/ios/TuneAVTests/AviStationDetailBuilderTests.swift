@@ -104,6 +104,43 @@ final class AviStationDetailBuilderTests: XCTestCase {
         XCTAssertEqual(selection.detail.queueStations.map(\.name), ["Queue Enriched Station base", "Queue Station queue"])
     }
 
+    func testOpenDetailSelectionTargetsAviWithoutFullPlayer() {
+        let station = makeStation(id: "base")
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let selection = builder.openDetailSelection(
+            station: station,
+            queueSource: .singleStation,
+            queue: { [$0] },
+            presentation: "detail"
+        )
+
+        XCTAssertEqual(selection.resolvedStation.id, "base")
+        XCTAssertEqual(selection.detail.station.id, "base")
+        XCTAssertEqual(selection.presentation, "detail")
+        XCTAssertFalse(selection.isFullPlayer)
+        XCTAssertEqual(selection.selectedTab, .avi)
+    }
+
+    func testOpenFullPlayerSelectionTargetsAviFullPlayer() {
+        let station = makeStation(id: "base")
+        let queueStation = makeStation(id: "queue")
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let selection = builder.openFullPlayerSelection(
+            station: station,
+            queueSource: .homeDiscovery,
+            queue: { [queueStation, $0] },
+            presentation: "player"
+        )
+
+        XCTAssertEqual(selection.detail.queueSource, .homeDiscovery)
+        XCTAssertEqual(selection.detail.queueStations.map { $0.id }, ["queue", "base"])
+        XCTAssertEqual(selection.presentation, "player")
+        XCTAssertTrue(selection.isFullPlayer)
+        XCTAssertEqual(selection.selectedTab, AppShellTab.avi)
+    }
+
     private func makeStation(id: String) -> Station {
         Station(
             id: id,

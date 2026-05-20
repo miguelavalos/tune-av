@@ -1048,26 +1048,23 @@ struct AppShellView: View {
         )
         isAviNowPlayingFullPlayer = false
         selectedMusicAviDetail = nil
-        let resolvedStation = selectAviStationDetail(
-            station,
+        applyAviStationOpenSelection(aviStationDetailBuilder.openDetailSelection(
+            station: station,
             queueSource: queueSource,
-            queue: { resolvedStation in queue ?? [resolvedStation] }
-        )
-        libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.detail.rawValue)
-        selectedTab = .avi
+            queue: { resolvedStation in queue ?? [resolvedStation] },
+            presentation: LastOpenedStationPresentation.detail.rawValue
+        ))
     }
 
     private func openNowPlayingFullPlayer(_ station: Station) {
         captureAviReturnContext()
         selectedMusicAviDetail = nil
-        let resolvedStation = selectAviStationDetail(
-            station,
+        applyAviStationOpenSelection(aviStationDetailBuilder.openFullPlayerSelection(
+            station: station,
             queueSource: .singleStation,
-            queue: { [$0] }
-        )
-        libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
-        isAviNowPlayingFullPlayer = true
-        selectedTab = .avi
+            queue: { [$0] },
+            presentation: LastOpenedStationPresentation.player.rawValue
+        ))
     }
 
     private func openContextualAvi() {
@@ -1077,13 +1074,12 @@ struct AppShellView: View {
         isAviNowPlayingFullPlayer = false
 
         if let currentStation = audioPlayer.currentStation {
-            let resolvedStation = selectAviStationDetail(
-                currentStation,
+            applyAviStationOpenSelection(aviStationDetailBuilder.openFullPlayerSelection(
+                station: currentStation,
                 queueSource: audioPlayer.playbackQueue.source,
-                queue: currentPlaybackQueue(fallbackStation:)
-            )
-            libraryStore.rememberOpenedStation(resolvedStation, presentation: LastOpenedStationPresentation.player.rawValue)
-            isAviNowPlayingFullPlayer = true
+                queue: currentPlaybackQueue(fallbackStation:),
+                presentation: LastOpenedStationPresentation.player.rawValue
+            ))
         }
 
         selectedTab = .avi
@@ -1185,6 +1181,14 @@ struct AppShellView: View {
         let resolvedStation = selection.resolvedStation
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         return resolvedStation
+    }
+
+    private func applyAviStationOpenSelection(_ selection: AviStationOpenSelection) {
+        selectedStationDetail = selection.detail
+        refreshSelectedStationEnrichmentIfNeeded(selection.resolvedStation)
+        libraryStore.rememberOpenedStation(selection.resolvedStation, presentation: selection.presentation)
+        isAviNowPlayingFullPlayer = selection.isFullPlayer
+        selectedTab = selection.selectedTab
     }
 
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
