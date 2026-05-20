@@ -897,6 +897,61 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(summary.music.cards.history.count, 8)
     }
 
+    @MainActor
+    func testListeningSessionUploadKeepsDraftIDsStableAcrossRetries() async throws {
+        var uploadedSessionIDs: [String] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+            XCTAssertEqual(request.url?.path, "/v1/tune/analytics/listening-sessions")
+            XCTAssertEqual(request.httpMethod, "POST")
+
+            let body = try XCTUnwrap(Self.requestBodyData(from: request))
+            let payload = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+            let sessions = try XCTUnwrap(payload?["sessions"] as? [[String: Any]])
+            uploadedSessionIDs.append(try XCTUnwrap(sessions.first?["id"] as? String))
+
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data("{}".utf8)
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession()
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+        let draft = TuneAVListeningSessionDraft(
+            id: "session-stable-id",
+            station: Station(
+                id: "bbc-radio-1",
+                name: "BBC Radio 1",
+                country: "United Kingdom",
+                language: "English",
+                tags: "pop",
+                streamURL: "https://example.com/bbc-radio-1.mp3"
+            ),
+            startedAt: Date(timeIntervalSince1970: 100),
+            endedAt: Date(timeIntervalSince1970: 140),
+            durationSeconds: 40,
+            source: "home",
+            endedReason: "networkRetry",
+            trackDetectedCount: 2
+        )
+
+        try await service.recordListeningSessions([draft])
+        try await service.recordListeningSessions([draft])
+
+        XCTAssertEqual(uploadedSessionIDs, ["session-stable-id", "session-stable-id"])
+    }
+
     func testStationServiceUsesAVALSYSResponse() async throws {
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.host, "api.test")
@@ -4495,6 +4550,29 @@ final class SharedAppleSupportTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [TuneAVTestURLProtocol.self]
         return URLSession(configuration: configuration)
+    }
+
+    private static func requestBodyData(from request: URLRequest) -> Data? {
+        if let httpBody = request.httpBody {
+            return httpBody
+        }
+
+        guard let stream = request.httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+
+        var data = Data()
+        let bufferSize = 1_024
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        while stream.hasBytesAvailable {
+            let read = stream.read(buffer, maxLength: bufferSize)
+            guard read > 0 else { break }
+            data.append(buffer, count: read)
+        }
+
+        return data
     }
 
     private func makeBackendGate() -> TuneAVBackendHealthGate {

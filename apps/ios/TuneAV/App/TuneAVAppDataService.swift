@@ -105,7 +105,7 @@ final class TuneAVAppDataService {
             .filter { $0.durationSeconds >= 10 }
             .map { session in
                 TuneAVListeningSessionInput(
-                    id: UUID().uuidString,
+                    id: session.id,
                     stationId: session.station.id,
                     stationName: session.station.name,
                     startedAt: TuneAVDateCoding.string(from: session.startedAt),
@@ -160,6 +160,7 @@ private struct TuneAVTrackFeedbackRequest: Encodable {
 }
 
 struct TuneAVListeningSessionDraft: Equatable {
+    let id: String
     let station: Station
     let startedAt: Date
     let endedAt: Date
@@ -167,6 +168,26 @@ struct TuneAVListeningSessionDraft: Equatable {
     let source: String
     let endedReason: String
     let trackDetectedCount: Int
+
+    init(
+        id: String = UUID().uuidString,
+        station: Station,
+        startedAt: Date,
+        endedAt: Date,
+        durationSeconds: Int,
+        source: String,
+        endedReason: String,
+        trackDetectedCount: Int
+    ) {
+        self.id = id
+        self.station = station
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.source = source
+        self.endedReason = endedReason
+        self.trackDetectedCount = trackDetectedCount
+    }
 }
 
 private struct TuneAVListeningSessionsRequest: Encodable {
