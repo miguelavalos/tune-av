@@ -21,6 +21,43 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertTrue(LibraryStoreListeningSessionBuffer.trimmed(sessions, maxCount: 0).isEmpty)
     }
 
+    func testListeningSessionBufferDeduplicatesByStableSessionIDKeepingNewestDraft() {
+        let older = listeningSessionDraft(
+            id: "stable-session",
+            stationID: "station-old",
+            endedReason: "stream_error"
+        )
+        let newer = listeningSessionDraft(
+            id: "stable-session",
+            stationID: "station-new",
+            endedReason: "paused"
+        )
+
+        let deduplicated = LibraryStoreListeningSessionBuffer.deduplicated([
+            listeningSessionDraft(id: "first-session", stationID: "station-first"),
+            older,
+            newer
+        ])
+
+        XCTAssertEqual(deduplicated.map(\.id), ["first-session", "stable-session"])
+        XCTAssertEqual(deduplicated.last?.station.id, "station-new")
+        XCTAssertEqual(deduplicated.last?.endedReason, "paused")
+    }
+
+    func testListeningSessionBufferBoundsAfterDeduplicatingRetries() {
+        let sessions = [
+            listeningSessionDraft(id: "session-1", stationID: "station-1"),
+            listeningSessionDraft(id: "session-2", stationID: "station-2-old"),
+            listeningSessionDraft(id: "session-2", stationID: "station-2-new"),
+            listeningSessionDraft(id: "session-3", stationID: "station-3")
+        ]
+
+        let bounded = LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: 2)
+
+        XCTAssertEqual(bounded.map(\.id), ["session-2", "session-3"])
+        XCTAssertEqual(bounded.first?.station.id, "station-2-new")
+    }
+
     func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let launchContext = TuneAVLaunchContext(environment: [
@@ -213,8 +250,13 @@ final class LibraryStoreTests: XCTestCase {
         )
     }
 
-    private func listeningSessionDraft(stationID: String) -> TuneAVListeningSessionDraft {
+    private func listeningSessionDraft(
+        id: String = UUID().uuidString,
+        stationID: String,
+        endedReason: String = "paused"
+    ) -> TuneAVListeningSessionDraft {
         TuneAVListeningSessionDraft(
+            id: id,
             station: Station(
                 id: stationID,
                 name: "Station \(stationID)",
@@ -227,7 +269,7 @@ final class LibraryStoreTests: XCTestCase {
             endedAt: Date(timeIntervalSince1970: 30),
             durationSeconds: 20,
             source: "home",
-            endedReason: "paused",
+            endedReason: endedReason,
             trackDetectedCount: 1
         )
     }

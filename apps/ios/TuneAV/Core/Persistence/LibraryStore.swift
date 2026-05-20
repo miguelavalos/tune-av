@@ -753,7 +753,7 @@ final class LibraryStore: ObservableObject {
             )
         )
 
-        pendingListeningSessions = LibraryStoreListeningSessionBuffer.trimmed(
+        pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
             pendingListeningSessions,
             maxCount: Self.maxPendingListeningSessions
         )
@@ -808,7 +808,7 @@ final class LibraryStore: ObservableObject {
 
         guard didUpload else {
             pendingListeningSessions.insert(contentsOf: sessions, at: 0)
-            pendingListeningSessions = LibraryStoreListeningSessionBuffer.trimmed(
+            pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
                 pendingListeningSessions,
                 maxCount: Self.maxPendingListeningSessions
             )
@@ -1381,6 +1381,24 @@ final class LibraryStore: ObservableObject {
 }
 
 enum LibraryStoreListeningSessionBuffer {
+    static func bounded(
+        _ sessions: [TuneAVListeningSessionDraft],
+        maxCount: Int
+    ) -> [TuneAVListeningSessionDraft] {
+        trimmed(deduplicated(sessions), maxCount: maxCount)
+    }
+
+    static func deduplicated(_ sessions: [TuneAVListeningSessionDraft]) -> [TuneAVListeningSessionDraft] {
+        var seenSessionIDs = Set<String>()
+        var uniqueSessions: [TuneAVListeningSessionDraft] = []
+
+        for session in sessions.reversed() where seenSessionIDs.insert(session.id).inserted {
+            uniqueSessions.append(session)
+        }
+
+        return uniqueSessions.reversed()
+    }
+
     static func trimmed(
         _ sessions: [TuneAVListeningSessionDraft],
         maxCount: Int
