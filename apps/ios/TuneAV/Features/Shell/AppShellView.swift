@@ -1044,18 +1044,23 @@ struct AppShellView: View {
         returnRadioMode: RadioLibraryMode? = nil,
         returnRadioOverview: Bool? = nil
     ) {
-        captureAviReturnContext(
-            radioMode: returnRadioMode,
-            radioOverview: returnRadioOverview
-        )
-        isAviNowPlayingFullPlayer = false
-        selectedMusicAviDetail = nil
-        applyAviStationOpenSelection(aviStationDetailBuilder.openDetailSelection(
+        let plan = ShellStationDetailOpenPlanner.detailPlan(
             station: station,
             queueSource: queueSource,
-            queue: { resolvedStation in queue ?? [resolvedStation] },
-            presentation: LastOpenedStationPresentation.detail.rawValue
-        ))
+            queue: queue,
+            returnRadioMode: returnRadioMode,
+            returnRadioOverview: returnRadioOverview,
+            presentation: LastOpenedStationPresentation.detail.rawValue,
+            builder: aviStationDetailBuilder
+        )
+        captureAviReturnContext(
+            radioMode: plan.returnRadioMode,
+            radioOverview: plan.returnRadioOverview
+        )
+        if plan.clearsMusicDetail {
+            selectedMusicAviDetail = nil
+        }
+        applyAviStationOpenSelection(plan.selection)
     }
 
     private func openNowPlayingFullPlayer(_ station: Station) {

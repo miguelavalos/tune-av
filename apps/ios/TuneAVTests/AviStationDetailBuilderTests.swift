@@ -180,6 +180,64 @@ final class AviStationDetailBuilderTests: XCTestCase {
         XCTAssertEqual(selection.selectedTab, AppShellTab.avi)
     }
 
+    func testStationDetailOpenPlannerBuildsDetailPlanWithReturnContext() {
+        let station = makeStation(id: "base")
+        let queueStation = makeStation(id: "queue")
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let plan = ShellStationDetailOpenPlanner.detailPlan(
+            station: station,
+            queueSource: .libraryFavorites,
+            queue: [station, queueStation],
+            returnRadioMode: .saved,
+            returnRadioOverview: false,
+            presentation: "detail",
+            builder: builder
+        )
+
+        XCTAssertEqual(plan.returnRadioMode, .saved)
+        XCTAssertEqual(plan.returnRadioOverview, false)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertEqual(plan.selection.detail.station.id, "base")
+        XCTAssertEqual(plan.selection.detail.queueSource, .libraryFavorites)
+        XCTAssertEqual(plan.selection.detail.queueStations.map(\.id), ["base", "queue"])
+        XCTAssertEqual(plan.selection.presentation, "detail")
+        XCTAssertFalse(plan.selection.isFullPlayer)
+        XCTAssertEqual(plan.selection.selectedTab, .avi)
+    }
+
+    func testStationDetailOpenPlannerFallsBackToResolvedStationQueue() {
+        let station = makeStation(id: "base")
+        let builder = AviStationDetailBuilder(
+            enrichStation: { station in
+                Station(
+                    id: "\(station.id)-enriched",
+                    name: station.name,
+                    country: station.country,
+                    language: station.language,
+                    tags: station.tags,
+                    streamURL: station.streamURL
+                )
+            },
+            enrichStations: { $0 }
+        )
+
+        let plan = ShellStationDetailOpenPlanner.detailPlan(
+            station: station,
+            queueSource: .singleStation,
+            queue: nil,
+            returnRadioMode: nil,
+            returnRadioOverview: nil,
+            presentation: "detail",
+            builder: builder
+        )
+
+        XCTAssertNil(plan.returnRadioMode)
+        XCTAssertNil(plan.returnRadioOverview)
+        XCTAssertEqual(plan.selection.resolvedStation.id, "base-enriched")
+        XCTAssertEqual(plan.selection.detail.queueStations.map(\.id), ["base-enriched"])
+    }
+
     private func makeStation(id: String) -> Station {
         Station(
             id: id,

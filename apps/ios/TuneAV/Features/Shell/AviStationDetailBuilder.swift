@@ -21,6 +21,37 @@ struct AviStationOpenSelection {
     let selectedTab: AppShellTab
 }
 
+struct ShellStationDetailOpenPlan {
+    let returnRadioMode: RadioLibraryMode?
+    let returnRadioOverview: Bool?
+    let clearsMusicDetail: Bool
+    let selection: AviStationOpenSelection
+}
+
+enum ShellStationDetailOpenPlanner {
+    static func detailPlan(
+        station: Station,
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        queue: [Station]?,
+        returnRadioMode: RadioLibraryMode?,
+        returnRadioOverview: Bool?,
+        presentation: String,
+        builder: AviStationDetailBuilder
+    ) -> ShellStationDetailOpenPlan {
+        ShellStationDetailOpenPlan(
+            returnRadioMode: returnRadioMode,
+            returnRadioOverview: returnRadioOverview,
+            clearsMusicDetail: true,
+            selection: builder.openDetailSelection(
+                station: station,
+                queueSource: queueSource,
+                queue: { resolvedStation in queue ?? [resolvedStation] },
+                presentation: presentation
+            )
+        )
+    }
+}
+
 struct AviStationDetailBuilder {
     let enrichStation: (Station) -> Station
     let enrichStations: ([Station]) -> [Station]
