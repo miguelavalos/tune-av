@@ -233,6 +233,184 @@ struct MusicLibraryControls: View {
     }
 }
 
+struct MusicLibraryOverview: View {
+    let snapshot: MusicLibraryDerivedState
+    let summary: TuneAVUserSummary?
+    let overviewLimit: Int
+    let showsAccountSummary: Bool
+    let userSummaryRefreshState: TuneAVUserSummaryRefreshState
+    let isSignedIn: Bool
+    let openAccountAction: () -> Void
+    let startSignInAction: () -> Void
+    let refreshSummary: () async -> Void
+    let openSearchAction: () -> Void
+    let openMode: (MusicContentMode) -> Void
+    let stationArtworkURL: (DiscoveredTrack) -> URL?
+    let trackFeedback: (DiscoveredTrack) -> TuneAVStationFeedback?
+    let openTrackInfo: (DiscoveredTrack) -> Void
+    let toggleSaved: (DiscoveredTrack) -> Void
+    let openTrackYouTube: (DiscoveredTrack) -> Void
+    let openLyrics: (DiscoveredTrack) -> Void
+    let openTrackAppleMusic: (DiscoveredTrack) -> Void
+    let openTrackSpotify: (DiscoveredTrack) -> Void
+    let hideAction: (DiscoveredTrack) -> Void
+    let removeAction: (DiscoveredTrack) -> Void
+    let openArtistInfo: (DiscoveryArtistSummary) -> Void
+    let openArtistYouTube: (String) -> Void
+    let openArtistAppleMusic: (String) -> Void
+    let openArtistSpotify: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if showsAccountSummary {
+                AccountSummaryStatusCard(
+                    kind: .music,
+                    state: userSummaryRefreshState,
+                    summary: summary,
+                    isSignedIn: isSignedIn,
+                    hasProAccess: true,
+                    openAccountAction: openAccountAction,
+                    startSignInAction: startSignInAction,
+                    refreshAction: refreshSummary
+                )
+            }
+
+            MusicOverviewMetricGrid(
+                snapshot: snapshot,
+                summary: summary,
+                openMode: openMode
+            )
+
+            if snapshot.hasOverviewContent {
+                musicOverviewTrackSectionIfNeeded(
+                    discoveries: Array(snapshot.savedDiscoveries.prefix(overviewLimit)),
+                    title: L10n.string("shell.music.overview.songs"),
+                    subtitle: L10n.string("shell.music.detail.songs.subtitle"),
+                    mode: .songs
+                )
+
+                musicOverviewArtistSectionIfNeeded(
+                    artists: Array(snapshot.visibleArtistSummaries.prefix(overviewLimit)),
+                    title: L10n.string("shell.music.overview.artists"),
+                    subtitle: L10n.string("shell.music.detail.artists.subtitle"),
+                    mode: .artists
+                )
+
+                musicOverviewTrackSectionIfNeeded(
+                    discoveries: Array(snapshot.tunedDiscoveries.prefix(overviewLimit)),
+                    title: L10n.string("shell.music.overview.top"),
+                    subtitle: L10n.string("shell.music.detail.top.subtitle"),
+                    mode: .top
+                )
+
+                musicOverviewTrackSectionIfNeeded(
+                    discoveries: Array(snapshot.visibleDiscoveries.prefix(overviewLimit)),
+                    title: L10n.string("shell.music.overview.history"),
+                    subtitle: L10n.string("shell.music.overview.latest.subtitle"),
+                    mode: .history
+                )
+            } else {
+                EmptyLibraryState(
+                    title: L10n.string("shell.music.overview.empty"),
+                    detail: L10n.string("shell.music.overview.empty.detail"),
+                    actionTitle: L10n.string("shell.music.overview.empty.action"),
+                    actionSystemImage: "magnifyingglass",
+                    action: openSearchAction
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func musicOverviewTrackSectionIfNeeded(
+        discoveries: [DiscoveredTrack],
+        title: String,
+        subtitle: String,
+        mode: MusicContentMode
+    ) -> some View {
+        if !discoveries.isEmpty {
+            RadioOverviewCarouselSection(title: title, subtitle: subtitle, action: { openMode(mode) }) {
+                MusicTrackCompactCarousel(
+                    discoveries: discoveries,
+                    stationArtworkURL: { discovery in stationArtworkURL(discovery) },
+                    trackFeedback: { discovery in trackFeedback(discovery) },
+                    openTrackInfo: { discovery in openTrackInfo(discovery) },
+                    toggleSaved: { discovery in toggleSaved(discovery) },
+                    openYouTube: { discovery in openTrackYouTube(discovery) },
+                    openLyrics: { discovery in openLyrics(discovery) },
+                    openAppleMusic: { discovery in openTrackAppleMusic(discovery) },
+                    openSpotify: { discovery in openTrackSpotify(discovery) },
+                    hideAction: { discovery in hideAction(discovery) },
+                    removeAction: { discovery in removeAction(discovery) }
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func musicOverviewArtistSectionIfNeeded(
+        artists: [DiscoveryArtistSummary],
+        title: String,
+        subtitle: String,
+        mode: MusicContentMode
+    ) -> some View {
+        if !artists.isEmpty {
+            RadioOverviewCarouselSection(title: title, subtitle: subtitle, action: { openMode(mode) }) {
+                MusicArtistCompactCarousel(
+                    artists: artists,
+                    openArtistInfo: { artist in openArtistInfo(artist) },
+                    openYouTube: { artist in openArtistYouTube(artist) },
+                    openAppleMusic: { artist in openArtistAppleMusic(artist) },
+                    openSpotify: { artist in openArtistSpotify(artist) }
+                )
+            }
+        }
+    }
+}
+
+struct MusicOverviewMetricGrid: View {
+    let snapshot: MusicLibraryDerivedState
+    let summary: TuneAVUserSummary?
+    let openMode: (MusicContentMode) -> Void
+
+    var body: some View {
+        RadioOverviewMetricGrid {
+            RadioOverviewMetricCard(
+                title: L10n.string("shell.music.overview.songs"),
+                value: summary?.music.cards.songs.count ?? snapshot.savedDiscoveries.count,
+                systemImage: "bookmark.fill",
+                tint: TuneAVTheme.highlight,
+                accessibilityIdentifier: "music.overview.songs",
+                action: { openMode(.songs) }
+            )
+            RadioOverviewMetricCard(
+                title: L10n.string("shell.music.overview.artists"),
+                value: summary?.music.cards.artists.count ?? snapshot.visibleArtistSummaries.count,
+                systemImage: "person.2.fill",
+                tint: Color(red: 0.17, green: 0.52, blue: 0.96),
+                accessibilityIdentifier: "music.overview.artists",
+                action: { openMode(.artists) }
+            )
+            RadioOverviewMetricCard(
+                title: L10n.string("shell.music.overview.top"),
+                value: snapshot.tunedDiscoveries.count,
+                systemImage: "sparkles",
+                tint: Color(red: 0.95, green: 0.48, blue: 0.18),
+                accessibilityIdentifier: "music.overview.top",
+                action: { openMode(.top) }
+            )
+            RadioOverviewMetricCard(
+                title: L10n.string("shell.music.overview.history"),
+                value: summary?.music.cards.history.count ?? snapshot.visibleDiscoveries.count,
+                systemImage: "clock.fill",
+                tint: Color(red: 0.54, green: 0.43, blue: 0.90),
+                accessibilityIdentifier: "music.overview.history",
+                action: { openMode(.history) }
+            )
+        }
+    }
+}
+
 struct MusicDetailHeader: View {
     let title: String
     let subtitle: String

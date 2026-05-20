@@ -9123,95 +9123,33 @@ struct MusicScreen: View {
     }
 
     private func musicOverview(_ snapshot: MusicLibraryDerivedState) -> some View {
-        VStack(alignment: .leading, spacing: 24) {
-            if accessController.capabilities.canAccessPremiumFeatures {
-                AccountSummaryStatusCard(
-                    kind: .music,
-                    state: libraryStore.userSummaryRefreshState,
-                    summary: summary,
-                    isSignedIn: accessController.isSignedIn,
-                    hasProAccess: true,
-                    openAccountAction: openAccountAction,
-                    startSignInAction: startSignInAction,
-                    refreshAction: {
-                        await libraryStore.refreshUserSummary(force: true)
-                    }
-                )
-            }
-
-            RadioOverviewMetricGrid {
-                RadioOverviewMetricCard(
-                    title: L10n.string("shell.music.overview.songs"),
-                    value: summary?.music.cards.songs.count ?? snapshot.savedDiscoveries.count,
-                    systemImage: "bookmark.fill",
-                    tint: TuneAVTheme.highlight,
-                    accessibilityIdentifier: "music.overview.songs",
-                    action: { openMusicMode(.songs) }
-                )
-                RadioOverviewMetricCard(
-                    title: L10n.string("shell.music.overview.artists"),
-                    value: summary?.music.cards.artists.count ?? snapshot.visibleArtistSummaries.count,
-                    systemImage: "person.2.fill",
-                    tint: Color(red: 0.17, green: 0.52, blue: 0.96),
-                    accessibilityIdentifier: "music.overview.artists",
-                    action: { openMusicMode(.artists) }
-                )
-                RadioOverviewMetricCard(
-                    title: L10n.string("shell.music.overview.top"),
-                    value: snapshot.tunedDiscoveries.count,
-                    systemImage: "sparkles",
-                    tint: Color(red: 0.95, green: 0.48, blue: 0.18),
-                    accessibilityIdentifier: "music.overview.top",
-                    action: { openMusicMode(.top) }
-                )
-                RadioOverviewMetricCard(
-                    title: L10n.string("shell.music.overview.history"),
-                    value: summary?.music.cards.history.count ?? snapshot.visibleDiscoveries.count,
-                    systemImage: "clock.fill",
-                    tint: Color(red: 0.54, green: 0.43, blue: 0.90),
-                    accessibilityIdentifier: "music.overview.history",
-                    action: { openMusicMode(.history) }
-                )
-            }
-
-            if snapshot.hasOverviewContent {
-                musicOverviewTrackSectionIfNeeded(
-                    discoveries: Array(snapshot.savedDiscoveries.prefix(Self.overviewLimit)),
-                    title: L10n.string("shell.music.overview.songs"),
-                    subtitle: L10n.string("shell.music.detail.songs.subtitle"),
-                    action: { openMusicMode(.songs) }
-                )
-
-                musicOverviewArtistSectionIfNeeded(
-                    artists: Array(snapshot.visibleArtistSummaries.prefix(Self.overviewLimit)),
-                    title: L10n.string("shell.music.overview.artists"),
-                    subtitle: L10n.string("shell.music.detail.artists.subtitle"),
-                    action: { openMusicMode(.artists) }
-                )
-
-                musicOverviewTrackSectionIfNeeded(
-                    discoveries: Array(snapshot.tunedDiscoveries.prefix(Self.overviewLimit)),
-                    title: L10n.string("shell.music.overview.top"),
-                    subtitle: L10n.string("shell.music.detail.top.subtitle"),
-                    action: { openMusicMode(.top) }
-                )
-
-                musicOverviewTrackSectionIfNeeded(
-                    discoveries: Array(snapshot.visibleDiscoveries.prefix(Self.overviewLimit)),
-                    title: L10n.string("shell.music.overview.history"),
-                    subtitle: L10n.string("shell.music.overview.latest.subtitle"),
-                    action: { openMusicMode(.history) }
-                )
-            } else {
-                EmptyLibraryState(
-                    title: L10n.string("shell.music.overview.empty"),
-                    detail: L10n.string("shell.music.overview.empty.detail"),
-                    actionTitle: L10n.string("shell.music.overview.empty.action"),
-                    actionSystemImage: "magnifyingglass",
-                    action: openSearchAction
-                )
-            }
-        }
+        MusicLibraryOverview(
+            snapshot: snapshot,
+            summary: summary,
+            overviewLimit: Self.overviewLimit,
+            showsAccountSummary: accessController.capabilities.canAccessPremiumFeatures,
+            userSummaryRefreshState: libraryStore.userSummaryRefreshState,
+            isSignedIn: accessController.isSignedIn,
+            openAccountAction: openAccountAction,
+            startSignInAction: startSignInAction,
+            refreshSummary: { await libraryStore.refreshUserSummary(force: true) },
+            openSearchAction: openSearchAction,
+            openMode: openMusicMode(_:),
+            stationArtworkURL: { discovery in stationArtworkURL(discovery) },
+            trackFeedback: { discovery in trackFeedback(discovery) },
+            openTrackInfo: { discovery in openDiscoveryInfo(discovery, nil) },
+            toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
+            openTrackYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
+            openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
+            openTrackAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
+            openTrackSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
+            hideAction: hideDiscoveryWithUndo(_:),
+            removeAction: { discovery in removeDiscovery(discovery) },
+            openArtistInfo: { artist in openArtistInfo(artist, nil) },
+            openArtistYouTube: { artist in runProAviAction { openArtistSearch(artist, youtube: true) } },
+            openArtistAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist) } },
+            openArtistSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist) } }
+        )
     }
 
     private func musicModeControls(_ snapshot: MusicLibraryDerivedState) -> some View {
@@ -9228,52 +9166,6 @@ struct MusicScreen: View {
             showOverview: showOverview,
             toggleSearch: toggleMusicSearch
         )
-    }
-
-    @ViewBuilder
-    private func musicOverviewTrackSectionIfNeeded(
-        discoveries: [DiscoveredTrack],
-        title: String,
-        subtitle: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        if !discoveries.isEmpty {
-            RadioOverviewCarouselSection(title: title, subtitle: subtitle, action: action) {
-                MusicTrackCompactCarousel(
-                    discoveries: discoveries,
-                    stationArtworkURL: { discovery in stationArtworkURL(discovery) },
-                    trackFeedback: { discovery in trackFeedback(discovery) },
-                    openTrackInfo: { discovery in openDiscoveryInfo(discovery, nil) },
-                    toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-                    openYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
-                    openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
-                    openAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
-                    openSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
-                    hideAction: hideDiscoveryWithUndo(_:),
-                    removeAction: { discovery in removeDiscovery(discovery) }
-                )
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func musicOverviewArtistSectionIfNeeded(
-        artists: [DiscoveryArtistSummary],
-        title: String,
-        subtitle: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        if !artists.isEmpty {
-            RadioOverviewCarouselSection(title: title, subtitle: subtitle, action: action) {
-                MusicArtistCompactCarousel(
-                    artists: artists,
-                    openArtistInfo: { artist in openArtistInfo(artist, nil) },
-                    openYouTube: { artist in runProAviAction { openArtistSearch(artist, youtube: true) } },
-                    openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist) } },
-                    openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist) } }
-                )
-            }
-        }
     }
 
     private func discoveryLibrarySection(_ snapshot: MusicLibraryDerivedState) -> some View {
