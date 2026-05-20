@@ -53,6 +53,7 @@
 		570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */; };
 		594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */; };
 		59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */; };
+		5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */; };
 		5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */; };
 		5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B77C435B56B564DDAC2DE52 /* UITestAccountDeletionAPI.swift */; };
 		60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */; };
@@ -171,6 +172,7 @@
 
 /* Begin PBXFileReference section */
 		008936263180E93620BF3D42 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
+		04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviFooterPlayerView.swift; sourceTree = "<group>"; };
 		06624915894913972B482E00 /* LaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchContext.swift; sourceTree = "<group>"; };
 		09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
 		0A2443197B44A3463AFABCB5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
@@ -378,6 +380,7 @@
 				458EF57C362E247FF5234C69 /* AppShellTab.swift */,
 				008936263180E93620BF3D42 /* AppShellView.swift */,
 				799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */,
+				04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */,
 				61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
 				B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */,
@@ -801,6 +804,7 @@
 				84FB8B926DB0F482FDB09F9D /* AppShellView.swift in Sources */,
 				A4A3A42AE74C29105A13D4D0 /* AudioPlayerService.swift in Sources */,
 				A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */,
+				5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */,
 				6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */,
 				33BBBE7EC2FDB8BFF9868C96 /* AviReturnCoordinator.swift in Sources */,
 				59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */,
