@@ -91,12 +91,17 @@ final class PlatformBackedEntitlementService: EntitlementService {
                 limits: tuneAVAccess.limits
             )
         } catch {
-            authLogger.error("Unable to refresh Account AV access: \(String(reflecting: error), privacy: .public)")
+            authLogger.error("Unable to refresh Account AV access error=\(Self.safeErrorCode(error), privacy: .public)")
             return fallbackAccess
         }
     }
 
     private static var shouldUseUITestAccessOverride: Bool {
         TuneAVUITestEnvironment.current.hasAccountOverride
+    }
+
+    private static func safeErrorCode(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(nsError.domain):\(nsError.code)"
     }
 }

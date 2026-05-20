@@ -105,7 +105,7 @@ final class AccessController: ObservableObject {
                 accountUser = accountService.currentUser
             } catch {
                 guard generation == accessRefreshGeneration else { return }
-                authLogger.debug("No active Account AV session during access refresh: \(String(reflecting: error), privacy: .public)")
+                authLogger.debug("No active Account AV session during access refresh error=\(Self.safeErrorCode(error), privacy: .public)")
             }
         }
         resolveAccessState()
@@ -274,4 +274,8 @@ final class AccessController: ObservableObject {
         )
     }
 
+    private static func safeErrorCode(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(nsError.domain):\(nsError.code)"
+    }
 }

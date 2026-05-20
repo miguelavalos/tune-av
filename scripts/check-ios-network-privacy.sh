@@ -59,6 +59,14 @@ if rg -n 'privacy: \.public.*(token|bearer|authorization|header|body|payload|htt
   fail "public OSLog interpolation must not include sensitive network/auth payload fields"
 fi
 
+if rg -n 'privacy: \.public.*(stationName|stationTitle|station\.name|title|artist|streamURL|homepageURL|artworkURL)' "$repo_root/apps/ios/TuneAV" "$repo_root/shared/apple"; then
+  fail "public OSLog interpolation must not include station, stream, track, artist, or artwork fields"
+fi
+
+if rg -n '(Logger|logger|authLogger|networkLogger|startupLogger|print|debugPrint|NSLog).*(String\(reflecting:|localizedDescription|absoluteString|allHTTPHeaderFields|httpBody)' "$repo_root/apps/ios/TuneAV/App" "$repo_root/apps/ios/TuneAV/Features" "$repo_root/apps/ios/TuneAV/Core" "$repo_root/shared/apple"; then
+  fail "iOS logs and diagnostics must not expose raw errors, full URLs, headers, or request bodies"
+fi
+
 if [ "$failures" -gt 0 ]; then
   exit 1
 fi
