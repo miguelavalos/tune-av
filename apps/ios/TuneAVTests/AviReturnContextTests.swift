@@ -123,4 +123,41 @@ final class AviReturnContextTests: XCTestCase {
         XCTAssertEqual(musicRequest.overview, false)
         XCTAssertNil(restoreRequest.radioReturnRequest)
     }
+
+    func testCoordinatorBuildsRestorationFromStoredContextBeforeFallback() throws {
+        var coordinator = AviReturnCoordinator()
+        coordinator.capture(
+            selectedTab: .library,
+            radioMode: .saved,
+            radioOverview: false,
+            musicMode: .songs,
+            musicOverview: true
+        )
+
+        let restoration = try XCTUnwrap(coordinator.consumeRestoration(fallbackTab: .home))
+
+        XCTAssertEqual(restoration.tab, .library)
+        let radioRequest = try XCTUnwrap(restoration.radioReturnRequest)
+        XCTAssertEqual(radioRequest.mode, .saved)
+        XCTAssertEqual(radioRequest.overview, false)
+        XCTAssertNil(restoration.musicReturnRequest)
+        XCTAssertNil(coordinator.context)
+    }
+
+    func testCoordinatorBuildsFallbackRestorationWithoutRequestedModeState() throws {
+        var coordinator = AviReturnCoordinator()
+
+        let restoration = try XCTUnwrap(coordinator.consumeRestoration(fallbackTab: .music))
+
+        XCTAssertEqual(restoration.tab, .music)
+        XCTAssertNil(restoration.radioReturnRequest)
+        XCTAssertNil(restoration.musicReturnRequest)
+        XCTAssertNil(coordinator.context)
+    }
+
+    func testCoordinatorReturnsNilRestorationWithoutContextOrFallback() {
+        var coordinator = AviReturnCoordinator()
+
+        XCTAssertNil(coordinator.consumeRestoration(fallbackTab: nil))
+    }
 }

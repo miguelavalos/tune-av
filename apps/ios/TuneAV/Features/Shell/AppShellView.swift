@@ -1132,11 +1132,9 @@ struct AppShellView: View {
         isAviNowPlayingFullPlayer = false
         libraryStore.clearOpenedStationPresentation()
 
-        if let request = aviReturnCoordinator.consumeRestoreRequest() {
-            restoreAviReturnRequest(request)
-            selectedTab = request.tab
-        } else if let fallbackTab {
-            selectedTab = fallbackTab
+        if let restoration = aviReturnCoordinator.consumeRestoration(fallbackTab: fallbackTab) {
+            restoreAviReturnState(restoration)
+            selectedTab = restoration.tab
         }
     }
 
@@ -1155,11 +1153,11 @@ struct AppShellView: View {
         )
     }
 
-    private func restoreAviReturnRequest(_ restoreRequest: AviReturnRestoreRequest) {
-        if let request = restoreRequest.radioReturnRequest {
+    private func restoreAviReturnState(_ restoration: AviReturnRestoration) {
+        if let request = restoration.radioReturnRequest {
             requestedRadioMode = request.mode
             requestedRadioOverview = request.overview
-        } else if let request = restoreRequest.musicReturnRequest {
+        } else if let request = restoration.musicReturnRequest {
             requestedMusicMode = request.mode
             requestedMusicOverview = request.overview
         }

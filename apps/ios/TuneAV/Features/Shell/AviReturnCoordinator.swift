@@ -67,6 +67,48 @@ struct AviReturnRestoreRequest {
     }
 }
 
+struct AviReturnRestoration {
+    let tab: AppShellTab
+    let radioMode: RadioLibraryMode?
+    let radioOverview: Bool?
+    let musicMode: MusicContentMode?
+    let musicOverview: Bool?
+    private let restoresRadioState: Bool
+    private let restoresMusicState: Bool
+
+    var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
+        guard restoresRadioState else { return nil }
+
+        return (radioMode, radioOverview)
+    }
+
+    var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
+        guard restoresMusicState else { return nil }
+
+        return (musicMode, musicOverview)
+    }
+
+    init(restoreRequest: AviReturnRestoreRequest) {
+        tab = restoreRequest.tab
+        radioMode = restoreRequest.radioMode
+        radioOverview = restoreRequest.radioOverview
+        musicMode = restoreRequest.musicMode
+        musicOverview = restoreRequest.musicOverview
+        restoresRadioState = restoreRequest.radioReturnRequest != nil
+        restoresMusicState = restoreRequest.musicReturnRequest != nil
+    }
+
+    init(fallbackTab: AppShellTab) {
+        tab = fallbackTab
+        radioMode = nil
+        radioOverview = nil
+        musicMode = nil
+        musicOverview = nil
+        restoresRadioState = false
+        restoresMusicState = false
+    }
+}
+
 struct AviReturnCoordinator {
     private(set) var context: AviReturnContext?
 
@@ -92,5 +134,14 @@ struct AviReturnCoordinator {
 
         self.context = nil
         return AviReturnRestoreRequest(context: context)
+    }
+
+    mutating func consumeRestoration(fallbackTab: AppShellTab?) -> AviReturnRestoration? {
+        if let request = consumeRestoreRequest() {
+            return AviReturnRestoration(restoreRequest: request)
+        }
+        guard let fallbackTab else { return nil }
+
+        return AviReturnRestoration(fallbackTab: fallbackTab)
     }
 }
