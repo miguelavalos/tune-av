@@ -5,9 +5,11 @@ on:
     paths:
       - ".github/workflows/ios-ci.yml"
       - "apps/ios/**"
+      - "apps/macos/**"
       - "package.json"
       - "shared/**"
       - "scripts/ios-ci-test.sh"
+      - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
       - "scripts/check-public-config-hygiene.sh"
       - "scripts/check-ios-network-privacy.sh"
@@ -17,9 +19,11 @@ on:
     paths:
       - ".github/workflows/ios-ci.yml"
       - "apps/ios/**"
+      - "apps/macos/**"
       - "package.json"
       - "shared/**"
       - "scripts/ios-ci-test.sh"
+      - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
       - "scripts/check-public-config-hygiene.sh"
       - "scripts/check-ios-network-privacy.sh"
@@ -87,5 +91,44 @@ jobs:
         with:
           name: ios-ci-xcresult
           path: .derived-data/ios-ci/TestResults/TuneAV.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+  macos-test:
+    name: Build and test macOS
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Cache macOS build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            .derived-data/macos-ci/SourcePackages
+            .derived-data/macos-ci/Build
+          key: ${{ runner.os }}-macos-ci-${{ hashFiles('apps/macos/TuneAVMac.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'apps/macos/TuneAVMac.xcodeproj/project.pbxproj', 'apps/macos/**/*.swift', 'shared/**/*.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-macos-ci-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test macOS
+        run: bun run macos:ci
+
+      - name: Upload macOS test result bundle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-ci-xcresult
+          path: .derived-data/macos-ci/TestResults/TuneAVMac.xcresult
           if-no-files-found: ignore
           retention-days: 7
