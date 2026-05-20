@@ -5189,40 +5189,33 @@ struct AviScreen: View {
     }
 
     private func showAviReactionForCurrentSongChange(identity: String) {
-        guard isNowPlayingFullPlayer, isFocusedStationActive, isPlaying, !identity.isEmpty else {
+        let isSavedDiscoveredTrack = focusedStation.map {
+            libraryStore.isSavedDiscoveredTrack(title: currentTrackTitle, artist: currentTrackArtist, station: $0)
+        } ?? false
+        let decision = ShellAviAutomaticReactionResolver.decision(
+            identity: identity,
+            lastIdentity: lastAutomaticAviReactionIdentity,
+            lastReactionAt: lastAutomaticAviReactionAt,
+            isNowPlayingFullPlayer: isNowPlayingFullPlayer,
+            isFocusedStationActive: isFocusedStationActive,
+            isPlaying: isPlaying,
+            currentTrackFeedback: currentTrackFeedback,
+            isSavedDiscoveredTrack: isSavedDiscoveredTrack
+        )
+
+        switch decision {
+        case .reset:
             aviReaction = nil
             lastAutomaticAviReactionIdentity = ""
-            return
-        }
-        guard identity != lastAutomaticAviReactionIdentity else { return }
-
-        let reaction: AviScreenReaction
-        switch currentTrackFeedback {
-        case .liked:
-            reaction = .recognizedTrack
-        case .disliked:
-            reaction = .disliked
-        case .notForMe:
-            reaction = .notForMe
-        case nil:
-            if let focusedStation,
-               libraryStore.isSavedDiscoveredTrack(title: currentTrackTitle, artist: currentTrackArtist, station: focusedStation) {
-                reaction = .recognizedTrack
-            } else {
-                reaction = .newTrack
-            }
-        }
-
-        let now = Date()
-        if reaction.usesAutomaticCooldown,
-           now.timeIntervalSince(lastAutomaticAviReactionAt) < AviScreenReaction.automaticCooldown {
+        case .none:
+            break
+        case .suppress(let identity):
             lastAutomaticAviReactionIdentity = identity
-            return
+        case .show(let reaction, let identity, let at):
+            lastAutomaticAviReactionIdentity = identity
+            lastAutomaticAviReactionAt = at
+            showAviReaction(reaction)
         }
-
-        lastAutomaticAviReactionIdentity = identity
-        lastAutomaticAviReactionAt = now
-        showAviReaction(reaction)
     }
 
     private func showAviReaction(for feedback: TuneAVStationFeedback) {

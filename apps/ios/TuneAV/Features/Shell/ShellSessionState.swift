@@ -209,6 +209,58 @@ enum ShellAviFeedbackResolver {
     }
 }
 
+enum ShellAviAutomaticReactionDecision: Equatable {
+    case reset
+    case none
+    case suppress(identity: String)
+    case show(reaction: AviScreenReaction, identity: String, at: Date)
+}
+
+enum ShellAviAutomaticReactionResolver {
+    static func decision(
+        identity: String,
+        lastIdentity: String,
+        lastReactionAt: Date,
+        now: Date = .now,
+        isNowPlayingFullPlayer: Bool,
+        isFocusedStationActive: Bool,
+        isPlaying: Bool,
+        currentTrackFeedback: TuneAVStationFeedback?,
+        isSavedDiscoveredTrack: Bool
+    ) -> ShellAviAutomaticReactionDecision {
+        guard isNowPlayingFullPlayer, isFocusedStationActive, isPlaying, !identity.isEmpty else {
+            return .reset
+        }
+        guard identity != lastIdentity else {
+            return .none
+        }
+
+        let reaction = reaction(for: currentTrackFeedback, isSavedDiscoveredTrack: isSavedDiscoveredTrack)
+        if reaction.usesAutomaticCooldown,
+           now.timeIntervalSince(lastReactionAt) < AviScreenReaction.automaticCooldown {
+            return .suppress(identity: identity)
+        }
+
+        return .show(reaction: reaction, identity: identity, at: now)
+    }
+
+    private static func reaction(
+        for feedback: TuneAVStationFeedback?,
+        isSavedDiscoveredTrack: Bool
+    ) -> AviScreenReaction {
+        switch feedback {
+        case .liked:
+            return .recognizedTrack
+        case .disliked:
+            return .disliked
+        case .notForMe:
+            return .notForMe
+        case nil:
+            return isSavedDiscoveredTrack ? .recognizedTrack : .newTrack
+        }
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 

@@ -2307,6 +2307,90 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(editingRadio.usesTrackFeedback)
     }
 
+    func testShellAviAutomaticReactionResolverResetsWhenScreenIsNotReady() {
+        let decision = ShellAviAutomaticReactionResolver.decision(
+            identity: "artist|title",
+            lastIdentity: "",
+            lastReactionAt: Date(timeIntervalSince1970: 10),
+            now: Date(timeIntervalSince1970: 20),
+            isNowPlayingFullPlayer: false,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: nil,
+            isSavedDiscoveredTrack: false
+        )
+
+        XCTAssertEqual(decision, .reset)
+    }
+
+    func testShellAviAutomaticReactionResolverChoosesFeedbackAndSavedTrackReactions() {
+        let liked = ShellAviAutomaticReactionResolver.decision(
+            identity: "liked",
+            lastIdentity: "",
+            lastReactionAt: Date(timeIntervalSince1970: 10),
+            now: Date(timeIntervalSince1970: 20),
+            isNowPlayingFullPlayer: true,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: .liked,
+            isSavedDiscoveredTrack: false
+        )
+        let saved = ShellAviAutomaticReactionResolver.decision(
+            identity: "saved",
+            lastIdentity: "",
+            lastReactionAt: Date(timeIntervalSince1970: 10),
+            now: Date(timeIntervalSince1970: 20),
+            isNowPlayingFullPlayer: true,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: nil,
+            isSavedDiscoveredTrack: true
+        )
+        let disliked = ShellAviAutomaticReactionResolver.decision(
+            identity: "disliked",
+            lastIdentity: "",
+            lastReactionAt: Date(timeIntervalSince1970: 10),
+            now: Date(timeIntervalSince1970: 20),
+            isNowPlayingFullPlayer: true,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: .disliked,
+            isSavedDiscoveredTrack: true
+        )
+
+        XCTAssertEqual(liked, .show(reaction: .recognizedTrack, identity: "liked", at: Date(timeIntervalSince1970: 20)))
+        XCTAssertEqual(saved, .show(reaction: .recognizedTrack, identity: "saved", at: Date(timeIntervalSince1970: 20)))
+        XCTAssertEqual(disliked, .show(reaction: .disliked, identity: "disliked", at: Date(timeIntervalSince1970: 20)))
+    }
+
+    func testShellAviAutomaticReactionResolverSuppressesNewTrackDuringCooldownAndDeduplicatesIdentity() {
+        let duringCooldown = ShellAviAutomaticReactionResolver.decision(
+            identity: "new",
+            lastIdentity: "",
+            lastReactionAt: Date(timeIntervalSince1970: 15),
+            now: Date(timeIntervalSince1970: 20),
+            isNowPlayingFullPlayer: true,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: nil,
+            isSavedDiscoveredTrack: false
+        )
+        let duplicate = ShellAviAutomaticReactionResolver.decision(
+            identity: "new",
+            lastIdentity: "new",
+            lastReactionAt: Date(timeIntervalSince1970: 15),
+            now: Date(timeIntervalSince1970: 30),
+            isNowPlayingFullPlayer: true,
+            isFocusedStationActive: true,
+            isPlaying: true,
+            currentTrackFeedback: nil,
+            isSavedDiscoveredTrack: false
+        )
+
+        XCTAssertEqual(duringCooldown, .suppress(identity: "new"))
+        XCTAssertEqual(duplicate, .none)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }
