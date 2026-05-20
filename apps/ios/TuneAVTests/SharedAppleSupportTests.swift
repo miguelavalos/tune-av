@@ -298,6 +298,30 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(didOpenPlayer)
     }
 
+    func testShellCellularPlaybackGateRequestsConfirmationOnlyForExpensiveNetworkWithWarningEnabled() {
+        XCTAssertEqual(
+            ShellCellularPlaybackGate.decision(
+                warnBeforeCellularPlayback: true,
+                currentNetworkIsExpensive: true
+            ),
+            .requestConfirmation
+        )
+        XCTAssertEqual(
+            ShellCellularPlaybackGate.decision(
+                warnBeforeCellularPlayback: false,
+                currentNetworkIsExpensive: true
+            ),
+            .playImmediately
+        )
+        XCTAssertEqual(
+            ShellCellularPlaybackGate.decision(
+                warnBeforeCellularPlayback: true,
+                currentNetworkIsExpensive: false
+            ),
+            .playImmediately
+        )
+    }
+
     func testShellDemoStationBootstrapPlannerSeedsAndPlaysWhenDemoIsNotCurrentStation() {
         XCTAssertEqual(
             ShellDemoStationBootstrapPlanner.actions(

@@ -882,16 +882,19 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
-        guard shouldPlayImmediatelyOnCurrentNetwork else {
+        switch cellularPlaybackGateDecision {
+        case .playImmediately:
+            playStationAfterCellularCheck(station, queueSource: queueSource, queue: queue)
+        case .requestConfirmation:
             pendingCellularPlayback = PendingPlayback(station: station, queueSource: queueSource, queue: queue)
-            return
         }
-
-        playStationAfterCellularCheck(station, queueSource: queueSource, queue: queue)
     }
 
-    private var shouldPlayImmediatelyOnCurrentNetwork: Bool {
-        !libraryStore.settings.warnBeforeCellularPlayback || !audioPlayer.currentNetworkIsExpensive
+    private var cellularPlaybackGateDecision: ShellCellularPlaybackGateDecision {
+        ShellCellularPlaybackGate.decision(
+            warnBeforeCellularPlayback: libraryStore.settings.warnBeforeCellularPlayback,
+            currentNetworkIsExpensive: audioPlayer.currentNetworkIsExpensive
+        )
     }
 
     private func playStationAfterCellularCheck(
