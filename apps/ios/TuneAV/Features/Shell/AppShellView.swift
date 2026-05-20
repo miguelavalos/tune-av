@@ -1053,14 +1053,7 @@ struct AppShellView: View {
             presentation: LastOpenedStationPresentation.detail.rawValue,
             builder: aviStationDetailBuilder
         )
-        captureAviReturnContext(
-            radioMode: plan.returnRadioMode,
-            radioOverview: plan.returnRadioOverview
-        )
-        if plan.clearsMusicDetail {
-            selectedMusicAviDetail = nil
-        }
-        applyAviStationOpenSelection(plan.selection)
+        applyStationDetailOpenPlan(plan)
     }
 
     private func openNowPlayingFullPlayer(_ station: Station) {
@@ -1069,6 +1062,10 @@ struct AppShellView: View {
             presentation: LastOpenedStationPresentation.player.rawValue,
             builder: aviStationDetailBuilder
         )
+        applyStationDetailOpenPlan(plan)
+    }
+
+    private func applyStationDetailOpenPlan(_ plan: ShellStationDetailOpenPlan) {
         captureAviReturnContext(
             radioMode: plan.returnRadioMode,
             radioOverview: plan.returnRadioOverview
