@@ -197,6 +197,38 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(filters?.allowsEmptySearch, true)
     }
 
+    func testAviRecommendationsCoordinatorBuildsRecommendationBucketsAndQueue() {
+        let current = shellStation(id: "current", tags: "jazz", countryCode: "ES")
+        let recent = shellStation(id: "recent", tags: "jazz", countryCode: "ES")
+        let favorite = shellStation(id: "favorite", tags: "rock", countryCode: "US")
+        let ignoredCurrent = shellStation(id: "current", tags: "jazz", countryCode: "ES")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: current,
+            recentStations: [recent],
+            favoriteStations: [favorite],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "jazz",
+            currentCountryCode: "ES"
+        )
+
+        let ranked = AviRecommendationsCoordinator.rankedCandidates(
+            stations: [ignoredCurrent, favorite, recent],
+            currentStation: current,
+            scorer: scorer
+        )
+
+        XCTAssertFalse(ranked.map(\.station.id).contains("current"))
+        XCTAssertEqual(AviRecommendationsCoordinator.queue(from: ranked).map(\.id), ranked.map(\.station.id))
+        XCTAssertEqual(AviRecommendationsCoordinator.topRecommendation(from: ranked)?.station.id, ranked.first?.station.id)
+        XCTAssertEqual(
+            AviRecommendationsCoordinator.secondaryRecommendations(from: ranked).map(\.station.id),
+            Array(ranked.dropFirst().prefix(2).map(\.station.id))
+        )
+        XCTAssertNotNil(AviRecommendationsCoordinator.topRecommendation(from: ranked)?.reason)
+    }
+
     @MainActor
     func testSleepTimerControllerSetsAndClearsSharedDescription() {
         let controller = TuneAVSleepTimerController()

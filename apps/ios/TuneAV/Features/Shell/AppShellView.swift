@@ -5648,36 +5648,23 @@ struct AviScreen: View {
     }
 
     private var rankedRecommendationCandidates: [(station: Station, rank: TuneAVLocalRecommendationScorer.Rank)] {
-        let excludedIDs = Set(([currentStation?.id].compactMap { $0 }))
-
-        return recommendationScorer
-            .rankedStations(stations.filter { !excludedIDs.contains($0.id) })
-            .filter { $0.rank.score > 0 }
-    }
-
-    private var topRecommendation: (station: Station, reason: String)? {
-        guard let top = rankedRecommendationCandidates.first else { return nil }
-        return recommendationViewModel(for: top)
-    }
-
-    private var secondaryRecommendations: [(station: Station, reason: String)] {
-        rankedRecommendationCandidates
-            .dropFirst()
-            .prefix(2)
-            .map(recommendationViewModel(for:))
-    }
-
-    private func recommendationViewModel(
-        for candidate: (station: Station, rank: TuneAVLocalRecommendationScorer.Rank)
-    ) -> (station: Station, reason: String) {
-        return (
-            station: candidate.station,
-            reason: TuneAVLocalRecommendationScorer.localizedSummary(for: candidate.rank.primaryReason) ?? L10n.string("shell.avi.recommendation.reasonFallback")
+        AviRecommendationsCoordinator.rankedCandidates(
+            stations: stations,
+            currentStation: currentStation,
+            scorer: recommendationScorer
         )
     }
 
+    private var topRecommendation: (station: Station, reason: String)? {
+        AviRecommendationsCoordinator.topRecommendation(from: rankedRecommendationCandidates)
+    }
+
+    private var secondaryRecommendations: [(station: Station, reason: String)] {
+        AviRecommendationsCoordinator.secondaryRecommendations(from: rankedRecommendationCandidates)
+    }
+
     private var recommendationQueue: [Station] {
-        rankedRecommendationCandidates.map(\.station)
+        AviRecommendationsCoordinator.queue(from: rankedRecommendationCandidates)
     }
 
     private var feedbackSignalCount: Int {
