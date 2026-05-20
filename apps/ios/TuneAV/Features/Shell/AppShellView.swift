@@ -1087,6 +1087,10 @@ struct AppShellView: View {
             presentation: LastOpenedStationPresentation.player.rawValue,
             builder: aviStationDetailBuilder
         )
+        applyContextualAviOpenPlan(plan)
+    }
+
+    private func applyContextualAviOpenPlan(_ plan: ShellContextualAviOpenPlan) {
         if plan.capturesReturnContext {
             captureAviReturnContext()
         }
