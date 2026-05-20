@@ -9363,12 +9363,7 @@ struct MusicScreen: View {
     }
 
     private func discoveryArtistsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
-        HStack(spacing: 10) {
-            Text(L10n.string("shell.music.artists.title"))
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
+        MusicDiscoveryArtistsHeader {
             discoveryActions(snapshot)
         }
     }
@@ -9412,29 +9407,16 @@ struct MusicScreen: View {
     }
 
     private func discoverySongsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
-        HStack(spacing: 10) {
-            Text(historyStationFilterTitle ?? currentMusicLibraryMode.songsTitle)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            if musicMode == .history, historyStationFilter != nil {
-                Button {
-                    historyStationFilter = nil
-                } label: {
-                    Text(L10n.string("shell.music.history.all"))
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(TuneAVTheme.highlight.opacity(0.10), in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("music.history.all")
+        MusicDiscoverySongsHeader(
+            title: historyStationFilterTitle ?? currentMusicLibraryMode.songsTitle,
+            showsAllHistoryButton: musicMode == .history && historyStationFilter != nil,
+            showAllHistory: {
+                historyStationFilter = nil
+            },
+            actions: {
+                discoveryActions(snapshot)
             }
-
-            discoveryActions(snapshot)
-        }
+        )
     }
 
     private var historyStationFilterTitle: String? {
@@ -9442,80 +9424,33 @@ struct MusicScreen: View {
         return "\(MusicLibraryMode.history.title) · \(historyStationFilter.name)"
     }
 
-    private func discoveryActions(_ snapshot: MusicLibraryDerivedState) -> some View {
-        HStack(spacing: 10) {
-            Button {
+    private func discoveryActions(_ snapshot: MusicLibraryDerivedState) -> MusicDiscoveryActions {
+        MusicDiscoveryActions(
+            isShareDisabled: snapshot.filteredDiscoveries.isEmpty,
+            shareAction: {
                 let shareText = discoveriesShareText(snapshot)
                 guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
                 discoveriesShareTextDraft = shareText
                 isShowingDiscoveriesShare = true
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.mutedSurface, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.library.discoveries.share"))
-            .accessibilityIdentifier("discoveries.share")
-            .disabled(snapshot.filteredDiscoveries.isEmpty)
-
-            Button {
+            },
+            clearAction: {
                 isConfirmingClearDiscoveries = true
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(red: 1, green: 0.17, blue: 0.38))
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.mutedSurface, in: Circle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.library.discoveries.clear"))
-            .accessibilityIdentifier("discoveries.clear")
-        }
+        )
     }
 
     @ViewBuilder
     private var hiddenDiscoveryUndoBanner: some View {
         if let hiddenDiscovery {
-            HStack(spacing: 12) {
-                Image(systemName: "eye.slash.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-
-                Text(L10n.string("shell.music.discovery.hidden"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button {
-                    restoreDiscovery(hiddenDiscovery)
-                    withAnimation(.snappy(duration: 0.22)) {
-                        self.hiddenDiscovery = nil
-                    }
-                } label: {
-                    Text(L10n.string("common.undo"))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.highlight)
+            HiddenDiscoveryUndoBanner(
+                bottomContentPadding: bottomContentPadding,
+                horizontalPadding: shellScreenHorizontalPadding
+            ) {
+                restoreDiscovery(hiddenDiscovery)
+                withAnimation(.snappy(duration: 0.22)) {
+                    self.hiddenDiscovery = nil
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("discoveries.undoHide")
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(TuneAVTheme.elevatedSurface, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-            .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 12, y: 5)
-            .padding(.horizontal, shellScreenHorizontalPadding)
-            .padding(.bottom, max(98, bottomContentPadding - 18))
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("discoveries.hiddenUndo")
         }
     }
 

@@ -248,3 +248,123 @@ struct MusicDetailHeader: View {
         )
     }
 }
+
+struct MusicDiscoveryArtistsHeader: View {
+    let actions: () -> MusicDiscoveryActions
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(L10n.string("shell.music.artists.title"))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            actions()
+        }
+    }
+}
+
+struct MusicDiscoverySongsHeader: View {
+    let title: String
+    let showsAllHistoryButton: Bool
+    let showAllHistory: () -> Void
+    let actions: () -> MusicDiscoveryActions
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if showsAllHistoryButton {
+                Button(action: showAllHistory) {
+                    Text(L10n.string("shell.music.history.all"))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(TuneAVTheme.highlight.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("music.history.all")
+            }
+
+            actions()
+        }
+    }
+}
+
+struct MusicDiscoveryActions: View {
+    let isShareDisabled: Bool
+    let shareAction: () -> Void
+    let clearAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button(action: shareAction) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .background(TuneAVTheme.mutedSurface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.library.discoveries.share"))
+            .accessibilityIdentifier("discoveries.share")
+            .disabled(isShareDisabled)
+
+            Button(action: clearAction) {
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(red: 1, green: 0.17, blue: 0.38))
+                    .frame(width: 36, height: 36)
+                    .background(TuneAVTheme.mutedSurface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.string("shell.library.discoveries.clear"))
+            .accessibilityIdentifier("discoveries.clear")
+        }
+    }
+}
+
+struct HiddenDiscoveryUndoBanner: View {
+    let bottomContentPadding: CGFloat
+    let horizontalPadding: CGFloat
+    let restoreAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "eye.slash.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+
+            Text(L10n.string("shell.music.discovery.hidden"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: restoreAction) {
+                Text(L10n.string("common.undo"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("discoveries.undoHide")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(TuneAVTheme.elevatedSurface, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        }
+        .shadow(color: TuneAVTheme.softShadow.opacity(0.22), radius: 12, y: 5)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.bottom, max(98, bottomContentPadding - 18))
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("discoveries.hiddenUndo")
+    }
+}
