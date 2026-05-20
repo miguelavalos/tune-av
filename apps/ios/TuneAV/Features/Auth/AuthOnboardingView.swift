@@ -197,9 +197,11 @@ struct AuthOnboardingView: View {
 
     private func logAuthError(_ error: Error, provider: String) {
         let nsError = error as NSError
-        let underlying = nsError.userInfo[NSUnderlyingErrorKey].map { "\($0)" } ?? "none"
+        let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+        let underlyingDomain = underlyingError?.domain ?? "none"
+        let underlyingCode = underlyingError?.code ?? 0
         authLogger.error(
-            "Account AV \(provider, privacy: .public) failed: type=\(String(describing: type(of: error)), privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) description=\(error.localizedDescription, privacy: .public) underlying=\(underlying, privacy: .public)"
+            "Account AV \(provider, privacy: .public) failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) underlying_domain=\(underlyingDomain, privacy: .public) underlying_code=\(underlyingCode, privacy: .public)"
         )
     }
 }
