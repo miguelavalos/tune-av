@@ -51,6 +51,20 @@ enum ShellListeningSessionCoordinator {
     }
 }
 
+enum ShellCurrentDiscoveryCoordinator {
+    static func shouldSaveStationFavorite(title: String?, artist: String?) -> Bool {
+        title == nil && artist == nil
+    }
+
+    static func canToggleTrack(isAlreadySaved: Bool, canMarkInteresting: Bool) -> Bool {
+        isAlreadySaved || canMarkInteresting
+    }
+
+    static func reactionAfterToggle(isSaved: Bool) -> AviScreenReaction {
+        isSaved ? .saved : .curious
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 

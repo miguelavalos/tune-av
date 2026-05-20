@@ -2133,6 +2133,20 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(flushed.trackKeys.count, 2)
     }
 
+    func testShellCurrentDiscoveryCoordinatorChoosesStationFallbackOnlyWithoutTrackMetadata() {
+        XCTAssertTrue(ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(title: nil, artist: nil))
+        XCTAssertFalse(ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(title: "Song", artist: nil))
+        XCTAssertFalse(ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(title: nil, artist: "Artist"))
+    }
+
+    func testShellCurrentDiscoveryCoordinatorAllowsSavedTrackRemovalBeyondLimit() {
+        XCTAssertTrue(ShellCurrentDiscoveryCoordinator.canToggleTrack(isAlreadySaved: true, canMarkInteresting: false))
+        XCTAssertTrue(ShellCurrentDiscoveryCoordinator.canToggleTrack(isAlreadySaved: false, canMarkInteresting: true))
+        XCTAssertFalse(ShellCurrentDiscoveryCoordinator.canToggleTrack(isAlreadySaved: false, canMarkInteresting: false))
+        XCTAssertEqual(ShellCurrentDiscoveryCoordinator.reactionAfterToggle(isSaved: true), .saved)
+        XCTAssertEqual(ShellCurrentDiscoveryCoordinator.reactionAfterToggle(isSaved: false), .curious)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }

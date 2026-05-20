@@ -5303,7 +5303,10 @@ struct AviScreen: View {
 
     @discardableResult
     private func saveAviCurrentDiscovery(for station: Station) -> Bool {
-        guard currentTrackTitle != nil || currentTrackArtist != nil else {
+        guard !ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(
+            title: currentTrackTitle,
+            artist: currentTrackArtist
+        ) else {
             showAviReaction(.liked)
             toggleFavorite(station)
             return true
@@ -5314,16 +5317,18 @@ struct AviScreen: View {
             currentUsage: libraryStore.savedDiscoveriesCount
         )
 
-        if !isCurrentTrackSaved(for: station) {
-            guard libraryStore.canMarkTrackInteresting(
+        let isAlreadySaved = isCurrentTrackSaved(for: station)
+        if !ShellCurrentDiscoveryCoordinator.canToggleTrack(
+            isAlreadySaved: isAlreadySaved,
+            canMarkInteresting: libraryStore.canMarkTrackInteresting(
                 title: currentTrackTitle,
                 artist: currentTrackArtist,
                 station: station,
                 limit: state.limit
-            ) else {
-                accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-                return false
-            }
+            )
+        ) {
+            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
+            return false
         }
 
         let didToggle = libraryStore.toggleDiscoveredTrackSaved(
@@ -5339,7 +5344,11 @@ struct AviScreen: View {
             return false
         }
 
-        showAviReaction(isCurrentTrackSaved(for: station) ? .saved : .curious)
+        showAviReaction(
+            ShellCurrentDiscoveryCoordinator.reactionAfterToggle(
+                isSaved: isCurrentTrackSaved(for: station)
+            )
+        )
         return true
     }
 
