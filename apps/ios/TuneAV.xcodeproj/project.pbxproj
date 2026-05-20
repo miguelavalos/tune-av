@@ -145,6 +145,7 @@
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
 		F73A1017B5BC7D5325D165E8 /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECEE2B4FACAC9EA16B737B1 /* TuneAVAppShellHomeFeed.swift */; };
+		F7EACDCDDF02578E446D4485 /* ShellHeaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */; };
 		F8BEE34E0F80EAC9432C3873 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B3D80F48D83AA5BCA01116A /* ClerkKitUI */; };
 		FA0801A605B9E3AB0847B0AD /* StationDetailQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */; };
 		FAE2D86B8E94C39687AC6C77 /* HomeScreenStateBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */; };
@@ -291,6 +292,7 @@
 		BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellSearch.swift; sourceTree = "<group>"; };
 		BA8E8B23A59D452594D47639 /* StationFeedbackControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationFeedbackControls.swift; sourceTree = "<group>"; };
 		BD95C0068EC297AAD27DFCAD /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHeaderViews.swift; sourceTree = "<group>"; };
 		C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVURLSupport.swift; sourceTree = "<group>"; };
 		C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@
 				3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
 				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
+				BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */,
 				215630B5CEED14742AC811BE /* ShellPlaceholderViews.swift */,
 				9032055EBEFD359E9A0B4A08 /* ShellSearchViews.swift */,
 				6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */,
@@ -849,6 +852,7 @@
 				8C55F5F020F160F719528D6F /* SelectedMusicAviDetail.swift in Sources */,
 				E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */,
 				1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */,
+				F7EACDCDDF02578E446D4485 /* ShellHeaderViews.swift in Sources */,
 				3B1ABBFA95315D1532ABD9EF /* ShellPlaceholderViews.swift in Sources */,
 				6C021BFA6934CAF149EAC91E /* ShellSearchViews.swift in Sources */,
 				3DCE3D361352CA6F90075E8D /* ShellTagViews.swift in Sources */,
