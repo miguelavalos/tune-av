@@ -3,6 +3,11 @@ struct ShellRestoredLaunchSelection {
     let queue: AudioPlayerService.PlaybackQueue
 }
 
+struct ShellPlaybackSelection {
+    let station: Station
+    let queue: AudioPlayerService.PlaybackQueue
+}
+
 enum ShellLaunchRestoreExecutor {
     @discardableResult
     static func restore(
@@ -19,6 +24,24 @@ enum ShellLaunchRestoreExecutor {
 }
 
 enum ShellPlaybackQueueBuilder {
+    static func playbackSelection(
+        station: Station,
+        queueSource: AudioPlayerService.PlaybackQueue.Source,
+        queue: [Station]?,
+        enrichStation: (Station) -> Station,
+        enrichStations: ([Station]) -> [Station]
+    ) -> ShellPlaybackSelection {
+        let resolvedStation = enrichStation(station)
+        let resolvedQueue = enrichStations(queue ?? [resolvedStation])
+        return ShellPlaybackSelection(
+            station: resolvedStation,
+            queue: AudioPlayerService.PlaybackQueue(
+                source: queueSource,
+                stations: resolvedQueue
+            )
+        )
+    }
+
     static func restoredLaunchSelection(
         lastPlayedStationID: String?,
         lastOpenedStationID: String?,

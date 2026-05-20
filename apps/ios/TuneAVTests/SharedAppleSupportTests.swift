@@ -298,6 +298,41 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(didOpenPlayer)
     }
 
+    func testShellPlaybackQueueBuilderBuildsPlaybackSelectionFromProvidedQueue() {
+        let station = shellStation(id: "base")
+        let queued = shellStation(id: "queued")
+
+        let selection = ShellPlaybackQueueBuilder.playbackSelection(
+            station: station,
+            queueSource: .homeDiscovery,
+            queue: [station, queued],
+            enrichStation: { shellStation(id: "\($0.id)-enriched") },
+            enrichStations: { stations in
+                stations.map { shellStation(id: "\($0.id)-queued") }
+            }
+        )
+
+        XCTAssertEqual(selection.station.id, "base-enriched")
+        XCTAssertEqual(selection.queue.source, .homeDiscovery)
+        XCTAssertEqual(selection.queue.stations.map(\.id), ["base-queued", "queued-queued"])
+    }
+
+    func testShellPlaybackQueueBuilderFallsBackToResolvedStationWhenQueueIsMissing() {
+        let station = shellStation(id: "base")
+
+        let selection = ShellPlaybackQueueBuilder.playbackSelection(
+            station: station,
+            queueSource: .singleStation,
+            queue: nil,
+            enrichStation: { shellStation(id: "\($0.id)-enriched") },
+            enrichStations: { stations in stations }
+        )
+
+        XCTAssertEqual(selection.station.id, "base-enriched")
+        XCTAssertEqual(selection.queue.source, .singleStation)
+        XCTAssertEqual(selection.queue.stations.map(\.id), ["base-enriched"])
+    }
+
     func testShellCellularPlaybackGateRequestsConfirmationOnlyForExpensiveNetworkWithWarningEnabled() {
         XCTAssertEqual(
             ShellCellularPlaybackGate.decision(

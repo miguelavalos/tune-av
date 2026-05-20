@@ -902,14 +902,15 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil
     ) {
-        let resolvedStation = enrichedStation(station)
-        let resolvedQueue = enrichedStations(queue ?? [resolvedStation])
-        let playbackQueue = AudioPlayerService.PlaybackQueue(
-            source: queueSource,
-            stations: resolvedQueue
+        let selection = ShellPlaybackQueueBuilder.playbackSelection(
+            station: station,
+            queueSource: queueSource,
+            queue: queue,
+            enrichStation: enrichedStation(_:),
+            enrichStations: enrichedStations(_:)
         )
-        audioPlayer.play(station: resolvedStation, queue: playbackQueue)
-        beginListeningSession(for: resolvedStation, source: queueSource)
+        audioPlayer.play(station: selection.station, queue: selection.queue)
+        beginListeningSession(for: selection.station, source: selection.queue.source)
     }
 
     private func requestStopPlaybackConfirmation() {
