@@ -1187,12 +1187,20 @@ struct AppShellView: View {
 
     private func restoreAviReturnState(_ plan: AviCloseFocusedDetailPlan) {
         if let request = plan.radioReturnRequest {
-            requestedRadioMode = request.mode
-            requestedRadioOverview = request.overview
+            applyRadioReturnRequest(request)
         } else if let request = plan.musicReturnRequest {
-            requestedMusicMode = request.mode
-            requestedMusicOverview = request.overview
+            applyMusicReturnRequest(request)
         }
+    }
+
+    private func applyRadioReturnRequest(_ request: (mode: RadioLibraryMode?, overview: Bool?)) {
+        requestedRadioMode = request.mode
+        requestedRadioOverview = request.overview
+    }
+
+    private func applyMusicReturnRequest(_ request: (mode: MusicContentMode?, overview: Bool?)) {
+        requestedMusicMode = request.mode
+        requestedMusicOverview = request.overview
     }
 
     private func currentPlaybackQueue(fallbackStation: Station) -> [Station] {
