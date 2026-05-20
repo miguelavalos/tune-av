@@ -1,12 +1,10 @@
 import Foundation
-import OSLog
 
 @MainActor
 final class TuneAVAppDataService {
     private let syncClient: TuneAVAppDataSyncClient
     private let apiClient: AVAccountAPIClient
     private let encoder = JSONEncoder()
-    private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
 
     init(apiClient: AVAccountAPIClient) {
         self.apiClient = apiClient
@@ -138,9 +136,6 @@ final class TuneAVAppDataService {
             headers: ["Idempotency-Key": Self.idempotencyKey(parts: ["listening-sessions"] + inputs.map(\.id))]
         )
         let result = TuneAVListeningSessionsUploadResult(response: response)
-        analyticsLogger.debug(
-            "Listening sessions uploaded accepted=\(result.accepted, privacy: .public) duplicate=\(result.duplicate, privacy: .public) rejected=\(result.rejected, privacy: .public)"
-        )
         return result
     }
 
