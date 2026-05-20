@@ -33,6 +33,10 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   hygiene:
     name: Validate release runtime config
