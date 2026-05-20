@@ -637,6 +637,8 @@ struct ContentView: View {
 
     private func applyPreferredLaunchTab(_ tab: MacLaunchContext.Tab) {
         switch tab {
+        case .home:
+            selectedSection = .home
         case .search:
             selectedSection = .search
         case .library:

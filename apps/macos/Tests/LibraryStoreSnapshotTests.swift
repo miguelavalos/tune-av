@@ -233,7 +233,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(direct.searchLimit, 24)
         XCTAssertEqual(worldwide.key, "|||music")
         XCTAssertTrue(worldwide.usesWorldwideDiscovery)
-        XCTAssertEqual(worldwide.searchLimit, 12)
+        XCTAssertEqual(worldwide.searchLimit, 16)
     }
 
     func testSearchFiltersLocalUITestSamplesLikeIOS() {
@@ -544,9 +544,9 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
         XCTAssertTrue(controller.capabilities.canUseBackend)
-        XCTAssertEqual(controller.limits.favoriteStations, 3)
-        XCTAssertEqual(controller.limits.aviActionsPerDay, 3)
-        XCTAssertEqual(controller.limits.lyricsSearchesPerDay, 3)
+        XCTAssertEqual(controller.limits.favoriteStations, 5)
+        XCTAssertEqual(controller.limits.aviActionsPerDay, 5)
+        XCTAssertEqual(controller.limits.lyricsSearchesPerDay, 5)
 
         controller.updateAccessMode(.signedInPro)
 
@@ -628,7 +628,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
         XCTAssertTrue(controller.capabilities.canUseBackend)
-        XCTAssertEqual(controller.limits.favoriteStations, 3)
+        XCTAssertEqual(controller.limits.favoriteStations, 5)
         XCTAssertEqual(controller.lastRefreshError as? MacAccessRefreshError, .requestFailed(statusCode: 503))
     }
 
@@ -1891,9 +1891,9 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         store.updateAccessMode(.guest)
 
         XCTAssertEqual(store.favorites.count, 5)
-        XCTAssertEqual(store.recents.count, 10)
-        XCTAssertEqual(store.discoveries.count, 20)
-        XCTAssertEqual(store.discoveries.filter(\.isMarkedInteresting).count, 5)
+        XCTAssertEqual(store.recents.count, 12)
+        XCTAssertEqual(store.discoveries.count, 24)
+        XCTAssertEqual(store.discoveries.filter(\.isMarkedInteresting).count, 10)
         XCTAssertEqual(store.backendConnectionStatus, .notConfigured)
         XCTAssertFalse(store.isCloudSyncConfigured)
         XCTAssertFalse(store.canRunCloudSync)
@@ -2005,7 +2005,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let proStore = LibraryStore(defaults: defaults)
         proStore.updateAccessMode(.signedInPro)
 
-        for index in 0..<8 {
+        for index in 0..<12 {
             proStore.recordDiscoveredTrack(
                 title: "Saved Track \(index)",
                 artist: "Artist",
@@ -2019,13 +2019,13 @@ final class LibraryStoreSnapshotTests: XCTestCase {
                 artworkURL: nil
             )
         }
-        XCTAssertEqual(proStore.discoveries.filter(\.isMarkedInteresting).count, 8)
+        XCTAssertEqual(proStore.discoveries.filter(\.isMarkedInteresting).count, 12)
         defaults.set("guest", forKey: "tuneav.mac.accessMode")
 
         let reloadedStore = LibraryStore(defaults: defaults)
 
         XCTAssertEqual(reloadedStore.accessMode, .guest)
-        XCTAssertEqual(reloadedStore.discoveries.filter(\.isMarkedInteresting).count, 5)
+        XCTAssertEqual(reloadedStore.discoveries.filter(\.isMarkedInteresting).count, 10)
     }
 
     func testClearLocalStateResetsAccessControllerAndCloudSyncState() {
@@ -2059,14 +2059,16 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/1"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/2"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/3"))
-        XCTAssertFalse(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/4"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/4"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/5"))
+        XCTAssertFalse(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/6"))
         XCTAssertNotNil(store.upgradePrompt)
 
         store.clearLocalState()
 
         XCTAssertNil(store.upgradePrompt)
-        XCTAssertEqual(store.dailyUsage(for: .youtubeSearch), LimitUsageSummary(used: 0, limit: 3))
-        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/4"))
+        XCTAssertEqual(store.dailyUsage(for: .youtubeSearch), LimitUsageSummary(used: 0, limit: 5))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/6"))
     }
 
     func testGuestDailyCountersPromptAtBackendAlignedLimit() {
@@ -2075,10 +2077,12 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/1"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/2"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/3"))
-        XCTAssertFalse(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/4"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/4"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/5"))
+        XCTAssertFalse(store.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/6"))
 
         XCTAssertEqual(store.upgradePrompt?.title, "Daily YouTube opens limit reached")
-        XCTAssertEqual(store.upgradePrompt?.progressText, "3 of 3 used today")
+        XCTAssertEqual(store.upgradePrompt?.progressText, "5 of 5 used today")
     }
 
     func testLimitUsageSummariesTrackCollectionsAndDailyCounters() {
@@ -2108,12 +2112,12 @@ final class LibraryStoreSnapshotTests: XCTestCase {
 
         XCTAssertEqual(store.favoritesUsage, LimitUsageSummary(used: 2, limit: 5))
         XCTAssertEqual(store.favoritesUsage.title, "2 of 5")
-        XCTAssertEqual(store.recentsUsage, LimitUsageSummary(used: 1, limit: 10))
-        XCTAssertEqual(store.discoveriesUsage, LimitUsageSummary(used: 1, limit: 20))
-        XCTAssertEqual(store.savedTracksUsage, LimitUsageSummary(used: 1, limit: 5))
-        XCTAssertEqual(store.dailyUsage(for: .webSearch), LimitUsageSummary(used: 1, limit: 3))
-        XCTAssertEqual(store.dailyUsage(for: .youtubeSearch), LimitUsageSummary(used: 2, limit: 3))
-        XCTAssertEqual(store.dailyUsage(for: .discoveryShare), LimitUsageSummary(used: 1, limit: 1))
+        XCTAssertEqual(store.recentsUsage, LimitUsageSummary(used: 1, limit: 15))
+        XCTAssertEqual(store.discoveriesUsage, LimitUsageSummary(used: 1, limit: 25))
+        XCTAssertEqual(store.savedTracksUsage, LimitUsageSummary(used: 1, limit: 10))
+        XCTAssertEqual(store.dailyUsage(for: .webSearch), LimitUsageSummary(used: 1, limit: 5))
+        XCTAssertEqual(store.dailyUsage(for: .youtubeSearch), LimitUsageSummary(used: 2, limit: 5))
+        XCTAssertEqual(store.dailyUsage(for: .discoveryShare), LimitUsageSummary(used: 1, limit: 5))
     }
 
     func testFavoriteLimitShowsUpgradePrompt() {
@@ -2133,7 +2137,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
     func testSavedTrackLimitShowsNonDailyUpgradePrompt() {
         let store = LibraryStore(defaults: isolatedUserDefaults())
 
-        for index in 0..<5 {
+        for index in 0..<10 {
             store.markTrackInteresting(
                 title: "Track \(index)",
                 artist: "Artist",
@@ -2149,9 +2153,9 @@ final class LibraryStoreSnapshotTests: XCTestCase {
             artworkURL: nil
         )
 
-        XCTAssertEqual(store.savedTracksUsage, LimitUsageSummary(used: 5, limit: 5))
+        XCTAssertEqual(store.savedTracksUsage, LimitUsageSummary(used: 10, limit: 10))
         XCTAssertEqual(store.upgradePrompt?.title, "Saved songs limit reached")
-        XCTAssertEqual(store.upgradePrompt?.progressText, "5 of 5 saved tracks used")
+        XCTAssertEqual(store.upgradePrompt?.progressText, "10 of 10 saved tracks used")
     }
 
     func testApplyLibrarySnapshotPersistsRoundTripState() {
@@ -2295,7 +2299,7 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         let defaults = isolatedUserDefaults()
         let store = LibraryStore(defaults: defaults)
 
-        for index in 0..<11 {
+        for index in 0..<16 {
             store.recordPlayback(of: station(id: "recent-\(index)"))
         }
 
@@ -2359,7 +2363,9 @@ final class LibraryStoreSnapshotTests: XCTestCase {
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%202%20lyrics"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%203%20lyrics"))
         XCTAssertTrue(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: lyricsURL))
-        XCTAssertFalse(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%204%20lyrics"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%204%20lyrics"))
+        XCTAssertTrue(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%205%20lyrics"))
+        XCTAssertFalse(store.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://www.google.com/search?q=artist%20song%206%20lyrics"))
     }
 
     func testCollectionFeaturesDoNotUseDailyCounters() {

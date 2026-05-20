@@ -192,7 +192,6 @@ final class MacTuneAVAppDataClient: MacTuneAVLibrarySyncing {
         self.urlSession = urlSession
         self.syncClient = TuneAVAppDataSyncClient(
             deviceId: "tuneav-macos",
-            isConfigured: { baseURL?.isSupportedAVAccountBaseURL == true },
             request: { path, method, body, headers in
                 guard let token = try await tokenProvider(), !token.isEmpty else {
                     throw MacAppDataClientError.missingToken
@@ -230,7 +229,7 @@ final class MacTuneAVAppDataClient: MacTuneAVLibrarySyncing {
     }
 
     func isConfigured() -> Bool {
-        syncClient.isConfigured()
+        baseURL?.isSupportedAVAccountBaseURL == true
     }
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {
