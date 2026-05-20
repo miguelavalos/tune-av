@@ -2744,10 +2744,7 @@ struct AviScreen: View {
                 .transition(.opacity)
             } else {
                 detailAskAviCollapsedContent {
-                    isShowingAviActions = true
-                    isShowingMoreAviActions = false
-                    isShowingFeedbackPicker = false
-                    isEditingRadioFeedback = false
+                    applyAviTransientState(currentAviTransientState.openingActions(resetPage: false))
                 }
                 .transition(.opacity)
             }
@@ -2770,11 +2767,7 @@ struct AviScreen: View {
                     .transition(.opacity)
             } else {
                 detailAskAviCollapsedContent {
-                    isShowingAviActions = true
-                    aviActionsPage = 0
-                    isShowingMoreAviActions = false
-                    isShowingFeedbackPicker = false
-                    isEditingRadioFeedback = false
+                    applyAviTransientState(currentAviTransientState.openingActions())
                 }
                 .transition(.opacity)
             }
@@ -4081,11 +4074,7 @@ struct AviScreen: View {
                     accessibilityIdentifier: "avi.actions.toggle"
                 ) {
                     withAnimation(.snappy(duration: 0.22)) {
-                        isShowingAviActions = true
-                        aviActionsPage = 0
-                        isShowingMoreAviActions = false
-                        isShowingFeedbackPicker = false
-                        isEditingRadioFeedback = false
+                        applyAviTransientState(currentAviTransientState.openingActions())
                     }
                 }
             }
@@ -4191,11 +4180,7 @@ struct AviScreen: View {
 
     private func openFullPlayerAviActions() {
         withAnimation(.snappy(duration: 0.22)) {
-            isShowingAviActions = true
-            aviActionsPage = 0
-            isShowingMoreAviActions = false
-            isShowingFeedbackPicker = false
-            isEditingRadioFeedback = false
+            applyAviTransientState(currentAviTransientState.openingActions())
         }
     }
 
@@ -4602,14 +4587,29 @@ struct AviScreen: View {
         )
     }
 
+    private var currentAviTransientState: ShellAviTransientState {
+        ShellAviTransientState(
+            isShowingActions: isShowingAviActions,
+            isShowingMoreActions: isShowingMoreAviActions,
+            isShowingFeedbackPicker: isShowingFeedbackPicker,
+            actionsPage: aviActionsPage,
+            isEditingRadioFeedback: isEditingRadioFeedback,
+            isShowingArtworkZoom: isShowingArtworkZoom
+        )
+    }
+
+    private func applyAviTransientState(_ state: ShellAviTransientState) {
+        isShowingAviActions = state.isShowingActions
+        isShowingMoreAviActions = state.isShowingMoreActions
+        isShowingFeedbackPicker = state.isShowingFeedbackPicker
+        aviActionsPage = state.actionsPage
+        isEditingRadioFeedback = state.isEditingRadioFeedback
+        isShowingArtworkZoom = state.isShowingArtworkZoom
+    }
+
     private func resetTransientAviUI() {
         withAnimation(.snappy(duration: 0.18)) {
-            isShowingAviActions = false
-            isShowingMoreAviActions = false
-            isShowingFeedbackPicker = false
-            aviActionsPage = 0
-            isEditingRadioFeedback = false
-            isShowingArtworkZoom = false
+            applyAviTransientState(currentAviTransientState.resettingAll())
         }
     }
 
@@ -5046,8 +5046,7 @@ struct AviScreen: View {
                 HStack(spacing: 6) {
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
-                            aviActionsPage = panelState.previousPage
-                            isEditingRadioFeedback = false
+                            applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.previousPage))
                         }
                     } label: {
                         Image(systemName: "chevron.left")
@@ -5062,8 +5061,7 @@ struct AviScreen: View {
 
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
-                            aviActionsPage = panelState.nextPage
-                            isEditingRadioFeedback = false
+                            applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.nextPage))
                         }
                     } label: {
                         Image(systemName: "chevron.right")
@@ -5235,11 +5233,7 @@ struct AviScreen: View {
 
     private func closeAviActions() {
         withAnimation(.snappy(duration: 0.2)) {
-            isShowingAviActions = false
-            isShowingMoreAviActions = false
-            isShowingFeedbackPicker = false
-            aviActionsPage = 0
-            isEditingRadioFeedback = false
+            applyAviTransientState(currentAviTransientState.closingActions())
         }
     }
 
@@ -5412,8 +5406,7 @@ struct AviScreen: View {
                     }
                     AviSignalActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {
                         withAnimation(.snappy(duration: 0.22)) {
-                            isShowingAviActions = true
-                            aviActionsPage = 0
+                            applyAviTransientState(currentAviTransientState.openingActions())
                         }
                     }
                 }

@@ -2391,6 +2391,60 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(duplicate, .none)
     }
 
+    func testShellAviTransientStateOpensAndClosesActionsWithoutClosingArtworkZoom() {
+        let state = ShellAviTransientState(
+            isShowingActions: false,
+            isShowingMoreActions: true,
+            isShowingFeedbackPicker: true,
+            actionsPage: 2,
+            isEditingRadioFeedback: true,
+            isShowingArtworkZoom: true
+        )
+
+        let opened = state.openingActions()
+        XCTAssertTrue(opened.isShowingActions)
+        XCTAssertFalse(opened.isShowingMoreActions)
+        XCTAssertFalse(opened.isShowingFeedbackPicker)
+        XCTAssertEqual(opened.actionsPage, 0)
+        XCTAssertFalse(opened.isEditingRadioFeedback)
+        XCTAssertTrue(opened.isShowingArtworkZoom)
+
+        let closed = opened.closingActions()
+        XCTAssertFalse(closed.isShowingActions)
+        XCTAssertFalse(closed.isShowingMoreActions)
+        XCTAssertFalse(closed.isShowingFeedbackPicker)
+        XCTAssertEqual(closed.actionsPage, 0)
+        XCTAssertFalse(closed.isEditingRadioFeedback)
+        XCTAssertTrue(closed.isShowingArtworkZoom)
+    }
+
+    func testShellAviTransientStateResetsAllAndChangesPage() {
+        let state = ShellAviTransientState(
+            isShowingActions: true,
+            isShowingMoreActions: true,
+            isShowingFeedbackPicker: true,
+            actionsPage: 1,
+            isEditingRadioFeedback: true,
+            isShowingArtworkZoom: true
+        )
+
+        let changedPage = state.changingActionsPage(to: 2)
+        XCTAssertTrue(changedPage.isShowingActions)
+        XCTAssertTrue(changedPage.isShowingMoreActions)
+        XCTAssertTrue(changedPage.isShowingFeedbackPicker)
+        XCTAssertEqual(changedPage.actionsPage, 2)
+        XCTAssertFalse(changedPage.isEditingRadioFeedback)
+        XCTAssertTrue(changedPage.isShowingArtworkZoom)
+
+        let reset = state.resettingAll()
+        XCTAssertFalse(reset.isShowingActions)
+        XCTAssertFalse(reset.isShowingMoreActions)
+        XCTAssertFalse(reset.isShowingFeedbackPicker)
+        XCTAssertEqual(reset.actionsPage, 0)
+        XCTAssertFalse(reset.isEditingRadioFeedback)
+        XCTAssertFalse(reset.isShowingArtworkZoom)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }

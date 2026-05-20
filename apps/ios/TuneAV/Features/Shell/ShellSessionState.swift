@@ -261,6 +261,59 @@ enum ShellAviAutomaticReactionResolver {
     }
 }
 
+struct ShellAviTransientState: Equatable {
+    var isShowingActions: Bool
+    var isShowingMoreActions: Bool
+    var isShowingFeedbackPicker: Bool
+    var actionsPage: Int
+    var isEditingRadioFeedback: Bool
+    var isShowingArtworkZoom: Bool
+
+    func openingActions(resetPage: Bool = true) -> ShellAviTransientState {
+        ShellAviTransientState(
+            isShowingActions: true,
+            isShowingMoreActions: false,
+            isShowingFeedbackPicker: false,
+            actionsPage: resetPage ? 0 : actionsPage,
+            isEditingRadioFeedback: false,
+            isShowingArtworkZoom: isShowingArtworkZoom
+        )
+    }
+
+    func closingActions() -> ShellAviTransientState {
+        ShellAviTransientState(
+            isShowingActions: false,
+            isShowingMoreActions: false,
+            isShowingFeedbackPicker: false,
+            actionsPage: 0,
+            isEditingRadioFeedback: false,
+            isShowingArtworkZoom: isShowingArtworkZoom
+        )
+    }
+
+    func resettingAll() -> ShellAviTransientState {
+        ShellAviTransientState(
+            isShowingActions: false,
+            isShowingMoreActions: false,
+            isShowingFeedbackPicker: false,
+            actionsPage: 0,
+            isEditingRadioFeedback: false,
+            isShowingArtworkZoom: false
+        )
+    }
+
+    func changingActionsPage(to page: Int) -> ShellAviTransientState {
+        ShellAviTransientState(
+            isShowingActions: isShowingActions,
+            isShowingMoreActions: isShowingMoreActions,
+            isShowingFeedbackPicker: isShowingFeedbackPicker,
+            actionsPage: page,
+            isEditingRadioFeedback: false,
+            isShowingArtworkZoom: isShowingArtworkZoom
+        )
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 
