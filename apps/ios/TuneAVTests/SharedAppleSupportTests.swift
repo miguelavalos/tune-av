@@ -2088,6 +2088,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
     func testTextNormalizesValuesAndBuildsJoinedQueries() {
         XCTAssertEqual(TuneAVText.normalizedValue("  Radio Nova  "), "Radio Nova")
+        XCTAssertEqual(TuneAVText.normalizedValue("  Massive\t  Attack\nTeardrop  "), "Massive Attack Teardrop")
         XCTAssertNil(TuneAVText.normalizedValue("   "))
         XCTAssertEqual(
             TuneAVText.joinedQuery(parts: ["  artist  ", nil, " title "], suffix: " live "),

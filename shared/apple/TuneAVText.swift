@@ -4,7 +4,8 @@ enum TuneAVText {
     static func normalizedValue(_ value: String?) -> String? {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        let collapsed = trimmed.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        return collapsed.isEmpty ? nil : collapsed
     }
 
     static func joinedQuery(parts: [String?], suffix: String? = nil) -> String {
@@ -26,6 +27,8 @@ enum TuneAVText {
 
     static func normalizedComparisonValue(_ value: String, locale: Locale = .current) -> String {
         value
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: locale)
             .lowercased()
     }
