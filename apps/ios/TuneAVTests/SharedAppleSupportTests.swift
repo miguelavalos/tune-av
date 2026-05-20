@@ -219,6 +219,42 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testShellDemoStationBootstrapPlannerSeedsAndPlaysWhenDemoIsNotCurrentStation() {
+        XCTAssertEqual(
+            ShellDemoStationBootstrapPlanner.actions(
+                hasDemoStation: true,
+                seedFavorite: true,
+                currentStationID: "last-played",
+                demoStationID: "demo"
+            ),
+            [.seed(favorite: true), .play]
+        )
+    }
+
+    func testShellDemoStationBootstrapPlannerSkipsPlaybackWhenDemoIsAlreadyCurrentStation() {
+        XCTAssertEqual(
+            ShellDemoStationBootstrapPlanner.actions(
+                hasDemoStation: true,
+                seedFavorite: false,
+                currentStationID: "demo",
+                demoStationID: "demo"
+            ),
+            [.seed(favorite: false)]
+        )
+    }
+
+    func testShellDemoStationBootstrapPlannerSkipsMissingDemoStation() {
+        XCTAssertEqual(
+            ShellDemoStationBootstrapPlanner.actions(
+                hasDemoStation: false,
+                seedFavorite: true,
+                currentStationID: nil,
+                demoStationID: nil
+            ),
+            []
+        )
+    }
+
     func testShellUITestBootstrapOverridesExposeTrackMetadataAndUpgradePromptOnlyForUITests() {
         let uiTestContext = TuneAVLaunchContext(environment: [
             "TUNEAV_UI_TESTS": "1",

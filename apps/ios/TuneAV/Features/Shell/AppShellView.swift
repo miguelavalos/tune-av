@@ -779,16 +779,38 @@ struct AppShellView: View {
         seedUITestDataIfNeeded()
         applyLaunchBootstrapActions()
 
-        if let demoStation = launchContext.demoStation {
-            libraryStore.ensureSeededStation(demoStation, favorite: launchContext.seedFavorite)
-            if audioPlayer.currentStation?.id != demoStation.id {
-                playStation(demoStation)
-            }
-            applyUITestTrackMetadataIfNeeded()
-        }
+        applyDemoStationBootstrapActions()
 
         if let feature = ShellUITestBootstrapOverrides.upgradePromptFeature(from: launchContext) {
             accessController.presentUpgradePrompt(for: feature)
+        }
+    }
+
+    private func applyDemoStationBootstrapActions() {
+        guard let demoStation = launchContext.demoStation else { return }
+
+        let actions = ShellDemoStationBootstrapPlanner.actions(
+            hasDemoStation: true,
+            seedFavorite: launchContext.seedFavorite,
+            currentStationID: audioPlayer.currentStation?.id,
+            demoStationID: demoStation.id
+        )
+
+        for action in actions {
+            applyDemoStationBootstrapAction(action, demoStation: demoStation)
+        }
+        applyUITestTrackMetadataIfNeeded()
+    }
+
+    private func applyDemoStationBootstrapAction(
+        _ action: ShellDemoStationBootstrapAction,
+        demoStation: Station
+    ) {
+        switch action {
+        case let .seed(favorite):
+            libraryStore.ensureSeededStation(demoStation, favorite: favorite)
+        case .play:
+            playStation(demoStation)
         }
     }
 
