@@ -96,6 +96,9 @@ jobs:
 
       - name: Generate and validate release Local.xcconfig
         run: |
+          set -o pipefail
+          mkdir -p build/release-privacy
+
           cleanup() {
             rm -f apps/ios/Config/Local.xcconfig
           }
@@ -131,4 +134,19 @@ jobs:
 
           chmod 600 apps/ios/Config/Local.xcconfig
           bun run ios:release-config:hygiene
-          bun run ios:privacy:release -- --check-urls
+          bun run ios:privacy:release -- --check-urls | tee build/release-privacy/privacy-release-gate.txt
+
+          {
+            echo "## iOS privacy release gate"
+            echo
+            echo '```text'
+            cat build/release-privacy/privacy-release-gate.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload privacy release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-privacy-release-gate
+          path: build/release-privacy/privacy-release-gate.txt
+          if-no-files-found: error
