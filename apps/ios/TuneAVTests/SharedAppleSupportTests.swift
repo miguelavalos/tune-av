@@ -2632,6 +2632,35 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(session?.source, "library")
     }
 
+    func testShellListeningSessionCoordinatorKeepsActiveSessionWhenStationMatches() throws {
+        let station = Station(id: "station", name: "Station", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/station")
+        var session: ActiveListeningSession?
+
+        XCTAssertNil(
+            ShellListeningSessionCoordinator.begin(
+                session: &session,
+                station: station,
+                source: .homeRecents,
+                now: Date(timeIntervalSince1970: 10)
+            )
+        )
+        ShellListeningSessionCoordinator.rememberTrack(session: &session, title: "Song", artist: "Artist")
+
+        XCTAssertNil(
+            ShellListeningSessionCoordinator.begin(
+                session: &session,
+                station: station,
+                source: .searchResults,
+                now: Date(timeIntervalSince1970: 20)
+            )
+        )
+
+        XCTAssertEqual(session?.station.id, "station")
+        XCTAssertEqual(session?.startedAt, Date(timeIntervalSince1970: 10))
+        XCTAssertEqual(session?.source, "home")
+        XCTAssertEqual(session?.trackKeys.count, 1)
+    }
+
     func testShellListeningSessionCoordinatorTracksUniqueSongsAndFlushes() throws {
         let station = Station(id: "station", name: "Station", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/station")
         var session: ActiveListeningSession?

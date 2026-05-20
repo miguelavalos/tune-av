@@ -14,7 +14,11 @@ enum ShellListeningSessionCoordinator {
         source: AudioPlayerService.PlaybackQueue.Source,
         now: Date = .now
     ) -> ActiveListeningSession? {
-        let endedSession = session?.station.id == station.id ? nil : session
+        if session?.station.id == station.id {
+            return nil
+        }
+
+        let endedSession = session
         session = ActiveListeningSession(
             station: station,
             startedAt: now,
