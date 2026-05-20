@@ -140,6 +140,7 @@
 		DA1AE91BA53265128FDDFAA3 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6EEF535130BB799019CE99 /* ClerkKit */; };
 		DB5E9D08FA99038D582C450B /* TuneAVAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277016C3BDB94A39E13DA224 /* TuneAVAccessPolicy.swift */; };
 		DBFF4B2009433688918EC56C /* TuneAVAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43337F851171AB4EB4E1111A /* TuneAVAccountModels.swift */; };
+		DCB2CEA0CB64D035E0796DBE /* ShellBrowserRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D6E7164063D945E2EF1F30 /* ShellBrowserRouter.swift */; };
 		DD6AEC7D8894EC110ED5D67D /* TuneAVMusicLibraryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */; };
 		DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */; };
 		E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */; };
@@ -290,6 +291,7 @@
 		A3218F25D3DD328B1F69801C /* StationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationInfoViews.swift; sourceTree = "<group>"; };
 		A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDetailQueueUITests.swift; sourceTree = "<group>"; };
 		A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
+		A4D6E7164063D945E2EF1F30 /* ShellBrowserRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellBrowserRouter.swift; sourceTree = "<group>"; };
 		A712F782B9CC6A3143D2B122 /* AVAccountAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAccountAPIClient.swift; sourceTree = "<group>"; };
 		A8DB50889CB95CD07ACBBE26 /* TuneAVAppDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataService.swift; sourceTree = "<group>"; };
 		A9B68303A43B5470159D47B7 /* MusicExternalSearchRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicExternalSearchRouter.swift; sourceTree = "<group>"; };
@@ -451,6 +453,7 @@
 				D89FB0FEA33AD342BE0E7126 /* SearchFilterViews.swift */,
 				324BA4D93248DB1B3D2C6C97 /* SearchScreen.swift */,
 				3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */,
+				A4D6E7164063D945E2EF1F30 /* ShellBrowserRouter.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
 				C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */,
 				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
@@ -895,6 +898,7 @@
 				835DB04BF3CA0FCDB726B90B /* SearchFilterViews.swift in Sources */,
 				B071817713F4012867A0D5CB /* SearchScreen.swift in Sources */,
 				8C55F5F020F160F719528D6F /* SelectedMusicAviDetail.swift in Sources */,
+				DCB2CEA0CB64D035E0796DBE /* ShellBrowserRouter.swift in Sources */,
 				E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */,
 				DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */,
 				1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */,

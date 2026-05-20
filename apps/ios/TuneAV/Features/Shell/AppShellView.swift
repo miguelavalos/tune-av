@@ -1783,6 +1783,13 @@ struct AviScreen: View {
     @State private var openArtistDetailAviActionsID: String?
     @State private var isShowingPlanComparison = false
 
+    private var browserRouter: ShellBrowserRouter {
+        ShellBrowserRouter(
+            openDestination: { browserDestination = $0 },
+            closeAviActions: closeAviActions
+        )
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             if isNowPlayingFullPlayer {
@@ -2863,7 +2870,7 @@ struct AviScreen: View {
                         playAction: { playStation(station.station, [station.station]) },
                         openWebsiteAction: {
                             if let url = station.station.resolvedHomepageURL {
-                                browserDestination = BrowserDestination(url: url)
+                                browserRouter.openURL(url)
                             }
                         },
                         detailsAction: { showStationDetails(station.station, [station.station]) }
@@ -2908,7 +2915,7 @@ struct AviScreen: View {
                         playAction: { playStation(station.station, [station.station]) },
                         openWebsiteAction: {
                             if let url = station.station.resolvedHomepageURL {
-                                browserDestination = BrowserDestination(url: url)
+                                browserRouter.openURL(url)
                             }
                         },
                         detailsAction: { showStationDetails(station.station, [station.station]) }
@@ -5028,11 +5035,7 @@ struct AviScreen: View {
             openWebsite: {
                 runProAviActionOutsideFullPlayer {
                     showAviReaction(.curious)
-                    if let url = station.resolvedHomepageURL {
-                        browserDestination = BrowserDestination(url: url)
-                    } else {
-                        openAviStationSearch(for: station)
-                    }
+                    browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
                 }
             },
             findRelatedRadios: {
@@ -5130,36 +5133,28 @@ struct AviScreen: View {
         destination: TuneAVExternalSearchURL.Destination,
         suffix: String? = nil
     ) {
-        guard let url = ShellAviExternalSearchResolver.trackSearchURL(
-            station: station,
+        browserRouter.openTrackSearch(
+            for: station,
             currentTrackArtist: currentTrackArtist,
             currentTrackTitle: currentTrackTitle,
             destination: destination,
             suffix: suffix
-        ) else { return }
-        browserDestination = BrowserDestination(url: url)
-        closeAviActions()
+        )
     }
 
     private func openAviArtistSearch() {
-        guard let url = ShellAviExternalSearchResolver.artistSearchURL(artist: currentTrackArtist) else { return }
-        browserDestination = BrowserDestination(url: url)
-        closeAviActions()
+        browserRouter.openArtistSearch(currentTrackArtist: currentTrackArtist)
     }
 
     private func openAviStationSearch(for station: Station) {
-        guard let url = ShellAviExternalSearchResolver.stationSearchURL(station: station) else { return }
-        browserDestination = BrowserDestination(url: url)
-        closeAviActions()
+        browserRouter.openStationSearch(for: station)
     }
 
     private func openExternalSearch(
         query: String,
         destination: TuneAVExternalSearchURL.Destination = .web
     ) {
-        guard let url = ShellAviExternalSearchResolver.externalSearchURL(query: query, destination: destination) else { return }
-        browserDestination = BrowserDestination(url: url)
-        closeAviActions()
+        browserRouter.openExternalSearch(query: query, destination: destination)
     }
 
     private func toggleDiscoverySaved(_ discovery: DiscoveredTrack) {
@@ -5277,11 +5272,7 @@ struct AviScreen: View {
                     }
                     AviSignalActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
                         runProAviActionOutsideFullPlayer {
-                            if let url = station.resolvedHomepageURL {
-                                browserDestination = BrowserDestination(url: url)
-                            } else {
-                                openAviStationSearch(for: station)
-                            }
+                            browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
                         }
                     }
                     AviSignalActionChip(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles") {
