@@ -7,12 +7,14 @@ configuration="Release"
 archive_path=""
 derived_data_path=""
 check_urls=0
+require_archive=0
 
 usage() {
   cat <<'USAGE'
 Usage:
   scripts/check-ios-privacy-release-gate.sh [--env dev|prod] [--configuration Debug|Release]
     [--archive <TuneAV.xcarchive>] [--derived-data <path>] [--check-urls]
+    [--require-archive]
 
 Runs the Tune AV iOS privacy release gate without printing secrets:
 - validates effective runtime config;
@@ -23,6 +25,9 @@ Runs the Tune AV iOS privacy release gate without printing secrets:
 Pass --archive for the final App Store archive. Without --archive or
 --derived-data this script reports source-level evidence and reminds you that
 archive-level SDK privacy evidence is still required before submission.
+
+Pass --require-archive in release/export workflows so submission evidence can
+only come from the final .xcarchive, never stale or unrelated DerivedData.
 USAGE
 }
 
@@ -48,6 +53,10 @@ while [ "$#" -gt 0 ]; do
       check_urls=1
       shift
       ;;
+    --require-archive)
+      require_archive=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -62,6 +71,11 @@ done
 
 if [ "$env_name" != "dev" ] && [ "$env_name" != "prod" ]; then
   echo "--env must be dev or prod." >&2
+  exit 2
+fi
+
+if [ "$require_archive" -eq 1 ] && [ -z "$archive_path" ]; then
+  echo "--require-archive requires --archive <TuneAV.xcarchive>." >&2
   exit 2
 fi
 
@@ -188,13 +202,19 @@ fi
 search_roots=()
 if [ -n "$archive_path" ]; then
   if [ -d "$archive_path" ]; then
+    case "$archive_path" in
+      *.xcarchive) ;;
+      *) fail "archive path must point to a .xcarchive bundle: $archive_path" ;;
+    esac
     search_roots+=("$archive_path")
   else
     fail "archive path does not exist: $archive_path"
   fi
 fi
 
-if [ -n "$derived_data_path" ]; then
+if [ "$require_archive" -eq 1 ] && [ -n "$derived_data_path" ]; then
+  fail "--derived-data cannot be used with --require-archive; pass the final .xcarchive only"
+elif [ -n "$derived_data_path" ]; then
   if [ -d "$derived_data_path" ]; then
     search_roots+=("$derived_data_path")
   else
@@ -202,7 +222,7 @@ if [ -n "$derived_data_path" ]; then
   fi
 fi
 
-if [ "${#search_roots[@]}" -eq 0 ]; then
+if [ "${#search_roots[@]}" -eq 0 ] && [ "$require_archive" -eq 0 ]; then
   for candidate in \
     "apps/ios/.DerivedData-codex" \
     "apps/ios/.DerivedData-device-release"; do
@@ -221,7 +241,11 @@ fi
 echo
 echo "Privacy manifests"
 if [ "${#search_roots[@]}" -eq 0 ]; then
-  warn "no archive or DerivedData search root found; archive-level PrivacyInfo.xcprivacy evidence is still required"
+  if [ "$require_archive" -eq 1 ]; then
+    fail "no .xcarchive search root found; pass --archive <TuneAV.xcarchive>"
+  else
+    warn "no archive or DerivedData search root found; archive-level PrivacyInfo.xcprivacy evidence is still required"
+  fi
 else
   find "${search_roots[@]}" -name PrivacyInfo.xcprivacy -print 2>/dev/null | sort -u > "$privacy_manifest_file"
   if [ -s "$privacy_manifest_file" ]; then
