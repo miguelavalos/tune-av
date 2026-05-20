@@ -9,6 +9,7 @@
     "ios:config:prod": "./scripts/generate-ios-local-xcconfig.sh --env prod",
     "ios:check:dev": "./scripts/check-ios-runtime-config.sh --env dev",
     "ios:check:prod": "./scripts/check-ios-runtime-config.sh --env prod",
+    "ios:secrets:hygiene": "node ./scripts/check-ios-hardcoded-sensitive-config.mjs",
     "ios:release-config:hygiene": "./scripts/check-ios-release-config-hygiene.sh --env prod --configuration Release",
     "ios:release:preflight": "./scripts/ios-release-preflight.sh",
     "ios:privacy:release": "./scripts/check-ios-privacy-release-gate.sh --env prod --configuration Release",

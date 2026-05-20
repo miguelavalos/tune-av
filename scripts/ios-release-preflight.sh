@@ -15,6 +15,7 @@ Usage:
 
 Runs the local Tune AV iOS release preflight:
 - iOS release config hygiene;
+- iOS hardcoded sensitive config hygiene;
 - iOS network privacy gate;
 - iOS release privacy gate;
 - optional archive build plus strict archive privacy evidence and app-size gates.
@@ -67,6 +68,7 @@ run_step() {
 }
 
 run_step "iOS release config hygiene" scripts/check-ios-release-config-hygiene.sh --env prod --configuration Release
+run_step "iOS hardcoded sensitive config hygiene" node scripts/check-ios-hardcoded-sensitive-config.mjs
 run_step "iOS network privacy gate" scripts/check-ios-network-privacy.sh
 if [ "$check_urls" -eq 1 ]; then
   run_step "iOS release privacy gate" scripts/check-ios-privacy-release-gate.sh --env prod --configuration Release --check-urls
