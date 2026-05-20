@@ -106,6 +106,7 @@
 		945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E6B173571331D31167D9AC /* InAppBrowserView.swift */; };
 		9527699C0DC7F9264E32024B /* MusicScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C764B25F8D88A52B45FBC /* MusicScreen.swift */; };
 		9853B126FAAE0E262216049F /* AppShellScaffoldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */; };
+		9A9A886CF765816751C8B4F6 /* ShellUITestBootstrapSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */; };
 		9E7B7C771DCBA9814EED3704 /* AviActionsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D105E1BEB11BF8E50BA6C6E7 /* AviActionsPanelView.swift */; };
 		A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */; };
 		A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */; };
@@ -359,6 +360,7 @@
 		F1A59E1F744BB8D10605B28B /* TuneAVLaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLaunchContext.swift; sourceTree = "<group>"; };
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
+		F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITestBootstrapSeeder.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
 		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
 		FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellScaffoldView.swift; sourceTree = "<group>"; };
@@ -481,6 +483,7 @@
 				9032055EBEFD359E9A0B4A08 /* ShellSearchViews.swift */,
 				9C071CD5FC33A2899B94A407 /* ShellSessionState.swift */,
 				6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */,
+				F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */,
 				C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */,
 				BA8E8B23A59D452594D47639 /* StationFeedbackControls.swift */,
 				A3218F25D3DD328B1F69801C /* StationInfoViews.swift */,
@@ -932,6 +935,7 @@
 				6C021BFA6934CAF149EAC91E /* ShellSearchViews.swift in Sources */,
 				F0D62692198E280D94A7CA9F /* ShellSessionState.swift in Sources */,
 				3DCE3D361352CA6F90075E8D /* ShellTagViews.swift in Sources */,
+				9A9A886CF765816751C8B4F6 /* ShellUITestBootstrapSeeder.swift in Sources */,
 				B41F6E43939C9E5746B866B2 /* Station.swift in Sources */,
 				318ED69750E46FB124579702 /* StationCompactCarousel.swift in Sources */,
 				0DD089160B30C3F849586063 /* StationFeedbackControls.swift in Sources */,

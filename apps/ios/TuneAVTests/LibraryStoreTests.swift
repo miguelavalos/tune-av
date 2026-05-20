@@ -3,6 +3,49 @@ import XCTest
 
 @MainActor
 final class LibraryStoreTests: XCTestCase {
+    func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let launchContext = TuneAVLaunchContext(environment: [
+            "TUNEAV_UI_TESTS": "1",
+            "TUNEAV_UI_TESTS_LOCAL_DISCOVERY": "1"
+        ])
+
+        ShellUITestBootstrapSeeder.seedLibraryIfNeeded(
+            launchContext: launchContext,
+            libraryStore: store,
+            recentLimit: 10
+        )
+
+        XCTAssertEqual(store.favoriteStations().map(\.id), Array(Station.samples.prefix(2)).map(\.id).reversed())
+        XCTAssertEqual(store.recentStations().map(\.id), Array(Station.samples.prefix(3)).map(\.id).reversed())
+        XCTAssertEqual(store.discoveries.map(\.title).sorted(), ["Midnight City", "Sweet Disposition"])
+        XCTAssertEqual(store.discoveries.filter(\.isMarkedInteresting).map(\.title), ["Sweet Disposition"])
+    }
+
+    func testShellUITestBootstrapSeederSkipsExistingLibrariesAndNonUITestLaunches() {
+        let existingStore = LibraryStore(container: PersistenceController(inMemory: true).container)
+        existingStore.toggleFavorite(for: Station.samples[0])
+
+        ShellUITestBootstrapSeeder.seedLibraryIfNeeded(
+            launchContext: TuneAVLaunchContext(environment: ["TUNEAV_UI_TESTS": "1"]),
+            libraryStore: existingStore,
+            recentLimit: 10
+        )
+
+        XCTAssertEqual(existingStore.favoriteStations().map(\.id), [Station.samples[0].id])
+        XCTAssertTrue(existingStore.recentStations().isEmpty)
+
+        let productionStore = LibraryStore(container: PersistenceController(inMemory: true).container)
+        ShellUITestBootstrapSeeder.seedLibraryIfNeeded(
+            launchContext: TuneAVLaunchContext(environment: [:]),
+            libraryStore: productionStore,
+            recentLimit: 10
+        )
+
+        XCTAssertTrue(productionStore.favoriteStations().isEmpty)
+        XCTAssertTrue(productionStore.recentStations().isEmpty)
+    }
+
     func testStationSnapshotsPreserveBackendEnrichmentForRecentsAndFavorites() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let station = enrichedStation()

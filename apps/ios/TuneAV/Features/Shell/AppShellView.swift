@@ -845,35 +845,11 @@ struct AppShellView: View {
     }
 
     private func seedUITestDataIfNeeded() {
-        guard launchContext.isUITesting else { return }
-        guard launchContext.shouldSeedUITestLibrary else { return }
-        guard libraryStore.favorites.isEmpty, libraryStore.recents.isEmpty else { return }
-
-        let samples = Array(Station.samples.prefix(3))
-        guard !samples.isEmpty else { return }
-
-        for station in samples.prefix(2) {
-            libraryStore.toggleFavorite(for: station)
-        }
-
-        for station in samples {
-            libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
-        }
-
-        if launchContext.shouldUseLocalUITestDiscovery {
-            libraryStore.recordDiscoveredTrack(
-                title: "Midnight City",
-                artist: "M83",
-                station: samples[0],
-                artworkURL: nil
-            )
-            libraryStore.markTrackInteresting(
-                title: "Sweet Disposition",
-                artist: "The Temper Trap",
-                station: samples[1],
-                artworkURL: nil
-            )
-        }
+        ShellUITestBootstrapSeeder.seedLibraryIfNeeded(
+            launchContext: launchContext,
+            libraryStore: libraryStore,
+            recentLimit: accessController.limits.recentStations
+        )
     }
 
     private func playStation(
