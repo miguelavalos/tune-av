@@ -17,14 +17,6 @@ struct RootView: View {
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
     private let launchContext = LaunchContext.current
-    private let initialHomeFeed = AppShellHomeFeed(
-        stationService: StationService(),
-        localizedCountryName: L10n.countryName(for:),
-        resolvedDeviceCountryCode: {
-            AppShellHomeFeed.resolvedDeviceCountryCode()
-        }
-    )
-
     var body: some View {
         Group {
             if shouldShowOnboarding {
@@ -58,9 +50,6 @@ struct RootView: View {
             }
         }
         .tint(TuneAVTheme.highlight)
-        .task {
-            await prefetchInitialHomeFeedIfNeeded()
-        }
         .task(id: scenePhase) {
             updateIdleTimer(for: scenePhase)
             guard scenePhase == .active else {
@@ -244,13 +233,6 @@ struct RootView: View {
             }
         }
         logStartupOperation("splash", startedAt: startedAt)
-    }
-
-    private func prefetchInitialHomeFeedIfNeeded() async {
-        guard !launchContext.isUITesting else { return }
-        await measureStartupOperation("home_prefetch") {
-            await initialHomeFeed.prefetchInitialFeed()
-        }
     }
 
     private func measureStartupOperation(_ name: String, operation: () async -> Void) async {
