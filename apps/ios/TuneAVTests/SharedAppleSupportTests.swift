@@ -2052,6 +2052,38 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVPlaybackQueueLogic.previousStation(in: resolved).id, "second")
     }
 
+    func testShellPlaybackQueueBuilderRestoresLibraryFavoritesBeforeFallback() {
+        let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
+        let favorite = Station(id: "favorite", name: "Favorite", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/favorite")
+        let recent = Station(id: "recent", name: "Recent", country: "Germany", language: "German", tags: "rock", streamURL: "https://example.com/recent")
+
+        let queue = ShellPlaybackQueueBuilder.restoredQueue(
+            for: current,
+            favorites: [current, favorite],
+            recents: [current, recent],
+            homeStations: []
+        )
+
+        XCTAssertEqual(queue.source, .libraryFavorites)
+        XCTAssertEqual(queue.stations.map(\.id), ["current", "favorite"])
+    }
+
+    func testShellPlaybackQueueBuilderDeduplicatesFallbackQueue() {
+        let current = Station(id: "current", name: "Current", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/current")
+        let recent = Station(id: "recent", name: "Recent", country: "Germany", language: "German", tags: "rock", streamURL: "https://example.com/recent")
+        let home = Station(id: "home", name: "Home", country: "Italy", language: "Italian", tags: "news", streamURL: "https://example.com/home")
+
+        let queue = ShellPlaybackQueueBuilder.restoredQueue(
+            for: current,
+            favorites: [current],
+            recents: [recent],
+            homeStations: [recent, home]
+        )
+
+        XCTAssertEqual(queue.source, .homeRecents)
+        XCTAssertEqual(queue.stations.map(\.id), ["current", "recent", "home"])
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }

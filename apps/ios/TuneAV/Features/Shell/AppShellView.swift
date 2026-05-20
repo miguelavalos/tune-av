@@ -877,28 +877,12 @@ struct AppShellView: View {
     }
 
     private func restoredPlaybackQueue(for station: Station) -> AudioPlayerService.PlaybackQueue {
-        let favorites = enrichedFavoriteStations
-        if favorites.contains(where: { $0.id == station.id }), favorites.count > 1 {
-            return AudioPlayerService.PlaybackQueue(source: .libraryFavorites, stations: favorites)
-        }
-
-        let recents = enrichedRecentStations
-        if recents.contains(where: { $0.id == station.id }), recents.count > 1 {
-            return AudioPlayerService.PlaybackQueue(source: .libraryRecents, stations: recents)
-        }
-
-        let fallbackQueue = uniquePlaybackStations([station] + favorites + recents + enrichedStations(homeSnapshot.stations))
-        return AudioPlayerService.PlaybackQueue(
-            source: fallbackQueue.count > 1 ? .homeRecents : .singleStation,
-            stations: fallbackQueue
+        ShellPlaybackQueueBuilder.restoredQueue(
+            for: station,
+            favorites: enrichedFavoriteStations,
+            recents: enrichedRecentStations,
+            homeStations: enrichedStations(homeSnapshot.stations)
         )
-    }
-
-    private func uniquePlaybackStations(_ stations: [Station]) -> [Station] {
-        var seenIDs = Set<String>()
-        return stations.filter { station in
-            seenIDs.insert(station.id).inserted
-        }
     }
 
     private func seedUITestDataIfNeeded() {
