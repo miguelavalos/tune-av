@@ -9108,18 +9108,10 @@ struct MusicScreen: View {
     }
 
     private var stickyMusicDetailHeader: some View {
-        MusicDetailHeader(
-            title: musicMode.title,
-            subtitle: musicMode.subtitle,
+        MusicStickyDetailHeader(
+            mode: musicMode,
             goBack: showOverview
         )
-        .padding(.horizontal, 20)
-        .padding(.top, 34)
-        .padding(.bottom, 12)
-        .background {
-            TuneAVTheme.shellBackground
-                .ignoresSafeArea(edges: .top)
-        }
     }
 
     private func musicOverview(_ snapshot: MusicLibraryDerivedState) -> some View {
@@ -9153,11 +9145,8 @@ struct MusicScreen: View {
     }
 
     private func musicModeControls(_ snapshot: MusicLibraryDerivedState) -> some View {
-        MusicLibraryControls(
-            savedCount: snapshot.savedDiscoveries.count,
-            historyCount: snapshot.visibleDiscoveries.count,
-            artistCount: snapshot.visibleArtistSummaries.count,
-            stationCount: snapshot.tunedDiscoveries.count,
+        MusicLibrarySnapshotControls(
+            snapshot: snapshot,
             selectedMode: musicMode,
             selectMode: selectMusicMode(_:),
             sort: musicSort,
@@ -9178,10 +9167,10 @@ struct MusicScreen: View {
             } else {
                 switch musicMode {
                 case .songs, .top, .history:
-                    discoverySongsHeader(snapshot)
+                    discoveryHeader(snapshot)
                     discoveryTrackList(snapshot)
                 case .artists:
-                    discoveryArtistsHeader(snapshot)
+                    discoveryHeader(snapshot)
                     MusicDiscoveryArtistList(
                         snapshot: snapshot,
                         openAviActionsID: $openMusicAviActionsID,
@@ -9231,12 +9220,6 @@ struct MusicScreen: View {
         )
     }
 
-    private func discoveryArtistsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
-        MusicDiscoveryArtistsHeader {
-            discoveryActions(snapshot)
-        }
-    }
-
     private func openArtistSongs(_ artistName: String) {
         selectedArtistName = artistName
         query = artistName
@@ -9275,16 +9258,13 @@ struct MusicScreen: View {
         browserDestination = BrowserDestination(url: search.url)
     }
 
-    private func discoverySongsHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
-        MusicDiscoverySongsHeader(
-            title: historyStationFilterTitle ?? currentMusicLibraryMode.songsTitle,
+    private func discoveryHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
+        MusicDiscoveryModeHeader(
+            mode: musicMode,
+            songsTitle: historyStationFilterTitle ?? currentMusicLibraryMode.songsTitle,
             showsAllHistoryButton: musicMode == .history && historyStationFilter != nil,
-            showAllHistory: {
-                historyStationFilter = nil
-            },
-            actions: {
-                discoveryActions(snapshot)
-            }
+            showAllHistory: { historyStationFilter = nil },
+            actions: { discoveryActions(snapshot) }
         )
     }
 

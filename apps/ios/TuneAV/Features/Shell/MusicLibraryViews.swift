@@ -233,6 +233,33 @@ struct MusicLibraryControls: View {
     }
 }
 
+struct MusicLibrarySnapshotControls: View {
+    let snapshot: MusicLibraryDerivedState
+    let selectedMode: MusicContentMode
+    let selectMode: (MusicContentMode) -> Void
+    let sort: MusicLibrarySort
+    let setSort: (MusicLibrarySort) -> Void
+    let isSearchExpanded: Bool
+    let showOverview: () -> Void
+    let toggleSearch: () -> Void
+
+    var body: some View {
+        MusicLibraryControls(
+            savedCount: snapshot.savedDiscoveries.count,
+            historyCount: snapshot.visibleDiscoveries.count,
+            artistCount: snapshot.visibleArtistSummaries.count,
+            stationCount: snapshot.tunedDiscoveries.count,
+            selectedMode: selectedMode,
+            selectMode: selectMode,
+            sort: sort,
+            setSort: setSort,
+            isSearchExpanded: isSearchExpanded,
+            showOverview: showOverview,
+            toggleSearch: toggleSearch
+        )
+    }
+}
+
 struct MusicLibraryOverview: View {
     let snapshot: MusicLibraryDerivedState
     let summary: TuneAVUserSummary?
@@ -424,6 +451,48 @@ struct MusicDetailHeader: View {
             accessibilityIdentifier: "music.detail.header",
             goBack: goBack
         )
+    }
+}
+
+struct MusicStickyDetailHeader: View {
+    let mode: MusicContentMode
+    let goBack: () -> Void
+
+    var body: some View {
+        MusicDetailHeader(
+            title: mode.title,
+            subtitle: mode.subtitle,
+            goBack: goBack
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 34)
+        .padding(.bottom, 12)
+        .background {
+            TuneAVTheme.shellBackground
+                .ignoresSafeArea(edges: .top)
+        }
+    }
+}
+
+struct MusicDiscoveryModeHeader: View {
+    let mode: MusicContentMode
+    let songsTitle: String
+    let showsAllHistoryButton: Bool
+    let showAllHistory: () -> Void
+    let actions: () -> MusicDiscoveryActions
+
+    var body: some View {
+        switch mode {
+        case .artists:
+            MusicDiscoveryArtistsHeader(actions: actions)
+        case .songs, .top, .history:
+            MusicDiscoverySongsHeader(
+                title: songsTitle,
+                showsAllHistoryButton: showsAllHistoryButton,
+                showAllHistory: showAllHistory,
+                actions: actions
+            )
+        }
     }
 }
 
