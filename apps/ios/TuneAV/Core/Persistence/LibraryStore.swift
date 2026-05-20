@@ -677,15 +677,18 @@ final class LibraryStore: ObservableObject {
     }
 
     func setBackendService(_ service: TuneAVAppDataService?) {
+        let previousService = backendService
         backendService = service
+        if previousService !== service {
+            listeningSessionUploadTask?.cancel()
+            listeningSessionUploadTask = nil
+        }
         if service == nil {
             userSummary = nil
             userSummaryFetchedAt = nil
             setUserSummaryRefreshState(.unavailable)
             userSummaryRefreshTask?.cancel()
             userSummaryRefreshTask = nil
-            listeningSessionUploadTask?.cancel()
-            listeningSessionUploadTask = nil
             listeningSessionFlushTask?.cancel()
             listeningSessionFlushTask = nil
             listeningSessionUploadRetryCount = 0
@@ -832,13 +835,20 @@ final class LibraryStore: ObservableObject {
         listeningSessionFlushTask = Task { @MainActor in
             do {
                 let result = try await backendService.recordListeningSessions(sessions)
-                guard self.backendService === backendService else { return }
-                finishListeningSessionUpload(didUpload: true, sessions: sessions, result: result)
+                guard self.backendService === backendService else {
+                    requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
+                    return
+                }
+                finishListeningSessionUpload(didUpload: true, sessions: sessions, result: result, incrementRetry: false)
             } catch is CancellationError {
-                return
-            } catch {
                 guard self.backendService === backendService else { return }
-                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil)
+                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil, incrementRetry: false)
+            } catch {
+                guard self.backendService === backendService else {
+                    requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
+                    return
+                }
+                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil, incrementRetry: true)
             }
         }
     }
@@ -846,12 +856,15 @@ final class LibraryStore: ObservableObject {
     private func finishListeningSessionUpload(
         didUpload: Bool,
         sessions: [TuneAVListeningSessionDraft],
-        result: TuneAVListeningSessionsUploadResult?
+        result: TuneAVListeningSessionsUploadResult?,
+        incrementRetry: Bool
     ) {
         listeningSessionFlushTask = nil
 
         guard didUpload else {
-            listeningSessionUploadRetryCount += 1
+            if incrementRetry {
+                listeningSessionUploadRetryCount += 1
+            }
             pendingListeningSessions.insert(contentsOf: sessions, at: 0)
             pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
                 pendingListeningSessions,
@@ -876,6 +889,22 @@ final class LibraryStore: ObservableObject {
         } else {
             scheduleListeningSessionUpload()
         }
+    }
+
+    private func requeueInterruptedListeningSessionUpload(_ sessions: [TuneAVListeningSessionDraft], reason: String) {
+        listeningSessionFlushTask = nil
+        guard let backendService, backendService.isConfigured() else { return }
+
+        pendingListeningSessions.insert(contentsOf: sessions, at: 0)
+        pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
+            pendingListeningSessions,
+            maxCount: Self.maxPendingListeningSessions
+        )
+        persistPendingListeningSessions()
+        analyticsLogger.debug(
+            "Listening session upload interrupted reason=\(reason, privacy: .public) requeued=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public)"
+        )
+        scheduleListeningSessionUpload()
     }
 
     func refreshCloudLibraryIfNeeded(force: Bool = false) async {
