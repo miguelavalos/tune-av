@@ -9131,16 +9131,16 @@ struct MusicScreen: View {
             trackFeedback: { discovery in trackFeedback(discovery) },
             openTrackInfo: { discovery in openDiscoveryInfo(discovery, nil) },
             toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-            openTrackYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
-            openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
-            openTrackAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
-            openTrackSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
+            openTrackYouTube: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryYouTube(discovery) } },
+            openLyrics: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryLyrics(discovery) } },
+            openTrackAppleMusic: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) } },
+            openTrackSpotify: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoverySpotify(discovery) } },
             hideAction: hideDiscoveryWithUndo(_:),
             removeAction: { discovery in removeDiscovery(discovery) },
             openArtistInfo: { artist in openArtistInfo(artist, nil) },
-            openArtistYouTube: { artist in runProAviAction { openArtistSearch(artist, youtube: true) } },
-            openArtistAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist) } },
-            openArtistSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist) } }
+            openArtistYouTube: { artist in runProAviAction { musicExternalSearchRouter.openArtistYouTube(artist) } },
+            openArtistAppleMusic: { artist in runProAviAction { musicExternalSearchRouter.openArtistAppleMusic(artist) } },
+            openArtistSpotify: { artist in runProAviAction { musicExternalSearchRouter.openArtistSpotify(artist) } }
         )
     }
 
@@ -9187,10 +9187,10 @@ struct MusicScreen: View {
             openArtistInfo: { discovery, mode in openArtistInfo(discoveryArtistSummary(for: discovery), mode) },
             openStationInfo: { discovery in openDiscoveryStationInfo(discovery) },
             toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-            openYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
-            openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
-            openAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
-            openSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
+            openYouTube: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryYouTube(discovery) } },
+            openLyrics: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryLyrics(discovery) } },
+            openAppleMusic: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) } },
+            openSpotify: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoverySpotify(discovery) } },
             hideAction: hideDiscoveryWithUndo(_:),
             removeAction: { discovery in removeDiscovery(discovery) }
         )
@@ -9211,9 +9211,9 @@ struct MusicScreen: View {
             openArtist: { artist, mode in openArtistInfo(artist, mode) },
             openArtistSongs: { artist in openArtistSongs(artist.name) },
             openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
-            openYouTube: { artist in runProAviAction { openArtistSearch(artist.name, youtube: true) } },
-            openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist.name) } },
-            openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } }
+            openYouTube: { artist in runProAviAction { musicExternalSearchRouter.openArtistYouTube(artist.name) } },
+            openAppleMusic: { artist in runProAviAction { musicExternalSearchRouter.openArtistAppleMusic(artist.name) } },
+            openSpotify: { artist in runProAviAction { musicExternalSearchRouter.openArtistSpotify(artist.name) } }
         )
     }
 
@@ -9232,36 +9232,11 @@ struct MusicScreen: View {
         musicMode = .songs
     }
 
-    private func openArtistSearch(_ artistName: String, youtube: Bool) {
-        let destination: TuneAVExternalSearchURL.Destination = youtube ? .youtube : .web
-        let feature: LimitedFeature = youtube ? .youtubeSearch : .webSearch
-        guard let search = TuneAVExternalSearchURL.artistSearch(
-            artist: artistName,
-            destination: destination,
-            feature: feature
-        ) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
-    }
-
-    private func openAppleMusicArtistSearch(_ artistName: String) {
-        guard let search = TuneAVExternalSearchURL.artistSearch(
-            artist: artistName,
-            destination: .appleMusic,
-            feature: .appleMusicSearch
-        ) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
-    }
-
-    private func openSpotifyArtistSearch(_ artistName: String) {
-        guard let search = TuneAVExternalSearchURL.artistSearch(
-            artist: artistName,
-            destination: .spotify,
-            feature: .spotifySearch
-        ) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
+    private var musicExternalSearchRouter: MusicExternalSearchRouter {
+        MusicExternalSearchRouter { search in
+            guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+            browserDestination = BrowserDestination(url: search.url)
+        }
     }
 
     private func discoveryHeader(_ snapshot: MusicLibraryDerivedState) -> some View {
@@ -9608,32 +9583,6 @@ struct MusicScreen: View {
         }
     }
 
-    private func openDiscoverySearch(_ discovery: DiscoveredTrack, suffix: String?, youtube: Bool) {
-        guard let search = TuneAVExternalSearchURL.discoverySearch(searchQuery: discovery.searchQuery, suffix: suffix, youtube: youtube) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
-    }
-
-    private func openAppleMusicSearch(_ discovery: DiscoveredTrack) {
-        guard let search = TuneAVExternalSearchURL.discoverySearch(
-            searchQuery: discovery.searchQuery,
-            destination: .appleMusic,
-            feature: .appleMusicSearch
-        ) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
-    }
-
-    private func openSpotifySearch(_ discovery: DiscoveredTrack) {
-        guard let search = TuneAVExternalSearchURL.discoverySearch(
-            searchQuery: discovery.searchQuery,
-            destination: .spotify,
-            feature: .spotifySearch
-        ) else { return }
-        guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-        browserDestination = BrowserDestination(url: search.url)
-    }
-
     private func useDailyFeatureIfAllowed(_ feature: LimitedFeature, usageKey: String) -> Bool {
         guard accessController.canUseDailyFeature(feature, usageKey: usageKey) else {
             accessController.presentUpgradePrompt(for: feature)
@@ -9642,6 +9591,73 @@ struct MusicScreen: View {
 
         accessController.recordDailyFeatureUse(feature, usageKey: usageKey)
         return true
+    }
+}
+
+private struct MusicExternalSearchRouter {
+    let openSearch: (TuneAVExternalSearchURL.FeatureSearch) -> Void
+
+    func openDiscoveryYouTube(_ discovery: DiscoveredTrack) {
+        openDiscovery(discovery, suffix: nil, youtube: true)
+    }
+
+    func openDiscoveryLyrics(_ discovery: DiscoveredTrack) {
+        openDiscovery(discovery, suffix: "lyrics", youtube: false)
+    }
+
+    func openDiscoveryAppleMusic(_ discovery: DiscoveredTrack) {
+        openDiscovery(discovery, destination: .appleMusic, feature: .appleMusicSearch)
+    }
+
+    func openDiscoverySpotify(_ discovery: DiscoveredTrack) {
+        openDiscovery(discovery, destination: .spotify, feature: .spotifySearch)
+    }
+
+    func openArtistYouTube(_ artistName: String) {
+        openArtist(artistName, destination: .youtube, feature: .youtubeSearch)
+    }
+
+    func openArtistAppleMusic(_ artistName: String) {
+        openArtist(artistName, destination: .appleMusic, feature: .appleMusicSearch)
+    }
+
+    func openArtistSpotify(_ artistName: String) {
+        openArtist(artistName, destination: .spotify, feature: .spotifySearch)
+    }
+
+    private func openDiscovery(_ discovery: DiscoveredTrack, suffix: String?, youtube: Bool) {
+        guard let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: discovery.searchQuery,
+            suffix: suffix,
+            youtube: youtube
+        ) else { return }
+        openSearch(search)
+    }
+
+    private func openDiscovery(
+        _ discovery: DiscoveredTrack,
+        destination: TuneAVExternalSearchURL.Destination,
+        feature: LimitedFeature
+    ) {
+        guard let search = TuneAVExternalSearchURL.discoverySearch(
+            searchQuery: discovery.searchQuery,
+            destination: destination,
+            feature: feature
+        ) else { return }
+        openSearch(search)
+    }
+
+    private func openArtist(
+        _ artistName: String,
+        destination: TuneAVExternalSearchURL.Destination,
+        feature: LimitedFeature
+    ) {
+        guard let search = TuneAVExternalSearchURL.artistSearch(
+            artist: artistName,
+            destination: destination,
+            feature: feature
+        ) else { return }
+        openSearch(search)
     }
 }
 
