@@ -142,6 +142,7 @@
 		DBFF4B2009433688918EC56C /* TuneAVAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43337F851171AB4EB4E1111A /* TuneAVAccountModels.swift */; };
 		DD6AEC7D8894EC110ED5D67D /* TuneAVMusicLibraryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */; };
 		DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */; };
+		E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */; };
 		E58B3F8E72B91F1B0F207DC9 /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 459263F3E9B809F0A8546FC1 /* TuneAVEighties80sNowPlaying.swift */; };
 		E5F0639AD50A6DDD7F572BEF /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32EAF81A20F877B3162053 /* TuneAVStation.swift */; };
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
@@ -219,6 +220,7 @@
 		3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStreamMetadataDelegate.swift; sourceTree = "<group>"; };
 		3FA01DDE4849773226DDE4FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		43337F851171AB4EB4E1111A /* TuneAVAccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountModels.swift; sourceTree = "<group>"; };
+		43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellGlobalPresentations.swift; sourceTree = "<group>"; };
 		447FB9154FC56A647BD11EEA /* TuneAVProPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVProPaywallView.swift; sourceTree = "<group>"; };
 		452F24716A1A3B0F57DA65DF /* AVAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAccountService.swift; sourceTree = "<group>"; };
 		458EF57C362E247FF5234C69 /* AppShellTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellTab.swift; sourceTree = "<group>"; };
@@ -398,6 +400,7 @@
 		402469ABC80FF3C48B9D8B82 /* Shell */ = {
 			isa = PBXGroup;
 			children = (
+				43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */,
 				7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */,
 				FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */,
 				FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */,
@@ -832,6 +835,7 @@
 				BF8C80B81C7F2ED5AC3D540B /* AccountDeletionScreen.swift in Sources */,
 				111145901EC3E6E5F79C5459 /* AccountDeletionViewModel.swift in Sources */,
 				0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */,
+				E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */,
 				D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */,
 				F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */,
 				9853B126FAAE0E262216049F /* AppShellScaffoldView.swift in Sources */,

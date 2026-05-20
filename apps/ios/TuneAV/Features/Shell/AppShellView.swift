@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct AppShellView: View {
-    private struct PendingPlayback: Identifiable {
+    struct PendingPlayback: Identifiable {
         let id = UUID()
         let station: Station
         let queueSource: AudioPlayerService.PlaybackQueue.Source
@@ -154,22 +154,6 @@ struct AppShellView: View {
             }
         )
         .environmentObject(chromeActions)
-        .overlay {
-            if isShowingFooterArtworkZoom, let station = audioPlayer.currentStation {
-                AppShellArtworkZoomOverlay(
-                    station: station,
-                    artworkURL: audioPlayer.currentTrackArtworkURL,
-                    title: audioPlayer.currentTrackTitle ?? station.name,
-                    subtitle: audioPlayer.currentTrackArtist ?? station.name
-                ) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
-                        isShowingFooterArtworkZoom = false
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .zIndex(30)
-            }
-        }
         .onAppear {
             chromeActions.openSettings = {
                 profileMode = .settings
@@ -180,56 +164,32 @@ struct AppShellView: View {
                 selectedTab = .profile
             }
         }
-        .sheet(item: Binding(
-            get: { accessController.upgradePrompt },
-            set: { accessController.upgradePrompt = $0 }
-        )) { prompt in
-            UpgradeRecommendationSheet(
-                prompt: prompt,
-                isGuest: accessController.accessMode == .guest,
-                accountIsAvailable: accessController.accountIsAvailable,
-                onPrimaryAction: {
-                    accessController.upgradePrompt = nil
-                    if accessController.accessMode == .guest {
-                        startSignInFlow(true)
-                    } else {
-                        isShowingProPaywall = true
-                    }
-                },
-                onDismiss: {
-                    accessController.upgradePrompt = nil
-                }
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $isShowingProPaywall) {
-            TuneAVProPaywallView {
+        .appShellGlobalPresentations(
+            isShowingFooterArtworkZoom: $isShowingFooterArtworkZoom,
+            currentStation: audioPlayer.currentStation,
+            currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
+            currentTrackTitle: audioPlayer.currentTrackTitle,
+            currentTrackArtist: audioPlayer.currentTrackArtist,
+            upgradePrompt: Binding(
+                get: { accessController.upgradePrompt },
+                set: { accessController.upgradePrompt = $0 }
+            ),
+            isGuest: accessController.accessMode == .guest,
+            accountIsAvailable: accessController.accountIsAvailable,
+            accessController: accessController,
+            showProPaywall: $isShowingProPaywall,
+            pendingCellularPlayback: $pendingCellularPlayback,
+            isConfirmingStopPlayback: $isConfirmingStopPlayback,
+            startSignInFlow: {
                 startSignInFlow(true)
-            }
-                .environmentObject(accessController)
-        }
-        .alert(L10n.string("settings.cellularPlayback.alert.title"), isPresented: pendingCellularPlaybackIsPresented) {
-            Button(L10n.string("common.cancel"), role: .cancel) {
-                pendingCellularPlayback = nil
-            }
-            Button(L10n.string("settings.cellularPlayback.alert.play")) {
-                if let pending = pendingCellularPlayback {
-                    playStationAfterCellularCheck(pending.station, queueSource: pending.queueSource, queue: pending.queue)
-                }
-                pendingCellularPlayback = nil
-            }
-        } message: {
-            Text(L10n.string("settings.cellularPlayback.alert.message"))
-        }
-        .alert(L10n.string("player.stopPlayback.alert.title"), isPresented: $isConfirmingStopPlayback) {
-            Button(L10n.string("common.cancel"), role: .cancel) {}
-            Button(L10n.string("player.stopPlayback.alert.stop"), role: .destructive) {
+            },
+            playPendingCellularPlayback: { pending in
+                playStationAfterCellularCheck(pending.station, queueSource: pending.queueSource, queue: pending.queue)
+            },
+            stopPlayback: {
                 stopPlaybackAndCloseSignal()
             }
-        } message: {
-            Text(L10n.string("player.stopPlayback.alert.message"))
-        }
+        )
         .task {
             await bootstrapIfNeeded()
         }
@@ -934,13 +894,6 @@ struct AppShellView: View {
 
     private var shouldPlayImmediatelyOnCurrentNetwork: Bool {
         !libraryStore.settings.warnBeforeCellularPlayback || !audioPlayer.currentNetworkIsExpensive
-    }
-
-    private var pendingCellularPlaybackIsPresented: Binding<Bool> {
-        Binding(
-            get: { pendingCellularPlayback != nil },
-            set: { if !$0 { pendingCellularPlayback = nil } }
-        )
     }
 
     private func playStationAfterCellularCheck(
