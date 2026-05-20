@@ -3675,40 +3675,18 @@ struct AviScreen: View {
     }
 
     private var queueSwitchOptions: [AviQueueSwitchOption] {
-        var options: [AviQueueSwitchOption] = []
-
-        if !playbackQueueStations.isEmpty {
-            options.append(
-                AviQueueSwitchOption(
-                    source: playbackQueueSource,
-                    title: L10n.string("shell.queue.currentOption", playbackQueueSource.displayTitle),
-                    stations: playbackQueueStations
-                )
-            )
-        }
-
-        if !stations.isEmpty {
-            options.append(AviQueueSwitchOption(source: .homeDiscovery, title: L10n.string("shell.queue.popular"), stations: stations))
-        }
-        if !favoriteStations.isEmpty {
-            options.append(AviQueueSwitchOption(source: .libraryFavorites, title: L10n.string("shell.queue.saved"), stations: favoriteStations))
-        }
-        if !recentStations.isEmpty {
-            options.append(AviQueueSwitchOption(source: .libraryRecents, title: L10n.string("shell.queue.recent"), stations: recentStations))
-        }
-
-        var seen = Set<String>()
-        return options.filter { option in
-            let key = "\(option.source.shortTitle)|\(option.stations.map(\.id).joined(separator: ","))"
-            return seen.insert(key).inserted
-        }
+        AviQueueSwitchCoordinator.options(
+            currentSource: playbackQueueSource,
+            playbackQueueStations: playbackQueueStations,
+            stations: stations,
+            favoriteStations: favoriteStations,
+            recentStations: recentStations
+        )
     }
 
     private func selectQueueOption(_ option: AviQueueSwitchOption) {
         guard let currentStation = currentStation ?? focusedStation else { return }
-        let queue = option.stations.contains(where: { $0.id == currentStation.id })
-            ? option.stations
-            : [currentStation] + option.stations
+        let queue = AviQueueSwitchCoordinator.queue(for: currentStation, option: option)
         playStationFromQueue(currentStation, option.source, queue)
         isShowingQueueSwitcher = false
     }

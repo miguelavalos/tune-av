@@ -114,6 +114,7 @@
 		A9C7CF8352325D492B036270 /* TuneAVLibraryStationLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */; };
 		ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */; };
 		AF019C179E67E7961F2F9D3A /* HomeDiscoveryTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */; };
+		AFB2A7F6915DC23B5BBF9141 /* AviQueueSwitchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */; };
 		AFDCD0652B5EE4BF1D8623BF /* TuneAVAccountDeletionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */; };
 		B071817713F4012867A0D5CB /* SearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324BA4D93248DB1B3D2C6C97 /* SearchScreen.swift */; };
 		B24295FC5A46733DD99B28FC /* AccessMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E89514F30FEAEB0078C58CA /* AccessMode.swift */; };
@@ -272,6 +273,7 @@
 		815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStationPresentationBuilder.swift; sourceTree = "<group>"; };
 		84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouter.swift; sourceTree = "<group>"; };
 		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviQueueSwitchCoordinator.swift; sourceTree = "<group>"; };
 		87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
 		8A3851E3C6DDCC98EA4C4111 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@
 				61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */,
 				4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */,
 				E9F2F06465313F965E5778A9 /* AviPreviewViews.swift */,
+				86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */,
 				F97D4A7D40F1763112C81473 /* AviReactionState.swift */,
 				DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
@@ -857,6 +860,7 @@
 				6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */,
 				2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */,
 				06715D33FDEBEB1D36ACCA4F /* AviPreviewViews.swift in Sources */,
+				AFB2A7F6915DC23B5BBF9141 /* AviQueueSwitchCoordinator.swift in Sources */,
 				1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */,
 				45BAF02010F5AB9B9728E140 /* AviRecommendationViews.swift in Sources */,
 				33BBBE7EC2FDB8BFF9868C96 /* AviReturnCoordinator.swift in Sources */,

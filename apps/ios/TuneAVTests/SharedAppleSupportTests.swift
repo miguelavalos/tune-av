@@ -107,6 +107,49 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(daily.progressText, L10n.string("mac.limits.progress.today", 3, 3))
     }
 
+    func testAviQueueSwitchCoordinatorBuildsDeduplicatedOptions() {
+        let current = shellStation(id: "current")
+        let favorite = shellStation(id: "favorite")
+        let options = AviQueueSwitchCoordinator.options(
+            currentSource: .homeDiscovery,
+            playbackQueueStations: [current],
+            stations: [current],
+            favoriteStations: [favorite],
+            recentStations: []
+        )
+
+        XCTAssertEqual(options.map(\.source), [.homeDiscovery, .libraryFavorites])
+        XCTAssertEqual(
+            options.first?.title,
+            L10n.string("shell.queue.currentOption", AudioPlayerService.PlaybackQueue.Source.homeDiscovery.displayTitle)
+        )
+        XCTAssertEqual(options.map { $0.stations.map(\.id) }, [["current"], ["favorite"]])
+    }
+
+    func testAviQueueSwitchCoordinatorPrependsCurrentStationOnlyWhenMissing() {
+        let current = shellStation(id: "current")
+        let favorite = shellStation(id: "favorite")
+        let missingCurrentOption = AviQueueSwitchOption(
+            source: .libraryFavorites,
+            title: "Saved",
+            stations: [favorite]
+        )
+        let includedCurrentOption = AviQueueSwitchOption(
+            source: .libraryFavorites,
+            title: "Saved",
+            stations: [favorite, current]
+        )
+
+        XCTAssertEqual(
+            AviQueueSwitchCoordinator.queue(for: current, option: missingCurrentOption).map(\.id),
+            ["current", "favorite"]
+        )
+        XCTAssertEqual(
+            AviQueueSwitchCoordinator.queue(for: current, option: includedCurrentOption).map(\.id),
+            ["favorite", "current"]
+        )
+    }
+
     @MainActor
     func testSleepTimerControllerSetsAndClearsSharedDescription() {
         let controller = TuneAVSleepTimerController()
@@ -4065,6 +4108,17 @@ final class SharedAppleSupportTests: XCTestCase {
             countryCode: countryCode,
             language: "English",
             tags: tags,
+            streamURL: "https://example.com/\(id)"
+        )
+    }
+
+    private func shellStation(id: String) -> Station {
+        Station(
+            id: id,
+            name: "Station \(id)",
+            country: "Spain",
+            language: "Spanish",
+            tags: "music",
             streamURL: "https://example.com/\(id)"
         )
     }
