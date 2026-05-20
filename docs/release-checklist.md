@@ -48,9 +48,11 @@ from the public Tune AV iOS repository.
    found from available build evidence.
 
    CI and archive preflight enforce the iOS app bundle size budget through
-   `scripts/report-ios-app-size.sh`. The default maximum is 150 MiB. Override
-   with `TUNEAV_IOS_MAX_APP_SIZE_BYTES` only when a release owner accepts and
-   documents the size increase.
+   `scripts/report-ios-app-size.sh`. The default maximum is 150 MiB for the
+   full app, with additional section budgets for executable, `Assets.car`,
+   `Frameworks`, and `PlugIns`. Override `TUNEAV_IOS_MAX_APP_SIZE_BYTES` or the
+   matching `TUNEAV_IOS_MAX_*_SIZE_BYTES` variable only when a release owner
+   accepts and documents the size increase.
 
 4. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
