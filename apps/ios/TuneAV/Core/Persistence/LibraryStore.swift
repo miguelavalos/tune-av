@@ -38,6 +38,8 @@ final class LibraryStore: ObservableObject {
     private var listeningSessionFlushTask: Task<Void, Never>?
     private var stationFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
     private var trackFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
+    private var stationFeedbackSyncTokens: [String: UUID] = [:]
+    private var trackFeedbackSyncTokens: [String: UUID] = [:]
 
     private enum RefreshScope {
         case favorites
@@ -675,8 +677,10 @@ final class LibraryStore: ObservableObject {
             listeningSessionFlushTask = nil
             stationFeedbackSyncTasks.values.forEach { $0.cancel() }
             stationFeedbackSyncTasks.removeAll()
+            stationFeedbackSyncTokens.removeAll()
             trackFeedbackSyncTasks.values.forEach { $0.cancel() }
             trackFeedbackSyncTasks.removeAll()
+            trackFeedbackSyncTokens.removeAll()
             pendingListeningSessions.removeAll()
         }
     }
@@ -1074,21 +1078,26 @@ final class LibraryStore: ObservableObject {
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
         guard let backendService, backendService.isConfigured() else { return }
 
+        let token = UUID()
         stationFeedbackSyncTasks[stationID]?.cancel()
+        stationFeedbackSyncTokens[stationID] = token
         stationFeedbackSyncTasks[stationID] = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled, self.backendService === backendService else { return }
+                guard !Task.isCancelled,
+                      self.backendService === backendService,
+                      self.stationFeedbackSyncTokens[stationID] == token
+                else { return }
                 try await backendService.setStationFeedback(feedback, stationID: stationID)
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                stationFeedbackSyncTasks[stationID] = nil
+                clearStationFeedbackSyncIfCurrent(stationID: stationID, token: token)
                 return
             }
             guard self.backendService === backendService else { return }
-            stationFeedbackSyncTasks[stationID] = nil
+            clearStationFeedbackSyncIfCurrent(stationID: stationID, token: token)
         }
     }
 
@@ -1101,22 +1110,39 @@ final class LibraryStore: ObservableObject {
         else { return }
 
         let normalizedArtist = normalizedTrackValue(artist)
+        let token = UUID()
         trackFeedbackSyncTasks[feedbackKey]?.cancel()
+        trackFeedbackSyncTokens[feedbackKey] = token
         trackFeedbackSyncTasks[feedbackKey] = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled, self.backendService === backendService else { return }
+                guard !Task.isCancelled,
+                      self.backendService === backendService,
+                      self.trackFeedbackSyncTokens[feedbackKey] == token
+                else { return }
                 try await backendService.setTrackFeedback(feedback, title: title, artist: normalizedArtist, stationID: stationID)
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                trackFeedbackSyncTasks[feedbackKey] = nil
+                clearTrackFeedbackSyncIfCurrent(feedbackKey: feedbackKey, token: token)
                 return
             }
             guard self.backendService === backendService else { return }
-            trackFeedbackSyncTasks[feedbackKey] = nil
+            clearTrackFeedbackSyncIfCurrent(feedbackKey: feedbackKey, token: token)
         }
+    }
+
+    private func clearStationFeedbackSyncIfCurrent(stationID: String, token: UUID) {
+        guard stationFeedbackSyncTokens[stationID] == token else { return }
+        stationFeedbackSyncTasks[stationID] = nil
+        stationFeedbackSyncTokens[stationID] = nil
+    }
+
+    private func clearTrackFeedbackSyncIfCurrent(feedbackKey: String, token: UUID) {
+        guard trackFeedbackSyncTokens[feedbackKey] == token else { return }
+        trackFeedbackSyncTasks[feedbackKey] = nil
+        trackFeedbackSyncTokens[feedbackKey] = nil
     }
 
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
