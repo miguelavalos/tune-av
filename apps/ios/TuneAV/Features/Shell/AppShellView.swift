@@ -6357,22 +6357,6 @@ private struct PlanSummaryPill: View {
     }
 }
 
-struct OptionalAccessibilityIdentifier: ViewModifier {
-    let identifier: String?
-
-    init(_ identifier: String?) {
-        self.identifier = identifier
-    }
-
-    func body(content: Content) -> some View {
-        if let identifier {
-            content.accessibilityIdentifier(identifier)
-        } else {
-            content
-        }
-    }
-}
-
 private struct AviSignalRow: View {
     let title: String
     let detail: String
