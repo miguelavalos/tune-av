@@ -64,6 +64,45 @@ final class AviStationDetailBuilderTests: XCTestCase {
         )
     }
 
+    func testActiveSignalSyncOnlyRunsInsideAvi() {
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        XCTAssertFalse(builder.shouldSyncActiveSignal(
+            selectedTab: .home,
+            isFullPlayer: true,
+            previousStationID: "old",
+            selectedDetailStationID: "old"
+        ))
+    }
+
+    func testActiveSignalSyncRunsForAviFullPlayer() {
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        XCTAssertTrue(builder.shouldSyncActiveSignal(
+            selectedTab: .avi,
+            isFullPlayer: true,
+            previousStationID: nil,
+            selectedDetailStationID: nil
+        ))
+    }
+
+    func testActiveSignalSyncRunsWhenVisibleDetailMatchesPreviousStation() {
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        XCTAssertTrue(builder.shouldSyncActiveSignal(
+            selectedTab: .avi,
+            isFullPlayer: false,
+            previousStationID: "old",
+            selectedDetailStationID: "old"
+        ))
+        XCTAssertFalse(builder.shouldSyncActiveSignal(
+            selectedTab: .avi,
+            isFullPlayer: false,
+            previousStationID: "old",
+            selectedDetailStationID: "other"
+        ))
+    }
+
     func testSelectionReturnsResolvedStationAndEnrichedQueueDetail() {
         let station = makeStation(id: "base")
         let queueStation = makeStation(id: "queue")

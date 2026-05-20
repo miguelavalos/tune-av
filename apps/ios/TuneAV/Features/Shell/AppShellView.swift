@@ -1192,18 +1192,12 @@ struct AppShellView: View {
     }
 
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
-        guard selectedTab == .avi else { return }
-        if isAviNowPlayingFullPlayer {
-            selectAviStationDetail(
-                currentStation,
-                queueSource: audioPlayer.playbackQueue.source,
-                queue: currentPlaybackQueue(fallbackStation:)
-            )
-            return
-        }
-
-        guard let previousStationID else { return }
-        guard selectedStationDetail?.station.id == previousStationID else { return }
+        guard aviStationDetailBuilder.shouldSyncActiveSignal(
+            selectedTab: selectedTab,
+            isFullPlayer: isAviNowPlayingFullPlayer,
+            previousStationID: previousStationID,
+            selectedDetailStationID: selectedStationDetail?.station.id
+        ) else { return }
 
         selectAviStationDetail(
             currentStation,

@@ -44,6 +44,21 @@ struct AviStationDetailBuilder {
         stations.isEmpty ? [fallbackStation] : stations
     }
 
+    func shouldSyncActiveSignal(
+        selectedTab: AppShellTab,
+        isFullPlayer: Bool,
+        previousStationID: String?,
+        selectedDetailStationID: String?
+    ) -> Bool {
+        guard selectedTab == .avi else { return false }
+        if isFullPlayer {
+            return true
+        }
+        guard let previousStationID else { return false }
+
+        return selectedDetailStationID == previousStationID
+    }
+
     func selection(
         station: Station,
         queueSource: AudioPlayerService.PlaybackQueue.Source,
