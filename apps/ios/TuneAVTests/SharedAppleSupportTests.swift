@@ -229,6 +229,49 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertNotNil(AviRecommendationsCoordinator.topRecommendation(from: ranked)?.reason)
     }
 
+    func testAviMusicDetailCoordinatorBuildsTrackSelection() {
+        let station = shellStation(id: "station")
+        let discovery = DiscoveredTrack(
+            title: "Teardrop",
+            artist: "Massive Attack",
+            station: station,
+            artworkURL: nil
+        )
+
+        let selection = AviMusicDetailCoordinator.track(discovery, returnMusicMode: .songs)
+
+        XCTAssertEqual(selection.returnMusicMode, .songs)
+        XCTAssertEqual(selection.returnMusicOverview, false)
+        XCTAssertEqual(selection.clearsStationDetail, true)
+        XCTAssertEqual(selection.isNowPlayingFullPlayer, false)
+        XCTAssertEqual(selection.selectedTab, .avi)
+        guard case .track(let selectedDiscovery) = selection.detail else {
+            return XCTFail("Expected track detail")
+        }
+        XCTAssertEqual(selectedDiscovery.discoveryID, discovery.discoveryID)
+    }
+
+    func testAviMusicDetailCoordinatorBuildsArtistSelectionWithOverviewReturn() {
+        let summary = DiscoveryArtistSummary(
+            name: "Massive Attack",
+            trackCount: 3,
+            artistArtworkURL: nil,
+            fallbackArtworkURL: nil
+        )
+
+        let selection = AviMusicDetailCoordinator.artist(summary, returnMusicMode: nil)
+
+        XCTAssertNil(selection.returnMusicMode)
+        XCTAssertEqual(selection.returnMusicOverview, true)
+        XCTAssertEqual(selection.clearsStationDetail, true)
+        XCTAssertEqual(selection.isNowPlayingFullPlayer, false)
+        XCTAssertEqual(selection.selectedTab, .avi)
+        guard case .artist(let selectedSummary) = selection.detail else {
+            return XCTFail("Expected artist detail")
+        }
+        XCTAssertEqual(selectedSummary, summary)
+    }
+
     @MainActor
     func testSleepTimerControllerSetsAndClearsSharedDescription() {
         let controller = TuneAVSleepTimerController()

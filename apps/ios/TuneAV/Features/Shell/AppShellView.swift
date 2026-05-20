@@ -1090,14 +1090,25 @@ struct AppShellView: View {
     }
 
     private func openDiscoveryInfo(_ discovery: DiscoveredTrack, returnMusicMode: MusicContentMode? = nil) {
-        captureAviReturnContext(
-            musicMode: returnMusicMode,
-            musicOverview: returnMusicMode == nil
+        openMusicAviDetail(
+            AviMusicDetailCoordinator.track(
+                discovery,
+                returnMusicMode: returnMusicMode
+            )
         )
-        selectedStationDetail = nil
-        isAviNowPlayingFullPlayer = false
-        selectedMusicAviDetail = .track(discovery)
-        selectedTab = .avi
+    }
+
+    private func openMusicAviDetail(_ selection: AviMusicDetailSelection) {
+        captureAviReturnContext(
+            musicMode: selection.returnMusicMode,
+            musicOverview: selection.returnMusicOverview
+        )
+        if selection.clearsStationDetail {
+            selectedStationDetail = nil
+        }
+        isAviNowPlayingFullPlayer = selection.isNowPlayingFullPlayer
+        selectedMusicAviDetail = selection.detail
+        selectedTab = selection.selectedTab
     }
 
     private func openDiscoveryStationInfo(_ discovery: DiscoveredTrack) {
@@ -1107,14 +1118,12 @@ struct AppShellView: View {
     }
 
     private func openArtistInfo(_ summary: DiscoveryArtistSummary, returnMusicMode: MusicContentMode? = nil) {
-        captureAviReturnContext(
-            musicMode: returnMusicMode,
-            musicOverview: returnMusicMode == nil
+        openMusicAviDetail(
+            AviMusicDetailCoordinator.artist(
+                summary,
+                returnMusicMode: returnMusicMode
+            )
         )
-        selectedStationDetail = nil
-        isAviNowPlayingFullPlayer = false
-        selectedMusicAviDetail = .artist(summary)
-        selectedTab = .avi
     }
 
     private func closeFocusedAviDetail(fallbackTab: AppShellTab? = nil) {
