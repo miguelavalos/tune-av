@@ -53,15 +53,18 @@ final class TuneAVAppDataService {
 
     func setStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) async throws {
         let payload = TuneAVFeedbackRequest(deviceId: "tuneav-ios", feedback: feedback?.backendValue)
+        let idempotencyKey = Self.idempotencyKey(parts: ["station-feedback", stationID, feedback?.backendValue ?? "clear"])
         _ = try await apiClient.requestData(
             path: "/v1/tune/feedback/stations/\(stationID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? stationID)",
             method: "PUT",
-            body: try encoder.encode(payload)
+            body: try encoder.encode(payload),
+            headers: ["Idempotency-Key": idempotencyKey]
         )
     }
 
     func setTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String, artist: String?, stationID: String?) async throws {
         let key = Self.trackFeedbackKey(title: title, artist: artist)
+        let idempotencyKey = Self.idempotencyKey(parts: ["track-feedback", key, stationID ?? "unknown-station", feedback?.backendValue ?? "clear"])
         let payload = TuneAVTrackFeedbackRequest(
             deviceId: "tuneav-ios",
             title: title,
@@ -72,7 +75,8 @@ final class TuneAVAppDataService {
         _ = try await apiClient.requestData(
             path: "/v1/tune/feedback/tracks/\(key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key)",
             method: "PUT",
-            body: try encoder.encode(payload)
+            body: try encoder.encode(payload),
+            headers: ["Idempotency-Key": idempotencyKey]
         )
     }
 
@@ -125,7 +129,8 @@ final class TuneAVAppDataService {
         _ = try await apiClient.requestData(
             path: "/v1/tune/analytics/listening-sessions",
             method: "POST",
-            body: try encoder.encode(payload)
+            body: try encoder.encode(payload),
+            headers: ["Idempotency-Key": Self.idempotencyKey(parts: ["listening-sessions"] + inputs.map(\.id))]
         )
     }
 
@@ -143,6 +148,20 @@ final class TuneAVAppDataService {
                     .lowercased()
             }
             .joined(separator: "::")
+    }
+
+    private static func idempotencyKey(parts: [String]) -> String {
+        parts
+            .map { part in
+                part
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                    .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
+                    .replacingOccurrences(of: "[^a-z0-9._:-]", with: "-", options: .regularExpression)
+                    .lowercased()
+            }
+            .filter { !$0.isEmpty }
+            .joined(separator: ":")
     }
 }
 

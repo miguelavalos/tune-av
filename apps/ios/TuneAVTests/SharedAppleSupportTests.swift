@@ -900,10 +900,12 @@ final class SharedAppleSupportTests: XCTestCase {
     @MainActor
     func testListeningSessionUploadKeepsDraftIDsStableAcrossRetries() async throws {
         var uploadedSessionIDs: [String] = []
+        var idempotencyKeys: [String?] = []
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.host, "api.test")
             XCTAssertEqual(request.url?.path, "/v1/tune/analytics/listening-sessions")
             XCTAssertEqual(request.httpMethod, "POST")
+            idempotencyKeys.append(request.value(forHTTPHeaderField: "Idempotency-Key"))
 
             let body = try XCTUnwrap(Self.requestBodyData(from: request))
             let payload = try JSONSerialization.jsonObject(with: body) as? [String: Any]
@@ -950,6 +952,49 @@ final class SharedAppleSupportTests: XCTestCase {
         try await service.recordListeningSessions([draft])
 
         XCTAssertEqual(uploadedSessionIDs, ["session-stable-id", "session-stable-id"])
+        XCTAssertEqual(idempotencyKeys, ["listening-sessions:session-stable-id", "listening-sessions:session-stable-id"])
+    }
+
+    @MainActor
+    func testFeedbackRequestsSendDeterministicIdempotencyKeys() async throws {
+        var idempotencyKeys: [String?] = []
+        var requestedPaths: [String] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.host, "api.test")
+            XCTAssertEqual(request.httpMethod, "PUT")
+            requestedPaths.append(request.url?.path ?? "")
+            idempotencyKeys.append(request.value(forHTTPHeaderField: "Idempotency-Key"))
+
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data("{}".utf8)
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession()
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+
+        try await service.setStationFeedback(.liked, stationID: "BBC Radio 1")
+        try await service.setTrackFeedback(.notForMe, title: "  Teardrop  ", artist: "Massive\tAttack", stationID: "BBC Radio 1")
+
+        XCTAssertEqual(requestedPaths, [
+            "/v1/tune/feedback/stations/BBC%20Radio%201",
+            "/v1/tune/feedback/tracks/teardrop%3A%3Amassive%20attack"
+        ])
+        XCTAssertEqual(idempotencyKeys, [
+            "station-feedback:bbc-radio-1:liked",
+            "track-feedback:teardrop::massive-attack:bbc-radio-1:not_for_me"
+        ])
     }
 
     func testStationServiceUsesAVALSYSResponse() async throws {
