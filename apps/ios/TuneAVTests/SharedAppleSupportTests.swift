@@ -1570,6 +1570,58 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(spotify?.url.host, "open.spotify.com")
     }
 
+    func testMusicExternalSearchRouterRoutesDiscoveryDestinations() {
+        let discovery = DiscoveredTrack(
+            title: "Dayvan Cowboy",
+            artist: "Boards of Canada",
+            station: Station(
+                id: "kexp",
+                name: "KEXP",
+                country: "United States",
+                language: "English",
+                tags: "indie",
+                streamURL: "https://example.com/kexp"
+            ),
+            artworkURL: nil
+        )
+        var searches: [TuneAVExternalSearchURL.FeatureSearch] = []
+        let router = MusicExternalSearchRouter { searches.append($0) }
+
+        router.openDiscoveryYouTube(discovery)
+        router.openDiscoveryLyrics(discovery)
+        router.openDiscoveryAppleMusic(discovery)
+        router.openDiscoverySpotify(discovery)
+
+        XCTAssertEqual(searches.map(\.feature), [
+            .youtubeSearch,
+            .lyricsSearch,
+            .appleMusicSearch,
+            .spotifySearch
+        ])
+        XCTAssertEqual(queryValue("search_query", in: searches[0].url), "Boards of Canada Dayvan Cowboy")
+        XCTAssertEqual(queryValue("q", in: searches[1].url), "Boards of Canada Dayvan Cowboy lyrics")
+        XCTAssertEqual(queryValue("term", in: searches[2].url), "Boards of Canada Dayvan Cowboy")
+        XCTAssertEqual(searches[3].url.host, "open.spotify.com")
+    }
+
+    func testMusicExternalSearchRouterRoutesArtistDestinations() {
+        var searches: [TuneAVExternalSearchURL.FeatureSearch] = []
+        let router = MusicExternalSearchRouter { searches.append($0) }
+
+        router.openArtistYouTube("Nina Simone")
+        router.openArtistAppleMusic("Nina Simone")
+        router.openArtistSpotify("Nina Simone")
+
+        XCTAssertEqual(searches.map(\.feature), [
+            .youtubeSearch,
+            .appleMusicSearch,
+            .spotifySearch
+        ])
+        XCTAssertEqual(queryValue("search_query", in: searches[0].url), "Nina Simone")
+        XCTAssertEqual(queryValue("term", in: searches[1].url), "Nina Simone")
+        XCTAssertEqual(searches[2].url.host, "open.spotify.com")
+    }
+
     func testTextNormalizesValuesAndBuildsJoinedQueries() {
         XCTAssertEqual(TuneAVText.normalizedValue("  Radio Nova  "), "Radio Nova")
         XCTAssertNil(TuneAVText.normalizedValue("   "))
