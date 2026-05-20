@@ -219,6 +219,39 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testShellUITestBootstrapOverridesExposeTrackMetadataAndUpgradePromptOnlyForUITests() {
+        let uiTestContext = TuneAVLaunchContext(environment: [
+            "TUNEAV_UI_TESTS": "1",
+            "TUNEAV_UI_TEST_TRACK_TITLE": " Midnight City ",
+            "TUNEAV_UI_TEST_TRACK_ARTIST": " M83 ",
+            "TUNEAV_UI_TEST_UPGRADE_PROMPT_FEATURE": "spotifySearch"
+        ])
+
+        XCTAssertEqual(
+            ShellUITestBootstrapOverrides.trackMetadata(from: uiTestContext),
+            ShellUITestTrackMetadataOverride(title: "Midnight City", artist: "M83")
+        )
+        XCTAssertEqual(
+            ShellUITestBootstrapOverrides.upgradePromptFeature(from: uiTestContext),
+            .spotifySearch
+        )
+
+        let productionContext = TuneAVLaunchContext(environment: [
+            "TUNEAV_UI_TEST_TRACK_TITLE": "Midnight City",
+            "TUNEAV_UI_TEST_UPGRADE_PROMPT_FEATURE": "spotifySearch"
+        ])
+
+        XCTAssertNil(ShellUITestBootstrapOverrides.trackMetadata(from: productionContext))
+        XCTAssertNil(ShellUITestBootstrapOverrides.upgradePromptFeature(from: productionContext))
+    }
+
+    func testShellUITestBootstrapOverridesSkipEmptyTrackMetadata() {
+        let context = TuneAVLaunchContext(environment: ["TUNEAV_UI_TESTS": "1"])
+
+        XCTAssertNil(ShellUITestBootstrapOverrides.trackMetadata(from: context))
+        XCTAssertNil(ShellUITestBootstrapOverrides.upgradePromptFeature(from: context))
+    }
+
     func testAviRelatedStationsCoordinatorBuildsDeduplicatedCandidates() {
         let popular = shellStation(id: "popular")
         let queued = shellStation(id: "queued")

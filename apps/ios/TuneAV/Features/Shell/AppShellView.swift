@@ -765,11 +765,10 @@ struct AppShellView: View {
     }
 
     private func applyUITestTrackMetadataIfNeeded() {
-        guard launchContext.isUITesting else { return }
-        guard launchContext.uiTestTrackTitle != nil || launchContext.uiTestTrackArtist != nil else { return }
+        guard let metadata = ShellUITestBootstrapOverrides.trackMetadata(from: launchContext) else { return }
         audioPlayer.applyUITestTrackMetadata(
-            title: launchContext.uiTestTrackTitle,
-            artist: launchContext.uiTestTrackArtist
+            title: metadata.title,
+            artist: metadata.artist
         )
     }
 
@@ -788,7 +787,7 @@ struct AppShellView: View {
             applyUITestTrackMetadataIfNeeded()
         }
 
-        if launchContext.isUITesting, let feature = launchContext.uiTestUpgradePromptFeature {
+        if let feature = ShellUITestBootstrapOverrides.upgradePromptFeature(from: launchContext) {
             accessController.presentUpgradePrompt(for: feature)
         }
     }
