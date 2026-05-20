@@ -130,6 +130,7 @@
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
 		EE2125B595BCC833804CA2AB /* AppShellView+Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */; };
 		F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */; };
+		F0B08039199D8F3DFA8F1758 /* MusicLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
@@ -276,6 +277,7 @@
 		C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
 		C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationCompactCarousel.swift; sourceTree = "<group>"; };
+		C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryViews.swift; sourceTree = "<group>"; };
 		CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueueUITests.swift; sourceTree = "<group>"; };
 		CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVNowPlayingService.swift; sourceTree = "<group>"; };
 		CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
@@ -382,6 +384,7 @@
 				AEEFAB97F10E3027AE027E62 /* LibraryRadioViews.swift */,
 				7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */,
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
+				C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */,
 				3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
 				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
@@ -799,6 +802,7 @@
 				665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */,
 				7B0060FA0D191CE8C1500F8D /* MiniPlayerView.swift in Sources */,
 				0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */,
+				F0B08039199D8F3DFA8F1758 /* MusicLibraryViews.swift in Sources */,
 				8E261DF063D5C71FEC90152D /* PersistenceController.swift in Sources */,
 				3B63D88278E41045F3E5950D /* ProfileScreen.swift in Sources */,
 				772107B947DC7AFE8F717983 /* RootView.swift in Sources */,
