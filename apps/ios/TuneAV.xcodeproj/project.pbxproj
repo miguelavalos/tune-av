@@ -92,6 +92,7 @@
 		9155A0A9591DFD0CDAC69A51 /* StationSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3353F73F03318E692C99BA07 /* StationSection.swift */; };
 		945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E6B173571331D31167D9AC /* InAppBrowserView.swift */; };
 		9527699C0DC7F9264E32024B /* MusicScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C764B25F8D88A52B45FBC /* MusicScreen.swift */; };
+		9853B126FAAE0E262216049F /* AppShellScaffoldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */; };
 		A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */; };
 		A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */; };
 		A4196DEA7C036793524034C2 /* SubscriptionPurchasingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AC473434C326DBD6A3A0C8 /* SubscriptionPurchasingService.swift */; };
@@ -318,6 +319,7 @@
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
+		FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellScaffoldView.swift; sourceTree = "<group>"; };
 		FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellNowPlayingPreviews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -372,6 +374,7 @@
 			children = (
 				7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */,
 				FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */,
+				FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */,
 				458EF57C362E247FF5234C69 /* AppShellTab.swift */,
 				008936263180E93620BF3D42 /* AppShellView.swift */,
 				799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */,
@@ -792,6 +795,7 @@
 				0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */,
 				D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */,
 				F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */,
+				9853B126FAAE0E262216049F /* AppShellScaffoldView.swift in Sources */,
 				3F9A20636CE17A83BFE8E8C4 /* AppShellTab.swift in Sources */,
 				EE2125B595BCC833804CA2AB /* AppShellView+Screens.swift in Sources */,
 				84FB8B926DB0F482FDB09F9D /* AppShellView.swift in Sources */,
