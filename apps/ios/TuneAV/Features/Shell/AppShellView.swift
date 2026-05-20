@@ -5011,10 +5011,6 @@ struct AviScreen: View {
         isFocusedStationActive ? "Encontrado en directo" : "Info de radio"
     }
 
-    private var aviActionsPanelHeight: CGFloat {
-        356
-    }
-
     private var aviActionsPanelState: ShellAviActionsPanelState {
         ShellAviActionsPanelState(
             hasSongStep: hasCurrentSongContext && isNowPlayingFullPlayer,
@@ -5029,134 +5025,73 @@ struct AviScreen: View {
     private func aviActionsPanel(for station: Station, showsStationDetailAction: Bool) -> some View {
         let panelState = aviActionsPanelState
 
-        return VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(panelState.title)
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(panelState.pageLabel)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
+        return AviActionsPanelView(
+            state: panelState,
+            showsStationDetailAction: showsStationDetailAction,
+            showsCloseSignalAction: isNowPlayingFullPlayer && isFocusedStationActive,
+            previousPage: {
+                withAnimation(.snappy(duration: 0.2)) {
+                    applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.previousPage))
                 }
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 6) {
-                    Button {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.previousPage))
-                        }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 10, weight: .black))
-                            .frame(width: 28, height: 28)
-                            .background(TuneAVTheme.cardSurface, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!panelState.canGoPrevious)
-                    .opacity(panelState.canGoPrevious ? 1 : 0.34)
-                    .accessibilityLabel(L10n.string("shell.avi.actions.previousOptions"))
-
-                    Button {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.nextPage))
-                        }
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .black))
-                            .frame(width: 28, height: 28)
-                            .background(TuneAVTheme.cardSurface, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!panelState.canGoNext)
-                    .opacity(panelState.canGoNext ? 1 : 0.34)
-                    .accessibilityLabel(L10n.string("shell.avi.actions.moreOptions"))
+            },
+            nextPage: {
+                withAnimation(.snappy(duration: 0.2)) {
+                    applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.nextPage))
                 }
-                .foregroundStyle(TuneAVTheme.textSecondary)
-
-                Button {
+            },
+            close: closeAviActions,
+            searchLyrics: {
+                showAviReaction(.curious)
+                openAviSearch(for: station, destination: .web, suffix: "lyrics")
+            },
+            searchYouTube: {
+                showAviReaction(.curious)
+                openAviSearch(for: station, destination: .youtube)
+            },
+            searchAppleMusic: {
+                showAviReaction(.curious)
+                openAviSearch(for: station, destination: .appleMusic)
+            },
+            searchArtist: {
+                showAviReaction(.curious)
+                openAviArtistSearch()
+            },
+            searchPublicInfo: {
+                runProAviActionOutsideFullPlayer {
+                    showAviReaction(.curious)
+                    openAviStationSearch(for: station)
+                }
+            },
+            showRadioDetails: {
+                showStationDetails(station, [station])
+                closeAviActions()
+            },
+            showHistory: {
+                runProAviActionOutsideFullPlayer {
+                    showStationDetails(station, [station])
                     closeAviActions()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 30, height: 30)
-                        .background(TuneAVTheme.cardSurface, in: Circle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.avi.actions.closeOptions"))
-                .accessibilityIdentifier("avi.actions.close")
-            }
-
-            VStack(spacing: 5) {
-                if panelState.showsSongActions {
-                    AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics") {
-                        showAviReaction(.curious)
-                        openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube") {
-                        showAviReaction(.curious)
-                        openAviSearch(for: station, destination: .youtube)
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.searchAppleMusic"), systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic") {
-                        showAviReaction(.curious)
-                        openAviSearch(for: station, destination: .appleMusic)
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.searchArtist"), systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist") {
-                        showAviReaction(.curious)
-                        openAviArtistSearch()
-                    }
-                } else {
-                    AviCommandButton(title: L10n.string("shell.avi.actions.searchPublicInfo"), systemImage: "info.circle", accessibilityIdentifier: "avi.actions.publicInfo") {
-                        runProAviActionOutsideFullPlayer {
-                            showAviReaction(.curious)
-                            openAviStationSearch(for: station)
-                        }
-                    }
-                    if showsStationDetailAction {
-                        AviCommandButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioDetails") {
-                            showStationDetails(station, [station])
-                            closeAviActions()
-                        }
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history") {
-                        runProAviActionOutsideFullPlayer {
-                            showStationDetails(station, [station])
-                            closeAviActions()
-                        }
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web") {
-                        runProAviActionOutsideFullPlayer {
-                            showAviReaction(.curious)
-                            if let url = station.resolvedHomepageURL {
-                                browserDestination = BrowserDestination(url: url)
-                            } else {
-                                openAviStationSearch(for: station)
-                            }
-                        }
-                    }
-                    AviCommandButton(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles", accessibilityIdentifier: "avi.actions.relatedRadios") {
-                        showAviReaction(.curious)
-                        showRelatedStations(for: station)
-                        closeAviActions()
+            },
+            openWebsite: {
+                runProAviActionOutsideFullPlayer {
+                    showAviReaction(.curious)
+                    if let url = station.resolvedHomepageURL {
+                        browserDestination = BrowserDestination(url: url)
+                    } else {
+                        openAviStationSearch(for: station)
                     }
                 }
+            },
+            findRelatedRadios: {
+                showAviReaction(.curious)
+                showRelatedStations(for: station)
+                closeAviActions()
+            },
+            closeSignal: {
+                closeAviActions()
+                stopPlayback()
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-
-            if isNowPlayingFullPlayer && isFocusedStationActive {
-                AviCloseSignalPanelButton {
-                    closeAviActions()
-                    stopPlayback()
-                }
-            }
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: aviActionsPanelHeight, alignment: .top)
-        .background(TuneAVTheme.elevatedSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        )
     }
 
     private func setAviMenuFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
@@ -6422,95 +6357,7 @@ private struct PlanSummaryPill: View {
     }
 }
 
-private struct AviCommandButton: View {
-    let title: String
-    let systemImage: String
-    let accessibilityIdentifier: String?
-    let action: () -> Void
-
-    init(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String? = nil,
-        action: @escaping () -> Void
-    ) {
-        self.title = title
-        self.systemImage = systemImage
-        self.accessibilityIdentifier = accessibilityIdentifier
-        self.action = action
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 28, height: 28)
-                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-
-                Text(title)
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .multilineTextAlignment(.leading)
-                    .minimumScaleFactor(0.78)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 36)
-            .padding(.horizontal, 10)
-            .background(TuneAVTheme.cardSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.46), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .modifier(OptionalAccessibilityIdentifier(accessibilityIdentifier))
-    }
-}
-
-private struct AviCloseSignalPanelButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(TuneAVTheme.textSecondary.opacity(0.1), in: Circle())
-
-                Text(L10n.string("shell.accessibility.closeSignal"))
-                    .font(.system(size: 13, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 38)
-            .background(TuneAVTheme.cardSurface.opacity(0.7), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.38), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
-        .accessibilityIdentifier("avi.actions.closeSignal")
-    }
-}
-
-private struct OptionalAccessibilityIdentifier: ViewModifier {
+struct OptionalAccessibilityIdentifier: ViewModifier {
     let identifier: String?
 
     init(_ identifier: String?) {
