@@ -150,6 +150,53 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testAviRelatedStationsCoordinatorBuildsDeduplicatedCandidates() {
+        let popular = shellStation(id: "popular")
+        let queued = shellStation(id: "queued")
+        let favorite = shellStation(id: "favorite")
+        let candidates = AviRelatedStationsCoordinator.candidateStations(
+            stations: [popular],
+            playbackQueueStations: [queued, popular],
+            recentStations: [queued],
+            favoriteStations: [favorite]
+        )
+
+        XCTAssertEqual(candidates.map(\.id), ["popular", "queued", "favorite"])
+    }
+
+    func testAviRelatedStationsCoordinatorRanksLocalResultsAndRemoteFilters() {
+        let base = shellStation(id: "base", tags: "jazz, chill", countryCode: "ES", language: "Spanish")
+        let tagMatch = shellStation(id: "tag", tags: "jazz", countryCode: "FR", language: "French")
+        let countryMatch = shellStation(id: "country", tags: "news", countryCode: "ES", language: "Spanish")
+        let unrelated = shellStation(id: "unrelated", tags: "metal", countryCode: "DE", language: "German")
+        let scorer = TuneAVLocalRecommendationScorer(
+            currentStation: nil,
+            recentStations: [],
+            favoriteStations: [],
+            discoveries: [],
+            stationFeedback: [:],
+            feedContext: .popularWorldwide,
+            preferredTag: "",
+            currentCountryCode: "US"
+        )
+        let results = AviRelatedStationsCoordinator.results(
+            for: base,
+            candidates: [unrelated, countryMatch, tagMatch, base],
+            scorer: scorer
+        )
+
+        XCTAssertEqual(results.map(\.station.id), ["tag", "country"])
+        XCTAssertEqual(AviRelatedStationsCoordinator.primaryTag(for: base), "jazz")
+
+        let filters = AviRelatedStationsCoordinator.remoteFilters(for: base)
+        XCTAssertEqual(filters?.query, "")
+        XCTAssertEqual(filters?.countryCode, "ES")
+        XCTAssertEqual(filters?.language, "Spanish")
+        XCTAssertEqual(filters?.tag, "jazz")
+        XCTAssertEqual(filters?.limit, 24)
+        XCTAssertEqual(filters?.allowsEmptySearch, true)
+    }
+
     @MainActor
     func testSleepTimerControllerSetsAndClearsSharedDescription() {
         let controller = TuneAVSleepTimerController()
@@ -4112,13 +4159,19 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
-    private func shellStation(id: String) -> Station {
+    private func shellStation(
+        id: String,
+        tags: String = "music",
+        countryCode: String? = nil,
+        language: String = "Spanish"
+    ) -> Station {
         Station(
             id: id,
             name: "Station \(id)",
             country: "Spain",
-            language: "Spanish",
-            tags: "music",
+            countryCode: countryCode,
+            language: language,
+            tags: tags,
             streamURL: "https://example.com/\(id)"
         )
     }

@@ -5600,13 +5600,13 @@ struct AviScreen: View {
 
     private func showRelatedStations(for station: Station) {
         relatedStationContext = RelatedStationContext(baseStation: station)
-        let localResults = relatedStationViewModels(for: station, candidates: relatedCandidateStations)
+        let localResults = relatedStationResults(for: station, candidates: relatedCandidateStations)
         relatedStationResults = localResults
         isLoadingRelatedStations = true
 
         Task {
             let remoteStations = await remoteRelatedStations(for: station)
-            let merged = relatedStationViewModels(
+            let merged = relatedStationResults(
                 for: station,
                 candidates: relatedCandidateStations + remoteStations
             )
@@ -5619,54 +5619,31 @@ struct AviScreen: View {
     }
 
     private var relatedCandidateStations: [Station] {
-        uniqueStations(stations + playbackQueueStations + recentStations + favoriteStations)
+        AviRelatedStationsCoordinator.candidateStations(
+            stations: stations,
+            playbackQueueStations: playbackQueueStations,
+            recentStations: recentStations,
+            favoriteStations: favoriteStations
+        )
     }
 
-    private func relatedStationViewModels(
+    private func relatedStationResults(
         for station: Station,
         candidates: [Station]
     ) -> [(station: Station, reason: String)] {
-        recommendationScorer
-            .relatedStations(to: station, candidates: uniqueStations(candidates))
-            .prefix(8)
-            .map { candidate in
-                (
-                    station: candidate.station,
-                    reason: TuneAVLocalRecommendationScorer.localizedSummary(for: candidate.rank.primaryReason) ?? L10n.string("shell.avi.recommendation.reasonFallback")
-                )
-            }
+        AviRelatedStationsCoordinator.results(
+            for: station,
+            candidates: candidates,
+            scorer: recommendationScorer
+        )
     }
 
     private func remoteRelatedStations(for station: Station) async -> [Station] {
-        guard let tag = primaryRelatedTag(for: station) else { return [] }
+        guard let filters = AviRelatedStationsCoordinator.remoteFilters(for: station) else { return [] }
         do {
-            return try await TuneAVStationService().searchStations(
-                filters: TuneAVStationSearchFilters(
-                    query: "",
-                    countryCode: station.countryCode ?? "",
-                    language: station.language,
-                    tag: tag,
-                    locale: Locale.current.identifier,
-                    limit: 24,
-                    allowsEmptySearch: true
-                )
-            )
+            return try await TuneAVStationService().searchStations(filters: filters)
         } catch {
             return []
-        }
-    }
-
-    private func primaryRelatedTag(for station: Station) -> String? {
-        station.tags
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
-    }
-
-    private func uniqueStations(_ stations: [Station]) -> [Station] {
-        var seen = Set<String>()
-        return stations.filter { station in
-            seen.insert(station.id).inserted
         }
     }
 
