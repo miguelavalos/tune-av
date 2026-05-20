@@ -997,6 +997,84 @@ final class SharedAppleSupportTests: XCTestCase {
         ])
     }
 
+    @MainActor
+    func testAccountAPIClientRetriesTransientNetworkFailuresOnce() async throws {
+        var attempts = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            attempts += 1
+            if attempts == 1 {
+                throw URLError(.networkConnectionLost)
+            }
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession(),
+            retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
+        )
+
+        _ = try await client.requestData(path: "/v1/tune/feedback/stations/station-1", method: "PUT")
+
+        XCTAssertEqual(attempts, 2)
+    }
+
+    @MainActor
+    func testAccountAPIClientRetriesServerErrorsButNotRateLimits() async throws {
+        var serverAttempts = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            serverAttempts += 1
+            let statusCode = serverAttempts == 1 ? 503 : 200
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession(),
+            retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
+        )
+
+        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+        XCTAssertEqual(serverAttempts, 2)
+
+        var rateLimitAttempts = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            rateLimitAttempts += 1
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 429,
+                httpVersion: nil,
+                headerFields: ["Retry-After": "60"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+
+        do {
+            _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+            XCTFail("Expected rate-limited requests to fail without retrying.")
+        } catch AVAccountAPIClientError.requestFailed(let statusCode) {
+            XCTAssertEqual(statusCode, 429)
+        }
+        XCTAssertEqual(rateLimitAttempts, 1)
+    }
+
     func testStationServiceUsesAVALSYSResponse() async throws {
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.host, "api.test")

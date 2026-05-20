@@ -31,17 +31,20 @@ final class AVAccountAPIClient {
     private let baseURLProvider: () -> URL?
     private let urlSession: URLSession
     private let decoder: JSONDecoder
+    private let retryPolicy: RetryPolicy
 
     init(
         getToken: @escaping () async throws -> String?,
         baseURLProvider: @escaping () -> URL? = { AppConfig.avAccountAPIBaseURL },
         urlSession: URLSession = TuneAVURLSessions.account,
-        decoder: JSONDecoder = JSONDecoder()
+        decoder: JSONDecoder = JSONDecoder(),
+        retryPolicy: RetryPolicy = .account
     ) {
         self.getToken = getToken
         self.baseURLProvider = baseURLProvider
         self.urlSession = urlSession
         self.decoder = decoder
+        self.retryPolicy = retryPolicy
     }
 
     func isConfigured() -> Bool {
@@ -105,7 +108,7 @@ final class AVAccountAPIClient {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }
@@ -115,6 +118,30 @@ final class AVAccountAPIClient {
         }
 
         return data
+    }
+
+    private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        var attempt = 1
+
+        while true {
+            do {
+                let (data, response) = try await urlSession.data(for: request)
+                if let httpResponse = response as? HTTPURLResponse,
+                   retryPolicy.shouldRetry(statusCode: httpResponse.statusCode, attempt: attempt),
+                   !Task.isCancelled {
+                    try await retryPolicy.sleep(beforeAttempt: attempt + 1)
+                    attempt += 1
+                    continue
+                }
+                return (data, response)
+            } catch {
+                guard retryPolicy.shouldRetry(error: error, attempt: attempt), !Task.isCancelled else {
+                    throw error
+                }
+                try await retryPolicy.sleep(beforeAttempt: attempt + 1)
+                attempt += 1
+            }
+        }
     }
 
     private static func url(baseURL: URL, path: String) -> URL {
@@ -132,3 +159,43 @@ final class AVAccountAPIClient {
 }
 
 extension AVAccountAPIClient: AccountDeletionAPI {}
+
+extension AVAccountAPIClient {
+    struct RetryPolicy {
+        let maxAttempts: Int
+        let backoffNanoseconds: UInt64
+
+        static let account = RetryPolicy(maxAttempts: 2, backoffNanoseconds: 250_000_000)
+        static let disabled = RetryPolicy(maxAttempts: 1, backoffNanoseconds: 0)
+
+        func shouldRetry(statusCode: Int, attempt: Int) -> Bool {
+            attempt < maxAttempts && (500..<600).contains(statusCode)
+        }
+
+        func shouldRetry(error: Error, attempt: Int) -> Bool {
+            guard attempt < maxAttempts, let urlError = error as? URLError else {
+                return false
+            }
+
+            switch urlError.code {
+            case .timedOut,
+                 .cannotFindHost,
+                 .cannotConnectToHost,
+                 .networkConnectionLost,
+                 .dnsLookupFailed,
+                 .notConnectedToInternet,
+                 .internationalRoamingOff,
+                 .callIsActive,
+                 .dataNotAllowed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        func sleep(beforeAttempt: Int) async throws {
+            guard beforeAttempt > 1, backoffNanoseconds > 0 else { return }
+            try await Task.sleep(nanoseconds: backoffNanoseconds)
+        }
+    }
+}
