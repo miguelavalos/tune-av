@@ -797,9 +797,11 @@ struct AppShellView: View {
     }
 
     private func rememberTrackForListeningSession(title: String, artist: String?) {
-        guard var session = listeningSession else { return }
-        session.trackKeys.insert("\(artist ?? "")|\(title)".lowercased())
-        listeningSession = session
+        ShellListeningSessionCoordinator.rememberTrack(
+            session: &listeningSession,
+            title: title,
+            artist: artist
+        )
     }
 
     private func applyUITestTrackMetadataIfNeeded() {
@@ -967,16 +969,14 @@ struct AppShellView: View {
     }
 
     private func beginListeningSession(for station: Station, source: AudioPlayerService.PlaybackQueue.Source) {
-        if listeningSession?.station.id != station.id {
-            flushListeningSession(endedReason: "station_changed")
-        }
-
-        listeningSession = ActiveListeningSession(
+        let endedSession = ShellListeningSessionCoordinator.begin(
+            session: &listeningSession,
             station: station,
-            startedAt: .now,
-            source: source.analyticsSource,
-            trackKeys: []
+            source: source
         )
+        if let endedSession {
+            recordListeningSession(endedSession, endedReason: "station_changed")
+        }
     }
 
     private func handlePlaybackStatusChange(
@@ -996,12 +996,11 @@ struct AppShellView: View {
                 recordConfirmedPlaybackIfNeeded(station)
             }
 
-            if listeningSession == nil, let station = audioPlayer.currentStation {
-                listeningSession = ActiveListeningSession(
+            if let station = audioPlayer.currentStation {
+                ShellListeningSessionCoordinator.resumeIfNeeded(
+                    session: &listeningSession,
                     station: station,
-                    startedAt: .now,
-                    source: audioPlayer.playbackQueue.source.analyticsSource,
-                    trackKeys: []
+                    source: audioPlayer.playbackQueue.source
                 )
             }
         case .loading:
@@ -1032,8 +1031,11 @@ struct AppShellView: View {
     }
 
     private func flushListeningSession(endedReason: String) {
-        guard let session = listeningSession else { return }
-        listeningSession = nil
+        guard let session = ShellListeningSessionCoordinator.flush(session: &listeningSession) else { return }
+        recordListeningSession(session, endedReason: endedReason)
+    }
+
+    private func recordListeningSession(_ session: ActiveListeningSession, endedReason: String) {
         libraryStore.recordListeningSession(
             station: session.station,
             startedAt: session.startedAt,

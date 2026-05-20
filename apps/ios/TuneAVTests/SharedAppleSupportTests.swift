@@ -2084,6 +2084,55 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(queue.stations.map(\.id), ["current", "recent", "home"])
     }
 
+    func testShellListeningSessionCoordinatorEndsPreviousSessionWhenStationChanges() throws {
+        let first = Station(id: "first", name: "First", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/first")
+        let second = Station(id: "second", name: "Second", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/second")
+        var session: ActiveListeningSession?
+
+        XCTAssertNil(
+            ShellListeningSessionCoordinator.begin(
+                session: &session,
+                station: first,
+                source: .homeRecents,
+                now: Date(timeIntervalSince1970: 10)
+            )
+        )
+
+        let ended = try XCTUnwrap(
+            ShellListeningSessionCoordinator.begin(
+                session: &session,
+                station: second,
+                source: .libraryFavorites,
+                now: Date(timeIntervalSince1970: 20)
+            )
+        )
+
+        XCTAssertEqual(ended.station.id, "first")
+        XCTAssertEqual(session?.station.id, "second")
+        XCTAssertEqual(session?.source, "library")
+    }
+
+    func testShellListeningSessionCoordinatorTracksUniqueSongsAndFlushes() throws {
+        let station = Station(id: "station", name: "Station", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/station")
+        var session: ActiveListeningSession?
+
+        ShellListeningSessionCoordinator.resumeIfNeeded(
+            session: &session,
+            station: station,
+            source: .searchResults,
+            now: Date(timeIntervalSince1970: 30)
+        )
+        ShellListeningSessionCoordinator.rememberTrack(session: &session, title: "Song", artist: "Artist")
+        ShellListeningSessionCoordinator.rememberTrack(session: &session, title: "song", artist: "artist")
+        ShellListeningSessionCoordinator.rememberTrack(session: &session, title: "Other", artist: nil)
+
+        let flushed = try XCTUnwrap(ShellListeningSessionCoordinator.flush(session: &session))
+
+        XCTAssertNil(session)
+        XCTAssertEqual(flushed.source, "search")
+        XCTAssertEqual(flushed.trackKeys.count, 2)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }
