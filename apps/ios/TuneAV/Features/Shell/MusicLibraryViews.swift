@@ -597,6 +597,37 @@ struct MusicDiscoveryActions: View {
     }
 }
 
+struct MusicDiscoveryLibrarySection<Header: View, TrackList: View, ArtistList: View>: View {
+    let snapshot: MusicLibraryDerivedState
+    let mode: MusicContentMode
+    let emptyTitle: String
+    let emptyDetail: String
+    @ViewBuilder let header: () -> Header
+    @ViewBuilder let trackList: () -> TrackList
+    @ViewBuilder let artistList: () -> ArtistList
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if snapshot.isCurrentModeEmpty {
+                EmptyLibraryState(
+                    title: emptyTitle,
+                    detail: emptyDetail
+                )
+            } else {
+                header()
+                switch mode {
+                case .songs, .top, .history:
+                    trackList()
+                case .artists:
+                    artistList()
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("music.section.discoveries")
+    }
+}
+
 struct MusicDiscoveryArtistList: View {
     let snapshot: MusicLibraryDerivedState
     @Binding var openAviActionsID: String?

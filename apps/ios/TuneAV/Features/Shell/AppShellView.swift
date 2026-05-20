@@ -9158,36 +9158,15 @@ struct MusicScreen: View {
     }
 
     private func discoveryLibrarySection(_ snapshot: MusicLibraryDerivedState) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if snapshot.isCurrentModeEmpty {
-                EmptyLibraryState(
-                    title: emptyDiscoveryTitle(snapshot),
-                    detail: emptyDiscoveryDetail(snapshot)
-                )
-            } else {
-                switch musicMode {
-                case .songs, .top, .history:
-                    discoveryHeader(snapshot)
-                    discoveryTrackList(snapshot)
-                case .artists:
-                    discoveryHeader(snapshot)
-                    MusicDiscoveryArtistList(
-                        snapshot: snapshot,
-                        openAviActionsID: $openMusicAviActionsID,
-                        currentMode: musicMode,
-                        openArtist: { artist, mode in openArtistInfo(artist, mode) },
-                        openArtistSongs: { artist in openArtistSongs(artist.name) },
-                        openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
-                        openYouTube: { artist in runProAviAction { openArtistSearch(artist.name, youtube: true) } },
-                        openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist.name) } },
-                        openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } },
-                        showMoreArtists: showMoreArtists
-                    )
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("music.section.discoveries")
+        MusicDiscoveryLibrarySection(
+            snapshot: snapshot,
+            mode: musicMode,
+            emptyTitle: emptyDiscoveryTitle(snapshot),
+            emptyDetail: emptyDiscoveryDetail(snapshot),
+            header: { discoveryHeader(snapshot) },
+            trackList: { discoveryTrackList(snapshot) },
+            artistList: { discoveryArtistList(snapshot) }
+        )
     }
 
     private func discoveryTrackList(_ snapshot: MusicLibraryDerivedState) -> some View {
@@ -9208,6 +9187,21 @@ struct MusicScreen: View {
             hideAction: hideDiscoveryWithUndo(_:),
             removeAction: { discovery in removeDiscovery(discovery) },
             showMoreDiscoveries: showMoreDiscoveries
+        )
+    }
+
+    private func discoveryArtistList(_ snapshot: MusicLibraryDerivedState) -> some View {
+        MusicDiscoveryArtistList(
+            snapshot: snapshot,
+            openAviActionsID: $openMusicAviActionsID,
+            currentMode: musicMode,
+            openArtist: { artist, mode in openArtistInfo(artist, mode) },
+            openArtistSongs: { artist in openArtistSongs(artist.name) },
+            openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
+            openYouTube: { artist in runProAviAction { openArtistSearch(artist.name, youtube: true) } },
+            openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist.name) } },
+            openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } },
+            showMoreArtists: showMoreArtists
         )
     }
 
