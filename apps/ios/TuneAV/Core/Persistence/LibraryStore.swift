@@ -19,6 +19,7 @@ final class LibraryStore: ObservableObject {
     private static let cloudLibraryRefreshInterval: TimeInterval = 300
     private static let discoveryRefreshInterval: TimeInterval = 60
     private static let listeningSessionBatchSize = 5
+    private static let maxPendingListeningSessions = 50
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
@@ -748,6 +749,11 @@ final class LibraryStore: ObservableObject {
             )
         )
 
+        pendingListeningSessions = LibraryStoreListeningSessionBuffer.trimmed(
+            pendingListeningSessions,
+            maxCount: Self.maxPendingListeningSessions
+        )
+
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
         } else {
@@ -798,6 +804,10 @@ final class LibraryStore: ObservableObject {
 
         guard didUpload else {
             pendingListeningSessions.insert(contentsOf: sessions, at: 0)
+            pendingListeningSessions = LibraryStoreListeningSessionBuffer.trimmed(
+                pendingListeningSessions,
+                maxCount: Self.maxPendingListeningSessions
+            )
             scheduleListeningSessionUpload()
             return
         }
@@ -1341,6 +1351,17 @@ final class LibraryStore: ObservableObject {
 
     private static func stationIdentityKey(for station: Station) -> String {
         TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
+    }
+}
+
+enum LibraryStoreListeningSessionBuffer {
+    static func trimmed(
+        _ sessions: [TuneAVListeningSessionDraft],
+        maxCount: Int
+    ) -> [TuneAVListeningSessionDraft] {
+        guard maxCount > 0 else { return [] }
+        guard sessions.count > maxCount else { return sessions }
+        return Array(sessions.suffix(maxCount))
     }
 }
 

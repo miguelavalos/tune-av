@@ -3,6 +3,24 @@ import XCTest
 
 @MainActor
 final class LibraryStoreTests: XCTestCase {
+    func testListeningSessionBufferKeepsMostRecentSessionsWithinLimit() {
+        let sessions = (0..<5).map { index in
+            listeningSessionDraft(stationID: "station-\(index)")
+        }
+
+        let trimmed = LibraryStoreListeningSessionBuffer.trimmed(sessions, maxCount: 3)
+
+        XCTAssertEqual(trimmed.map(\.station.id), ["station-2", "station-3", "station-4"])
+    }
+
+    func testListeningSessionBufferHandlesZeroLimit() {
+        let sessions = [
+            listeningSessionDraft(stationID: "station")
+        ]
+
+        XCTAssertTrue(LibraryStoreListeningSessionBuffer.trimmed(sessions, maxCount: 0).isEmpty)
+    }
+
     func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let launchContext = TuneAVLaunchContext(environment: [
@@ -192,6 +210,25 @@ final class LibraryStoreTests: XCTestCase {
                 reviewStatus: "generated",
                 updatedAt: "2026-05-09T00:00:00Z"
             )
+        )
+    }
+
+    private func listeningSessionDraft(stationID: String) -> TuneAVListeningSessionDraft {
+        TuneAVListeningSessionDraft(
+            station: Station(
+                id: stationID,
+                name: "Station \(stationID)",
+                country: "Spain",
+                language: "Spanish",
+                tags: "pop",
+                streamURL: "https://example.com/\(stationID)"
+            ),
+            startedAt: Date(timeIntervalSince1970: 10),
+            endedAt: Date(timeIntervalSince1970: 30),
+            durationSeconds: 20,
+            source: "home",
+            endedReason: "paused",
+            trackDetectedCount: 1
         )
     }
 }
