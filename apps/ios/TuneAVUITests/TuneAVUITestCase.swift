@@ -39,12 +39,13 @@ class TuneAVUITestCase: XCTestCase {
     ) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), file: file, line: line)
 
-        if !element.isHittable {
-            scrollView?.swipeUp()
-        }
-
         let deadline = Date().addingTimeInterval(timeout)
+        var scrollAttempts = 0
         while !element.isHittable, Date() < deadline {
+            if scrollAttempts < 4 {
+                scrollView?.swipeUp()
+                scrollAttempts += 1
+            }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
 
