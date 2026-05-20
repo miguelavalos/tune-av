@@ -12,7 +12,6 @@ const palette = {
   neutral200: "#D8DFDA",
 };
 
-const iosBrandingDir = path.join(rootDir, "apps/ios/branding");
 const iosAssetsDir = path.join(rootDir, "apps/ios/TuneAV/App/Assets.xcassets");
 const macAssetsDir = path.join(rootDir, "apps/macos/Assets.xcassets");
 
@@ -66,19 +65,6 @@ async function renderPng(svg, outputPath, width, height) {
     .toFile(outputPath);
 }
 
-async function writeSourceSvgs(wordmark, darkWordmark) {
-  await fs.mkdir(iosBrandingDir, { recursive: true });
-  await fs.writeFile(path.join(iosBrandingDir, "tune-av-wordmark.svg"), wordmark, "utf8");
-  await fs.writeFile(path.join(iosBrandingDir, "tune-av-wordmark-dark.svg"), darkWordmark, "utf8");
-}
-
-async function removeLegacyBrandingAssets() {
-  await Promise.all([
-    fs.rm(path.join(iosBrandingDir, "tuneav-wordmark.svg"), { force: true }),
-    fs.rm(path.join(iosBrandingDir, "tuneav-wordmark-dark.svg"), { force: true }),
-  ]);
-}
-
 async function writeWordmarkAssets(wordmark, darkWordmark) {
   await renderPng(wordmark, path.join(iosAssetsDir, "OnboardingWordmark.imageset/tune-av-logo.png"), 920, 300);
   await renderPng(darkWordmark, path.join(iosAssetsDir, "OnboardingWordmark.imageset/tune-av-logo-dark.png"), 920, 300);
@@ -87,8 +73,6 @@ async function writeWordmarkAssets(wordmark, darkWordmark) {
 
 const wordmark = await wordmarkSvg();
 const darkWordmark = await wordmarkSvg({ dark: true });
-await removeLegacyBrandingAssets();
-await writeSourceSvgs(wordmark, darkWordmark);
 await writeWordmarkAssets(wordmark, darkWordmark);
 
 console.log(JSON.stringify({
