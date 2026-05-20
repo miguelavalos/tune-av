@@ -2147,6 +2147,66 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(ShellCurrentDiscoveryCoordinator.reactionAfterToggle(isSaved: false), .curious)
     }
 
+    func testShellDiscoverySaveCoordinatorAllowsRemovingSavedDiscoveryWithoutLimitCheck() {
+        let station = Station(id: "station", name: "Station", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/station")
+        let discovery = DiscoveredTrack(
+            title: "Song",
+            artist: "Artist",
+            station: station,
+            artworkURL: nil,
+            playedAt: Date(timeIntervalSince1970: 10),
+            markedInterestedAt: Date(timeIntervalSince1970: 11)
+        )
+        var didToggle = false
+        var didRequestLimitState = false
+
+        ShellDiscoverySaveCoordinator.toggleDiscoverySaved(
+            discovery,
+            savedDiscoveriesCount: 10,
+            limitState: { currentUsage in
+                didRequestLimitState = true
+                return FeatureLimitState(feature: .savedTracks, currentUsage: currentUsage, limit: 1)
+            },
+            toggleSaved: { _, limit in
+                didToggle = true
+                XCTAssertNil(limit)
+                return true
+            },
+            presentUpgrade: { _ in XCTFail("Saved discoveries should be removable without showing an upgrade prompt.") }
+        )
+
+        XCTAssertTrue(didToggle)
+        XCTAssertFalse(didRequestLimitState)
+    }
+
+    func testShellDiscoverySaveCoordinatorBlocksNewSavedDiscoveryAtLimit() {
+        let station = Station(id: "station", name: "Station", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/station")
+        let discovery = DiscoveredTrack(
+            title: "Song",
+            artist: "Artist",
+            station: station,
+            artworkURL: nil,
+            playedAt: Date(timeIntervalSince1970: 10),
+            markedInterestedAt: nil
+        )
+        var promptedUsage: Int?
+
+        ShellDiscoverySaveCoordinator.toggleDiscoverySaved(
+            discovery,
+            savedDiscoveriesCount: 3,
+            limitState: { currentUsage in
+                FeatureLimitState(feature: .savedTracks, currentUsage: currentUsage, limit: 3)
+            },
+            toggleSaved: { _, _ in
+                XCTFail("Blocked discoveries should not be toggled.")
+                return false
+            },
+            presentUpgrade: { currentUsage in promptedUsage = currentUsage }
+        )
+
+        XCTAssertEqual(promptedUsage, 3)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }

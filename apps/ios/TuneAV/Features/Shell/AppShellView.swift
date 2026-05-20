@@ -1067,21 +1067,19 @@ struct AppShellView: View {
     }
 
     private func toggleDiscoverySaved(_ discovery: DiscoveredTrack) {
-        if discovery.isMarkedInteresting {
-            _ = libraryStore.toggleDiscoverySaved(discovery)
-            return
-        }
-
-        let state = accessController.limitState(
-            for: .savedTracks,
-            currentUsage: libraryStore.savedDiscoveriesCount
+        ShellDiscoverySaveCoordinator.toggleDiscoverySaved(
+            discovery,
+            savedDiscoveriesCount: libraryStore.savedDiscoveriesCount,
+            limitState: { currentUsage in
+                accessController.limitState(for: .savedTracks, currentUsage: currentUsage)
+            },
+            toggleSaved: { discovery, limit in
+                libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+            },
+            presentUpgrade: { currentUsage in
+                accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: currentUsage)
+            }
         )
-        guard state.isAllowed else {
-            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-            return
-        }
-
-        _ = libraryStore.toggleDiscoverySaved(discovery, savedLimit: state.limit)
     }
 
     private func showStationDetails(
@@ -5284,21 +5282,19 @@ struct AviScreen: View {
     }
 
     private func toggleDiscoverySaved(_ discovery: DiscoveredTrack) {
-        if discovery.isMarkedInteresting {
-            _ = libraryStore.toggleDiscoverySaved(discovery)
-            return
-        }
-
-        let state = accessController.limitState(
-            for: .savedTracks,
-            currentUsage: libraryStore.savedDiscoveriesCount
+        ShellDiscoverySaveCoordinator.toggleDiscoverySaved(
+            discovery,
+            savedDiscoveriesCount: libraryStore.savedDiscoveriesCount,
+            limitState: { currentUsage in
+                accessController.limitState(for: .savedTracks, currentUsage: currentUsage)
+            },
+            toggleSaved: { discovery, limit in
+                libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+            },
+            presentUpgrade: { currentUsage in
+                accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: currentUsage)
+            }
         )
-        guard state.isAllowed else {
-            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-            return
-        }
-
-        _ = libraryStore.toggleDiscoverySaved(discovery, savedLimit: state.limit)
     }
 
     @discardableResult

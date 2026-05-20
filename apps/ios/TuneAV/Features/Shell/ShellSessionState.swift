@@ -65,6 +65,29 @@ enum ShellCurrentDiscoveryCoordinator {
     }
 }
 
+enum ShellDiscoverySaveCoordinator {
+    static func toggleDiscoverySaved(
+        _ discovery: DiscoveredTrack,
+        savedDiscoveriesCount: Int,
+        limitState: (Int) -> FeatureLimitState,
+        toggleSaved: (DiscoveredTrack, Int?) -> Bool,
+        presentUpgrade: (Int) -> Void
+    ) {
+        if discovery.isMarkedInteresting {
+            _ = toggleSaved(discovery, nil)
+            return
+        }
+
+        let state = limitState(savedDiscoveriesCount)
+        guard state.isAllowed else {
+            presentUpgrade(state.currentUsage)
+            return
+        }
+
+        _ = toggleSaved(discovery, state.limit)
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 
