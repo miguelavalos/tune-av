@@ -1141,14 +1141,21 @@ struct AppShellView: View {
     }
 
     private func closeFocusedAviDetail(fallbackTab: AppShellTab? = nil) {
-        selectedStationDetail = nil
-        selectedMusicAviDetail = nil
-        isAviNowPlayingFullPlayer = false
-        libraryStore.clearOpenedStationPresentation()
+        let plan = aviReturnCoordinator.closeFocusedDetailPlan(fallbackTab: fallbackTab)
 
-        if let restoration = aviReturnCoordinator.consumeRestoration(fallbackTab: fallbackTab) {
-            restoreAviReturnState(restoration)
-            selectedTab = restoration.tab
+        if plan.clearsStationDetail {
+            selectedStationDetail = nil
+        }
+        if plan.clearsMusicDetail {
+            selectedMusicAviDetail = nil
+        }
+        isAviNowPlayingFullPlayer = plan.isNowPlayingFullPlayer
+        if plan.clearsOpenedStationPresentation {
+            libraryStore.clearOpenedStationPresentation()
+        }
+        restoreAviReturnState(plan)
+        if let selectedTab = plan.selectedTab {
+            self.selectedTab = selectedTab
         }
     }
 
@@ -1167,11 +1174,11 @@ struct AppShellView: View {
         )
     }
 
-    private func restoreAviReturnState(_ restoration: AviReturnRestoration) {
-        if let request = restoration.radioReturnRequest {
+    private func restoreAviReturnState(_ plan: AviCloseFocusedDetailPlan) {
+        if let request = plan.radioReturnRequest {
             requestedRadioMode = request.mode
             requestedRadioOverview = request.overview
-        } else if let request = restoration.musicReturnRequest {
+        } else if let request = plan.musicReturnRequest {
             requestedMusicMode = request.mode
             requestedMusicOverview = request.overview
         }

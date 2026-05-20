@@ -160,4 +160,57 @@ final class AviReturnContextTests: XCTestCase {
 
         XCTAssertNil(coordinator.consumeRestoration(fallbackTab: nil))
     }
+
+    func testCoordinatorCloseFocusedDetailPlanRestoresStoredContextBeforeFallback() throws {
+        var coordinator = AviReturnCoordinator()
+        coordinator.capture(
+            selectedTab: .music,
+            radioMode: nil,
+            radioOverview: nil,
+            musicMode: .songs,
+            musicOverview: true
+        )
+
+        let plan = coordinator.closeFocusedDetailPlan(fallbackTab: .home)
+
+        XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertFalse(plan.isNowPlayingFullPlayer)
+        XCTAssertTrue(plan.clearsOpenedStationPresentation)
+        XCTAssertEqual(plan.selectedTab, .music)
+
+        let musicRequest = try XCTUnwrap(plan.musicReturnRequest)
+        XCTAssertEqual(musicRequest.mode, .songs)
+        XCTAssertEqual(musicRequest.overview, true)
+        XCTAssertNil(plan.radioReturnRequest)
+        XCTAssertNil(coordinator.context)
+    }
+
+    func testCoordinatorCloseFocusedDetailPlanFallsBackWithoutModeState() {
+        var coordinator = AviReturnCoordinator()
+
+        let plan = coordinator.closeFocusedDetailPlan(fallbackTab: .home)
+
+        XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertFalse(plan.isNowPlayingFullPlayer)
+        XCTAssertTrue(plan.clearsOpenedStationPresentation)
+        XCTAssertEqual(plan.selectedTab, .home)
+        XCTAssertNil(plan.radioReturnRequest)
+        XCTAssertNil(plan.musicReturnRequest)
+    }
+
+    func testCoordinatorCloseFocusedDetailPlanWithoutRestorationStillClearsFocusedState() {
+        var coordinator = AviReturnCoordinator()
+
+        let plan = coordinator.closeFocusedDetailPlan(fallbackTab: nil)
+
+        XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertFalse(plan.isNowPlayingFullPlayer)
+        XCTAssertTrue(plan.clearsOpenedStationPresentation)
+        XCTAssertNil(plan.selectedTab)
+        XCTAssertNil(plan.radioReturnRequest)
+        XCTAssertNil(plan.musicReturnRequest)
+    }
 }

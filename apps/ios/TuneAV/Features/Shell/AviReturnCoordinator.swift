@@ -109,6 +109,34 @@ struct AviReturnRestoration {
     }
 }
 
+struct AviCloseFocusedDetailPlan {
+    let clearsStationDetail: Bool
+    let clearsMusicDetail: Bool
+    let isNowPlayingFullPlayer: Bool
+    let clearsOpenedStationPresentation: Bool
+    private let restoration: AviReturnRestoration?
+
+    var selectedTab: AppShellTab? {
+        restoration?.tab
+    }
+
+    var radioReturnRequest: (mode: RadioLibraryMode?, overview: Bool?)? {
+        restoration?.radioReturnRequest
+    }
+
+    var musicReturnRequest: (mode: MusicContentMode?, overview: Bool?)? {
+        restoration?.musicReturnRequest
+    }
+
+    init(restoration: AviReturnRestoration?) {
+        clearsStationDetail = true
+        clearsMusicDetail = true
+        isNowPlayingFullPlayer = false
+        clearsOpenedStationPresentation = true
+        self.restoration = restoration
+    }
+}
+
 struct AviReturnCoordinator {
     private(set) var context: AviReturnContext?
 
@@ -143,5 +171,9 @@ struct AviReturnCoordinator {
         guard let fallbackTab else { return nil }
 
         return AviReturnRestoration(fallbackTab: fallbackTab)
+    }
+
+    mutating func closeFocusedDetailPlan(fallbackTab: AppShellTab?) -> AviCloseFocusedDetailPlan {
+        AviCloseFocusedDetailPlan(restoration: consumeRestoration(fallbackTab: fallbackTab))
     }
 }
