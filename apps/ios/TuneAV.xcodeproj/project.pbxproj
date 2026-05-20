@@ -29,6 +29,7 @@
 		205DC1A5780218753D11B27F /* HomeScreenStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69777DC9CD8AED418E5B8C17 /* HomeScreenStateBuilder.swift */; };
 		2765BEAD37E1BE15277E578E /* LibraryRadioViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEEFAB97F10E3027AE027E62 /* LibraryRadioViews.swift */; };
 		29E66E7283CBCFED6811C14C /* TuneAVLocalRecommendationScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E377A482C9F747CDD7B4E0 /* TuneAVLocalRecommendationScorer.swift */; };
+		2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */; };
 		2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */; };
 		2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */; };
 		2F65C8472D88CA7FBAFE52BF /* AccessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE496FF33E54B703864FACD2 /* AccessController.swift */; };
@@ -227,6 +228,7 @@
 		47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVBundleConfig.swift; sourceTree = "<group>"; };
 		4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecentFavoriteStationSelector.swift; sourceTree = "<group>"; };
+		4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviPlanComparisonSheet.swift; sourceTree = "<group>"; };
 		4FD0A67AA9366F52644BCFA5 /* HomeEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeEmptyStateUITests.swift; sourceTree = "<group>"; };
 		502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthOnboardingView.swift; sourceTree = "<group>"; };
 		5066BF0197AA106B6FE9A2E3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -407,6 +409,7 @@
 				04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */,
 				BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */,
 				61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */,
+				4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */,
 				E9F2F06465313F965E5778A9 /* AviPreviewViews.swift */,
 				F97D4A7D40F1763112C81473 /* AviReactionState.swift */,
 				DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */,
@@ -842,6 +845,7 @@
 				5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */,
 				0329AE84F43EFCEDA3B88D1D /* AviFullPlayerViews.swift in Sources */,
 				6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */,
+				2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */,
 				06715D33FDEBEB1D36ACCA4F /* AviPreviewViews.swift in Sources */,
 				1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */,
 				45BAF02010F5AB9B9728E140 /* AviRecommendationViews.swift in Sources */,
