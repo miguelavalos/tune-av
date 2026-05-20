@@ -824,21 +824,22 @@ struct AppShellView: View {
             hasDemoStation: launchContext.demoStation != nil
         )
 
-        for action in actions {
-            applyLaunchBootstrapAction(action, lastPlayedStation: lastPlayedStation)
+        let routes = ShellLaunchBootstrapRouter.routes(
+            for: actions,
+            lastPlayedStation: lastPlayedStation,
+            demoStation: launchContext.demoStation
+        )
+
+        for route in routes {
+            applyLaunchBootstrapRoute(route)
         }
     }
 
-    private func applyLaunchBootstrapAction(
-        _ action: ShellLaunchBootstrapAction,
-        lastPlayedStation: Station?
-    ) {
-        switch action {
+    private func applyLaunchBootstrapRoute(_ route: ShellLaunchBootstrapRoute) {
+        switch route {
         case let .selectTab(tab):
             selectedTab = tab
-        case let .openPlayer(useDemoStation):
-            let station = useDemoStation ? launchContext.demoStation : lastPlayedStation
-            guard let station else { return }
+        case let .openPlayer(station):
             playStation(station)
             showStationDetails(station, queueSource: .singleStation, queue: [station])
         case .restoreLastOpenedStation:

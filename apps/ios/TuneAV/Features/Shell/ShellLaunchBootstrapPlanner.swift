@@ -6,6 +6,40 @@ enum ShellLaunchBootstrapAction: Equatable {
     case restoreLastOpenedStation
 }
 
+enum ShellLaunchBootstrapRoute: Equatable {
+    case selectTab(AppShellTab)
+    case openPlayer(Station)
+    case restoreLastOpenedStation
+}
+
+enum ShellLaunchBootstrapRouter {
+    static func routes(
+        for actions: [ShellLaunchBootstrapAction],
+        lastPlayedStation: Station?,
+        demoStation: Station?
+    ) -> [ShellLaunchBootstrapRoute] {
+        actions.compactMap { action in
+            route(for: action, lastPlayedStation: lastPlayedStation, demoStation: demoStation)
+        }
+    }
+
+    private static func route(
+        for action: ShellLaunchBootstrapAction,
+        lastPlayedStation: Station?,
+        demoStation: Station?
+    ) -> ShellLaunchBootstrapRoute? {
+        switch action {
+        case let .selectTab(tab):
+            return .selectTab(tab)
+        case let .openPlayer(useDemoStation):
+            guard let station = useDemoStation ? demoStation : lastPlayedStation else { return nil }
+            return .openPlayer(station)
+        case .restoreLastOpenedStation:
+            return .restoreLastOpenedStation
+        }
+    }
+}
+
 enum ShellLaunchBootstrapPlanner {
     static func actions(
         preferredTab: LaunchContext.Tab?,

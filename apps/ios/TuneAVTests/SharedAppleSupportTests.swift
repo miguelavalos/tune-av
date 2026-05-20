@@ -219,6 +219,47 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testShellLaunchBootstrapRouterResolvesOpenPlayerStation() {
+        let lastPlayedStation = shellStation(id: "last-played")
+        let demoStation = shellStation(id: "demo")
+
+        let routes = ShellLaunchBootstrapRouter.routes(
+            for: [
+                .selectTab(.music),
+                .openPlayer(useDemoStation: false),
+                .openPlayer(useDemoStation: true),
+                .restoreLastOpenedStation
+            ],
+            lastPlayedStation: lastPlayedStation,
+            demoStation: demoStation
+        )
+
+        XCTAssertEqual(routes.count, 4)
+        XCTAssertEqual(routes[0], .selectTab(.music))
+        if case let .openPlayer(station) = routes[1] {
+            XCTAssertEqual(station.id, "last-played")
+        } else {
+            XCTFail("Expected last played station route")
+        }
+        if case let .openPlayer(station) = routes[2] {
+            XCTAssertEqual(station.id, "demo")
+        } else {
+            XCTFail("Expected demo station route")
+        }
+        XCTAssertEqual(routes[3], .restoreLastOpenedStation)
+    }
+
+    func testShellLaunchBootstrapRouterSkipsMissingOpenPlayerStation() {
+        XCTAssertEqual(
+            ShellLaunchBootstrapRouter.routes(
+                for: [.openPlayer(useDemoStation: false), .openPlayer(useDemoStation: true)],
+                lastPlayedStation: nil,
+                demoStation: nil
+            ),
+            []
+        )
+    }
+
     func testShellDemoStationBootstrapPlannerSeedsAndPlaysWhenDemoIsNotCurrentStation() {
         XCTAssertEqual(
             ShellDemoStationBootstrapPlanner.actions(
