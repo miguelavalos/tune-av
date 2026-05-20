@@ -2,6 +2,27 @@ import XCTest
 @testable import TuneAV
 
 final class AccessLimitsTests: XCTestCase {
+    func testRootStartupSyncPolicySkipsGuestAccountRefreshWhenAccountProviderIsUnavailable() {
+        let policy = RootStartupSyncPolicy(accountIsAvailable: false, isSignedIn: false)
+
+        XCTAssertFalse(policy.shouldRefreshAccountState)
+        XCTAssertFalse(policy.shouldScheduleLibrarySync)
+    }
+
+    func testRootStartupSyncPolicyRefreshesAccountStateWhenProviderIsAvailable() {
+        let policy = RootStartupSyncPolicy(accountIsAvailable: true, isSignedIn: false)
+
+        XCTAssertTrue(policy.shouldRefreshAccountState)
+        XCTAssertFalse(policy.shouldScheduleLibrarySync)
+    }
+
+    func testRootStartupSyncPolicyRefreshesAndSyncsLibraryForSignedInUsers() {
+        let policy = RootStartupSyncPolicy(accountIsAvailable: false, isSignedIn: true)
+
+        XCTAssertTrue(policy.shouldRefreshAccountState)
+        XCTAssertTrue(policy.shouldScheduleLibrarySync)
+    }
+
     func testAccessPolicyMatchesSharedContract() throws {
         let contract = try loadAccessPolicyContract()
         let expectedModes: [(mode: AccessMode, planTier: String)] = [

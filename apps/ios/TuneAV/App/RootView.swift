@@ -158,7 +158,11 @@ struct RootView: View {
     }
 
     private func scheduleSignedInLibrarySync(after delay: Duration? = nil) {
-        guard accessController.isSignedIn else {
+        let syncPolicy = RootStartupSyncPolicy(
+            accountIsAvailable: accessController.accountIsAvailable,
+            isSignedIn: accessController.isSignedIn
+        )
+        guard syncPolicy.shouldScheduleLibrarySync else {
             cancelScheduledLibrarySync()
             return
         }
@@ -243,7 +247,11 @@ struct RootView: View {
     }
 
     private func refreshActiveAccountStateIfNeeded() async {
-        guard accessController.accountIsAvailable || accessController.isSignedIn else { return }
+        let syncPolicy = RootStartupSyncPolicy(
+            accountIsAvailable: accessController.accountIsAvailable,
+            isSignedIn: accessController.isSignedIn
+        )
+        guard syncPolicy.shouldRefreshAccountState else { return }
         await measureStartupOperation("access_sync") {
             await accessController.syncFromAccountProvider()
         }
@@ -258,6 +266,19 @@ struct RootView: View {
     private func logStartupOperation(_ name: String, startedAt: Date) {
         let durationMilliseconds = Int(Date().timeIntervalSince(startedAt) * 1_000)
         startupLogger.info("Startup operation completed name=\(name, privacy: .public) duration_ms=\(durationMilliseconds, privacy: .public)")
+    }
+}
+
+struct RootStartupSyncPolicy: Equatable {
+    let accountIsAvailable: Bool
+    let isSignedIn: Bool
+
+    var shouldRefreshAccountState: Bool {
+        accountIsAvailable || isSignedIn
+    }
+
+    var shouldScheduleLibrarySync: Bool {
+        isSignedIn
     }
 }
 
