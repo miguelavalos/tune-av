@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -27,6 +28,7 @@ final class LibraryStore: ObservableObject {
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
+    private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
     private var appDataService: TuneAVAppDataService?
     private var backendService: TuneAVAppDataService?
     private let tombstoneEncoder = JSONEncoder()
@@ -72,6 +74,11 @@ final class LibraryStore: ObservableObject {
         stationFeedback = Self.loadStationFeedback()
         trackFeedback = Self.loadTrackFeedback()
         pendingListeningSessions = Self.loadPendingListeningSessions(maxCount: Self.maxPendingListeningSessions)
+        if !pendingListeningSessions.isEmpty {
+            analyticsLogger.debug(
+                "Restored pending listening sessions pending=\(self.pendingListeningSessions.count, privacy: .public)"
+            )
+        }
         refresh()
     }
 
@@ -689,6 +696,7 @@ final class LibraryStore: ObservableObject {
             trackFeedbackSyncTasks.removeAll()
             trackFeedbackSyncTokens.removeAll()
             pendingListeningSessions.removeAll()
+            analyticsLogger.debug("Cleared pending listening sessions after backend disconnect")
             persistPendingListeningSessions()
         } else if !pendingListeningSessions.isEmpty {
             scheduleListeningSessionUpload()
@@ -768,6 +776,9 @@ final class LibraryStore: ObservableObject {
             maxCount: Self.maxPendingListeningSessions
         )
         persistPendingListeningSessions()
+        analyticsLogger.debug(
+            "Queued listening session pending=\(self.pendingListeningSessions.count, privacy: .public)"
+        )
 
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
@@ -789,6 +800,9 @@ final class LibraryStore: ObservableObject {
             maxDelay: Self.listeningSessionRetryMaxDelay,
             jitterFraction: Self.listeningSessionRetryJitterFraction
         )
+        analyticsLogger.debug(
+            "Scheduled listening session upload pending=\(self.pendingListeningSessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public) delaySeconds=\(delay, privacy: .public)"
+        )
         listeningSessionUploadTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
             guard !Task.isCancelled else { return }
@@ -803,6 +817,7 @@ final class LibraryStore: ObservableObject {
 
         guard let backendService, backendService.isConfigured() else {
             pendingListeningSessions.removeAll()
+            analyticsLogger.debug("Discarded pending listening sessions because backend is unavailable")
             persistPendingListeningSessions()
             return
         }
@@ -810,22 +825,29 @@ final class LibraryStore: ObservableObject {
 
         let sessions = pendingListeningSessions
         pendingListeningSessions.removeAll(keepingCapacity: true)
+        analyticsLogger.debug(
+            "Uploading listening sessions count=\(sessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public)"
+        )
 
         listeningSessionFlushTask = Task { @MainActor in
             do {
-                try await backendService.recordListeningSessions(sessions)
+                let result = try await backendService.recordListeningSessions(sessions)
                 guard self.backendService === backendService else { return }
-                finishListeningSessionUpload(didUpload: true, sessions: sessions)
+                finishListeningSessionUpload(didUpload: true, sessions: sessions, result: result)
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                finishListeningSessionUpload(didUpload: false, sessions: sessions)
+                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil)
             }
         }
     }
 
-    private func finishListeningSessionUpload(didUpload: Bool, sessions: [TuneAVListeningSessionDraft]) {
+    private func finishListeningSessionUpload(
+        didUpload: Bool,
+        sessions: [TuneAVListeningSessionDraft],
+        result: TuneAVListeningSessionsUploadResult?
+    ) {
         listeningSessionFlushTask = nil
 
         guard didUpload else {
@@ -836,12 +858,18 @@ final class LibraryStore: ObservableObject {
                 maxCount: Self.maxPendingListeningSessions
             )
             persistPendingListeningSessions()
+            analyticsLogger.debug(
+                "Listening session upload failed requeued=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public)"
+            )
             scheduleListeningSessionUpload()
             return
         }
 
         listeningSessionUploadRetryCount = 0
         persistPendingListeningSessions()
+        analyticsLogger.debug(
+            "Listening session upload finished sent=\(sessions.count, privacy: .public) accepted=\(result?.accepted ?? 0, privacy: .public) duplicate=\(result?.duplicate ?? 0, privacy: .public) rejected=\(result?.rejected ?? 0, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public)"
+        )
         guard !pendingListeningSessions.isEmpty else { return }
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
