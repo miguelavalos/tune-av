@@ -820,27 +820,18 @@ struct AppShellView: View {
     }
 
     private func restoreLastOpenedStationOnLaunch() {
-        if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
-            selectStationForLaunchAndOpenPlayer(lastStation)
-            return
-        }
+        guard let selection = restoredLaunchSelection() else { return }
 
-        if let stationID = libraryStore.settings.lastOpenedStationID,
-           let station = libraryStore.station(for: stationID) {
-            selectStationForLaunchAndOpenPlayer(station)
-        }
+        audioPlayer.select(station: selection.station, queue: selection.queue)
+        openNowPlayingFullPlayer(selection.station)
     }
 
-    private func selectStationForLaunchAndOpenPlayer(_ station: Station) {
-        let resolvedStation = enrichedStation(station)
-        let queue = restoredPlaybackQueue(for: resolvedStation)
-        audioPlayer.select(station: resolvedStation, queue: queue)
-        openNowPlayingFullPlayer(resolvedStation)
-    }
-
-    private func restoredPlaybackQueue(for station: Station) -> AudioPlayerService.PlaybackQueue {
-        ShellPlaybackQueueBuilder.restoredQueue(
-            for: station,
+    private func restoredLaunchSelection() -> ShellRestoredLaunchSelection? {
+        ShellPlaybackQueueBuilder.restoredLaunchSelection(
+            lastPlayedStationID: libraryStore.settings.lastPlayedStationID,
+            lastOpenedStationID: libraryStore.settings.lastOpenedStationID,
+            stationForID: libraryStore.station(for:),
+            enrichStation: enrichedStation(_:),
             favorites: enrichedFavoriteStations,
             recents: enrichedRecentStations,
             homeStations: enrichedStations(homeSnapshot.stations)

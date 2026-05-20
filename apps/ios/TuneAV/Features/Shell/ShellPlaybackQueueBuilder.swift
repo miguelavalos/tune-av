@@ -1,4 +1,33 @@
+struct ShellRestoredLaunchSelection {
+    let station: Station
+    let queue: AudioPlayerService.PlaybackQueue
+}
+
 enum ShellPlaybackQueueBuilder {
+    static func restoredLaunchSelection(
+        lastPlayedStationID: String?,
+        lastOpenedStationID: String?,
+        stationForID: (String?) -> Station?,
+        enrichStation: (Station) -> Station,
+        favorites: [Station],
+        recents: [Station],
+        homeStations: [Station]
+    ) -> ShellRestoredLaunchSelection? {
+        guard let station = stationForID(lastPlayedStationID) ?? stationForID(lastOpenedStationID) else {
+            return nil
+        }
+
+        let resolvedStation = enrichStation(station)
+        let queue = restoredQueue(
+            for: resolvedStation,
+            favorites: favorites,
+            recents: recents,
+            homeStations: homeStations
+        )
+
+        return ShellRestoredLaunchSelection(station: resolvedStation, queue: queue)
+    }
+
     static func restoredQueue(
         for station: Station,
         favorites: [Station],

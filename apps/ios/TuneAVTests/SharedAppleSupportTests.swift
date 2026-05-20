@@ -2249,6 +2249,62 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(queue.stations.map(\.id), ["current", "recent", "home"])
     }
 
+    func testShellPlaybackQueueBuilderRestoresLastPlayedBeforeLastOpened() throws {
+        let played = Station(id: "played", name: "Played", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/played")
+        let opened = Station(id: "opened", name: "Opened", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/opened")
+
+        let selection = try XCTUnwrap(ShellPlaybackQueueBuilder.restoredLaunchSelection(
+            lastPlayedStationID: "played",
+            lastOpenedStationID: "opened",
+            stationForID: { id in
+                ["played": played, "opened": opened][id ?? ""]
+            },
+            enrichStation: { station in
+                Station(id: station.id, name: "Enriched \(station.name)", country: station.country, language: station.language, tags: station.tags, streamURL: station.streamURL)
+            },
+            favorites: [played, opened],
+            recents: [],
+            homeStations: []
+        ))
+
+        XCTAssertEqual(selection.station.id, "played")
+        XCTAssertEqual(selection.station.name, "Enriched Played")
+        XCTAssertEqual(selection.queue.source, .libraryFavorites)
+        XCTAssertEqual(selection.queue.stations.map(\.id), ["played", "opened"])
+    }
+
+    func testShellPlaybackQueueBuilderRestoresLastOpenedWhenLastPlayedMissing() throws {
+        let opened = Station(id: "opened", name: "Opened", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/opened")
+
+        let selection = try XCTUnwrap(ShellPlaybackQueueBuilder.restoredLaunchSelection(
+            lastPlayedStationID: "missing",
+            lastOpenedStationID: "opened",
+            stationForID: { id in
+                id == "opened" ? opened : nil
+            },
+            enrichStation: { $0 },
+            favorites: [],
+            recents: [opened],
+            homeStations: []
+        ))
+
+        XCTAssertEqual(selection.station.id, "opened")
+        XCTAssertEqual(selection.queue.source, .singleStation)
+        XCTAssertEqual(selection.queue.stations.map(\.id), ["opened"])
+    }
+
+    func testShellPlaybackQueueBuilderSkipsLaunchRestoreWithoutStoredStation() {
+        XCTAssertNil(ShellPlaybackQueueBuilder.restoredLaunchSelection(
+            lastPlayedStationID: "missing",
+            lastOpenedStationID: nil,
+            stationForID: { _ in nil },
+            enrichStation: { $0 },
+            favorites: [],
+            recents: [],
+            homeStations: []
+        ))
+    }
+
     func testShellListeningSessionCoordinatorEndsPreviousSessionWhenStationChanges() throws {
         let first = Station(id: "first", name: "First", country: "Spain", language: "Spanish", tags: "pop", streamURL: "https://example.com/first")
         let second = Station(id: "second", name: "Second", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/second")
