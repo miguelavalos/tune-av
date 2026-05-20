@@ -2273,6 +2273,53 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(state.pageLabel, L10n.string("shell.avi.actions.page", 1, 1))
     }
 
+    func testShellAviActionsRouterCoordinatesMenuSideEffects() {
+        let station = Station(id: "nova", name: "Radio Nova", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/nova")
+        var events: [String] = []
+        let router = ShellAviActionsRouter(
+            changeActionsPage: { events.append("page:\($0)") },
+            closeAviActions: { events.append("close") },
+            showReaction: { events.append("reaction:\($0)") },
+            openTrackSearch: { station, destination, suffix in
+                events.append("track:\(station.id):\(destination):\(suffix ?? "nil")")
+            },
+            openArtistSearch: { events.append("artist") },
+            openStationSearch: { station in events.append("station:\(station.id)") },
+            runProActionOutsideFullPlayer: { action in
+                events.append("pro")
+                action()
+            },
+            showStationDetails: { station, queue in
+                events.append("details:\(station.id):\(queue.map(\.id).joined(separator: ","))")
+            },
+            openStationWebsiteOrSearch: { station in events.append("web:\(station.id)") },
+            showRelatedStations: { station in events.append("related:\(station.id)") },
+            stopPlayback: { events.append("stop") }
+        )
+
+        router.searchLyrics(for: station)
+        router.searchPublicInfo(for: station)
+        router.openWebsite(for: station)
+        router.findRelatedRadios(for: station)
+        router.closeSignal()
+
+        XCTAssertEqual(events, [
+            "reaction:curious",
+            "track:nova:web:lyrics",
+            "pro",
+            "reaction:curious",
+            "station:nova",
+            "pro",
+            "reaction:curious",
+            "web:nova",
+            "reaction:curious",
+            "related:nova",
+            "close",
+            "close",
+            "stop"
+        ])
+    }
+
     func testShellAviFeedbackResolverTargetsCurrentTrackInFullPlayerSongContext() {
         let target = ShellAviFeedbackResolver.primaryTarget(
             isNowPlayingFullPlayer: true,

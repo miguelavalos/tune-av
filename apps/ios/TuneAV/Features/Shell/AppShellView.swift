@@ -4978,75 +4978,57 @@ struct AviScreen: View {
         )
     }
 
+    private var aviActionsRouter: ShellAviActionsRouter {
+        ShellAviActionsRouter(
+            changeActionsPage: { page in
+                withAnimation(.snappy(duration: 0.2)) {
+                    applyAviTransientState(currentAviTransientState.changingActionsPage(to: page))
+                }
+            },
+            closeAviActions: closeAviActions,
+            showReaction: showAviReaction,
+            openTrackSearch: { station, destination, suffix in
+                openAviSearch(for: station, destination: destination, suffix: suffix)
+            },
+            openArtistSearch: openAviArtistSearch,
+            openStationSearch: openAviStationSearch,
+            runProActionOutsideFullPlayer: runProAviActionOutsideFullPlayer,
+            showStationDetails: { station, queue in
+                showStationDetails(station, queue)
+            },
+            openStationWebsiteOrSearch: { station in
+                browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
+            },
+            showRelatedStations: showRelatedStations,
+            stopPlayback: stopPlayback
+        )
+    }
+
     private func aviActionsPanel(for station: Station) -> some View {
         aviActionsPanel(for: station, showsStationDetailAction: true)
     }
 
     private func aviActionsPanel(for station: Station, showsStationDetailAction: Bool) -> some View {
         let panelState = aviActionsPanelState
+        let router = aviActionsRouter
 
         return AviActionsPanelView(
             state: panelState,
             showsStationDetailAction: showsStationDetailAction,
             showsCloseSignalAction: isNowPlayingFullPlayer && isFocusedStationActive,
-            previousPage: {
-                withAnimation(.snappy(duration: 0.2)) {
-                    applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.previousPage))
-                }
-            },
-            nextPage: {
-                withAnimation(.snappy(duration: 0.2)) {
-                    applyAviTransientState(currentAviTransientState.changingActionsPage(to: panelState.nextPage))
-                }
-            },
+            previousPage: { router.previousPage(from: panelState) },
+            nextPage: { router.nextPage(from: panelState) },
             close: closeAviActions,
-            searchLyrics: {
-                showAviReaction(.curious)
-                openAviSearch(for: station, destination: .web, suffix: "lyrics")
-            },
-            searchYouTube: {
-                showAviReaction(.curious)
-                openAviSearch(for: station, destination: .youtube)
-            },
-            searchAppleMusic: {
-                showAviReaction(.curious)
-                openAviSearch(for: station, destination: .appleMusic)
-            },
-            searchArtist: {
-                showAviReaction(.curious)
-                openAviArtistSearch()
-            },
-            searchPublicInfo: {
-                runProAviActionOutsideFullPlayer {
-                    showAviReaction(.curious)
-                    openAviStationSearch(for: station)
-                }
-            },
-            showRadioDetails: {
-                showStationDetails(station, [station])
-                closeAviActions()
-            },
-            showHistory: {
-                runProAviActionOutsideFullPlayer {
-                    showStationDetails(station, [station])
-                    closeAviActions()
-                }
-            },
-            openWebsite: {
-                runProAviActionOutsideFullPlayer {
-                    showAviReaction(.curious)
-                    browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
-                }
-            },
-            findRelatedRadios: {
-                showAviReaction(.curious)
-                showRelatedStations(for: station)
-                closeAviActions()
-            },
-            closeSignal: {
-                closeAviActions()
-                stopPlayback()
-            }
+            searchLyrics: { router.searchLyrics(for: station) },
+            searchYouTube: { router.searchYouTube(for: station) },
+            searchAppleMusic: { router.searchAppleMusic(for: station) },
+            searchArtist: router.searchArtist,
+            searchPublicInfo: { router.searchPublicInfo(for: station) },
+            showRadioDetails: { router.showRadioDetails(for: station) },
+            showHistory: { router.showHistory(for: station) },
+            openWebsite: { router.openWebsite(for: station) },
+            findRelatedRadios: { router.findRelatedRadios(for: station) },
+            closeSignal: router.closeSignal
         )
     }
 
