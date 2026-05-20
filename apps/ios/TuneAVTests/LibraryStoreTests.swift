@@ -10,7 +10,7 @@ final class LibraryStoreTests: XCTestCase {
 
         let trimmed = LibraryStoreListeningSessionBuffer.trimmed(sessions, maxCount: 3)
 
-        XCTAssertEqual(trimmed.map(\.station.id), ["station-2", "station-3", "station-4"])
+        XCTAssertEqual(trimmed.map(\.stationID), ["station-2", "station-3", "station-4"])
     }
 
     func testListeningSessionBufferHandlesZeroLimit() {
@@ -40,7 +40,7 @@ final class LibraryStoreTests: XCTestCase {
         ])
 
         XCTAssertEqual(deduplicated.map(\.id), ["first-session", "stable-session"])
-        XCTAssertEqual(deduplicated.last?.station.id, "station-new")
+        XCTAssertEqual(deduplicated.last?.stationID, "station-new")
         XCTAssertEqual(deduplicated.last?.endedReason, "paused")
     }
 
@@ -55,7 +55,7 @@ final class LibraryStoreTests: XCTestCase {
         let bounded = LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: 2)
 
         XCTAssertEqual(bounded.map(\.id), ["session-2", "session-3"])
-        XCTAssertEqual(bounded.first?.station.id, "station-2-new")
+        XCTAssertEqual(bounded.first?.stationID, "station-2-new")
     }
 
     func testListeningSessionPersistenceRestoresBoundedSessions() throws {
@@ -84,7 +84,72 @@ final class LibraryStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(restored.map(\.id), ["session-2", "session-3"])
-        XCTAssertEqual(restored.first?.station.id, "station-2-new")
+        XCTAssertEqual(restored.first?.stationID, "station-2-new")
+    }
+
+    func testListeningSessionPersistenceStoresCompactStationIdentityOnly() throws {
+        let storageKey = "test.pendingListeningSessions.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+
+        LibraryStoreListeningSessionPersistence.save(
+            [listeningSessionDraft(id: "session-1", stationID: "station-1")],
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+
+        let data = try XCTUnwrap(userDefaults.data(forKey: storageKey))
+        let json = String(decoding: data, as: UTF8.self)
+        XCTAssertTrue(json.contains("\"stationID\""))
+        XCTAssertTrue(json.contains("\"stationName\""))
+        XCTAssertFalse(json.contains("\"station\""))
+        XCTAssertFalse(json.contains("streamURL"))
+    }
+
+    func testListeningSessionPersistenceMigratesLegacyStationDrafts() throws {
+        struct LegacyDraft: Encodable {
+            let id: String
+            let station: Station
+            let startedAt: Date
+            let endedAt: Date
+            let durationSeconds: Int
+            let source: String
+            let endedReason: String
+            let trackDetectedCount: Int
+        }
+
+        let storageKey = "test.pendingListeningSessions.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+
+        let legacyDraft = LegacyDraft(
+            id: "legacy-session",
+            station: Station(
+                id: "legacy-station",
+                name: "Legacy Station",
+                country: "Spain",
+                language: "Spanish",
+                tags: "pop",
+                streamURL: "https://example.com/legacy.mp3"
+            ),
+            startedAt: Date(timeIntervalSince1970: 10),
+            endedAt: Date(timeIntervalSince1970: 30),
+            durationSeconds: 20,
+            source: "home",
+            endedReason: "paused",
+            trackDetectedCount: 1
+        )
+        userDefaults.set(try JSONEncoder().encode([legacyDraft]), forKey: storageKey)
+
+        let restored = LibraryStoreListeningSessionPersistence.load(
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+
+        XCTAssertEqual(restored.first?.stationID, "legacy-station")
+        XCTAssertEqual(restored.first?.stationName, "Legacy Station")
     }
 
     func testListeningSessionPersistenceClearsStorageWhenEmpty() throws {

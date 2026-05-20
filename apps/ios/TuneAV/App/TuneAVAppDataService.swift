@@ -113,8 +113,8 @@ final class TuneAVAppDataService {
             .map { session in
                 TuneAVListeningSessionInput(
                     id: session.id,
-                    stationId: session.station.id,
-                    stationName: session.station.name,
+                    stationId: session.stationID,
+                    stationName: session.stationName,
                     startedAt: TuneAVDateCoding.string(from: session.startedAt),
                     endedAt: TuneAVDateCoding.string(from: session.endedAt),
                     durationSeconds: session.durationSeconds,
@@ -190,13 +190,27 @@ private struct TuneAVTrackFeedbackRequest: Encodable {
 
 struct TuneAVListeningSessionDraft: Codable, Equatable {
     let id: String
-    let station: Station
+    let stationID: String
+    let stationName: String
     let startedAt: Date
     let endedAt: Date
     let durationSeconds: Int
     let source: String
     let endedReason: String
     let trackDetectedCount: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case station
+        case stationID
+        case stationName
+        case startedAt
+        case endedAt
+        case durationSeconds
+        case source
+        case endedReason
+        case trackDetectedCount
+    }
 
     init(
         id: String = UUID().uuidString,
@@ -209,13 +223,49 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         trackDetectedCount: Int
     ) {
         self.id = id
-        self.station = station
+        self.stationID = station.id
+        self.stationName = station.name
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.durationSeconds = durationSeconds
         self.source = source
         self.endedReason = endedReason
         self.trackDetectedCount = trackDetectedCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+
+        if let stationID = try container.decodeIfPresent(String.self, forKey: .stationID),
+           let stationName = try container.decodeIfPresent(String.self, forKey: .stationName) {
+            self.stationID = stationID
+            self.stationName = stationName
+        } else {
+            let station = try container.decode(Station.self, forKey: .station)
+            stationID = station.id
+            stationName = station.name
+        }
+
+        startedAt = try container.decode(Date.self, forKey: .startedAt)
+        endedAt = try container.decode(Date.self, forKey: .endedAt)
+        durationSeconds = try container.decode(Int.self, forKey: .durationSeconds)
+        source = try container.decode(String.self, forKey: .source)
+        endedReason = try container.decode(String.self, forKey: .endedReason)
+        trackDetectedCount = try container.decode(Int.self, forKey: .trackDetectedCount)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(stationID, forKey: .stationID)
+        try container.encode(stationName, forKey: .stationName)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(endedAt, forKey: .endedAt)
+        try container.encode(durationSeconds, forKey: .durationSeconds)
+        try container.encode(source, forKey: .source)
+        try container.encode(endedReason, forKey: .endedReason)
+        try container.encode(trackDetectedCount, forKey: .trackDetectedCount)
     }
 }
 
