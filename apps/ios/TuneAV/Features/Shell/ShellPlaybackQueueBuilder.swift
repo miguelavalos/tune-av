@@ -3,6 +3,21 @@ struct ShellRestoredLaunchSelection {
     let queue: AudioPlayerService.PlaybackQueue
 }
 
+enum ShellLaunchRestoreExecutor {
+    @discardableResult
+    static func restore(
+        selection: ShellRestoredLaunchSelection?,
+        selectStation: (Station, AudioPlayerService.PlaybackQueue) -> Void,
+        openPlayer: (Station) -> Void
+    ) -> Bool {
+        guard let selection else { return false }
+
+        selectStation(selection.station, selection.queue)
+        openPlayer(selection.station)
+        return true
+    }
+}
+
 enum ShellPlaybackQueueBuilder {
     static func restoredLaunchSelection(
         lastPlayedStationID: String?,

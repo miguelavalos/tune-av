@@ -260,6 +260,44 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testShellLaunchRestoreExecutorSelectsStationThenOpensPlayer() {
+        let station = shellStation(id: "last-played")
+        let queue = AudioPlayerService.PlaybackQueue(source: .libraryRecents, stations: [station])
+        let selection = ShellRestoredLaunchSelection(station: station, queue: queue)
+        var events: [String] = []
+        var selectedQueueSource: AudioPlayerService.PlaybackQueue.Source?
+
+        let didRestore = ShellLaunchRestoreExecutor.restore(
+            selection: selection,
+            selectStation: { selectedStation, selectedQueue in
+                selectedQueueSource = selectedQueue.source
+                events.append("select:\(selectedStation.id):\(selectedQueue.stations.map(\.id).joined(separator: ","))")
+            },
+            openPlayer: { openedStation in
+                events.append("open:\(openedStation.id)")
+            }
+        )
+
+        XCTAssertTrue(didRestore)
+        XCTAssertEqual(selectedQueueSource, .libraryRecents)
+        XCTAssertEqual(events, ["select:last-played:last-played", "open:last-played"])
+    }
+
+    func testShellLaunchRestoreExecutorSkipsMissingSelection() {
+        var didSelectStation = false
+        var didOpenPlayer = false
+
+        let didRestore = ShellLaunchRestoreExecutor.restore(
+            selection: nil,
+            selectStation: { _, _ in didSelectStation = true },
+            openPlayer: { _ in didOpenPlayer = true }
+        )
+
+        XCTAssertFalse(didRestore)
+        XCTAssertFalse(didSelectStation)
+        XCTAssertFalse(didOpenPlayer)
+    }
+
     func testShellDemoStationBootstrapPlannerSeedsAndPlaysWhenDemoIsNotCurrentStation() {
         XCTAssertEqual(
             ShellDemoStationBootstrapPlanner.actions(

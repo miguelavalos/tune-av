@@ -848,10 +848,13 @@ struct AppShellView: View {
     }
 
     private func restoreLastOpenedStationOnLaunch() {
-        guard let selection = restoredLaunchSelection() else { return }
-
-        audioPlayer.select(station: selection.station, queue: selection.queue)
-        openNowPlayingFullPlayer(selection.station)
+        ShellLaunchRestoreExecutor.restore(
+            selection: restoredLaunchSelection(),
+            selectStation: { station, queue in
+                audioPlayer.select(station: station, queue: queue)
+            },
+            openPlayer: openNowPlayingFullPlayer(_:)
+        )
     }
 
     private func restoredLaunchSelection() -> ShellRestoredLaunchSelection? {
