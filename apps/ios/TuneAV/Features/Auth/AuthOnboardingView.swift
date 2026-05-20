@@ -273,7 +273,7 @@ private struct DiscoveryHero: View {
 private struct BrandHeaderBadge: View {
     var body: some View {
         HStack {
-            Image("OnboardingWordmark")
+            Image("AuthWordmark")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 160, height: 54)

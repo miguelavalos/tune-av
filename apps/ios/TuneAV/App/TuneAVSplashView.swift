@@ -22,7 +22,7 @@ struct TuneAVSplashView: View {
             PaperSignalBackdrop(expanded: signalExpanded)
 
             VStack(spacing: 0) {
-                Image("OnboardingWordmark")
+                Image("SplashLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 232, height: 78)
