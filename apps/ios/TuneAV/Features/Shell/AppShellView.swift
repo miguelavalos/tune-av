@@ -1721,13 +1721,6 @@ private struct CachedStationNowPlaying {
 
 private let shellScrollCoordinateSpace = "shellScrollCoordinateSpace"
 
-private struct ActiveListeningSession {
-    let station: Station
-    let startedAt: Date
-    let source: String
-    var trackKeys: Set<String>
-}
-
 extension TuneAVPlaybackQueueSource {
     var displayTitle: String {
         switch self {
@@ -1777,23 +1770,6 @@ extension TuneAVPlaybackQueueSource {
             return "player"
         }
     }
-}
-
-private func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
-    defer { previousOffset = currentOffset }
-
-    if currentOffset > -18 {
-        return true
-    }
-
-    let delta = currentOffset - previousOffset
-    if delta < -10 {
-        return false
-    }
-    if delta > 8 {
-        return true
-    }
-    return currentVisibility
 }
 
 struct AviScreen: View {
