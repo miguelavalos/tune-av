@@ -10,6 +10,9 @@ MAX_ASSETS_SIZE_BYTES="${TUNEAV_IOS_MAX_ASSETS_SIZE_BYTES:-31457280}"
 MAX_FRAMEWORKS_SIZE_BYTES="${TUNEAV_IOS_MAX_FRAMEWORKS_SIZE_BYTES:-62914560}"
 MAX_PLUGINS_SIZE_BYTES="${TUNEAV_IOS_MAX_PLUGINS_SIZE_BYTES:-20971520}"
 
+rm -f "$REPORT_PATH"
+mkdir -p "$(dirname "$REPORT_PATH")"
+
 if [[ ! -d "$APP_PATH" ]]; then
   echo "FAIL $APP_PATH is missing. Run bun run ios:ci before generating the size report." >&2
   exit 1
@@ -85,8 +88,6 @@ write_budget_row() {
 
   printf '| %s | %s | %s | %s |\n' "$label" "$(human_bytes "$bytes")" "$budget" "$status"
 }
-
-mkdir -p "$(dirname "$REPORT_PATH")"
 
 app_bytes="$(bytes_for_path "$APP_PATH")"
 executable_path="$APP_PATH/TuneAV"

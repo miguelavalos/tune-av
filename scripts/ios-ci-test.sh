@@ -8,6 +8,10 @@ RESULT_BUNDLE_PATH="${TUNEAV_IOS_RESULT_BUNDLE_PATH:-$ROOT_DIR/.derived-data/ios
 SIZE_REPORT_PATH="${TUNEAV_IOS_SIZE_REPORT_PATH:-$ROOT_DIR/.derived-data/ios-ci/Reports/app-size.md}"
 LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH="${TUNEAV_IOS_LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH:-$(dirname "$RESULT_BUNDLE_PATH")/LaunchPerformance.xcresult}"
 
+rm -rf "$RESULT_BUNDLE_PATH" "$LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH"
+rm -f "$SIZE_REPORT_PATH"
+mkdir -p "$(dirname "$RESULT_BUNDLE_PATH")" "$(dirname "$LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH")" "$(dirname "$SIZE_REPORT_PATH")"
+
 device_id="$(xcrun simctl list devices available | awk '
   /iPhone 16 \(/ {
     if (match($0, /\([0-9A-F-]{36}\)/)) {
@@ -24,8 +28,6 @@ if [[ -z "$device_id" ]]; then
 fi
 
 cd "$IOS_DIR"
-rm -rf "$RESULT_BUNDLE_PATH"
-mkdir -p "$(dirname "$RESULT_BUNDLE_PATH")"
 xcodebuild test \
   -project TuneAV.xcodeproj \
   -scheme TuneAV \
