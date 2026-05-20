@@ -328,6 +328,97 @@ struct MusicDiscoveryActions: View {
     }
 }
 
+struct MusicDiscoveryArtistList: View {
+    let snapshot: MusicLibraryDerivedState
+    @Binding var openAviActionsID: String?
+    let currentMode: MusicContentMode
+    let openArtist: (DiscoveryArtistSummary, MusicContentMode) -> Void
+    let openArtistSongs: (DiscoveryArtistSummary) -> Void
+    let openArtistRadios: (DiscoveryArtistSummary, MusicContentMode) -> Void
+    let openYouTube: (DiscoveryArtistSummary) -> Void
+    let openAppleMusic: (DiscoveryArtistSummary) -> Void
+    let openSpotify: (DiscoveryArtistSummary) -> Void
+    let showMoreArtists: () -> Void
+
+    var body: some View {
+        LazyVStack(spacing: 10) {
+            ForEach(Array(snapshot.visibleArtistSummariesForMode.enumerated()), id: \.element.id) { index, artist in
+                DiscoveryArtistRow(
+                    summary: artist,
+                    openAviActionsID: $openAviActionsID,
+                    openArtist: { openArtist(artist, currentMode) },
+                    openArtistSongs: { openArtistSongs(artist) },
+                    openArtistRadios: { openArtistRadios(artist, currentMode) },
+                    openYouTube: { openYouTube(artist) },
+                    openAppleMusic: { openAppleMusic(artist) },
+                    openSpotify: { openSpotify(artist) }
+                )
+                .zIndex(openAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(snapshot.visibleArtistSummariesForMode.count - index))
+            }
+
+            if snapshot.canShowMoreArtists {
+                ShowMoreButton(
+                    title: L10n.string("common.showMore"),
+                    remainingCount: snapshot.filteredArtistSummaries.count - snapshot.visibleArtistSummariesForMode.count,
+                    action: showMoreArtists
+                )
+            }
+        }
+    }
+}
+
+struct MusicDiscoveryTrackList: View {
+    let snapshot: MusicLibraryDerivedState
+    @Binding var openAviActionsID: String?
+    let currentMode: MusicContentMode
+    let stationArtworkURL: (DiscoveredTrack) -> URL?
+    let trackFeedback: (DiscoveredTrack) -> TuneAVStationFeedback?
+    let openTrackInfo: (DiscoveredTrack, MusicContentMode) -> Void
+    let openArtistInfo: (DiscoveredTrack, MusicContentMode) -> Void
+    let openStationInfo: (DiscoveredTrack) -> Void
+    let toggleSaved: (DiscoveredTrack) -> Void
+    let openYouTube: (DiscoveredTrack) -> Void
+    let openLyrics: (DiscoveredTrack) -> Void
+    let openAppleMusic: (DiscoveredTrack) -> Void
+    let openSpotify: (DiscoveredTrack) -> Void
+    let hideAction: (DiscoveredTrack) -> Void
+    let removeAction: (DiscoveredTrack) -> Void
+    let showMoreDiscoveries: () -> Void
+
+    var body: some View {
+        LazyVStack(spacing: 10) {
+            ForEach(Array(snapshot.visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
+                DiscoveryTrackCard(
+                    discovery: discovery,
+                    stationArtworkURL: stationArtworkURL(discovery),
+                    feedback: trackFeedback(discovery),
+                    showsSaveButton: false,
+                    openAviActionsID: $openAviActionsID,
+                    openTrackInfo: { openTrackInfo(discovery, currentMode) },
+                    openArtistInfo: { openArtistInfo(discovery, currentMode) },
+                    openStationInfo: { openStationInfo(discovery) },
+                    toggleSaved: { toggleSaved(discovery) },
+                    openYouTube: { openYouTube(discovery) },
+                    openLyrics: { openLyrics(discovery) },
+                    openAppleMusic: { openAppleMusic(discovery) },
+                    openSpotify: { openSpotify(discovery) },
+                    hideAction: { hideAction(discovery) },
+                    removeAction: { removeAction(discovery) }
+                )
+                .zIndex(openAviActionsID == "track-\(discovery.discoveryID)" ? 10_000 : Double(snapshot.visibleFilteredDiscoveries.count - index))
+            }
+
+            if snapshot.canShowMoreDiscoveries {
+                ShowMoreButton(
+                    title: L10n.string("common.showMore"),
+                    remainingCount: snapshot.filteredDiscoveries.count - snapshot.visibleFilteredDiscoveries.count,
+                    action: showMoreDiscoveries
+                )
+            }
+        }
+    }
+}
+
 struct HiddenDiscoveryUndoBanner: View {
     let bottomContentPadding: CGFloat
     let horizontalPadding: CGFloat

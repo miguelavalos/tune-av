@@ -9290,29 +9290,18 @@ struct MusicScreen: View {
                     discoveryTrackList(snapshot)
                 case .artists:
                     discoveryArtistsHeader(snapshot)
-                    LazyVStack(spacing: 10) {
-                        ForEach(Array(snapshot.visibleArtistSummariesForMode.enumerated()), id: \.element.id) { index, artist in
-                            DiscoveryArtistRow(
-                                summary: artist,
-                                openAviActionsID: $openMusicAviActionsID,
-                                openArtist: { openArtistInfo(artist, musicMode) },
-                                openArtistSongs: { openArtistSongs(artist.name) },
-                                openArtistRadios: { openArtistInfo(artist, musicMode) },
-                                openYouTube: { runProAviAction { openArtistSearch(artist.name, youtube: true) } },
-                                openAppleMusic: { runProAviAction { openAppleMusicArtistSearch(artist.name) } },
-                                openSpotify: { runProAviAction { openSpotifyArtistSearch(artist.name) } }
-                            )
-                            .zIndex(openMusicAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(snapshot.visibleArtistSummariesForMode.count - index))
-                        }
-
-                        if snapshot.canShowMoreArtists {
-                            ShowMoreButton(
-                                title: L10n.string("common.showMore"),
-                                remainingCount: snapshot.filteredArtistSummaries.count - snapshot.visibleArtistSummariesForMode.count,
-                                action: showMoreArtists
-                            )
-                        }
-                    }
+                    MusicDiscoveryArtistList(
+                        snapshot: snapshot,
+                        openAviActionsID: $openMusicAviActionsID,
+                        currentMode: musicMode,
+                        openArtist: { artist, mode in openArtistInfo(artist, mode) },
+                        openArtistSongs: { artist in openArtistSongs(artist.name) },
+                        openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
+                        openYouTube: { artist in runProAviAction { openArtistSearch(artist.name, youtube: true) } },
+                        openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist.name) } },
+                        openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } },
+                        showMoreArtists: showMoreArtists
+                    )
                 }
             }
         }
@@ -9321,36 +9310,24 @@ struct MusicScreen: View {
     }
 
     private func discoveryTrackList(_ snapshot: MusicLibraryDerivedState) -> some View {
-        LazyVStack(spacing: 10) {
-            ForEach(Array(snapshot.visibleFilteredDiscoveries.enumerated()), id: \.element.discoveryID) { index, discovery in
-                DiscoveryTrackCard(
-                    discovery: discovery,
-                    stationArtworkURL: stationArtworkURL(discovery),
-                    feedback: trackFeedback(discovery),
-                    showsSaveButton: false,
-                    openAviActionsID: $openMusicAviActionsID,
-                    openTrackInfo: { openDiscoveryInfo(discovery, musicMode) },
-                    openArtistInfo: { openArtistInfo(discoveryArtistSummary(for: discovery), musicMode) },
-                    openStationInfo: { openDiscoveryStationInfo(discovery) },
-                    toggleSaved: { toggleDiscoverySaved(discovery) },
-                    openYouTube: { runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
-                    openLyrics: { runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
-                    openAppleMusic: { runProAviAction { openAppleMusicSearch(discovery) } },
-                    openSpotify: { runProAviAction { openSpotifySearch(discovery) } },
-                    hideAction: { hideDiscoveryWithUndo(discovery) },
-                    removeAction: { removeDiscovery(discovery) }
-                )
-                .zIndex(openMusicAviActionsID == "track-\(discovery.discoveryID)" ? 10_000 : Double(snapshot.visibleFilteredDiscoveries.count - index))
-            }
-
-            if snapshot.canShowMoreDiscoveries {
-                ShowMoreButton(
-                    title: L10n.string("common.showMore"),
-                    remainingCount: snapshot.filteredDiscoveries.count - snapshot.visibleFilteredDiscoveries.count,
-                    action: showMoreDiscoveries
-                )
-            }
-        }
+        MusicDiscoveryTrackList(
+            snapshot: snapshot,
+            openAviActionsID: $openMusicAviActionsID,
+            currentMode: musicMode,
+            stationArtworkURL: { discovery in stationArtworkURL(discovery) },
+            trackFeedback: { discovery in trackFeedback(discovery) },
+            openTrackInfo: { discovery, mode in openDiscoveryInfo(discovery, mode) },
+            openArtistInfo: { discovery, mode in openArtistInfo(discoveryArtistSummary(for: discovery), mode) },
+            openStationInfo: { discovery in openDiscoveryStationInfo(discovery) },
+            toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
+            openYouTube: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: nil, youtube: true) } },
+            openLyrics: { discovery in runProAviAction { openDiscoverySearch(discovery, suffix: "lyrics", youtube: false) } },
+            openAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
+            openSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
+            hideAction: hideDiscoveryWithUndo(_:),
+            removeAction: { discovery in removeDiscovery(discovery) },
+            showMoreDiscoveries: showMoreDiscoveries
+        )
     }
 
     private func discoveryArtistSummary(for discovery: DiscoveredTrack) -> DiscoveryArtistSummary {
