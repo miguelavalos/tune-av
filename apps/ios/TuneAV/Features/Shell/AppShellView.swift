@@ -1117,7 +1117,10 @@ struct AppShellView: View {
 
     private func openMusicAviDetail(_ selection: AviMusicDetailSelection) {
         let plan = AviMusicDetailCoordinator.openPlan(for: selection)
+        applyMusicAviDetailOpenPlan(plan)
+    }
 
+    private func applyMusicAviDetailOpenPlan(_ plan: AviMusicDetailOpenPlan) {
         captureAviReturnContext(
             musicMode: plan.returnMusicMode,
             musicOverview: plan.returnMusicOverview
