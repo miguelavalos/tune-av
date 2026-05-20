@@ -778,33 +778,7 @@ struct AppShellView: View {
         didBootstrap = true
 
         seedUITestDataIfNeeded()
-
-        if let preferredTab = launchContext.preferredTab {
-            switch preferredTab {
-            case .home:
-                selectedTab = .home
-            case .search:
-                selectedTab = .search
-            case .library:
-                selectedTab = .library
-            case .music:
-                selectedTab = .music
-            case .player:
-                if let lastStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID) {
-                    playStation(lastStation)
-                    showStationDetails(lastStation, queueSource: .singleStation, queue: [lastStation])
-                } else if let demoStation = launchContext.demoStation {
-                    playStation(demoStation)
-                    showStationDetails(demoStation, queueSource: .singleStation, queue: [demoStation])
-                }
-            case .settings:
-                selectedTab = .profile
-            }
-        } else if launchContext.preferredSearchQuery != nil {
-            selectedTab = .search
-        } else if libraryStore.settings.openLastStationOnLaunch {
-            restoreLastOpenedStationOnLaunch()
-        }
+        applyLaunchBootstrapActions()
 
         if let demoStation = launchContext.demoStation {
             libraryStore.ensureSeededStation(demoStation, favorite: launchContext.seedFavorite)
@@ -816,6 +790,38 @@ struct AppShellView: View {
 
         if launchContext.isUITesting, let feature = launchContext.uiTestUpgradePromptFeature {
             accessController.presentUpgradePrompt(for: feature)
+        }
+    }
+
+    private func applyLaunchBootstrapActions() {
+        let lastPlayedStation = libraryStore.station(for: libraryStore.settings.lastPlayedStationID)
+        let actions = ShellLaunchBootstrapPlanner.actions(
+            preferredTab: launchContext.preferredTab,
+            hasPreferredSearchQuery: launchContext.preferredSearchQuery != nil,
+            shouldRestoreLastOpenedStation: libraryStore.settings.openLastStationOnLaunch,
+            hasLastPlayedStation: lastPlayedStation != nil,
+            hasDemoStation: launchContext.demoStation != nil
+        )
+
+        for action in actions {
+            applyLaunchBootstrapAction(action, lastPlayedStation: lastPlayedStation)
+        }
+    }
+
+    private func applyLaunchBootstrapAction(
+        _ action: ShellLaunchBootstrapAction,
+        lastPlayedStation: Station?
+    ) {
+        switch action {
+        case let .selectTab(tab):
+            selectedTab = tab
+        case let .openPlayer(useDemoStation):
+            let station = useDemoStation ? launchContext.demoStation : lastPlayedStation
+            guard let station else { return }
+            playStation(station)
+            showStationDetails(station, queueSource: .singleStation, queue: [station])
+        case .restoreLastOpenedStation:
+            restoreLastOpenedStationOnLaunch()
         }
     }
 

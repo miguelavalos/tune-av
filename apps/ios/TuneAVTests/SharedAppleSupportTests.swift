@@ -150,6 +150,75 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testShellLaunchBootstrapPlannerSelectsPreferredTabs() {
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: .music,
+                hasPreferredSearchQuery: false,
+                shouldRestoreLastOpenedStation: true,
+                hasLastPlayedStation: false,
+                hasDemoStation: false
+            ),
+            [.selectTab(.music)]
+        )
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: .settings,
+                hasPreferredSearchQuery: false,
+                shouldRestoreLastOpenedStation: true,
+                hasLastPlayedStation: false,
+                hasDemoStation: false
+            ),
+            [.selectTab(.profile)]
+        )
+    }
+
+    func testShellLaunchBootstrapPlannerPlayerPrefersLastPlayedBeforeDemo() {
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: .player,
+                hasPreferredSearchQuery: false,
+                shouldRestoreLastOpenedStation: false,
+                hasLastPlayedStation: true,
+                hasDemoStation: true
+            ),
+            [.openPlayer(useDemoStation: false)]
+        )
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: .player,
+                hasPreferredSearchQuery: false,
+                shouldRestoreLastOpenedStation: false,
+                hasLastPlayedStation: false,
+                hasDemoStation: true
+            ),
+            [.openPlayer(useDemoStation: true)]
+        )
+    }
+
+    func testShellLaunchBootstrapPlannerFallsBackToSearchThenLastStationRestore() {
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: nil,
+                hasPreferredSearchQuery: true,
+                shouldRestoreLastOpenedStation: true,
+                hasLastPlayedStation: false,
+                hasDemoStation: false
+            ),
+            [.selectTab(.search)]
+        )
+        XCTAssertEqual(
+            ShellLaunchBootstrapPlanner.actions(
+                preferredTab: nil,
+                hasPreferredSearchQuery: false,
+                shouldRestoreLastOpenedStation: true,
+                hasLastPlayedStation: false,
+                hasDemoStation: false
+            ),
+            [.restoreLastOpenedStation]
+        )
+    }
+
     func testAviRelatedStationsCoordinatorBuildsDeduplicatedCandidates() {
         let popular = shellStation(id: "popular")
         let queued = shellStation(id: "queued")

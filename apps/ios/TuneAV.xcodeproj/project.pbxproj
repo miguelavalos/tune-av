@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0020EDECB0E4FE157BC2CC89 /* ShellLaunchBootstrapPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F9B420331C4682DFB2282 /* ShellLaunchBootstrapPlanner.swift */; };
 		00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */; };
 		0329AE84F43EFCEDA3B88D1D /* AviFullPlayerViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */; };
 		04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */; };
@@ -297,6 +298,7 @@
 		9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePersonalStationSelector.swift; sourceTree = "<group>"; };
 		9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeUITests.swift; sourceTree = "<group>"; };
 		A20097A1515219B62D4EC2C9 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
+		A28F9B420331C4682DFB2282 /* ShellLaunchBootstrapPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellLaunchBootstrapPlanner.swift; sourceTree = "<group>"; };
 		A3218F25D3DD328B1F69801C /* StationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationInfoViews.swift; sourceTree = "<group>"; };
 		A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDetailQueueUITests.swift; sourceTree = "<group>"; };
 		A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
@@ -473,6 +475,7 @@
 				C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */,
 				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
 				BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */,
+				A28F9B420331C4682DFB2282 /* ShellLaunchBootstrapPlanner.swift */,
 				215630B5CEED14742AC811BE /* ShellPlaceholderViews.swift */,
 				604190C7A168380EB4909040 /* ShellPlaybackQueueBuilder.swift */,
 				9032055EBEFD359E9A0B4A08 /* ShellSearchViews.swift */,
@@ -923,6 +926,7 @@
 				DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */,
 				1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */,
 				F7EACDCDDF02578E446D4485 /* ShellHeaderViews.swift in Sources */,
+				0020EDECB0E4FE157BC2CC89 /* ShellLaunchBootstrapPlanner.swift in Sources */,
 				3B1ABBFA95315D1532ABD9EF /* ShellPlaceholderViews.swift in Sources */,
 				3242A5025F10CB72F23DFF8B /* ShellPlaybackQueueBuilder.swift in Sources */,
 				6C021BFA6934CAF149EAC91E /* ShellSearchViews.swift in Sources */,
