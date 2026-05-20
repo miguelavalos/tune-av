@@ -29,6 +29,7 @@ struct ShellStationDetailOpenPlan {
 }
 
 struct ShellContextualAviOpenPlan {
+    let capturesReturnContext: Bool
     let clearsStationDetail: Bool
     let clearsMusicDetail: Bool
     let isFullPlayer: Bool
@@ -85,6 +86,7 @@ enum ShellStationDetailOpenPlanner {
         builder: AviStationDetailBuilder
     ) -> ShellContextualAviOpenPlan {
         ShellContextualAviOpenPlan(
+            capturesReturnContext: true,
             clearsStationDetail: true,
             clearsMusicDetail: true,
             isFullPlayer: false,

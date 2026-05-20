@@ -1087,7 +1087,9 @@ struct AppShellView: View {
             presentation: LastOpenedStationPresentation.player.rawValue,
             builder: aviStationDetailBuilder
         )
-        captureAviReturnContext()
+        if plan.capturesReturnContext {
+            captureAviReturnContext()
+        }
         if plan.clearsStationDetail {
             selectedStationDetail = nil
         }

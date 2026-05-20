@@ -273,6 +273,7 @@ final class AviStationDetailBuilderTests: XCTestCase {
         )
 
         XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.capturesReturnContext)
         XCTAssertTrue(plan.clearsMusicDetail)
         XCTAssertFalse(plan.isFullPlayer)
         XCTAssertEqual(plan.selection?.detail.queueSource, .libraryRecents)
@@ -294,6 +295,7 @@ final class AviStationDetailBuilderTests: XCTestCase {
         )
 
         XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.capturesReturnContext)
         XCTAssertTrue(plan.clearsMusicDetail)
         XCTAssertFalse(plan.isFullPlayer)
         XCTAssertNil(plan.selection)
