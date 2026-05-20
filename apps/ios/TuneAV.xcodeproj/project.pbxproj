@@ -21,6 +21,7 @@
 		1135792ADAF1DD6490EB73F0 /* AccountAV in Frameworks */ = {isa = PBXBuildFile; productRef = 4AB3D9EBECC62D9E2BF5A81D /* AccountAV */; };
 		13E78839BA278A2B9CD1BC4A /* TuneAVAppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */; };
 		151635FADD47D1B88D07889F /* TuneAVAccessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */; };
+		1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97D4A7D40F1763112C81473 /* AviReactionState.swift */; };
 		184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */; };
 		19D12529EFE7CA401E3471B3 /* TuneAVAppShellSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */; };
 		1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */; };
@@ -327,6 +328,7 @@
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
+		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
 		FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellScaffoldView.swift; sourceTree = "<group>"; };
 		FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellNowPlayingPreviews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -390,6 +392,7 @@
 				04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */,
 				BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */,
 				61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */,
+				F97D4A7D40F1763112C81473 /* AviReactionState.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
 				B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */,
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
@@ -817,6 +820,7 @@
 				5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */,
 				0329AE84F43EFCEDA3B88D1D /* AviFullPlayerViews.swift in Sources */,
 				6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */,
+				1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */,
 				33BBBE7EC2FDB8BFF9868C96 /* AviReturnCoordinator.swift in Sources */,
 				59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */,
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
