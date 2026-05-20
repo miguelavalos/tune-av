@@ -21,6 +21,7 @@ struct AppShellView: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var chromeActions = AppShellChromeActions()
     @State private var selectedTab: AppShellTab
@@ -219,6 +220,9 @@ struct AppShellView: View {
         }
         .onChange(of: audioPlayer.status) { oldStatus, newStatus in
             handlePlaybackStatusChange(from: oldStatus, to: newStatus)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhaseChange(newPhase)
         }
         .onChange(of: currentTrackDiscoveryKey) { _, _ in
             recordCurrentTrackDiscovery()
@@ -961,6 +965,30 @@ struct AppShellView: View {
         case .loading:
             break
         }
+    }
+
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        if ShellListeningSessionLifecycle.shouldFlushPendingSessions(scenePhase: phase) {
+            flushListeningSession(endedReason: "background")
+            libraryStore.flushPendingListeningSessions()
+            return
+        }
+
+        guard ShellListeningSessionLifecycle.shouldResumeActiveSession(
+            scenePhase: phase,
+            isPlaying: audioPlayer.status == .playing,
+            hasCurrentStation: audioPlayer.currentStation != nil
+        ),
+            let station = audioPlayer.currentStation
+        else {
+            return
+        }
+
+        ShellListeningSessionCoordinator.resumeIfNeeded(
+            session: &listeningSession,
+            station: station,
+            source: audioPlayer.playbackQueue.source
+        )
     }
 
     private func recordConfirmedPlaybackIfNeeded(_ station: Station) {

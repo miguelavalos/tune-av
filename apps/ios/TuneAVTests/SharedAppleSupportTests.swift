@@ -2938,6 +2938,20 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(flushed.trackKeys.count, 2)
     }
 
+    func testShellListeningSessionLifecycleFlushesOnlyWhenBackgrounded() {
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldFlushPendingSessions(scenePhase: .active))
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldFlushPendingSessions(scenePhase: .inactive))
+        XCTAssertTrue(ShellListeningSessionLifecycle.shouldFlushPendingSessions(scenePhase: .background))
+    }
+
+    func testShellListeningSessionLifecycleResumesOnlyWhenActivePlayingWithStation() {
+        XCTAssertTrue(ShellListeningSessionLifecycle.shouldResumeActiveSession(scenePhase: .active, isPlaying: true, hasCurrentStation: true))
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldResumeActiveSession(scenePhase: .active, isPlaying: false, hasCurrentStation: true))
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldResumeActiveSession(scenePhase: .active, isPlaying: true, hasCurrentStation: false))
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldResumeActiveSession(scenePhase: .inactive, isPlaying: true, hasCurrentStation: true))
+        XCTAssertFalse(ShellListeningSessionLifecycle.shouldResumeActiveSession(scenePhase: .background, isPlaying: true, hasCurrentStation: true))
+    }
+
     func testShellCurrentDiscoveryCoordinatorChoosesStationFallbackOnlyWithoutTrackMetadata() {
         XCTAssertTrue(ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(title: nil, artist: nil))
         XCTAssertFalse(ShellCurrentDiscoveryCoordinator.shouldSaveStationFavorite(title: "Song", artist: nil))

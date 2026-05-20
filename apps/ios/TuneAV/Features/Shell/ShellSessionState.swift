@@ -55,6 +55,16 @@ enum ShellListeningSessionCoordinator {
     }
 }
 
+enum ShellListeningSessionLifecycle {
+    static func shouldFlushPendingSessions(scenePhase: ScenePhase) -> Bool {
+        scenePhase == .background
+    }
+
+    static func shouldResumeActiveSession(scenePhase: ScenePhase, isPlaying: Bool, hasCurrentStation: Bool) -> Bool {
+        scenePhase == .active && isPlaying && hasCurrentStation
+    }
+}
+
 enum ShellCurrentDiscoveryCoordinator {
     static func shouldSaveStationFavorite(title: String?, artist: String?) -> Bool {
         title == nil && artist == nil

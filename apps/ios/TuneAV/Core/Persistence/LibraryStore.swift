@@ -765,6 +765,10 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    func flushPendingListeningSessions() {
+        flushListeningSessionUploads()
+    }
+
     private func scheduleListeningSessionUpload() {
         guard listeningSessionUploadTask == nil else { return }
 
