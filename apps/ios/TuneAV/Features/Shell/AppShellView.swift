@@ -5008,23 +5008,28 @@ struct AviScreen: View {
         356
     }
 
+    private var aviActionsPanelState: ShellAviActionsPanelState {
+        ShellAviActionsPanelState(
+            hasSongStep: hasCurrentSongContext && isNowPlayingFullPlayer,
+            currentPage: aviActionsPage
+        )
+    }
+
     private func aviActionsPanel(for station: Station) -> some View {
         aviActionsPanel(for: station, showsStationDetailAction: true)
     }
 
     private func aviActionsPanel(for station: Station, showsStationDetailAction: Bool) -> some View {
-        let hasSongStep = hasCurrentSongContext && isNowPlayingFullPlayer
-        let pageCount = hasSongStep ? 2 : 1
-        let lastPage = pageCount - 1
+        let panelState = aviActionsPanelState
 
         return VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(aviActionsPageTitle)
+                    Text(panelState.title)
                         .font(.system(size: 14, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
 
-                    Text(L10n.string("shell.avi.actions.page", min(aviActionsPage, lastPage) + 1, pageCount))
+                    Text(panelState.pageLabel)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
                 }
@@ -5034,7 +5039,7 @@ struct AviScreen: View {
                 HStack(spacing: 6) {
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
-                            aviActionsPage = max(0, aviActionsPage - 1)
+                            aviActionsPage = panelState.previousPage
                             isEditingRadioFeedback = false
                         }
                     } label: {
@@ -5044,13 +5049,13 @@ struct AviScreen: View {
                             .background(TuneAVTheme.cardSurface, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(aviActionsPage == 0)
-                    .opacity(pageCount == 1 || aviActionsPage == 0 ? 0.34 : 1)
+                    .disabled(!panelState.canGoPrevious)
+                    .opacity(panelState.canGoPrevious ? 1 : 0.34)
                     .accessibilityLabel(L10n.string("shell.avi.actions.previousOptions"))
 
                     Button {
                         withAnimation(.snappy(duration: 0.2)) {
-                            aviActionsPage = min(lastPage, aviActionsPage + 1)
+                            aviActionsPage = panelState.nextPage
                             isEditingRadioFeedback = false
                         }
                     } label: {
@@ -5060,8 +5065,8 @@ struct AviScreen: View {
                             .background(TuneAVTheme.cardSurface, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(aviActionsPage >= lastPage)
-                    .opacity(pageCount == 1 || aviActionsPage >= lastPage ? 0.34 : 1)
+                    .disabled(!panelState.canGoNext)
+                    .opacity(panelState.canGoNext ? 1 : 0.34)
                     .accessibilityLabel(L10n.string("shell.avi.actions.moreOptions"))
                 }
                 .foregroundStyle(TuneAVTheme.textSecondary)
@@ -5081,7 +5086,7 @@ struct AviScreen: View {
             }
 
             VStack(spacing: 5) {
-                if hasSongStep && aviActionsPage == 0 {
+                if panelState.showsSongActions {
                     AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics") {
                         showAviReaction(.curious)
                         openAviSearch(for: station, destination: .web, suffix: "lyrics")
@@ -5147,13 +5152,6 @@ struct AviScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: aviActionsPanelHeight, alignment: .top)
         .background(TuneAVTheme.elevatedSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
-    private var aviActionsPageTitle: String {
-        if isNowPlayingFullPlayer && hasCurrentSongContext && aviActionsPage == 0 {
-            return L10n.string("shell.avi.actions.aboutSong")
-        }
-        return L10n.string("shell.common.radio")
     }
 
     private func setAviMenuFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {

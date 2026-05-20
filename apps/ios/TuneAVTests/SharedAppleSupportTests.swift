@@ -2242,6 +2242,37 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertNil(ShellAviExternalSearchResolver.externalSearchURL(query: "  "))
     }
 
+    func testShellAviActionsPanelStatePaginatesSongAndStationActions() {
+        let first = ShellAviActionsPanelState(hasSongStep: true, currentPage: 0)
+        XCTAssertEqual(first.pageCount, 2)
+        XCTAssertEqual(first.pageDisplayIndex, 1)
+        XCTAssertTrue(first.showsSongActions)
+        XCTAssertFalse(first.canGoPrevious)
+        XCTAssertTrue(first.canGoNext)
+        XCTAssertEqual(first.nextPage, 1)
+        XCTAssertEqual(first.title, L10n.string("shell.avi.actions.aboutSong"))
+
+        let second = ShellAviActionsPanelState(hasSongStep: true, currentPage: 1)
+        XCTAssertEqual(second.pageDisplayIndex, 2)
+        XCTAssertFalse(second.showsSongActions)
+        XCTAssertTrue(second.canGoPrevious)
+        XCTAssertFalse(second.canGoNext)
+        XCTAssertEqual(second.previousPage, 0)
+        XCTAssertEqual(second.title, L10n.string("shell.common.radio"))
+    }
+
+    func testShellAviActionsPanelStateClampsSingleStationPage() {
+        let state = ShellAviActionsPanelState(hasSongStep: false, currentPage: 3)
+
+        XCTAssertEqual(state.pageCount, 1)
+        XCTAssertEqual(state.visiblePage, 0)
+        XCTAssertEqual(state.pageDisplayIndex, 1)
+        XCTAssertFalse(state.canGoPrevious)
+        XCTAssertFalse(state.canGoNext)
+        XCTAssertFalse(state.showsSongActions)
+        XCTAssertEqual(state.pageLabel, L10n.string("shell.avi.actions.page", 1, 1))
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }

@@ -122,6 +122,57 @@ enum ShellAviExternalSearchResolver {
     }
 }
 
+struct ShellAviActionsPanelState: Equatable {
+    let hasSongStep: Bool
+    let currentPage: Int
+
+    var pageCount: Int {
+        hasSongStep ? 2 : 1
+    }
+
+    var lastPage: Int {
+        pageCount - 1
+    }
+
+    var visiblePage: Int {
+        min(max(currentPage, 0), lastPage)
+    }
+
+    var pageDisplayIndex: Int {
+        visiblePage + 1
+    }
+
+    var showsSongActions: Bool {
+        hasSongStep && visiblePage == 0
+    }
+
+    var previousPage: Int {
+        max(0, visiblePage - 1)
+    }
+
+    var nextPage: Int {
+        min(lastPage, visiblePage + 1)
+    }
+
+    var canGoPrevious: Bool {
+        pageCount > 1 && visiblePage > 0
+    }
+
+    var canGoNext: Bool {
+        pageCount > 1 && visiblePage < lastPage
+    }
+
+    var title: String {
+        showsSongActions
+            ? L10n.string("shell.avi.actions.aboutSong")
+            : L10n.string("shell.common.radio")
+    }
+
+    var pageLabel: String {
+        L10n.string("shell.avi.actions.page", pageDisplayIndex, pageCount)
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 
