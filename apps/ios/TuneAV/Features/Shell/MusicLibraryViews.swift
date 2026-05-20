@@ -706,3 +706,20 @@ struct HiddenDiscoveryUndoBanner: View {
         .accessibilityIdentifier("discoveries.hiddenUndo")
     }
 }
+
+struct MusicHiddenDiscoveryUndoOverlay: View {
+    let hiddenDiscovery: DiscoveredTrack?
+    let bottomContentPadding: CGFloat
+    let horizontalPadding: CGFloat
+    let restoreAction: (DiscoveredTrack) -> Void
+
+    var body: some View {
+        if let hiddenDiscovery {
+            HiddenDiscoveryUndoBanner(
+                bottomContentPadding: bottomContentPadding,
+                horizontalPadding: horizontalPadding,
+                restoreAction: { restoreAction(hiddenDiscovery) }
+            )
+        }
+    }
+}

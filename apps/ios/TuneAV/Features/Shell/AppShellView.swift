@@ -9290,17 +9290,17 @@ struct MusicScreen: View {
 
     @ViewBuilder
     private var hiddenDiscoveryUndoBanner: some View {
-        if let hiddenDiscovery {
-            HiddenDiscoveryUndoBanner(
-                bottomContentPadding: bottomContentPadding,
-                horizontalPadding: shellScreenHorizontalPadding
-            ) {
-                restoreDiscovery(hiddenDiscovery)
+        MusicHiddenDiscoveryUndoOverlay(
+            hiddenDiscovery: hiddenDiscovery,
+            bottomContentPadding: bottomContentPadding,
+            horizontalPadding: shellScreenHorizontalPadding,
+            restoreAction: { discovery in
+                restoreDiscovery(discovery)
                 withAnimation(.snappy(duration: 0.22)) {
-                    self.hiddenDiscovery = nil
+                    hiddenDiscovery = nil
                 }
             }
-        }
+        )
     }
 
     private func discoverySubsectionTitle(_ title: String) -> some View {
