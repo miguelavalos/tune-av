@@ -677,16 +677,7 @@ struct MusicDiscoveryTrackList: View {
     let currentMode: MusicContentMode
     let stationArtworkURL: (DiscoveredTrack) -> URL?
     let trackFeedback: (DiscoveredTrack) -> TuneAVStationFeedback?
-    let openTrackInfo: (DiscoveredTrack, MusicContentMode) -> Void
-    let openArtistInfo: (DiscoveredTrack, MusicContentMode) -> Void
-    let openStationInfo: (DiscoveredTrack) -> Void
-    let toggleSaved: (DiscoveredTrack) -> Void
-    let openYouTube: (DiscoveredTrack) -> Void
-    let openLyrics: (DiscoveredTrack) -> Void
-    let openAppleMusic: (DiscoveredTrack) -> Void
-    let openSpotify: (DiscoveredTrack) -> Void
-    let hideAction: (DiscoveredTrack) -> Void
-    let removeAction: (DiscoveredTrack) -> Void
+    let actions: MusicDiscoveryTrackActions
     let showMoreDiscoveries: () -> Void
 
     var body: some View {
@@ -698,16 +689,16 @@ struct MusicDiscoveryTrackList: View {
                     feedback: trackFeedback(discovery),
                     showsSaveButton: false,
                     openAviActionsID: $openAviActionsID,
-                    openTrackInfo: { openTrackInfo(discovery, currentMode) },
-                    openArtistInfo: { openArtistInfo(discovery, currentMode) },
-                    openStationInfo: { openStationInfo(discovery) },
-                    toggleSaved: { toggleSaved(discovery) },
-                    openYouTube: { openYouTube(discovery) },
-                    openLyrics: { openLyrics(discovery) },
-                    openAppleMusic: { openAppleMusic(discovery) },
-                    openSpotify: { openSpotify(discovery) },
-                    hideAction: { hideAction(discovery) },
-                    removeAction: { removeAction(discovery) }
+                    openTrackInfo: { actions.openTrackInfo(discovery, currentMode) },
+                    openArtistInfo: { actions.openArtistInfo(discovery, currentMode) },
+                    openStationInfo: { actions.openStationInfo(discovery) },
+                    toggleSaved: { actions.toggleSaved(discovery) },
+                    openYouTube: { actions.openYouTube(discovery) },
+                    openLyrics: { actions.openLyrics(discovery) },
+                    openAppleMusic: { actions.openAppleMusic(discovery) },
+                    openSpotify: { actions.openSpotify(discovery) },
+                    hideAction: { actions.hideAction(discovery) },
+                    removeAction: { actions.removeAction(discovery) }
                 )
                 .zIndex(openAviActionsID == "track-\(discovery.discoveryID)" ? 10_000 : Double(snapshot.visibleFilteredDiscoveries.count - index))
             }
@@ -721,6 +712,19 @@ struct MusicDiscoveryTrackList: View {
             }
         }
     }
+}
+
+struct MusicDiscoveryTrackActions {
+    let openTrackInfo: (DiscoveredTrack, MusicContentMode) -> Void
+    let openArtistInfo: (DiscoveredTrack, MusicContentMode) -> Void
+    let openStationInfo: (DiscoveredTrack) -> Void
+    let toggleSaved: (DiscoveredTrack) -> Void
+    let openYouTube: (DiscoveredTrack) -> Void
+    let openLyrics: (DiscoveredTrack) -> Void
+    let openAppleMusic: (DiscoveredTrack) -> Void
+    let openSpotify: (DiscoveredTrack) -> Void
+    let hideAction: (DiscoveredTrack) -> Void
+    let removeAction: (DiscoveredTrack) -> Void
 }
 
 struct HiddenDiscoveryUndoBanner: View {

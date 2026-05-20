@@ -9176,6 +9176,13 @@ struct MusicScreen: View {
             currentMode: musicMode,
             stationArtworkURL: { discovery in stationArtworkURL(discovery) },
             trackFeedback: { discovery in trackFeedback(discovery) },
+            actions: discoveryTrackActions,
+            showMoreDiscoveries: showMoreDiscoveries
+        )
+    }
+
+    private var discoveryTrackActions: MusicDiscoveryTrackActions {
+        MusicDiscoveryTrackActions(
             openTrackInfo: { discovery, mode in openDiscoveryInfo(discovery, mode) },
             openArtistInfo: { discovery, mode in openArtistInfo(discoveryArtistSummary(for: discovery), mode) },
             openStationInfo: { discovery in openDiscoveryStationInfo(discovery) },
@@ -9185,8 +9192,7 @@ struct MusicScreen: View {
             openAppleMusic: { discovery in runProAviAction { openAppleMusicSearch(discovery) } },
             openSpotify: { discovery in runProAviAction { openSpotifySearch(discovery) } },
             hideAction: hideDiscoveryWithUndo(_:),
-            removeAction: { discovery in removeDiscovery(discovery) },
-            showMoreDiscoveries: showMoreDiscoveries
+            removeAction: { discovery in removeDiscovery(discovery) }
         )
     }
 
