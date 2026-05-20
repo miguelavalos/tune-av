@@ -123,6 +123,7 @@
 		AFB2A7F6915DC23B5BBF9141 /* AviQueueSwitchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */; };
 		AFDCD0652B5EE4BF1D8623BF /* TuneAVAccountDeletionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */; };
 		B071817713F4012867A0D5CB /* SearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324BA4D93248DB1B3D2C6C97 /* SearchScreen.swift */; };
+		B0BB1D68BF07EB0CC962AB3D /* LaunchPerformanceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */; };
 		B24295FC5A46733DD99B28FC /* AccessMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E89514F30FEAEB0078C58CA /* AccessMode.swift */; };
 		B321D36D9C0F690C596B93C9 /* DiscoveriesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */; };
 		B41F6E43939C9E5746B866B2 /* Station.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631EDD19FB5AEBFAF5EFD9B2 /* Station.swift */; };
@@ -283,6 +284,7 @@
 		7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationArtworkView.swift; sourceTree = "<group>"; };
 		7E72DA3D66622D24493F5809 /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
 		815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStationPresentationBuilder.swift; sourceTree = "<group>"; };
+		839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchPerformanceUITests.swift; sourceTree = "<group>"; };
 		84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouter.swift; sourceTree = "<group>"; };
 		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviQueueSwitchCoordinator.swift; sourceTree = "<group>"; };
@@ -700,6 +702,7 @@
 				4FD0A67AA9366F52644BCFA5 /* HomeEmptyStateUITests.swift */,
 				750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */,
 				9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */,
+				839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */,
 				67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */,
 				D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */,
 				5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */,
@@ -1016,6 +1019,7 @@
 				BCCF390C61B8E18D167DB605 /* HomeEmptyStateUITests.swift in Sources */,
 				634403CECCF87F79302E718A /* HomeRefreshUITests.swift in Sources */,
 				673F0D5A1BD5E542E4A4293B /* HomeUITests.swift in Sources */,
+				B0BB1D68BF07EB0CC962AB3D /* LaunchPerformanceUITests.swift in Sources */,
 				184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */,
 				A85E21A4D8B01574008347D6 /* PlayerQueueUITests.swift in Sources */,
 				77FAFD8E96B4506517898653 /* ProfileUITests.swift in Sources */,

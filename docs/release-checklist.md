@@ -54,6 +54,11 @@ from the public Tune AV iOS repository.
    matching `TUNEAV_IOS_MAX_*_SIZE_BYTES` variable only when a release owner
    accepts and documents the size increase.
 
+   `bun run ios:ci` also runs the launch performance UI smoke through
+   `scripts/smoke-ios-launch-performance.sh`. The default launch-ready budget is
+   10,000 ms and can be tightened with `TUNEAV_IOS_MAX_LAUNCH_READY_MS` once CI
+   has enough stable history for a lower threshold.
+
 4. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
    ```bash
