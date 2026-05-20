@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_PATH="${TUNEAV_IOS_APP_PATH:-$ROOT_DIR/.derived-data/ios-ci/Build/Products/Debug-iphonesimulator/TuneAV.app}"
 REPORT_PATH="${TUNEAV_IOS_SIZE_REPORT_PATH:-$ROOT_DIR/.derived-data/ios-ci/Reports/app-size.md}"
+MAX_APP_SIZE_BYTES="${TUNEAV_IOS_MAX_APP_SIZE_BYTES:-157286400}"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "FAIL $APP_PATH is missing. Run bun run ios:ci before generating the size report." >&2
@@ -80,3 +81,9 @@ executable_path="$APP_PATH/TuneAV"
 
 echo "iOS app bundle size: $(human_bytes "$app_bytes")"
 echo "iOS app size report written to $REPORT_PATH"
+
+if [[ "$MAX_APP_SIZE_BYTES" != "0" && "$app_bytes" -gt "$MAX_APP_SIZE_BYTES" ]]; then
+  echo "FAIL iOS app bundle exceeds max size: $(human_bytes "$app_bytes") > $(human_bytes "$MAX_APP_SIZE_BYTES")." >&2
+  echo "Set TUNEAV_IOS_MAX_APP_SIZE_BYTES=0 to report without enforcing a limit." >&2
+  exit 1
+fi

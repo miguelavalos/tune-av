@@ -47,6 +47,11 @@ from the public Tune AV iOS repository.
    URL reachability, App Privacy-relevant SDK inventory, and privacy manifests
    found from available build evidence.
 
+   CI and archive preflight enforce the iOS app bundle size budget through
+   `scripts/report-ios-app-size.sh`. The default maximum is 150 MiB. Override
+   with `TUNEAV_IOS_MAX_APP_SIZE_BYTES` only when a release owner accepts and
+   documents the size increase.
+
 4. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
    ```bash
@@ -88,7 +93,8 @@ from the public Tune AV iOS repository.
 
    The strict archive gate must use `--require-archive` internally and must list
    `PrivacyInfo.xcprivacy` files from the submitted `.xcarchive`, not only from
-   generic DerivedData.
+   generic DerivedData. It must also write an app-size report for the archived
+   `TuneAV.app` and stay within the configured size budget.
 
 8. For CI evidence, run the manual GitHub Actions workflow
    `iOS Archive Privacy Evidence`. Keep the uploaded
