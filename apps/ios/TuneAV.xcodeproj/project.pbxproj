@@ -86,6 +86,7 @@
 		8F263B120926F737D7EDD17F /* TuneAVTrackArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0417E3D522BA4E2564ADF9 /* TuneAVTrackArtworkService.swift */; };
 		9155A0A9591DFD0CDAC69A51 /* StationSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3353F73F03318E692C99BA07 /* StationSection.swift */; };
 		945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E6B173571331D31167D9AC /* InAppBrowserView.swift */; };
+		9527699C0DC7F9264E32024B /* MusicScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C764B25F8D88A52B45FBC /* MusicScreen.swift */; };
 		A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */; };
 		A3E917A8DC1D872E737BB325 /* AuthOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502C9D0599FDC9AE8E3CDC72 /* AuthOnboardingView.swift */; };
 		A4196DEA7C036793524034C2 /* SubscriptionPurchasingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AC473434C326DBD6A3A0C8 /* SubscriptionPurchasingService.swift */; };
@@ -229,6 +230,7 @@
 		6FCA3DA2875984A5F8B9A885 /* TuneAVExternalSearchURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVExternalSearchURL.swift; sourceTree = "<group>"; };
 		7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellMusicLibrary.swift; sourceTree = "<group>"; };
 		7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMusicLibraryLogic.swift; sourceTree = "<group>"; };
+		719C764B25F8D88A52B45FBC /* MusicScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicScreen.swift; sourceTree = "<group>"; };
 		750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRefreshUITests.swift; sourceTree = "<group>"; };
 		78E26A38B7BC6D3D3963CC70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Screens.swift"; sourceTree = "<group>"; };
@@ -388,6 +390,7 @@
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				A9B68303A43B5470159D47B7 /* MusicExternalSearchRouter.swift */,
 				C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */,
+				719C764B25F8D88A52B45FBC /* MusicScreen.swift */,
 				3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
 				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
@@ -807,6 +810,7 @@
 				0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */,
 				66ABFD9D4D80C70B76396FBF /* MusicExternalSearchRouter.swift in Sources */,
 				F0B08039199D8F3DFA8F1758 /* MusicLibraryViews.swift in Sources */,
+				9527699C0DC7F9264E32024B /* MusicScreen.swift in Sources */,
 				8E261DF063D5C71FEC90152D /* PersistenceController.swift in Sources */,
 				3B63D88278E41045F3E5950D /* ProfileScreen.swift in Sources */,
 				772107B947DC7AFE8F717983 /* RootView.swift in Sources */,
