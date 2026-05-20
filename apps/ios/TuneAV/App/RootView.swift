@@ -14,6 +14,7 @@ struct RootView: View {
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
+    @State private var lastAutomaticLibrarySyncRequestedAt: Date?
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
     private let launchContext = LaunchContext.current
@@ -158,15 +159,20 @@ struct RootView: View {
     }
 
     private func scheduleSignedInLibrarySync(after delay: Duration? = nil) {
-        let syncPolicy = RootStartupSyncPolicy(
-            accountIsAvailable: accessController.accountIsAvailable,
-            isSignedIn: accessController.isSignedIn
-        )
-        guard syncPolicy.shouldScheduleLibrarySync else {
+        guard accessController.isSignedIn else {
             cancelScheduledLibrarySync()
             return
         }
 
+        let syncPolicy = RootStartupSyncPolicy(
+            accountIsAvailable: accessController.accountIsAvailable,
+            isSignedIn: accessController.isSignedIn,
+            lastLibrarySyncRequestedAt: lastAutomaticLibrarySyncRequestedAt,
+            now: .now
+        )
+        guard syncPolicy.shouldScheduleLibrarySync else { return }
+
+        lastAutomaticLibrarySyncRequestedAt = syncPolicy.now
         scheduleLibrarySync(after: delay)
     }
 
@@ -270,15 +276,33 @@ struct RootView: View {
 }
 
 struct RootStartupSyncPolicy: Equatable {
+    static let automaticLibrarySyncInterval: TimeInterval = 300
+
     let accountIsAvailable: Bool
     let isSignedIn: Bool
+    let lastLibrarySyncRequestedAt: Date?
+    let now: Date
+
+    init(
+        accountIsAvailable: Bool,
+        isSignedIn: Bool,
+        lastLibrarySyncRequestedAt: Date? = nil,
+        now: Date = .now
+    ) {
+        self.accountIsAvailable = accountIsAvailable
+        self.isSignedIn = isSignedIn
+        self.lastLibrarySyncRequestedAt = lastLibrarySyncRequestedAt
+        self.now = now
+    }
 
     var shouldRefreshAccountState: Bool {
         accountIsAvailable || isSignedIn
     }
 
     var shouldScheduleLibrarySync: Bool {
-        isSignedIn
+        guard isSignedIn else { return false }
+        guard let lastLibrarySyncRequestedAt else { return true }
+        return now.timeIntervalSince(lastLibrarySyncRequestedAt) >= Self.automaticLibrarySyncInterval
     }
 }
 

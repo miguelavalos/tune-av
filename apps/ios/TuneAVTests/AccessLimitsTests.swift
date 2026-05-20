@@ -23,6 +23,32 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertTrue(policy.shouldScheduleLibrarySync)
     }
 
+    func testRootStartupSyncPolicySkipsRecentAutomaticLibrarySync() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let policy = RootStartupSyncPolicy(
+            accountIsAvailable: true,
+            isSignedIn: true,
+            lastLibrarySyncRequestedAt: now.addingTimeInterval(-60),
+            now: now
+        )
+
+        XCTAssertTrue(policy.shouldRefreshAccountState)
+        XCTAssertFalse(policy.shouldScheduleLibrarySync)
+    }
+
+    func testRootStartupSyncPolicyAllowsAutomaticLibrarySyncAfterInterval() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let policy = RootStartupSyncPolicy(
+            accountIsAvailable: true,
+            isSignedIn: true,
+            lastLibrarySyncRequestedAt: now.addingTimeInterval(-RootStartupSyncPolicy.automaticLibrarySyncInterval),
+            now: now
+        )
+
+        XCTAssertTrue(policy.shouldRefreshAccountState)
+        XCTAssertTrue(policy.shouldScheduleLibrarySync)
+    }
+
     func testAccessPolicyMatchesSharedContract() throws {
         let contract = try loadAccessPolicyContract()
         let expectedModes: [(mode: AccessMode, planTier: String)] = [
