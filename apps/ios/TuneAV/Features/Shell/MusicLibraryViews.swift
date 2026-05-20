@@ -632,12 +632,7 @@ struct MusicDiscoveryArtistList: View {
     let snapshot: MusicLibraryDerivedState
     @Binding var openAviActionsID: String?
     let currentMode: MusicContentMode
-    let openArtist: (DiscoveryArtistSummary, MusicContentMode) -> Void
-    let openArtistSongs: (DiscoveryArtistSummary) -> Void
-    let openArtistRadios: (DiscoveryArtistSummary, MusicContentMode) -> Void
-    let openYouTube: (DiscoveryArtistSummary) -> Void
-    let openAppleMusic: (DiscoveryArtistSummary) -> Void
-    let openSpotify: (DiscoveryArtistSummary) -> Void
+    let actions: MusicDiscoveryArtistActions
     let showMoreArtists: () -> Void
 
     var body: some View {
@@ -646,12 +641,12 @@ struct MusicDiscoveryArtistList: View {
                 DiscoveryArtistRow(
                     summary: artist,
                     openAviActionsID: $openAviActionsID,
-                    openArtist: { openArtist(artist, currentMode) },
-                    openArtistSongs: { openArtistSongs(artist) },
-                    openArtistRadios: { openArtistRadios(artist, currentMode) },
-                    openYouTube: { openYouTube(artist) },
-                    openAppleMusic: { openAppleMusic(artist) },
-                    openSpotify: { openSpotify(artist) }
+                    openArtist: { actions.openArtist(artist, currentMode) },
+                    openArtistSongs: { actions.openArtistSongs(artist) },
+                    openArtistRadios: { actions.openArtistRadios(artist, currentMode) },
+                    openYouTube: { actions.openYouTube(artist) },
+                    openAppleMusic: { actions.openAppleMusic(artist) },
+                    openSpotify: { actions.openSpotify(artist) }
                 )
                 .zIndex(openAviActionsID == "artist-\(artist.id)" ? 10_000 : Double(snapshot.visibleArtistSummariesForMode.count - index))
             }
@@ -665,6 +660,15 @@ struct MusicDiscoveryArtistList: View {
             }
         }
     }
+}
+
+struct MusicDiscoveryArtistActions {
+    let openArtist: (DiscoveryArtistSummary, MusicContentMode) -> Void
+    let openArtistSongs: (DiscoveryArtistSummary) -> Void
+    let openArtistRadios: (DiscoveryArtistSummary, MusicContentMode) -> Void
+    let openYouTube: (DiscoveryArtistSummary) -> Void
+    let openAppleMusic: (DiscoveryArtistSummary) -> Void
+    let openSpotify: (DiscoveryArtistSummary) -> Void
 }
 
 struct MusicDiscoveryTrackList: View {

@@ -9195,13 +9195,19 @@ struct MusicScreen: View {
             snapshot: snapshot,
             openAviActionsID: $openMusicAviActionsID,
             currentMode: musicMode,
+            actions: discoveryArtistActions,
+            showMoreArtists: showMoreArtists
+        )
+    }
+
+    private var discoveryArtistActions: MusicDiscoveryArtistActions {
+        MusicDiscoveryArtistActions(
             openArtist: { artist, mode in openArtistInfo(artist, mode) },
             openArtistSongs: { artist in openArtistSongs(artist.name) },
             openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
             openYouTube: { artist in runProAviAction { openArtistSearch(artist.name, youtube: true) } },
             openAppleMusic: { artist in runProAviAction { openAppleMusicArtistSearch(artist.name) } },
-            openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } },
-            showMoreArtists: showMoreArtists
+            openSpotify: { artist in runProAviAction { openSpotifyArtistSearch(artist.name) } }
         )
     }
 
