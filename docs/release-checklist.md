@@ -27,21 +27,33 @@ from the public Tune AV iOS repository.
    App Store uploads created on or after 2026-04-28, build with Xcode 26 and
    the iOS 26 SDK or later.
 
-2. For any signed local install, use the guarded preflight before building:
+2. Generate the production iOS local config before release checks:
 
    ```bash
-   bun run ios:check:prod
+   bun run ios:config:prod
    ```
 
-   Private validation details belong outside the public repository.
+   `apps/ios/Config/Local.xcconfig` is generated output. It must remain
+   ignored, mode `600`, and uncommitted.
 
-3. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
+3. Run the standard iOS release preflight:
+
+   ```bash
+   bun run ios:release:preflight
+   ```
+
+   This must pass with `0 failure(s), 0 warning(s)` in the release privacy gate.
+   It verifies production runtime config hygiene, network privacy logging, legal
+   URL reachability, App Privacy-relevant SDK inventory, and privacy manifests
+   found from available build evidence.
+
+4. Generate the iOS Xcode project when `apps/ios/project.yml` changes:
 
    ```bash
    cd apps/ios && xcodegen generate
    ```
 
-4. Run iOS unit tests:
+5. Run iOS unit tests:
 
    ```bash
    cd apps/ios
@@ -56,9 +68,31 @@ from the public Tune AV iOS repository.
    destination from `xcodebuild -showdestinations` when the local Xcode runtime
    set differs.
 
-5. Run targeted UI tests when the release changes shell navigation, limits,
+6. Run targeted UI tests when the release changes shell navigation, limits,
    playback queue, search, Profile, purchase/restore, account deletion, or
    discovery behavior.
+
+7. Before App Store submission, run the archive evidence preflight from a clean
+   production config:
+
+   ```bash
+   bun run ios:release:preflight -- --with-archive
+   ```
+
+   If an archive was already created by Xcode Organizer or CI, validate that
+   exact archive instead:
+
+   ```bash
+   bun run ios:release:preflight -- --archive /path/to/TuneAV.xcarchive
+   ```
+
+   The strict archive gate must use `--require-archive` internally and must list
+   `PrivacyInfo.xcprivacy` files from the submitted `.xcarchive`, not only from
+   generic DerivedData.
+
+8. For CI evidence, run the manual GitHub Actions workflow
+   `iOS Archive Privacy Evidence`. Keep the uploaded
+   `ios-archive-privacy-evidence` artifact with the release record.
 
 ## App Review Readiness
 
@@ -71,10 +105,17 @@ Before creating the archive for review:
 3. Confirm third-party SDK privacy manifests and signatures are present where
    Apple requires them, especially for subscription, account, analytics, or
    phone/auth dependencies.
-4. Smoke-test Guest playback, sign-in, Profile, Tune AV Pro paywall, restore,
+4. Confirm the release privacy gate reports:
+   - production bundle identifier `com.avalsys.tuneav`;
+   - listening analytics uploads enabled for production;
+   - reachable privacy, terms, delete-account, open-source, and support URLs;
+   - RevenueCat, Clerk, PhoneNumberKit, and Nuke inventory status;
+   - archive-level `PrivacyInfo.xcprivacy` evidence when submitting to App
+     Store.
+5. Smoke-test Guest playback, sign-in, Profile, Tune AV Pro paywall, restore,
    account deletion, full player, background audio, search, favorites, recents,
    and last-played queue resume.
-5. Recreate screenshots from the exact build attached to App Store Connect after
+6. Recreate screenshots from the exact build attached to App Store Connect after
    any meaningful UI, localization, entitlement, or paywall change.
 
 ## App Transport Security
