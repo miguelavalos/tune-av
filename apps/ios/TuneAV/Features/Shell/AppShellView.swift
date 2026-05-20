@@ -1150,7 +1150,10 @@ struct AppShellView: View {
 
     private func closeFocusedAviDetail(fallbackTab: AppShellTab? = nil) {
         let plan = aviReturnCoordinator.closeFocusedDetailPlan(fallbackTab: fallbackTab)
+        applyAviCloseFocusedDetailPlan(plan)
+    }
 
+    private func applyAviCloseFocusedDetailPlan(_ plan: AviCloseFocusedDetailPlan) {
         if plan.clearsStationDetail {
             selectedStationDetail = nil
         }
