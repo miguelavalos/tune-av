@@ -20,6 +20,7 @@
 		151635FADD47D1B88D07889F /* TuneAVAccessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */; };
 		184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */; };
 		19D12529EFE7CA401E3471B3 /* TuneAVAppShellSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */; };
+		1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */; };
 		205DC1A5780218753D11B27F /* HomeScreenStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69777DC9CD8AED418E5B8C17 /* HomeScreenStateBuilder.swift */; };
 		29E66E7283CBCFED6811C14C /* TuneAVLocalRecommendationScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E377A482C9F747CDD7B4E0 /* TuneAVLocalRecommendationScorer.swift */; };
 		2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */; };
@@ -294,6 +295,7 @@
 		F1A59E1F744BB8D10605B28B /* TuneAVLaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLaunchContext.swift; sourceTree = "<group>"; };
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
+		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
 		FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellNowPlayingPreviews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -376,6 +378,7 @@
 				3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */,
 				3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */,
 				1713B09701E9777A700FA782 /* ShellChromeViews.swift */,
+				F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */,
 				215630B5CEED14742AC811BE /* ShellPlaceholderViews.swift */,
 				9032055EBEFD359E9A0B4A08 /* ShellSearchViews.swift */,
 				6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */,
@@ -793,6 +796,7 @@
 				772107B947DC7AFE8F717983 /* RootView.swift in Sources */,
 				8C55F5F020F160F719528D6F /* SelectedMusicAviDetail.swift in Sources */,
 				E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */,
+				1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */,
 				3B1ABBFA95315D1532ABD9EF /* ShellPlaceholderViews.swift in Sources */,
 				6C021BFA6934CAF149EAC91E /* ShellSearchViews.swift in Sources */,
 				3DCE3D361352CA6F90075E8D /* ShellTagViews.swift in Sources */,
