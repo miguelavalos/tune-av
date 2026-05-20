@@ -8,6 +8,7 @@ on:
       - "apps/ios/TuneAV.xcodeproj/project.pbxproj"
       - "package.json"
       - "scripts/check-ios-release-config-hygiene.sh"
+      - "scripts/check-ios-privacy-release-gate.sh"
       - "scripts/check-ios-runtime-config.sh"
       - "scripts/generate-ios-local-xcconfig.sh"
   push:
@@ -19,6 +20,7 @@ on:
       - "apps/ios/TuneAV.xcodeproj/project.pbxproj"
       - "package.json"
       - "scripts/check-ios-release-config-hygiene.sh"
+      - "scripts/check-ios-privacy-release-gate.sh"
       - "scripts/check-ios-runtime-config.sh"
       - "scripts/generate-ios-local-xcconfig.sh"
 
@@ -92,7 +94,7 @@ jobs:
             sk_*) echo "::error title=Invalid TUNEAV_REVENUECAT_PUBLIC_API_KEY::Do not use a RevenueCat secret key in iOS config."; exit 1 ;;
           esac
 
-      - name: Generate release Local.xcconfig
+      - name: Generate and validate release Local.xcconfig
         run: |
           cleanup() {
             rm -f apps/ios/Config/Local.xcconfig
@@ -129,3 +131,4 @@ jobs:
 
           chmod 600 apps/ios/Config/Local.xcconfig
           bun run ios:release-config:hygiene
+          bun run ios:privacy:release -- --check-urls
