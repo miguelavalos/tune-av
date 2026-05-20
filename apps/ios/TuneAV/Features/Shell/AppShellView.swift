@@ -4614,25 +4614,32 @@ struct AviScreen: View {
     }
 
     private func focusedPrimaryFeedback(for station: Station) -> TuneAVStationFeedback? {
-        if isNowPlayingFullPlayer && hasCurrentSongContext {
+        if aviFeedbackTarget(for: station).usesTrackFeedback {
             return currentTrackFeedback
         }
         return stationFeedback[station.id]
     }
 
     private func focusedPrimaryFeedbackIdentity(for station: Station) -> String {
-        if isNowPlayingFullPlayer && hasCurrentSongContext {
-            return "track:\(currentSongIdentity)"
-        }
-        return "station:\(station.id)"
+        aviFeedbackTarget(for: station).identity
     }
 
     private func setFocusedPrimaryFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
-        if isNowPlayingFullPlayer && hasCurrentSongContext {
+        if aviFeedbackTarget(for: station).usesTrackFeedback {
             setCurrentTrackFeedback(feedback)
         } else {
             setStationFeedback(station, feedback)
         }
+    }
+
+    private func aviFeedbackTarget(for station: Station, isEditingRadioFeedback: Bool = false) -> ShellAviFeedbackTarget {
+        ShellAviFeedbackResolver.primaryTarget(
+            isNowPlayingFullPlayer: isNowPlayingFullPlayer,
+            hasCurrentSongContext: hasCurrentSongContext,
+            isEditingRadioFeedback: isEditingRadioFeedback,
+            stationID: station.id,
+            currentSongIdentity: currentSongIdentity
+        )
     }
 
     private func setCurrentTrackFeedback(_ feedback: TuneAVStationFeedback?) {
@@ -5155,7 +5162,7 @@ struct AviScreen: View {
     }
 
     private func setAviMenuFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
-        if isNowPlayingFullPlayer && hasCurrentSongContext && !isEditingRadioFeedback {
+        if aviFeedbackTarget(for: station, isEditingRadioFeedback: isEditingRadioFeedback).usesTrackFeedback {
             setCurrentTrackFeedback(feedback)
         } else {
             setStationFeedback(station, feedback)

@@ -173,6 +173,42 @@ struct ShellAviActionsPanelState: Equatable {
     }
 }
 
+enum ShellAviFeedbackTarget: Equatable {
+    case track(identity: String)
+    case station(id: String)
+
+    var identity: String {
+        switch self {
+        case .track(let identity):
+            "track:\(identity)"
+        case .station(let id):
+            "station:\(id)"
+        }
+    }
+
+    var usesTrackFeedback: Bool {
+        if case .track = self {
+            return true
+        }
+        return false
+    }
+}
+
+enum ShellAviFeedbackResolver {
+    static func primaryTarget(
+        isNowPlayingFullPlayer: Bool,
+        hasCurrentSongContext: Bool,
+        isEditingRadioFeedback: Bool = false,
+        stationID: String,
+        currentSongIdentity: String
+    ) -> ShellAviFeedbackTarget {
+        if isNowPlayingFullPlayer && hasCurrentSongContext && !isEditingRadioFeedback {
+            return .track(identity: currentSongIdentity)
+        }
+        return .station(id: stationID)
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 

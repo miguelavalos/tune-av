@@ -2273,6 +2273,40 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(state.pageLabel, L10n.string("shell.avi.actions.page", 1, 1))
     }
 
+    func testShellAviFeedbackResolverTargetsCurrentTrackInFullPlayerSongContext() {
+        let target = ShellAviFeedbackResolver.primaryTarget(
+            isNowPlayingFullPlayer: true,
+            hasCurrentSongContext: true,
+            stationID: "station",
+            currentSongIdentity: "artist|title|artwork"
+        )
+
+        XCTAssertEqual(target, .track(identity: "artist|title|artwork"))
+        XCTAssertEqual(target.identity, "track:artist|title|artwork")
+        XCTAssertTrue(target.usesTrackFeedback)
+    }
+
+    func testShellAviFeedbackResolverTargetsStationOutsideSongContextOrWhenEditingRadioFeedback() {
+        let noSongContext = ShellAviFeedbackResolver.primaryTarget(
+            isNowPlayingFullPlayer: true,
+            hasCurrentSongContext: false,
+            stationID: "station",
+            currentSongIdentity: "artist|title|artwork"
+        )
+        let editingRadio = ShellAviFeedbackResolver.primaryTarget(
+            isNowPlayingFullPlayer: true,
+            hasCurrentSongContext: true,
+            isEditingRadioFeedback: true,
+            stationID: "station",
+            currentSongIdentity: "artist|title|artwork"
+        )
+
+        XCTAssertEqual(noSongContext, .station(id: "station"))
+        XCTAssertEqual(editingRadio, .station(id: "station"))
+        XCTAssertEqual(editingRadio.identity, "station:station")
+        XCTAssertFalse(editingRadio.usesTrackFeedback)
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }
