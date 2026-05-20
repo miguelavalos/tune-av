@@ -3,11 +3,12 @@ name: iOS CI
 on:
   pull_request:
     paths:
-      - ".github/workflows/ios-ci.yml"
+      - ".github/workflows/**"
       - "apps/ios/**"
       - "apps/macos/**"
       - "package.json"
       - "shared/**"
+      - "scripts/check-github-actions-pinning.sh"
       - "scripts/ios-ci-test.sh"
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
@@ -17,11 +18,12 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/ios-ci.yml"
+      - ".github/workflows/**"
       - "apps/ios/**"
       - "apps/macos/**"
       - "package.json"
       - "shared/**"
+      - "scripts/check-github-actions-pinning.sh"
       - "scripts/ios-ci-test.sh"
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
@@ -60,6 +62,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: GitHub Actions pinning hygiene
+        run: bun run ci:actions-pinning
 
       - name: Public config hygiene
         run: bun run config:hygiene

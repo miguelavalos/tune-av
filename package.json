@@ -4,6 +4,7 @@
   "packageManager": "bun@1.3.13",
   "scripts": {
     "config:hygiene": "./scripts/check-public-config-hygiene.sh",
+    "ci:actions-pinning": "./scripts/check-github-actions-pinning.sh",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
     "ios:config:dev": "./scripts/generate-ios-local-xcconfig.sh --env dev",
     "ios:config:prod": "./scripts/generate-ios-local-xcconfig.sh --env prod",
