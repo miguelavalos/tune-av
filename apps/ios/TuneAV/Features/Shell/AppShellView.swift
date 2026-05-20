@@ -1221,18 +1221,21 @@ struct AppShellView: View {
             queueSource: queueSource,
             queue: queue
         )
-        selectedStationDetail = selection.detail
         let resolvedStation = selection.resolvedStation
-        refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
+        applySelectedStationDetail(selection.detail, resolvedStation: resolvedStation)
         return resolvedStation
     }
 
     private func applyAviStationOpenSelection(_ selection: AviStationOpenSelection) {
-        selectedStationDetail = selection.detail
-        refreshSelectedStationEnrichmentIfNeeded(selection.resolvedStation)
+        applySelectedStationDetail(selection.detail, resolvedStation: selection.resolvedStation)
         libraryStore.rememberOpenedStation(selection.resolvedStation, presentation: selection.presentation)
         isAviNowPlayingFullPlayer = selection.isFullPlayer
         selectedTab = selection.selectedTab
+    }
+
+    private func applySelectedStationDetail(_ detail: SelectedStationDetail, resolvedStation: Station) {
+        selectedStationDetail = detail
+        refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
     }
 
     private func syncAviActiveSignalIfNeeded(previousStationID: String?, currentStation: Station) {
