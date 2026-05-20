@@ -2476,6 +2476,7 @@ final class SharedAppleSupportTests: XCTestCase {
         var requestCount = 0
         TuneAVTestURLProtocol.requestHandler = { request in
             requestCount += 1
+            XCTAssertEqual(request.url?.host, "radio.test")
 
             return (
                 HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
@@ -2484,7 +2485,14 @@ final class SharedAppleSupportTests: XCTestCase {
         }
 
         let feed = AppShellHomeFeed(
-            stationService: StationService(session: testURLSession()),
+            stationService: StationService(
+                session: testURLSession(),
+                avalsysBaseURL: nil,
+                avalsysPopularBaseURL: nil,
+                radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+                backendGate: makeBackendGate(),
+                responseCache: TuneAVStationResponseCache()
+            ),
             localizedCountryName: { $0 },
             resolvedDeviceCountryCode: { "ES" },
             cache: HomeFeedCache(userDefaults: userDefaults, maxAge: 60)

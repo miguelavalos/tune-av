@@ -59,6 +59,31 @@ struct StationService {
         )
     }
 
+    init(
+        session: URLSession = TuneAVURLSessions.catalog,
+        avalsysBaseURL: URL?,
+        avalsysPopularBaseURL: URL?,
+        radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
+        backendGate: TuneAVBackendHealthGate = .shared,
+        responseCache: TuneAVStationResponseCache = .shared
+    ) {
+        self.service = TuneAVStationService(
+            session: session,
+            avalsysBaseURL: avalsysBaseURL,
+            avalsysPopularBaseURL: avalsysPopularBaseURL,
+            radioBrowserBaseURL: radioBrowserBaseURL,
+            fallbacks: TuneAVStationFallbacks(
+                unnamed: L10n.string("stationService.fallback.unnamed"),
+                unknownCountry: L10n.string("stationService.fallback.unknownCountry"),
+                unknownLanguage: L10n.string("stationService.fallback.unknownLanguage"),
+                noTags: L10n.string("stationService.fallback.noTags")
+            ),
+            invalidResponseMessage: L10n.string("stationService.error.invalidResponse"),
+            backendGate: backendGate,
+            responseCache: responseCache
+        )
+    }
+
     func searchStations(filters: SearchFilters) async throws -> [Station] {
         var localizedFilters = filters
         localizedFilters.locale = L10n.locale.identifier
