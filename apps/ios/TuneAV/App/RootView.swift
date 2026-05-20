@@ -56,10 +56,8 @@ struct RootView: View {
                 cancelScheduledLibrarySync()
                 return
             }
-            await measureStartupOperation("access_sync") {
-                await accessController.syncFromAccountProvider()
-            }
-            scheduleLibrarySync(after: .milliseconds(350))
+            await refreshActiveAccountStateIfNeeded()
+            scheduleSignedInLibrarySync(after: .milliseconds(350))
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
         .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
@@ -159,6 +157,15 @@ struct RootView: View {
         }
     }
 
+    private func scheduleSignedInLibrarySync(after delay: Duration? = nil) {
+        guard accessController.isSignedIn else {
+            cancelScheduledLibrarySync()
+            return
+        }
+
+        scheduleLibrarySync(after: delay)
+    }
+
     private func cancelScheduledLibrarySync() {
         librarySyncTask?.cancel()
         librarySyncTask = nil
@@ -233,6 +240,13 @@ struct RootView: View {
             }
         }
         logStartupOperation("splash", startedAt: startedAt)
+    }
+
+    private func refreshActiveAccountStateIfNeeded() async {
+        guard accessController.accountIsAvailable || accessController.isSignedIn else { return }
+        await measureStartupOperation("access_sync") {
+            await accessController.syncFromAccountProvider()
+        }
     }
 
     private func measureStartupOperation(_ name: String, operation: () async -> Void) async {
