@@ -73,3 +73,17 @@ Before merging playback-adjacent UI:
 
 Simulator audio stutter is a useful warning, but real-device playback is the
 release gate.
+
+## Launch Performance Profile
+
+Use the launch profile before and after changes that affect startup,
+dependency loading, app assets, the shell, or the first Home render:
+
+```bash
+bun run ios:profile:launch-performance
+```
+
+The profile runs the launch performance smoke several times and writes a local
+markdown report under `.derived-data/ios-launch-performance-profile/report.md`.
+Keep the same simulator/runtime when comparing commits. Tighten
+`TUNEAV_IOS_MAX_LAUNCH_READY_MS` only after the median is stable in CI history.
