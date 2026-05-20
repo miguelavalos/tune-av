@@ -1720,8 +1720,6 @@ private struct CachedStationNowPlaying {
 }
 
 private let shellScrollCoordinateSpace = "shellScrollCoordinateSpace"
-let shellScreenHorizontalPadding: CGFloat = 20
-private let shellScreenTopPadding: CGFloat = 24
 
 private struct ActiveListeningSession {
     let station: Station
@@ -1778,32 +1776,6 @@ extension TuneAVPlaybackQueueSource {
         case .singleStation:
             return "player"
         }
-    }
-}
-
-enum TuneAVHaptics {
-    @MainActor
-    static func selection() {
-        UISelectionFeedbackGenerator().selectionChanged()
-    }
-
-    @MainActor
-    static func lightImpact() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
-}
-
-extension View {
-    func shellScreenContentPadding(bottom bottomPadding: CGFloat) -> some View {
-        padding(.horizontal, shellScreenHorizontalPadding)
-            .padding(.top, shellScreenTopPadding)
-            .padding(.bottom, bottomPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    func shellScreenScrollBehavior() -> some View {
-        contentMargins(.horizontal, 0, for: .scrollContent)
-            .scrollIndicators(.hidden)
     }
 }
 
