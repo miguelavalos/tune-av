@@ -1064,32 +1064,43 @@ struct AppShellView: View {
     }
 
     private func openNowPlayingFullPlayer(_ station: Station) {
-        captureAviReturnContext()
-        selectedMusicAviDetail = nil
-        applyAviStationOpenSelection(aviStationDetailBuilder.openFullPlayerSelection(
+        let plan = ShellStationDetailOpenPlanner.fullPlayerPlan(
             station: station,
-            queueSource: .singleStation,
-            queue: { [$0] },
-            presentation: LastOpenedStationPresentation.player.rawValue
-        ))
+            presentation: LastOpenedStationPresentation.player.rawValue,
+            builder: aviStationDetailBuilder
+        )
+        captureAviReturnContext(
+            radioMode: plan.returnRadioMode,
+            radioOverview: plan.returnRadioOverview
+        )
+        if plan.clearsMusicDetail {
+            selectedMusicAviDetail = nil
+        }
+        applyAviStationOpenSelection(plan.selection)
     }
 
     private func openContextualAvi() {
+        let plan = ShellStationDetailOpenPlanner.contextualAviPlan(
+            currentStation: audioPlayer.currentStation,
+            currentQueueSource: audioPlayer.playbackQueue.source,
+            currentQueue: currentPlaybackQueue(fallbackStation:),
+            presentation: LastOpenedStationPresentation.player.rawValue,
+            builder: aviStationDetailBuilder
+        )
         captureAviReturnContext()
-        selectedStationDetail = nil
-        selectedMusicAviDetail = nil
-        isAviNowPlayingFullPlayer = false
+        if plan.clearsStationDetail {
+            selectedStationDetail = nil
+        }
+        if plan.clearsMusicDetail {
+            selectedMusicAviDetail = nil
+        }
+        isAviNowPlayingFullPlayer = plan.isFullPlayer
 
-        if let currentStation = audioPlayer.currentStation {
-            applyAviStationOpenSelection(aviStationDetailBuilder.openFullPlayerSelection(
-                station: currentStation,
-                queueSource: audioPlayer.playbackQueue.source,
-                queue: currentPlaybackQueue(fallbackStation:),
-                presentation: LastOpenedStationPresentation.player.rawValue
-            ))
+        if let selection = plan.selection {
+            applyAviStationOpenSelection(selection)
         }
 
-        selectedTab = .avi
+        selectedTab = plan.selectedTab
     }
 
     private func openDiscoveryInfo(_ discovery: DiscoveredTrack, returnMusicMode: MusicContentMode? = nil) {

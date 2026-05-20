@@ -28,6 +28,14 @@ struct ShellStationDetailOpenPlan {
     let selection: AviStationOpenSelection
 }
 
+struct ShellContextualAviOpenPlan {
+    let clearsStationDetail: Bool
+    let clearsMusicDetail: Bool
+    let isFullPlayer: Bool
+    let selection: AviStationOpenSelection?
+    let selectedTab: AppShellTab
+}
+
 enum ShellStationDetailOpenPlanner {
     static func detailPlan(
         station: Station,
@@ -48,6 +56,47 @@ enum ShellStationDetailOpenPlanner {
                 queue: { resolvedStation in queue ?? [resolvedStation] },
                 presentation: presentation
             )
+        )
+    }
+
+    static func fullPlayerPlan(
+        station: Station,
+        presentation: String,
+        builder: AviStationDetailBuilder
+    ) -> ShellStationDetailOpenPlan {
+        ShellStationDetailOpenPlan(
+            returnRadioMode: nil,
+            returnRadioOverview: nil,
+            clearsMusicDetail: true,
+            selection: builder.openFullPlayerSelection(
+                station: station,
+                queueSource: .singleStation,
+                queue: { [$0] },
+                presentation: presentation
+            )
+        )
+    }
+
+    static func contextualAviPlan(
+        currentStation: Station?,
+        currentQueueSource: AudioPlayerService.PlaybackQueue.Source,
+        currentQueue: @escaping (Station) -> [Station],
+        presentation: String,
+        builder: AviStationDetailBuilder
+    ) -> ShellContextualAviOpenPlan {
+        ShellContextualAviOpenPlan(
+            clearsStationDetail: true,
+            clearsMusicDetail: true,
+            isFullPlayer: false,
+            selection: currentStation.map { station in
+                builder.openFullPlayerSelection(
+                    station: station,
+                    queueSource: currentQueueSource,
+                    queue: currentQueue,
+                    presentation: presentation
+                )
+            },
+            selectedTab: .avi
         )
     }
 }

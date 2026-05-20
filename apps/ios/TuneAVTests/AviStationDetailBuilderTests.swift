@@ -238,6 +238,68 @@ final class AviStationDetailBuilderTests: XCTestCase {
         XCTAssertEqual(plan.selection.detail.queueStations.map(\.id), ["base-enriched"])
     }
 
+    func testStationDetailOpenPlannerBuildsFullPlayerPlan() {
+        let station = makeStation(id: "base")
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let plan = ShellStationDetailOpenPlanner.fullPlayerPlan(
+            station: station,
+            presentation: "player",
+            builder: builder
+        )
+
+        XCTAssertNil(plan.returnRadioMode)
+        XCTAssertNil(plan.returnRadioOverview)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertEqual(plan.selection.detail.station.id, "base")
+        XCTAssertEqual(plan.selection.detail.queueSource, .singleStation)
+        XCTAssertEqual(plan.selection.detail.queueStations.map(\.id), ["base"])
+        XCTAssertEqual(plan.selection.presentation, "player")
+        XCTAssertTrue(plan.selection.isFullPlayer)
+        XCTAssertEqual(plan.selection.selectedTab, .avi)
+    }
+
+    func testStationDetailOpenPlannerBuildsContextualAviPlanForCurrentStation() {
+        let station = makeStation(id: "base")
+        let queueStation = makeStation(id: "queue")
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let plan = ShellStationDetailOpenPlanner.contextualAviPlan(
+            currentStation: station,
+            currentQueueSource: .libraryRecents,
+            currentQueue: { [$0, queueStation] },
+            presentation: "player",
+            builder: builder
+        )
+
+        XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertFalse(plan.isFullPlayer)
+        XCTAssertEqual(plan.selection?.detail.queueSource, .libraryRecents)
+        XCTAssertEqual(plan.selection?.detail.queueStations.map(\.id), ["base", "queue"])
+        XCTAssertEqual(plan.selection?.presentation, "player")
+        XCTAssertEqual(plan.selection?.isFullPlayer, true)
+        XCTAssertEqual(plan.selectedTab, .avi)
+    }
+
+    func testStationDetailOpenPlannerBuildsContextualAviPlanWithoutCurrentStation() {
+        let builder = AviStationDetailBuilder(enrichStation: { $0 }, enrichStations: { $0 })
+
+        let plan = ShellStationDetailOpenPlanner.contextualAviPlan(
+            currentStation: nil,
+            currentQueueSource: .singleStation,
+            currentQueue: { [$0] },
+            presentation: "player",
+            builder: builder
+        )
+
+        XCTAssertTrue(plan.clearsStationDetail)
+        XCTAssertTrue(plan.clearsMusicDetail)
+        XCTAssertFalse(plan.isFullPlayer)
+        XCTAssertNil(plan.selection)
+        XCTAssertEqual(plan.selectedTab, .avi)
+    }
+
     private func makeStation(id: String) -> Station {
         Station(
             id: id,
