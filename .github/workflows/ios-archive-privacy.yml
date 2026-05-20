@@ -44,12 +44,13 @@ jobs:
 
       - name: Generate release Local.xcconfig
         run: |
+          set -euo pipefail
           scripts/generate-ios-ci-release-xcconfig.sh --source ".github/workflows/ios-archive-privacy.yml"
           bun run ios:release-config:hygiene
 
       - name: Archive iOS app
         run: |
-          set -o pipefail
+          set -euo pipefail
           mkdir -p build/release-privacy
           archive_path="$RUNNER_TEMP/TuneAV.xcarchive"
           derived_data_path="$RUNNER_TEMP/TuneAVDerivedData"
@@ -69,7 +70,7 @@ jobs:
 
       - name: Validate archive privacy evidence
         run: |
-          set -o pipefail
+          set -euo pipefail
           archive_path="$RUNNER_TEMP/TuneAV.xcarchive"
 
           bun run ios:privacy:release -- \

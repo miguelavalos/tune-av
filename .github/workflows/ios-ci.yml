@@ -81,6 +81,7 @@ jobs:
 
       - name: Report iOS app size
         run: |
+          set -euo pipefail
           bun run ios:size-report
           cat .derived-data/ios-ci/Reports/app-size.md >> "$GITHUB_STEP_SUMMARY"
 
