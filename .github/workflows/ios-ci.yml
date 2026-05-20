@@ -9,6 +9,7 @@ on:
       - "package.json"
       - "shared/**"
       - "scripts/check-github-actions-pinning.sh"
+      - "scripts/check-github-workflow-timeouts.mjs"
       - "scripts/ios-ci-test.sh"
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
@@ -24,6 +25,7 @@ on:
       - "package.json"
       - "shared/**"
       - "scripts/check-github-actions-pinning.sh"
+      - "scripts/check-github-workflow-timeouts.mjs"
       - "scripts/ios-ci-test.sh"
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
@@ -69,6 +71,9 @@ jobs:
 
       - name: GitHub Actions pinning hygiene
         run: bun run ci:actions-pinning
+
+      - name: GitHub Actions timeout hygiene
+        run: bun run ci:workflow-timeouts
 
       - name: Public config hygiene
         run: bun run config:hygiene
