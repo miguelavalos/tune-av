@@ -50,12 +50,10 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - name: Cache iOS build artifacts
+      - name: Cache iOS Swift packages
         uses: actions/cache@v4
         with:
-          path: |
-            .derived-data/ios-ci/SourcePackages
-            .derived-data/ios-ci/Build
+          path: .derived-data/ios-ci/SourcePackages
           key: ${{ runner.os }}-ios-ci-${{ hashFiles('apps/ios/TuneAV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'apps/ios/TuneAV.xcodeproj/project.pbxproj', 'apps/ios/**/*.swift', 'shared/**/*.swift') }}
           restore-keys: |
             ${{ runner.os }}-ios-ci-
@@ -77,20 +75,12 @@ jobs:
           bun run ios:size-report
           cat .derived-data/ios-ci/Reports/app-size.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload iOS app size report
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-app-size-report
-          path: .derived-data/ios-ci/Reports/app-size.md
-          if-no-files-found: error
-          retention-days: 30
-
       - name: Upload iOS test result bundle
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ci-xcresult
-          path: .derived-data/ios-ci/TestResults/TuneAV.xcresult
+          name: ios-ci-xcresults
+          path: .derived-data/ios-ci/TestResults/*.xcresult
           if-no-files-found: ignore
           retention-days: 7
 
@@ -108,12 +98,10 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - name: Cache macOS build artifacts
+      - name: Cache macOS Swift packages
         uses: actions/cache@v4
         with:
-          path: |
-            .derived-data/macos-ci/SourcePackages
-            .derived-data/macos-ci/Build
+          path: .derived-data/macos-ci/SourcePackages
           key: ${{ runner.os }}-macos-ci-${{ hashFiles('apps/macos/TuneAVMac.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'apps/macos/TuneAVMac.xcodeproj/project.pbxproj', 'apps/macos/**/*.swift', 'shared/**/*.swift') }}
           restore-keys: |
             ${{ runner.os }}-macos-ci-
