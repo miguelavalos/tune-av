@@ -1113,16 +1113,18 @@ struct AppShellView: View {
     }
 
     private func openMusicAviDetail(_ selection: AviMusicDetailSelection) {
+        let plan = AviMusicDetailCoordinator.openPlan(for: selection)
+
         captureAviReturnContext(
-            musicMode: selection.returnMusicMode,
-            musicOverview: selection.returnMusicOverview
+            musicMode: plan.returnMusicMode,
+            musicOverview: plan.returnMusicOverview
         )
-        if selection.clearsStationDetail {
+        if plan.clearsStationDetail {
             selectedStationDetail = nil
         }
-        isAviNowPlayingFullPlayer = selection.isNowPlayingFullPlayer
-        selectedMusicAviDetail = selection.detail
-        selectedTab = selection.selectedTab
+        isAviNowPlayingFullPlayer = plan.isNowPlayingFullPlayer
+        selectedMusicAviDetail = plan.detail
+        selectedTab = plan.selectedTab
     }
 
     private func openDiscoveryStationInfo(_ discovery: DiscoveredTrack) {

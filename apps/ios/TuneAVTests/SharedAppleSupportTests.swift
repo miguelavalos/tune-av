@@ -548,6 +548,29 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(selectedSummary, summary)
     }
 
+    func testAviMusicDetailCoordinatorBuildsOpenPlanFromSelection() {
+        let station = shellStation(id: "station")
+        let discovery = DiscoveredTrack(
+            title: "Angel",
+            artist: "Massive Attack",
+            station: station,
+            artworkURL: nil
+        )
+        let selection = AviMusicDetailCoordinator.track(discovery, returnMusicMode: .history)
+
+        let plan = AviMusicDetailCoordinator.openPlan(for: selection)
+
+        XCTAssertEqual(plan.returnMusicMode, .history)
+        XCTAssertEqual(plan.returnMusicOverview, false)
+        XCTAssertEqual(plan.clearsStationDetail, true)
+        XCTAssertEqual(plan.isNowPlayingFullPlayer, false)
+        XCTAssertEqual(plan.selectedTab, .avi)
+        guard case .track(let selectedDiscovery) = plan.detail else {
+            return XCTFail("Expected track detail")
+        }
+        XCTAssertEqual(selectedDiscovery.discoveryID, discovery.discoveryID)
+    }
+
     @MainActor
     func testSleepTimerControllerSetsAndClearsSharedDescription() {
         let controller = TuneAVSleepTimerController()

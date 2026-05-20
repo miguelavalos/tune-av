@@ -9,6 +9,24 @@ struct AviMusicDetailSelection {
     let selectedTab: AppShellTab
 }
 
+struct AviMusicDetailOpenPlan {
+    let detail: SelectedMusicAviDetail
+    let returnMusicMode: MusicContentMode?
+    let returnMusicOverview: Bool
+    let clearsStationDetail: Bool
+    let isNowPlayingFullPlayer: Bool
+    let selectedTab: AppShellTab
+
+    init(selection: AviMusicDetailSelection) {
+        detail = selection.detail
+        returnMusicMode = selection.returnMusicMode
+        returnMusicOverview = selection.returnMusicOverview
+        clearsStationDetail = selection.clearsStationDetail
+        isNowPlayingFullPlayer = selection.isNowPlayingFullPlayer
+        selectedTab = selection.selectedTab
+    }
+}
+
 enum AviMusicDetailCoordinator {
     static func track(
         _ discovery: DiscoveredTrack,
@@ -36,5 +54,9 @@ enum AviMusicDetailCoordinator {
             isNowPlayingFullPlayer: false,
             selectedTab: .avi
         )
+    }
+
+    static func openPlan(for selection: AviMusicDetailSelection) -> AviMusicDetailOpenPlan {
+        AviMusicDetailOpenPlan(selection: selection)
     }
 }
