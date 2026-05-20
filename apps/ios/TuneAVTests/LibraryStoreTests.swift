@@ -110,6 +110,56 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertNil(userDefaults.data(forKey: storageKey))
     }
 
+    func testListeningSessionRetryPolicyAppliesExponentialBackoffAndJitter() {
+        let firstRetryDelay = LibraryStoreListeningSessionRetryPolicy.delay(
+            retryCount: 0,
+            baseDelay: 30,
+            maxDelay: 300,
+            jitterFraction: 0.2,
+            randomFraction: { 0 }
+        )
+        let secondRetryDelay = LibraryStoreListeningSessionRetryPolicy.delay(
+            retryCount: 1,
+            baseDelay: 30,
+            maxDelay: 300,
+            jitterFraction: 0.2,
+            randomFraction: { 0.5 }
+        )
+        let cappedRetryDelay = LibraryStoreListeningSessionRetryPolicy.delay(
+            retryCount: 10,
+            baseDelay: 30,
+            maxDelay: 300,
+            jitterFraction: 0.2,
+            randomFraction: { 1 }
+        )
+
+        XCTAssertEqual(firstRetryDelay, 24)
+        XCTAssertEqual(secondRetryDelay, 60)
+        XCTAssertEqual(cappedRetryDelay, 300)
+    }
+
+    func testListeningSessionRetryPolicyBoundsInvalidInputs() {
+        XCTAssertEqual(
+            LibraryStoreListeningSessionRetryPolicy.delay(
+                retryCount: -1,
+                baseDelay: 30,
+                maxDelay: 300,
+                jitterFraction: 2,
+                randomFraction: { -1 }
+            ),
+            0
+        )
+        XCTAssertEqual(
+            LibraryStoreListeningSessionRetryPolicy.delay(
+                retryCount: 0,
+                baseDelay: 0,
+                maxDelay: 300,
+                jitterFraction: 0.2
+            ),
+            0
+        )
+    }
+
     func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let launchContext = TuneAVLaunchContext(environment: [

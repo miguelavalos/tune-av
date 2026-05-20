@@ -21,6 +21,9 @@ final class LibraryStore: ObservableObject {
     private static let discoveryRefreshInterval: TimeInterval = 60
     private static let listeningSessionBatchSize = 5
     private static let maxPendingListeningSessions = 50
+    private static let listeningSessionRetryBaseDelay: TimeInterval = 30
+    private static let listeningSessionRetryMaxDelay: TimeInterval = 300
+    private static let listeningSessionRetryJitterFraction = 0.2
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
@@ -35,6 +38,7 @@ final class LibraryStore: ObservableObject {
     private var userSummaryFetchedAt: Date?
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
+    private var listeningSessionUploadRetryCount = 0
     private var listeningSessionUploadTask: Task<Void, Never>?
     private var listeningSessionFlushTask: Task<Void, Never>?
     private var stationFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
@@ -677,6 +681,7 @@ final class LibraryStore: ObservableObject {
             listeningSessionUploadTask = nil
             listeningSessionFlushTask?.cancel()
             listeningSessionFlushTask = nil
+            listeningSessionUploadRetryCount = 0
             stationFeedbackSyncTasks.values.forEach { $0.cancel() }
             stationFeedbackSyncTasks.removeAll()
             stationFeedbackSyncTokens.removeAll()
@@ -778,8 +783,14 @@ final class LibraryStore: ObservableObject {
     private func scheduleListeningSessionUpload() {
         guard listeningSessionUploadTask == nil else { return }
 
+        let delay = LibraryStoreListeningSessionRetryPolicy.delay(
+            retryCount: listeningSessionUploadRetryCount,
+            baseDelay: Self.listeningSessionRetryBaseDelay,
+            maxDelay: Self.listeningSessionRetryMaxDelay,
+            jitterFraction: Self.listeningSessionRetryJitterFraction
+        )
         listeningSessionUploadTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(30))
+            try? await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
             guard !Task.isCancelled else { return }
             flushListeningSessionUploads()
         }
@@ -818,6 +829,7 @@ final class LibraryStore: ObservableObject {
         listeningSessionFlushTask = nil
 
         guard didUpload else {
+            listeningSessionUploadRetryCount += 1
             pendingListeningSessions.insert(contentsOf: sessions, at: 0)
             pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
                 pendingListeningSessions,
@@ -828,6 +840,7 @@ final class LibraryStore: ObservableObject {
             return
         }
 
+        listeningSessionUploadRetryCount = 0
         persistPendingListeningSessions()
         guard !pendingListeningSessions.isEmpty else { return }
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
@@ -1466,6 +1479,26 @@ enum LibraryStoreListeningSessionPersistence {
         }
         guard let data = try? encoder.encode(boundedSessions) else { return }
         userDefaults.set(data, forKey: storageKey)
+    }
+}
+
+enum LibraryStoreListeningSessionRetryPolicy {
+    static func delay(
+        retryCount: Int,
+        baseDelay: TimeInterval,
+        maxDelay: TimeInterval,
+        jitterFraction: Double,
+        randomFraction: () -> Double = { Double.random(in: 0...1) }
+    ) -> TimeInterval {
+        guard baseDelay > 0, maxDelay > 0 else { return 0 }
+
+        let boundedRetryCount = max(0, min(retryCount, 10))
+        let exponentialDelay = baseDelay * pow(2, Double(boundedRetryCount))
+        let cappedDelay = min(exponentialDelay, maxDelay)
+        let boundedJitter = max(0, min(jitterFraction, 1))
+        let jitterMultiplier = 1 + ((max(0, min(randomFraction(), 1)) * 2) - 1) * boundedJitter
+
+        return min(cappedDelay * jitterMultiplier, maxDelay)
     }
 }
 
