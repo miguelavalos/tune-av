@@ -58,6 +58,58 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(bounded.first?.station.id, "station-2-new")
     }
 
+    func testListeningSessionPersistenceRestoresBoundedSessions() throws {
+        let storageKey = "test.pendingListeningSessions.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+
+        let sessions = [
+            listeningSessionDraft(id: "session-1", stationID: "station-1"),
+            listeningSessionDraft(id: "session-2", stationID: "station-2-old"),
+            listeningSessionDraft(id: "session-2", stationID: "station-2-new"),
+            listeningSessionDraft(id: "session-3", stationID: "station-3")
+        ]
+
+        LibraryStoreListeningSessionPersistence.save(
+            sessions,
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+
+        let restored = LibraryStoreListeningSessionPersistence.load(
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+
+        XCTAssertEqual(restored.map(\.id), ["session-2", "session-3"])
+        XCTAssertEqual(restored.first?.station.id, "station-2-new")
+    }
+
+    func testListeningSessionPersistenceClearsStorageWhenEmpty() throws {
+        let storageKey = "test.pendingListeningSessions.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+
+        LibraryStoreListeningSessionPersistence.save(
+            [listeningSessionDraft(id: "session-1", stationID: "station-1")],
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+        XCTAssertNotNil(userDefaults.data(forKey: storageKey))
+
+        LibraryStoreListeningSessionPersistence.save(
+            [],
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2
+        )
+
+        XCTAssertNil(userDefaults.data(forKey: storageKey))
+    }
+
     func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let launchContext = TuneAVLaunchContext(environment: [

@@ -188,7 +188,7 @@ private struct TuneAVTrackFeedbackRequest: Encodable {
     let feedback: String?
 }
 
-struct TuneAVListeningSessionDraft: Equatable {
+struct TuneAVListeningSessionDraft: Codable, Equatable {
     let id: String
     let station: Station
     let startedAt: Date

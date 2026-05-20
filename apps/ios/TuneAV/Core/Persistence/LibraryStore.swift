@@ -15,6 +15,7 @@ final class LibraryStore: ObservableObject {
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
+    private static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
     private static let cloudLibraryRefreshInterval: TimeInterval = 300
     private static let discoveryRefreshInterval: TimeInterval = 60
@@ -66,6 +67,7 @@ final class LibraryStore: ObservableObject {
 
         stationFeedback = Self.loadStationFeedback()
         trackFeedback = Self.loadTrackFeedback()
+        pendingListeningSessions = Self.loadPendingListeningSessions(maxCount: Self.maxPendingListeningSessions)
         refresh()
     }
 
@@ -682,6 +684,9 @@ final class LibraryStore: ObservableObject {
             trackFeedbackSyncTasks.removeAll()
             trackFeedbackSyncTokens.removeAll()
             pendingListeningSessions.removeAll()
+            persistPendingListeningSessions()
+        } else if !pendingListeningSessions.isEmpty {
+            scheduleListeningSessionUpload()
         }
     }
 
@@ -757,6 +762,7 @@ final class LibraryStore: ObservableObject {
             pendingListeningSessions,
             maxCount: Self.maxPendingListeningSessions
         )
+        persistPendingListeningSessions()
 
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
@@ -786,6 +792,7 @@ final class LibraryStore: ObservableObject {
 
         guard let backendService, backendService.isConfigured() else {
             pendingListeningSessions.removeAll()
+            persistPendingListeningSessions()
             return
         }
         guard !pendingListeningSessions.isEmpty else { return }
@@ -816,10 +823,12 @@ final class LibraryStore: ObservableObject {
                 pendingListeningSessions,
                 maxCount: Self.maxPendingListeningSessions
             )
+            persistPendingListeningSessions()
             scheduleListeningSessionUpload()
             return
         }
 
+        persistPendingListeningSessions()
         guard !pendingListeningSessions.isEmpty else { return }
         if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
@@ -1382,6 +1391,21 @@ final class LibraryStore: ObservableObject {
     private static func stationIdentityKey(for station: Station) -> String {
         TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
     }
+
+    private static func loadPendingListeningSessions(maxCount: Int) -> [TuneAVListeningSessionDraft] {
+        LibraryStoreListeningSessionPersistence.load(
+            storageKey: pendingListeningSessionsStorageKey,
+            maxCount: maxCount
+        )
+    }
+
+    private func persistPendingListeningSessions() {
+        LibraryStoreListeningSessionPersistence.save(
+            pendingListeningSessions,
+            storageKey: Self.pendingListeningSessionsStorageKey,
+            maxCount: Self.maxPendingListeningSessions
+        )
+    }
 }
 
 enum LibraryStoreListeningSessionBuffer {
@@ -1410,6 +1434,38 @@ enum LibraryStoreListeningSessionBuffer {
         guard maxCount > 0 else { return [] }
         guard sessions.count > maxCount else { return sessions }
         return Array(sessions.suffix(maxCount))
+    }
+}
+
+enum LibraryStoreListeningSessionPersistence {
+    static func load(
+        storageKey: String,
+        userDefaults: UserDefaults = .standard,
+        decoder: JSONDecoder = JSONDecoder(),
+        maxCount: Int
+    ) -> [TuneAVListeningSessionDraft] {
+        guard let data = userDefaults.data(forKey: storageKey),
+              let sessions = try? decoder.decode([TuneAVListeningSessionDraft].self, from: data) else {
+            return []
+        }
+
+        return LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: maxCount)
+    }
+
+    static func save(
+        _ sessions: [TuneAVListeningSessionDraft],
+        storageKey: String,
+        userDefaults: UserDefaults = .standard,
+        encoder: JSONEncoder = JSONEncoder(),
+        maxCount: Int
+    ) {
+        let boundedSessions = LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: maxCount)
+        guard !boundedSessions.isEmpty else {
+            userDefaults.removeObject(forKey: storageKey)
+            return
+        }
+        guard let data = try? encoder.encode(boundedSessions) else { return }
+        userDefaults.set(data, forKey: storageKey)
     }
 }
 
