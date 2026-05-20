@@ -3390,6 +3390,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.loadingTimeoutSeconds, .seconds(12))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackInitialDelay, .seconds(4))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackPollingInterval, .seconds(25))
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.cachedNowPlayingMaximumAge, 30 * 60)
 
         XCTAssertTrue(
             TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(
@@ -3423,6 +3424,38 @@ final class SharedAppleSupportTests: XCTestCase {
                 isRecoverablePlaybackState: true
             )
         )
+    }
+
+    func testAudioPlaybackPolicyExpiresCachedNowPlayingState() {
+        let now = Date(timeIntervalSince1970: 2_000)
+        let freshState = TuneAVCachedNowPlayingState(
+            title: "Fresh",
+            artist: "Artist",
+            albumTitle: nil,
+            artworkURL: nil,
+            artistURL: nil,
+            cachedAt: now.addingTimeInterval(-TuneAVAudioPlaybackPolicy.cachedNowPlayingMaximumAge)
+        )
+        let expiredState = TuneAVCachedNowPlayingState(
+            title: "Expired",
+            artist: "Artist",
+            albumTitle: nil,
+            artworkURL: nil,
+            artistURL: nil,
+            cachedAt: now.addingTimeInterval(-TuneAVAudioPlaybackPolicy.cachedNowPlayingMaximumAge - 1)
+        )
+        let futureState = TuneAVCachedNowPlayingState(
+            title: "Future",
+            artist: "Artist",
+            albumTitle: nil,
+            artworkURL: nil,
+            artistURL: nil,
+            cachedAt: now.addingTimeInterval(1)
+        )
+
+        XCTAssertTrue(TuneAVAudioPlaybackPolicy.isCachedNowPlayingFresh(freshState, now: now))
+        XCTAssertFalse(TuneAVAudioPlaybackPolicy.isCachedNowPlayingFresh(expiredState, now: now))
+        XCTAssertFalse(TuneAVAudioPlaybackPolicy.isCachedNowPlayingFresh(futureState, now: now))
     }
 
     func testStationResolvesHomepageAndBuildsShareText() {

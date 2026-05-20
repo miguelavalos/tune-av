@@ -1002,13 +1002,19 @@ final class AudioPlayerService: NSObject, ObservableObject {
             artist: currentTrackArtist,
             albumTitle: currentTrackAlbumTitle,
             artworkURL: currentTrackArtworkURL,
-            artistURL: currentTrackArtistURL
+            artistURL: currentTrackArtistURL,
+            cachedAt: Date()
         )
         rememberCachedNowPlayingStationID(stationID)
     }
 
     private func restoreCachedNowPlaying(for station: Station) {
         guard let cachedState = cachedNowPlayingByStationID[station.id] else { return }
+        guard TuneAVAudioPlaybackPolicy.isCachedNowPlayingFresh(cachedState) else {
+            cachedNowPlayingByStationID[station.id] = nil
+            cachedNowPlayingStationIDs.removeAll { $0 == station.id }
+            return
+        }
         rememberCachedNowPlayingStationID(station.id)
 
         let sanitizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(cachedState.artist)

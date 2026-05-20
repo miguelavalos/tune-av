@@ -6,6 +6,7 @@ struct TuneAVCachedNowPlayingState: Equatable {
     let albumTitle: String?
     let artworkURL: URL?
     let artistURL: URL?
+    let cachedAt: Date
 }
 
 enum TuneAVPlaybackState: Equatable {
@@ -35,6 +36,12 @@ enum TuneAVAudioPlaybackPolicy {
     static let loadingTimeoutSeconds: Duration = .seconds(12)
     static let nowPlayingFallbackInitialDelay: Duration = .seconds(4)
     static let nowPlayingFallbackPollingInterval: Duration = .seconds(25)
+    static let cachedNowPlayingMaximumAge: TimeInterval = 30 * 60
+
+    static func isCachedNowPlayingFresh(_ state: TuneAVCachedNowPlayingState, now: Date = Date()) -> Bool {
+        let age = now.timeIntervalSince(state.cachedAt)
+        return age >= 0 && age <= cachedNowPlayingMaximumAge
+    }
 
     static func shouldRetryAfterNetworkRestored(
         isNetworkSatisfied: Bool,
