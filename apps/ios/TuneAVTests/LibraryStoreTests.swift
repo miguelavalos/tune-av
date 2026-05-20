@@ -74,13 +74,17 @@ final class LibraryStoreTests: XCTestCase {
             sessions,
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
 
         let restored = LibraryStoreListeningSessionPersistence.load(
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
 
         XCTAssertEqual(restored.map(\.id), ["session-2", "session-3"])
@@ -96,7 +100,9 @@ final class LibraryStoreTests: XCTestCase {
             [listeningSessionDraft(id: "session-1", stationID: "station-1")],
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
 
         let data = try XCTUnwrap(userDefaults.data(forKey: storageKey))
@@ -145,11 +151,54 @@ final class LibraryStoreTests: XCTestCase {
         let restored = LibraryStoreListeningSessionPersistence.load(
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
 
         XCTAssertEqual(restored.first?.stationID, "legacy-station")
         XCTAssertEqual(restored.first?.stationName, "Legacy Station")
+    }
+
+    func testListeningSessionPersistenceDropsExpiredSessions() throws {
+        let storageKey = "test.pendingListeningSessions.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+
+        let now = Date(timeIntervalSince1970: 1_000)
+        let sessions = [
+            listeningSessionDraft(
+                id: "expired",
+                stationID: "station-expired",
+                startedAt: Date(timeIntervalSince1970: 100),
+                endedAt: Date(timeIntervalSince1970: 120)
+            ),
+            listeningSessionDraft(
+                id: "retained",
+                stationID: "station-retained",
+                startedAt: Date(timeIntervalSince1970: 960),
+                endedAt: Date(timeIntervalSince1970: 980)
+            )
+        ]
+
+        LibraryStoreListeningSessionPersistence.save(
+            sessions,
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 5,
+            maxAge: 100,
+            now: now
+        )
+
+        let restored = LibraryStoreListeningSessionPersistence.load(
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 5,
+            maxAge: 100,
+            now: now
+        )
+
+        XCTAssertEqual(restored.map(\.id), ["retained"])
     }
 
     func testListeningSessionPersistenceClearsStorageWhenEmpty() throws {
@@ -161,7 +210,9 @@ final class LibraryStoreTests: XCTestCase {
             [listeningSessionDraft(id: "session-1", stationID: "station-1")],
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
         XCTAssertNotNil(userDefaults.data(forKey: storageKey))
 
@@ -169,7 +220,9 @@ final class LibraryStoreTests: XCTestCase {
             [],
             storageKey: storageKey,
             userDefaults: userDefaults,
-            maxCount: 2
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
         )
 
         XCTAssertNil(userDefaults.data(forKey: storageKey))
@@ -420,7 +473,9 @@ final class LibraryStoreTests: XCTestCase {
     private func listeningSessionDraft(
         id: String = UUID().uuidString,
         stationID: String,
-        endedReason: String = "paused"
+        endedReason: String = "paused",
+        startedAt: Date = Date(timeIntervalSince1970: 10),
+        endedAt: Date = Date(timeIntervalSince1970: 30)
     ) -> TuneAVListeningSessionDraft {
         TuneAVListeningSessionDraft(
             id: id,
@@ -432,9 +487,9 @@ final class LibraryStoreTests: XCTestCase {
                 tags: "pop",
                 streamURL: "https://example.com/\(stationID)"
             ),
-            startedAt: Date(timeIntervalSince1970: 10),
-            endedAt: Date(timeIntervalSince1970: 30),
-            durationSeconds: 20,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            durationSeconds: max(0, Int(endedAt.timeIntervalSince(startedAt).rounded())),
             source: "home",
             endedReason: endedReason,
             trackDetectedCount: 1

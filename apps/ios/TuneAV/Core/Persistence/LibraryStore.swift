@@ -22,6 +22,7 @@ final class LibraryStore: ObservableObject {
     private static let discoveryRefreshInterval: TimeInterval = 60
     private static let listeningSessionBatchSize = 5
     private static let maxPendingListeningSessions = 50
+    private static let maxPendingListeningSessionAge: TimeInterval = 7 * 24 * 60 * 60
     private static let listeningSessionRetryBaseDelay: TimeInterval = 30
     private static let listeningSessionRetryMaxDelay: TimeInterval = 300
     private static let listeningSessionRetryJitterFraction = 0.2
@@ -1465,7 +1466,8 @@ final class LibraryStore: ObservableObject {
     private static func loadPendingListeningSessions(maxCount: Int) -> [TuneAVListeningSessionDraft] {
         LibraryStoreListeningSessionPersistence.load(
             storageKey: pendingListeningSessionsStorageKey,
-            maxCount: maxCount
+            maxCount: maxCount,
+            maxAge: maxPendingListeningSessionAge
         )
     }
 
@@ -1473,7 +1475,8 @@ final class LibraryStore: ObservableObject {
         LibraryStoreListeningSessionPersistence.save(
             pendingListeningSessions,
             storageKey: Self.pendingListeningSessionsStorageKey,
-            maxCount: Self.maxPendingListeningSessions
+            maxCount: Self.maxPendingListeningSessions,
+            maxAge: Self.maxPendingListeningSessionAge
         )
     }
 }
@@ -1512,14 +1515,19 @@ enum LibraryStoreListeningSessionPersistence {
         storageKey: String,
         userDefaults: UserDefaults = .standard,
         decoder: JSONDecoder = JSONDecoder(),
-        maxCount: Int
+        maxCount: Int,
+        maxAge: TimeInterval,
+        now: Date = Date()
     ) -> [TuneAVListeningSessionDraft] {
         guard let data = userDefaults.data(forKey: storageKey),
               let sessions = try? decoder.decode([TuneAVListeningSessionDraft].self, from: data) else {
             return []
         }
 
-        return LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: maxCount)
+        return LibraryStoreListeningSessionBuffer.bounded(
+            retained(sessions, maxAge: maxAge, now: now),
+            maxCount: maxCount
+        )
     }
 
     static func save(
@@ -1527,15 +1535,30 @@ enum LibraryStoreListeningSessionPersistence {
         storageKey: String,
         userDefaults: UserDefaults = .standard,
         encoder: JSONEncoder = JSONEncoder(),
-        maxCount: Int
+        maxCount: Int,
+        maxAge: TimeInterval,
+        now: Date = Date()
     ) {
-        let boundedSessions = LibraryStoreListeningSessionBuffer.bounded(sessions, maxCount: maxCount)
+        let boundedSessions = LibraryStoreListeningSessionBuffer.bounded(
+            retained(sessions, maxAge: maxAge, now: now),
+            maxCount: maxCount
+        )
         guard !boundedSessions.isEmpty else {
             userDefaults.removeObject(forKey: storageKey)
             return
         }
         guard let data = try? encoder.encode(boundedSessions) else { return }
         userDefaults.set(data, forKey: storageKey)
+    }
+
+    private static func retained(
+        _ sessions: [TuneAVListeningSessionDraft],
+        maxAge: TimeInterval,
+        now: Date
+    ) -> [TuneAVListeningSessionDraft] {
+        guard maxAge > 0 else { return [] }
+        let oldestAllowedEndedAt = now.addingTimeInterval(-maxAge)
+        return sessions.filter { $0.endedAt >= oldestAllowedEndedAt && $0.endedAt <= now }
     }
 }
 
