@@ -1029,6 +1029,75 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     @MainActor
+    func testAccountAPIClientRecordsSanitizedNetworkMetrics() async throws {
+        var events: [AVAccountAPIClient.NetworkEvent] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession(),
+            metricsSink: AVAccountAPIClient.MetricsSink { events.append($0) }
+        )
+
+        _ = try await client.requestData(path: "/v1/tune/feedback/stations/BBC%20Radio%201", method: "PUT")
+
+        XCTAssertEqual(events.map(\.kind), [.started, .completed])
+        XCTAssertEqual(events.map(\.operation), [
+            "v1.tune.feedback.stations.item",
+            "v1.tune.feedback.stations.item"
+        ])
+        XCTAssertEqual(events.last?.statusCode, 200)
+        XCTAssertEqual(events.last?.attempt, 1)
+        XCTAssertNotNil(events.last?.durationMilliseconds)
+        XCTAssertFalse(events.map(\.operation).joined(separator: "|").contains("BBC"))
+        XCTAssertFalse(events.map(\.operation).joined(separator: "|").contains("Radio"))
+    }
+
+    @MainActor
+    func testAccountAPIClientRecordsRetryMetrics() async throws {
+        var attempts = 0
+        var events: [AVAccountAPIClient.NetworkEvent] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            attempts += 1
+            let statusCode = attempts == 1 ? 503 : 200
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession(),
+            retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0),
+            metricsSink: AVAccountAPIClient.MetricsSink { events.append($0) }
+        )
+
+        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+
+        XCTAssertEqual(attempts, 2)
+        XCTAssertEqual(events.map(\.kind), [.started, .retrying, .completed])
+        XCTAssertEqual(events[1].statusCode, 503)
+        XCTAssertEqual(events[1].attempt, 2)
+        XCTAssertEqual(events.last?.attempt, 2)
+    }
+
+    @MainActor
     func testAccountAPIClientRetriesServerErrorsButNotRateLimits() async throws {
         var serverAttempts = 0
         TuneAVTestURLProtocol.requestHandler = { request in

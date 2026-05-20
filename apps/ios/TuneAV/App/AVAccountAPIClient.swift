@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 @MainActor
 protocol AccountDeletionAPI {
@@ -32,19 +33,23 @@ final class AVAccountAPIClient {
     private let urlSession: URLSession
     private let decoder: JSONDecoder
     private let retryPolicy: RetryPolicy
+    private let metricsSink: MetricsSink
+    private let networkLogger = Logger(subsystem: "com.avalsys.tuneav", category: "account-network")
 
     init(
         getToken: @escaping () async throws -> String?,
         baseURLProvider: @escaping () -> URL? = { AppConfig.avAccountAPIBaseURL },
         urlSession: URLSession = TuneAVURLSessions.account,
         decoder: JSONDecoder = JSONDecoder(),
-        retryPolicy: RetryPolicy = .account
+        retryPolicy: RetryPolicy = .account,
+        metricsSink: MetricsSink = .osLog
     ) {
         self.getToken = getToken
         self.baseURLProvider = baseURLProvider
         self.urlSession = urlSession
         self.decoder = decoder
         self.retryPolicy = retryPolicy
+        self.metricsSink = metricsSink
     }
 
     func isConfigured() -> Bool {
@@ -108,19 +113,85 @@ final class AVAccountAPIClient {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        let (data, response) = try await data(for: request)
+        let operation = Self.operationName(method: method, path: path)
+        let startedAt = Date()
+        recordNetworkEvent(
+            NetworkEvent(
+                kind: .started,
+                operation: operation,
+                method: method,
+                statusCode: nil,
+                durationMilliseconds: nil,
+                attempt: 1,
+                errorCode: nil
+            )
+        )
+
+        let data: Data
+        let response: URLResponse
+        let attempts: Int
+        do {
+            (data, response, attempts) = try await performDataTask(for: request, operation: operation, method: method)
+        } catch {
+            recordNetworkEvent(
+                NetworkEvent(
+                    kind: .failed,
+                    operation: operation,
+                    method: method,
+                    statusCode: nil,
+                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                    attempt: nil,
+                    errorCode: Self.sanitizedErrorCode(error)
+                )
+            )
+            throw error
+        }
+
         guard let httpResponse = response as? HTTPURLResponse else {
+            recordNetworkEvent(
+                NetworkEvent(
+                    kind: .failed,
+                    operation: operation,
+                    method: method,
+                    statusCode: nil,
+                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                    attempt: attempts,
+                    errorCode: "bad_server_response"
+                )
+            )
             throw URLError(.badServerResponse)
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
+            recordNetworkEvent(
+                NetworkEvent(
+                    kind: .failed,
+                    operation: operation,
+                    method: method,
+                    statusCode: httpResponse.statusCode,
+                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                    attempt: attempts,
+                    errorCode: nil
+                )
+            )
             throw AVAccountAPIClientError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
+        recordNetworkEvent(
+            NetworkEvent(
+                kind: .completed,
+                operation: operation,
+                method: method,
+                statusCode: httpResponse.statusCode,
+                durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                attempt: attempts,
+                errorCode: nil
+            )
+        )
         return data
     }
 
-    private func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+    private func performDataTask(for request: URLRequest, operation: String, method: String) async throws -> (Data, URLResponse, Int) {
         var attempt = 1
 
         while true {
@@ -129,15 +200,37 @@ final class AVAccountAPIClient {
                 if let httpResponse = response as? HTTPURLResponse,
                    retryPolicy.shouldRetry(statusCode: httpResponse.statusCode, attempt: attempt),
                    !Task.isCancelled {
+                    recordNetworkEvent(
+                        NetworkEvent(
+                            kind: .retrying,
+                            operation: operation,
+                            method: method,
+                            statusCode: httpResponse.statusCode,
+                            durationMilliseconds: nil,
+                            attempt: attempt + 1,
+                            errorCode: nil
+                        )
+                    )
                     try await retryPolicy.sleep(beforeAttempt: attempt + 1)
                     attempt += 1
                     continue
                 }
-                return (data, response)
+                return (data, response, attempt)
             } catch {
                 guard retryPolicy.shouldRetry(error: error, attempt: attempt), !Task.isCancelled else {
                     throw error
                 }
+                recordNetworkEvent(
+                    NetworkEvent(
+                        kind: .retrying,
+                        operation: operation,
+                        method: method,
+                        statusCode: nil,
+                        durationMilliseconds: nil,
+                        attempt: attempt + 1,
+                        errorCode: Self.sanitizedErrorCode(error)
+                    )
+                )
                 try await retryPolicy.sleep(beforeAttempt: attempt + 1)
                 attempt += 1
             }
@@ -156,11 +249,98 @@ final class AVAccountAPIClient {
         components.percentEncodedQuery = String(pathAndQuery[1])
         return components.url ?? url
     }
+
+    private func recordNetworkEvent(_ event: NetworkEvent) {
+        metricsSink.record(event)
+        switch event.kind {
+        case .started:
+            networkLogger.debug("Account API request started operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public)")
+        case .retrying:
+            networkLogger.info("Account API request retrying operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) attempt=\(event.attempt ?? 0, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public)")
+        case .completed:
+            networkLogger.info("Account API request completed operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) duration_ms=\(event.durationMilliseconds ?? 0, privacy: .public) attempts=\(event.attempt ?? 0, privacy: .public)")
+        case .failed:
+            networkLogger.error("Account API request failed operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) duration_ms=\(event.durationMilliseconds ?? 0, privacy: .public) attempts=\(event.attempt ?? 0, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public)")
+        }
+    }
+
+    private static func durationMilliseconds(since startedAt: Date) -> Int {
+        max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
+    }
+
+    private static func sanitizedErrorCode(_ error: Error) -> String {
+        if let urlError = error as? URLError {
+            return urlError.code.metricName
+        }
+        if let clientError = error as? AVAccountAPIClientError {
+            switch clientError {
+            case .missingToken:
+                return "missing_token"
+            case .missingBaseURL:
+                return "missing_base_url"
+            case .requestFailed:
+                return "request_failed"
+            }
+        }
+        return "network_error"
+    }
+
+    private static func operationName(method: String, path: String) -> String {
+        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let pathOnly = String(sanitizedPath.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first ?? "")
+        let components = pathOnly.split(separator: "/").map(String.init)
+
+        switch components {
+        case ["v1", "me"]:
+            return "v1.me"
+        case ["v1", "me", "access"]:
+            return "v1.me.access"
+        case ["v1", "me", "delete-account-request"]:
+            return "v1.me.delete_account_request"
+        case ["v1", "me", "delete-account-finalize"]:
+            return "v1.me.delete_account_finalize"
+        case ["v1", "apps", "tuneav", "link"]:
+            return "v1.apps.tuneav.link"
+        case ["v1", "tune", "me", "summary"]:
+            return "v1.tune.me.summary"
+        case let route where route.count == 5 && route.prefix(4) == ["v1", "tune", "feedback", "stations"]:
+            return "v1.tune.feedback.stations.item"
+        case let route where route.count == 5 && route.prefix(4) == ["v1", "tune", "feedback", "tracks"]:
+            return "v1.tune.feedback.tracks.item"
+        case ["v1", "tune", "analytics", "listening-sessions"]:
+            return "v1.tune.analytics.listening_sessions"
+        default:
+            return "unknown.\(method.lowercased())"
+        }
+    }
 }
 
 extension AVAccountAPIClient: AccountDeletionAPI {}
 
 extension AVAccountAPIClient {
+    struct MetricsSink: Sendable {
+        let record: @MainActor @Sendable (NetworkEvent) -> Void
+
+        static let osLog = MetricsSink { _ in }
+    }
+
+    struct NetworkEvent: Equatable, Sendable {
+        enum Kind: String, Sendable {
+            case started
+            case retrying
+            case completed
+            case failed
+        }
+
+        let kind: Kind
+        let operation: String
+        let method: String
+        let statusCode: Int?
+        let durationMilliseconds: Int?
+        let attempt: Int?
+        let errorCode: String?
+    }
+
     struct RetryPolicy {
         let maxAttempts: Int
         let backoffNanoseconds: UInt64
@@ -196,6 +376,35 @@ extension AVAccountAPIClient {
         func sleep(beforeAttempt: Int) async throws {
             guard beforeAttempt > 1, backoffNanoseconds > 0 else { return }
             try await Task.sleep(nanoseconds: backoffNanoseconds)
+        }
+    }
+}
+
+private extension URLError.Code {
+    var metricName: String {
+        switch self {
+        case .timedOut:
+            return "timed_out"
+        case .cannotFindHost:
+            return "cannot_find_host"
+        case .cannotConnectToHost:
+            return "cannot_connect_to_host"
+        case .networkConnectionLost:
+            return "network_connection_lost"
+        case .dnsLookupFailed:
+            return "dns_lookup_failed"
+        case .notConnectedToInternet:
+            return "not_connected_to_internet"
+        case .internationalRoamingOff:
+            return "international_roaming_off"
+        case .callIsActive:
+            return "call_is_active"
+        case .dataNotAllowed:
+            return "data_not_allowed"
+        case .badServerResponse:
+            return "bad_server_response"
+        default:
+            return "url_error"
         }
     }
 }
