@@ -1156,18 +1156,6 @@ struct AppShellView: View {
         }
     }
 
-    private func aviStationDetail(
-        station: Station,
-        queueSource: AudioPlayerService.PlaybackQueue.Source,
-        queue: [Station]
-    ) -> SelectedStationDetail {
-        aviStationDetailBuilder.detail(
-            station: station,
-            queueSource: queueSource,
-            queue: queue
-        )
-    }
-
     private func currentPlaybackQueue(fallbackStation: Station) -> [Station] {
         aviStationDetailBuilder.playbackQueue(
             stations: audioPlayer.playbackQueue.stations,
@@ -1181,12 +1169,13 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source,
         queue: (Station) -> [Station]
     ) -> Station {
-        let resolvedStation = enrichedStation(station)
-        selectedStationDetail = aviStationDetail(
-            station: resolvedStation,
+        let selection = aviStationDetailBuilder.selection(
+            station: station,
             queueSource: queueSource,
-            queue: queue(resolvedStation)
+            queue: queue
         )
+        selectedStationDetail = selection.detail
+        let resolvedStation = selection.resolvedStation
         refreshSelectedStationEnrichmentIfNeeded(resolvedStation)
         return resolvedStation
     }

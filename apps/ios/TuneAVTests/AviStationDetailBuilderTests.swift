@@ -64,6 +64,46 @@ final class AviStationDetailBuilderTests: XCTestCase {
         )
     }
 
+    func testSelectionReturnsResolvedStationAndEnrichedQueueDetail() {
+        let station = makeStation(id: "base")
+        let queueStation = makeStation(id: "queue")
+        let builder = AviStationDetailBuilder(
+            enrichStation: { station in
+                Station(
+                    id: station.id,
+                    name: "Enriched \(station.name)",
+                    country: station.country,
+                    language: station.language,
+                    tags: station.tags,
+                    streamURL: station.streamURL
+                )
+            },
+            enrichStations: { stations in
+                stations.map { station in
+                    Station(
+                        id: station.id,
+                        name: "Queue \(station.name)",
+                        country: station.country,
+                        language: station.language,
+                        tags: station.tags,
+                        streamURL: station.streamURL
+                    )
+                }
+            }
+        )
+
+        let selection = builder.selection(
+            station: station,
+            queueSource: .homeDiscovery,
+            queue: { resolvedStation in [resolvedStation, queueStation] }
+        )
+
+        XCTAssertEqual(selection.resolvedStation.name, "Enriched Station base")
+        XCTAssertEqual(selection.detail.station.name, "Enriched Station base")
+        XCTAssertEqual(selection.detail.queueSource, .homeDiscovery)
+        XCTAssertEqual(selection.detail.queueStations.map(\.name), ["Queue Enriched Station base", "Queue Station queue"])
+    }
+
     private func makeStation(id: String) -> Station {
         Station(
             id: id,
