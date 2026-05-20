@@ -547,6 +547,28 @@ struct MusicDiscoveryActions: View {
     let shareAction: () -> Void
     let clearAction: () -> Void
 
+    init(
+        isShareDisabled: Bool,
+        shareAction: @escaping () -> Void,
+        clearAction: @escaping () -> Void
+    ) {
+        self.isShareDisabled = isShareDisabled
+        self.shareAction = shareAction
+        self.clearAction = clearAction
+    }
+
+    init(
+        snapshot: MusicLibraryDerivedState,
+        shareAction: @escaping (MusicLibraryDerivedState) -> Void,
+        clearAction: @escaping () -> Void
+    ) {
+        self.init(
+            isShareDisabled: snapshot.filteredDiscoveries.isEmpty,
+            shareAction: { shareAction(snapshot) },
+            clearAction: clearAction
+        )
+    }
+
     var body: some View {
         HStack(spacing: 10) {
             Button(action: shareAction) {

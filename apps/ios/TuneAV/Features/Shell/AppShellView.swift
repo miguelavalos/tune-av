@@ -9275,17 +9275,21 @@ struct MusicScreen: View {
 
     private func discoveryActions(_ snapshot: MusicLibraryDerivedState) -> MusicDiscoveryActions {
         MusicDiscoveryActions(
-            isShareDisabled: snapshot.filteredDiscoveries.isEmpty,
-            shareAction: {
-                let shareText = discoveriesShareText(snapshot)
-                guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
-                discoveriesShareTextDraft = shareText
-                isShowingDiscoveriesShare = true
-            },
-            clearAction: {
-                isConfirmingClearDiscoveries = true
-            }
+            snapshot: snapshot,
+            shareAction: shareDiscoveries(_:),
+            clearAction: confirmClearDiscoveries
         )
+    }
+
+    private func shareDiscoveries(_ snapshot: MusicLibraryDerivedState) {
+        let shareText = discoveriesShareText(snapshot)
+        guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
+        discoveriesShareTextDraft = shareText
+        isShowingDiscoveriesShare = true
+    }
+
+    private func confirmClearDiscoveries() {
+        isConfirmingClearDiscoveries = true
     }
 
     @ViewBuilder
