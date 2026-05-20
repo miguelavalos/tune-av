@@ -1,10 +1,12 @@
 import Foundation
+import OSLog
 
 @MainActor
 final class TuneAVAppDataService {
     private let syncClient: TuneAVAppDataSyncClient
     private let apiClient: AVAccountAPIClient
     private let encoder = JSONEncoder()
+    private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
 
     init(apiClient: AVAccountAPIClient) {
         self.apiClient = apiClient
@@ -104,7 +106,8 @@ final class TuneAVAppDataService {
         ])
     }
 
-    func recordListeningSessions(_ sessions: [TuneAVListeningSessionDraft]) async throws {
+    @discardableResult
+    func recordListeningSessions(_ sessions: [TuneAVListeningSessionDraft]) async throws -> TuneAVListeningSessionsUploadResult {
         let inputs = sessions
             .filter { $0.durationSeconds >= 10 }
             .map { session in
@@ -120,18 +123,25 @@ final class TuneAVAppDataService {
                     trackDetectedCount: session.trackDetectedCount
                 )
             }
-        guard !inputs.isEmpty else { return }
+        guard !inputs.isEmpty else {
+            return TuneAVListeningSessionsUploadResult(accepted: 0, duplicate: 0, rejected: sessions.count)
+        }
 
         let payload = TuneAVListeningSessionsRequest(
             deviceId: "tuneav-ios",
             sessions: inputs
         )
-        _ = try await apiClient.requestData(
+        let response: TuneAVListeningSessionsResponse = try await apiClient.request(
             path: "/v1/tune/analytics/listening-sessions",
             method: "POST",
             body: try encoder.encode(payload),
             headers: ["Idempotency-Key": Self.idempotencyKey(parts: ["listening-sessions"] + inputs.map(\.id))]
         )
+        let result = TuneAVListeningSessionsUploadResult(response: response)
+        analyticsLogger.debug(
+            "Listening sessions uploaded accepted=\(result.accepted, privacy: .public) duplicate=\(result.duplicate, privacy: .public) rejected=\(result.rejected, privacy: .public)"
+        )
+        return result
     }
 
     static func isoString(from date: Date) -> String {
@@ -212,6 +222,45 @@ struct TuneAVListeningSessionDraft: Equatable {
 private struct TuneAVListeningSessionsRequest: Encodable {
     let deviceId: String
     let sessions: [TuneAVListeningSessionInput]
+}
+
+struct TuneAVListeningSessionsUploadResult: Equatable {
+    let accepted: Int
+    let duplicate: Int
+    let rejected: Int
+
+    init(accepted: Int, duplicate: Int, rejected: Int) {
+        self.accepted = accepted
+        self.duplicate = duplicate
+        self.rejected = rejected
+    }
+
+    fileprivate init(response: TuneAVListeningSessionsResponse) {
+        self.init(
+            accepted: response.accepted,
+            duplicate: response.duplicate,
+            rejected: response.rejected
+        )
+    }
+}
+
+private struct TuneAVListeningSessionsResponse: Decodable {
+    let accepted: Int
+    let duplicate: Int
+    let rejected: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case accepted
+        case duplicate
+        case rejected
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accepted = try container.decodeIfPresent(Int.self, forKey: .accepted) ?? 0
+        duplicate = try container.decodeIfPresent(Int.self, forKey: .duplicate) ?? 0
+        rejected = try container.decodeIfPresent(Int.self, forKey: .rejected) ?? 0
+    }
 }
 
 private struct TuneAVListeningSessionInput: Encodable {

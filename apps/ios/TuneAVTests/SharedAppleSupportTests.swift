@@ -956,6 +956,51 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     @MainActor
+    func testListeningSessionUploadDecodesAcceptedDuplicateAndRejectedCounts() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/v1/tune/analytics/listening-sessions")
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data(#"{"accepted":0,"duplicate":1,"rejected":0}"#.utf8)
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession()
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+        let draft = TuneAVListeningSessionDraft(
+            id: "session-duplicate-id",
+            station: Station(
+                id: "bbc-radio-1",
+                name: "BBC Radio 1",
+                country: "United Kingdom",
+                language: "English",
+                tags: "pop",
+                streamURL: "https://example.com/bbc-radio-1.mp3"
+            ),
+            startedAt: Date(timeIntervalSince1970: 100),
+            endedAt: Date(timeIntervalSince1970: 140),
+            durationSeconds: 40,
+            source: "home",
+            endedReason: "networkRetry",
+            trackDetectedCount: 2
+        )
+
+        let result = try await service.recordListeningSessions([draft])
+
+        XCTAssertEqual(result, TuneAVListeningSessionsUploadResult(accepted: 0, duplicate: 1, rejected: 0))
+    }
+
+    @MainActor
     func testFeedbackRequestsSendDeterministicIdempotencyKeys() async throws {
         var idempotencyKeys: [String?] = []
         var requestedPaths: [String] = []
