@@ -88,6 +88,40 @@ enum ShellDiscoverySaveCoordinator {
     }
 }
 
+enum ShellAviExternalSearchResolver {
+    static func trackSearchURL(
+        station: Station,
+        currentTrackArtist: String?,
+        currentTrackTitle: String?,
+        destination: TuneAVExternalSearchURL.Destination,
+        suffix: String? = nil
+    ) -> URL? {
+        let query = TuneAVExternalSearchURL.query(
+            parts: [currentTrackArtist, currentTrackTitle, station.name],
+            suffix: suffix
+        )
+        guard !query.isEmpty else { return nil }
+        return TuneAVExternalSearchURL.url(for: destination, query: query)
+    }
+
+    static func artistSearchURL(artist: String?) -> URL? {
+        guard let artist = TuneAVExternalSearchURL.normalizedValue(artist) else { return nil }
+        return TuneAVExternalSearchURL.url(for: .web, query: artist)
+    }
+
+    static func stationSearchURL(station: Station) -> URL? {
+        TuneAVExternalSearchURL.stationSearch(stationName: station.name)
+    }
+
+    static func externalSearchURL(
+        query: String,
+        destination: TuneAVExternalSearchURL.Destination = .web
+    ) -> URL? {
+        guard let query = TuneAVExternalSearchURL.normalizedValue(query) else { return nil }
+        return TuneAVExternalSearchURL.url(for: destination, query: query)
+    }
+}
+
 func nextShellHeaderVisibility(currentOffset: CGFloat, previousOffset: inout CGFloat, currentVisibility: Bool) -> Bool {
     defer { previousOffset = currentOffset }
 

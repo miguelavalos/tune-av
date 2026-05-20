@@ -5250,24 +5250,25 @@ struct AviScreen: View {
         destination: TuneAVExternalSearchURL.Destination,
         suffix: String? = nil
     ) {
-        let query = TuneAVExternalSearchURL.query(
-            parts: [currentTrackArtist, currentTrackTitle, station.name],
+        guard let url = ShellAviExternalSearchResolver.trackSearchURL(
+            station: station,
+            currentTrackArtist: currentTrackArtist,
+            currentTrackTitle: currentTrackTitle,
+            destination: destination,
             suffix: suffix
-        )
-        guard !query.isEmpty, let url = TuneAVExternalSearchURL.url(for: destination, query: query) else { return }
+        ) else { return }
         browserDestination = BrowserDestination(url: url)
         closeAviActions()
     }
 
     private func openAviArtistSearch() {
-        guard let currentTrackArtist else { return }
-        guard let url = TuneAVExternalSearchURL.url(for: .web, query: currentTrackArtist) else { return }
+        guard let url = ShellAviExternalSearchResolver.artistSearchURL(artist: currentTrackArtist) else { return }
         browserDestination = BrowserDestination(url: url)
         closeAviActions()
     }
 
     private func openAviStationSearch(for station: Station) {
-        guard let url = TuneAVExternalSearchURL.stationSearch(stationName: station.name) else { return }
+        guard let url = ShellAviExternalSearchResolver.stationSearchURL(station: station) else { return }
         browserDestination = BrowserDestination(url: url)
         closeAviActions()
     }
@@ -5276,7 +5277,7 @@ struct AviScreen: View {
         query: String,
         destination: TuneAVExternalSearchURL.Destination = .web
     ) {
-        guard let url = TuneAVExternalSearchURL.url(for: destination, query: query) else { return }
+        guard let url = ShellAviExternalSearchResolver.externalSearchURL(query: query, destination: destination) else { return }
         browserDestination = BrowserDestination(url: url)
         closeAviActions()
     }

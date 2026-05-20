@@ -2207,6 +2207,41 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(promptedUsage, 3)
     }
 
+    func testShellAviExternalSearchResolverBuildsTrackStationQueries() {
+        let station = Station(id: "nova", name: "Radio Nova", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/nova")
+
+        let lyrics = ShellAviExternalSearchResolver.trackSearchURL(
+            station: station,
+            currentTrackArtist: " Massive Attack ",
+            currentTrackTitle: " Teardrop ",
+            destination: .web,
+            suffix: " lyrics "
+        )
+        let youtube = ShellAviExternalSearchResolver.trackSearchURL(
+            station: station,
+            currentTrackArtist: nil,
+            currentTrackTitle: " Teardrop ",
+            destination: .youtube
+        )
+
+        XCTAssertEqual(queryValue("q", in: lyrics), "Massive Attack Teardrop Radio Nova lyrics")
+        XCTAssertEqual(queryValue("search_query", in: youtube), "Teardrop Radio Nova")
+    }
+
+    func testShellAviExternalSearchResolverBuildsArtistStationAndDirectQueries() {
+        let station = Station(id: "nova", name: "  Radio Nova  ", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/nova")
+
+        let artist = ShellAviExternalSearchResolver.artistSearchURL(artist: " Nina Simone ")
+        let stationSearch = ShellAviExternalSearchResolver.stationSearchURL(station: station)
+        let spotify = ShellAviExternalSearchResolver.externalSearchURL(query: " Boards of Canada Dayvan Cowboy ", destination: .spotify)
+
+        XCTAssertEqual(queryValue("q", in: artist), "Nina Simone")
+        XCTAssertEqual(queryValue("q", in: stationSearch), "Radio Nova radio")
+        XCTAssertEqual(spotify?.host, "open.spotify.com")
+        XCTAssertNil(ShellAviExternalSearchResolver.artistSearchURL(artist: "  "))
+        XCTAssertNil(ShellAviExternalSearchResolver.externalSearchURL(query: "  "))
+    }
+
     func testStationFeedbackDisplayOrderKeepsDislikeAwayFromLike() {
         XCTAssertEqual(TuneAVStationFeedback.displayOrder, [.liked, .notForMe, .disliked])
     }
