@@ -10,40 +10,35 @@ struct AccountDeletionScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
+        AVSettingsSheetScaffold(
+            spacing: 18,
+            horizontalPadding: 24,
+            topPadding: 24,
+            bottomPadding: 24,
+            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
+            closeTitle: L10n.string("common.done"),
+            closeAccessibilityIdentifier: "accountDeletion.done",
+            onClose: { dismiss() }
+        ) {
+            header
 
-                    if viewModel.isLoading {
-                        ProgressView(L10n.string("accountDeletion.loading"))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 40)
-                    } else {
-                        sharedAccountNotice
-                        stateContent
-                    }
-                }
-                .padding(24)
+            if viewModel.isLoading {
+                ProgressView(L10n.string("accountDeletion.loading"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 40)
+            } else {
+                sharedAccountNotice
+                stateContent
             }
-            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-            .navigationTitle(L10n.string("accountDeletion.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.string("common.done")) {
-                        dismiss()
-                    }
-                    .accessibilityIdentifier("accountDeletion.done")
-                }
-            }
-            .task {
-                await viewModel.load()
-            }
-            .onChange(of: viewModel.didCompleteDeletion) { _, didComplete in
-                guard didComplete else { return }
-                dismiss()
-            }
+        }
+        .navigationTitle(L10n.string("accountDeletion.title"))
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.load()
+        }
+        .onChange(of: viewModel.didCompleteDeletion) { _, didComplete in
+            guard didComplete else { return }
+            dismiss()
         }
         .accessibilityIdentifier("accountDeletion.sheet")
     }
