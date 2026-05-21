@@ -11,21 +11,6 @@ private enum StationCompactMetrics {
     static let textLineHeight: CGFloat = 13
 }
 
-struct StationFeedbackBadge: View {
-    let feedback: TuneAVStationFeedback
-    var size: CGFloat = 18
-    var fontSize: CGFloat = 8
-
-    var body: some View {
-        TuneAVFeedbackBadge(
-            feedback: feedback,
-            size: size,
-            fontSize: fontSize,
-            borderOpacity: 0.82
-        )
-    }
-}
-
 struct StationCompactCarousel: View {
     let stations: [Station]
     let favoriteStationIDs: Set<String>
@@ -238,7 +223,7 @@ private struct StationCompactCard: View {
     @ViewBuilder
     private var feedbackBadgeIfNeeded: some View {
         if let stationFeedback {
-            StationFeedbackBadge(feedback: stationFeedback, size: 22, fontSize: 10)
+            TuneAVFeedbackBadge(feedback: stationFeedback, size: 22, fontSize: 10, borderOpacity: 0.82)
                 .accessibilityLabel(stationFeedback.localizedState)
                 .accessibilityIdentifier("stationRow.feedback.\(station.id)")
         }

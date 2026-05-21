@@ -92,7 +92,7 @@ struct DiscoveryTrackCard: View {
             artwork
 
             if let feedback {
-                MusicFeedbackBadge(feedback: feedback, size: badgeSize, fontSize: badgeFontSize)
+                TuneAVFeedbackBadge(feedback: feedback, size: badgeSize, fontSize: badgeFontSize)
                     .offset(x: badgeOffset, y: badgeOffset)
             }
         }
@@ -346,7 +346,7 @@ private struct MusicTrackCompactCard: View {
             artwork
 
             if let feedback {
-                MusicFeedbackBadge(feedback: feedback, size: 22, fontSize: 9)
+                TuneAVFeedbackBadge(feedback: feedback, size: 22, fontSize: 9)
                     .offset(x: -5, y: -5)
             }
         }
@@ -399,17 +399,6 @@ private struct MusicTrackCompactCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("common.more"))
-    }
-}
-
-private struct MusicFeedbackBadge: View {
-    let feedback: TuneAVStationFeedback
-    var size: CGFloat = 18
-    var fontSize: CGFloat = 8
-    var borderWidth: CGFloat = 1
-
-    var body: some View {
-        TuneAVFeedbackBadge(feedback: feedback, size: size, fontSize: fontSize)
     }
 }
 

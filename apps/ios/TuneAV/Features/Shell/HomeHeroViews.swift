@@ -77,7 +77,7 @@ struct HomeTuningDeskHero: View {
                     .minimumScaleFactor(0.7)
 
                 if let stationFeedback {
-                    StationFeedbackBadge(feedback: stationFeedback, size: 24, fontSize: 11)
+                    TuneAVFeedbackBadge(feedback: stationFeedback, size: 24, fontSize: 11, borderOpacity: 0.82)
                         .accessibilityLabel(stationFeedback.localizedState)
                 }
             }

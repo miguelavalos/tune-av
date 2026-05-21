@@ -84,7 +84,7 @@ struct StationListActionRow: View {
     @ViewBuilder
     private var feedbackBadgeIfNeeded: some View {
         if let stationFeedback {
-            StationFeedbackBadge(feedback: stationFeedback, size: 20, fontSize: 9)
+            TuneAVFeedbackBadge(feedback: stationFeedback, size: 20, fontSize: 9, borderOpacity: 0.82)
                 .accessibilityLabel(stationFeedback.localizedState)
                 .accessibilityIdentifier("stationRow.feedback.\(station.id)")
         }
