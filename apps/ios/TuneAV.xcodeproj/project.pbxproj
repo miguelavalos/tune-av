@@ -55,7 +55,7 @@
 		45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */; };
 		45BAF02010F5AB9B9728E140 /* AviRecommendationViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */; };
 		47205EF3DFF8BC5AD51C7190 /* HomeHeroActionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */; };
-		4C8FB23CB0922016ED1592C0 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
+		4C8FB23CB0922016ED1592C0 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B3D80F48D83AA5BCA01116A /* ClerkKitUI */; };
 		5262C5B1A21F461825E20E04 /* AviEmotionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4A5CDB7CB1D479EFCF11EC /* AviEmotionViews.swift */; };
 		52F63407C3660C485A435BC3 /* HomeHeroActionRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */; };
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
@@ -91,6 +91,7 @@
 		7B0060FA0D191CE8C1500F8D /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */; };
 		7F95781EA9741CC5BC958DAB /* TuneAVSleepTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */; };
 		8173B6F9E09CBB364BA4A5AF /* AVAccountAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A712F782B9CC6A3143D2B122 /* AVAccountAPIClient.swift */; };
+		8315851166D4B5F324552123 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
 		835DB04BF3CA0FCDB726B90B /* SearchFilterViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89FB0FEA33AD342BE0E7126 /* SearchFilterViews.swift */; };
 		8493FD9C156E55EC743944EA /* TuneAVAccessLimitPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B460F9081126180579CEE3 /* TuneAVAccessLimitPolicy.swift */; };
 		84FB8B926DB0F482FDB09F9D /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008936263180E93620BF3D42 /* AppShellView.swift */; };
@@ -147,7 +148,7 @@
 		D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */; };
 		D3A7E73AF8A4D548E0D389C2 /* TuneAVSharedTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */; };
 		D3C9265273CD8D459FC07D83 /* TuneAVAppDataSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */; };
-		DA1AE91BA53265128FDDFAA3 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6EEF535130BB799019CE99 /* ClerkKit */; };
+		DA1AE91BA53265128FDDFAA3 /* AVHaptics in Frameworks */ = {isa = PBXBuildFile; productRef = 170B941249EAB674488EB58E /* AVHaptics */; };
 		DB5E9D08FA99038D582C450B /* TuneAVAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277016C3BDB94A39E13DA224 /* TuneAVAccessPolicy.swift */; };
 		DBFF4B2009433688918EC56C /* TuneAVAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43337F851171AB4EB4E1111A /* TuneAVAccountModels.swift */; };
 		DCB2CEA0CB64D035E0796DBE /* ShellBrowserRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D6E7164063D945E2EF1F30 /* ShellBrowserRouter.swift */; };
@@ -170,7 +171,7 @@
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
 		F73A1017B5BC7D5325D165E8 /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECEE2B4FACAC9EA16B737B1 /* TuneAVAppShellHomeFeed.swift */; };
 		F7EACDCDDF02578E446D4485 /* ShellHeaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */; };
-		F8BEE34E0F80EAC9432C3873 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B3D80F48D83AA5BCA01116A /* ClerkKitUI */; };
+		F8BEE34E0F80EAC9432C3873 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6EEF535130BB799019CE99 /* ClerkKit */; };
 		FA0801A605B9E3AB0847B0AD /* StationDetailQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */; };
 		FAE2D86B8E94C39687AC6C77 /* HomeScreenStateBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */; };
 		FCDFDD7520D96185AD38133E /* ShellCellularPlaybackGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EBF8F04CC78A6F55E19FFB /* ShellCellularPlaybackGate.swift */; };
@@ -250,6 +251,7 @@
 		5066BF0197AA106B6FE9A2E3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		509FF844944C248F5012AB98 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		513BDBDAF4D86F1F9B65A11D /* TuneAVUpgradePromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUpgradePromptContent.swift; sourceTree = "<group>"; };
+		55EEAFD85645D40D9DB62E70 /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = "../../../apps-av/apple"; sourceTree = SOURCE_ROOT; };
 		58F44C547C4ADED911C85197 /* account-av */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "account-av"; path = "../../../account-av"; sourceTree = SOURCE_ROOT; };
 		5A4A5CDB7CB1D479EFCF11EC /* AviEmotionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviEmotionViews.swift; sourceTree = "<group>"; };
 		5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
@@ -383,9 +385,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				1135792ADAF1DD6490EB73F0 /* AccountAV in Frameworks */,
-				DA1AE91BA53265128FDDFAA3 /* ClerkKit in Frameworks */,
-				F8BEE34E0F80EAC9432C3873 /* ClerkKitUI in Frameworks */,
-				4C8FB23CB0922016ED1592C0 /* RevenueCat in Frameworks */,
+				DA1AE91BA53265128FDDFAA3 /* AVHaptics in Frameworks */,
+				F8BEE34E0F80EAC9432C3873 /* ClerkKit in Frameworks */,
+				4C8FB23CB0922016ED1592C0 /* ClerkKitUI in Frameworks */,
+				8315851166D4B5F324552123 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,6 +666,7 @@
 			isa = PBXGroup;
 			children = (
 				58F44C547C4ADED911C85197 /* account-av */,
+				55EEAFD85645D40D9DB62E70 /* apple */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -779,6 +783,7 @@
 			name = TuneAV;
 			packageProductDependencies = (
 				4AB3D9EBECC62D9E2BF5A81D /* AccountAV */,
+				170B941249EAB674488EB58E /* AVHaptics */,
 				9C6EEF535130BB799019CE99 /* ClerkKit */,
 				4B3D80F48D83AA5BCA01116A /* ClerkKitUI */,
 				6794F21337B7CE6C965181CA /* RevenueCat */,
@@ -822,6 +827,7 @@
 				7DE25E285B2E624DD931BE52 /* XCRemoteSwiftPackageReference "clerk-ios" */,
 				BDE1153F2A79285C223AC4C0 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				A1F83CEFB4AD63696729E31E /* XCLocalSwiftPackageReference "../../../account-av" */,
+				B98985C4701A7E1BEA33B767 /* XCLocalSwiftPackageReference "../../../apps-av/apple" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6008366DBF81C2312A3A00D2 /* Products */;
@@ -1349,6 +1355,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../../account-av";
 		};
+		B98985C4701A7E1BEA33B767 /* XCLocalSwiftPackageReference "../../../apps-av/apple" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../apps-av/apple";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1371,6 +1381,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		170B941249EAB674488EB58E /* AVHaptics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AVHaptics;
+		};
 		4AB3D9EBECC62D9E2BF5A81D /* AccountAV */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AccountAV;

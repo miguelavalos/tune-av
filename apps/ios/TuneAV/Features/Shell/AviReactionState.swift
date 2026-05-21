@@ -1,3 +1,4 @@
+import AVHaptics
 import Foundation
 
 enum AviScreenReaction: Equatable {
@@ -63,6 +64,21 @@ enum AviScreenReaction: Equatable {
             return true
         case .recognizedTrack, .liked, .curious, .saved, .disliked, .notForMe, .warning:
             return false
+        }
+    }
+
+    var hapticEvent: AVHapticEvent? {
+        switch self {
+        case .newTrack:
+            return nil
+        case .recognizedTrack, .liked, .saved:
+            return .save
+        case .curious:
+            return .selection
+        case .disliked, .notForMe:
+            return .dislike
+        case .warning:
+            return .warning
         }
     }
 }

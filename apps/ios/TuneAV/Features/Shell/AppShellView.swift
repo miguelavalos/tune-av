@@ -1,3 +1,4 @@
+import AVHaptics
 import OSLog
 import SwiftUI
 import UIKit
@@ -5362,6 +5363,9 @@ struct AviScreen: View {
         aviReaction = reaction
         aviReactionStartedAt = Date()
         aviReactionToken = token
+        if let hapticEvent = reaction.hapticEvent {
+            AVHaptics.perform(hapticEvent)
+        }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(reaction.durationMilliseconds))
             guard aviReactionToken == token else { return }

@@ -1,5 +1,5 @@
+import AVHaptics
 import SwiftUI
-import UIKit
 
 let shellScreenHorizontalPadding: CGFloat = 20
 let shellScreenTopPadding: CGFloat = 24
@@ -7,12 +7,12 @@ let shellScreenTopPadding: CGFloat = 24
 enum TuneAVHaptics {
     @MainActor
     static func selection() {
-        UISelectionFeedbackGenerator().selectionChanged()
+        AVHaptics.perform(.selection)
     }
 
     @MainActor
     static func lightImpact() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AVHaptics.perform(.impactLight)
     }
 }
 

@@ -14,6 +14,8 @@ settings:
 packages:
   AccountAV:
     path: ../../../account-av
+  AppsAV:
+    path: ../../../apps-av/apple
   Clerk:
     url: https://github.com/clerk/clerk-ios
     from: 1.0.0
@@ -58,6 +60,8 @@ targets:
     dependencies:
       - package: AccountAV
         product: AccountAV
+      - package: AppsAV
+        product: AVHaptics
       - package: Clerk
         product: ClerkKit
       - package: Clerk
