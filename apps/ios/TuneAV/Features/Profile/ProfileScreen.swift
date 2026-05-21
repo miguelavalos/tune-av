@@ -264,10 +264,11 @@ struct ProfileScreen: View {
     }
 
     private var cloudSyncRetryButton: some View {
-        ProfileSecondaryButton(
+        AVSettingsButton(
             title: libraryStore.cloudSyncStatus == .syncing
                 ? L10n.string("profile.sync.retry.syncing")
                 : L10n.string("profile.sync.retry"),
+            style: .secondary,
             isLoading: libraryStore.cloudSyncStatus == .syncing,
             action: {
                 Task {
@@ -331,8 +332,9 @@ struct ProfileScreen: View {
                 action: { isShowingProPaywall = true }
             )
         case .signedInPro:
-            ProfileSecondaryButton(
+            AVSettingsButton(
                 title: L10n.string("profile.pro.manage"),
+                style: .secondary,
                 action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
             )
             .accessibilityIdentifier("profile.pro.manage")
@@ -351,10 +353,11 @@ struct ProfileScreen: View {
             )
             .disabled(!accessController.accountIsAvailable)
         } else {
-            ProfileSecondaryButton(
+            AVSettingsButton(
                 title: isSigningOut
                     ? L10n.string("profile.actions.signingOut")
                     : L10n.string("profile.actions.signOut"),
+                style: .secondary,
                 isLoading: isSigningOut,
                 action: {
                     Task { await signOut() }
@@ -402,28 +405,28 @@ struct ProfileScreen: View {
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
 
-            SettingsToggleRow(
+            AVSettingsToggleRow(
                 systemImage: "iphone.gen3.radiowaves.left.and.right",
                 title: L10n.string("profile.preferences.keepScreenAwake.title"),
                 detail: L10n.string("profile.preferences.keepScreenAwake.detail"),
                 isOn: keepScreenAwakeSelection
             )
 
-            SettingsToggleRow(
+            AVSettingsToggleRow(
                 systemImage: "antenna.radiowaves.left.and.right",
                 title: L10n.string("profile.preferences.cellularWarning.title"),
                 detail: L10n.string("profile.preferences.cellularWarning.detail"),
                 isOn: cellularWarningSelection
             )
 
-            SettingsToggleRow(
+            AVSettingsToggleRow(
                 systemImage: "clock.arrow.circlepath",
                 title: L10n.string("profile.preferences.openLastStation.title"),
                 detail: L10n.string("profile.preferences.openLastStation.detail"),
                 isOn: openLastStationSelection
             )
 
-            SettingsToggleRow(
+            AVSettingsToggleRow(
                 systemImage: "forward.end.fill",
                 title: L10n.string("profile.preferences.autoSkipUnstableStreams.title"),
                 detail: L10n.string("profile.preferences.autoSkipUnstableStreams.detail"),
@@ -431,7 +434,7 @@ struct ProfileScreen: View {
             )
 
             if !audioPlayer.temporarilyUnstableStationIDs.isEmpty {
-                SettingsActionRow(
+                AVSettingsInlineActionRow(
                     systemImage: "checkmark.circle",
                     title: L10n.string("profile.preferences.clearUnstableWarnings.title"),
                     detail: L10n.string("profile.preferences.clearUnstableWarnings.detail", audioPlayer.temporarilyUnstableStationIDs.count),
@@ -491,10 +494,11 @@ struct ProfileScreen: View {
                 )
             }
 
-            ProfileDangerButton(
+            AVSettingsButton(
                 title: isClearingLocalData
                     ? clearLibraryLoadingTitle
                     : L10n.string("profile.actions.manageLocalData"),
+                style: .destructive,
                 action: { isShowingLocalDataActions = true }
             )
             .disabled(isClearingLocalData)
@@ -529,7 +533,7 @@ struct ProfileScreen: View {
                 )
 
                 if let openSourceURL = AppConfig.openSourceURL {
-                    ProfileActionRow(
+                    AVSettingsActionRow(
                         systemImage: "book.pages",
                         title: L10n.string("profile.help.sourceCode.title"),
                         detail: L10n.string("profile.help.sourceCode.detail"),
@@ -538,7 +542,7 @@ struct ProfileScreen: View {
                 }
 
                 if let supportURL = AppConfig.supportURL {
-                    ProfileActionRow(
+                    AVSettingsActionRow(
                         systemImage: "questionmark.bubble",
                         title: L10n.string("profile.help.support.title"),
                         detail: L10n.string("profile.help.support.detail"),
@@ -546,7 +550,7 @@ struct ProfileScreen: View {
                     )
                 }
                 if let termsURL = AppConfig.termsURL {
-                    ProfileActionRow(
+                    AVSettingsActionRow(
                         systemImage: "doc.text",
                         title: L10n.string("profile.help.terms.title"),
                         detail: L10n.string("profile.help.terms.detail"),
@@ -554,7 +558,7 @@ struct ProfileScreen: View {
                     )
                 }
                 if let privacyURL = AppConfig.privacyURL {
-                    ProfileActionRow(
+                    AVSettingsActionRow(
                         systemImage: "hand.raised",
                         title: L10n.string("profile.help.privacy.title"),
                         detail: L10n.string("profile.help.privacy.detail"),
@@ -574,7 +578,7 @@ struct ProfileScreen: View {
                 subtitle: L10n.string("profile.safety.subtitle")
             )
 
-            ProfileActionRow(
+            AVSettingsActionRow(
                 systemImage: "exclamationmark.shield",
                 title: L10n.string("profile.safety.delete.title"),
                 detail: L10n.string("profile.safety.delete.detail"),
@@ -949,7 +953,7 @@ struct ProfileScreen: View {
     private var themeSelector: some View {
         HStack(spacing: 10) {
             ForEach(AppTheme.allCases) { theme in
-                ThemeOptionButton(
+                AVSettingsOptionButton(
                     title: themeLabel(for: theme),
                     systemImage: themeSymbol(for: theme),
                     isSelected: themeController.currentTheme == theme,
@@ -1208,80 +1212,5 @@ private struct ProfilePrimaryButton: View {
     var body: some View {
         AVSettingsButton(title: title, style: .primary, action: action)
         .accessibilityIdentifier(accessibilityID)
-    }
-}
-
-private struct ProfileSecondaryButton: View {
-    let title: String
-    var isLoading = false
-    let action: () -> Void
-
-    var body: some View {
-        AVSettingsButton(title: title, style: .secondary, isLoading: isLoading, action: action)
-    }
-}
-
-private struct ProfileDangerButton: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        AVSettingsButton(title: title, style: .destructive, action: action)
-    }
-}
-
-private struct ProfileActionRow: View {
-    let systemImage: String
-    let title: String
-    let detail: String
-    let action: () -> Void
-
-    var body: some View {
-        AVSettingsActionRow(systemImage: systemImage, title: title, detail: detail, action: action)
-    }
-}
-
-private struct SettingsToggleRow: View {
-    let systemImage: String
-    let title: String
-    let detail: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        AVSettingsToggleRow(systemImage: systemImage, title: title, detail: detail, isOn: $isOn)
-    }
-}
-
-private struct SettingsActionRow: View {
-    let systemImage: String
-    let title: String
-    let detail: String
-    let actionTitle: String
-    let action: () -> Void
-
-    var body: some View {
-        AVSettingsInlineActionRow(
-            systemImage: systemImage,
-            title: title,
-            detail: detail,
-            actionTitle: actionTitle,
-            action: action
-        )
-    }
-}
-
-private struct ThemeOptionButton: View {
-    let title: String
-    let systemImage: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        AVSettingsOptionButton(
-            title: title,
-            systemImage: systemImage,
-            isSelected: isSelected,
-            action: action
-        )
     }
 }
