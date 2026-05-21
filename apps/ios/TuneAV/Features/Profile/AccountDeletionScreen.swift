@@ -23,9 +23,7 @@ struct AccountDeletionScreen: View {
             header
 
             if viewModel.isLoading {
-                ProgressView(L10n.string("accountDeletion.loading"))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 40)
+                AVSettingsLoadingState(L10n.string("accountDeletion.loading"))
             } else {
                 sharedAccountNotice
                 stateContent
