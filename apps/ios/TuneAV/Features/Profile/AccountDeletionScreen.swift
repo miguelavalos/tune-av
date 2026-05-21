@@ -216,26 +216,12 @@ struct AccountDeletionScreen: View {
     private var blockerList: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(viewModel.blockers) { blocker in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(blocker.label)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    if let detail = blocker.detail, !detail.isEmpty {
-                        Text(detail)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    if let managementUrl = blocker.managementUrl {
-                        Link(L10n.string("accountDeletion.manageLink"), destination: managementUrl)
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                AVSettingsDetailCard(
+                    title: blocker.label,
+                    detail: blocker.detail,
+                    linkTitle: blocker.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
+                    linkDestination: blocker.managementUrl
+                )
                 .accessibilityIdentifier("accountDeletion.blocker.\(blocker.type.rawValue)")
             }
         }
@@ -244,26 +230,12 @@ struct AccountDeletionScreen: View {
     private var warningList: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(viewModel.warnings) { warning in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(warning.label)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    if let detail = warning.detail, !detail.isEmpty {
-                        Text(detail)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    if let managementUrl = warning.managementUrl {
-                        Link(L10n.string("accountDeletion.manageLink"), destination: managementUrl)
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                AVSettingsDetailCard(
+                    title: warning.label,
+                    detail: warning.detail,
+                    linkTitle: warning.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
+                    linkDestination: warning.managementUrl
+                )
                 .accessibilityIdentifier("accountDeletion.warning.\(warning.type.rawValue)")
             }
         }
