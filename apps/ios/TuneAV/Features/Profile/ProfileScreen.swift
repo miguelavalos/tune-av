@@ -188,16 +188,6 @@ struct ProfileScreen: View {
                     .accessibilityIdentifier("profile.sync.pending")
                 }
 
-                if libraryStore.syncDiagnostics.isSummaryStale {
-                    Text(L10n.string("profile.sync.summaryPending.inline"))
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(TuneAVTheme.highlight.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .accessibilityIdentifier("profile.sync.summaryPending")
-                }
             }
 
             if let lastActivity = cloudSyncLastActivity {
