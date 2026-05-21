@@ -190,11 +190,7 @@ struct MusicLibraryControls: View {
             Image(systemName: "arrow.up.arrow.down")
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(width: 40, height: 40)
-                .background(TuneAVTheme.mutedSurface, in: Capsule())
-                .overlay {
-                    Capsule().stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+                .musicToolbarCapsule()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.music.sort.accessibilityLabel", sort.title))
@@ -206,11 +202,7 @@ struct MusicLibraryControls: View {
             Image(systemName: "square.grid.2x2.fill")
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(width: 40, height: 40)
-                .background(TuneAVTheme.mutedSurface, in: Capsule())
-                .overlay {
-                    Capsule().stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+                .musicToolbarCapsule()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.accessibility.showOverview"))
@@ -222,15 +214,28 @@ struct MusicLibraryControls: View {
             Image(systemName: isSearchExpanded ? "xmark" : "magnifyingglass")
                 .font(.system(size: 14, weight: .black))
                 .foregroundStyle(isSearchExpanded ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
-                .frame(width: 40, height: 40)
-                .background(isSearchExpanded ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface, in: Capsule())
-                .overlay {
-                    Capsule().stroke(isSearchExpanded ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+                .musicToolbarCapsule(
+                    fill: isSearchExpanded ? TuneAVTheme.highlight : TuneAVTheme.mutedSurface,
+                    stroke: isSearchExpanded ? TuneAVTheme.highlight.opacity(0.5) : TuneAVTheme.borderSubtle
+                )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.music.searchAccess.title"))
         .accessibilityIdentifier("music.searchToggle")
+    }
+}
+
+private extension View {
+    func musicToolbarCapsule(
+        fill: Color = TuneAVTheme.mutedSurface,
+        stroke: Color = TuneAVTheme.borderSubtle
+    ) -> some View {
+        frame(width: 40, height: 40)
+            .background(fill, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(stroke, lineWidth: 1)
+            }
     }
 }
 
