@@ -484,10 +484,12 @@ struct AppShellView: View {
     }
 
     private func openSearchTab() {
+        AVHaptics.perform(.navigation)
         selectedTab = .search
     }
 
     private func openLibraryTab() {
+        AVHaptics.perform(.navigation)
         selectedTab = .library
     }
 
@@ -518,6 +520,7 @@ struct AppShellView: View {
     }
 
     private func openAccountProfile() {
+        AVHaptics.perform(.navigation)
         profileMode = .account
         selectedTab = .profile
     }
@@ -1135,6 +1138,7 @@ struct AppShellView: View {
     }
 
     private func applyStationDetailOpenPlan(_ plan: ShellStationDetailOpenPlan) {
+        AVHaptics.perform(.openPanel)
         captureAviReturnContext(
             radioMode: plan.returnRadioMode,
             radioOverview: plan.returnRadioOverview
@@ -1157,6 +1161,7 @@ struct AppShellView: View {
     }
 
     private func applyContextualAviOpenPlan(_ plan: ShellContextualAviOpenPlan) {
+        AVHaptics.perform(.openPanel)
         if plan.capturesReturnContext {
             captureAviReturnContext()
         }
@@ -1190,6 +1195,7 @@ struct AppShellView: View {
     }
 
     private func applyMusicAviDetailOpenPlan(_ plan: AviMusicDetailOpenPlan) {
+        AVHaptics.perform(.openPanel)
         captureAviReturnContext(
             musicMode: plan.returnMusicMode,
             musicOverview: plan.returnMusicOverview
@@ -1228,6 +1234,7 @@ struct AppShellView: View {
     }
 
     private func applyAviCloseFocusedDetailPlan(_ plan: AviCloseFocusedDetailPlan) {
+        AVHaptics.perform(.closePanel)
         if plan.clearsStationDetail {
             selectedStationDetail = nil
         }
@@ -4492,6 +4499,7 @@ struct AviScreen: View {
     }
 
     private func openFullPlayerAviActions() {
+        AVHaptics.perform(.openPanel)
         withAnimation(.snappy(duration: 0.22)) {
             applyAviTransientState(currentAviTransientState.openingActions())
         }
@@ -5471,6 +5479,7 @@ struct AviScreen: View {
     }
 
     private func closeAviActions() {
+        AVHaptics.perform(.closePanel)
         withAnimation(.snappy(duration: 0.2)) {
             applyAviTransientState(currentAviTransientState.closingActions())
         }

@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct DiscoveryTrackCard: View {
@@ -115,6 +116,7 @@ struct DiscoveryTrackCard: View {
 
     private var aviActionsMenu: some View {
         Button {
+            AVHaptics.perform(isShowingAviActions ? .closePanel : .openPanel)
             withAnimation(.snappy(duration: 0.18)) {
                 if isShowingAviActions {
                     openAviActionsID = nil
@@ -191,6 +193,7 @@ struct DiscoveryTrackCard: View {
     }
 
     private func closeAviActions() {
+        AVHaptics.perform(.closePanel)
         withAnimation(.snappy(duration: 0.18)) {
             openAviActionsID = nil
             aviActionsPage = 0
@@ -746,6 +749,7 @@ struct DiscoveryArtistRow: View {
             .buttonStyle(.plain)
 
             Button {
+                AVHaptics.perform(isShowingAviActions ? .closePanel : .openPanel)
                 withAnimation(.snappy(duration: 0.18)) {
                     if isShowingAviActions {
                         openAviActionsID = nil
@@ -797,6 +801,7 @@ struct DiscoveryArtistRow: View {
     }
 
     private func closeAviActions() {
+        AVHaptics.perform(.closePanel)
         withAnimation(.snappy(duration: 0.18)) {
             openAviActionsID = nil
             aviActionsPage = 0
