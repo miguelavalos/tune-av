@@ -3130,14 +3130,13 @@ struct AviScreen: View {
     @ViewBuilder
     private func discoveryArtwork(_ discovery: DiscoveredTrack, size: CGFloat) -> some View {
         if let artworkURL = discovery.resolvedArtworkURL ?? discovery.resolvedStationArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                musicArtworkFallback(systemImage: "music.note", size: size)
-            }
-            .frame(width: size, height: size)
-            .clipShape(musicArtworkShape(size: size))
-            .overlay {
-                musicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                    musicArtworkFallback(systemImage: "music.note", size: size)
+                }
             }
         } else {
             musicArtworkFallback(systemImage: "music.note", size: size)
@@ -3147,14 +3146,13 @@ struct AviScreen: View {
     @ViewBuilder
     private func artistArtwork(_ summary: DiscoveryArtistSummary, size: CGFloat) -> some View {
         if let artworkURL = summary.displayArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                musicArtworkFallback(systemImage: "person.fill", size: size)
-            }
-            .frame(width: size, height: size)
-            .clipShape(musicArtworkShape(size: size))
-            .overlay {
-                musicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                    musicArtworkFallback(systemImage: "person.fill", size: size)
+                }
             }
         } else {
             musicArtworkFallback(systemImage: "person.fill", size: size)

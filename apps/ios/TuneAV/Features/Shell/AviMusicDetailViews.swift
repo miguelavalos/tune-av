@@ -1,4 +1,5 @@
 import AVAviFoundation
+import AVAppShellFoundation
 import SwiftUI
 
 struct AviFocusedTrackSummaryCard: View {
@@ -28,14 +29,13 @@ struct AviFocusedTrackSummaryCard: View {
     private var artwork: some View {
         let size: CGFloat = 62
         if let artworkURL = discovery.resolvedArtworkURL ?? discovery.resolvedStationArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                AviMusicArtworkFallback(systemImage: "music.note", size: size)
-            }
-            .frame(width: size, height: size)
-            .clipShape(AviMusicArtworkShape(size: size))
-            .overlay {
-                AviMusicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                    AviMusicArtworkFallback(systemImage: "music.note", size: size)
+                }
             }
         } else {
             AviMusicArtworkFallback(systemImage: "music.note", size: size)
@@ -64,14 +64,13 @@ struct AviFocusedArtistSummaryCard: View {
     private var artwork: some View {
         let size: CGFloat = 62
         if let artworkURL = summary.displayArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                AviMusicArtworkFallback(systemImage: "person.fill", size: size)
-            }
-            .frame(width: size, height: size)
-            .clipShape(AviMusicArtworkShape(size: size))
-            .overlay {
-                AviMusicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                    AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+                }
             }
         } else {
             AviMusicArtworkFallback(systemImage: "person.fill", size: size)
