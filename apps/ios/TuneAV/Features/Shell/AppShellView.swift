@@ -4649,18 +4649,11 @@ struct AviScreen: View {
 
                 Spacer(minLength: 0)
 
-                Button {
-                    closeAviActions()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 30, height: 30)
-                        .background(TuneAVTheme.cardSurface, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.avi.actions.closeOptions"))
-                .accessibilityIdentifier("avi.actions.close")
+                AVAviPanelCloseButton(
+                    accessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
+                    accessibilityIdentifier: "avi.actions.close",
+                    action: closeAviActions
+                )
             }
 
             HStack(spacing: 8) {
