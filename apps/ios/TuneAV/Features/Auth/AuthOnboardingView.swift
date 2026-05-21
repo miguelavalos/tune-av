@@ -252,24 +252,10 @@ private struct DiscoveryHero: View {
     let compact: Bool
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text(L10n.string("auth.feature.title"))
-                .font(.system(size: 30, weight: .black))
-                .foregroundStyle(TuneAVTheme.brandGraphite)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.86)
-
-            Text(L10n.string("auth.feature.subtitle"))
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 316)
-        }
-        .padding(.horizontal, 24)
-        .padding(.horizontal, 18)
-        .accessibilityElement(children: .contain)
+        AVOnboardingHeroText(
+            title: L10n.string("auth.feature.title"),
+            subtitle: L10n.string("auth.feature.subtitle")
+        )
     }
 }
 
