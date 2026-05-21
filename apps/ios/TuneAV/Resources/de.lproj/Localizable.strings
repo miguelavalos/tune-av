@@ -682,6 +682,7 @@
 "profile.sync.pending.one" = "%d ausstehendes Element";
 "profile.sync.pending.other" = "%d ausstehende Elemente";
 "profile.sync.pending.title" = "Ausstehend";
+"profile.sync.summaryPending.inline" = "Die Übersicht wird aktualisiert.";
 "profile.sync.retry" = "Jetzt synchronisieren";
 "profile.sync.retry.syncing" = "Synchronisieren…";
 "profile.sync.status.conflict" = "Cloud und dieses Gerät wurden geändert. Aktualisiere aus der Cloud, bevor du weiter bearbeitest.";

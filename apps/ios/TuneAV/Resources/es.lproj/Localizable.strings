@@ -723,6 +723,7 @@
 "profile.sync.pending.one" = "%d elemento pendiente";
 "profile.sync.pending.other" = "%d elementos pendientes";
 "profile.sync.pending.title" = "Pendiente";
+"profile.sync.summaryPending.inline" = "El resumen se está actualizando.";
 "profile.sync.retry" = "Sincronizar ahora";
 "profile.sync.retry.syncing" = "Sincronizando…";
 "profile.sync.status.conflict" = "La nube y este dispositivo han cambiado. Actualiza desde la nube antes de editar.";

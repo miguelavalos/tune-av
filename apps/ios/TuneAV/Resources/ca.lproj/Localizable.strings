@@ -682,6 +682,7 @@
 "profile.sync.pending.one" = "%d element pendent";
 "profile.sync.pending.other" = "%d elements pendents";
 "profile.sync.pending.title" = "Pendent";
+"profile.sync.summaryPending.inline" = "El resum s'està actualitzant.";
 "profile.sync.retry" = "Sincronitzar ara";
 "profile.sync.retry.syncing" = "Sincronitzant…";
 "profile.sync.status.conflict" = "El núvol i aquest dispositiu han canviat. Actualitza des del núvol abans d'editar.";

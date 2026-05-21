@@ -682,6 +682,7 @@
 "profile.sync.pending.one" = "%d élément en attente";
 "profile.sync.pending.other" = "%d éléments en attente";
 "profile.sync.pending.title" = "En attente";
+"profile.sync.summaryPending.inline" = "Le résumé est en cours de mise à jour.";
 "profile.sync.retry" = "Synchroniser maintenant";
 "profile.sync.retry.syncing" = "Synchronisation…";
 "profile.sync.status.conflict" = "Le cloud et cet appareil ont changé. Actualisez depuis le cloud avant de modifier.";

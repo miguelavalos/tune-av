@@ -723,6 +723,7 @@
 "profile.sync.pending.one" = "%d pending item";
 "profile.sync.pending.other" = "%d pending items";
 "profile.sync.pending.title" = "Pending";
+"profile.sync.summaryPending.inline" = "Summary is updating.";
 "profile.sync.retry" = "Sync now";
 "profile.sync.retry.syncing" = "Syncing…";
 "profile.sync.status.conflict" = "Cloud and this device both changed. Refresh from cloud before editing.";
