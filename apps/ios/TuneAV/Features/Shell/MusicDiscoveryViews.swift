@@ -1,4 +1,5 @@
 import AVAviFoundation
+import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
@@ -223,14 +224,13 @@ struct DiscoveryTrackCard: View {
     }
 
     private func remoteArtwork<Fallback: View>(url: URL, @ViewBuilder fallback: @escaping () -> Fallback) -> some View {
-        TuneAVRemoteArtworkImage(url: url, size: 54, scale: displayScale) {
-            fallback()
-        }
-        .frame(width: 54, height: 54)
-        .clipShape(artworkShape(size: 54))
-        .overlay {
-            artworkShape(size: 54)
-                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        AVFramedArtwork(
+            size: 54,
+            cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 54)
+        ) {
+            TuneAVRemoteArtworkImage(url: url, size: 54, scale: displayScale) {
+                fallback()
+            }
         }
     }
 
@@ -382,14 +382,13 @@ private struct MusicTrackCompactCard: View {
     }
 
     private func remoteArtwork(url: URL) -> some View {
-        TuneAVRemoteArtworkImage(url: url, size: 68, scale: displayScale) {
-            fallbackArtwork
-        }
-        .frame(width: 68, height: 68)
-        .clipShape(artworkShape(size: 68))
-        .overlay {
-            artworkShape(size: 68)
-                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+        AVFramedArtwork(
+            size: 68,
+            cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 68)
+        ) {
+            TuneAVRemoteArtworkImage(url: url, size: 68, scale: displayScale) {
+                fallbackArtwork
+            }
         }
     }
 
@@ -542,14 +541,13 @@ private struct MusicArtistCompactCard: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = summary.displayArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
-                fallbackArtwork
-            }
-            .frame(width: artworkSize, height: artworkSize)
-            .clipShape(artworkShape)
-            .overlay {
-                artworkShape
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: artworkSize,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: artworkSize)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
+                    fallbackArtwork
+                }
             }
         } else {
             fallbackArtwork
@@ -721,14 +719,13 @@ struct DiscoveryArtistRow: View {
     @ViewBuilder
     private var artwork: some View {
         if let artworkURL = summary.displayArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
-                fallbackArtwork
-            }
-            .frame(width: artworkSize, height: artworkSize)
-            .clipShape(artworkShape)
-            .overlay {
-                artworkShape
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: artworkSize,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: artworkSize)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: artworkSize, scale: displayScale) {
+                    fallbackArtwork
+                }
             }
         } else {
             fallbackArtwork
