@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import SwiftUI
 
 struct SearchCountryFilterButton: View {
@@ -260,8 +261,6 @@ struct SearchField: View {
     let prompt: String
     let focusRequest: Int?
 
-    @FocusState private var isFocused: Bool
-
     init(query: Binding<String>, prompt: String? = nil, focusRequest: Int? = nil) {
         _query = query
         self.prompt = prompt ?? L10n.string("shell.search.field.defaultPrompt")
@@ -269,49 +268,12 @@ struct SearchField: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-
-            TextField(
-                text: $query,
-                prompt: Text(prompt)
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.68))
-            ) {
-            }
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .tint(TuneAVTheme.highlight)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($isFocused)
-
-            if !query.isEmpty {
-                Button(L10n.string("shell.search.field.clear")) {
-                    query = ""
-                }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.highlight)
-            }
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(TuneAVTheme.cardSurface)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+        AVAppShellSearchField(
+            query: $query,
+            prompt: prompt,
+            clearTitle: L10n.string("shell.search.field.clear"),
+            focusRequest: focusRequest
         )
-        .task(id: focusRequest) {
-            guard focusRequest != nil else { return }
-            try? await Task.sleep(for: .milliseconds(180))
-            guard !Task.isCancelled else { return }
-            isFocused = true
-        }
     }
 }
 
