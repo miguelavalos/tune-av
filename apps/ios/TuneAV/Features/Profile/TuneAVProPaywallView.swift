@@ -21,14 +21,14 @@ struct TuneAVProPaywallView: View {
                     paywallOfferCard
 
                     if accessController.isWaitingForSubscriptionReconciliation {
-                        paywallStatus("clock.arrow.circlepath", reconciliationStatus)
+                        AVPaywallStatusRow(systemImage: "clock.arrow.circlepath", message: reconciliationStatus)
                     } else if let error = accessController.subscriptionError?.errorDescription {
-                        paywallStatus("exclamationmark.triangle", error)
+                        AVPaywallStatusRow(systemImage: "exclamationmark.triangle", message: error)
                     }
 
                     AVPaywallBenefitList(items: benefitItems)
 
-                    legalLinks
+                    AVPaywallLegalLinks(links: legalLinkItems)
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 18)
@@ -170,14 +170,6 @@ struct TuneAVProPaywallView: View {
                 detail: L10n.string("paywall.benefit.discovery")
             )
         ]
-    }
-
-    private func paywallStatus(_ systemImage: String, _ message: String) -> some View {
-        AVPaywallStatusRow(systemImage: systemImage, message: message)
-    }
-
-    private var legalLinks: some View {
-        AVPaywallLegalLinks(links: legalLinkItems)
     }
 
     private var legalLinkItems: [AVPaywallLegalLink] {
