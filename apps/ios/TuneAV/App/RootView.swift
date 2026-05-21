@@ -1,6 +1,8 @@
+import AVLaunchFoundation
+import AVPaywallFoundation
+import OSLog
 import SwiftUI
 import UIKit
-import OSLog
 
 struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -18,6 +20,10 @@ struct RootView: View {
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
     private let launchContext = LaunchContext.current
+    private var splashPolicy: AVSplashTransitionPolicy {
+        AVSplashTransitionPolicy(isDisabled: launchContext.shouldDisableSplash)
+    }
+
     var body: some View {
         Group {
             if shouldShowOnboarding {
@@ -236,7 +242,8 @@ struct RootView: View {
     }
 
     private func showInitialSplashIfNeeded() async {
-        guard !launchContext.shouldDisableSplash, !hasShownSplashThisLaunch else {
+        let splashPolicy = splashPolicy
+        guard !splashPolicy.isDisabled, !hasShownSplashThisLaunch else {
             isShowingSplash = false
             return
         }
@@ -244,10 +251,10 @@ struct RootView: View {
         hasShownSplashThisLaunch = true
         let startedAt = Date()
         isShowingSplash = true
-        try? await Task.sleep(for: .milliseconds(1650))
+        try? await Task.sleep(for: splashPolicy.displayDuration)
 
         await MainActor.run {
-            withAnimation(.easeOut(duration: 0.35)) {
+            withAnimation(splashPolicy.dismissAnimation) {
                 isShowingSplash = false
             }
         }
@@ -316,60 +323,17 @@ struct UpgradeRecommendationSheet: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(spacing: 14) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textInverse)
-                    .frame(width: 48, height: 48)
-                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.string("limits.upgrade.eyebrow"))
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .textCase(.uppercase)
-
-                    Text(prompt.title)
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                }
-            }
-
-            Text(prompt.message)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("limits.upgrade.message")
-
-            VStack(spacing: 12) {
-                Button(action: onPrimaryAction) {
-                    Text(primaryButtonTitle)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textInverse)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .disabled(isGuest && !accountIsAvailable)
-                .accessibilityIdentifier("limits.upgrade.primary")
-
-                Button(action: onDismiss) {
-                    Text(L10n.string("limits.upgrade.notNow"))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .accessibilityIdentifier("limits.upgrade.dismiss")
-            }
-        }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("limits.upgrade.sheet.\(prompt.feature.rawValue)")
+        AVUpgradePromptSheet(
+            eyebrow: L10n.string("limits.upgrade.eyebrow"),
+            title: prompt.title,
+            message: prompt.message,
+            primaryButtonTitle: primaryButtonTitle,
+            primaryButtonIsDisabled: isGuest && !accountIsAvailable,
+            dismissButtonTitle: L10n.string("limits.upgrade.notNow"),
+            accessibilityIdentifier: "limits.upgrade.sheet.\(prompt.feature.rawValue)",
+            onPrimaryAction: onPrimaryAction,
+            onDismiss: onDismiss
+        )
     }
 
     private var primaryButtonTitle: String {

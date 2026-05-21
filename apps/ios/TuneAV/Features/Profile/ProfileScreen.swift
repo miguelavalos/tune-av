@@ -1,3 +1,4 @@
+import AVSettingsFoundation
 import SwiftUI
 
 struct ProfileScreen: View {
@@ -594,25 +595,11 @@ struct ProfileScreen: View {
     }
 
     private func sectionHeader(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-
-            Text(subtitle)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        AVSettingsSectionHeader(title: title, subtitle: subtitle)
     }
 
     private var profileCardBackground: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(TuneAVTheme.cardSurface)
-            .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
+        AVSettingsCardBackground()
     }
 
     private var displayName: String {
@@ -1331,18 +1318,7 @@ private struct ProfilePrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(TuneAVTheme.brandBlack)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(
-                    TuneAVTheme.highlight,
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                )
-        }
-        .buttonStyle(.plain)
+        AVSettingsButton(title: title, style: .primary, action: action)
         .accessibilityIdentifier(accessibilityID)
     }
 }
@@ -1353,32 +1329,7 @@ private struct ProfileSecondaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Text(title)
-                    .font(.system(size: 15, weight: .bold))
-
-                Spacer()
-
-                if isLoading {
-                    ProgressView()
-                        .tint(TuneAVTheme.textPrimary)
-                }
-            }
-            .foregroundStyle(TuneAVTheme.textPrimary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .padding(.horizontal, 18)
-            .background(
-                TuneAVTheme.cardSurface,
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
+        AVSettingsButton(title: title, style: .secondary, isLoading: isLoading, action: action)
     }
 }
 
@@ -1387,27 +1338,7 @@ private struct ProfileDangerButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color(red: 0.84, green: 0.16, blue: 0.22))
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .padding(.horizontal, 18)
-            .background(
-                TuneAVTheme.cardSurface,
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color(red: 0.84, green: 0.16, blue: 0.22).opacity(0.18), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
+        AVSettingsButton(title: title, style: .destructive, action: action)
     }
 }
 
@@ -1418,42 +1349,7 @@ private struct ProfileActionRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 22)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(detail)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 12)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
-                    .padding(.top, 4)
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(TuneAVTheme.mutedSurface)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
-            )
-        }
-        .buttonStyle(.plain)
+        AVSettingsActionRow(systemImage: systemImage, title: title, detail: detail, action: action)
     }
 }
 
@@ -1464,37 +1360,7 @@ private struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 22)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(detail)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 12)
-
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(TuneAVTheme.mutedSurface)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        )
+        AVSettingsToggleRow(systemImage: systemImage, title: title, detail: detail, isOn: $isOn)
     }
 }
 
@@ -1506,38 +1372,12 @@ private struct SettingsActionRow: View {
     let action: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 22)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(detail)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 12)
-
-            Button(actionTitle, action: action)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .buttonStyle(.plain)
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(TuneAVTheme.mutedSurface)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+        AVSettingsInlineActionRow(
+            systemImage: systemImage,
+            title: title,
+            detail: detail,
+            actionTitle: actionTitle,
+            action: action
         )
     }
 }

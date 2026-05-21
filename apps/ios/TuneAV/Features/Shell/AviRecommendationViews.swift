@@ -1,3 +1,4 @@
+import AVAviFoundation
 import SwiftUI
 
 struct AviRecommendationRow: View {
@@ -119,19 +120,7 @@ struct AviActionButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 14, weight: .bold))
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle.opacity(0.7), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
+        AVAviActionButton(title: title, systemImage: systemImage, action: action)
     }
 }
 
@@ -141,28 +130,6 @@ struct AviPromptButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .black))
-
-                Text(title)
-                    .font(.system(size: 13, weight: .black))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(TuneAVTheme.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 11)
-            .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
+        AVAviPromptButton(title: title, systemImage: systemImage, action: action)
     }
 }
