@@ -123,16 +123,17 @@ struct AppShellView: View {
             },
             footerPlayer: {
                 if let station = audioPlayer.currentStation {
+                    let displayStation = enrichedStation(station)
                     if isAviFullPlayerActive && !isAviActionPanelOpen {
                         AviExpandedFooterPlayerView(
-                            station: station,
+                            station: displayStation,
                             playbackQueueSource: audioPlayer.playbackQueue.source,
                             playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
                             stations: enrichedStations(homeStations),
                             recentStations: enrichedRecentStations,
                             favoriteStations: enrichedFavoriteStations
                         ) {
-                            openNowPlayingFullPlayer(station)
+                            openNowPlayingFullPlayer(displayStation)
                         } showArtworkZoom: {
                             withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                                 isShowingFooterArtworkZoom = true
@@ -143,8 +144,8 @@ struct AppShellView: View {
                             playStation(station, queueSource: source, queue: queue)
                         }
                     } else if !shouldHideFooterPlayer {
-                        MiniPlayerView(station: station) {
-                            openNowPlayingFullPlayer(station)
+                        MiniPlayerView(station: displayStation) {
+                            openNowPlayingFullPlayer(displayStation)
                         }
                     }
                 }
@@ -415,7 +416,7 @@ struct AppShellView: View {
         let favoriteStations = enrichedFavoriteStations
 
         return makeAviScreen(
-            currentStation: audioPlayer.currentStation,
+            currentStation: audioPlayer.currentStation.map(enrichedStation),
             focusedStation: focusedStation,
             isFocusedStationActive: focusedStation.map(audioPlayer.isCurrent(_:)) ?? false,
             currentTrackTitle: TuneAVText.normalizedValue(audioPlayer.currentTrackTitle),
@@ -987,7 +988,7 @@ struct AppShellView: View {
 
     private func recordConfirmedPlaybackIfNeeded(_ station: Station) {
         guard lastConfirmedPlaybackStationID != station.id else { return }
-        libraryStore.recordPlayback(of: station, recentLimit: accessController.limits.recentStations)
+        libraryStore.recordPlayback(of: enrichedStation(station), recentLimit: accessController.limits.recentStations)
         lastConfirmedPlaybackStationID = station.id
     }
 
