@@ -160,7 +160,7 @@ struct DiscoveryTrackCard: View {
             close: closeAviActions
         ) {
             if aviActionsPage == 0 {
-                AviListActionButton(
+                AVAviPanelOptionButton(
                     title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort"),
                     systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
                     accessibilityIdentifier: "discoveryTrack.save.\(discovery.discoveryID)"
@@ -168,23 +168,23 @@ struct DiscoveryTrackCard: View {
                     toggleSaved()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("shell.music.discovery.openTrackInfo.action"), systemImage: "info.circle") {
+                AVAviPanelOptionButton(title: L10n.string("shell.music.discovery.openTrackInfo.action"), systemImage: "info.circle") {
                     openTrackInfo()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("player.artist.view"), systemImage: "person.crop.circle") {
+                AVAviPanelOptionButton(title: L10n.string("player.artist.view"), systemImage: "person.crop.circle") {
                     openArtistInfo()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("shell.music.discovery.openStation.action"), systemImage: "dot.radiowaves.left.and.right") {
+                AVAviPanelOptionButton(title: L10n.string("shell.music.discovery.openStation.action"), systemImage: "dot.radiowaves.left.and.right") {
                     openStationInfo()
                     closeAviActions()
                 }
             } else {
-                AviListActionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
-                AviListActionButton(title: L10n.string("player.discovery.lyrics"), systemImage: "text.quote", action: runAndClose(openLyrics))
-                AviListActionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
-                AviListActionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.lyrics"), systemImage: "text.quote", action: runAndClose(openLyrics))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
             }
         }
     }
@@ -399,24 +399,6 @@ private struct MusicTrackCompactCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("common.more"))
-    }
-}
-
-private struct AviListActionButton: View {
-    let title: String
-    let systemImage: String
-    var role: ButtonRole?
-    var accessibilityIdentifier: String?
-    let action: () -> Void
-
-    var body: some View {
-        AVAviPanelOptionButton(
-            title: title,
-            systemImage: systemImage,
-            role: role,
-            accessibilityIdentifier: accessibilityIdentifier,
-            action: action
-        )
     }
 }
 
@@ -640,22 +622,22 @@ struct DiscoveryArtistRow: View {
             close: closeAviActions
         ) {
             if aviActionsPage == 0 {
-                AviListActionButton(title: L10n.string("shell.music.artist.openDetails"), systemImage: "info.circle") {
+                AVAviPanelOptionButton(title: L10n.string("shell.music.artist.openDetails"), systemImage: "info.circle") {
                     openArtist()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("shell.music.artist.viewSavedSongs"), systemImage: "music.note.list") {
+                AVAviPanelOptionButton(title: L10n.string("shell.music.artist.viewSavedSongs"), systemImage: "music.note.list") {
                     openArtistSongs()
                     closeAviActions()
                 }
-                AviListActionButton(title: L10n.string("shell.avi.music.artist.radios"), systemImage: "dot.radiowaves.left.and.right") {
+                AVAviPanelOptionButton(title: L10n.string("shell.avi.music.artist.radios"), systemImage: "dot.radiowaves.left.and.right") {
                     openArtistRadios()
                     closeAviActions()
                 }
             } else {
-                AviListActionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
-                AviListActionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
-                AviListActionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.youtube"), systemImage: "play.rectangle", action: runAndClose(openYouTube))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
+                AVAviPanelOptionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
             }
         }
     }

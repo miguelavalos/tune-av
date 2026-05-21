@@ -129,19 +129,19 @@ struct StationListActionRow: View {
 
     private var aviActionsPanel: some View {
         TuneAviPopoverActionsPanel(close: closeAviActions) {
-            AviRowActionButton(
+            AVAviPanelOptionButton(
                 title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                 systemImage: isFavorite ? "bookmark.slash" : "bookmark"
             ) {
                 toggleFavorite()
                 closeAviActions()
             }
-            AviRowActionButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "info.circle") {
+            AVAviPanelOptionButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "info.circle") {
                 detailsAction()
                 closeAviActions()
             }
             if station.resolvedHomepageURL != nil {
-                AviRowActionButton(title: L10n.string("player.menu.openWebsite"), systemImage: "safari") {
+                AVAviPanelOptionButton(title: L10n.string("player.menu.openWebsite"), systemImage: "safari") {
                     openWebsiteAction()
                     closeAviActions()
                 }
@@ -227,17 +227,6 @@ struct StationListActionRow: View {
         }
 
         return TuneAVText.normalizedValue(station.country, excluding: Station.unknownDetailValues, locale: L10n.locale)
-    }
-}
-
-struct AviRowActionButton: View {
-    let title: String
-    let systemImage: String
-    var role: ButtonRole?
-    let action: () -> Void
-
-    var body: some View {
-        AVAviPanelOptionButton(title: title, systemImage: systemImage, role: role, action: action)
     }
 }
 

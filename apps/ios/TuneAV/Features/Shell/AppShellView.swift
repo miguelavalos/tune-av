@@ -2186,14 +2186,14 @@ struct AviScreen: View {
                     AviSignalStep(index: 3, title: L10n.string("shell.avi.preview.step.remember"))
                 } else if let currentStation {
                     HStack(spacing: 8) {
-                        AviPromptButton(
+                        AVAviPromptButton(
                             title: L10n.string("shell.avi.preview.prompt.saveStation"),
                             systemImage: "bookmark",
                             action: {
                                 toggleFavorite(currentStation)
                             }
                         )
-                        AviPromptButton(
+                        AVAviPromptButton(
                             title: L10n.string("shell.avi.preview.prompt.history"),
                             systemImage: "clock.arrow.circlepath",
                             action: { showStationDetails(currentStation, [currentStation]) }
@@ -5649,8 +5649,8 @@ struct AviScreen: View {
             }
 
             HStack(spacing: 12) {
-                AviActionButton(title: L10n.string("tab.search"), systemImage: "magnifyingglass", action: openSearch)
-                AviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "bookmark.fill", action: openLibrary)
+                AVAviActionButton(title: L10n.string("tab.search"), systemImage: "magnifyingglass", action: openSearch)
+                AVAviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "bookmark.fill", action: openLibrary)
             }
         }
     }
