@@ -13,65 +13,38 @@ struct DetailTopHeader: View {
     let goBack: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 13) {
-            if showsBackButton {
-                AVAppShellIconButton(
-                    systemName: "chevron.left",
-                    accessibilityLabel: L10n.string("common.back"),
-                    accessibilityIdentifier: "\(accessibilityIdentifier).back",
-                    action: goBack
-                )
-            } else {
-                AviStableEmotionImage(emotion: .focused, assetVariant: .head, width: 40)
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
-                    .overlay {
-                        Circle().stroke(TuneAVTheme.borderSubtle.opacity(0.7), lineWidth: 1)
-                    }
+        AVAppShellDetailHeaderScaffold(
+            title: title,
+            entityName: entityName,
+            subtitle: subtitle,
+            status: status,
+            accessibilityIdentifier: accessibilityIdentifier
+        ) {
+            leadingControl
+        } accessory: {
+            if let feedback {
+                feedbackBadge(feedback)
             }
-
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 8) {
-                    if let status {
-                        Text(status)
-                            .font(.system(size: 11, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .textCase(.uppercase)
-                            .lineLimit(1)
-                    }
-
-                    if let feedback {
-                        feedbackBadge(feedback)
-                    }
-                }
-
-                Text(title)
-                    .font(.system(size: entityName == nil ? 25 : 15, weight: .black, design: .rounded))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(entityName == nil ? 2 : 1)
-                    .minimumScaleFactor(0.78)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let entityName {
-                    Text(entityName)
-                        .font(.system(size: 24, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.72)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 1)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    @ViewBuilder
+    private var leadingControl: some View {
+        if showsBackButton {
+            AVAppShellIconButton(
+                systemName: "chevron.left",
+                accessibilityLabel: L10n.string("common.back"),
+                accessibilityIdentifier: "\(accessibilityIdentifier).back",
+                action: goBack
+            )
+        } else {
+            AviStableEmotionImage(emotion: .focused, assetVariant: .head, width: 40)
+                .frame(width: 36, height: 36)
+                .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+                .overlay {
+                    Circle().stroke(TuneAVTheme.borderSubtle.opacity(0.7), lineWidth: 1)
+                }
+        }
     }
 
     private func feedbackBadge(_ feedback: TuneAVStationFeedback) -> some View {
