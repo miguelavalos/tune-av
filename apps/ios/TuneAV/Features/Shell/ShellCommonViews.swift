@@ -1,15 +1,4 @@
-import AVSettingsFoundation
 import SwiftUI
-
-struct ShellRow: View {
-    let systemImage: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        AVSettingsInfoRow(systemImage: systemImage, title: title, detail: detail)
-    }
-}
 
 struct ShellStatusPill: View {
     let title: String
