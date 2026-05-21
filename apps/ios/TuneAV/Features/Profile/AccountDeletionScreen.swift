@@ -49,17 +49,11 @@ struct AccountDeletionScreen: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.string("accountDeletion.title"))
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .accessibilityIdentifier("accountDeletion.title")
-
-            Text(L10n.string("accountDeletion.subtitle"))
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        AVSettingsScreenHeader(
+            title: L10n.string("accountDeletion.title"),
+            subtitle: L10n.string("accountDeletion.subtitle"),
+            titleAccessibilityIdentifier: "accountDeletion.title"
+        )
     }
 
     private var sharedAccountNotice: some View {

@@ -51,15 +51,7 @@ struct ProfileScreen: View {
             VStack(alignment: .leading, spacing: 24) {
                 ShellBrandHeader(statusTitle: statusTitle, activeItem: headerActiveItem)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(screenTitle)
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(screenSubtitle)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                }
+                AVSettingsScreenHeader(title: screenTitle, subtitle: screenSubtitle)
 
                 screenContent
             }
