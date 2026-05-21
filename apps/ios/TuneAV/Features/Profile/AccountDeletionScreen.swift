@@ -1,3 +1,4 @@
+import AVSettingsFoundation
 import SwiftUI
 
 struct AccountDeletionScreen: View {
@@ -62,18 +63,11 @@ struct AccountDeletionScreen: View {
     }
 
     private var sharedAccountNotice: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(L10n.string("accountDeletion.shared.title"), systemImage: "person.2.badge.gearshape")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-
-            Text(L10n.string("accountDeletion.shared.detail"))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(18)
-        .background(cardBackground)
+        AVSettingsNoticeCard(
+            systemImage: "person.2.badge.gearshape",
+            title: L10n.string("accountDeletion.shared.title"),
+            detail: L10n.string("accountDeletion.shared.detail")
+        )
     }
 
     @ViewBuilder
@@ -307,33 +301,6 @@ struct AccountDeletionScreen: View {
     }
 
     private func statusCard(systemImage: String, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(detail)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(18)
-        .background(cardBackground)
-    }
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(TuneAVTheme.cardSurface)
-            .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
+        AVSettingsStatusCard(systemImage: systemImage, title: title, detail: detail)
     }
 }
