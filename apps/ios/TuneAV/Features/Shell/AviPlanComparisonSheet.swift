@@ -63,18 +63,13 @@ struct AviPlanComparisonSheet: View {
                         )
                     }
 
-                    Button {
+                    AVPaywallPrimaryButton(
+                        title: accessMode == .guest ? L10n.string("shell.avi.preview.primary.search") : L10n.string("shell.avi.preview.primary.pro"),
+                        accessibilityIdentifier: "avi.planComparison.primary"
+                    ) {
                         onDismiss()
                         onPrimaryAction()
-                    } label: {
-                        Text(accessMode == .guest ? L10n.string("shell.avi.preview.primary.search") : L10n.string("shell.avi.preview.primary.pro"))
-                            .font(.system(size: 16, weight: .black))
-                            .foregroundStyle(TuneAVTheme.textInverse)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
-                    .accessibilityIdentifier("avi.planComparison.primary")
                 }
                 .padding(22)
             }
