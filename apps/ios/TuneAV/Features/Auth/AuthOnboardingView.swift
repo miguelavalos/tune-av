@@ -356,81 +356,34 @@ private struct AuthOptionsPanel: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(TuneAVTheme.brandGraphite.opacity(0.22))
-                .frame(width: 46, height: 4)
-                .padding(.top, 12)
-
-            VStack(spacing: 7) {
-                Text(L10n.string("auth.options.title"))
-                    .font(.system(size: 22, weight: .black, design: .serif))
-                    .foregroundStyle(TuneAVTheme.brandGraphite)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.string("auth.options.subtitle"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.neutral600)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, 16)
-
-            VStack(spacing: 10) {
-                AVAuthProviderButton(
-                    title: L10n.string("auth.provider.apple"),
-                    isLoading: activeProvider == .apple,
-                    style: .dark,
-                    action: onAppleTap
-                ) {
-                    Image(systemName: "applelogo")
-                        .font(.system(size: 17, weight: .bold))
-                }
-
-                AVAuthProviderButton(
-                    title: L10n.string("auth.provider.google"),
-                    isLoading: activeProvider == .google,
-                    style: .light,
-                    action: onGoogleTap
-                ) {
-                    GoogleBadge()
-                }
-            }
-            .padding(.top, 20)
-            .disabled(!accountIsAvailable)
-
-            if !accountIsAvailable {
-                Text(L10n.string("auth.options.unavailable"))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 12)
+        AVAuthOptionsPanelScaffold(
+            title: L10n.string("auth.options.title"),
+            subtitle: L10n.string("auth.options.subtitle"),
+            legalConsentText: legalConsentText,
+            unavailableMessage: accountIsAvailable ? nil : L10n.string("auth.options.unavailable"),
+            skipTitle: L10n.string("auth.options.skip"),
+            actionsAreDisabled: !accountIsAvailable,
+            onSkip: onSkip
+        ) {
+            AVAuthProviderButton(
+                title: L10n.string("auth.provider.apple"),
+                isLoading: activeProvider == .apple,
+                style: .dark,
+                action: onAppleTap
+            ) {
+                Image(systemName: "applelogo")
+                    .font(.system(size: 17, weight: .bold))
             }
 
-            Button(L10n.string("auth.options.skip"), action: onSkip)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.82))
-                .padding(.top, 16)
-
-            Text(legalConsentText)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.66))
-                .tint(TuneAVTheme.brandGraphite.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .padding(.top, 14)
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 32)
-        .background(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(Color(red: 0.99, green: 0.97, blue: 0.91).opacity(0.98))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .stroke(TuneAVTheme.brandGraphite.opacity(0.12), lineWidth: 1)
-                }
-                .shadow(color: .black.opacity(0.28), radius: 24, y: 14)
-        )
-        .overlay(alignment: .topTrailing) {
+            AVAuthProviderButton(
+                title: L10n.string("auth.provider.google"),
+                isLoading: activeProvider == .google,
+                style: .light,
+                action: onGoogleTap
+            ) {
+                GoogleBadge()
+            }
+        } accessory: {
             AviSheetPeekCompanion()
                 .offset(x: -44, y: -91)
                 .allowsHitTesting(false)
