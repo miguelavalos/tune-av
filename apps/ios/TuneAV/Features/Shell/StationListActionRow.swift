@@ -1,3 +1,4 @@
+import AVAviFoundation
 import AVHaptics
 import SwiftUI
 
@@ -108,16 +109,11 @@ struct StationListActionRow: View {
                 isShowingAviActions.toggle()
             }
         } label: {
-            Image("AviV2HeadNeutral")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
-                .frame(width: 36, height: 36)
-                .background(TuneAVTheme.elevatedSurface, in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
+            AVAviAvatarBadge(backgroundStyle: .elevated) {
+                Image("AviV2HeadNeutral")
+                    .resizable()
+                    .scaledToFit()
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("shell.avi.actions.askShort"))
