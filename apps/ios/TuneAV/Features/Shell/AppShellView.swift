@@ -4640,21 +4640,6 @@ struct AviScreen: View {
         )
     }
 
-    private func compactAviOptionButton(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        AVAviPanelOptionButton(
-            title: title,
-            systemImage: systemImage,
-            style: .compact,
-            accessibilityIdentifier: accessibilityIdentifier,
-            action: action
-        )
-    }
-
     private func compactAviActionsSheet(for station: Station) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -4679,22 +4664,42 @@ struct AviScreen: View {
             }
 
             HStack(spacing: 8) {
-                compactAviOptionButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube") {
+                AVAviPanelOptionButton(
+                    title: L10n.string("shell.avi.actions.searchYouTube"),
+                    systemImage: "play.rectangle",
+                    style: .compact,
+                    accessibilityIdentifier: "avi.actions.youtube"
+                ) {
                     showAviReaction(.curious)
                     openAviSearch(for: station, destination: .youtube)
                 }
-                compactAviOptionButton(title: L10n.string("shell.avi.actions.searchArtist"), systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist") {
+                AVAviPanelOptionButton(
+                    title: L10n.string("shell.avi.actions.searchArtist"),
+                    systemImage: "person.crop.circle",
+                    style: .compact,
+                    accessibilityIdentifier: "avi.actions.artist"
+                ) {
                     showAviReaction(.curious)
                     openAviArtistSearch()
                 }
             }
 
             HStack(spacing: 8) {
-                compactAviOptionButton(title: L10n.string("shell.avi.actions.searchAppleMusic"), systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic") {
+                AVAviPanelOptionButton(
+                    title: L10n.string("shell.avi.actions.searchAppleMusic"),
+                    systemImage: "music.note",
+                    style: .compact,
+                    accessibilityIdentifier: "avi.actions.appleMusic"
+                ) {
                     showAviReaction(.curious)
                     openAviSearch(for: station, destination: .appleMusic)
                 }
-                compactAviOptionButton(title: L10n.string("shell.avi.actions.radioFeedback"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioFeedback") {
+                AVAviPanelOptionButton(
+                    title: L10n.string("shell.avi.actions.radioFeedback"),
+                    systemImage: "dot.radiowaves.left.and.right",
+                    style: .compact,
+                    accessibilityIdentifier: "avi.actions.radioFeedback"
+                ) {
                     setAviMenuFeedback(.liked, for: station)
                     closeAviActions()
                 }
