@@ -48,14 +48,7 @@ struct DetailTopHeader: View {
     }
 
     private func feedbackBadge(_ feedback: TuneAVStationFeedback) -> some View {
-        Image(systemName: feedback.systemImage)
-            .font(.system(size: 9, weight: .black))
-            .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-            .frame(width: 20, height: 20)
-            .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
-            .overlay {
-                Circle().stroke(Color.white.opacity(0.74), lineWidth: 1)
-            }
+        TuneAVFeedbackBadge(feedback: feedback, size: 20, fontSize: 9, borderOpacity: 0.74)
     }
 }
 

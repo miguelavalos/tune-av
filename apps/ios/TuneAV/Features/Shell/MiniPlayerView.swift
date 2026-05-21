@@ -9,16 +9,14 @@ struct TuneAVFeedbackBadge: View {
     var borderOpacity: Double = 0.78
 
     var body: some View {
-        Image(systemName: feedback.systemImage)
-            .font(.system(size: fontSize ?? size * 0.41, weight: .black))
-            .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-            .frame(width: size, height: size)
-            .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(Color.white.opacity(borderOpacity), lineWidth: 1)
-            }
-            .accessibilityLabel(feedback.localizedState)
+        AVFeedbackStatusBadge(
+            systemImage: feedback.systemImage,
+            accessibilityLabel: feedback.localizedState,
+            isHighlighted: feedback == .liked,
+            size: size,
+            fontSize: fontSize,
+            borderOpacity: borderOpacity
+        )
     }
 }
 
