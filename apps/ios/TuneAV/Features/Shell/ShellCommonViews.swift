@@ -1,22 +1,5 @@
 import SwiftUI
 
-struct ShellStatusPill: View {
-    let title: String
-
-    var body: some View {
-        Text(title.uppercased())
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(TuneAVTheme.highlight)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(TuneAVTheme.highlight.opacity(0.1), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
-            }
-    }
-}
-
 struct EmptyLibraryState: View {
     let title: String
     let detail: String

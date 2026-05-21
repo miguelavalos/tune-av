@@ -62,7 +62,7 @@ struct LiveNowPanel: View {
 
                 Spacer()
 
-                ShellStatusPill(title: status)
+                AVStatusPill(title: status)
             }
 
             HStack(spacing: 12) {
