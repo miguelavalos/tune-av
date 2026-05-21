@@ -1054,8 +1054,8 @@
 "shell.avi.header.trackWithArtist.summary" = "Titel von %@ erkannt. Dein Feedback verfeinert ihn.";
 "shell.avi.header.track.summary" = "Titel erkannt. Dein Feedback verfeinert ihn.";
 "shell.avi.header.known.label" = "BEKANNT";
-"shell.avi.header.favorite.title" = "Radio aus deiner Sammlung";
-"shell.avi.header.favorite.summary" = "Avi vergleicht es mit deinen letzten Signalen.";
+"shell.avi.header.favorite.title" = "Aus deiner Sammlung";
+"shell.avi.header.favorite.summary" = "Avi vergleicht mit letzten Signalen.";
 "shell.avi.header.exploring.label" = "ERKUNDEN";
 "shell.avi.header.context.title" = "Es gibt Kontext zu lesen";
 "shell.avi.header.contextWithCategory.summary" = "%@-Profil erkannt. Gib Feedback, wenn es passt.";

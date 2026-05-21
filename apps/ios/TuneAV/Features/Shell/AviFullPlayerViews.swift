@@ -31,29 +31,33 @@ struct FullPlayerAviHeader: View {
                 }
                 .accessibilityLabel(L10n.string("shell.avi.title"))
 
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(label)
                     .font(.system(size: 11, weight: .black))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
                     .lineLimit(1)
-                    .frame(height: 13)
+                    .minimumScaleFactor(0.78)
+                    .allowsTightening(true)
+                    .frame(height: 12)
 
                 Text(title)
-                    .font(.system(size: 25, weight: .black, design: .rounded))
+                    .font(.system(size: 22, weight: .black, design: .rounded))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                    .allowsTightening(true)
                     .truncationMode(.tail)
-                    .frame(height: 30)
+                    .frame(height: 46, alignment: .topLeading)
 
                 Text(summary)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(TuneAVTheme.textSecondary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.82)
+                    .minimumScaleFactor(0.76)
+                    .allowsTightening(true)
                     .truncationMode(.tail)
-                    .frame(height: 34, alignment: .topLeading)
+                    .frame(height: 28, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
