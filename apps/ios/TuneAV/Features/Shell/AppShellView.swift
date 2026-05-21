@@ -2106,9 +2106,9 @@ struct AviScreen: View {
             }
 
             HStack(spacing: 8) {
-                AviSignalChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform")
-                AviSignalChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark")
-                AviSignalChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
+                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform")
+                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark")
+                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
             }
 
             Text(L10n.string("shell.avi.preview.detail"))
@@ -2181,9 +2181,9 @@ struct AviScreen: View {
 
             VStack(spacing: 8) {
                 if currentStation == nil {
-                    AviSignalStep(index: 1, title: L10n.string("shell.avi.preview.step.choose"))
-                    AviSignalStep(index: 2, title: L10n.string("shell.avi.preview.step.listen"))
-                    AviSignalStep(index: 3, title: L10n.string("shell.avi.preview.step.remember"))
+                    AVAviSignalStep(index: 1, title: L10n.string("shell.avi.preview.step.choose"))
+                    AVAviSignalStep(index: 2, title: L10n.string("shell.avi.preview.step.listen"))
+                    AVAviSignalStep(index: 3, title: L10n.string("shell.avi.preview.step.remember"))
                 } else if let currentStation {
                     HStack(spacing: 8) {
                         AVAviPromptButton(
@@ -2740,14 +2740,14 @@ struct AviScreen: View {
                 .foregroundStyle(TuneAVTheme.textPrimary)
 
             if hasCurrentSongContext {
-                AviSignalRow(
+                AVAviInfoRow(
                     title: L10n.string("shell.avi.signals.currentSong.title"),
                     detail: currentTrackArtist.map { L10n.string("shell.avi.signals.currentSong.detailWithArtist", $0) } ?? L10n.string("shell.avi.signals.currentSong.detail"),
                     systemImage: "music.note",
                     accessibilityIdentifier: "avi.signals.currentSong"
                 )
             } else if let currentStation {
-                AviSignalRow(
+                AVAviInfoRow(
                     title: L10n.string("shell.avi.signals.currentRadio.title"),
                     detail: L10n.string("shell.avi.signals.currentRadio.detail", currentStation.name),
                     systemImage: "dot.radiowaves.left.and.right",
@@ -2756,7 +2756,7 @@ struct AviScreen: View {
             }
 
             if let recommendation = topRecommendation {
-                AviSignalRow(
+                AVAviInfoRow(
                     title: L10n.string("shell.avi.signals.next.title"),
                     detail: "\(recommendation.station.name): \(recommendation.reason)",
                     systemImage: "sparkles",
@@ -2764,7 +2764,7 @@ struct AviScreen: View {
                 )
             }
 
-            AviSignalRow(
+            AVAviInfoRow(
                 title: L10n.string("shell.avi.signals.feedback.title"),
                 detail: feedbackSignalCount == 0 ? L10n.string("shell.avi.signals.feedback.emptyDetail") : L10n.plural(singular: "shell.avi.signals.feedback.count.one", plural: "shell.avi.signals.feedback.count.other", count: feedbackSignalCount, feedbackSignalCount),
                 systemImage: "hand.thumbsup",
@@ -5347,7 +5347,7 @@ struct AviScreen: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    AviSignalActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
+                    AVAviActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
                         runProAviActionOutsideFullPlayer {
                             if isFocusedStationActive && hasCurrentSongContext {
                                 openAviSearch(for: station, destination: .web, suffix: "lyrics")
@@ -5356,25 +5356,25 @@ struct AviScreen: View {
                             }
                         }
                     }
-                    AviSignalActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
+                    AVAviActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
                         runProAviActionOutsideFullPlayer {
                             showStationDetails(station, [station])
                         }
                     }
-                    AviSignalActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
+                    AVAviActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
                         runProAviActionOutsideFullPlayer {
                             browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
                         }
                     }
-                    AviSignalActionChip(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles") {
+                    AVAviActionChip(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles") {
                         showRelatedStations(for: station)
                     }
                     if isFocusedStationActive {
-                        AviSignalActionChip(title: L10n.string("shell.accessibility.closeSignal"), systemImage: "power") {
+                        AVAviActionChip(title: L10n.string("shell.accessibility.closeSignal"), systemImage: "power") {
                             stopPlayback()
                         }
                     }
-                    AviSignalActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {
+                    AVAviActionChip(title: L10n.string("common.more"), systemImage: "ellipsis") {
                         withAnimation(.snappy(duration: 0.22)) {
                             applyAviTransientState(currentAviTransientState.openingActions())
                         }
@@ -5637,28 +5637,28 @@ struct AviScreen: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
 
-            AviSignalRow(
+            AVAviInfoRow(
                 title: L10n.string("shell.avi.signals.recent.title"),
                 detail: recentStations.isEmpty ? L10n.string("shell.avi.signals.recent.empty") : L10n.plural(singular: "shell.avi.signals.recent.count.one", plural: "shell.avi.signals.recent.count.other", count: recentStations.count, recentStations.count),
                 systemImage: "clock.arrow.circlepath",
                 accessibilityIdentifier: "avi.signals.recent"
             )
 
-            AviSignalRow(
+            AVAviInfoRow(
                 title: L10n.string("shell.avi.signals.saved.title"),
                 detail: favoriteStations.isEmpty ? L10n.string("shell.avi.signals.saved.empty") : L10n.plural(singular: "shell.avi.signals.saved.count.one", plural: "shell.avi.signals.saved.count.other", count: favoriteStations.count, favoriteStations.count),
                 systemImage: "dot.radiowaves.left.and.right",
                 accessibilityIdentifier: "avi.signals.saved"
             )
 
-            AviSignalRow(
+            AVAviInfoRow(
                 title: L10n.string("shell.avi.signals.discoveries.title"),
                 detail: recentDiscoveryCount == 0 ? L10n.string("shell.avi.signals.discoveries.empty") : L10n.plural(singular: "shell.avi.signals.discoveries.count.one", plural: "shell.avi.signals.discoveries.count.other", count: recentDiscoveryCount, recentDiscoveryCount),
                 systemImage: "sparkles",
                 accessibilityIdentifier: "avi.signals.discoveries"
             )
 
-            AviSignalRow(
+            AVAviInfoRow(
                 title: L10n.string("shell.avi.signals.feedback.title"),
                 detail: feedbackSignalCount == 0 ? L10n.string("shell.avi.signals.feedback.empty") : L10n.plural(singular: "shell.avi.signals.feedback.count.one", plural: "shell.avi.signals.feedback.count.other", count: feedbackSignalCount, feedbackSignalCount),
                 systemImage: "hand.thumbsup",
