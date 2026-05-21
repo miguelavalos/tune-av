@@ -441,14 +441,14 @@ struct LibraryScreen: View {
     }
 
     private func openMode(_ mode: RadioLibraryMode) {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.modeChange)
         selectedMode = mode
         isShowingOverview = false
         visibleLimit = Self.pageSize
     }
 
     private func showOverview() {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.navigation)
         query = ""
         isSearchExpanded = false
         visibleLimit = Self.pageSize
@@ -459,7 +459,7 @@ struct LibraryScreen: View {
 
     private func setActiveSort(_ sort: RadioSavedSort) {
         guard activeSort != sort else { return }
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.modeChange)
         switch selectedMode {
         case .saved, .tuned:
             savedSortRawValue = sort.rawValue
@@ -469,7 +469,7 @@ struct LibraryScreen: View {
     }
 
     private func toggleSearch() {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(isSearchExpanded ? .closePanel : .openPanel)
         isShowingOverview = false
         withAnimation(.snappy(duration: 0.22)) {
             isSearchExpanded.toggle()
@@ -477,7 +477,7 @@ struct LibraryScreen: View {
     }
 
     private func showMoreStations() {
-        AVHaptics.perform(.impactLight)
+        AVHaptics.perform(.loadMore)
         visibleLimit += Self.pageSize
     }
 

@@ -475,12 +475,12 @@ struct MusicScreen: View {
     }
 
     private func showMoreDiscoveries() {
-        AVHaptics.perform(.impactLight)
+        AVHaptics.perform(.loadMore)
         visibleDiscoveryLimit += Self.pageSize
     }
 
     private func showMoreArtists() {
-        AVHaptics.perform(.impactLight)
+        AVHaptics.perform(.loadMore)
         visibleArtistLimit += Self.pageSize
     }
 
@@ -572,7 +572,7 @@ struct MusicScreen: View {
 
     private func selectMusicMode(_ mode: MusicContentMode) {
         guard musicMode != mode else { return }
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.modeChange)
         isShowingOverview = false
         selectedArtistName = nil
         if mode != .history {
@@ -583,7 +583,7 @@ struct MusicScreen: View {
     }
 
     private func openMusicMode(_ mode: MusicContentMode) {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.modeChange)
         isShowingOverview = false
         selectedArtistName = nil
         if mode != .history {
@@ -594,7 +594,7 @@ struct MusicScreen: View {
     }
 
     private func showOverview() {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.navigation)
         query = ""
         isSearchExpanded = false
         selectedArtistName = nil
@@ -606,7 +606,7 @@ struct MusicScreen: View {
     }
 
     private func toggleMusicSearch() {
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(isSearchExpanded ? .closePanel : .openPanel)
         isShowingOverview = false
         withAnimation(.snappy(duration: 0.22)) {
             isSearchExpanded.toggle()
@@ -615,7 +615,7 @@ struct MusicScreen: View {
 
     private func setMusicSort(_ sort: MusicLibrarySort) {
         guard musicSort != sort else { return }
-        AVHaptics.perform(.selection)
+        AVHaptics.perform(.modeChange)
         musicSortRawValue = sort.rawValue
         resetVisibleLimits()
     }
