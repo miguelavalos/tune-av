@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import SwiftUI
 
 struct RadioStationListSnapshot {
@@ -51,27 +52,10 @@ struct ShowMoreButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: "chevron.down.circle.fill")
-                    .font(.system(size: 16, weight: .bold))
-
-                Text(L10n.string("common.showMoreCount", title, remainingCount))
-                    .font(.system(size: 14, weight: .black))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-            .foregroundStyle(TuneAVTheme.highlight)
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .background(TuneAVTheme.highlight.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(TuneAVTheme.highlight.opacity(0.20), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("list.showMore")
+        AVAppShellShowMoreButton(
+            title: L10n.string("common.showMoreCount", title, remainingCount),
+            action: action
+        )
     }
 }
 
