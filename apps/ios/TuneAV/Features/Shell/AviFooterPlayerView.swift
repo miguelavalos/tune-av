@@ -220,22 +220,16 @@ struct AviExpandedFooterPlayerView: View {
     }
 
     private var queueSourceButton: some View {
-        Button {
+        AVCircularMaterialIconButton(
+            systemImage: "list.bullet",
+            size: 54,
+            fontSize: 18,
+            fontWeight: .black,
+            accessibilityLabel: L10n.string("shell.queue.current", playbackQueueSource.displayTitle),
+            accessibilityIdentifier: "avi.footerPlayer.queue"
+        ) {
             isShowingQueueSwitcher = true
-        } label: {
-            Image(systemName: "list.bullet")
-                .font(.system(size: 18, weight: .black))
-            .foregroundStyle(TuneAVTheme.textSecondary)
-            .frame(width: 54, height: 54)
-            .background(.ultraThinMaterial.opacity(1), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(.white.opacity(0.12), lineWidth: 1)
-            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.queue.current", playbackQueueSource.displayTitle))
-        .accessibilityIdentifier("avi.footerPlayer.queue")
     }
 
     private var sleepTimerMenu: some View {
