@@ -7,25 +7,11 @@ struct AviPreviewCapabilityRow: View {
     let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .black))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 30, height: 30)
-                .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(detail)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        AVAviPreviewCapabilityRow(
+            systemImage: systemImage,
+            title: title,
+            detail: detail
+        )
     }
 }
 
