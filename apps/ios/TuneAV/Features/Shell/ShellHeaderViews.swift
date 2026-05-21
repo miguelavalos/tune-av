@@ -1,3 +1,4 @@
+import AVAviFoundation
 import SwiftUI
 
 struct DetailTopHeader: View {
@@ -100,42 +101,18 @@ struct AviScreenHeader: View {
     var accessibilityIdentifier: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        AVAviScreenHeader(
+            title: title,
+            summary: summary,
+            status: status,
+            accessibilityIdentifier: accessibilityIdentifier
+        ) {
             if showsAviImage {
                 AviStableEmotionImage(emotion: emotion, assetVariant: .head, width: 54)
                     .accessibilityLabel(L10n.string("shell.avi.title"))
+            } else {
+                EmptyView()
             }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.68)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 7) {
-                    Text(summary)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if let status {
-                        Text(status)
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
-                            .background(TuneAVTheme.highlight.opacity(0.11), in: Capsule(style: .continuous))
-                    }
-
-                    Spacer(minLength: 0)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }

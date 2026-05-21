@@ -62,6 +62,18 @@ targets:
         product: AccountAV
       - package: AppsAV
         product: AVHaptics
+      - package: AppsAV
+        product: AVBrandFoundation
+      - package: AppsAV
+        product: AVAppShellFoundation
+      - package: AppsAV
+        product: AVLaunchFoundation
+      - package: AppsAV
+        product: AVSettingsFoundation
+      - package: AppsAV
+        product: AVAviFoundation
+      - package: AppsAV
+        product: AVPaywallFoundation
       - package: Clerk
         product: ClerkKit
       - package: Clerk

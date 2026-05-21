@@ -1,3 +1,4 @@
+import AVAviFoundation
 import SwiftUI
 
 struct AviActionsPanelView: View {
@@ -19,68 +20,31 @@ struct AviActionsPanelView: View {
     let closeSignal: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            header
-
-            VStack(spacing: 5) {
+        AVAviActionPanel(
+            title: state.title,
+            pageLabel: state.pageLabel,
+            canGoPrevious: state.canGoPrevious,
+            canGoNext: state.canGoNext,
+            previousAccessibilityLabel: L10n.string("shell.avi.actions.previousOptions"),
+            nextAccessibilityLabel: L10n.string("shell.avi.actions.moreOptions"),
+            closeAccessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
+            previousPage: previousPage,
+            nextPage: nextPage,
+            close: close
+        ) {
+            Group {
                 if state.showsSongActions {
                     songActions
                 } else {
                     stationActions
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-
+        } footer: {
             if showsCloseSignalAction {
                 AviCloseSignalPanelButton(action: closeSignal)
+            } else {
+                EmptyView()
             }
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 356, alignment: .top)
-        .background(TuneAVTheme.elevatedSurface.opacity(0.62), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(state.title)
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(state.pageLabel)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-            }
-
-            Spacer(minLength: 0)
-
-            HStack(spacing: 6) {
-                pagingButton(
-                    systemImage: "chevron.left",
-                    isEnabled: state.canGoPrevious,
-                    accessibilityLabel: L10n.string("shell.avi.actions.previousOptions"),
-                    action: previousPage
-                )
-                pagingButton(
-                    systemImage: "chevron.right",
-                    isEnabled: state.canGoNext,
-                    accessibilityLabel: L10n.string("shell.avi.actions.moreOptions"),
-                    action: nextPage
-                )
-            }
-            .foregroundStyle(TuneAVTheme.textSecondary)
-
-            Button(action: close) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .frame(width: 30, height: 30)
-                    .background(TuneAVTheme.cardSurface, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.avi.actions.closeOptions"))
-            .accessibilityIdentifier("avi.actions.close")
         }
     }
 
@@ -105,23 +69,6 @@ struct AviActionsPanelView: View {
         }
     }
 
-    private func pagingButton(
-        systemImage: String,
-        isEnabled: Bool,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 10, weight: .black))
-                .frame(width: 28, height: 28)
-                .background(TuneAVTheme.cardSurface, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : 0.34)
-        .accessibilityLabel(accessibilityLabel)
-    }
 }
 
 struct AviCommandButton: View {
@@ -143,39 +90,12 @@ struct AviCommandButton: View {
     }
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 28, height: 28)
-                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-
-                Text(title)
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .multilineTextAlignment(.leading)
-                    .minimumScaleFactor(0.78)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 36)
-            .padding(.horizontal, 10)
-            .background(TuneAVTheme.cardSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.46), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .modifier(OptionalAccessibilityIdentifier(accessibilityIdentifier))
+        AVAviCommandButton(
+            title: title,
+            systemImage: systemImage,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 }
 
@@ -183,31 +103,6 @@ struct AviCloseSignalPanelButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(TuneAVTheme.textSecondary.opacity(0.1), in: Circle())
-
-                Text(L10n.string("shell.accessibility.closeSignal"))
-                    .font(.system(size: 13, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 38)
-            .background(TuneAVTheme.cardSurface.opacity(0.7), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.38), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
-        .accessibilityIdentifier("avi.actions.closeSignal")
+        AVAviCloseSignalPanelButton(title: L10n.string("shell.accessibility.closeSignal"), action: action)
     }
 }

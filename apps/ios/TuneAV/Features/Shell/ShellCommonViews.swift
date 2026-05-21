@@ -1,3 +1,4 @@
+import AVSettingsFoundation
 import SwiftUI
 
 struct OptionalAccessibilityIdentifier: ViewModifier {
@@ -22,23 +23,7 @@ struct ShellRow: View {
     let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.highlight)
-                .frame(width: 22)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(detail)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
+        AVSettingsInfoRow(systemImage: systemImage, title: title, detail: detail)
     }
 }
 
