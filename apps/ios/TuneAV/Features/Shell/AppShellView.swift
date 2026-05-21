@@ -4462,31 +4462,7 @@ struct AviScreen: View {
             }
             .frame(height: 38)
         } else {
-            HStack(spacing: 8) {
-                StationFeedbackButton(
-                    title: L10n.string("shell.stationFeedback.like"),
-                    systemImage: "hand.thumbsup.fill",
-                    feedback: .liked,
-                    isSelected: false,
-                    action: { selectFeedback(.liked) }
-                )
-
-                StationFeedbackButton(
-                    title: L10n.string("shell.stationFeedback.notForMe"),
-                    systemImage: "minus.circle.fill",
-                    feedback: .notForMe,
-                    isSelected: false,
-                    action: { selectFeedback(.notForMe) }
-                )
-
-                StationFeedbackButton(
-                    title: L10n.string("shell.stationFeedback.dislike"),
-                    systemImage: "hand.thumbsdown.fill",
-                    feedback: .disliked,
-                    isSelected: false,
-                    action: { selectFeedback(.disliked) }
-                )
-            }
+            StationFeedbackOptionsRow(selectFeedback: selectFeedback)
             .frame(height: 38)
         }
     }
