@@ -3552,40 +3552,21 @@ struct AviScreen: View {
     private func focusedRadioSummaryCard(for station: Station) -> some View {
         let stationDiscoveries = focusedStationDiscoveries(for: station)
 
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                StationArtworkView(station: station, size: 62)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(station.name)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-
-                    Text(defaultPublicSignalInfo(for: station))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
-
-                    if let latestDiscovery = stationDiscoveries.first {
-                        Text("\(L10n.string("shell.avi.music.latestSong")) · \(latestDiscovery.title)")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .lineLimit(1)
-                    } else if libraryStore.isFavorite(station) {
-                        Text(L10n.string("shell.library.favorites.title"))
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .lineLimit(1)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        let metadata: String? = if let latestDiscovery = stationDiscoveries.first {
+            "\(L10n.string("shell.avi.music.latestSong")) · \(latestDiscovery.title)"
+        } else if libraryStore.isFavorite(station) {
+            L10n.string("shell.library.favorites.title")
+        } else {
+            nil
         }
-        .padding(12)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.16), radius: 10, y: 5)
+
+        return AVAviFocusedSummaryCard(
+            title: station.name,
+            subtitle: defaultPublicSignalInfo(for: station),
+            metadata: metadata
+        ) {
+            StationArtworkView(station: station, size: 62)
+        }
     }
 
     private func focusedRadioStats(for station: Station) -> some View {
@@ -3594,19 +3575,19 @@ struct AviScreen: View {
             ?? L10n.string("shell.avi.music.feedback.empty")
 
         return HStack(spacing: 7) {
-            ArtistStatPill(
+            AVAviStatPill(
                 title: L10n.string("shell.library.discoveries.title"),
                 value: "\(stationDiscoveries.count)",
                 systemImage: "music.note"
             )
 
-            ArtistStatPill(
+            AVAviStatPill(
                 title: L10n.string("shell.library.favorites.title"),
                 value: libraryStore.isFavorite(station) ? L10n.string("common.yes") : L10n.string("common.no"),
                 systemImage: "dot.radiowaves.left.and.right"
             )
 
-            ArtistStatPill(
+            AVAviStatPill(
                 title: L10n.string("shell.avi.music.lastSeen"),
                 value: latestDate,
                 systemImage: "clock.fill"
