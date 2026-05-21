@@ -118,16 +118,13 @@ struct AccountDeletionScreen: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TuneAVTheme.textPrimary)
 
-            TextField("DELETE", text: $viewModel.confirmationText)
+            AVSettingsTextField(
+                "DELETE",
+                text: $viewModel.confirmationText,
+                accessibilityIdentifier: "accountDeletion.confirmation"
+            )
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
-                .padding(14)
-                .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-                .accessibilityIdentifier("accountDeletion.confirmation")
 
             AVSettingsButton(
                 title: viewModel.isSubmitting
