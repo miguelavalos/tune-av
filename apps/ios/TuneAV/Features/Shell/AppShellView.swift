@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 import UIKit
 
@@ -24,14 +25,8 @@ struct AppShellView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var chromeActions = AppShellChromeActions()
+    @StateObject private var searchPresentation: SearchPresentationStore
     @State private var selectedTab: AppShellTab
-    @State private var searchQuery: String
-    @State private var searchTag: String?
-    @State private var searchCountryCode: String?
-    @State private var searchDiscoveryMode: TuneAVStationDiscoveryMode = .music
-    @State private var searchResults: [Station] = []
-    @State private var searchIsLoading = false
-    @State private var searchErrorMessage: String?
     @State private var homeStations: [Station] = []
     @State private var homeIsLoading = false
     @State private var homeErrorMessage: String?
@@ -64,6 +59,7 @@ struct AppShellView: View {
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
+    private let searchLogger = Logger(subsystem: "com.avalsys.tuneav", category: "search")
     private let genreTags = TuneAVStationMusicClassifier.musicTags
     private static let libraryEnrichmentRefreshInterval: TimeInterval = 300
 
@@ -97,7 +93,7 @@ struct AppShellView: View {
         self.launchContext = launchContext
         self.startSignInFlow = startSignInFlow
         _selectedTab = State(initialValue: AppShellTab(launchContext.preferredTab, preferredSearchQuery: launchContext.preferredSearchQuery))
-        _searchQuery = State(initialValue: launchContext.preferredSearchQuery ?? "")
+        _searchPresentation = StateObject(wrappedValue: SearchPresentationStore(query: launchContext.preferredSearchQuery ?? ""))
     }
 
     var body: some View {
@@ -282,22 +278,19 @@ struct AppShellView: View {
     }
 
     private func openHomeSearchTag(_ tag: String) {
-        searchQuery = ""
-        searchCountryCode = nil
-        searchTag = tag
-        searchDiscoveryMode = .music
+        searchPresentation.openTag(tag)
         selectedTab = .search
     }
 
     private var searchScreen: some View {
         makeSearchScreen(
-            query: $searchQuery,
-            activeTag: $searchTag,
-            selectedCountryCode: $searchCountryCode,
-            discoveryMode: $searchDiscoveryMode,
+            query: $searchPresentation.query,
+            activeTag: $searchPresentation.activeTag,
+            selectedCountryCode: $searchPresentation.selectedCountryCode,
+            discoveryMode: $searchPresentation.discoveryMode,
             results: enrichedStations(visibleSearchResults),
-            isLoading: searchIsLoading,
-            errorMessage: searchErrorMessage,
+            isLoading: searchPresentation.isLoading,
+            errorMessage: searchPresentation.errorMessage,
             tags: genreTags,
             bottomContentPadding: shouldHideFooterPlayer ? 176 : shellScrollBottomPadding,
             favoriteStationIDs: favoriteStationIDs,
@@ -310,9 +303,9 @@ struct AppShellView: View {
     }
 
     private var visibleSearchResults: [Station] {
-        searchResults.isEmpty
+        searchPresentation.results.isEmpty
             ? searchFallbackStations(for: searchRequest)
-            : searchResults
+            : searchPresentation.results
     }
 
     private func showSearchStationDetails(
@@ -565,7 +558,7 @@ struct AppShellView: View {
     }
 
     private var searchRequestKey: String {
-        "\(searchRequest.key)|\(languageController.currentLanguage.id)"
+        "\(searchPresentation.requestKey)|\(languageController.currentLanguage.id)"
     }
 
     private var homeFeedRequestKey: String {
@@ -573,7 +566,7 @@ struct AppShellView: View {
     }
 
     private var searchRequest: AppShellSearchRequest {
-        AppShellSearchRequest(query: searchQuery, tag: searchTag, countryCode: searchCountryCode, discoveryMode: searchDiscoveryMode)
+        searchPresentation.request
     }
 
     private var shellScrollBottomPadding: CGFloat {
@@ -649,7 +642,7 @@ struct AppShellView: View {
         AppShellNowPlayingPreviews.candidateStations(
             selectedTab: selectedTab,
             homeSnapshot: homeSnapshot,
-            searchResults: enrichedStations(searchResults),
+            searchResults: enrichedStations(searchPresentation.results),
             favoriteStations: enrichedFavoriteStations,
             recentStations: enrichedRecentStations,
             isEnabled: isProNowPlayingEnabled
@@ -1512,19 +1505,19 @@ struct AppShellView: View {
         let requestKey = searchRequestKey
 
         guard shouldLoadSearchResults(for: request) else {
-            searchIsLoading = false
+            searchPresentation.finishCancelled()
             return
         }
 
         seedSearchResultsIfNeeded(for: request)
-        searchIsLoading = true
-        searchErrorMessage = nil
+        searchPresentation.beginLoading()
+        searchLogger.debug(
+            "Search load started has_query=\(!request.query.isEmpty, privacy: .public) has_tag=\(request.tag != nil, privacy: .public) has_country=\(request.countryCode != nil, privacy: .public) mode=\(request.discoveryMode.rawValue, privacy: .public)"
+        )
 
         if launchContext.isUITesting && launchContext.shouldUseLocalUITestSearch {
             let results = AppShellSearch.localUITestSearchResults(request: request)
-            searchResults = results
-            searchErrorMessage = nil
-            searchIsLoading = false
+            searchPresentation.finishLoading(results: results)
             return
         }
 
@@ -1540,29 +1533,33 @@ struct AppShellView: View {
             guard requestKey == searchRequestKey else { return }
 
             rememberBackendStations(results)
-            searchResults = results
-            searchErrorMessage = nil
-            searchIsLoading = false
+            searchPresentation.finishLoading(results: results)
+            searchLogger.info(
+                "Search load completed result_count=\(results.count, privacy: .public) mode=\(request.discoveryMode.rawValue, privacy: .public)"
+            )
         } catch is CancellationError {
             guard requestKey == searchRequestKey else { return }
-            searchIsLoading = false
+            searchPresentation.finishCancelled()
+            searchLogger.debug("Search load cancelled")
         } catch {
             guard requestKey == searchRequestKey else { return }
             let fallback = searchFallbackStations(for: request)
-            searchResults = fallback
-            searchErrorMessage = fallback.isEmpty ? L10n.string("shell.error.search") : nil
-            searchIsLoading = false
+            searchPresentation.finishWithFallback(fallback, emptyErrorMessage: L10n.string("shell.error.search"))
+            searchLogger.error(
+                "Search load failed fallback_count=\(fallback.count, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
+            )
         }
     }
 
     private func seedSearchResultsIfNeeded(for request: AppShellSearchRequest) {
-        guard searchResults.isEmpty else { return }
         let fallback = searchFallbackStations(for: request)
-        guard !fallback.isEmpty else { return }
-        searchResults = fallback
+        searchPresentation.seedResultsIfEmpty(fallback)
     }
 
     private func searchFallbackStations(for request: AppShellSearchRequest) -> [Station] {
+        if launchContext.isUITesting && launchContext.shouldUseLocalUITestSearch {
+            return AppShellSearch.localUITestSearchResults(request: request)
+        }
         guard request.query.isEmpty else { return [] }
 
         let candidates = AppShellHomeFeed.mergeUniqueStations(
@@ -1582,6 +1579,11 @@ struct AppShellView: View {
             !request.query.isEmpty ||
             request.tag != nil ||
             request.countryCode != nil
+    }
+
+    private static func safeErrorCode(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(nsError.domain)#\(nsError.code)"
     }
 
     private var defaultEditorialStations: [Station] {
