@@ -292,37 +292,15 @@ private struct CallToActionSection: View {
     let skipAction: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            Button(action: accountIsAvailable ? accountAction : skipAction) {
-                Text(L10n.string("auth.cta.continue"))
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.brandBlack)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(TuneAVTheme.highlight, in: Capsule())
-            }
-            .overlay(alignment: .topTrailing) {
-                AviOnboardingCompanion()
-                    .offset(x: -2, y: -112)
-                    .allowsHitTesting(false)
-            }
-
-            Button(L10n.string("auth.cta.skip"), action: skipAction)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.84))
-        }
-        .background(alignment: .top) {
-            RadialGradient(
-                colors: [
-                    TuneAVTheme.highlight.opacity(0.18),
-                    .clear
-                ],
-                center: .top,
-                startRadius: 24,
-                endRadius: 220
-            )
-            .frame(height: 220)
-            .offset(y: -18)
+        AVOnboardingCallToActionSection(
+            primaryTitle: L10n.string("auth.cta.continue"),
+            secondaryTitle: L10n.string("auth.cta.skip"),
+            primaryAction: accountIsAvailable ? accountAction : skipAction,
+            secondaryAction: skipAction
+        ) {
+            AviOnboardingCompanion()
+                .offset(x: -2, y: -112)
+                .allowsHitTesting(false)
         }
     }
 }
