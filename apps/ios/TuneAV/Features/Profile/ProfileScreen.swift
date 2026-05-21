@@ -1098,16 +1098,10 @@ private struct LocalDataManagementSheet: View {
             closeTitle: L10n.string("profile.alert.clearData.cancel"),
             onClose: { dismiss() }
         ) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L10n.string("profile.localDataSheet.title"))
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(L10n.string("profile.localDataSheet.subtitle"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            AVSettingsSheetHeader(
+                title: L10n.string("profile.localDataSheet.title"),
+                subtitle: L10n.string("profile.localDataSheet.subtitle")
+            )
 
             maintenanceGroup(
                 title: L10n.string("profile.localDataSheet.partialTitle"),
