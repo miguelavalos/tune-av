@@ -135,24 +135,15 @@ struct AccountDeletionScreen: View {
                 }
                 .accessibilityIdentifier("accountDeletion.confirmation")
 
-            Button {
+            AVSettingsButton(
+                title: viewModel.isSubmitting
+                    ? L10n.string("accountDeletion.deleting")
+                    : L10n.string("accountDeletion.deleteButton"),
+                style: .destructivePrimary,
+                isLoading: viewModel.isSubmitting
+            ) {
                 Task { await viewModel.requestDeletion() }
-            } label: {
-                HStack {
-                    Text(viewModel.isSubmitting ? L10n.string("accountDeletion.deleting") : L10n.string("accountDeletion.deleteButton"))
-                        .font(.system(size: 15, weight: .bold))
-                    Spacer()
-                    if viewModel.isSubmitting {
-                        ProgressView()
-                            .tint(.white)
-                    }
-                }
-                .foregroundStyle(.white)
-                .frame(height: 48)
-                .padding(.horizontal, 18)
-                .background(Color(red: 0.84, green: 0.16, blue: 0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
-            .buttonStyle(.plain)
             .disabled(!viewModel.canRequestDeletion || viewModel.isSubmitting)
             .opacity(viewModel.canRequestDeletion ? 1 : 0.45)
             .accessibilityIdentifier("accountDeletion.deleteButton")
@@ -171,17 +162,15 @@ struct AccountDeletionScreen: View {
             warningList
 
             if viewModel.canFinalizeDeletion {
-                Button {
+                AVSettingsButton(
+                    title: viewModel.isSubmitting
+                        ? L10n.string("accountDeletion.finalizing")
+                        : L10n.string("accountDeletion.finalizeButton"),
+                    style: .primary,
+                    isLoading: viewModel.isSubmitting
+                ) {
                     Task { await viewModel.finalizeDeletion() }
-                } label: {
-                    Text(viewModel.isSubmitting ? L10n.string("accountDeletion.finalizing") : L10n.string("accountDeletion.finalizeButton"))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.brandBlack)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
-                .buttonStyle(.plain)
                 .disabled(viewModel.isSubmitting)
                 .accessibilityIdentifier("accountDeletion.finalizeButton")
             }
@@ -200,45 +189,25 @@ struct AccountDeletionScreen: View {
             warningList
 
             if viewModel.canUnlinkCurrentApp {
-                Button {
+                AVSettingsButton(
+                    title: viewModel.isSubmitting
+                        ? L10n.string("accountDeletion.unlinking")
+                        : L10n.string("accountDeletion.unlinkButton"),
+                    style: .secondary,
+                    isLoading: viewModel.isSubmitting
+                ) {
                     Task { await viewModel.unlinkCurrentApp() }
-                } label: {
-                    HStack {
-                        Text(viewModel.isSubmitting ? L10n.string("accountDeletion.unlinking") : L10n.string("accountDeletion.unlinkButton"))
-                            .font(.system(size: 15, weight: .bold))
-                        Spacer()
-                        if viewModel.isSubmitting {
-                            ProgressView()
-                                .tint(TuneAVTheme.textPrimary)
-                        }
-                    }
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .frame(height: 48)
-                    .padding(.horizontal, 18)
-                    .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
                 }
-                .buttonStyle(.plain)
                 .disabled(!viewModel.canUnlinkCurrentApp)
                 .accessibilityIdentifier("accountDeletion.unlinkButton")
             }
 
             if let accountURL = AppConfig.deleteAccountURL {
-                Link(destination: accountURL) {
-                    Label(L10n.string("accountDeletion.accountWebsiteLink"), systemImage: "safari")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
-                }
+                AVSettingsLinkButton(
+                    title: L10n.string("accountDeletion.accountWebsiteLink"),
+                    systemImage: "safari",
+                    destination: accountURL
+                )
                 .accessibilityIdentifier("accountDeletion.accountWebsiteLink")
             }
         }
