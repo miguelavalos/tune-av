@@ -12,8 +12,9 @@ rm -rf "$RESULT_BUNDLE_PATH" "$LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH"
 rm -f "$SIZE_REPORT_PATH"
 mkdir -p "$(dirname "$RESULT_BUNDLE_PATH")" "$(dirname "$LAUNCH_PERFORMANCE_RESULT_BUNDLE_PATH")" "$(dirname "$SIZE_REPORT_PATH")"
 
-device_id="$(xcrun simctl list devices available | awk '
-  /iPhone 16 \(/ {
+simulator_name="${TUNEAV_IOS_SIMULATOR_NAME:-iPhone 16}"
+device_id="$(xcrun simctl list devices available | awk -v simulator_name="$simulator_name" '
+  index($0, simulator_name " (") {
     if (match($0, /\([0-9A-F-]{36}\)/)) {
       print substr($0, RSTART + 1, RLENGTH - 2)
       exit
@@ -22,7 +23,18 @@ device_id="$(xcrun simctl list devices available | awk '
 ')"
 
 if [[ -z "$device_id" ]]; then
-  echo "No available iPhone 16 simulator found." >&2
+  device_id="$(xcrun simctl list devices available | awk '
+    /iPhone/ {
+      if (match($0, /\([0-9A-F-]{36}\)/)) {
+        print substr($0, RSTART + 1, RLENGTH - 2)
+        exit
+      }
+    }
+  ')"
+fi
+
+if [[ -z "$device_id" ]]; then
+  echo "No available iPhone simulator found." >&2
   xcrun simctl list devices available >&2
   exit 1
 fi
