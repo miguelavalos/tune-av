@@ -1,3 +1,4 @@
+import AVAviFoundation
 import AVHaptics
 import OSLog
 import SwiftUI
@@ -4774,36 +4775,13 @@ struct AviScreen: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 12, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .frame(width: 25, height: 25)
-                    .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-
-                Text(title)
-                    .font(.system(size: 12, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.68))
-            }
-            .padding(.horizontal, 9)
-            .frame(maxWidth: .infinity)
-            .frame(height: 42)
-            .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.6), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        AVAviPanelOptionButton(
+            title: title,
+            systemImage: systemImage,
+            style: .compact,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private func compactAviActionsSheet(for station: Station) -> some View {

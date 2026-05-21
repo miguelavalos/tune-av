@@ -288,35 +288,6 @@ struct AviRowActionButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(role: role, action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(role == .destructive ? Color.red : TuneAVTheme.highlight)
-                    .frame(width: 30, height: 30)
-                    .background((role == .destructive ? Color.red : TuneAVTheme.highlight).opacity(0.1), in: Circle())
-
-                Text(title)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 44)
-            .padding(.horizontal, 10)
-            .background(TuneAVTheme.cardSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.46), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
+        AVAviPanelOptionButton(title: title, systemImage: systemImage, role: role, action: action)
     }
 }
