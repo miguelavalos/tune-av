@@ -191,6 +191,7 @@ final class AviStationDetailBuilderTests: XCTestCase {
             queue: [station, queueStation],
             returnRadioMode: .saved,
             returnRadioOverview: false,
+            initialSection: .history,
             presentation: "detail",
             builder: builder
         )
@@ -201,6 +202,7 @@ final class AviStationDetailBuilderTests: XCTestCase {
         XCTAssertEqual(plan.selection.detail.station.id, "base")
         XCTAssertEqual(plan.selection.detail.queueSource, .libraryFavorites)
         XCTAssertEqual(plan.selection.detail.queueStations.map(\.id), ["base", "queue"])
+        XCTAssertEqual(plan.selection.detail.initialSection, .history)
         XCTAssertEqual(plan.selection.presentation, "detail")
         XCTAssertFalse(plan.selection.isFullPlayer)
         XCTAssertEqual(plan.selection.selectedTab, .avi)
@@ -228,6 +230,7 @@ final class AviStationDetailBuilderTests: XCTestCase {
             queue: nil,
             returnRadioMode: nil,
             returnRadioOverview: nil,
+            initialSection: .about,
             presentation: "detail",
             builder: builder
         )

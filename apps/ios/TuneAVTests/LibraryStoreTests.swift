@@ -278,6 +278,45 @@ final class LibraryStoreTests: XCTestCase {
         )
     }
 
+    func testLocalFeedbackRetentionLimitsByAccessMode() {
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.guest).stationFeedbackLimit, 50)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.guest).trackFeedbackLimit, 50)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInFree).stationFeedbackLimit, 100)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInFree).trackFeedbackLimit, 100)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInPro).stationFeedbackLimit, 300)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInPro).trackFeedbackLimit, 300)
+    }
+
+    func testLocalFeedbackStoreKeepsMostRecentRecordsWithinLimit() {
+        let records = [
+            "old": TuneAVLocalFeedbackRecord(feedback: .liked, updatedAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 10))),
+            "middle": TuneAVLocalFeedbackRecord(feedback: .notForMe, updatedAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 20))),
+            "new": TuneAVLocalFeedbackRecord(feedback: .disliked, updatedAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 30)))
+        ]
+
+        let bounded = TuneAVLocalFeedbackStore.bounded(records, maxCount: 2)
+
+        XCTAssertNil(bounded["old"])
+        XCTAssertEqual(bounded["middle"]?.feedback, .notForMe)
+        XCTAssertEqual(bounded["new"]?.feedback, .disliked)
+    }
+
+    func testLocalFeedbackStoreMigratesLegacyFeedbackWithTimestamp() {
+        let updatedAt = Date(timeIntervalSince1970: 42)
+
+        let records = TuneAVLocalFeedbackStore.records(
+            fromLegacy: [
+                "station": .liked,
+                "track": .disliked
+            ],
+            updatedAt: updatedAt
+        )
+
+        XCTAssertEqual(records["station"]?.feedback, .liked)
+        XCTAssertEqual(records["track"]?.feedback, .disliked)
+        XCTAssertEqual(records["station"]?.updatedAt, TuneAVDateCoding.string(from: updatedAt))
+    }
+
     func testShellUITestBootstrapSeederSeedsFavoritesRecentsAndLocalDiscoveries() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let launchContext = TuneAVLaunchContext(environment: [
@@ -356,6 +395,26 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.favoriteStations().first?.editorial?.discoveryProfile?.attentionMode, "active")
     }
 
+    func testRememberStationSnapshotsKeepsNewestMetadataSnapshot() {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let newerStation = enrichedStation(metadataUpdatedAt: "2026-05-20T10:00:00Z", artworkVersion: "new")
+        let olderStation = enrichedStation(metadataUpdatedAt: "2026-05-19T10:00:00Z", artworkVersion: "old")
+        let newestStation = enrichedStation(metadataUpdatedAt: "2026-05-21T10:00:00Z", artworkVersion: "newest")
+
+        store.recordPlayback(of: newerStation, recentLimit: 10)
+        store.toggleFavorite(for: newerStation)
+
+        store.rememberStationSnapshots([olderStation])
+
+        XCTAssertEqual(store.recentStations().first?.artwork?.version, "new")
+        XCTAssertEqual(store.favoriteStations().first?.metadataUpdatedAt, "2026-05-20T10:00:00Z")
+
+        store.rememberStationSnapshots([newestStation])
+
+        XCTAssertEqual(store.recentStations().first?.artwork?.version, "newest")
+        XCTAssertEqual(store.favoriteStations().first?.metadataUpdatedAt, "2026-05-21T10:00:00Z")
+    }
+
     func testToggleDiscoveredTrackSavedSavesAndUnsavesCurrentTrack() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let station = Station(
@@ -424,7 +483,7 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(AppShellMusicLibrary.savedDiscoveries([stationMetadata, realSong]).map(\.title), ["Welcome To The Jungle"])
     }
 
-    private func enrichedStation() -> Station {
+    private func enrichedStation(metadataUpdatedAt: String? = nil, artworkVersion: String = "v1") -> Station {
         Station(
             id: "test-station",
             name: "Test Radio",
@@ -437,7 +496,8 @@ final class LibraryStoreTests: XCTestCase {
             visibility: "public",
             qualityScore: 90,
             enrichmentStatus: "enriched",
-            artwork: StationArtwork(status: "generated", url: "https://example.com/artwork.png", version: "v1"),
+            metadataUpdatedAt: metadataUpdatedAt,
+            artwork: StationArtwork(status: "generated", url: "https://example.com/artwork.png", version: artworkVersion),
             editorial: StationEditorial(
                 summary: "Editorial summary",
                 primaryFormat: "newsTalk",

@@ -193,6 +193,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
     let source: String
     let endedReason: String
     let trackDetectedCount: Int
+    let userID: String?
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -205,6 +206,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         case source
         case endedReason
         case trackDetectedCount
+        case userID
     }
 
     init(
@@ -215,7 +217,8 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         durationSeconds: Int,
         source: String,
         endedReason: String,
-        trackDetectedCount: Int
+        trackDetectedCount: Int,
+        userID: String? = nil
     ) {
         self.id = id
         self.stationID = station.id
@@ -226,6 +229,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         self.source = source
         self.endedReason = endedReason
         self.trackDetectedCount = trackDetectedCount
+        self.userID = userID
     }
 
     init(from decoder: Decoder) throws {
@@ -248,6 +252,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         source = try container.decode(String.self, forKey: .source)
         endedReason = try container.decode(String.self, forKey: .endedReason)
         trackDetectedCount = try container.decode(Int.self, forKey: .trackDetectedCount)
+        userID = try container.decodeIfPresent(String.self, forKey: .userID)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -261,6 +266,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         try container.encode(source, forKey: .source)
         try container.encode(endedReason, forKey: .endedReason)
         try container.encode(trackDetectedCount, forKey: .trackDetectedCount)
+        try container.encodeIfPresent(userID, forKey: .userID)
     }
 }
 

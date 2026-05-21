@@ -66,6 +66,7 @@ struct Station: Identifiable, Hashable, Codable {
     let visibility: String?
     let qualityScore: Int?
     let enrichmentStatus: String?
+    let metadataUpdatedAt: String?
     let artwork: StationArtwork?
     let editorial: StationEditorial?
 
@@ -97,6 +98,7 @@ struct Station: Identifiable, Hashable, Codable {
         visibility: String? = nil,
         qualityScore: Int? = nil,
         enrichmentStatus: String? = nil,
+        metadataUpdatedAt: String? = nil,
         artwork: StationArtwork? = nil,
         editorial: StationEditorial? = nil
     ) {
@@ -127,12 +129,39 @@ struct Station: Identifiable, Hashable, Codable {
         self.visibility = visibility
         self.qualityScore = qualityScore
         self.enrichmentStatus = enrichmentStatus
+        self.metadataUpdatedAt = metadataUpdatedAt
         self.artwork = artwork
         self.editorial = editorial
     }
 }
 
 extension Station {
+    var metadataUpdatedAtDate: Date? {
+        guard let metadataUpdatedAt, !metadataUpdatedAt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+
+        let date = TuneAVDateCoding.date(from: metadataUpdatedAt)
+        return date == .distantPast ? nil : date
+    }
+
+    func metadataFreshnessCompared(to other: Station) -> Bool? {
+        let currentDate = metadataUpdatedAtDate
+        let otherDate = other.metadataUpdatedAtDate
+
+        switch (currentDate, otherDate) {
+        case let (current?, other?):
+            guard current != other else { return nil }
+            return current > other
+        case (.some, .none):
+            return true
+        case (.none, .some):
+            return false
+        case (.none, .none):
+            return nil
+        }
+    }
+
     static var unknownCountryValues: [String] {
         [
             L10n.string("stationService.fallback.unknownCountry"),

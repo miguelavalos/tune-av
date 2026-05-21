@@ -296,6 +296,9 @@ struct MusicLibraryOverview: View {
                     summary: summary,
                     isSignedIn: isSignedIn,
                     hasProAccess: true,
+                    localRadioTunedCount: nil,
+                    localMusicDetectedCount: snapshot.visibleDiscoveries.count,
+                    localMusicArtistCount: snapshot.visibleArtistSummaries.count,
                     openAccountAction: openAccountAction,
                     startSignInAction: startSignInAction,
                     refreshAction: refreshSummary
@@ -404,7 +407,7 @@ struct MusicOverviewMetricGrid: View {
         RadioOverviewMetricGrid {
             RadioOverviewMetricCard(
                 title: L10n.string("shell.music.overview.songs"),
-                value: summary?.music.cards.songs.count ?? snapshot.savedDiscoveries.count,
+                value: snapshot.savedDiscoveries.count,
                 systemImage: "bookmark.fill",
                 tint: TuneAVTheme.highlight,
                 accessibilityIdentifier: "music.overview.songs",
@@ -412,7 +415,7 @@ struct MusicOverviewMetricGrid: View {
             )
             RadioOverviewMetricCard(
                 title: L10n.string("shell.music.overview.artists"),
-                value: summary?.music.cards.artists.count ?? snapshot.visibleArtistSummaries.count,
+                value: snapshot.visibleArtistSummaries.count,
                 systemImage: "person.2.fill",
                 tint: Color(red: 0.17, green: 0.52, blue: 0.96),
                 accessibilityIdentifier: "music.overview.artists",
@@ -428,7 +431,7 @@ struct MusicOverviewMetricGrid: View {
             )
             RadioOverviewMetricCard(
                 title: L10n.string("shell.music.overview.history"),
-                value: summary?.music.cards.history.count ?? snapshot.visibleDiscoveries.count,
+                value: snapshot.visibleDiscoveries.count,
                 systemImage: "clock.fill",
                 tint: Color(red: 0.54, green: 0.43, blue: 0.90),
                 accessibilityIdentifier: "music.overview.history",

@@ -187,6 +187,9 @@ struct AccountSummaryStatusCard: View {
     let summary: TuneAVUserSummary?
     let isSignedIn: Bool
     let hasProAccess: Bool
+    let localRadioTunedCount: Int?
+    let localMusicDetectedCount: Int?
+    let localMusicArtistCount: Int?
     let openAccountAction: () -> Void
     let startSignInAction: () -> Void
     let refreshAction: () async -> Void
@@ -329,15 +332,18 @@ struct AccountSummaryStatusCard: View {
         switch kind {
         case .radios:
             let topWeekText = L10n.plural(singular: "shell.count.topWeekStation.one", plural: "shell.count.topWeekStation.other", count: summary.radio.cards.topWeek.count, summary.radio.cards.topWeek.count)
-            let tunedText = L10n.plural(singular: "shell.count.tunedSignal.one", plural: "shell.count.tunedSignal.other", count: summary.radio.cards.tuned.count, summary.radio.cards.tuned.count)
+            let tunedCount = localRadioTunedCount ?? summary.radio.cards.tuned.count
+            let tunedText = L10n.plural(singular: "shell.count.tunedSignal.one", plural: "shell.count.tunedSignal.other", count: tunedCount, tunedCount)
             return L10n.string(
                 "shell.summary.radios.loaded",
                 topWeekText,
                 tunedText
             )
         case .music:
-            let detectedText = L10n.plural(singular: "shell.count.detectedSong.one", plural: "shell.count.detectedSong.other", count: summary.music.cards.history.count, summary.music.cards.history.count)
-            let artistText = L10n.plural(singular: "shell.count.artist.one", plural: "shell.count.artist.other", count: summary.music.cards.artists.count, summary.music.cards.artists.count)
+            let detectedCount = localMusicDetectedCount ?? summary.music.cards.history.count
+            let artistCount = localMusicArtistCount ?? summary.music.cards.artists.count
+            let detectedText = L10n.plural(singular: "shell.count.detectedSong.one", plural: "shell.count.detectedSong.other", count: detectedCount, detectedCount)
+            let artistText = L10n.plural(singular: "shell.count.artist.one", plural: "shell.count.artist.other", count: artistCount, artistCount)
             return L10n.string(
                 "shell.summary.music.loaded",
                 detectedText,

@@ -1,7 +1,22 @@
+enum StationDetailSection: Equatable {
+    case about
+    case history
+
+    var accessibilityID: String {
+        switch self {
+        case .about:
+            return "about"
+        case .history:
+            return "history"
+        }
+    }
+}
+
 struct SelectedStationDetail: Identifiable {
     let station: Station
     let queueSource: AudioPlayerService.PlaybackQueue.Source
     let queueStations: [Station]
+    let initialSection: StationDetailSection
 
     var id: String {
         station.id
@@ -44,6 +59,7 @@ enum ShellStationDetailOpenPlanner {
         queue: [Station]?,
         returnRadioMode: RadioLibraryMode?,
         returnRadioOverview: Bool?,
+        initialSection: StationDetailSection,
         presentation: String,
         builder: AviStationDetailBuilder
     ) -> ShellStationDetailOpenPlan {
@@ -55,7 +71,8 @@ enum ShellStationDetailOpenPlanner {
                 station: station,
                 queueSource: queueSource,
                 queue: { resolvedStation in queue ?? [resolvedStation] },
-                presentation: presentation
+                presentation: presentation,
+                initialSection: initialSection
             )
         )
     }
@@ -115,7 +132,8 @@ struct AviStationDetailBuilder {
         SelectedStationDetail(
             station: enrichStation(station),
             queueSource: queueSource,
-            queueStations: enrichStations(queue)
+            queueStations: enrichStations(queue),
+            initialSection: .about
         )
     }
 
@@ -150,7 +168,8 @@ struct AviStationDetailBuilder {
         let detail = SelectedStationDetail(
             station: resolvedStation,
             queueSource: queueSource,
-            queueStations: enrichStations(queue(resolvedStation))
+            queueStations: enrichStations(queue(resolvedStation)),
+            initialSection: .about
         )
 
         return AviStationDetailSelection(
@@ -163,14 +182,16 @@ struct AviStationDetailBuilder {
         station: Station,
         queueSource: AudioPlayerService.PlaybackQueue.Source,
         queue: (Station) -> [Station],
-        presentation: String
+        presentation: String,
+        initialSection: StationDetailSection = .about
     ) -> AviStationOpenSelection {
         openSelection(
             station: station,
             queueSource: queueSource,
             queue: queue,
             presentation: presentation,
-            isFullPlayer: false
+            isFullPlayer: false,
+            initialSection: initialSection
         )
     }
 
@@ -185,7 +206,8 @@ struct AviStationDetailBuilder {
             queueSource: queueSource,
             queue: queue,
             presentation: presentation,
-            isFullPlayer: true
+            isFullPlayer: true,
+            initialSection: .about
         )
     }
 
@@ -194,17 +216,24 @@ struct AviStationDetailBuilder {
         queueSource: AudioPlayerService.PlaybackQueue.Source,
         queue: (Station) -> [Station],
         presentation: String,
-        isFullPlayer: Bool
+        isFullPlayer: Bool,
+        initialSection: StationDetailSection
     ) -> AviStationOpenSelection {
         let selection = selection(
             station: station,
             queueSource: queueSource,
             queue: queue
         )
+        let detail = SelectedStationDetail(
+            station: selection.detail.station,
+            queueSource: selection.detail.queueSource,
+            queueStations: selection.detail.queueStations,
+            initialSection: initialSection
+        )
 
         return AviStationOpenSelection(
             resolvedStation: selection.resolvedStation,
-            detail: selection.detail,
+            detail: detail,
             presentation: presentation,
             isFullPlayer: isFullPlayer,
             selectedTab: .avi

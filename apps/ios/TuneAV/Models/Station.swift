@@ -121,6 +121,18 @@ private extension Station {
         return String(data: data, encoding: .utf8)
     }
 
+    func shouldReplacePersistedSnapshot(_ currentSnapshot: Station?, currentJSON: String?) -> Bool {
+        guard let currentSnapshot else {
+            return persistenceSnapshotJSON != currentJSON
+        }
+
+        if let isNewer = metadataFreshnessCompared(to: currentSnapshot) {
+            return isNewer
+        }
+
+        return persistenceSnapshotJSON != currentJSON
+    }
+
     static func persistenceSnapshot(from json: String?) -> Station? {
         guard
             let json,
@@ -193,6 +205,7 @@ final class FavoriteStation {
 
     @discardableResult
     func updateStationSnapshot(_ station: Station) -> Bool {
+        guard station.shouldReplacePersistedSnapshot(stationSnapshot, currentJSON: stationSnapshotJSON) else { return false }
         let nextSnapshotJSON = station.persistenceSnapshotJSON
         guard stationSnapshotJSON != nextSnapshotJSON else { return false }
         stationSnapshotJSON = nextSnapshotJSON
@@ -277,6 +290,7 @@ final class RecentStation {
 
     @discardableResult
     func updateStationSnapshot(_ station: Station) -> Bool {
+        guard station.shouldReplacePersistedSnapshot(stationSnapshot, currentJSON: stationSnapshotJSON) else { return false }
         let nextSnapshotJSON = station.persistenceSnapshotJSON
         guard stationSnapshotJSON != nextSnapshotJSON else { return false }
         stationSnapshotJSON = nextSnapshotJSON

@@ -434,6 +434,7 @@ struct AppShellView: View {
             discoveries: libraryStore.discoveries,
             focusedMusicDetail: selectedMusicAviDetail,
             isNowPlayingFullPlayer: isAviNowPlayingFullPlayer,
+            focusedStationDetailSection: selectedStationDetail?.initialSection ?? .about,
             isActionPanelOpen: $isAviActionPanelOpen,
             stationFeedback: libraryStore.stationFeedback,
             feedContext: homeSnapshot.feedContext,
@@ -1063,7 +1064,8 @@ struct AppShellView: View {
         queueSource: AudioPlayerService.PlaybackQueue.Source = .singleStation,
         queue: [Station]? = nil,
         returnRadioMode: RadioLibraryMode? = nil,
-        returnRadioOverview: Bool? = nil
+        returnRadioOverview: Bool? = nil,
+        initialSection: StationDetailSection = .about
     ) {
         let plan = ShellStationDetailOpenPlanner.detailPlan(
             station: station,
@@ -1071,6 +1073,7 @@ struct AppShellView: View {
             queue: queue,
             returnRadioMode: returnRadioMode,
             returnRadioOverview: returnRadioOverview,
+            initialSection: initialSection,
             presentation: LastOpenedStationPresentation.detail.rawValue,
             builder: aviStationDetailBuilder
         )
@@ -1157,7 +1160,12 @@ struct AppShellView: View {
     private func openDiscoveryStationInfo(_ discovery: DiscoveredTrack) {
         guard let station = libraryStore.station(for: discovery.stationID) else { return }
 
-        showStationDetails(station, queueSource: .libraryRecents, queue: enrichedRecentStations)
+        showStationDetails(
+            station,
+            queueSource: .libraryRecents,
+            queue: enrichedRecentStations,
+            initialSection: .history
+        )
     }
 
     private func openArtistInfo(_ summary: DiscoveryArtistSummary, returnMusicMode: MusicContentMode? = nil) {
@@ -1293,6 +1301,12 @@ struct AppShellView: View {
 
         guard let cachedStation else { return station }
         guard cachedStation.hasBackendEnrichment else { return station }
+        if let isStationNewer = station.metadataFreshnessCompared(to: cachedStation) {
+            return isStationNewer ? station : cachedStation
+        }
+        if station.displayArtworkURL != nil, cachedStation.displayArtworkURL == nil {
+            return station
+        }
         guard !station.hasBackendEnrichment || cachedStation.enrichmentRank >= station.enrichmentRank else { return station }
         return cachedStation
     }
@@ -1309,7 +1323,7 @@ struct AppShellView: View {
         for station in stations where station.hasBackendEnrichment {
             for key in station.enrichmentLookupKeys {
                 let current = nextEnrichedStationsByID[key]
-                guard current == nil || station.enrichmentRank >= current!.enrichmentRank else { continue }
+                guard station.isPreferredEnrichment(over: current) else { continue }
                 nextEnrichedStationsByID[key] = station
             }
         }
@@ -1691,6 +1705,20 @@ private extension Station {
 
         return rank
     }
+
+    func isPreferredEnrichment(over current: Station?) -> Bool {
+        guard let current else { return true }
+        if let isNewer = metadataFreshnessCompared(to: current) {
+            return isNewer
+        }
+        return enrichmentRank >= current.enrichmentRank
+    }
+}
+
+private struct AviHeaderCopy {
+    let label: String
+    let title: String
+    let summary: String
 }
 
 extension Array where Element == Station {
@@ -1806,6 +1834,7 @@ struct AviScreen: View {
     let discoveries: [DiscoveredTrack]
     let focusedMusicDetail: SelectedMusicAviDetail?
     let isNowPlayingFullPlayer: Bool
+    let focusedStationDetailSection: StationDetailSection
     @Binding var isActionPanelOpen: Bool
     let stationFeedback: [String: TuneAVStationFeedback]
     let feedContext: HomeFeedContext
@@ -1851,6 +1880,7 @@ struct AviScreen: View {
     @State private var visibleArtistSongLimit = artistDetailPageSize
     @State private var visibleArtistStationLimit = artistDetailPageSize
     @State private var visibleFocusedRadioHistoryLimit = artistDetailPageSize
+    @State private var selectedStationDetailSection: StationDetailSection = .about
     @State private var openArtistDetailAviActionsID: String?
     @State private var isShowingPlanComparison = false
 
@@ -1865,7 +1895,9 @@ struct AviScreen: View {
         ZStack(alignment: .bottom) {
             if isNowPlayingFullPlayer {
                 VStack(alignment: .leading, spacing: 16) {
-                    aviContextHeader
+                    if focusedDetailIsEmpty || activeMusicDetail != nil {
+                        aviContextHeader
+                    }
 
                     if focusedDetailIsEmpty {
                         aviLandingContent
@@ -1875,7 +1907,7 @@ struct AviScreen: View {
                             focusedSignalExperience
                     }
                 }
-                .padding(.horizontal, shellScreenHorizontalPadding)
+                .padding(.horizontal, 12)
                 .padding(.top, shellScreenTopPadding + 18)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -1950,6 +1982,13 @@ struct AviScreen: View {
         .onChange(of: focusedStation?.id) { _, _ in
             visibleFocusedRadioHistoryLimit = Self.artistDetailPageSize
             openArtistDetailAviActionsID = nil
+            selectedStationDetailSection = focusedStationDetailSection
+        }
+        .onChange(of: focusedStationDetailSection) { _, section in
+            selectedStationDetailSection = section
+        }
+        .onAppear {
+            selectedStationDetailSection = focusedStationDetailSection
         }
         .onDisappear {
             isActionPanelOpen = false
@@ -2288,20 +2327,33 @@ struct AviScreen: View {
         if let focusedStation {
             if !isNowPlayingFullPlayer {
                 VStack(alignment: .leading, spacing: 12) {
-                    focusedRadioSummaryCard(for: focusedStation)
-                    focusedRadioStats(for: focusedStation)
-                    focusedRadioQuickActions(for: focusedStation)
-                    focusedAviServices(for: focusedStation)
-                    relatedStationsPanel
-                    focusedRadioHistoryBlock(for: focusedStation)
-                    focusedSignalInfo(for: focusedStation)
+                    focusedRadioSectionPicker(for: focusedStation)
+
+                    switch selectedStationDetailSection {
+                    case .about:
+                        focusedRadioAboutContent(for: focusedStation)
+                    case .history:
+                        focusedRadioHistoryBlock(for: focusedStation, showsTitle: false)
+                    }
                 }
             } else {
                 VStack(alignment: .leading, spacing: 10) {
-                    fullPlayerAviSignalBlock(for: focusedStation)
+                    fullPlayerAviFeedbackBlock(for: focusedStation)
                     relatedStationsPanel
                 }
             }
+        }
+    }
+
+    private func focusedRadioAboutContent(for station: Station) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            focusedRadioSummaryCard(for: station)
+            focusedRadioStats(for: station)
+            focusedRadioQuickActions(for: station)
+            focusedAviServices(for: station)
+            relatedStationsPanel
+            focusedRadioHistorySummary(for: station)
+            focusedSignalInfo(for: station)
         }
     }
 
@@ -3131,9 +3183,9 @@ struct AviScreen: View {
                     emotion: aviEmotion,
                     reactionEmotion: aviReaction?.emotion,
                     reactionStartedAt: aviReaction == nil ? nil : aviReactionStartedAt,
-                    label: aviEmotionLabel,
-                    title: fullPlayerAviHeadline,
-                    summary: aviPrimaryLine
+                    label: fullPlayerAviCopy.label,
+                    title: fullPlayerAviCopy.title,
+                    summary: fullPlayerAviCopy.summary
                 )
             } else {
                 if activeMusicDetail != nil {
@@ -3198,6 +3250,89 @@ struct AviScreen: View {
             return L10n.string("shell.avi.mood.ready")
         }
         return L10n.string("shell.avi.mood.vibing")
+    }
+
+    private var fullPlayerAviCopy: AviHeaderCopy {
+        guard let station = focusedStation ?? currentStation else {
+            return AviHeaderCopy(
+                label: "LISTA",
+                title: "Avi espera señal",
+                summary: "Busca una radio y Avi empieza a leerla."
+            )
+        }
+
+        if isLoading {
+            return AviHeaderCopy(
+                label: "AFINANDO",
+                title: "Buscando la señal",
+                summary: "Avi espera metadata estable antes de decidir."
+            )
+        }
+
+        let feedback = focusedPrimaryFeedback(for: station)
+        let hasSong = isFocusedStationActive && hasCurrentSongContext
+        let isTrackSaved = hasSong && isCurrentTrackSaved(for: station)
+
+        if isTrackSaved {
+            return AviHeaderCopy(
+                label: "GUARDADA",
+                title: "Queda en tu colección",
+                summary: "Avi usará esta canción para afinar tu mapa."
+            )
+        }
+
+        if let feedback {
+            switch feedback {
+            case .liked:
+                return AviHeaderCopy(
+                    label: "APRENDIENDO",
+                    title: hasSong ? "Buena pista para ti" : "Esta radio suma",
+                    summary: hasSong ? "Tu like empuja este sonido hacia delante." : "Avi acercará señales parecidas."
+                )
+            case .notForMe:
+                return AviHeaderCopy(
+                    label: "AJUSTANDO",
+                    title: "La bajo de prioridad",
+                    summary: "No la descarto, pero pesará menos en el mapa."
+                )
+            case .disliked:
+                return AviHeaderCopy(
+                    label: "DESCARTANDO",
+                    title: "La aparto del mapa",
+                    summary: hasSong ? "Avi evitará señales con este pulso." : "Esta radio no guiará tus próximas pistas."
+                )
+            }
+        }
+
+        if hasSong {
+            return AviHeaderCopy(
+                label: "ESCUCHANDO",
+                title: "Avi sigue esta canción",
+                summary: currentTrackArtist.map { "Tema detectado de \($0). Tu feedback afina." } ?? "Tema detectado. Tu feedback afina."
+            )
+        }
+
+        if libraryStore.isFavorite(station) {
+            return AviHeaderCopy(
+                label: "CONOCIDA",
+                title: "Radio de tu colección",
+                summary: "Avi la compara con tus señales recientes."
+            )
+        }
+
+        if station.displayArtworkURL != nil || station.editorial != nil {
+            return AviHeaderCopy(
+                label: "EXPLORANDO",
+                title: "Hay contexto para leer",
+                summary: station.category.map { "Perfil \($0) detectado. Dale feedback si encaja." } ?? "Avi tiene pistas para entender esta radio."
+            )
+        }
+
+        return AviHeaderCopy(
+            label: isFocusedStationActive ? "LEYENDO" : "EXPLORANDO",
+            title: isFocusedStationActive ? "Avi lee esta señal" : "Lista para descubrir",
+            summary: isFocusedStationActive ? "Dale una pista con tu feedback." : "Avi está lista cuando pulses reproducir."
+        )
     }
 
     private var aviCommandEyebrow: String {
@@ -3403,16 +3538,119 @@ struct AviScreen: View {
         }
     }
 
+    private func focusedRadioSectionPicker(for station: Station) -> some View {
+        let stationDiscoveries = focusedStationDiscoveries(for: station)
+
+        return HStack(spacing: 6) {
+            focusedRadioSectionButton(
+                .about,
+                title: L10n.string("shell.stationDetail.section.about"),
+                badge: nil
+            )
+            focusedRadioSectionButton(
+                .history,
+                title: L10n.string("shell.stationDetail.tab.history"),
+                badge: stationDiscoveries.isEmpty ? nil : "\(stationDiscoveries.count)"
+            )
+        }
+        .padding(4)
+        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.58), lineWidth: 1)
+        }
+        .accessibilityIdentifier("avi.stationDetail.sections")
+    }
+
+    private func focusedRadioSectionButton(
+        _ section: StationDetailSection,
+        title: String,
+        badge: String?
+    ) -> some View {
+        let isSelected = selectedStationDetailSection == section
+
+        return Button {
+            TuneAVHaptics.lightImpact()
+            selectedStationDetailSection = section
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 13, weight: .black))
+                    .lineLimit(1)
+
+                if let badge {
+                    Text(badge)
+                        .font(.system(size: 11, weight: .black))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            (isSelected ? TuneAVTheme.highlight.opacity(0.18) : TuneAVTheme.elevatedSurface),
+                            in: Capsule(style: .continuous)
+                        )
+                }
+            }
+            .foregroundStyle(isSelected ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                isSelected ? TuneAVTheme.elevatedSurface : Color.clear,
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("avi.stationDetail.section.\(section.accessibilityID)")
+    }
+
     @ViewBuilder
-    private func focusedRadioHistoryBlock(for station: Station) -> some View {
+    private func focusedRadioHistorySummary(for station: Station) -> some View {
+        let stationDiscoveries = focusedStationDiscoveries(for: station)
+        if !stationDiscoveries.isEmpty {
+            Button {
+                TuneAVHaptics.lightImpact()
+                selectedStationDetailSection = .history
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .frame(width: 32, height: 32)
+                        .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(L10n.string("shell.stationDetail.tab.history"))
+                            .font(.system(size: 15, weight: .black))
+                            .foregroundStyle(TuneAVTheme.textPrimary)
+
+                        Text(L10n.plural(singular: "shell.count.discovery.one", plural: "shell.count.discovery.other", count: stationDiscoveries.count, stationDiscoveries.count))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(TuneAVTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                }
+                .padding(14)
+                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("avi.stationDetail.historySummary")
+        }
+    }
+
+    @ViewBuilder
+    private func focusedRadioHistoryBlock(for station: Station, showsTitle: Bool = true) -> some View {
         let stationDiscoveries = focusedStationDiscoveries(for: station)
         let visibleDiscoveries = Array(stationDiscoveries.prefix(visibleFocusedRadioHistoryLimit))
         let remainingCount = max(0, stationDiscoveries.count - visibleDiscoveries.count)
         if !stationDiscoveries.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.string("shell.stationDetail.tab.history"))
-                    .font(.system(size: 16, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
+                if showsTitle {
+                    Text(L10n.string("shell.stationDetail.tab.history"))
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                }
 
                 ForEach(visibleDiscoveries) { discovery in
                     DiscoveryTrackCard(
@@ -3462,6 +3700,13 @@ struct AviScreen: View {
             }
             .padding(14)
             .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        } else {
+            Text(L10n.string("shell.library.discoveries.empty"))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
 
@@ -4019,7 +4264,7 @@ struct AviScreen: View {
     }
 
     private func fullPlayerAviControlPanel(for station: Station) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
                     .font(.system(size: 11, weight: .black))
@@ -4091,31 +4336,60 @@ struct AviScreen: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    private func fullPlayerAviSignalBlock(for station: Station) -> some View {
-        ZStack(alignment: .topLeading) {
-            if isShowingAviActions {
-                aviActionsPanel(for: station)
-                    .transition(.opacity)
-            } else {
-                fullPlayerAviSignalSummary(for: station)
-                .transition(.opacity)
+    private func fullPlayerAviFeedbackBlock(for station: Station) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            FullPlayerAviHeader(
+                emotion: aviEmotion,
+                reactionEmotion: aviReaction?.emotion,
+                reactionStartedAt: aviReaction == nil ? nil : aviReactionStartedAt,
+                label: fullPlayerAviCopy.label,
+                title: fullPlayerAviCopy.title,
+                summary: fullPlayerAviCopy.summary
+            )
+
+            Rectangle()
+                .fill(TuneAVTheme.borderSubtle.opacity(0.64))
+                .frame(height: 1)
+
+            ZStack(alignment: .topLeading) {
+                if isShowingAviActions {
+                    aviActionsPanel(for: station)
+                        .transition(.opacity)
+                } else {
+                    fullPlayerAviSignalSummary(for: station)
+                        .transition(.opacity)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(height: isShowingAviActions ? 424 : 166, alignment: .top)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 438 : 172, alignment: .top)
+        .frame(height: isShowingAviActions ? 570 : 300, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(isShowingAviActions ? 0.22 : 0.38), lineWidth: isShowingAviActions ? 1 : 1.5)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            TuneAVTheme.glassStroke.opacity(0.95),
+                            TuneAVTheme.highlight.opacity(isShowingAviActions ? 0.14 : 0.2)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         }
         .shadow(color: TuneAVTheme.softShadow.opacity(0.2), radius: 12, y: 6)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("avi.fullPlayer.feedbackBlock")
     }
 
     private func fullPlayerAviSignalSummary(for station: Station) -> some View {
         let selectedFeedback = focusedPrimaryFeedback(for: station)
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 10) {
                 Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
                     .font(.system(size: 11, weight: .black))

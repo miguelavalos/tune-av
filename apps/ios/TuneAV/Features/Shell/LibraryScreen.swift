@@ -9,6 +9,7 @@ struct LibraryScreen: View {
         let overviewFavoriteStations: [Station]
         let overviewTunedStations: [Station]
         let overviewMusicStations: [Station]
+        let tunedStationCount: Int
         let musicStationCount: Int
         let activeStationSnapshot: RadioStationListSnapshot
 
@@ -174,6 +175,9 @@ struct LibraryScreen: View {
                     summary: summary,
                     isSignedIn: accessController.isSignedIn,
                     hasProAccess: true,
+                    localRadioTunedCount: derivedState.tunedStationCount,
+                    localMusicDetectedCount: nil,
+                    localMusicArtistCount: nil,
                     openAccountAction: openAccountAction,
                     startSignInAction: startSignInAction,
                     refreshAction: {
@@ -185,21 +189,21 @@ struct LibraryScreen: View {
             RadioOverviewMetricGrid {
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.library.overview.saved"),
-                    value: summary?.radio.cards.saved.count ?? favorites.count,
+                    value: favorites.count,
                     systemImage: "dot.radiowaves.left.and.right",
                     tint: TuneAVTheme.highlight,
                     action: { openMode(.saved) }
                 )
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.library.overview.recent"),
-                    value: summary?.radio.cards.recent.count ?? recents.count,
+                    value: recents.count,
                     systemImage: "clock.fill",
                     tint: Color(red: 0.17, green: 0.52, blue: 0.96),
                     action: { openMode(.recent) }
                 )
                 RadioOverviewMetricCard(
                     title: L10n.string("shell.library.overview.tuned"),
-                    value: summary?.radio.cards.tuned.count ?? stationFeedback.count,
+                    value: derivedState.tunedStationCount,
                     systemImage: "slider.horizontal.3",
                     tint: Color(red: 0.95, green: 0.48, blue: 0.18),
                     action: { openMode(.tuned) }
@@ -346,6 +350,7 @@ struct LibraryScreen: View {
             overviewFavoriteStations: Array(favorites.prefix(Self.overviewLimit)),
             overviewTunedStations: Array(tunedStations.prefix(Self.overviewLimit)),
             overviewMusicStations: Array(musicStations.prefix(Self.overviewLimit)),
+            tunedStationCount: tunedStations.count,
             musicStationCount: musicStations.count,
             activeStationSnapshot: activeStationSnapshot
         )

@@ -80,7 +80,18 @@ struct AviExpandedFooterPlayerView: View {
     @State private var isShowingQueueSwitcher = false
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 0) {
+            Button(action: showArtworkZoom) {
+                stationNameText
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(station.name)
+            .accessibilityIdentifier("avi.footerPlayer.stationName")
+            .frame(height: 22)
+
+            Spacer()
+                .frame(height: 8)
+
             Button(action: showArtworkZoom) {
                 artwork
                     .frame(maxWidth: .infinity)
@@ -88,6 +99,10 @@ struct AviExpandedFooterPlayerView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
             .accessibilityIdentifier("avi.footerPlayer.artworkZoom")
+            .frame(height: 152)
+
+            Spacer()
+                .frame(height: 14)
 
             Button(action: showArtworkZoom) {
                 metadataText
@@ -95,6 +110,9 @@ struct AviExpandedFooterPlayerView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
             .accessibilityIdentifier("avi.footerPlayer.textZoom")
+            .frame(height: 58)
+
+            Spacer(minLength: 0)
 
             controlsRow
         }
@@ -175,32 +193,39 @@ struct AviExpandedFooterPlayerView: View {
     }
 
     private var metadataText: some View {
-        VStack(alignment: .center, spacing: 4) {
-            Text(station.name)
-                .font(.system(size: 21, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.82)
-                .truncationMode(.tail)
-                .frame(height: 50, alignment: .center)
-
+        VStack(alignment: .center, spacing: 5) {
             Text(artistLine)
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(trackArtworkExists ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .frame(height: 19, alignment: .center)
 
             Text(titleLine)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.88))
+                .font(.system(size: 18, weight: .black, design: .rounded))
+                .foregroundStyle(TuneAVTheme.textPrimary)
                 .multilineTextAlignment(.center)
-                .lineLimit(1)
+                .lineLimit(2)
+                .minimumScaleFactor(0.86)
                 .truncationMode(.tail)
+                .frame(height: 40, alignment: .top)
         }
-        .frame(maxWidth: .infinity, minHeight: 84, maxHeight: 84, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .center)
         .contentShape(Rectangle())
+    }
+
+    private var stationNameText: some View {
+        Text(station.name)
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            .foregroundStyle(TuneAVTheme.textSecondary)
+            .multilineTextAlignment(.center)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .truncationMode(.tail)
+            .frame(height: 18, alignment: .center)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .contentShape(Rectangle())
     }
 
     @ViewBuilder

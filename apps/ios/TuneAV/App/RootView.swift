@@ -52,6 +52,7 @@ struct RootView: View {
         }
         .tint(TuneAVTheme.highlight)
         .task(id: scenePhase) {
+            libraryStore.configureLocalFeedbackRetention(for: accessController.accessMode)
             updateIdleTimer(for: scenePhase)
             guard scenePhase == .active else {
                 cancelScheduledLibrarySync()
@@ -65,6 +66,7 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
         }
         .onChange(of: accessController.accessMode) { _, _ in
+            libraryStore.configureLocalFeedbackRetention(for: accessController.accessMode)
             authOptionsArePresented = false
 
             if accessController.accessMode != .guest {
@@ -132,10 +134,10 @@ struct RootView: View {
             return
         }
 
-        libraryStore.setBackendService(appDataService)
+        libraryStore.setBackendService(appDataService, userID: accessController.accountUser?.id)
         libraryStore.setAppDataService(appDataService)
-        await libraryStore.refreshUserSummary()
         await libraryStore.refreshCloudLibraryIfNeeded()
+        await libraryStore.refreshUserSummary(force: true)
     }
 
     private func scheduleLibrarySync(after delay: Duration? = nil) {
@@ -187,7 +189,7 @@ struct RootView: View {
             return
         }
 
-        libraryStore.setBackendService(backendService)
+        libraryStore.setBackendService(backendService, userID: accessController.accountUser?.id)
         await libraryStore.refreshUserSummary()
     }
 

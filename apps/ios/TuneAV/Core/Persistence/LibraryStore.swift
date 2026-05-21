@@ -13,9 +13,11 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
     @Published private(set) var userSummary: TuneAVUserSummary?
     @Published private(set) var userSummaryRefreshState: TuneAVUserSummaryRefreshState = .idle
+    @Published private(set) var syncDiagnostics = TuneAVSyncDiagnostics()
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
+    private static let pendingFeedbackUploadsStorageKey = "tuneav.pendingFeedbackUploads.v1"
     private static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
     private static let cloudLibraryRefreshInterval: TimeInterval = 300
@@ -26,12 +28,16 @@ final class LibraryStore: ObservableObject {
     private static let listeningSessionRetryBaseDelay: TimeInterval = 30
     private static let listeningSessionRetryMaxDelay: TimeInterval = 300
     private static let listeningSessionRetryJitterFraction = 0.2
+    private static let feedbackSyncRetryBaseDelay: TimeInterval = 5
+    private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
+    private static let feedbackSyncRetryJitterFraction = 0.2
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
     private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
     private var appDataService: TuneAVAppDataService?
     private var backendService: TuneAVAppDataService?
+    private var backendServiceUserID: String?
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
@@ -48,6 +54,12 @@ final class LibraryStore: ObservableObject {
     private var trackFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
     private var stationFeedbackSyncTokens: [String: UUID] = [:]
     private var trackFeedbackSyncTokens: [String: UUID] = [:]
+    private var stationFeedbackSyncRetryCounts: [String: Int] = [:]
+    private var trackFeedbackSyncRetryCounts: [String: Int] = [:]
+    private var pendingFeedbackUploads: [String: TuneAVPendingFeedbackUpload] = [:]
+    private var stationFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
+    private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
+    private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
 
     private enum RefreshScope {
         case favorites
@@ -72,9 +84,28 @@ final class LibraryStore: ObservableObject {
             self.settings = settings
         }
 
-        stationFeedback = Self.loadStationFeedback()
-        trackFeedback = Self.loadTrackFeedback()
+        let loadedStationFeedback = Self.loadStationFeedbackRecords()
+        let loadedTrackFeedback = Self.loadTrackFeedbackRecords()
+        stationFeedbackRecords = TuneAVLocalFeedbackStore.bounded(
+            loadedStationFeedback.records,
+            maxCount: localFeedbackRetention.stationFeedbackLimit
+        )
+        trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(
+            loadedTrackFeedback.records,
+            maxCount: localFeedbackRetention.trackFeedbackLimit
+        )
+        stationFeedback = stationFeedbackRecords.mapValues(\.feedback)
+        trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        if loadedStationFeedback.needsPersistence || stationFeedbackRecords != loadedStationFeedback.records {
+            Self.saveStationFeedbackRecords(stationFeedbackRecords)
+        }
+        if loadedTrackFeedback.needsPersistence || trackFeedbackRecords != loadedTrackFeedback.records {
+            Self.saveTrackFeedbackRecords(trackFeedbackRecords)
+        }
         pendingListeningSessions = Self.loadPendingListeningSessions(maxCount: Self.maxPendingListeningSessions)
+        updatePendingListeningSessionDiagnostic()
+        pendingFeedbackUploads = Self.loadPendingFeedbackUploads()
+        syncDiagnostics.pendingFeedbackUploadCount = pendingFeedbackUploads.count
         if !pendingListeningSessions.isEmpty {
             analyticsLogger.debug(
                 "Restored pending listening sessions pending=\(self.pendingListeningSessions.count, privacy: .public)"
@@ -190,6 +221,13 @@ final class LibraryStore: ObservableObject {
         userSummaryRefreshState = state
     }
 
+    private func updateSyncDiagnostics(_ update: (inout TuneAVSyncDiagnostics) -> Void) {
+        var nextDiagnostics = syncDiagnostics
+        update(&nextDiagnostics)
+        guard nextDiagnostics != syncDiagnostics else { return }
+        syncDiagnostics = nextDiagnostics
+    }
+
     func isFavorite(_ station: Station) -> Bool {
         let identityKey = Self.stationIdentityKey(for: station)
         return favorites.contains {
@@ -213,13 +251,15 @@ final class LibraryStore: ObservableObject {
     func rememberStationSnapshots(_ stations: [Station]) {
         guard !stations.isEmpty else { return }
 
+        let favoritesByID = Dictionary(favorites.map { ($0.stationID, $0) }, uniquingKeysWith: { first, _ in first })
+        let recentsByID = Dictionary(recents.map { ($0.stationID, $0) }, uniquingKeysWith: { first, _ in first })
         var didUpdate = false
         for station in stations {
-            if let favorite = favorites.first(where: { $0.stationID == station.id }) {
+            if let favorite = favoritesByID[station.id] {
                 didUpdate = favorite.updateStationSnapshot(station) || didUpdate
             }
 
-            if let recent = recents.first(where: { $0.stationID == station.id }) {
+            if let recent = recentsByID[station.id] {
                 didUpdate = recent.updateStationSnapshot(station) || didUpdate
             }
         }
@@ -346,17 +386,27 @@ final class LibraryStore: ObservableObject {
         stationFeedback[station.id]
     }
 
+    func configureLocalFeedbackRetention(for accessMode: AccessMode) {
+        let retention = TuneAVLocalFeedbackRetention.forMode(accessMode)
+        guard retention != localFeedbackRetention else { return }
+        localFeedbackRetention = retention
+        pruneLocalFeedbackIfNeeded()
+    }
+
     func setFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
-        var nextFeedback = stationFeedback
+        var nextRecords = stationFeedbackRecords
         if let feedback {
-            nextFeedback[station.id] = feedback
+            nextRecords[station.id] = TuneAVLocalFeedbackRecord(feedback: feedback, updatedAt: TuneAVDateCoding.string(from: .now))
         } else {
-            nextFeedback.removeValue(forKey: station.id)
+            nextRecords.removeValue(forKey: station.id)
         }
 
-        guard nextFeedback != stationFeedback else { return }
-        stationFeedback = nextFeedback
-        Self.saveStationFeedback(stationFeedback)
+        nextRecords = TuneAVLocalFeedbackStore.bounded(nextRecords, maxCount: localFeedbackRetention.stationFeedbackLimit)
+        guard nextRecords != stationFeedbackRecords else { return }
+        stationFeedbackRecords = nextRecords
+        stationFeedback = nextRecords.mapValues(\.feedback)
+        Self.saveStationFeedbackRecords(nextRecords)
+        rememberPendingStationFeedbackUpload(feedback, stationID: station.id)
         syncStationFeedback(feedback, stationID: station.id)
     }
 
@@ -372,17 +422,22 @@ final class LibraryStore: ObservableObject {
     func setFeedbackForDiscoveredTrack(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?) {
         guard let key = discoveredTrackFeedbackKey(title: title, artist: artist) else { return }
 
-        var nextFeedback = trackFeedback
+        var nextRecords = trackFeedbackRecords
         if let feedback {
-            nextFeedback[key] = feedback
+            nextRecords[key] = TuneAVLocalFeedbackRecord(feedback: feedback, updatedAt: TuneAVDateCoding.string(from: .now))
         } else {
-            nextFeedback.removeValue(forKey: key)
+            nextRecords.removeValue(forKey: key)
         }
 
-        guard nextFeedback != trackFeedback else { return }
-        trackFeedback = nextFeedback
-        Self.saveTrackFeedback(trackFeedback)
-        syncTrackFeedback(feedback, title: title, artist: artist, stationID: nil)
+        nextRecords = TuneAVLocalFeedbackStore.bounded(nextRecords, maxCount: localFeedbackRetention.trackFeedbackLimit)
+        guard nextRecords != trackFeedbackRecords else { return }
+        trackFeedbackRecords = nextRecords
+        trackFeedback = nextRecords.mapValues(\.feedback)
+        Self.saveTrackFeedbackRecords(nextRecords)
+        let normalizedTitle = normalizedTrackValue(title)
+        let normalizedArtist = normalizedTrackValue(artist)
+        rememberPendingTrackFeedbackUpload(feedback, feedbackKey: key, title: normalizedTitle, artist: normalizedArtist, stationID: nil)
+        syncTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: nil)
     }
 
     func recordDiscoveredTrack(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -677,9 +732,11 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func setBackendService(_ service: TuneAVAppDataService?) {
+    func setBackendService(_ service: TuneAVAppDataService?, userID: String? = nil) {
         let previousService = backendService
         backendService = service
+        backendServiceUserID = service == nil ? nil : userID
+        updatePendingListeningSessionDiagnostic()
         if previousService !== service {
             listeningSessionUploadTask?.cancel()
             listeningSessionUploadTask = nil
@@ -696,14 +753,23 @@ final class LibraryStore: ObservableObject {
             stationFeedbackSyncTasks.values.forEach { $0.cancel() }
             stationFeedbackSyncTasks.removeAll()
             stationFeedbackSyncTokens.removeAll()
+            stationFeedbackSyncRetryCounts.removeAll()
             trackFeedbackSyncTasks.values.forEach { $0.cancel() }
             trackFeedbackSyncTasks.removeAll()
             trackFeedbackSyncTokens.removeAll()
-            pendingListeningSessions.removeAll()
-            analyticsLogger.debug("Cleared pending listening sessions after backend disconnect")
+            trackFeedbackSyncRetryCounts.removeAll()
+            updateSyncDiagnostics {
+                $0.pendingListeningSessionCount = uploadablePendingListeningSessions().count
+                $0.pendingFeedbackUploadCount = pendingFeedbackUploads.count
+                $0.lastSummaryFetchAt = nil
+            }
+            analyticsLogger.debug("Kept pending listening sessions after backend disconnect")
             persistPendingListeningSessions()
-        } else if !pendingListeningSessions.isEmpty {
+        } else if !uploadablePendingListeningSessions().isEmpty {
             scheduleListeningSessionUpload()
+        }
+        if service != nil {
+            schedulePendingFeedbackUploadsForCurrentUser()
         }
     }
 
@@ -731,6 +797,7 @@ final class LibraryStore: ObservableObject {
                 guard self.backendService === backendService else { return }
                 userSummary = summary
                 userSummaryFetchedAt = .now
+                updateSyncDiagnostics { $0.lastSummaryFetchAt = userSummaryFetchedAt }
                 setUserSummaryRefreshState(summary.hasAnyActivity ? .loaded : .empty)
             } catch AVAccountAPIClientError.missingToken, AVAccountAPIClientError.missingBaseURL {
                 guard self.backendService === backendService else { return }
@@ -771,7 +838,8 @@ final class LibraryStore: ObservableObject {
                 durationSeconds: duration,
                 source: source,
                 endedReason: endedReason,
-                trackDetectedCount: trackDetectedCount
+                trackDetectedCount: trackDetectedCount,
+                userID: backendServiceUserID
             )
         )
 
@@ -779,12 +847,13 @@ final class LibraryStore: ObservableObject {
             pendingListeningSessions,
             maxCount: Self.maxPendingListeningSessions
         )
+        updatePendingListeningSessionDiagnostic()
         persistPendingListeningSessions()
         analyticsLogger.debug(
             "Queued listening session pending=\(self.pendingListeningSessions.count, privacy: .public)"
         )
 
-        if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
+        if uploadablePendingListeningSessions().count >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
         } else {
             scheduleListeningSessionUpload()
@@ -820,15 +889,17 @@ final class LibraryStore: ObservableObject {
         guard listeningSessionFlushTask == nil else { return }
 
         guard let backendService, backendService.isConfigured() else {
-            pendingListeningSessions.removeAll()
-            analyticsLogger.debug("Discarded pending listening sessions because backend is unavailable")
+            analyticsLogger.debug("Kept pending listening sessions because backend is unavailable")
+            updatePendingListeningSessionDiagnostic()
             persistPendingListeningSessions()
             return
         }
-        guard !pendingListeningSessions.isEmpty else { return }
+        let sessions = uploadablePendingListeningSessions()
+        guard !sessions.isEmpty else { return }
 
-        let sessions = pendingListeningSessions
-        pendingListeningSessions.removeAll(keepingCapacity: true)
+        let sessionIDs = Set(sessions.map(\.id))
+        pendingListeningSessions.removeAll { sessionIDs.contains($0.id) }
+        updatePendingListeningSessionDiagnostic()
         analyticsLogger.debug(
             "Uploading listening sessions count=\(sessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public)"
         )
@@ -842,7 +913,10 @@ final class LibraryStore: ObservableObject {
                 }
                 finishListeningSessionUpload(didUpload: true, sessions: sessions, result: result, incrementRetry: false)
             } catch is CancellationError {
-                guard self.backendService === backendService else { return }
+                guard self.backendService === backendService else {
+                    requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
+                    return
+                }
                 finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil, incrementRetry: false)
             } catch {
                 guard self.backendService === backendService else {
@@ -871,6 +945,7 @@ final class LibraryStore: ObservableObject {
                 pendingListeningSessions,
                 maxCount: Self.maxPendingListeningSessions
             )
+            updatePendingListeningSessionDiagnostic()
             persistPendingListeningSessions()
             analyticsLogger.debug(
                 "Listening session upload failed requeued=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public)"
@@ -880,12 +955,14 @@ final class LibraryStore: ObservableObject {
         }
 
         listeningSessionUploadRetryCount = 0
+        updatePendingListeningSessionDiagnostic()
         persistPendingListeningSessions()
         analyticsLogger.debug(
             "Listening session upload finished sent=\(sessions.count, privacy: .public) accepted=\(result?.accepted ?? 0, privacy: .public) duplicate=\(result?.duplicate ?? 0, privacy: .public) rejected=\(result?.rejected ?? 0, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public)"
         )
-        guard !pendingListeningSessions.isEmpty else { return }
-        if pendingListeningSessions.count >= Self.listeningSessionBatchSize {
+        let uploadableCount = uploadablePendingListeningSessions().count
+        guard uploadableCount > 0 else { return }
+        if uploadableCount >= Self.listeningSessionBatchSize {
             flushListeningSessionUploads()
         } else {
             scheduleListeningSessionUpload()
@@ -894,17 +971,18 @@ final class LibraryStore: ObservableObject {
 
     private func requeueInterruptedListeningSessionUpload(_ sessions: [TuneAVListeningSessionDraft], reason: String) {
         listeningSessionFlushTask = nil
-        guard let backendService, backendService.isConfigured() else { return }
 
         pendingListeningSessions.insert(contentsOf: sessions, at: 0)
         pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
             pendingListeningSessions,
             maxCount: Self.maxPendingListeningSessions
         )
+        updatePendingListeningSessionDiagnostic()
         persistPendingListeningSessions()
         analyticsLogger.debug(
             "Listening session upload interrupted reason=\(reason, privacy: .public) requeued=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public)"
         )
+        guard let backendService, backendService.isConfigured() else { return }
         scheduleListeningSessionUpload()
     }
 
@@ -938,6 +1016,7 @@ final class LibraryStore: ObservableObject {
             setCloudSyncStatus(.syncing)
             let remoteDocument = try await appDataService.pullLibrary()
             guard self.appDataService === appDataService else { return }
+            updateSyncDiagnostics { $0.lastCloudPullAt = .now }
             let localSnapshot = librarySnapshot()
 
             switch TuneAVLibrarySyncPlanner.decision(
@@ -954,6 +1033,7 @@ final class LibraryStore: ObservableObject {
                 if mergedSnapshot != remoteSnapshot {
                     try await appDataService.pushLibrary(mergedSnapshot)
                     guard self.appDataService === appDataService else { return }
+                    updateSyncDiagnostics { $0.lastCloudPushAt = .now }
                 }
             case .pushLocal:
                 let snapshotToPush: TuneAVLibrarySnapshot
@@ -968,6 +1048,7 @@ final class LibraryStore: ObservableObject {
 
                 try await appDataService.pushLibrary(snapshotToPush)
                 guard self.appDataService === appDataService else { return }
+                updateSyncDiagnostics { $0.lastCloudPushAt = .now }
                 if snapshotToPush != localSnapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
@@ -1086,24 +1167,86 @@ final class LibraryStore: ObservableObject {
         )
     }
 
-    private static func loadStationFeedback() -> [String: TuneAVStationFeedback] {
-        guard let data = UserDefaults.standard.data(forKey: stationFeedbackStorageKey) else { return [:] }
-        return (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+    private static func loadStationFeedbackRecords() -> TuneAVLocalFeedbackLoadResult {
+        guard let data = UserDefaults.standard.data(forKey: stationFeedbackStorageKey) else {
+            return TuneAVLocalFeedbackLoadResult(records: [:], needsPersistence: false)
+        }
+        if let records = try? JSONDecoder().decode([String: TuneAVLocalFeedbackRecord].self, from: data) {
+            return TuneAVLocalFeedbackLoadResult(records: records, needsPersistence: false)
+        }
+        let migrated = (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+        return TuneAVLocalFeedbackLoadResult(
+            records: TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now),
+            needsPersistence: !migrated.isEmpty
+        )
     }
 
-    private static func saveStationFeedback(_ feedback: [String: TuneAVStationFeedback]) {
+    private static func saveStationFeedbackRecords(_ feedback: [String: TuneAVLocalFeedbackRecord]) {
+        guard !feedback.isEmpty else {
+            UserDefaults.standard.removeObject(forKey: stationFeedbackStorageKey)
+            return
+        }
         guard let data = try? JSONEncoder().encode(feedback) else { return }
         UserDefaults.standard.set(data, forKey: stationFeedbackStorageKey)
     }
 
-    private static func loadTrackFeedback() -> [String: TuneAVStationFeedback] {
-        guard let data = UserDefaults.standard.data(forKey: trackFeedbackStorageKey) else { return [:] }
-        return (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+    private static func loadTrackFeedbackRecords() -> TuneAVLocalFeedbackLoadResult {
+        guard let data = UserDefaults.standard.data(forKey: trackFeedbackStorageKey) else {
+            return TuneAVLocalFeedbackLoadResult(records: [:], needsPersistence: false)
+        }
+        if let records = try? JSONDecoder().decode([String: TuneAVLocalFeedbackRecord].self, from: data) {
+            return TuneAVLocalFeedbackLoadResult(records: records, needsPersistence: false)
+        }
+        let migrated = (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+        return TuneAVLocalFeedbackLoadResult(
+            records: TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now),
+            needsPersistence: !migrated.isEmpty
+        )
     }
 
-    private static func saveTrackFeedback(_ feedback: [String: TuneAVStationFeedback]) {
+    private static func saveTrackFeedbackRecords(_ feedback: [String: TuneAVLocalFeedbackRecord]) {
+        guard !feedback.isEmpty else {
+            UserDefaults.standard.removeObject(forKey: trackFeedbackStorageKey)
+            return
+        }
         guard let data = try? JSONEncoder().encode(feedback) else { return }
         UserDefaults.standard.set(data, forKey: trackFeedbackStorageKey)
+    }
+
+    private static func loadPendingFeedbackUploads() -> [String: TuneAVPendingFeedbackUpload] {
+        guard let data = UserDefaults.standard.data(forKey: pendingFeedbackUploadsStorageKey) else { return [:] }
+        return (try? JSONDecoder().decode([String: TuneAVPendingFeedbackUpload].self, from: data)) ?? [:]
+    }
+
+    private static func savePendingFeedbackUploads(_ uploads: [String: TuneAVPendingFeedbackUpload]) {
+        guard !uploads.isEmpty else {
+            UserDefaults.standard.removeObject(forKey: pendingFeedbackUploadsStorageKey)
+            return
+        }
+        guard let data = try? JSONEncoder().encode(uploads) else { return }
+        UserDefaults.standard.set(data, forKey: pendingFeedbackUploadsStorageKey)
+    }
+
+    private func pruneLocalFeedbackIfNeeded() {
+        let nextStationRecords = TuneAVLocalFeedbackStore.bounded(
+            stationFeedbackRecords,
+            maxCount: localFeedbackRetention.stationFeedbackLimit
+        )
+        if nextStationRecords != stationFeedbackRecords {
+            stationFeedbackRecords = nextStationRecords
+            stationFeedback = nextStationRecords.mapValues(\.feedback)
+            Self.saveStationFeedbackRecords(nextStationRecords)
+        }
+
+        let nextTrackRecords = TuneAVLocalFeedbackStore.bounded(
+            trackFeedbackRecords,
+            maxCount: localFeedbackRetention.trackFeedbackLimit
+        )
+        if nextTrackRecords != trackFeedbackRecords {
+            trackFeedbackRecords = nextTrackRecords
+            trackFeedback = nextTrackRecords.mapValues(\.feedback)
+            Self.saveTrackFeedbackRecords(nextTrackRecords)
+        }
     }
 
     private func saveAndRefresh(_ scope: RefreshScope = .all) {
@@ -1129,6 +1272,7 @@ final class LibraryStore: ObservableObject {
                 let remoteDocument = try await appDataService.pullLibrary()
                 try Task.checkCancellation()
                 guard self.appDataService === appDataService else { return }
+                updateSyncDiagnostics { $0.lastCloudPullAt = .now }
                 let snapshotToPush: TuneAVLibrarySnapshot
                 if let remoteSnapshot = remoteDocument.snapshot {
                     snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
@@ -1143,6 +1287,7 @@ final class LibraryStore: ObservableObject {
                 try await appDataService.pushLibrary(snapshotToPush)
                 try Task.checkCancellation()
                 guard self.appDataService === appDataService else { return }
+                updateSyncDiagnostics { $0.lastCloudPushAt = .now }
                 if snapshotToPush != snapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
@@ -1165,9 +1310,30 @@ final class LibraryStore: ObservableObject {
         let token = UUID()
         stationFeedbackSyncTasks[stationID]?.cancel()
         stationFeedbackSyncTokens[stationID] = token
+        stationFeedbackSyncRetryCounts[stationID] = 0
+        startStationFeedbackSync(feedback, stationID: stationID, token: token, retryCount: 0, backendService: backendService)
+    }
+
+    private func startStationFeedbackSync(
+        _ feedback: TuneAVStationFeedback?,
+        stationID: String,
+        token: UUID,
+        retryCount: Int,
+        backendService: TuneAVAppDataService
+    ) {
+        let delay = retryCount == 0
+            ? 1
+            : LibraryStoreListeningSessionRetryPolicy.delay(
+                retryCount: retryCount - 1,
+                baseDelay: Self.feedbackSyncRetryBaseDelay,
+                maxDelay: Self.feedbackSyncRetryMaxDelay,
+                jitterFraction: Self.feedbackSyncRetryJitterFraction
+            )
+
+        stationFeedbackSyncRetryCounts[stationID] = retryCount
         stationFeedbackSyncTasks[stationID] = Task { @MainActor in
             do {
-                try await Task.sleep(for: .seconds(1))
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
                 guard !Task.isCancelled,
                       self.backendService === backendService,
                       self.stationFeedbackSyncTokens[stationID] == token
@@ -1177,7 +1343,13 @@ final class LibraryStore: ObservableObject {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                clearStationFeedbackSyncIfCurrent(stationID: stationID, token: token)
+                retryStationFeedbackSyncIfCurrent(
+                    feedback,
+                    stationID: stationID,
+                    token: token,
+                    retryCount: retryCount + 1,
+                    backendService: backendService
+                )
                 return
             }
             guard self.backendService === backendService else { return }
@@ -1197,19 +1369,61 @@ final class LibraryStore: ObservableObject {
         let token = UUID()
         trackFeedbackSyncTasks[feedbackKey]?.cancel()
         trackFeedbackSyncTokens[feedbackKey] = token
+        trackFeedbackSyncRetryCounts[feedbackKey] = 0
+        startTrackFeedbackSync(
+            feedback,
+            feedbackKey: feedbackKey,
+            title: title,
+            artist: normalizedArtist,
+            stationID: stationID,
+            token: token,
+            retryCount: 0,
+            backendService: backendService
+        )
+    }
+
+    private func startTrackFeedbackSync(
+        _ feedback: TuneAVStationFeedback?,
+        feedbackKey: String,
+        title: String,
+        artist: String?,
+        stationID: String?,
+        token: UUID,
+        retryCount: Int,
+        backendService: TuneAVAppDataService
+    ) {
+        let delay = retryCount == 0
+            ? 1
+            : LibraryStoreListeningSessionRetryPolicy.delay(
+                retryCount: retryCount - 1,
+                baseDelay: Self.feedbackSyncRetryBaseDelay,
+                maxDelay: Self.feedbackSyncRetryMaxDelay,
+                jitterFraction: Self.feedbackSyncRetryJitterFraction
+            )
+
+        trackFeedbackSyncRetryCounts[feedbackKey] = retryCount
         trackFeedbackSyncTasks[feedbackKey] = Task { @MainActor in
             do {
-                try await Task.sleep(for: .seconds(1))
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
                 guard !Task.isCancelled,
                       self.backendService === backendService,
                       self.trackFeedbackSyncTokens[feedbackKey] == token
                 else { return }
-                try await backendService.setTrackFeedback(feedback, title: title, artist: normalizedArtist, stationID: stationID)
+                try await backendService.setTrackFeedback(feedback, title: title, artist: artist, stationID: stationID)
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                clearTrackFeedbackSyncIfCurrent(feedbackKey: feedbackKey, token: token)
+                retryTrackFeedbackSyncIfCurrent(
+                    feedback,
+                    feedbackKey: feedbackKey,
+                    title: title,
+                    artist: artist,
+                    stationID: stationID,
+                    token: token,
+                    retryCount: retryCount + 1,
+                    backendService: backendService
+                )
                 return
             }
             guard self.backendService === backendService else { return }
@@ -1217,16 +1431,115 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    private func retryStationFeedbackSyncIfCurrent(
+        _ feedback: TuneAVStationFeedback?,
+        stationID: String,
+        token: UUID,
+        retryCount: Int,
+        backendService: TuneAVAppDataService
+    ) {
+        guard stationFeedbackSyncTokens[stationID] == token else { return }
+        startStationFeedbackSync(feedback, stationID: stationID, token: token, retryCount: retryCount, backendService: backendService)
+    }
+
+    private func retryTrackFeedbackSyncIfCurrent(
+        _ feedback: TuneAVStationFeedback?,
+        feedbackKey: String,
+        title: String,
+        artist: String?,
+        stationID: String?,
+        token: UUID,
+        retryCount: Int,
+        backendService: TuneAVAppDataService
+    ) {
+        guard trackFeedbackSyncTokens[feedbackKey] == token else { return }
+        startTrackFeedbackSync(
+            feedback,
+            feedbackKey: feedbackKey,
+            title: title,
+            artist: artist,
+            stationID: stationID,
+            token: token,
+            retryCount: retryCount,
+            backendService: backendService
+        )
+    }
+
     private func clearStationFeedbackSyncIfCurrent(stationID: String, token: UUID) {
         guard stationFeedbackSyncTokens[stationID] == token else { return }
         stationFeedbackSyncTasks[stationID] = nil
         stationFeedbackSyncTokens[stationID] = nil
+        stationFeedbackSyncRetryCounts[stationID] = nil
+        clearPendingFeedbackUpload(key: TuneAVPendingFeedbackUpload.stationKey(stationID))
     }
 
     private func clearTrackFeedbackSyncIfCurrent(feedbackKey: String, token: UUID) {
         guard trackFeedbackSyncTokens[feedbackKey] == token else { return }
         trackFeedbackSyncTasks[feedbackKey] = nil
         trackFeedbackSyncTokens[feedbackKey] = nil
+        trackFeedbackSyncRetryCounts[feedbackKey] = nil
+        clearPendingFeedbackUpload(key: TuneAVPendingFeedbackUpload.trackKey(feedbackKey))
+    }
+
+    private func rememberPendingStationFeedbackUpload(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard let userID = backendServiceUserID else { return }
+        let key = TuneAVPendingFeedbackUpload.stationKey(stationID)
+        pendingFeedbackUploads[key] = TuneAVPendingFeedbackUpload(
+            kind: .station,
+            userID: userID,
+            key: key,
+            feedback: feedback,
+            stationID: stationID,
+            title: nil,
+            artist: nil,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        updateSyncDiagnostics { $0.pendingFeedbackUploadCount = pendingFeedbackUploads.count }
+        Self.savePendingFeedbackUploads(pendingFeedbackUploads)
+    }
+
+    private func rememberPendingTrackFeedbackUpload(
+        _ feedback: TuneAVStationFeedback?,
+        feedbackKey: String,
+        title: String?,
+        artist: String?,
+        stationID: String?
+    ) {
+        guard let userID = backendServiceUserID, let title else { return }
+        let key = TuneAVPendingFeedbackUpload.trackKey(feedbackKey)
+        pendingFeedbackUploads[key] = TuneAVPendingFeedbackUpload(
+            kind: .track,
+            userID: userID,
+            key: key,
+            feedback: feedback,
+            stationID: stationID,
+            title: title,
+            artist: artist,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        updateSyncDiagnostics { $0.pendingFeedbackUploadCount = pendingFeedbackUploads.count }
+        Self.savePendingFeedbackUploads(pendingFeedbackUploads)
+    }
+
+    private func clearPendingFeedbackUpload(key: String) {
+        guard pendingFeedbackUploads[key] != nil else { return }
+        pendingFeedbackUploads[key] = nil
+        updateSyncDiagnostics { $0.pendingFeedbackUploadCount = pendingFeedbackUploads.count }
+        Self.savePendingFeedbackUploads(pendingFeedbackUploads)
+    }
+
+    private func schedulePendingFeedbackUploadsForCurrentUser() {
+        guard let userID = backendServiceUserID else { return }
+        for upload in pendingFeedbackUploads.values where upload.userID == userID {
+            switch upload.kind {
+            case .station:
+                guard let stationID = upload.stationID else { continue }
+                syncStationFeedback(upload.feedback, stationID: stationID)
+            case .track:
+                guard let title = upload.title else { continue }
+                syncTrackFeedback(upload.feedback, title: title, artist: upload.artist, stationID: upload.stationID)
+            }
+        }
     }
 
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
@@ -1479,6 +1792,17 @@ final class LibraryStore: ObservableObject {
             maxAge: Self.maxPendingListeningSessionAge
         )
     }
+
+    private func uploadablePendingListeningSessions() -> [TuneAVListeningSessionDraft] {
+        guard let backendServiceUserID else { return [] }
+        return pendingListeningSessions.filter { $0.userID == backendServiceUserID }
+    }
+
+    private func updatePendingListeningSessionDiagnostic() {
+        updateSyncDiagnostics {
+            $0.pendingListeningSessionCount = uploadablePendingListeningSessions().count
+        }
+    }
 }
 
 enum LibraryStoreListeningSessionBuffer {
@@ -1507,6 +1831,102 @@ enum LibraryStoreListeningSessionBuffer {
         guard maxCount > 0 else { return [] }
         guard sessions.count > maxCount else { return sessions }
         return Array(sessions.suffix(maxCount))
+    }
+}
+
+struct TuneAVLocalFeedbackRecord: Codable, Equatable {
+    let feedback: TuneAVStationFeedback
+    let updatedAt: String
+}
+
+struct TuneAVPendingFeedbackUpload: Codable, Equatable {
+    enum Kind: String, Codable {
+        case station
+        case track
+    }
+
+    let kind: Kind
+    let userID: String
+    let key: String
+    let feedback: TuneAVStationFeedback?
+    let stationID: String?
+    let title: String?
+    let artist: String?
+    let updatedAt: String
+
+    static func stationKey(_ stationID: String) -> String {
+        "station:\(stationID)"
+    }
+
+    static func trackKey(_ feedbackKey: String) -> String {
+        "track:\(feedbackKey)"
+    }
+}
+
+struct TuneAVSyncDiagnostics: Equatable {
+    var lastCloudPullAt: Date?
+    var lastCloudPushAt: Date?
+    var lastSummaryFetchAt: Date?
+    var pendingListeningSessionCount: Int = 0
+    var pendingFeedbackUploadCount: Int = 0
+
+    var isSummaryStale: Bool {
+        let latestLibrarySyncAt = [lastCloudPullAt, lastCloudPushAt].compactMap { $0 }.max()
+        guard let latestLibrarySyncAt else { return false }
+        guard let lastSummaryFetchAt else { return true }
+        return lastSummaryFetchAt < latestLibrarySyncAt
+    }
+}
+
+struct TuneAVLocalFeedbackLoadResult: Equatable {
+    let records: [String: TuneAVLocalFeedbackRecord]
+    let needsPersistence: Bool
+}
+
+struct TuneAVLocalFeedbackRetention: Equatable {
+    let stationFeedbackLimit: Int
+    let trackFeedbackLimit: Int
+
+    static func forMode(_ accessMode: AccessMode) -> TuneAVLocalFeedbackRetention {
+        switch accessMode {
+        case .guest:
+            TuneAVLocalFeedbackRetention(stationFeedbackLimit: 50, trackFeedbackLimit: 50)
+        case .signedInFree:
+            TuneAVLocalFeedbackRetention(stationFeedbackLimit: 100, trackFeedbackLimit: 100)
+        case .signedInPro:
+            TuneAVLocalFeedbackRetention(stationFeedbackLimit: 300, trackFeedbackLimit: 300)
+        }
+    }
+}
+
+enum TuneAVLocalFeedbackStore {
+    static func bounded(
+        _ records: [String: TuneAVLocalFeedbackRecord],
+        maxCount: Int
+    ) -> [String: TuneAVLocalFeedbackRecord] {
+        guard maxCount > 0 else { return [:] }
+        guard records.count > maxCount else { return records }
+
+        let retainedKeys = Set(
+            records
+                .sorted {
+                    if $0.value.updatedAt == $1.value.updatedAt {
+                        return $0.key > $1.key
+                    }
+                    return TuneAVDateCoding.date(from: $0.value.updatedAt) > TuneAVDateCoding.date(from: $1.value.updatedAt)
+                }
+                .prefix(maxCount)
+                .map(\.key)
+        )
+        return records.filter { retainedKeys.contains($0.key) }
+    }
+
+    static func records(
+        fromLegacy feedback: [String: TuneAVStationFeedback],
+        updatedAt: Date
+    ) -> [String: TuneAVLocalFeedbackRecord] {
+        let timestamp = TuneAVDateCoding.string(from: updatedAt)
+        return feedback.mapValues { TuneAVLocalFeedbackRecord(feedback: $0, updatedAt: timestamp) }
     }
 }
 

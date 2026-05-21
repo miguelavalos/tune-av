@@ -187,6 +187,60 @@ struct ProfileScreen: View {
                     )
                     .accessibilityIdentifier("profile.sync.lastSynced")
                 }
+
+                ShellRow(
+                    systemImage: "arrow.down.doc",
+                    title: L10n.string("profile.sync.diagnostics.lastPull.title"),
+                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastCloudPullAt)
+                )
+                .accessibilityIdentifier("profile.sync.lastPull")
+
+                ShellRow(
+                    systemImage: "arrow.up.doc",
+                    title: L10n.string("profile.sync.diagnostics.lastPush.title"),
+                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastCloudPushAt)
+                )
+                .accessibilityIdentifier("profile.sync.lastPush")
+
+                ShellRow(
+                    systemImage: "chart.bar.doc.horizontal",
+                    title: L10n.string("profile.sync.diagnostics.summary.title"),
+                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastSummaryFetchAt)
+                )
+                .accessibilityIdentifier("profile.sync.summaryFetch")
+
+                if libraryStore.syncDiagnostics.isSummaryStale {
+                    ShellRow(
+                        systemImage: "clock.arrow.circlepath",
+                        title: L10n.string("profile.sync.diagnostics.summaryPending.title"),
+                        detail: L10n.string("profile.sync.diagnostics.summaryPending.detail")
+                    )
+                    .accessibilityIdentifier("profile.sync.summaryPending")
+                }
+
+                ShellRow(
+                    systemImage: "tray.and.arrow.up",
+                    title: L10n.string("profile.sync.diagnostics.pendingSessions.title"),
+                    detail: L10n.plural(
+                        singular: "profile.sync.diagnostics.pendingSessions.one",
+                        plural: "profile.sync.diagnostics.pendingSessions.other",
+                        count: libraryStore.syncDiagnostics.pendingListeningSessionCount,
+                        libraryStore.syncDiagnostics.pendingListeningSessionCount
+                    )
+                )
+                .accessibilityIdentifier("profile.sync.pendingSessions")
+
+                ShellRow(
+                    systemImage: "hand.thumbsup",
+                    title: L10n.string("profile.sync.diagnostics.pendingFeedback.title"),
+                    detail: L10n.plural(
+                        singular: "profile.sync.diagnostics.pendingFeedback.one",
+                        plural: "profile.sync.diagnostics.pendingFeedback.other",
+                        count: libraryStore.syncDiagnostics.pendingFeedbackUploadCount,
+                        libraryStore.syncDiagnostics.pendingFeedbackUploadCount
+                    )
+                )
+                .accessibilityIdentifier("profile.sync.pendingFeedback")
             }
 
             ProfileSecondaryButton(
@@ -197,6 +251,7 @@ struct ProfileScreen: View {
                 action: {
                     Task {
                         await libraryStore.refreshCloudLibraryIfNeeded(force: true)
+                        await libraryStore.refreshUserSummary(force: true)
                     }
                 }
             )
@@ -737,6 +792,13 @@ struct ProfileScreen: View {
             return date
         }
         return nil
+    }
+
+    private func syncDateDetail(_ date: Date?) -> String {
+        guard let date else {
+            return L10n.string("profile.sync.diagnostics.never")
+        }
+        return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     private var languageSelection: Binding<AppLanguage> {

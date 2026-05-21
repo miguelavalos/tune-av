@@ -521,6 +521,7 @@ private struct TuneAVStationDTO: Decodable {
     let visibility: String?
     let qualityScore: Int?
     let enrichmentStatus: String?
+    let metadataUpdatedAt: String?
     let artwork: StationArtwork?
     let editorial: StationEditorial?
 
@@ -552,6 +553,7 @@ private struct TuneAVStationDTO: Decodable {
         case visibility
         case qualityScore
         case enrichmentStatus
+        case metadataUpdatedAt
         case artwork
         case editorial
     }
@@ -585,6 +587,7 @@ private struct TuneAVStationDTO: Decodable {
         visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         qualityScore = try container.decodeIfPresent(Int.self, forKey: .qualityScore)
         enrichmentStatus = try container.decodeIfPresent(String.self, forKey: .enrichmentStatus)
+        metadataUpdatedAt = try container.decodeIfPresent(String.self, forKey: .metadataUpdatedAt)
         artwork = try container.decodeIfPresent(StationArtwork.self, forKey: .artwork)
         editorial = try container.decodeIfPresent(StationEditorial.self, forKey: .editorial)
     }
@@ -621,6 +624,7 @@ private struct TuneAVStationDTO: Decodable {
             visibility: visibility,
             qualityScore: qualityScore,
             enrichmentStatus: enrichmentStatus,
+            metadataUpdatedAt: metadataUpdatedAt,
             artwork: artwork,
             editorial: editorial
         )
