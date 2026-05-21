@@ -113,23 +113,3 @@ struct AviRelatedStationRow: View {
         .accessibilityIdentifier("avi.related.row")
     }
 }
-
-struct AviActionButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        AVAviActionButton(title: title, systemImage: systemImage, action: action)
-    }
-}
-
-struct AviPromptButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        AVAviPromptButton(title: title, systemImage: systemImage, action: action)
-    }
-}
