@@ -1,3 +1,4 @@
+import AVPaywallFoundation
 import SwiftUI
 
 struct AviPlanComparisonSheet: View {
@@ -9,21 +10,13 @@ struct AviPlanComparisonSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(L10n.string("shell.avi.plans.eyebrow"))
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .textCase(.uppercase)
-
-                        Text(L10n.string("shell.avi.plans.title"))
-                            .font(.system(size: 28, weight: .black, design: .rounded))
-                            .foregroundStyle(TuneAVTheme.textPrimary)
-
-                        Text(L10n.string("shell.avi.plans.subtitle"))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    AVPaywallHeader(
+                        eyebrow: L10n.string("shell.avi.plans.eyebrow"),
+                        title: L10n.string("shell.avi.plans.title"),
+                        subtitle: L10n.string("shell.avi.plans.subtitle"),
+                        titleFontSize: 28,
+                        subtitleFontSize: 14
+                    )
 
                     planSummaryStrip
 
@@ -98,15 +91,15 @@ struct AviPlanComparisonSheet: View {
 
     private var planSummaryStrip: some View {
         HStack(spacing: 10) {
-            PlanSummaryPill(
+            AVPlanSummaryPill(
                 title: L10n.string("shell.avi.plans.summary.start"),
                 detail: L10n.string("shell.avi.plans.summary.start.detail")
             )
-            PlanSummaryPill(
+            AVPlanSummaryPill(
                 title: L10n.string("shell.avi.plans.summary.save"),
                 detail: L10n.string("shell.avi.plans.summary.save.detail")
             )
-            PlanSummaryPill(
+            AVPlanSummaryPill(
                 title: L10n.string("shell.avi.plans.summary.pro"),
                 detail: L10n.string("shell.avi.plans.summary.pro.detail")
             )
@@ -114,81 +107,12 @@ struct AviPlanComparisonSheet: View {
     }
 
     private func planCard(title: String, subtitle: String, isCurrent: Bool, isHighlighted: Bool = false, rows: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 18, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-
-                    Text(subtitle)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                if isCurrent {
-                    Text(L10n.string("shell.avi.plans.current"))
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textInverse)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(TuneAVTheme.highlight, in: Capsule(style: .continuous))
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(rows, id: \.self) { row in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .black))
-                            .foregroundStyle(TuneAVTheme.highlight)
-                            .frame(width: 18)
-
-                        Text(row)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .background(isHighlighted ? TuneAVTheme.highlight.opacity(0.08) : TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(isHighlighted ? TuneAVTheme.highlight.opacity(0.36) : TuneAVTheme.borderSubtle.opacity(0.64), lineWidth: 1)
-        }
-    }
-}
-
-private struct PlanSummaryPill: View {
-    let title: String
-    let detail: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 12, weight: .black))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-
-            Text(detail)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 66, alignment: .topLeading)
-        .padding(10)
-        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
-        }
+        AVPlanComparisonCard(
+            title: title,
+            subtitle: subtitle,
+            rows: rows,
+            currentLabel: isCurrent ? L10n.string("shell.avi.plans.current") : nil,
+            isHighlighted: isHighlighted
+        )
     }
 }
