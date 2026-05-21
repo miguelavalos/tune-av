@@ -2352,7 +2352,6 @@ struct AviScreen: View {
             focusedRadioQuickActions(for: station)
             focusedAviServices(for: station)
             relatedStationsPanel
-            focusedRadioHistorySummary(for: station)
             focusedSignalInfo(for: station)
         }
     }
@@ -3599,44 +3598,6 @@ struct AviScreen: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("avi.stationDetail.section.\(section.accessibilityID)")
-    }
-
-    @ViewBuilder
-    private func focusedRadioHistorySummary(for station: Station) -> some View {
-        let stationDiscoveries = focusedStationDiscoveries(for: station)
-        if !stationDiscoveries.isEmpty {
-            Button {
-                TuneAVHaptics.lightImpact()
-                selectedStationDetailSection = .history
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 16, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .frame(width: 32, height: 32)
-                        .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(L10n.string("shell.stationDetail.tab.history"))
-                            .font(.system(size: 15, weight: .black))
-                            .foregroundStyle(TuneAVTheme.textPrimary)
-
-                        Text(L10n.plural(singular: "shell.count.discovery.one", plural: "shell.count.discovery.other", count: stationDiscoveries.count, stationDiscoveries.count))
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                }
-                .padding(14)
-                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("avi.stationDetail.historySummary")
-        }
     }
 
     @ViewBuilder
