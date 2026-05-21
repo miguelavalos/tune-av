@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import SwiftUI
 
 enum MusicContentMode: String, CaseIterable, Identifiable {
@@ -503,12 +504,7 @@ struct MusicDiscoveryArtistsHeader: View {
     let actions: () -> MusicDiscoveryActions
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(L10n.string("shell.music.artists.title"))
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
+        AVAppShellSectionHeader(title: L10n.string("shell.music.artists.title")) {
             actions()
         }
     }
@@ -521,12 +517,7 @@ struct MusicDiscoverySongsHeader: View {
     let actions: () -> MusicDiscoveryActions
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
+        AVAppShellSectionHeader(title: title) {
             if showsAllHistoryButton {
                 Button(action: showAllHistory) {
                     Text(L10n.string("shell.music.history.all"))
