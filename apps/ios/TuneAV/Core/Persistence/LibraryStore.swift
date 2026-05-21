@@ -31,6 +31,8 @@ final class LibraryStore: ObservableObject {
     private static let feedbackSyncRetryBaseDelay: TimeInterval = 5
     private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
     private static let feedbackSyncRetryJitterFraction = 0.2
+    private static let maxCloudDiscoveryRecords = 30
+    private static let maxCloudTombstonesPerResource = 5
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
@@ -1025,22 +1027,27 @@ final class LibraryStore: ObservableObject {
                 remoteDocument: remoteDocument
             ) {
             case .pullRemote(let remoteSnapshot):
-                let mergedSnapshot = TuneAVLibrarySnapshotMerger.merged(
-                    local: localSnapshot,
-                    remote: remoteSnapshot
+                let mergedSnapshot = cloudBoundedSnapshot(
+                    TuneAVLibrarySnapshotMerger.merged(
+                        local: localSnapshot,
+                        remote: remoteSnapshot
+                    )
                 )
                 applyRemoteSnapshot(mergedSnapshot)
                 if mergedSnapshot != remoteSnapshot {
                     try await appDataService.pushLibrary(mergedSnapshot)
                     guard self.appDataService === appDataService else { return }
                     updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+                    clearSyncedTombstones()
                 }
             case .pushLocal:
                 let snapshotToPush: TuneAVLibrarySnapshot
                 if let remoteSnapshot = remoteDocument.snapshot {
-                    snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
-                        local: localSnapshot,
-                        remote: remoteSnapshot
+                    snapshotToPush = cloudBoundedSnapshot(
+                        TuneAVLibrarySnapshotMerger.merged(
+                            local: localSnapshot,
+                            remote: remoteSnapshot
+                        )
                     )
                 } else {
                     snapshotToPush = localSnapshot
@@ -1049,6 +1056,7 @@ final class LibraryStore: ObservableObject {
                 try await appDataService.pushLibrary(snapshotToPush)
                 guard self.appDataService === appDataService else { return }
                 updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+                clearSyncedTombstones()
                 if snapshotToPush != localSnapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
@@ -1077,6 +1085,7 @@ final class LibraryStore: ObservableObject {
         do {
             setCloudSyncStatus(.syncing)
             try await appDataService.overwriteLibrary(librarySnapshot())
+            clearSyncedTombstones()
             setCloudSyncStatus(.synced(.now))
         } catch TuneAVAppDataError.conflict {
             setCloudSyncStatus(.conflict)
@@ -1275,9 +1284,11 @@ final class LibraryStore: ObservableObject {
                 updateSyncDiagnostics { $0.lastCloudPullAt = .now }
                 let snapshotToPush: TuneAVLibrarySnapshot
                 if let remoteSnapshot = remoteDocument.snapshot {
-                    snapshotToPush = TuneAVLibrarySnapshotMerger.merged(
-                        local: snapshot,
-                        remote: remoteSnapshot
+                    snapshotToPush = cloudBoundedSnapshot(
+                        TuneAVLibrarySnapshotMerger.merged(
+                            local: snapshot,
+                            remote: remoteSnapshot
+                        )
                     )
                 } else {
                     snapshotToPush = snapshot
@@ -1288,6 +1299,7 @@ final class LibraryStore: ObservableObject {
                 try Task.checkCancellation()
                 guard self.appDataService === appDataService else { return }
                 updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+                clearSyncedTombstones()
                 if snapshotToPush != snapshot {
                     applyRemoteSnapshot(snapshotToPush)
                 }
@@ -1556,7 +1568,7 @@ final class LibraryStore: ObservableObject {
                     lastPlayedAt: TuneAVAppDataService.isoString(from: $0.lastPlayedAt)
                 )
             } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
-            discoveries: discoveries.map(\.appDataRecord) + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
+            discoveries: cloudDiscoveryRecords() + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
             settings: AppSettingsRecord(
                 preferredCountry: settings.preferredCountry,
                 preferredLanguage: settings.preferredLanguage,
@@ -1572,6 +1584,39 @@ final class LibraryStore: ObservableObject {
                 updatedAt: TuneAVAppDataService.isoString(from: settings.updatedAt)
             )
         )
+    }
+
+    private func cloudBoundedSnapshot(_ snapshot: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
+        TuneAVLibrarySnapshot(
+            favorites: snapshot.favorites,
+            recents: snapshot.recents,
+            discoveries: cloudBoundedDiscoveryRecords(snapshot.discoveries),
+            settings: snapshot.settings
+        )
+    }
+
+    private func cloudBoundedDiscoveryRecords(_ records: [DiscoveredTrackRecord]) -> [DiscoveredTrackRecord] {
+        records
+            .filter { $0.markedInterestedAt != nil || $0.hiddenAt != nil || $0.deletedAt != nil }
+            .sorted { lhs, rhs in
+                let lhsPinned = lhs.markedInterestedAt != nil
+                let rhsPinned = rhs.markedInterestedAt != nil
+                if lhsPinned != rhsPinned {
+                    return lhsPinned
+                }
+
+                let lhsDate = [lhs.markedInterestedAt, lhs.hiddenAt, lhs.deletedAt, lhs.playedAt]
+                    .compactMap { $0 }
+                    .map(TuneAVDateCoding.date(from:))
+                    .max() ?? .distantPast
+                let rhsDate = [rhs.markedInterestedAt, rhs.hiddenAt, rhs.deletedAt, rhs.playedAt]
+                    .compactMap { $0 }
+                    .map(TuneAVDateCoding.date(from:))
+                    .max() ?? .distantPast
+                return lhsDate > rhsDate
+            }
+            .prefix(Self.maxCloudDiscoveryRecords)
+            .map { $0 }
     }
 
     private func latestLocalUpdateAt() -> Date {
@@ -1765,11 +1810,38 @@ final class LibraryStore: ObservableObject {
     }
 
     private func tombstoneRecords<Record: Decodable>(resource: String, type: Record.Type) -> [Record] {
-        TuneAVLibraryTombstoneCoding.records(for: resource, in: tombstones().map(\.sharedTombstone), as: type, decoder: tombstoneDecoder)
+        let sharedTombstones = tombstones()
+            .filter { $0.resource == resource }
+            .sorted { $0.deletedAt > $1.deletedAt }
+            .prefix(Self.maxCloudTombstonesPerResource)
+            .map(\.sharedTombstone)
+        return TuneAVLibraryTombstoneCoding.records(for: resource, in: sharedTombstones, as: type, decoder: tombstoneDecoder)
     }
 
     private func tombstones() -> [LibrarySyncTombstone] {
         (try? context.fetch(FetchDescriptor<LibrarySyncTombstone>())) ?? []
+    }
+
+    private func cloudDiscoveryRecords() -> [DiscoveredTrackRecord] {
+        discoveries
+            .filter { $0.markedInterestedAt != nil || $0.hiddenAt != nil }
+            .sorted { lhs, rhs in
+                let lhsPinned = lhs.markedInterestedAt != nil
+                let rhsPinned = rhs.markedInterestedAt != nil
+                if lhsPinned != rhsPinned {
+                    return lhsPinned
+                }
+                return lhs.playedAt > rhs.playedAt
+            }
+            .prefix(Self.maxCloudDiscoveryRecords)
+            .map(\.appDataRecord)
+    }
+
+    private func clearSyncedTombstones() {
+        let currentTombstones = tombstones()
+        guard !currentTombstones.isEmpty else { return }
+        currentTombstones.forEach(context.delete)
+        try? context.save()
     }
 
     private static func stationIdentityKey(for station: Station) -> String {
