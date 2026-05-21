@@ -1,4 +1,5 @@
 import AVAviFoundation
+import AVAppShellFoundation
 import AVHaptics
 import OSLog
 import SwiftUI
@@ -4048,54 +4049,18 @@ struct AviScreen: View {
     }
 
     private func artworkZoomOverlay(for station: Station) -> some View {
-        ZStack {
-            Rectangle()
-                .fill(.black.opacity(0.76))
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
-                        isShowingArtworkZoom = false
-                    }
-            }
-
-            GeometryReader { proxy in
-                let artworkSize = min(proxy.size.width - 8, 372)
-                let captionWidth = min(artworkSize, 360)
-
-                VStack(spacing: 12) {
-                    currentArtwork(for: station, size: artworkSize)
-                        .shadow(color: .black.opacity(0.46), radius: 32, y: 18)
-
-                    VStack(spacing: 7) {
-                        Text(currentTrackTitle ?? station.name)
-                            .font(.system(size: 27, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.72)
-
-                        Text(currentTrackArtist ?? station.name)
-                            .font(.system(size: 18, weight: .black))
-                            .foregroundStyle(.white.opacity(0.92))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.74)
-                    }
-                    .frame(width: captionWidth - 28)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 15)
-                    .background(.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(.white.opacity(0.24), lineWidth: 1)
-                    }
-                    .shadow(color: .black.opacity(0.52), radius: 22, y: 12)
+        AVArtworkZoomOverlay(
+            title: currentTrackTitle ?? station.name,
+            subtitle: currentTrackArtist ?? station.name,
+            accessibilityIdentifier: "avi.nowPlaying.artworkZoomOverlay",
+            dismiss: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                    isShowingArtworkZoom = false
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 4)
             }
+        ) { artworkSize in
+            currentArtwork(for: station, size: artworkSize)
         }
-        .accessibilityIdentifier("avi.nowPlaying.artworkZoomOverlay")
     }
 
     private func focusedRadioBlock(for station: Station) -> some View {
