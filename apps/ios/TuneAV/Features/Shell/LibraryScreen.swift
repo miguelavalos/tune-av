@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct LibraryScreen: View {
@@ -440,14 +441,14 @@ struct LibraryScreen: View {
     }
 
     private func openMode(_ mode: RadioLibraryMode) {
-        TuneAVHaptics.selection()
+        AVHaptics.perform(.selection)
         selectedMode = mode
         isShowingOverview = false
         visibleLimit = Self.pageSize
     }
 
     private func showOverview() {
-        TuneAVHaptics.selection()
+        AVHaptics.perform(.selection)
         query = ""
         isSearchExpanded = false
         visibleLimit = Self.pageSize
@@ -458,7 +459,7 @@ struct LibraryScreen: View {
 
     private func setActiveSort(_ sort: RadioSavedSort) {
         guard activeSort != sort else { return }
-        TuneAVHaptics.selection()
+        AVHaptics.perform(.selection)
         switch selectedMode {
         case .saved, .tuned:
             savedSortRawValue = sort.rawValue
@@ -468,7 +469,7 @@ struct LibraryScreen: View {
     }
 
     private func toggleSearch() {
-        TuneAVHaptics.selection()
+        AVHaptics.perform(.selection)
         isShowingOverview = false
         withAnimation(.snappy(duration: 0.22)) {
             isSearchExpanded.toggle()
@@ -476,7 +477,7 @@ struct LibraryScreen: View {
     }
 
     private func showMoreStations() {
-        TuneAVHaptics.lightImpact()
+        AVHaptics.perform(.impactLight)
         visibleLimit += Self.pageSize
     }
 

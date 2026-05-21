@@ -3596,7 +3596,7 @@ struct AviScreen: View {
         let isSelected = selectedStationDetailSection == section
 
         return Button {
-            TuneAVHaptics.lightImpact()
+            AVHaptics.perform(.impactLight)
             selectedStationDetailSection = section
         } label: {
             HStack(spacing: 6) {
