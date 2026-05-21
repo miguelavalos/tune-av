@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct HomeScreen: View {
@@ -90,12 +91,17 @@ struct HomeScreen: View {
     private var homeHeroActionRouter: HomeHeroActionRouter {
         HomeHeroActionRouter(
             isCurrentStation: audioPlayer.isCurrent(_:),
-            togglePlayback: audioPlayer.togglePlayback,
+            togglePlayback: togglePlayback,
             playStation: playStation,
             showStationDetails: showStationDetails,
             currentFeedback: { stationFeedback[$0.id] },
             setStationFeedback: setStationFeedback
         )
+    }
+
+    private func togglePlayback() {
+        AVHaptics.perform(.playbackToggle)
+        audioPlayer.togglePlayback()
     }
 
 }

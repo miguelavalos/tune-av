@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct AviQueueSwitchOption: Identifiable {
@@ -154,12 +155,14 @@ struct AviExpandedFooterPlayerView: View {
             queueSourceButton
 
             queueButton(systemImage: "backward.fill", accessibilityIdentifier: "avi.footerPlayer.previous") {
+                AVHaptics.perform(.queueStep)
                 audioPlayer.playPreviousInQueue()
             }
 
             playPauseButton
 
             queueButton(systemImage: "forward.fill", accessibilityIdentifier: "avi.footerPlayer.next") {
+                AVHaptics.perform(.queueStep)
                 audioPlayer.playNextInQueue()
             }
 
@@ -171,6 +174,7 @@ struct AviExpandedFooterPlayerView: View {
 
     private var playPauseButton: some View {
         Button {
+            AVHaptics.perform(.playbackToggle)
             audioPlayer.togglePlayback()
         } label: {
             ZStack {

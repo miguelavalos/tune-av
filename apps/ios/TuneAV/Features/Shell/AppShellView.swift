@@ -3,6 +3,19 @@ import OSLog
 import SwiftUI
 import UIKit
 
+private func stationFeedbackHapticEvent(for feedback: TuneAVStationFeedback?) -> AVHapticEvent {
+    switch feedback {
+    case .liked:
+        return .like
+    case .notForMe:
+        return .notForMe
+    case .disliked:
+        return .dislike
+    case nil:
+        return .clear
+    }
+}
+
 struct AppShellView: View {
     struct PendingPlayback: Identifiable {
         let id = UUID()
@@ -270,9 +283,7 @@ struct AppShellView: View {
             refreshHome: refreshHomePresentationAndFeed,
             playStation: playStation,
             toggleFavorite: toggleFavorite(_:),
-            setStationFeedback: { station, feedback in
-                libraryStore.setFeedback(feedback, for: station)
-            },
+            setStationFeedback: setStationFeedbackWithHaptic(_:feedback:),
             showStationDetails: { station, queueSource, queue in
                 showStationDetails(station, queueSource: queueSource, queue: queue)
             }
@@ -452,14 +463,12 @@ struct AppShellView: View {
             openPlayer: openAviPlayer,
             stopPlayback: stopPlaybackAndCloseSignal,
             setSleepTimer: audioPlayer.setSleepTimer(minutes:),
-            playPrevious: audioPlayer.playPreviousInQueue,
-            playNext: audioPlayer.playNextInQueue,
+            playPrevious: playPreviousInQueueWithHaptic,
+            playNext: playNextInQueueWithHaptic,
             playStation: playAviDiscoveryStation(_:queue:),
             playStationFromQueue: playStation(_:queueSource:queue:),
             toggleFavorite: toggleFavorite(_:),
-            setStationFeedback: { station, feedback in
-                libraryStore.setFeedback(feedback, for: station)
-            },
+            setStationFeedback: setStationFeedbackWithHaptic(_:feedback:),
             showStationDetails: showAviStationDetails(_:queue:),
             openDiscoveryInfo: { discovery in
                 openDiscoveryInfo(discovery)
@@ -488,7 +497,7 @@ struct AppShellView: View {
         let focusedQueueSource = selectedStationDetail?.queueSource ?? .singleStation
 
         if let focusedStation, audioPlayer.isCurrent(focusedStation) {
-            audioPlayer.togglePlayback()
+            togglePlaybackWithHaptic()
         } else if let focusedStation {
             playStation(
                 focusedStation,
@@ -913,6 +922,7 @@ struct AppShellView: View {
             enrichStation: enrichedStation(_:),
             enrichStations: enrichedStations(_:)
         )
+        AVHaptics.perform(.playbackToggle)
         audioPlayer.play(station: selection.station, queue: selection.queue)
         beginListeningSession(for: selection.station, source: selection.queue.source)
     }
@@ -923,8 +933,24 @@ struct AppShellView: View {
     }
 
     private func stopPlaybackAndCloseSignal() {
+        AVHaptics.perform(.stopPlayback)
         audioPlayer.stopAndClearCurrentStation()
         closeFocusedAviDetail(fallbackTab: .home)
+    }
+
+    private func togglePlaybackWithHaptic() {
+        AVHaptics.perform(.playbackToggle)
+        audioPlayer.togglePlayback()
+    }
+
+    private func playPreviousInQueueWithHaptic() {
+        AVHaptics.perform(.queueStep)
+        audioPlayer.playPreviousInQueue()
+    }
+
+    private func playNextInQueueWithHaptic() {
+        AVHaptics.perform(.queueStep)
+        audioPlayer.playNextInQueue()
     }
 
     private func beginListeningSession(for station: Station, source: AudioPlayerService.PlaybackQueue.Source) {
@@ -1033,6 +1059,7 @@ struct AppShellView: View {
         let resolvedStation = enrichedStation(station)
 
         if libraryStore.isFavorite(resolvedStation) {
+            AVHaptics.perform(.unsave)
             libraryStore.toggleFavorite(for: resolvedStation)
             return
         }
@@ -1046,7 +1073,14 @@ struct AppShellView: View {
             return
         }
 
+        AVHaptics.perform(.save)
         libraryStore.toggleFavorite(for: resolvedStation)
+    }
+
+    private func setStationFeedbackWithHaptic(_ station: Station, feedback: TuneAVStationFeedback?) {
+        guard libraryStore.stationFeedback[station.id] != feedback else { return }
+        libraryStore.setFeedback(feedback, for: station)
+        AVHaptics.perform(stationFeedbackHapticEvent(for: feedback))
     }
 
     private func toggleDiscoverySaved(_ discovery: DiscoveredTrack) {
@@ -1057,7 +1091,12 @@ struct AppShellView: View {
                 accessController.limitState(for: .savedTracks, currentUsage: currentUsage)
             },
             toggleSaved: { discovery, limit in
-                libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+                let wasSaved = discovery.isMarkedInteresting
+                let didToggle = libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+                if didToggle {
+                    AVHaptics.perform(wasSaved ? .unsave : .save)
+                }
+                return didToggle
             },
             presentUpgrade: { currentUsage in
                 accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: currentUsage)
@@ -2781,9 +2820,12 @@ struct AviScreen: View {
             selectFeedback: { feedback in
                 let nextFeedback = libraryStore.feedback(for: discovery) == feedback ? nil : feedback
                 libraryStore.setFeedbackForDiscoveredTrack(nextFeedback, title: discovery.title, artist: discovery.artist)
+                AVHaptics.perform(stationFeedbackHapticEvent(for: nextFeedback))
             },
             clearFeedback: {
+                guard libraryStore.feedback(for: discovery) != nil else { return }
                 libraryStore.setFeedbackForDiscoveredTrack(nil, title: discovery.title, artist: discovery.artist)
+                AVHaptics.perform(.clear)
             }
         )
     }
@@ -4914,11 +4956,13 @@ struct AviScreen: View {
     }
 
     private func setCurrentTrackFeedback(_ feedback: TuneAVStationFeedback?) {
+        guard currentTrackFeedback != feedback else { return }
         libraryStore.setFeedbackForDiscoveredTrack(
             feedback,
             title: currentTrackTitle,
             artist: currentTrackArtist
         )
+        AVHaptics.perform(stationFeedbackHapticEvent(for: feedback))
     }
 
     private func focusedSignalInfo(for station: Station) -> some View {
@@ -5345,12 +5389,20 @@ struct AviScreen: View {
 
     private func setAviMenuFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
         if aviFeedbackTarget(for: station, isEditingRadioFeedback: isEditingRadioFeedback).usesTrackFeedback {
-            setCurrentTrackFeedback(feedback)
+            guard currentTrackFeedback != feedback else { return }
+            libraryStore.setFeedbackForDiscoveredTrack(
+                feedback,
+                title: currentTrackTitle,
+                artist: currentTrackArtist
+            )
         } else {
+            guard stationFeedback[station.id] != feedback else { return }
             setStationFeedback(station, feedback)
         }
         if let feedback {
             showAviReaction(for: feedback)
+        } else {
+            AVHaptics.perform(.clear)
         }
     }
 
@@ -5461,7 +5513,12 @@ struct AviScreen: View {
                 accessController.limitState(for: .savedTracks, currentUsage: currentUsage)
             },
             toggleSaved: { discovery, limit in
-                libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+                let wasSaved = discovery.isMarkedInteresting
+                let didToggle = libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
+                if didToggle {
+                    AVHaptics.perform(wasSaved ? .unsave : .save)
+                }
+                return didToggle
             },
             presentUpgrade: { currentUsage in
                 accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: currentUsage)

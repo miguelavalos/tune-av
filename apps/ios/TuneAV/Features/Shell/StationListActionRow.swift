@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct StationListActionRow: View {
@@ -159,6 +160,7 @@ struct StationListActionRow: View {
 
     private func playStation() {
         if audioPlayer.isCurrent(station) {
+            AVHaptics.perform(.playbackToggle)
             audioPlayer.togglePlayback()
         } else {
             playAction()

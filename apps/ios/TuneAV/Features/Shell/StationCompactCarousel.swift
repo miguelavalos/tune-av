@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 private enum StationCompactMetrics {
@@ -293,6 +294,7 @@ private struct StationCompactCard: View {
 
     private func playCompactStation() {
         if audioPlayer.isCurrent(station) {
+            AVHaptics.perform(.playbackToggle)
             audioPlayer.togglePlayback()
         } else {
             playAction()

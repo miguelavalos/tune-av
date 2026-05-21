@@ -1,3 +1,4 @@
+import AVHaptics
 import SwiftUI
 
 struct TuneAVFeedbackBadge: View {
@@ -56,10 +57,12 @@ struct MiniPlayerView: View {
             Spacer(minLength: 8)
 
             queueButton(systemImage: "backward.fill", accessibilityIdentifier: "miniPlayer.previous") {
+                AVHaptics.perform(.queueStep)
                 audioPlayer.playPreviousInQueue()
             }
 
             Button {
+                AVHaptics.perform(.playbackToggle)
                 audioPlayer.togglePlayback()
             } label: {
                 ZStack {
@@ -81,6 +84,7 @@ struct MiniPlayerView: View {
             .accessibilityIdentifier("miniPlayer.playPause")
 
             queueButton(systemImage: "forward.fill", accessibilityIdentifier: "miniPlayer.next") {
+                AVHaptics.perform(.queueStep)
                 audioPlayer.playNextInQueue()
             }
         }
