@@ -198,31 +198,29 @@ struct AccountDeletionScreen: View {
     }
 
     private var blockerList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(viewModel.blockers) { blocker in
-                AVSettingsDetailCard(
-                    title: blocker.label,
-                    detail: blocker.detail,
-                    linkTitle: blocker.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
-                    linkDestination: blocker.managementUrl
-                )
-                .accessibilityIdentifier("accountDeletion.blocker.\(blocker.type.rawValue)")
-            }
-        }
+        AVSettingsDetailList(items: viewModel.blockers.map { blocker in
+            AVSettingsDetailListItem(
+                id: blocker.type.rawValue,
+                title: blocker.label,
+                detail: blocker.detail,
+                linkTitle: blocker.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
+                linkDestination: blocker.managementUrl,
+                accessibilityIdentifier: "accountDeletion.blocker.\(blocker.type.rawValue)"
+            )
+        })
     }
 
     private var warningList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(viewModel.warnings) { warning in
-                AVSettingsDetailCard(
-                    title: warning.label,
-                    detail: warning.detail,
-                    linkTitle: warning.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
-                    linkDestination: warning.managementUrl
-                )
-                .accessibilityIdentifier("accountDeletion.warning.\(warning.type.rawValue)")
-            }
-        }
+        AVSettingsDetailList(items: viewModel.warnings.map { warning in
+            AVSettingsDetailListItem(
+                id: warning.type.rawValue,
+                title: warning.label,
+                detail: warning.detail,
+                linkTitle: warning.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
+                linkDestination: warning.managementUrl,
+                accessibilityIdentifier: "accountDeletion.warning.\(warning.type.rawValue)"
+            )
+        })
     }
 
     private func statusCard(systemImage: String, title: String, detail: String) -> some View {
