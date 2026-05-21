@@ -1,4 +1,5 @@
 import AVAviFoundation
+import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
@@ -92,13 +93,7 @@ struct StationListActionRow: View {
     private var stationQualityBadges: some View {
         HStack(spacing: 5) {
             ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
-                Text(badge)
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .lineLimit(1)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(TuneAVTheme.highlight.opacity(0.1), in: Capsule())
+                AVStationSignalBadge(title: badge)
             }
         }
     }
