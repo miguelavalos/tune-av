@@ -1218,61 +1218,19 @@ private struct LocalDataManagementSheet: View {
     }
 
     private func maintenanceGroup(title: String, rows: [LocalDataMaintenanceRow]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .textCase(.uppercase)
+        AVSettingsGroupedActionList(title: title) {
+            ForEach(rows.indices, id: \.self) { index in
+                let row = rows[index]
 
-            VStack(spacing: 0) {
-                ForEach(rows) { row in
-                    Button {
-                        pendingTarget = row.target
-                    } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: row.systemImage)
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(TuneAVTheme.highlight)
-                                .frame(width: 22)
-                                .padding(.top, 2)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(row.title)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                                Text(row.detail)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(TuneAVTheme.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-
-                            Spacer(minLength: 12)
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.7))
-                                .padding(.top, 4)
-                        }
-                        .padding(16)
-                    }
-                    .buttonStyle(.plain)
-
-                    if row.id != rows.last?.id {
-                        Divider()
-                            .overlay(TuneAVTheme.borderSubtle)
-                            .padding(.leading, 50)
-                    }
+                AVSettingsGroupedActionRow(
+                    systemImage: row.systemImage,
+                    title: row.title,
+                    detail: row.detail,
+                    showsDivider: index < rows.count - 1
+                ) {
+                    pendingTarget = row.target
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(TuneAVTheme.mutedSurface)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
-            )
         }
     }
 
