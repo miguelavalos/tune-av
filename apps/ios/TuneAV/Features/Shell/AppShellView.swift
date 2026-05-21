@@ -4602,23 +4602,12 @@ struct AviScreen: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 12, weight: .black))
-                .labelStyle(.titleAndIcon)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(width: 96, height: 38)
-                .background(TuneAVTheme.shellBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        AVAviFeedbackCompactActionButton(
+            title: title,
+            systemImage: systemImage,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private func fullPlayerFeedbackDecisionButton(
@@ -4628,37 +4617,13 @@ struct AviScreen: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 12, weight: .black))
-                .labelStyle(.titleAndIcon)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 38)
-                .background {
-                    fullPlayerFeedbackDecisionButtonBackground(isSelected: isSelected)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
-    }
-
-    @ViewBuilder
-    private func fullPlayerFeedbackDecisionButtonBackground(isSelected: Bool) -> some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(TuneAVTheme.highlight)
-        } else {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(TuneAVTheme.shellBackground)
-        }
+        AVAviFeedbackDecisionButton(
+            title: title,
+            systemImage: systemImage,
+            isSelected: isSelected,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private func fullPlayerFeedbackInfoRow(
@@ -4667,35 +4632,12 @@ struct AviScreen: View {
         systemImage: String,
         isAction: Bool
     ) -> some View {
-        HStack(spacing: 9) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .black))
-                .foregroundStyle(isAction ? TuneAVTheme.brandBlack : TuneAVTheme.highlight)
-                .frame(width: 28, height: 28)
-                .background((isAction ? TuneAVTheme.brandBlack.opacity(0.12) : TuneAVTheme.highlight.opacity(0.12)), in: Circle())
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.system(size: 12, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-
-                Text(subtitle)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 11)
-        .frame(maxWidth: .infinity)
-        .frame(height: 38)
-        .background(TuneAVTheme.highlight.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.16), lineWidth: 1)
-        }
+        AVAviFeedbackInfoRow(
+            title: title,
+            subtitle: subtitle,
+            systemImage: systemImage,
+            isAction: isAction
+        )
     }
 
     private func compactAviOptionButton(
