@@ -1112,25 +1112,25 @@ private struct LocalDataManagementSheet: View {
             maintenanceGroup(
                 title: L10n.string("profile.localDataSheet.partialTitle"),
                 rows: [
-                    maintenanceRow(
+                    LocalDataMaintenanceRow(
                         systemImage: "heart.text.square",
                         title: L10n.string("profile.actions.clearFavorites"),
                         detail: L10n.string("profile.alert.clearFavorites.message"),
                         target: .favorites
                     ),
-                    maintenanceRow(
+                    LocalDataMaintenanceRow(
                         systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
                         title: L10n.string("profile.actions.clearRecents"),
                         detail: L10n.string("profile.alert.clearRecents.message"),
                         target: .recents
                     ),
-                    maintenanceRow(
+                    LocalDataMaintenanceRow(
                         systemImage: "music.note.list",
                         title: L10n.string("profile.actions.clearDiscoveries"),
                         detail: L10n.string("profile.alert.clearDiscoveries.message"),
                         target: .discoveries
                     ),
-                    maintenanceRow(
+                    LocalDataMaintenanceRow(
                         systemImage: "slider.horizontal.3",
                         title: L10n.string("profile.actions.resetSettings"),
                         detail: L10n.string("profile.alert.resetSettings.message"),
@@ -1185,20 +1185,6 @@ private struct LocalDataManagementSheet: View {
         }
     }
 
-    private func maintenanceRow(
-        systemImage: String,
-        title: String,
-        detail: String,
-        target: ProfileScreen.LocalDataClearTarget
-    ) -> LocalDataMaintenanceRow {
-        LocalDataMaintenanceRow(
-            systemImage: systemImage,
-            title: title,
-            detail: detail,
-            target: target
-        )
-    }
-
     private var pendingTargetIsPresented: Binding<Bool> {
         Binding(
             get: { pendingTarget != nil },
@@ -1207,8 +1193,7 @@ private struct LocalDataManagementSheet: View {
     }
 }
 
-private struct LocalDataMaintenanceRow: Identifiable {
-    let id = UUID()
+private struct LocalDataMaintenanceRow {
     let systemImage: String
     let title: String
     let detail: String
