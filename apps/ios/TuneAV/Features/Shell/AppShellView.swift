@@ -3254,17 +3254,17 @@ struct AviScreen: View {
     private var fullPlayerAviCopy: AviHeaderCopy {
         guard let station = focusedStation ?? currentStation else {
             return AviHeaderCopy(
-                label: "LISTA",
-                title: "Avi espera señal",
-                summary: "Busca una radio y Avi empieza a leerla."
+                label: L10n.string("shell.avi.header.ready.label"),
+                title: L10n.string("shell.avi.header.ready.title"),
+                summary: L10n.string("shell.avi.header.ready.summary")
             )
         }
 
         if isLoading {
             return AviHeaderCopy(
-                label: "AFINANDO",
-                title: "Buscando la señal",
-                summary: "Avi espera metadata estable antes de decidir."
+                label: L10n.string("shell.avi.header.tuning.label"),
+                title: L10n.string("shell.avi.header.tuning.title"),
+                summary: L10n.string("shell.avi.header.tuning.summary")
             )
         }
 
@@ -3274,9 +3274,9 @@ struct AviScreen: View {
 
         if isTrackSaved {
             return AviHeaderCopy(
-                label: "GUARDADA",
-                title: "Queda en tu colección",
-                summary: "Avi usará esta canción para afinar tu mapa."
+                label: L10n.string("shell.avi.header.saved.label"),
+                title: L10n.string("shell.avi.header.saved.title"),
+                summary: L10n.string("shell.avi.header.saved.summary")
             )
         }
 
@@ -3284,53 +3284,53 @@ struct AviScreen: View {
             switch feedback {
             case .liked:
                 return AviHeaderCopy(
-                    label: "APRENDIENDO",
-                    title: hasSong ? "Buena pista para ti" : "Esta radio suma",
-                    summary: hasSong ? "Tu like empuja este sonido hacia delante." : "Avi acercará señales parecidas."
+                    label: L10n.string("shell.avi.header.learning.label"),
+                    title: hasSong ? L10n.string("shell.avi.header.likedSong.title") : L10n.string("shell.avi.header.likedStation.title"),
+                    summary: hasSong ? L10n.string("shell.avi.header.likedSong.summary") : L10n.string("shell.avi.header.likedStation.summary")
                 )
             case .notForMe:
                 return AviHeaderCopy(
-                    label: "AJUSTANDO",
-                    title: "La bajo de prioridad",
-                    summary: "No la descarto, pero pesará menos en el mapa."
+                    label: L10n.string("shell.avi.header.adjusting.label"),
+                    title: L10n.string("shell.avi.header.notForMe.title"),
+                    summary: L10n.string("shell.avi.header.notForMe.summary")
                 )
             case .disliked:
                 return AviHeaderCopy(
-                    label: "DESCARTANDO",
-                    title: "La aparto del mapa",
-                    summary: hasSong ? "Avi evitará señales con este pulso." : "Esta radio no guiará tus próximas pistas."
+                    label: L10n.string("shell.avi.header.discarding.label"),
+                    title: L10n.string("shell.avi.header.disliked.title"),
+                    summary: hasSong ? L10n.string("shell.avi.header.dislikedSong.summary") : L10n.string("shell.avi.header.dislikedStation.summary")
                 )
             }
         }
 
         if hasSong {
             return AviHeaderCopy(
-                label: "ESCUCHANDO",
-                title: "Avi sigue esta canción",
-                summary: currentTrackArtist.map { "Tema detectado de \($0). Tu feedback afina." } ?? "Tema detectado. Tu feedback afina."
+                label: L10n.string("shell.avi.header.listening.label"),
+                title: L10n.string("shell.avi.header.track.title"),
+                summary: currentTrackArtist.map { L10n.string("shell.avi.header.trackWithArtist.summary", $0) } ?? L10n.string("shell.avi.header.track.summary")
             )
         }
 
         if libraryStore.isFavorite(station) {
             return AviHeaderCopy(
-                label: "CONOCIDA",
-                title: "Radio de tu colección",
-                summary: "Avi la compara con tus señales recientes."
+                label: L10n.string("shell.avi.header.known.label"),
+                title: L10n.string("shell.avi.header.favorite.title"),
+                summary: L10n.string("shell.avi.header.favorite.summary")
             )
         }
 
         if station.displayArtworkURL != nil || station.editorial != nil {
             return AviHeaderCopy(
-                label: "EXPLORANDO",
-                title: "Hay contexto para leer",
-                summary: station.category.map { "Perfil \($0) detectado. Dale feedback si encaja." } ?? "Avi tiene pistas para entender esta radio."
+                label: L10n.string("shell.avi.header.exploring.label"),
+                title: L10n.string("shell.avi.header.context.title"),
+                summary: station.category.map { L10n.string("shell.avi.header.contextWithCategory.summary", $0) } ?? L10n.string("shell.avi.header.context.summary")
             )
         }
 
         return AviHeaderCopy(
-            label: isFocusedStationActive ? "LEYENDO" : "EXPLORANDO",
-            title: isFocusedStationActive ? "Avi lee esta señal" : "Lista para descubrir",
-            summary: isFocusedStationActive ? "Dale una pista con tu feedback." : "Avi está lista cuando pulses reproducir."
+            label: isFocusedStationActive ? L10n.string("shell.avi.header.reading.label") : L10n.string("shell.avi.header.exploring.label"),
+            title: isFocusedStationActive ? L10n.string("shell.avi.header.reading.title") : L10n.string("shell.avi.header.discover.title"),
+            summary: isFocusedStationActive ? L10n.string("shell.avi.header.reading.summary") : L10n.string("shell.avi.header.discover.summary")
         )
     }
 
@@ -5572,7 +5572,7 @@ struct AviScreen: View {
     private var primaryFocusedActionTitle: String {
         guard !isLoading else { return L10n.string("audio.status.loading") }
         guard isFocusedStationActive else { return L10n.string("player.control.play") }
-        return isPlaying ? "Pausar" : "Escuchar"
+        return isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.listen")
     }
 
     private var primaryFocusedActionIcon: String {

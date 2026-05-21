@@ -93,22 +93,22 @@ final class AppLanguageController: ObservableObject {
             from: storedLanguage ?? Locale.preferredLanguages.first
         )
         currentLanguage = resolvedLanguage
-
-        if storedLanguage == nil {
-            userDefaults.set(resolvedLanguage.rawValue, forKey: userDefaultsKey)
-        }
     }
 
     func select(_ language: AppLanguage) {
+        userDefaults.set(language.rawValue, forKey: userDefaultsKey)
         guard currentLanguage != language else { return }
         currentLanguage = language
-        userDefaults.set(language.rawValue, forKey: userDefaultsKey)
     }
 }
 
 enum L10n {
+    private static let userDefaultsKey = "tuneav.appLanguage"
+
     static var locale: Locale {
-        AppLanguage.resolved(from: UserDefaults.standard.string(forKey: "tuneav.appLanguage")).locale
+        AppLanguage.resolved(
+            from: UserDefaults.standard.string(forKey: userDefaultsKey) ?? Locale.preferredLanguages.first
+        ).locale
     }
 
     static func string(_ key: String) -> String {
@@ -181,7 +181,9 @@ enum L10n {
     }
 
     private static var bundle: Bundle {
-        let selectedLanguage = AppLanguage.resolved(from: UserDefaults.standard.string(forKey: "tuneav.appLanguage"))
+        let selectedLanguage = AppLanguage.resolved(
+            from: UserDefaults.standard.string(forKey: userDefaultsKey) ?? Locale.preferredLanguages.first
+        )
 
         guard let path = Bundle.main.path(forResource: selectedLanguage.rawValue, ofType: "lproj"),
               let localizedBundle = Bundle(path: path) else {
