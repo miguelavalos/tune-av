@@ -21,8 +21,8 @@ apps/
   macos/    SwiftUI macOS app for Mac App Store distribution
 docs/
   ios-current-state.md
-  ios-animation-performance.md
-  install-ios.md
+  ios-animation-and-assets.md
+  install.md
   release-checklist.md
 shared/
   apple/     Swift Modules and Apple-domain shared code
@@ -73,9 +73,10 @@ This public repo does not carry private bootstrap examples or generated local co
 
 Run `bun run config:hygiene` before pushing config-related changes.
 
-See [docs/install-ios.md](docs/install-ios.md) for setup details.
+See [docs/install.md](docs/install.md) for setup details.
 
-For playback-adjacent UI work, follow [docs/ios-animation-performance.md](docs/ios-animation-performance.md).
+For playback-adjacent UI and Avi asset work, follow
+[docs/ios-animation-and-assets.md](docs/ios-animation-and-assets.md).
 
 ## Third-Party Services And Data Sources
 

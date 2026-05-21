@@ -7,6 +7,9 @@ node_modules/
 # App Store working media
 docs/app-store/screenshots/
 
+# Generated local QA assets
+apps/ios/TuneAV/Tools/avi_reaction_contact_sheet.png
+
 # Xcode
 DerivedData/
 .DerivedData*/

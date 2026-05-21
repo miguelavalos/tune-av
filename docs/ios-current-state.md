@@ -68,13 +68,12 @@ material, or generated config to this repository.
 
 ## Active iOS Docs
 
-- [install-ios.md](install-ios.md): local simulator and guarded device install.
+- [install.md](install.md): local simulator, guarded iOS device install, and
+  macOS setup.
 - [public-config-policy.md](public-config-policy.md): public/private config
   boundary.
-- [ios-animation-performance.md](ios-animation-performance.md): playback-safe
-  UI animation rules.
-- [avi-frame-animation-contract.md](avi-frame-animation-contract.md): Avi PNG
-  frame-loop asset contract.
+- [ios-animation-and-assets.md](ios-animation-and-assets.md): playback-safe
+  UI animation rules and Avi PNG frame-loop asset contract.
 - [station-enrichment-contract.md](station-enrichment-contract.md): public iOS
   display expectations for enriched stations.
 - [release-checklist.md](release-checklist.md): public repository hygiene and
