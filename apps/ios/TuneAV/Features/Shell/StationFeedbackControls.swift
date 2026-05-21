@@ -1,3 +1,4 @@
+import AVAviFoundation
 import SwiftUI
 
 struct StationFeedbackControl: View {
@@ -80,25 +81,13 @@ struct AviCompactFeedbackControl: View {
     var body: some View {
         HStack(spacing: 7) {
             ForEach(TuneAVStationFeedback.displayOrder, id: \.self) { feedback in
-                Button {
+                AVAviCompactFeedbackButton(
+                    systemImage: feedback.systemImage,
+                    accessibilityLabel: feedback.localizedState,
+                    accessibilityIdentifier: "avi.recommendation.feedback.\(feedback.rawValue)"
+                ) {
                     selectFeedback(feedback)
-                } label: {
-                    Image(systemName: feedback.systemImage)
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 34, height: 30)
-                        .background(
-                            TuneAVTheme.elevatedSurface,
-                            in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(feedback.localizedState)
-                .accessibilityIdentifier("avi.recommendation.feedback.\(feedback.rawValue)")
             }
         }
         .frame(height: 30)
@@ -114,29 +103,11 @@ struct SelectedStationFeedbackStatus: View {
     let feedback: TuneAVStationFeedback
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: feedback.systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(TuneAVTheme.brandBlack)
-                .frame(width: 30, height: 30)
-                .background(TuneAVTheme.highlight, in: Circle())
-
-            Text(feedback.localizedState)
-                .font(.system(size: 13, weight: .black))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .frame(maxWidth: .infinity)
-        .frame(height: 38)
-        .background(TuneAVTheme.highlight.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
-        }
-        .accessibilityLabel(feedback.localizedState)
+        AVAviSelectedFeedbackStatus(
+            title: feedback.localizedState,
+            systemImage: feedback.systemImage,
+            accessibilityLabel: feedback.localizedState
+        )
     }
 }
 
@@ -148,25 +119,13 @@ struct StationFeedbackButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .black))
-                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 38)
-                .background(
-                    isSelected ? TuneAVTheme.highlight : TuneAVTheme.elevatedSurface,
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.62) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        AVAviFeedbackOptionButton(
+            title: title,
+            systemImage: systemImage,
+            isSelected: isSelected,
+            accessibilityIdentifier: "stationFeedback.\(feedback.rawValue)",
+            action: action
+        )
         .accessibilityValue(isSelected ? L10n.string("common.selected") : "")
-        .accessibilityIdentifier("stationFeedback.\(feedback.rawValue)")
     }
 }
