@@ -2217,11 +2217,11 @@ struct AviScreen: View {
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .textCase(.uppercase)
 
-            AviPreviewCapabilityRow(systemImage: "text.quote", title: L10n.string("shell.avi.preview.music.title"), detail: L10n.string("shell.avi.preview.music.detail"))
+            AVAviPreviewCapabilityRow(systemImage: "text.quote", title: L10n.string("shell.avi.preview.music.title"), detail: L10n.string("shell.avi.preview.music.detail"))
             Divider().overlay(TuneAVTheme.borderSubtle.opacity(0.45))
-            AviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: L10n.string("shell.avi.preview.radio.title"), detail: L10n.string("shell.avi.preview.radio.detail"))
+            AVAviPreviewCapabilityRow(systemImage: "dot.radiowaves.left.and.right", title: L10n.string("shell.avi.preview.radio.title"), detail: L10n.string("shell.avi.preview.radio.detail"))
             Divider().overlay(TuneAVTheme.borderSubtle.opacity(0.45))
-            AviPreviewCapabilityRow(systemImage: "sparkles", title: L10n.string("shell.avi.preview.recommendations.title"), detail: L10n.string("shell.avi.preview.recommendations.detail"))
+            AVAviPreviewCapabilityRow(systemImage: "sparkles", title: L10n.string("shell.avi.preview.recommendations.title"), detail: L10n.string("shell.avi.preview.recommendations.detail"))
         }
         .padding(14)
         .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -2233,7 +2233,7 @@ struct AviScreen: View {
 
     private var aviPreviewActions: some View {
         VStack(spacing: 12) {
-            AviPreviewPrimaryButton(
+            AVAviPreviewPrimaryButton(
                 title: primaryAviPreviewTitle,
                 systemImage: primaryAviPreviewSystemImage,
                 accessibilityIdentifier: "avi.preview.primary",
@@ -2241,7 +2241,7 @@ struct AviScreen: View {
             )
 
             HStack(spacing: 10) {
-                AviPreviewSecondaryButton(
+                AVAviPreviewSecondaryButton(
                     title: L10n.string("shell.avi.preview.compare"),
                     systemImage: "rectangle.3.group",
                     accessibilityIdentifier: "avi.preview.compare"
@@ -2250,7 +2250,7 @@ struct AviScreen: View {
                 }
 
                 if currentStation != nil || currentTrackTitle != nil {
-                    AviPreviewSecondaryButton(
+                    AVAviPreviewSecondaryButton(
                         title: L10n.string("shell.avi.preview.search"),
                         systemImage: "magnifyingglass",
                         accessibilityIdentifier: "avi.preview.search",

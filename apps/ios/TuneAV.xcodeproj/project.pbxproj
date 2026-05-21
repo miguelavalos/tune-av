@@ -13,7 +13,6 @@
 		048EAE755F2A9BD6B24B09F7 /* AVSettingsFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 90D6E680E4FC3B4E34986388 /* AVSettingsFoundation */; };
 		04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */; };
 		054EDB1A6A553D8548C6A9B6 /* HomeScreenSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7B4AB74E73BDD74174C98B /* HomeScreenSections.swift */; };
-		06715D33FDEBEB1D36ACCA4F /* AviPreviewViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F2F06465313F965E5778A9 /* AviPreviewViews.swift */; };
 		0BEFD1AF0CCEFF38FA4AED12 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */; };
 		0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */; };
 		0D5C58A2E90E4A7F9B7D8211 /* MusicArtworkViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5C58A1E90E4A7F9B7D8211 /* MusicArtworkViews.swift */; };
@@ -372,7 +371,6 @@
 		E76489FBB943FD3200A86D0B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
 		E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDiscoveryTagBuilder.swift; sourceTree = "<group>"; };
-		E9F2F06465313F965E5778A9 /* AviPreviewViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviPreviewViews.swift; sourceTree = "<group>"; };
 		EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReturnContextTests.swift; sourceTree = "<group>"; };
 		EBFD2CD6810AE58E6B99DE14 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppTheme.swift; sourceTree = "<group>"; };
@@ -457,7 +455,6 @@
 				38AEC6EB98A07A25F08C3A1A /* AviMusicDetailCoordinator.swift */,
 				61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */,
 				4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */,
-				E9F2F06465313F965E5778A9 /* AviPreviewViews.swift */,
 				86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */,
 				F97D4A7D40F1763112C81473 /* AviReactionState.swift */,
 				B3C5ED7575C9647A5AEE8507 /* AviRecommendationsCoordinator.swift */,
@@ -918,7 +915,6 @@
 				22EDBA967B0BB6EF80A51307 /* AviMusicDetailCoordinator.swift in Sources */,
 				6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */,
 				2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */,
-				06715D33FDEBEB1D36ACCA4F /* AviPreviewViews.swift in Sources */,
 				AFB2A7F6915DC23B5BBF9141 /* AviQueueSwitchCoordinator.swift in Sources */,
 				1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */,
 				45BAF02010F5AB9B9728E140 /* AviRecommendationViews.swift in Sources */,
