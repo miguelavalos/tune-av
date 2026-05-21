@@ -4013,22 +4013,17 @@ struct AviScreen: View {
     @ViewBuilder
     private func currentArtwork(for station: Station, size: CGFloat) -> some View {
         if let currentTrackArtworkURL {
-            TuneAVRemoteArtworkImage(url: currentTrackArtworkURL, size: size, scale: displayScale) {
-                StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
-            }
-            .frame(width: size, height: size)
-            .clipShape(artworkShape(size: size))
-            .overlay {
-                artworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: currentTrackArtworkURL, size: size, scale: displayScale) {
+                    StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
+                }
             }
         } else {
             StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
         }
-    }
-
-    private func artworkShape(size: CGFloat) -> RoundedRectangle {
-        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 
     private func artworkZoomOverlay(for station: Station) -> some View {

@@ -89,14 +89,14 @@ struct MiniPlayerView: View {
     @ViewBuilder
     private var miniArtwork: some View {
         if let artworkURL = audioPlayer.currentTrackArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: 46, scale: displayScale) {
-                StationArtworkView(station: station, size: 46)
-            }
-            .frame(width: 46, height: 46)
-            .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46), style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46), style: .continuous)
-                    .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
+            AVFramedArtwork(
+                size: 46,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 46),
+                strokeOpacity: 0.55
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: 46, scale: displayScale) {
+                    StationArtworkView(station: station, size: 46)
+                }
             }
         } else {
             StationArtworkView(
