@@ -143,17 +143,11 @@ struct SearchCountryPickerSheet: View {
                                                     .font(.system(size: 11, weight: .bold))
                                             }
                                         }
-                                        .foregroundStyle(selectedCountryCode == option.code ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 11)
-                                        .background(
-                                            Capsule(style: .continuous)
-                                                .fill(selectedCountryCode == option.code ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface)
+                                        .shellChip(
+                                            isHighlighted: selectedCountryCode == option.code,
+                                            verticalPadding: 11,
+                                            highlightedStrokeOpacity: 0.24
                                         )
-                                        .overlay {
-                                            Capsule(style: .continuous)
-                                                .stroke(selectedCountryCode == option.code ? TuneAVTheme.highlight.opacity(0.24) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                                        }
                                     }
                                     .buttonStyle(.plain)
                                 }

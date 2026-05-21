@@ -9,19 +9,33 @@ struct WrapTagsRow: View {
             ForEach(tags, id: \.self) { tag in
                 Text(tag)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(highlighted ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(highlighted ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface)
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(highlighted ? TuneAVTheme.highlight.opacity(0.18) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
+                    .shellChip(isHighlighted: highlighted, horizontalPadding: 12, verticalPadding: 8)
             }
         }
+    }
+}
+
+extension View {
+    func shellChip(
+        isHighlighted: Bool,
+        horizontalPadding: CGFloat = 14,
+        verticalPadding: CGFloat = 10,
+        highlightedStrokeOpacity: Double = 0.22
+    ) -> some View {
+        foregroundStyle(isHighlighted ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(isHighlighted ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface)
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(
+                        isHighlighted ? TuneAVTheme.highlight.opacity(highlightedStrokeOpacity) : TuneAVTheme.borderSubtle,
+                        lineWidth: 1
+                    )
+            }
     }
 }
 
