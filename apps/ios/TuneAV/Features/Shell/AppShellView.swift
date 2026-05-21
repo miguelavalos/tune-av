@@ -3135,11 +3135,11 @@ struct AviScreen: View {
                 cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
             ) {
                 TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                    musicArtworkFallback(systemImage: "music.note", size: size)
+                    TuneAVMusicArtworkFallback(systemImage: "music.note", size: size, iconSize: 22)
                 }
             }
         } else {
-            musicArtworkFallback(systemImage: "music.note", size: size)
+            TuneAVMusicArtworkFallback(systemImage: "music.note", size: size, iconSize: 22)
         }
     }
 
@@ -3151,11 +3151,11 @@ struct AviScreen: View {
                 cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
             ) {
                 TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                    musicArtworkFallback(systemImage: "person.fill", size: size)
+                    TuneAVMusicArtworkFallback(systemImage: "person.fill", size: size, iconSize: 22)
                 }
             }
         } else {
-            musicArtworkFallback(systemImage: "person.fill", size: size)
+            TuneAVMusicArtworkFallback(systemImage: "person.fill", size: size, iconSize: 22)
         }
     }
 
@@ -3222,25 +3222,6 @@ struct AviScreen: View {
         value
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: L10n.locale)
             .lowercased()
-    }
-
-    private func musicArtworkFallback(systemImage: String, size: CGFloat) -> some View {
-        musicArtworkShape(size: size)
-            .fill(TuneAVTheme.mutedSurface)
-            .frame(width: size, height: size)
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.highlight)
-            }
-            .overlay {
-                musicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-    }
-
-    private func musicArtworkShape(size: CGFloat) -> RoundedRectangle {
-        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 
     private var aviContextHeader: some View {
