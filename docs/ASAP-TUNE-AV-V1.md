@@ -1,217 +1,301 @@
-# ASAP: Tune AV v1
+# ASAP: AV Foundation From Tune AV
 
-Goal: finish Tune AV as the first complete, stable, App Store-ready AV app.
+Goal: use Tune AV as the reference app for the AV product family before the
+first App Store release.
 
-This document is intentionally focused on Tune AV. Do not use this phase to extract
-large shared UI packages or migrate Moments AV / Series AV. Tune AV is the reference
-app; shared packages should only grow when they directly help Tune AV ship cleanly.
+Tune AV is already close to release. Before submitting it, we should review the
+whole app and extract only the pieces that make sense as shared foundation for
+future apps such as Moments AV and Series AV. The result should be a cleaner Tune
+AV v1 and a stronger `apps-av` foundation.
 
-## Release Principle
+This phase is not about migrating other apps yet. Moments AV, Series AV, and any
+new app will start after Tune AV v1 is accepted and stable.
 
-- Tune AV v1 must feel coherent across splash, onboarding, shell, footer, Avi,
-  playback, library, profile, settings, paywall, and account flows.
-- Prefer fixing Tune AV in place over abstracting too early.
-- No legacy wrappers or migration layers.
-- Every PR should leave the app cleaner, buildable, and tested.
-- Anything extracted to `apps-av` must be immediately used by Tune AV and must
-  remove local duplication.
+## Principles
 
-## PR 1: Visual Structure And Branding Audit
+- Tune AV remains the source of truth for the first AV app structure.
+- Shared code must improve control, consistency, and speed across future apps.
+- No migrations, no legacy compatibility layers, no duplicate old/new paths.
+- Every extraction must be used immediately by Tune AV.
+- Tune AV should get simpler after each shared extraction.
+- `apps-av` should stay generic: platform-specific code belongs under platform
+  folders such as `apple/`, leaving room for Android or web later.
+- App-specific features stay in Tune AV unless they are clearly reusable as a
+  branded AV app pattern.
 
-Purpose: make Tune AV internally consistent before App Store work.
+## What Should Be Considered For Shared
 
-Check:
+High-value candidates:
 
-- Splash visual quality and launch transition.
-- Onboarding visual quality and Account AV entry points.
-- Header: settings, logo, account.
-- Footer: tab shape, selected state, Avi button, safe area behavior.
-- Avi surfaces: companion card, full player, action panel, detail screens.
-- Profile/settings cards and empty states.
-- Typography, corner radius, spacing, shadows, icon weight, and accent use.
-- German/English/Catalan/Spanish text fit on compact iPhones.
+- Brand foundation: colors, typography, spacing, radius, icon sizing, motion,
+  haptics, surface styles, and common visual tokens.
+- App structure: splash, onboarding shell, main shell, footer, header actions,
+  settings entry, account entry, safe-area behavior, and navigation shape.
+- Avi foundation: entry points, companion surfaces, context indicator, action
+  panels, reaction/emotion UI, detail surface patterns, and shared interaction
+  contracts.
+- Account/settings presentation: reusable UI structure around Account AV,
+  profile shell, settings rows, legal/support/delete-account entry points.
+- Paywall/limits presentation: common surfaces, blocked-action prompts, restore
+  entry, entitlement-state UI, without forcing Tune-specific business logic.
+- Localization and text-fit helpers: common labels, layout constraints, compact
+  device behavior, reusable validation patterns.
+- QA/release utilities: shared checklist structure, smoke-test flows, screenshot
+  expectations, build verification conventions.
+
+Low-value or not-now candidates:
+
+- Tune-specific radio, station, playback, discovery, music, or recommendation
+  models.
+- Business logic that is likely to differ per app.
+- Abstractions created only because another app may need them later.
+- Shared APIs that mention Tune AV concepts.
+- Compatibility wrappers around code we can delete cleanly.
+
+## PR 1: Full Tune AV Shared Audit
+
+Purpose: inspect the complete Tune AV app and decide what is worth sharing.
+
+Review:
+
+- Splash and launch transition.
+- Onboarding and first-run experience.
+- Main shell and navigation.
+- Footer and Avi entry.
+- Header/logo/settings/account surfaces.
+- Profile/settings/account/legal flows.
+- Avi surfaces and interaction patterns.
+- Paywall and limits.
+- Localization and text fit.
+- Existing use of `apps-av`, `account-av`, and local Tune AV components.
 
 Deliverable:
 
-- Small UI fixes only where inconsistency is visible.
-- Build iOS Simulator.
-- Simulator smoke test Home, Search, Library, Music, Avi, Profile.
+- A short extraction map with three buckets:
+  - move to `apps-av` now
+  - keep in Tune AV
+  - revisit after Tune AV v1
+- No code changes unless needed to unblock the audit.
 
-## PR 2: First-Run, Onboarding, Account
+## PR 2: Shared Brand Foundation
 
-Purpose: ensure the first user experience is App Store-ready.
+Purpose: make AV branding controllable from one Apple shared package.
 
-Check:
+Move to `apps-av/apple` if the audit confirms stable patterns:
 
-- Fresh install path.
-- Guest mode path.
-- Sign in entry points.
-- Account unavailable state.
+- Semantic brand colors.
+- Typography roles.
+- Spacing and layout constants.
+- Corner radius and surface styles.
+- Common icon sizing.
+- Existing shared haptics alignment.
+- Motion/duration constants if already repeated.
+
+Tune AV cleanup:
+
+- Replace local duplicated constants with shared foundation.
+- Remove old local equivalents.
+- Keep Tune-specific colors/assets only where they truly define Tune AV.
+
+Verification:
+
+- iOS Simulator build.
+- Visual smoke on splash, onboarding, Home, Library, Music, Avi, Profile.
+
+## PR 3: Shared App Shell
+
+Purpose: ensure future AV apps share the same structural feel.
+
+Move to shared only if the API can stay app-neutral:
+
+- App shell container.
+- Footer/tab structure.
+- Avi central entry.
+- Header action layout.
+- Settings/account/logo placement.
+- Safe-area and keyboard behavior.
+- Selected/pressed states.
+
+Tune AV cleanup:
+
+- Tune AV provides app-specific tabs, labels, icons, and destinations.
+- Shared code owns the layout and interaction shape.
+- Delete replaced local shell components.
+
+Verification:
+
+- Simulator smoke: Home, Search, Library, Music, Avi, Profile.
+- Confirm navigation state and footer selection remain correct.
+
+## PR 4: Shared Splash And Onboarding Foundation
+
+Purpose: make every AV app start with the same branded quality.
+
+Move to shared:
+
+- Splash layout pattern.
+- Launch transition pattern.
+- Onboarding page container.
+- Account/legal entry layout.
+- Shared buttons/surfaces used by onboarding.
+
+Tune AV cleanup:
+
+- Tune AV keeps its own copy, imagery, app name, and app-specific onboarding
+  content.
+- Shared code owns structure, spacing, transitions, and reusable states.
+
+Verification:
+
+- Fresh install simulator run.
+- Guest path.
+- Sign-in entry path.
+- Legal links.
+- Compact iPhone text fit.
+
+## PR 5: Shared Account, Settings, And Legal Surfaces
+
+Purpose: keep account/settings flows consistent across all AV apps while reusing
+Account AV where appropriate.
+
+Move to shared:
+
+- Profile/settings shell.
+- Settings row styles.
+- Account entry card structure.
+- Legal/support/delete-account row patterns.
+- Empty/error/loading presentation where generic.
+
+Keep outside shared:
+
+- Account AV implementation details.
+- App-specific settings.
+- Tune-specific user-facing copy.
+
+Tune AV cleanup:
+
+- Replace local duplicated settings/profile UI.
+- Keep Tune-specific settings as configuration/content.
+
+Verification:
+
+- Guest profile.
+- Signed-in profile if available.
 - Sign out.
-- Account deletion flow.
-- Legal links from onboarding/profile.
-- Error states for auth failures.
+- Delete-account entry.
+- Legal/support links.
 
-Deliverable:
+## PR 6: Shared Avi Foundation
 
-- Fix broken, unclear, or visually inconsistent onboarding/account behavior.
-- Build and targeted smoke tests.
+Purpose: make Avi a consistent AV family interface while allowing each app to
+define what Avi actually does.
 
-## PR 3: Core Product Flows
+Move to shared:
 
-Purpose: validate Tune AV's real value loop.
+- Avi entry surface.
+- Companion card/surface layout.
+- Context indicator.
+- Action panel structure.
+- Detail surface pattern.
+- Reaction/emotion presentation.
+- Shared haptic events already available in `AVHaptics`.
 
-Check:
+Keep in Tune AV:
 
-- Home daily desk.
-- Play station.
-- Stop/close signal.
-- Full player.
-- Search station.
-- Favorite/unfavorite.
-- Station feedback: like, not for me, dislike, clear.
-- Recent/favorite/tuned library modes.
-- Music/discoveries save/unsave and feedback.
-- Last played resume.
-- Cellular playback warning if enabled.
+- Radio/music/discovery-specific Avi behavior.
+- Tune-specific prompts, copy, and recommendations.
+- Feature-specific data models.
 
-Deliverable:
+Tune AV cleanup:
 
-- Fix blockers and obvious UX breaks.
-- Keep feature changes minimal unless they are required for v1 quality.
-- Build and simulator smoke test.
+- Tune AV passes app-specific context and actions into shared Avi UI.
+- Delete local generic Avi surfaces once replaced.
 
-## PR 4: Avi v1 Quality Pass
+Verification:
 
-Purpose: make Avi feel like a coherent product pillar, not a decorative layer.
+- Open Avi from footer.
+- Open radio details.
+- Open music/discovery details.
+- Trigger reactions/actions.
+- Navigate back and across tabs.
 
-Check:
+## PR 7: Shared Paywall And Limit Surfaces
 
-- Avi entry from footer.
-- Avi active context indicator.
-- Avi full player state.
-- Avi radio details.
-- Avi music/discovery details.
-- Avi action panels.
-- Avi emotions/reactions.
-- Haptics on physical device later.
-- No repeated or noisy reactions.
+Purpose: make monetization UI consistent without locking future apps into Tune
+AV business rules.
 
-Deliverable:
+Move to shared:
 
-- Fix interaction bugs, layout issues, and noisy transitions.
-- Simulator smoke test; physical-device haptics pass before release candidate.
+- Paywall surface layout.
+- Feature/benefit row style.
+- Blocked-action prompt layout.
+- Restore purchase entry pattern.
+- Loading/error/entitlement presentation.
 
-## PR 5: Paywall, Limits, Purchases
+Keep in Tune AV:
 
-Purpose: make monetization/restrictions review-safe and understandable.
+- Product IDs.
+- Entitlement mapping.
+- Tune-specific limits.
+- Tune-specific paywall copy.
 
-Check:
+Verification:
 
-- Pro paywall copy.
-- Guest/free/pro limits.
-- Upgrade prompts from blocked actions.
-- Restore purchases.
-- RevenueCat entitlement state handling.
-- Offline or failed purchase states.
+- Free/guest blocked action.
+- Paywall display.
+- Restore entry.
+- Purchase error/offline state where practical.
 
-Deliverable:
+## PR 8: Tune AV Cleanup And Consistency Pass
 
-- Fix review-blocking or confusing behavior.
-- Build and targeted tests where available.
+Purpose: make Tune AV the clean reference implementation.
 
-## PR 6: App Store Technical Readiness
+Do:
 
-Purpose: prepare the exact build path for Apple submission.
+- Remove dead local components replaced by shared code.
+- Remove duplicated styles and constants.
+- Confirm no Tune-specific names leaked into `apps-av`.
+- Confirm `apps-av` APIs are small, stable, and app-neutral.
+- Confirm Tune AV still reads as Tune AV, not as a generic demo app.
 
-Run and verify the existing release checklist in `docs/release-checklist.md`.
+Verification:
 
-Check:
+- iOS Simulator build.
+- Unit tests if present.
+- Simulator smoke across all primary flows.
+- Review repo status in both `tune-av` and `apps-av`.
 
-- Production config generation.
-- Bundle identifier.
-- Version/build number.
-- App icon and launch assets.
-- Privacy manifest evidence.
-- Third-party SDK inventory.
-- Legal/support/delete-account URLs.
-- ATS review notes for live radio HTTP streams.
-- Archive preflight.
-- App size budget.
+## PR 9: Tune AV Release Candidate
 
-Deliverable:
+Purpose: freeze the first Tune AV version for TestFlight and App Store.
 
-- Release checklist passes or has documented, accepted exceptions.
-- No private config or signing artifacts committed.
-
-## PR 7: Localization And Text Fit
-
-Purpose: avoid App Store screenshots and real devices showing broken text.
-
-Check:
-
-- English.
-- Spanish.
-- Catalan.
-- German.
-- Compact iPhone.
-- Large Dynamic Type where practical.
-- Buttons, pills, cards, nav labels, paywall, onboarding, profile.
-
-Deliverable:
-
-- Fix truncation, overflow, awkward copy, and missing localized strings.
-- Build and simulator screenshots for key screens.
-
-## PR 8: Release Candidate
-
-Purpose: freeze Tune AV v1 for TestFlight/App Store.
+Run and verify `docs/release-checklist.md`.
 
 Required:
 
-- Clean repo.
+- Clean repos.
 - All intended commits pushed.
 - iOS Simulator build passes.
-- Unit tests pass.
-- Release preflight passes.
-- Archive preflight passes.
-- Physical-device smoke completed.
-- Haptics physical-device pass completed.
-- App Store screenshots captured from release-equivalent build.
+- Physical-device smoke test passes.
+- Physical-device haptics pass completed.
+- App Store privacy/legal/support/delete-account material ready.
+- Screenshots captured from a release-equivalent build.
 - TestFlight build processed.
+- No known v1 blockers remain.
 
 Deliverable:
 
-- Release candidate tag or release branch, depending on final workflow.
-
-## Shared Package Rule During v1
-
-Allowed:
-
-- Small, stable utilities already proven in Tune AV.
-- Code that Tune AV consumes immediately.
-- Code that removes local duplication without changing product behavior.
-
-Not allowed during v1:
-
-- Large shell/branding extraction just to prepare Moments AV or Series AV.
-- Generic abstractions that delay Tune AV release.
-- Compatibility wrappers.
-- Shared APIs that still mention Tune-specific models.
-
-Current shared package status:
-
-- `apps-av/apple/AVHaptics` is accepted and already used by Tune AV.
-- Further shared work should wait unless it directly improves Tune AV v1.
+- Tune AV v1 release candidate ready for App Store submission.
 
 ## Definition Of Done
 
-Tune AV v1 is done when:
+This phase is done when:
 
-- The app feels visually coherent.
-- First-run, guest, account, playback, library, Avi, profile, paywall, and legal
-  flows work.
-- Build, tests, simulator smoke, physical-device smoke, and release preflight pass.
-- App Store submission material is ready.
-- No known v1 blockers remain.
-
+- Tune AV is ready to submit as the first AV app.
+- `apps-av` contains only shared code that Tune AV actually uses.
+- Tune AV no longer carries duplicated local versions of extracted foundation
+  code.
+- The shared Apple foundation is app-neutral and leaves room for Android or web
+  platform folders later.
+- Moments AV and Series AV can start after release using Tune AV plus `apps-av`
+  as the reference, without copying unstable local code.
