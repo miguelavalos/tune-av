@@ -4253,7 +4253,7 @@ struct AviScreen: View {
 
             HStack(spacing: 10) {
                 if !hasCurrentSongContext {
-                    fullPlayerAviActionButton(
+                    AVAviPrimaryActionButton(
                         title: stationSaveActionTitle(for: station),
                         systemImage: stationSaveActionSystemImage(for: station),
                         accessibilityIdentifier: "avi.fullPlayer.saveRadio"
@@ -4263,7 +4263,7 @@ struct AviScreen: View {
                     }
                 }
 
-                fullPlayerAviActionButton(
+                AVAviPrimaryActionButton(
                     title: L10n.string("shell.avi.actions.ask"),
                     systemImage: "sparkles",
                     accessibilityIdentifier: "avi.actions.toggle"
@@ -4614,30 +4614,6 @@ struct AviScreen: View {
                 .stroke(TuneAVTheme.highlight.opacity(0.2), lineWidth: 1)
         }
         .shadow(color: TuneAVTheme.glassShadow, radius: 24, y: 12)
-    }
-
-    private func fullPlayerAviActionButton(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .black))
-                Text(title)
-                    .font(.system(size: 13, weight: .black))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-            }
-            .foregroundStyle(TuneAVTheme.brandBlack)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     private var hasCurrentSongContext: Bool {
