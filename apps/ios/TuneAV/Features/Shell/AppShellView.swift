@@ -2483,7 +2483,7 @@ struct AviScreen: View {
 
     @ViewBuilder
     private func focusedStationPrimaryCommands(for station: Station) -> some View {
-        AviCommandButton(
+        AVAviCommandButton(
             title: hasCurrentSongContext ? L10n.string("shell.avi.actions.searchLyrics") : L10n.string("shell.avi.actions.searchPublicInfo"),
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: "avi.command.primary.search"
@@ -2497,7 +2497,7 @@ struct AviScreen: View {
             }
         }
 
-        AviCommandButton(
+        AVAviCommandButton(
             title: L10n.string("shell.avi.actions.history"),
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
@@ -2507,7 +2507,7 @@ struct AviScreen: View {
             }
         }
 
-        AviCommandButton(
+        AVAviCommandButton(
             title: L10n.string("shell.avi.actions.findRelatedRadios"),
             systemImage: "sparkles",
             accessibilityIdentifier: "avi.command.primary.relatedRadios"
@@ -2520,7 +2520,7 @@ struct AviScreen: View {
     private func focusedMusicPrimaryCommands(for detail: SelectedMusicAviDetail) -> some View {
         switch detail {
         case .track(let discovery):
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchLyrics"),
                 systemImage: "text.quote",
                 accessibilityIdentifier: "avi.command.primary.music.lyrics"
@@ -2529,7 +2529,7 @@ struct AviScreen: View {
                     openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
                 }
             }
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.music.youtube"
@@ -2538,7 +2538,7 @@ struct AviScreen: View {
                     openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
                 }
             }
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchArtist"),
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.music.artist"
@@ -2548,7 +2548,7 @@ struct AviScreen: View {
                 }
             }
         case .artist(let summary):
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchArtist"),
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.artist.search"
@@ -2557,7 +2557,7 @@ struct AviScreen: View {
                     openExternalSearch(query: summary.name)
                 }
             }
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.artist.youtube"
@@ -2566,7 +2566,7 @@ struct AviScreen: View {
                     openExternalSearch(query: summary.name, destination: .youtube)
                 }
             }
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.findRelatedRadios"),
                 systemImage: "magnifyingglass",
                 accessibilityIdentifier: "avi.command.primary.artist.searchRadio"
@@ -2583,7 +2583,7 @@ struct AviScreen: View {
 
     @ViewBuilder
     private func currentSignalPrimaryCommands(for station: Station) -> some View {
-        AviCommandButton(
+        AVAviCommandButton(
             title: hasCurrentSongContext ? L10n.string("shell.avi.actions.searchLyrics") : L10n.string("shell.avi.actions.searchPublicInfo"),
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.searchLyrics" : "avi.command.primary.searchRadio"
@@ -2597,7 +2597,7 @@ struct AviScreen: View {
             }
         }
 
-        AviCommandButton(
+        AVAviCommandButton(
             title: L10n.string("shell.avi.actions.history"),
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
@@ -2611,7 +2611,7 @@ struct AviScreen: View {
     @ViewBuilder
     private var defaultAviPrimaryCommands: some View {
         if currentStation != nil {
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.action.nowPlaying"),
                 systemImage: "waveform",
                 accessibilityIdentifier: "avi.command.primary.currentPlayer"
@@ -2620,7 +2620,7 @@ struct AviScreen: View {
             }
         }
 
-        AviCommandButton(
+        AVAviCommandButton(
             title: L10n.string("shell.avi.action.findStation"),
             systemImage: "sparkles",
             accessibilityIdentifier: "avi.command.primary.findStation"
@@ -2628,7 +2628,7 @@ struct AviScreen: View {
             openSearch()
         }
 
-        AviCommandButton(
+        AVAviCommandButton(
             title: L10n.string("shell.avi.action.saved"),
             systemImage: "bookmark.fill",
             accessibilityIdentifier: "avi.command.primary.saved"
@@ -2637,7 +2637,7 @@ struct AviScreen: View {
         }
 
         if let recommendation = topRecommendation {
-            AviCommandButton(
+            AVAviCommandButton(
                 title: L10n.string("shell.avi.recommendation.play"),
                 systemImage: "play.fill",
                 accessibilityIdentifier: "avi.command.primary.recommendation"

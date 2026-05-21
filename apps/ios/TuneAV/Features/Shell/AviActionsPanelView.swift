@@ -41,7 +41,7 @@ struct AviActionsPanelView: View {
             }
         } footer: {
             if showsCloseSignalAction {
-                AviCloseSignalPanelButton(action: closeSignal)
+                AVAviCloseSignalPanelButton(title: L10n.string("shell.accessibility.closeSignal"), action: closeSignal)
             } else {
                 EmptyView()
             }
@@ -50,59 +50,22 @@ struct AviActionsPanelView: View {
 
     private var songActions: some View {
         Group {
-            AviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics", action: searchLyrics)
-            AviCommandButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube", action: searchYouTube)
-            AviCommandButton(title: L10n.string("shell.avi.actions.searchAppleMusic"), systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic", action: searchAppleMusic)
-            AviCommandButton(title: L10n.string("shell.avi.actions.searchArtist"), systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist", action: searchArtist)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.searchLyrics"), systemImage: "text.quote", accessibilityIdentifier: "avi.actions.lyrics", action: searchLyrics)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube", action: searchYouTube)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.searchAppleMusic"), systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic", action: searchAppleMusic)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.searchArtist"), systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist", action: searchArtist)
         }
     }
 
     private var stationActions: some View {
         Group {
-            AviCommandButton(title: L10n.string("shell.avi.actions.searchPublicInfo"), systemImage: "info.circle", accessibilityIdentifier: "avi.actions.publicInfo", action: searchPublicInfo)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.searchPublicInfo"), systemImage: "info.circle", accessibilityIdentifier: "avi.actions.publicInfo", action: searchPublicInfo)
             if showsStationDetailAction {
-                AviCommandButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioDetails", action: showRadioDetails)
+                AVAviCommandButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioDetails", action: showRadioDetails)
             }
-            AviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history", action: showHistory)
-            AviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web", action: openWebsite)
-            AviCommandButton(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles", accessibilityIdentifier: "avi.actions.relatedRadios", action: findRelatedRadios)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.history"), systemImage: "clock.arrow.circlepath", accessibilityIdentifier: "avi.actions.history", action: showHistory)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.openWebsite"), systemImage: "safari", accessibilityIdentifier: "avi.actions.web", action: openWebsite)
+            AVAviCommandButton(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles", accessibilityIdentifier: "avi.actions.relatedRadios", action: findRelatedRadios)
         }
-    }
-
-}
-
-struct AviCommandButton: View {
-    let title: String
-    let systemImage: String
-    let accessibilityIdentifier: String?
-    let action: () -> Void
-
-    init(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String? = nil,
-        action: @escaping () -> Void
-    ) {
-        self.title = title
-        self.systemImage = systemImage
-        self.accessibilityIdentifier = accessibilityIdentifier
-        self.action = action
-    }
-
-    var body: some View {
-        AVAviCommandButton(
-            title: title,
-            systemImage: systemImage,
-            accessibilityIdentifier: accessibilityIdentifier,
-            action: action
-        )
-    }
-}
-
-struct AviCloseSignalPanelButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        AVAviCloseSignalPanelButton(title: L10n.string("shell.accessibility.closeSignal"), action: action)
     }
 }
