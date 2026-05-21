@@ -11,8 +11,7 @@ struct RootView: View {
     @State private var authOptionsArePresented = false
     @State private var automaticGuestOnboardingIsPresented = false
     @State private var isShowingAccountOnboarding = false
-    @State private var isShowingSplash = false
-    @State private var hasShownSplashThisLaunch = false
+    @State private var splashTransition = AVSplashTransitionState()
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
@@ -45,7 +44,7 @@ struct RootView: View {
                 )
                     .environmentObject(accessController)
                     .overlay {
-                        if isShowingSplash {
+                        if splashTransition.isShowing {
                             TuneAVSplashView()
                                 .transition(.opacity)
                                 .zIndex(1)
@@ -243,19 +242,13 @@ struct RootView: View {
 
     private func showInitialSplashIfNeeded() async {
         let splashPolicy = splashPolicy
-        guard !splashPolicy.isDisabled, !hasShownSplashThisLaunch else {
-            isShowingSplash = false
-            return
-        }
-
-        hasShownSplashThisLaunch = true
+        guard splashTransition.beginIfNeeded(policy: splashPolicy) else { return }
         let startedAt = Date()
-        isShowingSplash = true
         try? await Task.sleep(for: splashPolicy.displayDuration)
 
         await MainActor.run {
             withAnimation(splashPolicy.dismissAnimation) {
-                isShowingSplash = false
+                splashTransition.dismiss()
             }
         }
         logStartupOperation("splash", startedAt: startedAt)
