@@ -140,14 +140,14 @@ struct AviExpandedFooterPlayerView: View {
     private var artwork: some View {
         ZStack(alignment: .topLeading) {
             if let artworkURL = audioPlayer.currentTrackArtworkURL {
-                TuneAVRemoteArtworkImage(url: artworkURL, size: 152, scale: displayScale) {
-                    StationArtworkView(station: station, size: 152)
-                }
-                .frame(width: 152, height: 152)
-                .clipShape(RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152), style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152), style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle.opacity(0.55), lineWidth: 1)
+                AVFramedArtwork(
+                    size: 152,
+                    cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152),
+                    strokeOpacity: 0.55
+                ) {
+                    TuneAVRemoteArtworkImage(url: artworkURL, size: 152, scale: displayScale) {
+                        StationArtworkView(station: station, size: 152)
+                    }
                 }
             } else {
                 StationArtworkView(
@@ -323,14 +323,13 @@ struct AppShellArtworkZoomOverlay: View {
     @ViewBuilder
     private func artwork(size: CGFloat) -> some View {
         if let artworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                StationArtworkView(station: station, size: size)
-            }
-            .frame(width: size, height: size)
-            .clipShape(artworkShape(size: size))
-            .overlay {
-                artworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVFramedArtwork(
+                size: size,
+                cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
+            ) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
+                    StationArtworkView(station: station, size: size)
+                }
             }
         } else {
             StationArtworkView(
@@ -340,9 +339,5 @@ struct AppShellArtworkZoomOverlay: View {
                 isAnimationActive: false
             )
         }
-    }
-
-    private func artworkShape(size: CGFloat) -> RoundedRectangle {
-        RoundedRectangle(cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size), style: .continuous)
     }
 }
