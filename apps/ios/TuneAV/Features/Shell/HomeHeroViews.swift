@@ -270,13 +270,12 @@ private struct HomeLiveStatePill: View {
                 .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.78))
                 .lineLimit(1)
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 7)
-        .background(TuneAVTheme.highlight.opacity(0.12), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(TuneAVTheme.highlight.opacity(0.2), lineWidth: 1)
-        }
+        .homeHeroCapsule(
+            horizontalPadding: 9,
+            verticalPadding: 7,
+            fill: TuneAVTheme.highlight.opacity(0.12),
+            stroke: TuneAVTheme.highlight.opacity(0.2)
+        )
     }
 
     private var title: String {
@@ -298,13 +297,12 @@ private struct HomeDeskBadge: View {
             .font(.system(size: 11, weight: .bold))
             .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
             .lineLimit(1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(Color.white.opacity(0.58), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
-            }
+            .homeHeroCapsule(
+                horizontalPadding: 8,
+                verticalPadding: 5,
+                fill: Color.white.opacity(0.58),
+                stroke: TuneAVTheme.brandGraphite.opacity(0.08)
+            )
     }
 }
 
@@ -324,13 +322,29 @@ private struct HomeDeskSignalPill: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Color.white.opacity(0.62), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(TuneAVTheme.brandGraphite.opacity(0.08), lineWidth: 1)
-        }
+        .homeHeroCapsule(
+            horizontalPadding: 10,
+            verticalPadding: 7,
+            fill: Color.white.opacity(0.62),
+            stroke: TuneAVTheme.brandGraphite.opacity(0.08)
+        )
+    }
+}
+
+private extension View {
+    func homeHeroCapsule(
+        horizontalPadding: CGFloat,
+        verticalPadding: CGFloat,
+        fill: Color,
+        stroke: Color
+    ) -> some View {
+        padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .background(fill, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(stroke, lineWidth: 1)
+            }
     }
 }
 
