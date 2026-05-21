@@ -14,17 +14,7 @@ struct GenreTagStrip: View {
                     } label: {
                         Text(L10n.genreLabel(for: tag))
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(activeTag == tag ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(
-                                Capsule(style: .continuous)
-                                    .fill(activeTag == tag ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface)
-                            )
-                            .overlay {
-                                Capsule(style: .continuous)
-                                    .stroke(activeTag == tag ? TuneAVTheme.highlight.opacity(0.22) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                            }
+                            .shellChip(isHighlighted: activeTag == tag)
                     }
                     .buttonStyle(.plain)
                 }
