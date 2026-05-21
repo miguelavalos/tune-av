@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
@@ -81,65 +82,22 @@ struct AviExpandedFooterPlayerView: View {
     @State private var isShowingQueueSwitcher = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button(action: showArtworkZoom) {
-                stationNameText
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(station.name)
-            .accessibilityIdentifier("avi.footerPlayer.stationName")
-            .frame(height: 22)
-
-            Spacer()
-                .frame(height: 8)
-
-            Button(action: showArtworkZoom) {
-                artwork
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
-            .accessibilityIdentifier("avi.footerPlayer.artworkZoom")
-            .frame(height: 152)
-
-            Spacer()
-                .frame(height: 14)
-
-            Button(action: showArtworkZoom) {
-                metadataText
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.accessibility.zoomArtwork"))
-            .accessibilityIdentifier("avi.footerPlayer.textZoom")
-            .frame(height: 58)
-
-            Spacer(minLength: 0)
-
+        AVExpandedFooterPlayerScaffold(
+            stationTitle: station.name,
+            subtitle: artistLine,
+            title: titleLine,
+            isSubtitleHighlighted: trackArtworkExists,
+            artworkAccessibilityLabel: L10n.string("shell.accessibility.zoomArtwork"),
+            accessibilityLabel: L10n.string("shell.miniPlayer.accessibility.label", station.name),
+            accessibilityHint: L10n.string("shell.miniPlayer.accessibility.hint"),
+            stationAction: showArtworkZoom,
+            artworkAction: showArtworkZoom,
+            metadataAction: showArtworkZoom
+        ) {
+            artwork
+        } controls: {
             controlsRow
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
-        .frame(height: 360)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(TuneAVTheme.cardSurface)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [TuneAVTheme.glassStroke, TuneAVTheme.highlight.opacity(0.12)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-        .shadow(color: TuneAVTheme.glassShadow.opacity(0.7), radius: 8, y: 2)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(L10n.string("shell.miniPlayer.accessibility.label", station.name))
-        .accessibilityHint(L10n.string("shell.miniPlayer.accessibility.hint"))
-        .accessibilityIdentifier("avi.footerPlayer.container")
         .sheet(isPresented: $isShowingQueueSwitcher) {
             AviQueueSwitcherSheet(
                 currentSource: playbackQueueSource,
@@ -194,42 +152,6 @@ struct AviExpandedFooterPlayerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("avi.footerPlayer.playPause")
-    }
-
-    private var metadataText: some View {
-        VStack(alignment: .center, spacing: 5) {
-            Text(artistLine)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(trackArtworkExists ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(height: 19, alignment: .center)
-
-            Text(titleLine)
-                .font(.system(size: 18, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.86)
-                .truncationMode(.tail)
-                .frame(height: 40, alignment: .top)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .contentShape(Rectangle())
-    }
-
-    private var stationNameText: some View {
-        Text(station.name)
-            .font(.system(size: 13, weight: .black, design: .rounded))
-            .foregroundStyle(TuneAVTheme.textSecondary)
-            .multilineTextAlignment(.center)
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
-            .truncationMode(.tail)
-            .frame(height: 18, alignment: .center)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -307,20 +229,12 @@ struct AviExpandedFooterPlayerView: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(audioPlayer.canCyclePlaybackQueue ? TuneAVTheme.textSecondary : TuneAVTheme.textSecondary.opacity(0.28))
-                .frame(width: 54, height: 54)
-                .background(.ultraThinMaterial.opacity(audioPlayer.canCyclePlaybackQueue ? 1 : 0.45), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(audioPlayer.canCyclePlaybackQueue ? 0.12 : 0.06), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .disabled(!audioPlayer.canCyclePlaybackQueue)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        AVFooterPlayerControlButton(
+            systemImage: systemImage,
+            isEnabled: audioPlayer.canCyclePlaybackQueue,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private var queueSourceButton: some View {
