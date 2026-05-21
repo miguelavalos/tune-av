@@ -168,99 +168,133 @@ struct ProfileScreen: View {
         VStack(alignment: .leading, spacing: 18) {
             sectionHeader(
                 title: L10n.string("profile.sync.title"),
-                subtitle: L10n.string("profile.sync.subtitle")
+                subtitle: L10n.string("profile.sync.subtitle.short")
             )
 
             VStack(alignment: .leading, spacing: 12) {
                 ShellRow(
                     systemImage: cloudSyncIcon,
-                    title: L10n.string("profile.sync.status.title"),
-                    detail: cloudSyncStatusDetail
+                    title: cloudSyncHeadline,
+                    detail: cloudSyncCompactDetail
                 )
                 .accessibilityIdentifier("profile.sync.status")
 
-                if let lastSyncedAt = cloudSyncLastSyncedAt {
+                if let pendingDetail = cloudSyncPendingDetail {
                     ShellRow(
-                        systemImage: "clock.badge.checkmark",
-                        title: L10n.string("profile.sync.lastSynced.title"),
-                        detail: lastSyncedAt.formatted(date: .abbreviated, time: .shortened)
+                        systemImage: "tray.and.arrow.up",
+                        title: L10n.string("profile.sync.pending.title"),
+                        detail: pendingDetail
                     )
-                    .accessibilityIdentifier("profile.sync.lastSynced")
+                    .accessibilityIdentifier("profile.sync.pending")
                 }
-
-                ShellRow(
-                    systemImage: "arrow.down.doc",
-                    title: L10n.string("profile.sync.diagnostics.lastPull.title"),
-                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastCloudPullAt)
-                )
-                .accessibilityIdentifier("profile.sync.lastPull")
-
-                ShellRow(
-                    systemImage: "arrow.up.doc",
-                    title: L10n.string("profile.sync.diagnostics.lastPush.title"),
-                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastCloudPushAt)
-                )
-                .accessibilityIdentifier("profile.sync.lastPush")
-
-                ShellRow(
-                    systemImage: "chart.bar.doc.horizontal",
-                    title: L10n.string("profile.sync.diagnostics.summary.title"),
-                    detail: syncDateDetail(libraryStore.syncDiagnostics.lastSummaryFetchAt)
-                )
-                .accessibilityIdentifier("profile.sync.summaryFetch")
 
                 if libraryStore.syncDiagnostics.isSummaryStale {
-                    ShellRow(
-                        systemImage: "clock.arrow.circlepath",
-                        title: L10n.string("profile.sync.diagnostics.summaryPending.title"),
-                        detail: L10n.string("profile.sync.diagnostics.summaryPending.detail")
-                    )
-                    .accessibilityIdentifier("profile.sync.summaryPending")
+                    Text(L10n.string("profile.sync.summaryPending.inline"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(TuneAVTheme.highlight.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .accessibilityIdentifier("profile.sync.summaryPending")
                 }
-
-                ShellRow(
-                    systemImage: "tray.and.arrow.up",
-                    title: L10n.string("profile.sync.diagnostics.pendingSessions.title"),
-                    detail: L10n.plural(
-                        singular: "profile.sync.diagnostics.pendingSessions.one",
-                        plural: "profile.sync.diagnostics.pendingSessions.other",
-                        count: libraryStore.syncDiagnostics.pendingListeningSessionCount,
-                        libraryStore.syncDiagnostics.pendingListeningSessionCount
-                    )
-                )
-                .accessibilityIdentifier("profile.sync.pendingSessions")
-
-                ShellRow(
-                    systemImage: "hand.thumbsup",
-                    title: L10n.string("profile.sync.diagnostics.pendingFeedback.title"),
-                    detail: L10n.plural(
-                        singular: "profile.sync.diagnostics.pendingFeedback.one",
-                        plural: "profile.sync.diagnostics.pendingFeedback.other",
-                        count: libraryStore.syncDiagnostics.pendingFeedbackUploadCount,
-                        libraryStore.syncDiagnostics.pendingFeedbackUploadCount
-                    )
-                )
-                .accessibilityIdentifier("profile.sync.pendingFeedback")
             }
 
-            ProfileSecondaryButton(
-                title: libraryStore.cloudSyncStatus == .syncing
-                    ? L10n.string("profile.sync.retry.syncing")
-                    : L10n.string("profile.sync.retry"),
-                isLoading: libraryStore.cloudSyncStatus == .syncing,
-                action: {
-                    Task {
-                        await libraryStore.refreshCloudLibraryIfNeeded(force: true)
-                        await libraryStore.refreshUserSummary(force: true)
-                    }
-                }
-            )
-            .disabled(libraryStore.cloudSyncStatus == .syncing)
-            .accessibilityIdentifier("profile.sync.retry")
+            if let lastActivity = cloudSyncLastActivity {
+                Text(L10n.string("profile.sync.lastActivity", lastActivity.formatted(date: .abbreviated, time: .shortened)))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .accessibilityIdentifier("profile.sync.lastActivity")
+            }
+
+            cloudSyncRetryButton
         }
         .padding(22)
         .background(profileCardBackground)
         .accessibilityIdentifier("profile.sync.card")
+    }
+
+    private var cloudSyncPendingDetail: String? {
+        let sessions = libraryStore.syncDiagnostics.pendingListeningSessionCount
+        let feedback = libraryStore.syncDiagnostics.pendingFeedbackUploadCount
+        let pending = sessions + feedback
+        guard pending > 0 else { return nil }
+        return L10n.plural(
+            singular: "profile.sync.pending.one",
+            plural: "profile.sync.pending.other",
+            count: pending,
+            pending
+        )
+    }
+
+    private var cloudSyncLastActivity: Date? {
+        [
+            cloudSyncLastSyncedAt,
+            libraryStore.syncDiagnostics.lastCloudPullAt,
+            libraryStore.syncDiagnostics.lastCloudPushAt,
+            libraryStore.syncDiagnostics.lastSummaryFetchAt
+        ]
+        .compactMap { $0 }
+        .max()
+    }
+
+    private var cloudSyncHeadline: String {
+        if cloudSyncPendingDetail != nil {
+            return L10n.string("profile.sync.headline.pending")
+        }
+        if libraryStore.syncDiagnostics.isSummaryStale {
+            return L10n.string("profile.sync.headline.updating")
+        }
+        switch libraryStore.cloudSyncStatus {
+        case .idle:
+            return L10n.string("profile.sync.headline.ready")
+        case .syncing:
+            return L10n.string("profile.sync.headline.syncing")
+        case .synced:
+            return L10n.string("profile.sync.headline.synced")
+        case .conflict:
+            return L10n.string("profile.sync.headline.needsAttention")
+        case .failed:
+            return L10n.string("profile.sync.headline.failed")
+        }
+    }
+
+    private var cloudSyncCompactDetail: String {
+        if cloudSyncPendingDetail != nil {
+            return L10n.string("profile.sync.detail.pending")
+        }
+        if libraryStore.syncDiagnostics.isSummaryStale {
+            return L10n.string("profile.sync.detail.updating")
+        }
+        switch libraryStore.cloudSyncStatus {
+        case .idle:
+            return L10n.string("profile.sync.detail.ready")
+        case .syncing:
+            return L10n.string("profile.sync.detail.syncing")
+        case .synced:
+            return L10n.string("profile.sync.detail.synced")
+        case .conflict:
+            return L10n.string("profile.sync.detail.needsAttention")
+        case .failed:
+            return L10n.string("profile.sync.detail.failed")
+        }
+    }
+
+    private var cloudSyncRetryButton: some View {
+        ProfileSecondaryButton(
+            title: libraryStore.cloudSyncStatus == .syncing
+                ? L10n.string("profile.sync.retry.syncing")
+                : L10n.string("profile.sync.retry"),
+            isLoading: libraryStore.cloudSyncStatus == .syncing,
+            action: {
+                Task {
+                    await libraryStore.refreshCloudLibraryIfNeeded(force: true)
+                    await libraryStore.refreshUserSummary(force: true)
+                }
+            }
+        )
+        .disabled(libraryStore.cloudSyncStatus == .syncing)
+        .accessibilityIdentifier("profile.sync.retry")
     }
 
     private var proPlanCard: some View {
@@ -772,33 +806,11 @@ struct ProfileScreen: View {
         }
     }
 
-    private var cloudSyncStatusDetail: String {
-        switch libraryStore.cloudSyncStatus {
-        case .idle:
-            L10n.string("profile.sync.status.idle")
-        case .syncing:
-            L10n.string("profile.sync.status.syncing")
-        case .synced:
-            L10n.string("profile.sync.status.synced")
-        case .conflict:
-            L10n.string("profile.sync.status.conflict")
-        case .failed:
-            L10n.string("profile.sync.status.failed")
-        }
-    }
-
     private var cloudSyncLastSyncedAt: Date? {
         if case .synced(let date) = libraryStore.cloudSyncStatus {
             return date
         }
         return nil
-    }
-
-    private func syncDateDetail(_ date: Date?) -> String {
-        guard let date else {
-            return L10n.string("profile.sync.diagnostics.never")
-        }
-        return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     private var languageSelection: Binding<AppLanguage> {
