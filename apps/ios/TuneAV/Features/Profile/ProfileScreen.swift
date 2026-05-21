@@ -1093,70 +1093,59 @@ private struct LocalDataManagementSheet: View {
     @State private var pendingTarget: ProfileScreen.LocalDataClearTarget?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(L10n.string("profile.localDataSheet.title"))
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(TuneAVTheme.textPrimary)
+        AVSettingsSheetScaffold(
+            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
+            closeTitle: L10n.string("profile.alert.clearData.cancel"),
+            onClose: { dismiss() }
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.string("profile.localDataSheet.title"))
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
 
-                        Text(L10n.string("profile.localDataSheet.subtitle"))
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    maintenanceGroup(
-                        title: L10n.string("profile.localDataSheet.partialTitle"),
-                        rows: [
-                            maintenanceRow(
-                                systemImage: "heart.text.square",
-                                title: L10n.string("profile.actions.clearFavorites"),
-                                detail: L10n.string("profile.alert.clearFavorites.message"),
-                                target: .favorites
-                            ),
-                            maintenanceRow(
-                                systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
-                                title: L10n.string("profile.actions.clearRecents"),
-                                detail: L10n.string("profile.alert.clearRecents.message"),
-                                target: .recents
-                            ),
-                            maintenanceRow(
-                                systemImage: "music.note.list",
-                                title: L10n.string("profile.actions.clearDiscoveries"),
-                                detail: L10n.string("profile.alert.clearDiscoveries.message"),
-                                target: .discoveries
-                            ),
-                            maintenanceRow(
-                                systemImage: "slider.horizontal.3",
-                                title: L10n.string("profile.actions.resetSettings"),
-                                detail: L10n.string("profile.alert.resetSettings.message"),
-                                target: .settings
-                            )
-                        ]
-                    )
-
-                    AVSettingsDestructiveActionCard(
-                        sectionTitle: L10n.string("profile.localDataSheet.dangerTitle"),
-                        systemImage: "trash",
-                        title: clearAllTitle,
-                        detail: L10n.string("profile.alert.clearData.message")
-                    ) {
-                        pendingTarget = .all
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 22)
-                .padding(.bottom, 28)
+                Text(L10n.string("profile.localDataSheet.subtitle"))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.string("profile.alert.clearData.cancel")) {
-                        dismiss()
-                    }
-                }
+
+            maintenanceGroup(
+                title: L10n.string("profile.localDataSheet.partialTitle"),
+                rows: [
+                    maintenanceRow(
+                        systemImage: "heart.text.square",
+                        title: L10n.string("profile.actions.clearFavorites"),
+                        detail: L10n.string("profile.alert.clearFavorites.message"),
+                        target: .favorites
+                    ),
+                    maintenanceRow(
+                        systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+                        title: L10n.string("profile.actions.clearRecents"),
+                        detail: L10n.string("profile.alert.clearRecents.message"),
+                        target: .recents
+                    ),
+                    maintenanceRow(
+                        systemImage: "music.note.list",
+                        title: L10n.string("profile.actions.clearDiscoveries"),
+                        detail: L10n.string("profile.alert.clearDiscoveries.message"),
+                        target: .discoveries
+                    ),
+                    maintenanceRow(
+                        systemImage: "slider.horizontal.3",
+                        title: L10n.string("profile.actions.resetSettings"),
+                        detail: L10n.string("profile.alert.resetSettings.message"),
+                        target: .settings
+                    )
+                ]
+            )
+
+            AVSettingsDestructiveActionCard(
+                sectionTitle: L10n.string("profile.localDataSheet.dangerTitle"),
+                systemImage: "trash",
+                title: clearAllTitle,
+                detail: L10n.string("profile.alert.clearData.message")
+            ) {
+                pendingTarget = .all
             }
         }
         .alert(
