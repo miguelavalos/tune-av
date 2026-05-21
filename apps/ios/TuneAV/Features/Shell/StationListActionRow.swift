@@ -240,44 +240,16 @@ struct AviRowActionsPanel<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.string("shell.avi.actions.ask"))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(1)
-
-                    Text(L10n.string("shell.avi.actions.page", 1, 1))
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                }
-
-                Spacer(minLength: 0)
-
-                Button(action: close) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 30, height: 30)
-                        .background(TuneAVTheme.cardSurface, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.avi.actions.closeOptions"))
-            }
-
-            VStack(spacing: 7) {
-                content()
-            }
+        AVAviPopoverActionPanel(
+            title: L10n.string("shell.avi.actions.ask"),
+            pageLabel: L10n.string("shell.avi.actions.page", 1, 1),
+            previousAccessibilityLabel: L10n.string("shell.avi.actions.previousOptions"),
+            nextAccessibilityLabel: L10n.string("shell.avi.actions.moreOptions"),
+            closeAccessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
+            close: close
+        ) {
+            content()
         }
-        .padding(13)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .background(TuneAVTheme.elevatedSurface.opacity(0.96), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(TuneAVTheme.highlight.opacity(0.2), lineWidth: 1)
-        }
-        .shadow(color: TuneAVTheme.glassShadow, radius: 24, y: 12)
     }
 }
 
