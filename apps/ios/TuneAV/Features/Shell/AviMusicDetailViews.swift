@@ -34,11 +34,11 @@ struct AviFocusedTrackSummaryCard: View {
                 cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
             ) {
                 TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                    AviMusicArtworkFallback(systemImage: "music.note", size: size)
+                    TuneAVMusicArtworkFallback(systemImage: "music.note", size: size, iconSize: 22)
                 }
             }
         } else {
-            AviMusicArtworkFallback(systemImage: "music.note", size: size)
+            TuneAVMusicArtworkFallback(systemImage: "music.note", size: size, iconSize: 22)
         }
     }
 }
@@ -69,11 +69,11 @@ struct AviFocusedArtistSummaryCard: View {
                 cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
             ) {
                 TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
-                    AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+                    TuneAVMusicArtworkFallback(systemImage: "person.fill", size: size, iconSize: 22)
                 }
             }
         } else {
-            AviMusicArtworkFallback(systemImage: "person.fill", size: size)
+            TuneAVMusicArtworkFallback(systemImage: "person.fill", size: size, iconSize: 22)
         }
     }
 }
@@ -238,37 +238,5 @@ struct AviFocusedTrackQuickActions: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(TuneAVTheme.borderSubtle.opacity(0.68), lineWidth: 1)
         }
-    }
-}
-
-private struct AviMusicArtworkFallback: View {
-    let systemImage: String
-    let size: CGFloat
-
-    var body: some View {
-        AviMusicArtworkShape(size: size)
-            .fill(TuneAVTheme.mutedSurface)
-            .frame(width: size, height: size)
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.highlight)
-            }
-            .overlay {
-                AviMusicArtworkShape(size: size)
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-            }
-    }
-}
-
-private struct AviMusicArtworkShape: Shape {
-    let size: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        RoundedRectangle(
-            cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size),
-            style: .continuous
-        )
-        .path(in: rect)
     }
 }
