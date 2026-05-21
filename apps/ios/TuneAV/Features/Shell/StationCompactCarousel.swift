@@ -15,19 +15,14 @@ struct StationFeedbackBadge: View {
     let feedback: TuneAVStationFeedback
     var size: CGFloat = 18
     var fontSize: CGFloat = 8
-    var borderWidth: CGFloat = 1
 
     var body: some View {
-        Image(systemName: feedback.systemImage)
-            .font(.system(size: fontSize, weight: .black))
-            .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-            .frame(width: size, height: size)
-            .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.82), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(Color.white.opacity(0.82), lineWidth: borderWidth)
-            }
-            .accessibilityLabel(feedback.localizedState)
+        TuneAVFeedbackBadge(
+            feedback: feedback,
+            size: size,
+            fontSize: fontSize,
+            borderOpacity: 0.82
+        )
     }
 }
 

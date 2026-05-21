@@ -159,15 +159,7 @@ struct AviExpandedFooterPlayerView: View {
             }
 
             if let feedback = currentTrackFeedback {
-                Image(systemName: feedback.systemImage)
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(feedback == .liked ? TuneAVTheme.brandBlack : TuneAVTheme.textInverse)
-                    .frame(width: 26, height: 26)
-                    .background(feedback == .liked ? TuneAVTheme.highlight : TuneAVTheme.brandGraphite.opacity(0.86), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Color.white.opacity(0.78), lineWidth: 1)
-                    }
+                TuneAVFeedbackBadge(feedback: feedback, size: 26, fontSize: 10)
                     .offset(x: -5, y: -5)
             }
         }
