@@ -18,7 +18,7 @@ struct ShellBrandHeader: View {
     var activeItem: ShellBrandHeaderActiveItem?
 
     var body: some View {
-        HStack(spacing: 12) {
+        AVAppShellBrandHeaderScaffold {
             AVAppShellIconButton(
                 systemName: "gearshape.fill",
                 accessibilityLabel: L10n.string("shell.header.settings"),
@@ -28,16 +28,11 @@ struct ShellBrandHeader: View {
                 fontSize: 15,
                 action: chromeActions.openSettings
             )
-
-            Spacer(minLength: 8)
-
+        } logo: {
             Image("HeaderWordmark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 160, height: 54)
-
-            Spacer(minLength: 8)
-
+        } trailing: {
             AVAppShellIconButton(
                 systemName: "person.crop.circle.fill",
                 accessibilityLabel: L10n.string("shell.header.account"),
