@@ -1,22 +1,6 @@
 import AVSettingsFoundation
 import SwiftUI
 
-struct OptionalAccessibilityIdentifier: ViewModifier {
-    let identifier: String?
-
-    init(_ identifier: String?) {
-        self.identifier = identifier
-    }
-
-    func body(content: Content) -> some View {
-        if let identifier {
-            content.accessibilityIdentifier(identifier)
-        } else {
-            content
-        }
-    }
-}
-
 struct ShellRow: View {
     let systemImage: String
     let title: String
