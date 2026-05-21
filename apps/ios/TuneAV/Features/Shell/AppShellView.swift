@@ -3957,57 +3957,40 @@ struct AviScreen: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(canCyclePlaybackQueue ? TuneAVTheme.textSecondary : TuneAVTheme.textSecondary.opacity(0.28))
-                .frame(width: 48, height: 48)
-                .background(.ultraThinMaterial.opacity(canCyclePlaybackQueue ? 1 : 0.45), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(canCyclePlaybackQueue ? 0.12 : 0.06), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .disabled(!canCyclePlaybackQueue)
-        .accessibilityLabel(accessibilityLabel(for: systemImage))
-        .accessibilityIdentifier(accessibilityIdentifier)
+        AVCircularMaterialIconButton(
+            systemImage: systemImage,
+            size: 48,
+            fontSize: 17,
+            isEnabled: canCyclePlaybackQueue,
+            accessibilityLabel: accessibilityLabel(for: systemImage),
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private var queueSourceDockButton: some View {
-        Button {
+        AVCircularMaterialIconButton(
+            systemImage: "list.bullet",
+            size: 48,
+            fontSize: 17,
+            fontWeight: .black,
+            accessibilityLabel: L10n.string("shell.queue.current", playbackQueueSource.displayTitle),
+            accessibilityIdentifier: "avi.controls.queue"
+        ) {
             isShowingQueueSwitcher = true
-        } label: {
-            Image(systemName: "list.bullet")
-                .font(.system(size: 17, weight: .black))
-            .foregroundStyle(TuneAVTheme.textSecondary)
-            .frame(width: 48, height: 48)
-            .background(.ultraThinMaterial.opacity(1), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(.white.opacity(0.12), lineWidth: 1)
-            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.queue.current", playbackQueueSource.displayTitle))
-        .accessibilityIdentifier("avi.controls.queue")
     }
 
     private var closeSignalDockButton: some View {
-        Button(action: stopPlayback) {
-            Image(systemName: "power")
-                .font(.system(size: 17, weight: .black))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .frame(width: 48, height: 48)
-                .background(.ultraThinMaterial.opacity(1), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(0.12), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.string("shell.accessibility.closeSignal"))
-        .accessibilityIdentifier("avi.controls.closeSignal")
+        AVCircularMaterialIconButton(
+            systemImage: "power",
+            size: 48,
+            fontSize: 17,
+            fontWeight: .black,
+            accessibilityLabel: L10n.string("shell.accessibility.closeSignal"),
+            accessibilityIdentifier: "avi.controls.closeSignal",
+            action: stopPlayback
+        )
     }
 
     private var queueSwitchOptions: [AviQueueSwitchOption] {
