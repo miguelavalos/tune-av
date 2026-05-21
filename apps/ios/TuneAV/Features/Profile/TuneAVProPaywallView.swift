@@ -26,12 +26,7 @@ struct TuneAVProPaywallView: View {
                         paywallStatus("exclamationmark.triangle", error)
                     }
 
-                    VStack(spacing: 8) {
-                        paywallBenefit("sparkles", titleKey: "paywall.benefit.avi.title", detailKey: "paywall.benefit.avi")
-                        paywallBenefit("heart.text.square", titleKey: "paywall.benefit.library.title", detailKey: "paywall.benefit.library")
-                        paywallBenefit("icloud", titleKey: "paywall.benefit.sync.title", detailKey: "paywall.benefit.sync")
-                        paywallBenefit("radio", titleKey: "paywall.benefit.discovery.title", detailKey: "paywall.benefit.discovery")
-                    }
+                    AVPaywallBenefitList(items: benefitItems)
 
                     legalLinks
                 }
@@ -148,12 +143,33 @@ struct TuneAVProPaywallView: View {
         }
     }
 
-    private func paywallBenefit(_ systemImage: String, titleKey: String, detailKey: String) -> some View {
-        AVPaywallBenefitRow(
-            systemImage: systemImage,
-            title: L10n.string(titleKey),
-            detail: L10n.string(detailKey)
-        )
+    private var benefitItems: [AVPaywallBenefitItem] {
+        [
+            AVPaywallBenefitItem(
+                id: "avi",
+                systemImage: "sparkles",
+                title: L10n.string("paywall.benefit.avi.title"),
+                detail: L10n.string("paywall.benefit.avi")
+            ),
+            AVPaywallBenefitItem(
+                id: "library",
+                systemImage: "heart.text.square",
+                title: L10n.string("paywall.benefit.library.title"),
+                detail: L10n.string("paywall.benefit.library")
+            ),
+            AVPaywallBenefitItem(
+                id: "sync",
+                systemImage: "icloud",
+                title: L10n.string("paywall.benefit.sync.title"),
+                detail: L10n.string("paywall.benefit.sync")
+            ),
+            AVPaywallBenefitItem(
+                id: "discovery",
+                systemImage: "radio",
+                title: L10n.string("paywall.benefit.discovery.title"),
+                detail: L10n.string("paywall.benefit.discovery")
+            )
+        ]
     }
 
     private func paywallStatus(_ systemImage: String, _ message: String) -> some View {
