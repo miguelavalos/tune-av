@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
@@ -30,32 +31,21 @@ struct MiniPlayerView: View {
     let openPlayer: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        AVMiniPlayerScaffold(
+            title: station.name,
+            subtitle: artistLine,
+            detail: titleLine,
+            isSubtitleHighlighted: trackArtworkExists,
+            accessibilityLabel: L10n.string("shell.miniPlayer.accessibility.label", station.name),
+            accessibilityHint: L10n.string("shell.miniPlayer.accessibility.hint"),
+            action: openPlayer
+        ) {
             ZStack(alignment: .topLeading) {
                 miniArtwork
                 feedbackBadge
                     .offset(x: -5, y: -5)
             }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(station.name)
-                    .font(.subheadline.weight(.bold))
-                    .lineLimit(1)
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(artistLine)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(trackArtworkExists ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
-                    .lineLimit(1)
-
-                Text(titleLine)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.88))
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 8)
-
+        } controls: {
             queueButton(systemImage: "backward.fill", accessibilityIdentifier: "miniPlayer.previous") {
                 AVHaptics.perform(.queueStep)
                 audioPlayer.playPreviousInQueue()
@@ -88,31 +78,6 @@ struct MiniPlayerView: View {
                 audioPlayer.playNextInQueue()
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(TuneAVTheme.elevatedSurface)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [TuneAVTheme.glassStroke, TuneAVTheme.highlight.opacity(0.12)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-        .shadow(color: TuneAVTheme.glassShadow.opacity(0.7), radius: 8, y: 2)
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .onTapGesture(perform: openPlayer)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(L10n.string("shell.miniPlayer.accessibility.label", station.name))
-        .accessibilityHint(L10n.string("shell.miniPlayer.accessibility.hint"))
-        .accessibilityIdentifier("miniPlayer.container")
     }
 
     @ViewBuilder
@@ -198,20 +163,12 @@ struct MiniPlayerView: View {
         accessibilityIdentifier: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(audioPlayer.canCyclePlaybackQueue ? TuneAVTheme.textSecondary : TuneAVTheme.textSecondary.opacity(0.28))
-                .frame(width: 34, height: 34)
-                .background(.ultraThinMaterial.opacity(audioPlayer.canCyclePlaybackQueue ? 1 : 0.45), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(audioPlayer.canCyclePlaybackQueue ? 0.12 : 0.06), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .disabled(!audioPlayer.canCyclePlaybackQueue)
-        .accessibilityIdentifier(accessibilityIdentifier)
+        AVMiniPlayerControlButton(
+            systemImage: systemImage,
+            isEnabled: audioPlayer.canCyclePlaybackQueue,
+            accessibilityIdentifier: accessibilityIdentifier,
+            action: action
+        )
     }
 
     private func normalizedMetadata(_ value: String?) -> String? {
