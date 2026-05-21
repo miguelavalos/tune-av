@@ -27,39 +27,21 @@ struct AviQueueSwitcherSheet: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        NavigationStack {
-            List(options) { option in
-                Button {
+        AVSelectionSheetScaffold(
+            title: L10n.string("shell.queue.title"),
+            closeTitle: L10n.string("shell.avi.plans.close"),
+            onClose: onDismiss
+        ) {
+            ForEach(options) { option in
+                AVSelectionSheetRow(
+                    title: option.title,
+                    detail: L10n.plural(singular: "shell.queue.stationCount.one", plural: "shell.queue.stationCount.other", count: option.stations.count, option.stations.count),
+                    isSelected: option.source == currentSource
+                ) {
                     selectOption(option)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: option.source == currentSource ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(option.source == currentSource ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.55))
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(option.title)
-                                .font(.system(size: 15, weight: .black))
-                                .foregroundStyle(TuneAVTheme.textPrimary)
-
-                            Text(L10n.plural(singular: "shell.queue.stationCount.one", plural: "shell.queue.stationCount.other", count: option.stations.count, option.stations.count))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(TuneAVTheme.textSecondary)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                }
-                .buttonStyle(.plain)
-            }
-            .navigationTitle(L10n.string("shell.queue.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.string("shell.avi.plans.close"), action: onDismiss)
                 }
             }
         }
-        .presentationDetents([.medium])
     }
 }
 
