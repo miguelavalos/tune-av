@@ -1,4 +1,5 @@
 import AuthenticationServices
+import AVSettingsFoundation
 import SwiftUI
 import os
 
@@ -376,7 +377,7 @@ private struct AuthOptionsPanel: View {
             .padding(.top, 16)
 
             VStack(spacing: 10) {
-                AuthIconButton(
+                AVAuthProviderButton(
                     title: L10n.string("auth.provider.apple"),
                     isLoading: activeProvider == .apple,
                     style: .dark,
@@ -386,7 +387,7 @@ private struct AuthOptionsPanel: View {
                         .font(.system(size: 17, weight: .bold))
                 }
 
-                AuthIconButton(
+                AVAuthProviderButton(
                     title: L10n.string("auth.provider.google"),
                     isLoading: activeProvider == .google,
                     style: .light,
@@ -447,94 +448,6 @@ private struct AviSheetPeekCompanion: View {
             .offset(y: -5)
         .frame(width: 140, height: 110)
         .accessibilityHidden(true)
-    }
-}
-
-private struct AuthIconButton<Content: View>: View {
-    enum Style {
-        case dark
-        case light
-    }
-
-    let title: String
-    let isLoading: Bool
-    let style: Style
-    let action: () -> Void
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                ZStack {
-                    if isLoading {
-                        ProgressView()
-                            .tint(progressTint)
-                    } else {
-                        content
-                            .foregroundStyle(iconTint)
-                    }
-                }
-                .frame(width: 24, height: 24)
-
-                Text(title)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(titleTint)
-            }
-            .frame(height: 46)
-            .frame(maxWidth: .infinity)
-            .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(borderStyle, lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(isLoading)
-    }
-
-    private var backgroundStyle: Color {
-        switch style {
-        case .dark:
-            TuneAVTheme.brandGraphite
-        case .light:
-            Color.white.opacity(0.72)
-        }
-    }
-
-    private var borderStyle: Color {
-        switch style {
-        case .dark:
-            TuneAVTheme.brandGraphite.opacity(0.2)
-        case .light:
-            TuneAVTheme.brandGraphite.opacity(0.18)
-        }
-    }
-
-    private var titleTint: Color {
-        switch style {
-        case .dark:
-            .white
-        case .light:
-            TuneAVTheme.brandGraphite
-        }
-    }
-
-    private var iconTint: Color {
-        switch style {
-        case .dark:
-            .white
-        case .light:
-            TuneAVTheme.brandGraphite
-        }
-    }
-
-    private var progressTint: Color {
-        switch style {
-        case .dark:
-            .white
-        case .light:
-            TuneAVTheme.brandGraphite
-        }
     }
 }
 
