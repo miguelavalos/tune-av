@@ -2556,7 +2556,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(direct.key, "nova|jazz|ES|music")
         XCTAssertEqual(direct.discoveryMode, .music)
         XCTAssertFalse(direct.usesWorldwideDiscovery)
-        XCTAssertEqual(direct.searchLimit, 24)
+        XCTAssertEqual(direct.searchLimit, 50)
         XCTAssertEqual(worldwide.key, "|||music")
         XCTAssertTrue(worldwide.usesWorldwideDiscovery)
         XCTAssertEqual(worldwide.searchLimit, AppShellHomeFeed.defaultFeedLimit)

@@ -574,7 +574,7 @@ struct AppShellSearchRequest: Equatable {
     }
 
     var searchLimit: Int {
-        query.isEmpty ? AppShellHomeFeed.defaultFeedLimit : 24
+        query.isEmpty ? AppShellHomeFeed.defaultFeedLimit : 50
     }
 }
 
