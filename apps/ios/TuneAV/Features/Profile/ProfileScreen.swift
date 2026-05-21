@@ -1137,43 +1137,13 @@ private struct LocalDataManagementSheet: View {
                         ]
                     )
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(L10n.string("profile.localDataSheet.dangerTitle"))
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(TuneAVTheme.textSecondary)
-                            .textCase(.uppercase)
-
-                        Button {
-                            pendingTarget = .all
-                        } label: {
-                            HStack(alignment: .center, spacing: 12) {
-                                Image(systemName: "trash")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .frame(width: 22)
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(clearAllTitle)
-                                        .font(.system(size: 15, weight: .bold))
-
-                                    Text(L10n.string("profile.alert.clearData.message"))
-                                        .font(.system(size: 13, weight: .medium))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-
-                                Spacer(minLength: 12)
-                            }
-                            .foregroundStyle(Color(red: 0.84, green: 0.16, blue: 0.22))
-                            .padding(16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .fill(Color(red: 0.84, green: 0.16, blue: 0.22).opacity(0.07))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                            .stroke(Color(red: 0.84, green: 0.16, blue: 0.22).opacity(0.18), lineWidth: 1)
-                                    }
-                            )
-                        }
-                        .buttonStyle(.plain)
+                    AVSettingsDestructiveActionCard(
+                        sectionTitle: L10n.string("profile.localDataSheet.dangerTitle"),
+                        systemImage: "trash",
+                        title: clearAllTitle,
+                        detail: L10n.string("profile.alert.clearData.message")
+                    ) {
+                        pendingTarget = .all
                     }
                 }
                 .padding(.horizontal, 20)
