@@ -132,19 +132,19 @@ struct ProfileScreen: View {
                 .overlay(TuneAVTheme.borderSubtle)
 
             VStack(alignment: .leading, spacing: 12) {
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "person.crop.circle",
                     title: L10n.string("profile.summary.account.title"),
                     detail: accountSummaryDetail
                 )
                 if let emailAddress = accessController.accountUser?.emailAddress {
-                    ShellRow(
+                    AVSettingsInfoRow(
                         systemImage: "envelope",
                         title: L10n.string("profile.account.email.title"),
                         detail: emailAddress
                     )
                 }
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "sparkles.rectangle.stack",
                     title: L10n.string("profile.summary.plan.title"),
                     detail: planSummaryDetail
@@ -165,7 +165,7 @@ struct ProfileScreen: View {
             )
 
             VStack(alignment: .leading, spacing: 12) {
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: cloudSyncIcon,
                     title: cloudSyncHeadline,
                     detail: cloudSyncCompactDetail
@@ -173,7 +173,7 @@ struct ProfileScreen: View {
                 .accessibilityIdentifier("profile.sync.status")
 
                 if let pendingDetail = cloudSyncPendingDetail {
-                    ShellRow(
+                    AVSettingsInfoRow(
                         systemImage: "tray.and.arrow.up",
                         title: L10n.string("profile.sync.pending.title"),
                         detail: pendingDetail
@@ -289,17 +289,17 @@ struct ProfileScreen: View {
             )
 
             VStack(alignment: .leading, spacing: 12) {
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "heart.text.square",
                     title: L10n.string("profile.pro.library.title"),
                     detail: L10n.string("profile.pro.library.detail")
                 )
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "icloud",
                     title: L10n.string("profile.pro.sync.title"),
                     detail: L10n.string("profile.pro.sync.detail")
                 )
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "sparkles",
                     title: L10n.string("profile.pro.avi.title"),
                     detail: L10n.string("profile.pro.avi.detail")
@@ -375,7 +375,7 @@ struct ProfileScreen: View {
                 subtitle: L10n.string("profile.preferences.subtitle")
             )
 
-            ShellRow(
+            AVSettingsInfoRow(
                 systemImage: "globe",
                 title: L10n.string("profile.preferences.language.title"),
                 detail: L10n.string("profile.preferences.language.detail")
@@ -383,7 +383,7 @@ struct ProfileScreen: View {
 
             languageSelector
 
-            ShellRow(
+            AVSettingsInfoRow(
                 systemImage: "music.note.list",
                 title: L10n.string("profile.preferences.preferredGenre.title"),
                 detail: L10n.string(
@@ -394,7 +394,7 @@ struct ProfileScreen: View {
 
             preferredGenreSelector
 
-            ShellRow(
+            AVSettingsInfoRow(
                 systemImage: "circle.lefthalf.filled",
                 title: L10n.string("profile.preferences.theme.title"),
                 detail: L10n.string("profile.preferences.theme.detail")
@@ -455,7 +455,7 @@ struct ProfileScreen: View {
             )
 
             VStack(alignment: .leading, spacing: 12) {
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "heart.text.square",
                     title: L10n.string("shell.library.favorites.title"),
                     detail: localCountDetail(
@@ -465,7 +465,7 @@ struct ProfileScreen: View {
                         plural: "profile.local.favorites.count.other"
                     )
                 )
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
                     title: L10n.string("shell.home.recents.title"),
                     detail: localCountDetail(
@@ -475,7 +475,7 @@ struct ProfileScreen: View {
                         plural: "profile.local.recents.count.other"
                     )
                 )
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "music.note.list",
                     title: L10n.string("profile.local.savedMusic.title"),
                     detail: localCountDetail(
@@ -485,7 +485,7 @@ struct ProfileScreen: View {
                         plural: "profile.local.savedMusic.count.other"
                     )
                 )
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "internaldrive",
                     title: L10n.string("profile.local.storagePolicy.title"),
                     detail: accessController.capabilities.isLocalOnly
@@ -526,7 +526,7 @@ struct ProfileScreen: View {
             )
 
             VStack(spacing: 12) {
-                ShellRow(
+                AVSettingsInfoRow(
                     systemImage: "chevron.left.forwardslash.chevron.right",
                     title: L10n.string("profile.help.opensource.title"),
                     detail: L10n.string("profile.help.opensource.detail")
