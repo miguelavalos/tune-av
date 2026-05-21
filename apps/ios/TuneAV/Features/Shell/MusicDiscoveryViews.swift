@@ -1,3 +1,4 @@
+import AVAviFoundation
 import AVHaptics
 import SwiftUI
 
@@ -126,15 +127,10 @@ struct DiscoveryTrackCard: View {
                 }
             }
         } label: {
-            Image("AviV2HeadNeutral")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
-                .frame(width: 36, height: 36)
-                .background(TuneAVTheme.mutedSurface, in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            AVAviAvatarBadge(backgroundStyle: .muted) {
+                Image("AviV2HeadNeutral")
+                    .resizable()
+                    .scaledToFit()
             }
         }
         .buttonStyle(.plain)
@@ -759,16 +755,11 @@ struct DiscoveryArtistRow: View {
                     }
                 }
             } label: {
-                Image("AviV2HeadNeutral")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 22, height: 22)
-                    .frame(width: 36, height: 36)
-                    .background(TuneAVTheme.mutedSurface.opacity(0.85), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
+                AVAviAvatarBadge(backgroundStyle: .mutedSoft) {
+                    Image("AviV2HeadNeutral")
+                        .resizable()
+                        .scaledToFit()
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.avi.actions.askShort"))

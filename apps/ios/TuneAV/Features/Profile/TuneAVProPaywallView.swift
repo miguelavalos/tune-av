@@ -1,3 +1,4 @@
+import AVAviFoundation
 import AVPaywallFoundation
 import SwiftUI
 
@@ -90,16 +91,17 @@ struct TuneAVProPaywallView: View {
     }
 
     private var paywallAviAvatar: some View {
-        Image("AviV2HeadNeutral")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 54, height: 54)
-            .padding(7)
-            .background(TuneAVTheme.highlight.opacity(0.1), in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
-            }
+        AVAviAvatarBadge(
+            imageSize: 54,
+            badgeSize: 68,
+            padding: 7,
+            backgroundStyle: .accentSoft,
+            strokeStyle: .accentSoft
+        ) {
+            Image("AviV2HeadNeutral")
+                .resizable()
+                .scaledToFit()
+        }
     }
 
     private func primaryAction() {
