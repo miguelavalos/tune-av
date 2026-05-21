@@ -4475,14 +4475,14 @@ struct AviScreen: View {
         if hasCurrentSongContext {
             fullPlayerFeedbackDecisionRow(station: station)
         } else if feedback != nil {
-            fullPlayerFeedbackInfoRow(
+            AVAviFeedbackInfoRow(
                 title: L10n.string("player.avi.feedback.tuned"),
                 subtitle: L10n.string("player.avi.feedback.tunedHint"),
                 systemImage: "sparkles",
                 isAction: false
             )
         } else {
-            fullPlayerFeedbackInfoRow(
+            AVAviFeedbackInfoRow(
                 title: L10n.string("player.avi.feedback.choose"),
                 subtitle: L10n.string("player.avi.feedback.chooseHint"),
                 systemImage: "slider.horizontal.3",
@@ -4495,7 +4495,7 @@ struct AviScreen: View {
         VStack(alignment: .leading, spacing: 6) {
             if aviDiscoveryDecision == .ignored {
                 HStack(spacing: 8) {
-                    fullPlayerFeedbackInfoRow(
+                    AVAviFeedbackInfoRow(
                         title: L10n.string("player.discovery.noSave"),
                         subtitle: L10n.string("player.discovery.noSaveHint"),
                         systemImage: "xmark",
@@ -4503,7 +4503,7 @@ struct AviScreen: View {
                     )
                     .accessibilityIdentifier("avi.fullPlayer.discoveryNoSave")
 
-                    fullPlayerFeedbackCompactActionButton(
+                    AVAviFeedbackCompactActionButton(
                         title: L10n.string("player.discovery.saveShort"),
                         systemImage: "bookmark",
                         accessibilityIdentifier: "avi.fullPlayer.saveAfterNoSave"
@@ -4516,14 +4516,14 @@ struct AviScreen: View {
                 }
             } else if isCurrentTrackSaved(for: station) {
                 HStack(spacing: 8) {
-                    fullPlayerFeedbackInfoRow(
+                    AVAviFeedbackInfoRow(
                         title: L10n.string("player.discovery.savedShort"),
                         subtitle: L10n.string("player.discovery.savedHintShort"),
                         systemImage: "bookmark.fill",
                         isAction: false
                     )
 
-                    fullPlayerFeedbackCompactActionButton(
+                    AVAviFeedbackCompactActionButton(
                         title: L10n.string("player.discovery.unsaveShort"),
                         systemImage: "bookmark.slash",
                         accessibilityIdentifier: "avi.fullPlayer.unsaveSong"
@@ -4536,7 +4536,7 @@ struct AviScreen: View {
                 }
             } else {
                 HStack(spacing: 8) {
-                    fullPlayerFeedbackDecisionButton(
+                    AVAviFeedbackDecisionButton(
                         title: currentTrackSaveActionTitle(for: station),
                         systemImage: currentTrackSaveActionSystemImage(for: station),
                         isSelected: isCurrentTrackSaved(for: station),
@@ -4548,7 +4548,7 @@ struct AviScreen: View {
                         }
                     }
 
-                    fullPlayerFeedbackDecisionButton(
+                    AVAviFeedbackDecisionButton(
                         title: L10n.string("player.discovery.noSave"),
                         systemImage: "xmark",
                         isSelected: false,
@@ -4570,50 +4570,6 @@ struct AviScreen: View {
             }
         }
         .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
-    }
-
-    private func fullPlayerFeedbackCompactActionButton(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        AVAviFeedbackCompactActionButton(
-            title: title,
-            systemImage: systemImage,
-            accessibilityIdentifier: accessibilityIdentifier,
-            action: action
-        )
-    }
-
-    private func fullPlayerFeedbackDecisionButton(
-        title: String,
-        systemImage: String,
-        isSelected: Bool,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        AVAviFeedbackDecisionButton(
-            title: title,
-            systemImage: systemImage,
-            isSelected: isSelected,
-            accessibilityIdentifier: accessibilityIdentifier,
-            action: action
-        )
-    }
-
-    private func fullPlayerFeedbackInfoRow(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        isAction: Bool
-    ) -> some View {
-        AVAviFeedbackInfoRow(
-            title: title,
-            subtitle: subtitle,
-            systemImage: systemImage,
-            isAction: isAction
-        )
     }
 
     private func compactAviActionsSheet(for station: Station) -> some View {
