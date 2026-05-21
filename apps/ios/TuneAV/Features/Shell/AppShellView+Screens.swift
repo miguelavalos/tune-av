@@ -56,6 +56,9 @@ extension AppShellView {
         discoveryMode: Binding<TuneAVStationDiscoveryMode>,
         results: [Station],
         isLoading: Bool,
+        isLoadingMore: Bool,
+        totalCount: Int?,
+        hasMoreResults: Bool,
         errorMessage: String?,
         tags: [String],
         bottomContentPadding: CGFloat,
@@ -64,7 +67,8 @@ extension AppShellView {
         stationFeedback: [String: TuneAVStationFeedback],
         playStation: @escaping (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void,
         toggleFavorite: @escaping (Station) -> Void,
-        showStationDetails: @escaping (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void
+        showStationDetails: @escaping (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void,
+        loadMoreResults: @escaping () -> Void
     ) -> some View {
         SearchScreen(
             query: query,
@@ -73,6 +77,9 @@ extension AppShellView {
             discoveryMode: discoveryMode,
             results: results,
             isLoading: isLoading,
+            isLoadingMore: isLoadingMore,
+            totalCount: totalCount,
+            hasMoreResults: hasMoreResults,
             errorMessage: errorMessage,
             tags: tags,
             bottomContentPadding: bottomContentPadding,
@@ -81,7 +88,8 @@ extension AppShellView {
             stationFeedback: stationFeedback,
             playStation: playStation,
             toggleFavorite: toggleFavorite,
-            showStationDetails: showStationDetails
+            showStationDetails: showStationDetails,
+            loadMoreResults: loadMoreResults
         )
     }
 

@@ -574,7 +574,7 @@ struct AppShellSearchRequest: Equatable {
     }
 
     var searchLimit: Int {
-        query.isEmpty ? AppShellHomeFeed.defaultFeedLimit : 50
+        query.isEmpty ? AppShellHomeFeed.defaultFeedLimit : 24
     }
 }
 
@@ -585,7 +585,11 @@ final class SearchPresentationStore: ObservableObject {
     @Published var selectedCountryCode: String?
     @Published var discoveryMode: TuneAVStationDiscoveryMode
     @Published private(set) var results: [Station] = []
+    @Published private(set) var totalCount: Int?
+    @Published private(set) var hasMoreResults = false
+    @Published private(set) var nextCursor: String?
     @Published private(set) var isLoading = false
+    @Published private(set) var isLoadingMore = false
     @Published private(set) var errorMessage: String?
 
     init(
@@ -622,28 +626,65 @@ final class SearchPresentationStore: ObservableObject {
 
     func beginLoading() {
         isLoading = true
+        isLoadingMore = false
         errorMessage = nil
     }
 
     func finishLoading(results: [Station]) {
         self.results = results
+        totalCount = results.count
+        hasMoreResults = false
+        nextCursor = nil
         errorMessage = nil
         isLoading = false
     }
 
+    func finishLoading(page: TuneAVStationSearchPage) {
+        results = page.stations
+        totalCount = page.total
+        hasMoreResults = page.hasMore
+        nextCursor = page.nextCursor
+        errorMessage = nil
+        isLoading = false
+        isLoadingMore = false
+    }
+
+    func beginLoadingMore() -> String? {
+        guard !isLoading, !isLoadingMore, hasMoreResults, let nextCursor else { return nil }
+        isLoadingMore = true
+        errorMessage = nil
+        return nextCursor
+    }
+
+    func finishLoadingMore(page: TuneAVStationSearchPage) {
+        let existingIDs = Set(results.map(\.id))
+        results.append(contentsOf: page.stations.filter { !existingIDs.contains($0.id) })
+        totalCount = page.total ?? totalCount
+        hasMoreResults = page.hasMore
+        nextCursor = page.nextCursor
+        errorMessage = nil
+        isLoadingMore = false
+    }
+
     func finishWithFallback(_ fallback: [Station], emptyErrorMessage: String?) {
         results = fallback
+        totalCount = fallback.count
+        hasMoreResults = false
+        nextCursor = nil
         errorMessage = fallback.isEmpty ? emptyErrorMessage : nil
         isLoading = false
+        isLoadingMore = false
     }
 
     func finishCancelled() {
         isLoading = false
+        isLoadingMore = false
     }
 
     func seedResultsIfEmpty(_ fallback: [Station]) {
         guard results.isEmpty, !fallback.isEmpty else { return }
         results = fallback
+        totalCount = fallback.count
     }
 }
 
@@ -659,7 +700,7 @@ struct AppShellSearch {
         request: AppShellSearchRequest,
         recentStations: [Station],
         favoriteStations: [Station]
-    ) async throws -> [Station] {
+    ) async throws -> TuneAVStationSearchPage {
         if request.usesWorldwideDiscovery {
             let stations = try await loadPopularDiscoveryStations(
                 limit: AppShellHomeFeed.defaultFeedLimit,
@@ -669,19 +710,26 @@ struct AppShellSearch {
                 recentStations: recentStations,
                 favoriteStations: favoriteStations
             )
-            return TuneAVStationMusicClassifier.orderedForDiscoveryMode(stations, mode: request.discoveryMode, request: request)
+            return .singlePage(TuneAVStationMusicClassifier.orderedForDiscoveryMode(stations, mode: request.discoveryMode, request: request))
         }
 
-        let stations = try await stationService.searchStations(
+        return try await loadSearchPage(request: request, cursor: nil)
+    }
+
+    @MainActor
+    func loadSearchPage(request: AppShellSearchRequest, cursor: String?) async throws -> TuneAVStationSearchPage {
+        let page = try await stationService.searchStationsPage(
             filters: .init(
                 query: request.query,
                 countryCode: request.countryCode ?? "",
                 tag: request.tag ?? "",
+                mode: request.discoveryMode.rawValue,
+                cursor: cursor,
                 limit: request.searchLimit,
                 allowsEmptySearch: request.query.isEmpty
             )
         )
-        return TuneAVStationMusicClassifier.orderedForDiscoveryMode(stations, mode: request.discoveryMode, request: request)
+        return page
     }
 
     @MainActor

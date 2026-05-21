@@ -90,6 +90,12 @@ struct StationService {
         return try await service.searchStations(filters: localizedFilters)
     }
 
+    func searchStationsPage(filters: SearchFilters) async throws -> TuneAVStationSearchPage {
+        var localizedFilters = filters
+        localizedFilters.locale = L10n.locale.identifier
+        return try await service.searchStationsPage(filters: localizedFilters)
+    }
+
     func popularStations(filters: SearchFilters) async throws -> [Station] {
         var localizedFilters = filters
         localizedFilters.locale = L10n.locale.identifier

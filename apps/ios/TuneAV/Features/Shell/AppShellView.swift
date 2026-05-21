@@ -291,6 +291,9 @@ struct AppShellView: View {
             discoveryMode: $searchPresentation.discoveryMode,
             results: enrichedStations(visibleSearchResults),
             isLoading: searchPresentation.isLoading,
+            isLoadingMore: searchPresentation.isLoadingMore,
+            totalCount: searchPresentation.totalCount,
+            hasMoreResults: searchPresentation.hasMoreResults,
             errorMessage: searchPresentation.errorMessage,
             tags: genreTags,
             bottomContentPadding: shouldHideFooterPlayer ? 176 : shellScrollBottomPadding,
@@ -299,7 +302,8 @@ struct AppShellView: View {
             stationFeedback: libraryStore.stationFeedback,
             playStation: playStation,
             toggleFavorite: toggleFavorite(_:),
-            showStationDetails: showSearchStationDetails(_:queueSource:queue:)
+            showStationDetails: showSearchStationDetails(_:queueSource:queue:),
+            loadMoreResults: { Task { await loadMoreSearchResults() } }
         )
     }
 
@@ -1540,15 +1544,16 @@ struct AppShellView: View {
             try await Task.sleep(for: .milliseconds(300))
             try Task.checkCancellation()
 
-            let results = try await appSearch.load(
+            let page = try await appSearch.load(
                 request: request,
                 recentStations: recentStations,
                 favoriteStations: favoriteStations
             )
             guard requestKey == searchRequestKey else { return }
 
+            let results = page.stations
             rememberBackendStations(results)
-            searchPresentation.finishLoading(results: results)
+            searchPresentation.finishLoading(page: page)
             searchLogger.info(
                 "Search load completed result_count=\(results.count, privacy: .public) mode=\(request.discoveryMode.rawValue, privacy: .public)"
             )
@@ -1563,6 +1568,26 @@ struct AppShellView: View {
             searchLogger.error(
                 "Search load failed fallback_count=\(fallback.count, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
             )
+        }
+    }
+
+    private func loadMoreSearchResults() async {
+        let request = searchRequest
+        let requestKey = searchRequestKey
+        guard !request.usesWorldwideDiscovery, let cursor = searchPresentation.beginLoadingMore() else { return }
+
+        do {
+            let page = try await appSearch.loadSearchPage(request: request, cursor: cursor)
+            guard requestKey == searchRequestKey else { return }
+            rememberBackendStations(page.stations)
+            searchPresentation.finishLoadingMore(page: page)
+            searchLogger.info(
+                "Search next page completed result_count=\(page.stations.count, privacy: .public) mode=\(request.discoveryMode.rawValue, privacy: .public)"
+            )
+        } catch {
+            guard requestKey == searchRequestKey else { return }
+            searchPresentation.finishCancelled()
+            searchLogger.error("Search next page failed error=\(Self.safeErrorCode(error), privacy: .public)")
         }
     }
 

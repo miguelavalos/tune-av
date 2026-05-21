@@ -8,8 +8,28 @@ struct TuneAVStationSearchFilters {
     var language: String = ""
     var tag: String = ""
     var locale: String = ""
+    var mode: String = "allRadio"
+    var cursor: String?
     var limit: Int = 30
     var allowsEmptySearch: Bool = false
+}
+
+struct TuneAVStationSearchPage {
+    let stations: [Station]
+    let total: Int?
+    let totalIsExact: Bool
+    let hasMore: Bool
+    let nextCursor: String?
+
+    static func singlePage(_ stations: [Station]) -> TuneAVStationSearchPage {
+        TuneAVStationSearchPage(
+            stations: stations,
+            total: stations.count,
+            totalIsExact: true,
+            hasMore: false,
+            nextCursor: nil
+        )
+    }
 }
 
 struct TuneAVStationFallbacks {
@@ -84,6 +104,7 @@ struct TuneAVStationService {
         let trimmedLanguage = filters.language.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedTag = filters.tag.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLocale = filters.locale.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMode = filters.mode.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard filters.allowsEmptySearch || !trimmedQuery.isEmpty || !trimmedCountry.isEmpty || !trimmedCountryCode.isEmpty || !trimmedLanguage.isEmpty || !trimmedTag.isEmpty else {
             return []
@@ -96,6 +117,8 @@ struct TuneAVStationService {
             language: trimmedLanguage,
             tag: trimmedTag,
             locale: trimmedLocale,
+            mode: trimmedMode.isEmpty ? "allRadio" : trimmedMode,
+            cursor: filters.cursor,
             limit: filters.limit
         )
 
@@ -106,11 +129,49 @@ struct TuneAVStationService {
                 return stations
             } catch {
                 await backendGate.recordFailure()
-                // Radio Browser remains the app's emergency catalog fallback.
             }
         }
 
         return try await searchRadioBrowser(filters: normalizedFilters)
+    }
+
+    func searchStationsPage(filters: TuneAVStationSearchFilters) async throws -> TuneAVStationSearchPage {
+        let trimmedQuery = filters.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCountry = filters.country.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCountryCode = filters.countryCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLanguage = filters.language.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTag = filters.tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLocale = filters.locale.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMode = filters.mode.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard filters.allowsEmptySearch || !trimmedQuery.isEmpty || !trimmedCountry.isEmpty || !trimmedCountryCode.isEmpty || !trimmedLanguage.isEmpty || !trimmedTag.isEmpty else {
+            return .singlePage([])
+        }
+
+        let normalizedFilters = NormalizedStationSearchFilters(
+            query: trimmedQuery,
+            country: trimmedCountry,
+            countryCode: trimmedCountryCode,
+            language: trimmedLanguage,
+            tag: trimmedTag,
+            locale: trimmedLocale,
+            mode: trimmedMode.isEmpty ? "allRadio" : trimmedMode,
+            cursor: filters.cursor,
+            limit: filters.limit
+        )
+
+        if let avalsysBaseURL, await backendGate.canAttempt() {
+            do {
+                let page = try await searchAVALSYSPage(filters: normalizedFilters, baseURL: avalsysBaseURL)
+                await backendGate.recordSuccess()
+                return page
+            } catch {
+                await backendGate.recordFailure()
+                // Radio Browser remains the app's emergency catalog fallback.
+            }
+        }
+
+        return try await searchRadioBrowserPage(filters: normalizedFilters)
     }
 
     func popularStations(filters: TuneAVStationSearchFilters) async throws -> [Station] {
@@ -130,6 +191,8 @@ struct TuneAVStationService {
             language: trimmedLanguage,
             tag: trimmedTag,
             locale: trimmedLocale,
+            mode: "allRadio",
+            cursor: nil,
             limit: popularFilters.limit
         )
 
@@ -159,6 +222,8 @@ struct TuneAVStationService {
             filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
             filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
             filters.locale.isEmpty ? nil : URLQueryItem(name: "locale", value: filters.locale),
+            filters.mode.isEmpty ? nil : URLQueryItem(name: "mode", value: filters.mode),
+            filters.cursor.map { URLQueryItem(name: "cursor", value: $0) },
             surface.map { URLQueryItem(name: "surface", value: $0) },
             URLQueryItem(name: "limit", value: String(filters.limit))
         ]
@@ -186,7 +251,49 @@ struct TuneAVStationService {
         }
     }
 
+    private func searchAVALSYSPage(filters: NormalizedStationSearchFilters, baseURL: URL, surface: String? = nil) async throws -> TuneAVStationSearchPage {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            filters.query.isEmpty ? nil : URLQueryItem(name: "q", value: filters.query),
+            filters.country.isEmpty ? nil : URLQueryItem(name: "country", value: filters.country),
+            filters.countryCode.isEmpty ? nil : URLQueryItem(name: "countryCode", value: filters.countryCode),
+            filters.language.isEmpty ? nil : URLQueryItem(name: "language", value: filters.language),
+            filters.tag.isEmpty ? nil : URLQueryItem(name: "tag", value: filters.tag),
+            filters.locale.isEmpty ? nil : URLQueryItem(name: "locale", value: filters.locale),
+            filters.mode.isEmpty ? nil : URLQueryItem(name: "mode", value: filters.mode),
+            filters.cursor.map { URLQueryItem(name: "cursor", value: $0) },
+            surface.map { URLQueryItem(name: "surface", value: $0) },
+            URLQueryItem(name: "limit", value: String(filters.limit))
+        ]
+        .compactMap { $0 }
+
+        guard let url = components?.url else {
+            throw URLError(.badURL)
+        }
+
+        let response = try await decodedResponse(
+            TuneAVStationSearchResponseDTO.self,
+            url: url,
+            timeoutInterval: 4
+        )
+        guard case .value(let dto, _) = response else {
+            throw ServiceError.invalidResponse(invalidResponseMessage)
+        }
+        let stations = applyExactTagFilterIfNeeded(deduplicatedStations(dto.resolvedStations), tag: filters.tag, limit: filters.limit)
+        return TuneAVStationSearchPage(
+            stations: stations,
+            total: dto.pagination?.total,
+            totalIsExact: dto.pagination?.totalIsExact ?? true,
+            hasMore: dto.pagination?.hasMore ?? false,
+            nextCursor: dto.pagination?.nextCursor
+        )
+    }
+
     private func searchRadioBrowser(filters: NormalizedStationSearchFilters) async throws -> [Station] {
+        try await searchRadioBrowserPage(filters: filters).stations
+    }
+
+    private func searchRadioBrowserPage(filters: NormalizedStationSearchFilters) async throws -> TuneAVStationSearchPage {
         var components = URLComponents(url: radioBrowserBaseURL, resolvingAgainstBaseURL: false)
         components?.queryItems = [
             filters.query.isEmpty ? nil : URLQueryItem(name: "name", value: filters.query),
@@ -197,6 +304,7 @@ struct TuneAVStationService {
             URLQueryItem(name: "hidebroken", value: "true"),
             URLQueryItem(name: "order", value: "clickcount"),
             URLQueryItem(name: "reverse", value: "true"),
+            filters.cursor.flatMap { radioBrowserOffsetQueryItem(cursor: $0) },
             URLQueryItem(name: "limit", value: String(filters.limit))
         ]
         .compactMap { $0 }
@@ -206,14 +314,23 @@ struct TuneAVStationService {
         }
 
         let cacheKey = "radioBrowser|\(url.absoluteString)"
-        return try await responseCache.stations(for: cacheKey) { _ in
+        let stations = try await responseCache.stations(for: cacheKey) { _ in
             let response = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
             guard case .value(let stations, _) = response else {
                 throw ServiceError.invalidResponse(invalidResponseMessage)
             }
             let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
-            return .updated(applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit), etag: nil)
+            let pageStations = applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit)
+            return .updated(pageStations, etag: nil)
         }
+        let offset = decodedRadioBrowserOffset(filters.cursor) ?? 0
+        return TuneAVStationSearchPage(
+            stations: stations,
+            total: nil,
+            totalIsExact: false,
+            hasMore: stations.count >= filters.limit,
+            nextCursor: stations.count >= filters.limit ? encodedRadioBrowserOffset(offset + stations.count) : nil
+        )
     }
 
     private func decodedResponse<T: Decodable>(
@@ -482,15 +599,50 @@ private struct NormalizedStationSearchFilters {
     let language: String
     let tag: String
     let locale: String
+    let mode: String
+    let cursor: String?
     let limit: Int
 }
 
 private struct TuneAVStationSearchResponseDTO: Decodable {
     let stations: [TuneAVStationDTO]
+    let pagination: TuneAVStationSearchPaginationDTO?
 
     var resolvedStations: [Station] {
         stations.compactMap(\.station)
     }
+
+}
+
+private struct TuneAVStationSearchPaginationDTO: Decodable {
+    let total: Int?
+    let limit: Int
+    let returned: Int
+    let hasMore: Bool
+    let nextCursor: String?
+    let totalIsExact: Bool
+}
+
+private func encodedRadioBrowserOffset(_ offset: Int) -> String {
+    let payload = #"{"offset":\#(max(0, offset))}"#
+    return Data(payload.utf8).base64EncodedString()
+}
+
+private func decodedRadioBrowserOffset(_ cursor: String?) -> Int? {
+    guard let cursor,
+          let data = Data(base64Encoded: cursor),
+          let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let offset = object["offset"] as? Int else {
+        return nil
+    }
+    return max(0, offset)
+}
+
+private func radioBrowserOffsetQueryItem(cursor: String) -> URLQueryItem? {
+    guard let offset = decodedRadioBrowserOffset(cursor), offset > 0 else {
+        return nil
+    }
+    return URLQueryItem(name: "offset", value: String(offset))
 }
 
 private struct TuneAVStationDTO: Decodable {

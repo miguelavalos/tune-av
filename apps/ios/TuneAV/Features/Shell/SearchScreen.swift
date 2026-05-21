@@ -8,6 +8,9 @@ struct SearchScreen: View {
 
     let results: [Station]
     let isLoading: Bool
+    let isLoadingMore: Bool
+    let totalCount: Int?
+    let hasMoreResults: Bool
     let errorMessage: String?
     let tags: [String]
     let bottomContentPadding: CGFloat
@@ -17,6 +20,7 @@ struct SearchScreen: View {
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
+    let loadMoreResults: () -> Void
 
     @EnvironmentObject private var libraryStore: LibraryStore
     @State private var isShowingCountryPicker = false
@@ -70,8 +74,8 @@ struct SearchScreen: View {
                         : L10n.plural(
                             singular: "shell.search.results.count.one",
                             plural: "shell.search.results.count.other",
-                            count: results.count,
-                            results.count,
+                            count: totalCount ?? results.count,
+                            totalCount ?? results.count,
                             queryText
                         ),
                     accessibilityIdentifier: "search.section.results"
@@ -90,6 +94,11 @@ struct SearchScreen: View {
                                     detailsAction: { showStationDetails(station, .searchResults, results) }
                                 )
                                 .zIndex(Double(results.count - index))
+                            }
+                            if hasMoreResults {
+                                SearchLoadingCard()
+                                    .opacity(isLoadingMore ? 1 : 0.01)
+                                    .onAppear(perform: loadMoreResults)
                             }
                         }
                     } else if isLoading {
