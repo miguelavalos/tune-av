@@ -60,7 +60,7 @@ struct AccountDeletionScreen: View {
     @ViewBuilder
     private var stateContent: some View {
         if let errorMessage = viewModel.errorMessage {
-            statusCard(
+            AVSettingsStatusCard(
                 systemImage: "exclamationmark.triangle",
                 title: L10n.string("accountDeletion.error.title"),
                 detail: errorMessage
@@ -69,7 +69,7 @@ struct AccountDeletionScreen: View {
         }
 
         if viewModel.didUnlinkCurrentApp {
-            statusCard(
+            AVSettingsStatusCard(
                 systemImage: "link.badge.minus",
                 title: L10n.string("accountDeletion.unlinked.title"),
                 detail: viewModel.unlinkMessage ?? L10n.string("accountDeletion.unlinked.detail")
@@ -84,7 +84,7 @@ struct AccountDeletionScreen: View {
             case .inProgress:
                 inProgressContent
             case .completed:
-                statusCard(
+                AVSettingsStatusCard(
                     systemImage: "checkmark.circle",
                     title: L10n.string("accountDeletion.completed.title"),
                     detail: L10n.string("accountDeletion.completed.detail")
@@ -98,7 +98,7 @@ struct AccountDeletionScreen: View {
 
     private var eligibleContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            statusCard(
+            AVSettingsStatusCard(
                 systemImage: "checkmark.shield",
                 title: L10n.string("accountDeletion.eligible.title"),
                 detail: L10n.string("accountDeletion.eligible.detail")
@@ -136,7 +136,7 @@ struct AccountDeletionScreen: View {
 
     private var inProgressContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            statusCard(
+            AVSettingsStatusCard(
                 systemImage: "clock.badge.exclamationmark",
                 title: L10n.string("accountDeletion.inProgress.title"),
                 detail: L10n.string("accountDeletion.inProgress.detail")
@@ -163,7 +163,7 @@ struct AccountDeletionScreen: View {
 
     private func blockedContent(title: String) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            statusCard(
+            AVSettingsStatusCard(
                 systemImage: "lock.shield",
                 title: title,
                 detail: L10n.string("accountDeletion.blocked.detail")
@@ -221,9 +221,5 @@ struct AccountDeletionScreen: View {
                 accessibilityIdentifier: "accountDeletion.warning.\(warning.type.rawValue)"
             )
         })
-    }
-
-    private func statusCard(systemImage: String, title: String, detail: String) -> some View {
-        AVSettingsStatusCard(systemImage: systemImage, title: title, detail: detail)
     }
 }
