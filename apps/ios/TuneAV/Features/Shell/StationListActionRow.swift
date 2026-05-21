@@ -128,7 +128,7 @@ struct StationListActionRow: View {
     }
 
     private var aviActionsPanel: some View {
-        AviRowActionsPanel(close: closeAviActions) {
+        TuneAviPopoverActionsPanel(close: closeAviActions) {
             AviRowActionButton(
                 title: isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"),
                 systemImage: isFavorite ? "bookmark.slash" : "bookmark"
@@ -230,24 +230,6 @@ struct StationListActionRow: View {
     }
 }
 
-struct AviRowActionsPanel<Content: View>: View {
-    let close: () -> Void
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        AVAviPopoverActionPanel(
-            title: L10n.string("shell.avi.actions.ask"),
-            pageLabel: L10n.string("shell.avi.actions.page", 1, 1),
-            previousAccessibilityLabel: L10n.string("shell.avi.actions.previousOptions"),
-            nextAccessibilityLabel: L10n.string("shell.avi.actions.moreOptions"),
-            closeAccessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
-            close: close
-        ) {
-            content()
-        }
-    }
-}
-
 struct AviRowActionButton: View {
     let title: String
     let systemImage: String
@@ -256,5 +238,32 @@ struct AviRowActionButton: View {
 
     var body: some View {
         AVAviPanelOptionButton(title: title, systemImage: systemImage, role: role, action: action)
+    }
+}
+
+struct TuneAviPopoverActionsPanel<Content: View>: View {
+    var page = 0
+    var pageCount = 1
+    var previous: () -> Void = {}
+    var next: () -> Void = {}
+    let close: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        AVAviPopoverActionPanel(
+            title: L10n.string("shell.avi.actions.ask"),
+            pageLabel: L10n.string("shell.avi.actions.page", page + 1, pageCount),
+            showsPagingControls: pageCount > 1,
+            canGoPrevious: page > 0,
+            canGoNext: page < pageCount - 1,
+            previousAccessibilityLabel: L10n.string("shell.avi.actions.previousOptions"),
+            nextAccessibilityLabel: L10n.string("shell.avi.actions.moreOptions"),
+            closeAccessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
+            previousPage: previous,
+            nextPage: next,
+            close: close
+        ) {
+            content()
+        }
     }
 }

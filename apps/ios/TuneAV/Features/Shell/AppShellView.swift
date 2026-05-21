@@ -2898,7 +2898,7 @@ struct AviScreen: View {
     private func focusedMusicAviServices(for detail: SelectedMusicAviDetail) -> some View {
         ZStack(alignment: .topLeading) {
             if isShowingAviActions {
-                AviRowActionsPanel(close: closeAviActions) {
+                TuneAviPopoverActionsPanel(close: closeAviActions) {
                     focusedMusicPrimaryCommands(for: detail)
                 }
                 .transition(.opacity)
