@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import AVAviFoundation
 import SwiftUI
 
@@ -14,19 +15,12 @@ struct DetailTopHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: 13) {
             if showsBackButton {
-                Button(action: goBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .frame(width: 36, height: 36)
-                        .background(TuneAVTheme.elevatedSurface, in: Circle())
-                        .overlay {
-                            Circle().stroke(TuneAVTheme.borderSubtle.opacity(0.52), lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("common.back"))
-                .accessibilityIdentifier("\(accessibilityIdentifier).back")
+                AVAppShellIconButton(
+                    systemName: "chevron.left",
+                    accessibilityLabel: L10n.string("common.back"),
+                    accessibilityIdentifier: "\(accessibilityIdentifier).back",
+                    action: goBack
+                )
             } else {
                 AviStableEmotionImage(emotion: .focused, assetVariant: .head, width: 40)
                     .frame(width: 36, height: 36)

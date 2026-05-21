@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import SwiftUI
 
 final class AppShellChromeActions: ObservableObject {
@@ -18,19 +19,15 @@ struct ShellBrandHeader: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button {
-                chromeActions.openSettings()
-            } label: {
-                headerIcon(
-                    systemName: "gearshape.fill",
-                    isSelected: activeItem == .settings,
-                    fontSize: 15
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.header.settings"))
-            .accessibilityValue(activeItem == .settings ? L10n.string("common.selected") : "")
-            .accessibilityIdentifier("header.settings")
+            AVAppShellIconButton(
+                systemName: "gearshape.fill",
+                accessibilityLabel: L10n.string("shell.header.settings"),
+                accessibilityValue: activeItem == .settings ? L10n.string("common.selected") : "",
+                accessibilityIdentifier: "header.settings",
+                isSelected: activeItem == .settings,
+                fontSize: 15,
+                action: chromeActions.openSettings
+            )
 
             Spacer(minLength: 8)
 
@@ -41,36 +38,16 @@ struct ShellBrandHeader: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                chromeActions.openAccount()
-            } label: {
-                headerIcon(
-                    systemName: "person.crop.circle.fill",
-                    isSelected: activeItem == .account,
-                    fontSize: 16
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.string("shell.header.account"))
-            .accessibilityValue(activeItem == .account ? L10n.string("common.selected") : "")
-            .accessibilityIdentifier("header.account")
+            AVAppShellIconButton(
+                systemName: "person.crop.circle.fill",
+                accessibilityLabel: L10n.string("shell.header.account"),
+                accessibilityValue: activeItem == .account ? L10n.string("common.selected") : "",
+                accessibilityIdentifier: "header.account",
+                isSelected: activeItem == .account,
+                fontSize: 16,
+                action: chromeActions.openAccount
+            )
         }
-    }
-
-    private func headerIcon(systemName: String, isSelected: Bool, fontSize: CGFloat) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: fontSize, weight: .semibold))
-            .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-            .frame(width: 36, height: 36)
-            .background(isSelected ? TuneAVTheme.footerGlassSelected : TuneAVTheme.elevatedSurface, in: Circle())
-            .overlay {
-                Circle()
-                    .stroke(
-                        isSelected ? TuneAVTheme.highlight.opacity(0.28) : TuneAVTheme.borderSubtle.opacity(0.52),
-                        lineWidth: 1
-                    )
-            }
-            .shadow(color: TuneAVTheme.highlight.opacity(isSelected ? 0.12 : 0), radius: 8, y: 3)
     }
 }
 
