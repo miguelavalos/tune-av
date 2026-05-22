@@ -186,6 +186,23 @@ limited by app behavior:
 - Before App Review, confirm review notes explain the radio-stream compatibility
   reason for ATS broad loading and that authenticated/backend traffic remains
   HTTPS-only.
+- Do not replace this with `NSAllowsArbitraryLoadsForMedia` without replaying a
+  real HTTP-only radio smoke test. In May 2026, direct HTTP Icecast/MP3 streams
+  such as public broadcaster endpoints failed under the media-only exception but
+  played correctly under `NSAllowsArbitraryLoads`.
+
+Suggested App Review note:
+
+```text
+Tune AV plays public live radio streams from broadcaster-operated domains. Some
+broadcasters only publish playable Icecast/MP3 stream URLs over HTTP, and these
+hosts are discovered dynamically from the radio catalog rather than controlled by
+AVALSYS. The ATS exception is required only so AVPlayer can open user-initiated
+live audio streams from those broadcaster domains. Tune AV does not send
+credentials, account data, payment data, or personal information to HTTP stream
+hosts. Account, subscription, support, legal, and backend API traffic remains
+HTTPS-only.
+```
 
 ## Public Release
 
