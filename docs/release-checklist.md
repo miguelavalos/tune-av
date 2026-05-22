@@ -174,34 +174,25 @@ Before creating the archive for review:
 
 ## App Transport Security
 
-Tune AV declares `NSAllowsArbitraryLoads` because live radio catalogs can include
-playable HTTP stream URLs that are not under AVALSYS control. Keep this exception
-limited by app behavior:
+Tune AV does not allow arbitrary remote HTTP loads in iOS. Stream compatibility
+is controlled from the backend:
 
-- Account AV, Support AV, legal, and open-source URLs must resolve to HTTPS
-  except localhost loopback during development.
+- Backend station search must upgrade HTTP stream URLs to verified HTTPS when
+  the HTTPS equivalent is playable.
+- HTTP-only streams must not be returned to iOS as playable stations.
+- iOS must not retry failed HTTPS streams by downgrading to HTTP.
+- Account AV, Support AV, legal, open-source, and stream URLs returned to iOS
+  must resolve to HTTPS except localhost loopback during development.
 - The in-app browser must reject remote HTTP pages; use HTTPS for web content.
-- Remote HTTP should be treated as playback-only stream input for `AVPlayer`,
-  not as a general networking policy.
-- Before App Review, confirm review notes explain the radio-stream compatibility
-  reason for ATS broad loading and that authenticated/backend traffic remains
-  HTTPS-only.
-- Do not replace this with `NSAllowsArbitraryLoadsForMedia` without replaying a
-  real HTTP-only radio smoke test. In May 2026, direct HTTP Icecast/MP3 streams
-  such as public broadcaster endpoints failed under the media-only exception but
-  played correctly under `NSAllowsArbitraryLoads`.
 
 Suggested App Review note:
 
 ```text
-Tune AV plays public live radio streams from broadcaster-operated domains. Some
-broadcasters only publish playable Icecast/MP3 stream URLs over HTTP, and these
-hosts are discovered dynamically from the radio catalog rather than controlled by
-AVALSYS. The ATS exception is required only so AVPlayer can open user-initiated
-live audio streams from those broadcaster domains. Tune AV does not send
-credentials, account data, payment data, or personal information to HTTP stream
-hosts. Account, subscription, support, legal, and backend API traffic remains
-HTTPS-only.
+Tune AV plays public live radio streams from broadcaster-operated domains. The
+Tune AV backend validates stream URLs before they are shown in the iOS app and
+only returns HTTPS-playable streams to iOS. HTTP-only broadcaster streams are not
+treated as playable in the App Store build. Account, subscription, support,
+legal, backend API, and stream playback traffic in iOS remains HTTPS-only.
 ```
 
 ## Public Release
