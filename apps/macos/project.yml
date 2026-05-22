@@ -6,6 +6,8 @@ options:
 packages:
   AccountAV:
     path: ../../../account-av
+  AppsAV:
+    path: ../../../apps-av/apple
 targets:
   TuneAVMac:
     type: application
@@ -51,6 +53,8 @@ targets:
     dependencies:
       - package: AccountAV
         product: AccountAV
+      - package: AppsAV
+        product: AVBrandFoundation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER)"
