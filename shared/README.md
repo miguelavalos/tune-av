@@ -14,6 +14,30 @@ Do not put runtime-specific source directly under `shared/`. Create a platform o
 
 Use `shared/apple` for Swift implementation shared only by Apple targets. Move behavior to `shared/contracts` only when backend, generated clients, or future native clients need the same source of truth.
 
+## Relationship To Apps AV
+
+`apps-av/apple` is the cross-product Apple foundation. Tune AV should use it for
+structure, design primitives, shared shell chrome, launch/settings/paywall
+surfaces, assistant visual primitives, and semantic haptics.
+
+`tune-av/shared/apple` is Tune AV's Apple-domain layer. It should keep Tune-only
+radio and music behavior that may be shared between Tune AV iOS and macOS but
+should not become the default model for every AVALSYS app.
+
+Keep this package as the owner of Tune-specific concepts:
+
+- station models, station service parsing, stream URLs, and station artwork
+- playback queue rules, now-playing parsing, track metadata, and artwork lookup
+- radio library rules, saved stations, discoveries, and music-library policy
+- external music/search URLs such as lyrics, YouTube, and Apple Music routing
+- Tune AV account/access/deletion policy, product limits, and upgrade copy
+- Tune-specific Avi context, recommendation inputs, reaction rules, and assets
+
+If code is reusable because it is visual structure or styling, prefer Apps AV.
+If code is reusable because Tune iOS and Tune macOS both need the same radio or
+music behavior, keep it here. If a future non-Tune app would need different
+names to understand the API, it is not ready for Apps AV.
+
 ## Promotion Rules
 
 Start from the iOS app unless there is already a stronger source of truth. Promote code only when it passes one of these checks:
