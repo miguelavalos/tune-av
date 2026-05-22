@@ -15,12 +15,12 @@
 		054EDB1A6A553D8548C6A9B6 /* HomeScreenSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7B4AB74E73BDD74174C98B /* HomeScreenSections.swift */; };
 		0BEFD1AF0CCEFF38FA4AED12 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */; };
 		0C712A0DAD480061CBD11498 /* MusicDiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA71440129B24B643BE8760 /* MusicDiscoveryViews.swift */; };
-		0D5C58A2E90E4A7F9B7D8211 /* MusicArtworkViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5C58A1E90E4A7F9B7D8211 /* MusicArtworkViews.swift */; };
 		0D13EEB6E106D7FC3ACFD650 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD95C0068EC297AAD27DFCAD /* AppConfig.swift */; };
-		0E8B3527C5A44C69A4C26CE2 /* FeedbackBadgeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8B3526C5A44C69A4C26CE2 /* FeedbackBadgeViews.swift */; };
+		0D5C58A2E90E4A7F9B7D8211 /* MusicArtworkViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5C58A1E90E4A7F9B7D8211 /* MusicArtworkViews.swift */; };
 		0D681AC3313B72BE8AE5C273 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 969857CE9E9F5A0C0E195E34 /* HomeScreen.swift */; };
 		0DD089160B30C3F849586063 /* StationFeedbackControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8E8B23A59D452594D47639 /* StationFeedbackControls.swift */; };
 		0E4797422645A21A64BB07D4 /* ShellUITestBootstrapOverrides.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0948F460D008D20F4E5706 /* ShellUITestBootstrapOverrides.swift */; };
+		0E8B3527C5A44C69A4C26CE2 /* FeedbackBadgeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8B3526C5A44C69A4C26CE2 /* FeedbackBadgeViews.swift */; };
 		0FBAD2A1F3F7F81047182C42 /* TuneAVStationArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */; };
 		111145901EC3E6E5F79C5459 /* AccountDeletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD2AD3365E308FA6A45AE9C /* AccountDeletionViewModel.swift */; };
 		1128115FFD9AD7844185A94C /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 9744CD1D4ACE67E92FC87D91 /* AVPaywallFoundation */; };
@@ -211,13 +211,14 @@
 		06624915894913972B482E00 /* LaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchContext.swift; sourceTree = "<group>"; };
 		09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
 		0A2443197B44A3463AFABCB5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
-		0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDerivedStateBuilder.swift; sourceTree = "<group>"; };
 		0D5C58A1E90E4A7F9B7D8211 /* MusicArtworkViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicArtworkViews.swift; sourceTree = "<group>"; };
 		0E8B3526C5A44C69A4C26CE2 /* FeedbackBadgeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackBadgeViews.swift; sourceTree = "<group>"; };
+		0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDerivedStateBuilder.swift; sourceTree = "<group>"; };
 		12A3B12BBA94111AA7B04163 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
 		157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendationInsightBuilder.swift; sourceTree = "<group>"; };
-		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1713B09701E9777A700FA782 /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
+		172A4B75CDB4F578D5320BA1 /* AviReactionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionAnimation.swift; sourceTree = "<group>"; };
 		198A05B4515ED79560A09DEF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		1B61305E0867F482CEA3CA5B /* HomeHeroViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroViews.swift; sourceTree = "<group>"; };
 		1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenStateBuilderTests.swift; sourceTree = "<group>"; };
@@ -264,7 +265,6 @@
 		55EEAFD85645D40D9DB62E70 /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = "../../../apps-av/apple"; sourceTree = SOURCE_ROOT; };
 		58F44C547C4ADED911C85197 /* account-av */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "account-av"; path = "../../../account-av"; sourceTree = SOURCE_ROOT; };
 		5A4A5CDB7CB1D479EFCF11EC /* AviEmotionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviEmotionViews.swift; sourceTree = "<group>"; };
-		172A4B75CDB4F578D5320BA1 /* AviReactionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionAnimation.swift; sourceTree = "<group>"; };
 		5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
 		5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodGenreTagBuilder.swift; sourceTree = "<group>"; };
 		604190C7A168380EB4909040 /* ShellPlaybackQueueBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellPlaybackQueueBuilder.swift; sourceTree = "<group>"; };
@@ -281,7 +281,7 @@
 		69777DC9CD8AED418E5B8C17 /* HomeScreenStateBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenStateBuilder.swift; sourceTree = "<group>"; };
 		6A0948F460D008D20F4E5706 /* ShellUITestBootstrapOverrides.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITestBootstrapOverrides.swift; sourceTree = "<group>"; };
 		6A7CBB3F4E1C56B85A3C8D0B /* TuneAVDailyUsageLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDailyUsageLimiter.swift; sourceTree = "<group>"; };
-		6C3DB46280DA5D6542F3E2F1 /* TuneAVTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6C3DB46280DA5D6542F3E2F1 /* TuneAVTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = file; name = TuneAVTests.xctest; path = TuneAV.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D34076181B4D7F27E738D66 /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
 		6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTagViews.swift; sourceTree = "<group>"; };
 		6ECEE2B4FACAC9EA16B737B1 /* TuneAVAppShellHomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellHomeFeed.swift; sourceTree = "<group>"; };
@@ -300,7 +300,7 @@
 		815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStationPresentationBuilder.swift; sourceTree = "<group>"; };
 		839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchPerformanceUITests.swift; sourceTree = "<group>"; };
 		84E30C282A10CD70115978FF /* HomeHeroActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouter.swift; sourceTree = "<group>"; };
-		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		85BAE76A86EE8D86099128F0 /* TuneAVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = file; name = TuneAVUITests.xctest; path = TuneAV.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviQueueSwitchCoordinator.swift; sourceTree = "<group>"; };
 		87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
@@ -318,6 +318,7 @@
 		9C071CD5FC33A2899B94A407 /* ShellSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellSessionState.swift; sourceTree = "<group>"; };
 		9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePersonalStationSelector.swift; sourceTree = "<group>"; };
 		9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeUITests.swift; sourceTree = "<group>"; };
+		9F1AC469F5F1D93919C0B81C /* TuneAviPopoverActionsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAviPopoverActionsPanel.swift; sourceTree = "<group>"; };
 		A20097A1515219B62D4EC2C9 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
 		A28F9B420331C4682DFB2282 /* ShellLaunchBootstrapPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellLaunchBootstrapPlanner.swift; sourceTree = "<group>"; };
 		A3218F25D3DD328B1F69801C /* StationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationInfoViews.swift; sourceTree = "<group>"; };
@@ -347,7 +348,6 @@
 		BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviFullPlayerViews.swift; sourceTree = "<group>"; };
 		BD95C0068EC297AAD27DFCAD /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHeaderViews.swift; sourceTree = "<group>"; };
-		9F1AC469F5F1D93919C0B81C /* TuneAviPopoverActionsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAviPopoverActionsPanel.swift; sourceTree = "<group>"; };
 		C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVURLSupport.swift; sourceTree = "<group>"; };
 		C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonBehaviors.swift; sourceTree = "<group>"; };
@@ -372,7 +372,7 @@
 		E2EBF8F04CC78A6F55E19FFB /* ShellCellularPlaybackGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCellularPlaybackGate.swift; sourceTree = "<group>"; };
 		E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeaturedStationBuilder.swift; sourceTree = "<group>"; };
 		E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAviPickStationSelector.swift; sourceTree = "<group>"; };
-		E76489FBB943FD3200A86D0B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E76489FBB943FD3200A86D0B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVL10n.swift; sourceTree = "<group>"; };
 		E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDiscoveryTagBuilder.swift; sourceTree = "<group>"; };
 		EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReturnContextTests.swift; sourceTree = "<group>"; };
@@ -829,7 +829,6 @@
 						TestTargetID = BF42636FB07B96618ECE9E1B;
 					};
 					BF42636FB07B96618ECE9E1B = {
-						DevelopmentTeam = "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)";
 						ProvisioningStyle = Automatic;
 					};
 				};
