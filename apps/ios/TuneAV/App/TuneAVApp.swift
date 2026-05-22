@@ -1,3 +1,4 @@
+import AVBrandFoundation
 import SwiftData
 import SwiftUI
 
@@ -37,6 +38,7 @@ struct TuneAVApp: App {
                     .environment(\.locale, languageController.locale)
                     .environmentObject(audioPlayer)
                     .environmentObject(libraryStore)
+                    .avBrandPalette(TuneAVTheme.brandPalette)
                     .preferredColorScheme(themeController.currentTheme.preferredColorScheme)
             }
         }
