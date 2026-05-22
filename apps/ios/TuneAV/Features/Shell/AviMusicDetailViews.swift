@@ -192,37 +192,19 @@ struct AviFocusedTrackQuickActions: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Button(action: toggleSaved) {
-                    Label(
-                        discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort"),
-                        systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark"
-                    )
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(discovery.isMarkedInteresting ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(discovery.isMarkedInteresting ? TuneAVTheme.highlight.opacity(0.34) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("avi.detail.track.save")
+                AVAviQuickActionButton(
+                    title: discovery.isMarkedInteresting ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort"),
+                    systemImage: discovery.isMarkedInteresting ? "bookmark.slash" : "bookmark",
+                    isSelected: discovery.isMarkedInteresting,
+                    accessibilityIdentifier: "avi.detail.track.save",
+                    action: toggleSaved
+                )
 
-                Button(action: openArtist) {
-                    Image(systemName: "person.crop.circle")
-                        .font(.system(size: 16, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .frame(width: 44, height: 44)
-                        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.avi.actions.searchArtist"))
+                AVAviIconActionButton(
+                    systemImage: "person.crop.circle",
+                    accessibilityLabel: L10n.string("shell.avi.actions.searchArtist"),
+                    action: openArtist
+                )
             }
 
             StationFeedbackControl(
