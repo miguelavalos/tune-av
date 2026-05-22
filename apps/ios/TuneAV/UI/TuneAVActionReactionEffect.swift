@@ -21,7 +21,7 @@ private extension TuneAVActionReaction {
         case .like:
             return .positive
         case .save:
-            return .save
+            return .affirm
         case .dislike:
             return .negative
         case .notForMe:
