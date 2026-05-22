@@ -12,7 +12,7 @@ struct AviRecommendationRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            AVAviRecommendationItemRow(
+            AVAviSuggestedItemRow(
                 title: station.name,
                 detail: reason,
                 playAccessibilityLabel: L10n.string("shell.avi.recommendation.play"),
@@ -51,7 +51,7 @@ struct AviRelatedStationRow: View {
     let detailsAction: () -> Void
 
     var body: some View {
-        AVAviRecommendationItemRow(
+        AVAviSuggestedItemRow(
             title: station.name,
             detail: reason,
             playAccessibilityLabel: L10n.string("shell.avi.recommendation.play"),
