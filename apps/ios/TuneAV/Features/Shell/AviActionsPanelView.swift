@@ -41,7 +41,11 @@ struct AviActionsPanelView: View {
             }
         } footer: {
             if showsCloseSignalAction {
-                AVAviCloseSignalPanelButton(title: L10n.string("shell.accessibility.closeSignal"), action: closeSignal)
+                AVAviStopPanelButton(
+                    title: L10n.string("shell.accessibility.closeSignal"),
+                    accessibilityIdentifier: "avi.actions.closeSignal",
+                    action: closeSignal
+                )
             } else {
                 EmptyView()
             }

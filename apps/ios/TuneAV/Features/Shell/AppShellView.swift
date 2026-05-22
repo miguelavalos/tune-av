@@ -2106,9 +2106,9 @@ struct AviScreen: View {
             }
 
             HStack(spacing: 8) {
-                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform")
-                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark")
-                AVAviSignalChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
+                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform")
+                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark")
+                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
             }
 
             Text(L10n.string("shell.avi.preview.detail"))
@@ -2181,9 +2181,9 @@ struct AviScreen: View {
 
             VStack(spacing: 8) {
                 if currentStation == nil {
-                    AVAviSignalStep(index: 1, title: L10n.string("shell.avi.preview.step.choose"))
-                    AVAviSignalStep(index: 2, title: L10n.string("shell.avi.preview.step.listen"))
-                    AVAviSignalStep(index: 3, title: L10n.string("shell.avi.preview.step.remember"))
+                    AVAviPreviewStep(index: 1, title: L10n.string("shell.avi.preview.step.choose"))
+                    AVAviPreviewStep(index: 2, title: L10n.string("shell.avi.preview.step.listen"))
+                    AVAviPreviewStep(index: 3, title: L10n.string("shell.avi.preview.step.remember"))
                 } else if let currentStation {
                     HStack(spacing: 8) {
                         AVAviPromptButton(
