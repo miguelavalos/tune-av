@@ -178,7 +178,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             ]
         )
 
-        let aviEmotion = app.descendants(matching: .any)["avi.fullPlayer.header"].firstMatch
+        let aviEmotion = app.descendants(matching: .any)["avi.focused.header"].firstMatch
         if !aviEmotion.waitForExistence(timeout: 2) {
             openFullPlayerFromMiniPlayer(in: app)
         }

@@ -69,9 +69,13 @@ struct AviExpandedFooterPlayerView: View {
             subtitle: artistLine,
             title: titleLine,
             isSubtitleHighlighted: trackArtworkExists,
+            primaryTitleAccessibilityIdentifier: "avi.footerPlayer.primaryTitle",
             artworkAccessibilityLabel: L10n.string("shell.accessibility.zoomArtwork"),
+            artworkAccessibilityIdentifier: "avi.footerPlayer.artworkZoom",
+            metadataAccessibilityIdentifier: "avi.footerPlayer.textZoom",
             accessibilityLabel: L10n.string("shell.miniPlayer.accessibility.label", station.name),
             accessibilityHint: L10n.string("shell.miniPlayer.accessibility.hint"),
+            accessibilityIdentifier: "avi.footerPlayer.container",
             primaryAction: showArtworkZoom,
             artworkAction: showArtworkZoom,
             metadataAction: showArtworkZoom

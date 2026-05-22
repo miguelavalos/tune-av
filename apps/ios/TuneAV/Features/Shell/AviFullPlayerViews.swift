@@ -16,7 +16,7 @@ struct FullPlayerAviHeader: View {
     }
 
     var body: some View {
-        AVAviFullPlayerHeaderScaffold(
+        AVAviFocusedHeaderScaffold(
             label: label,
             title: title,
             summary: summary,

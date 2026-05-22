@@ -261,7 +261,7 @@ private struct StationCompactCard: View {
     private func stationQualityBadges(hasNowPlaying: Bool) -> some View {
         HStack(spacing: 5) {
             ForEach(station.userSignalBadges(hasNowPlaying: hasNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
-                AVSignalBadge(title: badge)
+                AVCompactStatusBadge(title: badge)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
