@@ -93,7 +93,7 @@ struct StationListActionRow: View {
     private var stationQualityBadges: some View {
         HStack(spacing: 5) {
             ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
-                AVStationSignalBadge(title: badge)
+                AVSignalBadge(title: badge)
             }
         }
     }
