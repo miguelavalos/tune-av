@@ -151,7 +151,7 @@ struct StationListActionRow: View {
 
     private func playStation() {
         if audioPlayer.isCurrent(station) {
-            AVHaptics.perform(.playbackToggle)
+            AVHaptics.perform(.primaryAction)
             audioPlayer.togglePlayback()
         } else {
             playAction()

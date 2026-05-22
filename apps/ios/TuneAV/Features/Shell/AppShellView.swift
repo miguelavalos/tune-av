@@ -8,11 +8,11 @@ import UIKit
 private func stationFeedbackHapticEvent(for feedback: TuneAVStationFeedback?) -> AVHapticEvent {
     switch feedback {
     case .liked:
-        return .like
+        return .positiveFeedback
     case .notForMe:
         return .notForMe
     case .disliked:
-        return .dislike
+        return .negativeFeedback
     case nil:
         return .clear
     }
@@ -927,7 +927,7 @@ struct AppShellView: View {
             enrichStation: enrichedStation(_:),
             enrichStations: enrichedStations(_:)
         )
-        AVHaptics.perform(.playbackToggle)
+        AVHaptics.perform(.primaryAction)
         audioPlayer.play(station: selection.station, queue: selection.queue)
         beginListeningSession(for: selection.station, source: selection.queue.source)
     }
@@ -938,23 +938,23 @@ struct AppShellView: View {
     }
 
     private func stopPlaybackAndCloseSignal() {
-        AVHaptics.perform(.stopPlayback)
+        AVHaptics.perform(.stopAction)
         audioPlayer.stopAndClearCurrentStation()
         closeFocusedAviDetail(fallbackTab: .home)
     }
 
     private func togglePlaybackWithHaptic() {
-        AVHaptics.perform(.playbackToggle)
+        AVHaptics.perform(.primaryAction)
         audioPlayer.togglePlayback()
     }
 
     private func playPreviousInQueueWithHaptic() {
-        AVHaptics.perform(.queueStep)
+        AVHaptics.perform(.step)
         audioPlayer.playPreviousInQueue()
     }
 
     private func playNextInQueueWithHaptic() {
-        AVHaptics.perform(.queueStep)
+        AVHaptics.perform(.step)
         audioPlayer.playNextInQueue()
     }
 
@@ -1064,7 +1064,7 @@ struct AppShellView: View {
         let resolvedStation = enrichedStation(station)
 
         if libraryStore.isFavorite(resolvedStation) {
-            AVHaptics.perform(.unsave)
+            AVHaptics.perform(.undo)
             libraryStore.toggleFavorite(for: resolvedStation)
             return
         }
@@ -1078,7 +1078,7 @@ struct AppShellView: View {
             return
         }
 
-        AVHaptics.perform(.save)
+        AVHaptics.perform(.affirm)
         libraryStore.toggleFavorite(for: resolvedStation)
     }
 
@@ -1099,7 +1099,7 @@ struct AppShellView: View {
                 let wasSaved = discovery.isMarkedInteresting
                 let didToggle = libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
                 if didToggle {
-                    AVHaptics.perform(wasSaved ? .unsave : .save)
+                    AVHaptics.perform(wasSaved ? .undo : .affirm)
                 }
                 return didToggle
             },
@@ -5230,7 +5230,7 @@ struct AviScreen: View {
                 let wasSaved = discovery.isMarkedInteresting
                 let didToggle = libraryStore.toggleDiscoverySaved(discovery, savedLimit: limit)
                 if didToggle {
-                    AVHaptics.perform(wasSaved ? .unsave : .save)
+                    AVHaptics.perform(wasSaved ? .undo : .affirm)
                 }
                 return didToggle
             },

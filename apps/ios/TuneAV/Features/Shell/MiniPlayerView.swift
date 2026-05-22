@@ -27,12 +27,12 @@ struct MiniPlayerView: View {
             }
         } controls: {
             queueButton(systemImage: "backward.fill", accessibilityIdentifier: "miniPlayer.previous") {
-                AVHaptics.perform(.queueStep)
+                AVHaptics.perform(.step)
                 audioPlayer.playPreviousInQueue()
             }
 
             Button {
-                AVHaptics.perform(.playbackToggle)
+                AVHaptics.perform(.primaryAction)
                 audioPlayer.togglePlayback()
             } label: {
                 ZStack {
@@ -54,7 +54,7 @@ struct MiniPlayerView: View {
             .accessibilityIdentifier("miniPlayer.playPause")
 
             queueButton(systemImage: "forward.fill", accessibilityIdentifier: "miniPlayer.next") {
-                AVHaptics.perform(.queueStep)
+                AVHaptics.perform(.step)
                 audioPlayer.playNextInQueue()
             }
         }
