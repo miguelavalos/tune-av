@@ -6,6 +6,12 @@ This project follows semantic versioning once public releases begin.
 
 ## Unreleased
 
+- Prepare the iOS App Store upload path with checked-in export options and
+  documented signed archive/export commands.
+- Complete the Tune AV shared-foundation extraction pass for the first release
+  candidate, consuming app-neutral Apple components from `apps-av/apple`.
+- Verify the iOS release candidate on 2026-05-22 with unit tests, Home UI smoke,
+  release config hygiene, archive privacy evidence, and app-size gate.
 - Track post-submission work for the next release after the iOS 1.0 App Review submission.
 - Redesign the iOS full player around fixed-height Avi feedback, larger artwork, stable text truncation, and controls that do not shift between stations.
 - Keep the full player in portrait orientation and hide the mini-player while the full player is visible.

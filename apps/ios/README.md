@@ -5,6 +5,11 @@ SwiftUI iOS app for Tune AV.
 Use [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
 current public state document for the iOS app.
 
+Current release status, dated 2026-05-22: iOS is in App Store submission
+preparation. The release candidate builds and runs, release/archive preflight
+passes, and `Config/ExportOptionsUpload.plist` is the checked-in export options
+file for signed App Store Connect upload.
+
 ## Local Config
 
 1. From the repo root, run `bun install`.
@@ -34,6 +39,9 @@ Optional account-connected behavior:
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
 - Pro cloud sync and backend-backed summary/analytics only when Account AV backend config is available
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
+- shared app shell, launch, settings/account, Avi feedback/actions, paywall, and
+  text-fit foundations are consumed from `apps-av/apple` where they are
+  app-neutral
 
 ## Localization
 
