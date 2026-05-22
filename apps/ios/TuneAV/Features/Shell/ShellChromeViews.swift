@@ -2,8 +2,20 @@ import AVAppShellFoundation
 import SwiftUI
 
 final class AppShellChromeActions: ObservableObject {
-    var openSettings: () -> Void = {}
-    var openAccount: () -> Void = {}
+    @Published var request: AppShellChromeRequest?
+
+    func openSettings() {
+        request = AppShellChromeRequest(item: .settings)
+    }
+
+    func openAccount() {
+        request = AppShellChromeRequest(item: .account)
+    }
+}
+
+struct AppShellChromeRequest: Equatable {
+    let id = UUID()
+    let item: ShellBrandHeaderActiveItem
 }
 
 enum ShellBrandHeaderActiveItem {

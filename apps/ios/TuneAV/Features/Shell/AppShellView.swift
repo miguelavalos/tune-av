@@ -171,15 +171,9 @@ struct AppShellView: View {
             }
         )
         .environmentObject(chromeActions)
-        .onAppear {
-            chromeActions.openSettings = {
-                profileMode = .settings
-                selectedTab = .profile
-            }
-            chromeActions.openAccount = {
-                profileMode = .account
-                selectedTab = .profile
-            }
+        .onChange(of: chromeActions.request) { _, request in
+            guard let request else { return }
+            openChromeRequest(request.item)
         }
         .appShellGlobalPresentations(
             isShowingFooterArtworkZoom: $isShowingFooterArtworkZoom,
@@ -528,6 +522,17 @@ struct AppShellView: View {
     private func openAccountProfile() {
         AVHaptics.perform(.navigation)
         profileMode = .account
+        selectedTab = .profile
+    }
+
+    private func openChromeRequest(_ item: ShellBrandHeaderActiveItem) {
+        AVHaptics.perform(.navigation)
+        switch item {
+        case .settings:
+            profileMode = .settings
+        case .account:
+            profileMode = .account
+        }
         selectedTab = .profile
     }
 
