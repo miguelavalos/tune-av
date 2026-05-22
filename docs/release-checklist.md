@@ -5,6 +5,14 @@ from the public Tune AV iOS repository.
 
 ## Repository Hygiene
 
+Current status on 2026-05-22: tracked repository hygiene is clean after the
+shared foundation and App Store upload-preparation PRs. The only checked-in
+release operation file is `apps/ios/Config/ExportOptionsUpload.plist`;
+generated local config, archives, signed outputs, and evidence artifacts remain
+ignored. If `apps/ios/Config/Local.xcconfig` exists from release checks, treat
+it as generated local state and remove/regenerate it before public hygiene
+checks or publishing public artifacts.
+
 1. Run `bun install`.
 2. Run the public hygiene check:
 
@@ -19,9 +27,20 @@ from the public Tune AV iOS repository.
    - `.env.*`
    - private bootstrap files
 4. Confirm no signing files, provisioning profiles, private keys, exported certificates, or local build products are present.
-5. Confirm public docs do not contain private email addresses, personal account names, Team IDs, local backend URLs, provider secrets, runbooks, or non-public operational/planning details.
+5. Confirm public docs do not contain private email addresses, personal account names, local backend URLs, provider secrets, runbooks, or non-public operational/planning details. The production Apple team ID is intentionally present only in checked-in Xcode/export configuration that must match the public app bundle.
 
 ## Build Verification
+
+Latest local evidence, dated 2026-05-22:
+
+- `apps-av/apple`: `swift build` passed.
+- `TuneAVTests`: 286 tests passed on `iPhone 17 / iOS 26.5`.
+- `HomeUITests/testTogglingFavoriteKeepsHomeInteractive`: passed on `iPhone 17
+  / iOS 26.5`.
+- `bun run ios:release:preflight`: passed.
+- `bun run ios:release:preflight -- --with-archive`: unsigned Release archive
+  succeeded; strict archive privacy evidence passed; app-size gate reported
+  `24.82 MiB`.
 
 1. Confirm the local archive toolchain matches Apple's current upload gate. For
    App Store uploads created on or after 2026-04-28, build with Xcode 26 and

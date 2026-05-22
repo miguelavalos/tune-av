@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-05-19
+Date: 2026-05-22
 
 This is the public source of truth for the current Tune AV iOS app. It describes
 what exists in this repository without exposing private backend, signing, or
@@ -29,6 +29,9 @@ Current app shape:
 - backend-backed access refresh, user summary, listening analytics, and cloud
   library sync only when the signed-in/configured runtime supports them;
 - account deletion entry point and local data clearing from Profile.
+- app-neutral shared Apple UI foundations from `apps-av/apple` are now used for
+  brand tokens, shell structure, launch/splash support, settings/account
+  surfaces, Avi controls, paywall/limit surfaces, and text-fit hardening.
 
 ## Access Model
 
@@ -106,15 +109,24 @@ The destination above is an example. Use `xcodebuild -showdestinations` or
 Xcode's Devices window and replace the name/OS with an installed simulator when
 the local Xcode image set differs.
 
-Latest full local verification known to the maintainers, run on 2026-05-18:
+Latest full local verification known to the maintainers, run on 2026-05-22:
 
-- `TuneAVTests`: 139 tests, 0 failures on `iPhone 17 / iOS 26.5`.
-- `ProfileUITests`: 8 tests, 0 failures on `iPhone 17 / iOS 26.5`.
+- `apps-av/apple`: `swift build`, 0 failures.
+- `TuneAVTests`: 286 tests, 0 failures on `iPhone 17 / iOS 26.5`.
+- `HomeUITests/testTogglingFavoriteKeepsHomeInteractive`: 1 UI test, 0
+  failures on `iPhone 17 / iOS 26.5`.
+- Tune AV Debug build/run on `iPhone 17 / iOS 26.5`, with Home shell snapshot
+  showing header, tabs, Avi entry, Home hero, and scrollable content.
 
-Latest focused local verification known to the maintainers, run on 2026-05-19:
+Latest release readiness verification known to the maintainers, run on
+2026-05-22:
 
-- Release simulator build/run on `iPhone 17 / iOS 26.5` after full-player,
-  paywall, queue-resume, and duplicate-recents fixes.
+- `bun run ios:release:preflight`: passed with `0 failure(s), 0 warning(s)`.
+- `bun run ios:release:preflight -- --with-archive`: unsigned Release archive
+  succeeded, strict archive privacy evidence passed with app, RevenueCat, and
+  PhoneNumberKit privacy manifests, and app-size gate reported `24.82 MiB`.
+- App Store upload export options are checked in at
+  `apps/ios/Config/ExportOptionsUpload.plist`.
 
 These checks prove repository behavior only. They do not prove App Store
 Connect processing, live StoreKit subscription availability, RevenueCat
@@ -135,8 +147,8 @@ install, and launch the app.
 - keep screenshots and public App Store copy aligned with the shipped iOS build;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
-- complete App Review evidence outside the public repository: Xcode/SDK upload
-  gate, third-party SDK privacy manifests/signatures, App Privacy answers,
-  subscription sandbox lifecycle, real-device smoke, review notes, and final
-  screenshots;
+- complete App Review evidence outside the public repository: signed upload,
+  build processing, TestFlight assignment, third-party SDK
+  manifests/signatures, App Privacy answers, subscription sandbox lifecycle,
+  real-device smoke, review notes, and final screenshots;
 - keep macOS documentation secondary until macOS is actively being released.

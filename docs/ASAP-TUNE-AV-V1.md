@@ -11,6 +11,12 @@ AV v1 and a stronger `apps-av` foundation.
 This phase is not about migrating other apps yet. Moments AV, Series AV, and any
 new app will start after Tune AV v1 is accepted and stable.
 
+Status on 2026-05-22: PRs 1-8 are complete for the Tune AV v1 scope, and PR 9
+has passed local release-candidate verification. The remaining work is outside
+the shared extraction phase: signed App Store Connect upload, TestFlight build
+processing, real-device release smoke, subscription/App Privacy checks, review
+notes, and final screenshots.
+
 ## Principles
 
 - Tune AV remains the source of truth for the first AV app structure.
@@ -56,6 +62,9 @@ Low-value or not-now candidates:
 
 Purpose: inspect the complete Tune AV app and decide what is worth sharing.
 
+Status: complete. The audit produced the extraction path used by the subsequent
+shared Apple foundation PRs.
+
 Review:
 
 - Splash and launch transition.
@@ -80,6 +89,9 @@ Deliverable:
 ## PR 2: Shared Brand Foundation
 
 Purpose: make AV branding controllable from one Apple shared package.
+
+Status: complete for Tune AV v1. Tune consumes shared brand tokens from
+`apps-av/apple`.
 
 Move to `apps-av/apple` if the audit confirms stable patterns:
 
@@ -106,6 +118,9 @@ Verification:
 
 Purpose: ensure future AV apps share the same structural feel.
 
+Status: complete for Tune AV v1. Tune consumes shared shell/header/footer
+structure while keeping app-specific tabs and behavior local.
+
 Move to shared only if the API can stay app-neutral:
 
 - App shell container.
@@ -130,6 +145,9 @@ Verification:
 ## PR 4: Shared Splash And Onboarding Foundation
 
 Purpose: make every AV app start with the same branded quality.
+
+Status: complete for Tune AV v1. Tune keeps app-specific copy/assets and uses
+shared launch/onboarding structure where app-neutral.
 
 Move to shared:
 
@@ -157,6 +175,9 @@ Verification:
 
 Purpose: keep account/settings flows consistent across all AV apps while reusing
 Account AV where appropriate.
+
+Status: complete for Tune AV v1. Shared settings/account containers, cards, and
+buttons are consumed by Tune.
 
 Move to shared:
 
@@ -189,6 +210,9 @@ Verification:
 
 Purpose: make Avi a consistent AV family interface while allowing each app to
 define what Avi actually does.
+
+Status: complete for Tune AV v1. Shared Avi controls and surfaces cover the
+generic UI; radio/music/discovery behavior remains local to Tune.
 
 Move to shared:
 
@@ -224,6 +248,9 @@ Verification:
 Purpose: make monetization UI consistent without locking future apps into Tune
 AV business rules.
 
+Status: complete for Tune AV v1. Shared paywall and upgrade-prompt scaffolds
+are used by Tune while products, entitlements, limits, and copy stay local.
+
 Move to shared:
 
 - Paywall surface layout.
@@ -250,6 +277,9 @@ Verification:
 
 Purpose: make Tune AV the clean reference implementation.
 
+Status: complete for Tune AV v1. The final text-fit pass landed in
+`apps-av/apple` and Tune builds against it.
+
 Do:
 
 - Remove dead local components replaced by shared code.
@@ -268,6 +298,13 @@ Verification:
 ## PR 9: Tune AV Release Candidate
 
 Purpose: freeze the first Tune AV version for TestFlight and App Store.
+
+Status: local RC verification complete on 2026-05-22. `apps-av/apple` builds,
+Tune unit/UI smoke checks pass, release preflight passes, unsigned Release
+archive succeeds, strict archive privacy evidence passes, and App Store upload
+export options are checked in. Pending items are signed upload, TestFlight
+processing, real-device release smoke, App Privacy/subscription confirmation,
+review notes, and final screenshots.
 
 Run and verify `docs/release-checklist.md`.
 
