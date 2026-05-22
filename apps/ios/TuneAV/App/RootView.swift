@@ -40,7 +40,8 @@ struct RootView: View {
             } else {
                 AppShellView(
                     launchContext: launchContext,
-                    startSignInFlow: startSignInFlow
+                    startSignInFlow: startSignInFlow,
+                    synchronizeLibraryNow: refreshLibrarySync
                 )
                     .environmentObject(accessController)
                     .overlay {
@@ -77,6 +78,15 @@ struct RootView: View {
             if accessController.accessMode != .guest {
                 automaticGuestOnboardingIsPresented = false
                 isShowingAccountOnboarding = false
+                guard scenePhase == .active else { return }
+                if accessController.capabilities.canUseCloudSync {
+                    lastAutomaticLibrarySyncRequestedAt = .now
+                    scheduleLibrarySync(after: .milliseconds(150))
+                } else {
+                    Task {
+                        await refreshTuneBackendService()
+                    }
+                }
             } else {
                 cancelScheduledLibrarySync()
                 libraryStore.setAppDataService(nil)

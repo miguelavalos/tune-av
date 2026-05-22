@@ -33,6 +33,7 @@ struct AppShellView: View {
 
     let launchContext: LaunchContext
     let startSignInFlow: (Bool) -> Void
+    let synchronizeLibraryNow: () async -> Void
 
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var audioPlayer: AudioPlayerService
@@ -104,10 +105,12 @@ struct AppShellView: View {
 
     init(
         launchContext: LaunchContext = .current,
-        startSignInFlow: @escaping (Bool) -> Void = { _ in }
+        startSignInFlow: @escaping (Bool) -> Void = { _ in },
+        synchronizeLibraryNow: @escaping () async -> Void = {}
     ) {
         self.launchContext = launchContext
         self.startSignInFlow = startSignInFlow
+        self.synchronizeLibraryNow = synchronizeLibraryNow
         _selectedTab = State(initialValue: AppShellTab(launchContext.preferredTab, preferredSearchQuery: launchContext.preferredSearchQuery))
         _searchPresentation = StateObject(wrappedValue: SearchPresentationStore(query: launchContext.preferredSearchQuery ?? ""))
     }
@@ -423,6 +426,7 @@ struct AppShellView: View {
         makeProfileScreen(
             mode: profileMode,
             startSignInFlow: startSignInFlow,
+            synchronizeLibraryNow: synchronizeLibraryNow,
             bottomContentPadding: shellScrollBottomPadding
         )
     }

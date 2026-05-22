@@ -34,6 +34,7 @@ struct ProfileScreen: View {
 
     let mode: Mode
     let startSignInFlow: (Bool) -> Void
+    let synchronizeLibraryNow: () async -> Void
     let bottomContentPadding: CGFloat
 
     @State private var isClearingLocalData = false
@@ -268,8 +269,7 @@ struct ProfileScreen: View {
             isLoading: libraryStore.cloudSyncStatus == .syncing,
             action: {
                 Task {
-                    await libraryStore.refreshCloudLibraryIfNeeded(force: true)
-                    await libraryStore.refreshUserSummary(force: true)
+                    await synchronizeLibraryNow()
                 }
             }
         )

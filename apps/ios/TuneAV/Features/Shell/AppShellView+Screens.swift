@@ -180,11 +180,13 @@ extension AppShellView {
     func makeProfileScreen(
         mode: ProfileScreen.Mode,
         startSignInFlow: @escaping (Bool) -> Void,
+        synchronizeLibraryNow: @escaping () async -> Void,
         bottomContentPadding: CGFloat
     ) -> some View {
         ProfileScreen(
             mode: mode,
             startSignInFlow: startSignInFlow,
+            synchronizeLibraryNow: synchronizeLibraryNow,
             bottomContentPadding: bottomContentPadding
         )
     }
