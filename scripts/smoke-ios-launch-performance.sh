@@ -55,6 +55,7 @@ xcodebuild \
   -resultBundlePath "$RESULT_BUNDLE_PATH" \
   -only-testing:"$TEST_ID" \
   test \
+  TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS="$MAX_LAUNCH_READY_MS" \
   CODE_SIGNING_ALLOWED=NO
 
 echo "iOS launch performance smoke passed."

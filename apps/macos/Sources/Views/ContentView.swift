@@ -774,12 +774,13 @@ struct ContentView: View {
         }
 
         do {
-            let results = try await appSearch.load(
+            let page = try await appSearch.load(
                 request: request,
                 recentStations: libraryStore.recentStations(),
                 favoriteStations: libraryStore.favoriteStations()
             )
             guard requestKey == searchRequest().key else { return }
+            let results = page.stations
             searchResults = results.isEmpty ? Station.samples : results
             if initial, request.query.isEmpty, let tag = request.tag, !tag.isEmpty {
                 homeFeedContext = .preferredGenre(tag)

@@ -36,6 +36,8 @@ schemes:
       targets:
         - TuneAVTests
         - TuneAVUITests
+      environmentVariables:
+        TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS: "$(TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS)"
     analyze:
       config: Debug
     profile:
