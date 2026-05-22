@@ -57,6 +57,7 @@ struct TuneAVProPaywallView: View {
             detail: L10n.string("paywall.scene.detail"),
             primaryButtonTitle: primaryButtonTitle,
             primaryButtonIsDisabled: primaryButtonIsDisabled,
+            primaryAccessibilityIdentifier: "paywall.purchase",
             primaryAction: primaryAction
         ) {
             paywallAviAvatar
