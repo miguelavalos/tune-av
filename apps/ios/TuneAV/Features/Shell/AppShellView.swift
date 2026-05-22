@@ -227,6 +227,9 @@ struct AppShellView: View {
             }
             guard let station = audioPlayer.currentStation else { return }
             syncAviActiveSignalIfNeeded(previousStationID: previousStationID, currentStation: station)
+            if audioPlayer.status == .playing {
+                recordConfirmedPlaybackIfNeeded(station)
+            }
         }
         .onChange(of: audioPlayer.status) { oldStatus, newStatus in
             handlePlaybackStatusChange(from: oldStatus, to: newStatus)
@@ -234,7 +237,7 @@ struct AppShellView: View {
         .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)
         }
-        .onChange(of: currentTrackDiscoveryKey) { _, _ in
+        .task(id: currentTrackDiscoveryKey) {
             recordCurrentTrackDiscovery()
         }
     }
@@ -3912,6 +3915,7 @@ struct AviScreen: View {
         } label: {
             sleepTimerMenuLabel(remainingMinutes: activeSleepTimerRemainingMinutes)
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
         .accessibilityValue(sleepTimerOptionTitle(for: activeSleepTimerMinutes))
         .accessibilityIdentifier("avi.controls.sleepTimer")
@@ -3931,7 +3935,7 @@ struct AviScreen: View {
         }
         .foregroundStyle(TuneAVTheme.textPrimary)
         .frame(width: 70, height: 34)
-        .background(TuneAVTheme.elevatedSurface, in: Capsule())
+        .background(Color.clear, in: Capsule())
         .overlay {
             Capsule()
                 .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
@@ -4014,12 +4018,12 @@ struct AviScreen: View {
 
     @ViewBuilder
     private func currentArtwork(for station: Station, size: CGFloat) -> some View {
-        if let currentTrackArtworkURL {
+        if let artworkURL = currentTrackArtworkURL ?? station.displayArtworkURL {
             AVFramedArtwork(
                 size: size,
                 cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: size)
             ) {
-                TuneAVRemoteArtworkImage(url: currentTrackArtworkURL, size: size, scale: displayScale) {
+                TuneAVRemoteArtworkImage(url: artworkURL, size: size, scale: displayScale) {
                     StationThumbnailView(station: station, size: size, textMode: .none, animationOverlay: .none, isAnimationActive: false)
                 }
             }
@@ -4550,14 +4554,6 @@ struct AviScreen: View {
                 }
                 .frame(height: 42)
 
-                if let aviDiscoveryDecision {
-                    Text(aviDiscoveryDecision.localizedHint)
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .accessibilityIdentifier("avi.fullPlayer.discoveryDecisionHint")
-                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)

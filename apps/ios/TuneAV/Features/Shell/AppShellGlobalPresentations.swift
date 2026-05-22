@@ -63,7 +63,7 @@ private struct AppShellGlobalPresentations: ViewModifier {
                 if isShowingFooterArtworkZoom, let currentStation {
                     AppShellArtworkZoomOverlay(
                         station: currentStation,
-                        artworkURL: currentTrackArtworkURL,
+                        artworkURL: currentTrackArtworkURL ?? currentStation.displayArtworkURL,
                         title: currentTrackTitle ?? currentStation.name,
                         subtitle: currentTrackArtist ?? currentStation.name
                     ) {

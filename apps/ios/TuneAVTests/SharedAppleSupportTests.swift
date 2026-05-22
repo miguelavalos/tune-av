@@ -653,6 +653,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("Someday I"))
         XCTAssertTrue(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("We Don"))
         XCTAssertFalse(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("I Still Haven't Found What I'm Looking For"))
+        XCTAssertFalse(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("Livin' on a Prayer"))
         XCTAssertFalse(TuneAVTrackMetadataParser.titleLooksLikeTruncatedContraction("Radio Song"))
     }
 
@@ -2160,6 +2161,14 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(track?.title, "Someday I'll Be Saturday Night")
     }
 
+    func testNowPlayingMetadataKeepsApostropheInLivinOnAPrayer() {
+        let bytes = Array("StreamTitle='Bon Jovi - Livin' on a Prayer';StreamUrl='';\0\0".utf8)
+        let track = TuneAVNowPlayingMetadata.parseICYMetadata(bytes)
+
+        XCTAssertEqual(track?.artist, "Bon Jovi")
+        XCTAssertEqual(track?.title, "Livin' on a Prayer")
+    }
+
     func testNowPlayingMetadataReadsCaseInsensitiveIntervalHeader() {
         let response = HTTPURLResponse(
             url: URL(string: "https://example.com/stream")!,
@@ -3422,6 +3431,55 @@ final class SharedAppleSupportTests: XCTestCase {
                 userRequestedPlayback: true,
                 hasCurrentStation: true,
                 isRecoverablePlaybackState: true
+            )
+        )
+    }
+
+    func testAudioPlaybackPolicyAllowsFallbackToCompleteTruncatedStreamTitle() {
+        XCTAssertTrue(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Livin",
+                currentArtist: "Bon Jovi",
+                fallbackTitle: "Livin' on a Prayer",
+                fallbackArtist: "Bon Jovi"
+            )
+        )
+
+        XCTAssertTrue(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "It",
+                currentArtist: "Artist",
+                fallbackTitle: "It's Alright",
+                fallbackArtist: "Artist"
+            )
+        )
+    }
+
+    func testAudioPlaybackPolicyDoesNotReplaceStreamTitleWithDifferentSong() {
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Livin",
+                currentArtist: "Bon Jovi",
+                fallbackTitle: "Livin' on a Prayer",
+                fallbackArtist: "Different Artist"
+            )
+        )
+
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Livin' on a Prayer",
+                currentArtist: "Bon Jovi",
+                fallbackTitle: "Livin' on a Prayer",
+                fallbackArtist: "Bon Jovi"
+            )
+        )
+
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Song",
+                currentArtist: "Artist",
+                fallbackTitle: "Other Song",
+                fallbackArtist: "Artist"
             )
         )
     }

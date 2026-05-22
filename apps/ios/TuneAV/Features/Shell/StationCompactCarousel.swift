@@ -190,14 +190,16 @@ private struct StationCompactCard: View {
                 HStack(spacing: 5) {
                     feedbackBadgeIfNeeded
 
-                    Text(compactTertiaryLine)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+                    stationQualityBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
 
-                stationQualityBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
+                    if compactStatusBadges.isEmpty {
+                        Text(compactTertiaryLine)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: StationCompactMetrics.artworkSize, alignment: .center)
@@ -260,11 +262,22 @@ private struct StationCompactCard: View {
 
     private func stationQualityBadges(hasNowPlaying: Bool) -> some View {
         HStack(spacing: 5) {
-            ForEach(station.userSignalBadges(hasNowPlaying: hasNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
+            ForEach(compactStatusBadges(hasNowPlaying: hasNowPlaying), id: \.self) { badge in
                 AVCompactStatusBadge(title: badge)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var compactStatusBadges: [String] {
+        compactStatusBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
+    }
+
+    private func compactStatusBadges(hasNowPlaying: Bool) -> [String] {
+        Array(station.userSignalBadges(
+            hasNowPlaying: hasNowPlaying,
+            isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)
+        ).prefix(2))
     }
 
     private func playCompactStation() {

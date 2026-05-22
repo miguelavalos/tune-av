@@ -45,7 +45,7 @@ struct StationListActionRow: View {
                 Text(station.name)
                     .font(.system(size: 15, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(3)
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(primaryDetailLine)
@@ -92,7 +92,7 @@ struct StationListActionRow: View {
 
     private var stationQualityBadges: some View {
         HStack(spacing: 5) {
-            ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)), id: \.self) { badge in
+            ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)).prefix(2), id: \.self) { badge in
                 AVCompactStatusBadge(title: badge)
             }
         }

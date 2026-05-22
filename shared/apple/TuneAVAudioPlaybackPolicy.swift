@@ -43,6 +43,32 @@ enum TuneAVAudioPlaybackPolicy {
         return age >= 0 && age <= cachedNowPlayingMaximumAge
     }
 
+    static func fallbackNowPlayingShouldReplaceStreamTrack(
+        currentTitle: String?,
+        currentArtist: String?,
+        fallbackTitle: String,
+        fallbackArtist: String?
+    ) -> Bool {
+        guard let normalizedCurrentTitle = TuneAVTrackMetadataParser.sanitizeTitle(currentTitle, artist: currentArtist) else {
+            return true
+        }
+
+        let normalizedCurrentArtist = TuneAVTrackMetadataParser.sanitizeArtist(currentArtist)
+        let normalizedFallbackArtist = TuneAVTrackMetadataParser.sanitizeArtist(fallbackArtist)
+
+        if let normalizedCurrentArtist,
+           let normalizedFallbackArtist,
+           normalizedFallbackArtist.localizedCaseInsensitiveCompare(normalizedCurrentArtist) != .orderedSame {
+            return false
+        }
+
+        let currentComparable = comparableTrackTitle(normalizedCurrentTitle)
+        let fallbackComparable = comparableTrackTitle(fallbackTitle)
+
+        guard fallbackComparable.count > currentComparable.count else { return false }
+        return fallbackComparable.hasPrefix(currentComparable)
+    }
+
     static func shouldRetryAfterNetworkRestored(
         isNetworkSatisfied: Bool,
         hadPreviousNetworkStatus: Bool,
@@ -57,6 +83,13 @@ enum TuneAVAudioPlaybackPolicy {
             userRequestedPlayback &&
             hasCurrentStation &&
             isRecoverablePlaybackState
+    }
+
+    private static func comparableTrackTitle(_ title: String) -> String {
+        title
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: L10n.locale)
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     enum ErrorKey {

@@ -252,6 +252,7 @@ struct AviExpandedFooterPlayerView: View {
         } label: {
             sleepTimerMenuLabel(remainingMinutes: audioPlayer.activeSleepTimerRemainingMinutes)
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(L10n.string("profile.preferences.sleepTimer.title"))
         .accessibilityValue(sleepTimerOptionTitle(for: audioPlayer.activeSleepTimerMinutes))
         .accessibilityIdentifier("avi.footerPlayer.sleepTimer")
@@ -260,7 +261,7 @@ struct AviExpandedFooterPlayerView: View {
     private func sleepTimerMenuLabel(remainingMinutes: Int?) -> some View {
         ZStack {
             Circle()
-                .fill(.ultraThinMaterial.opacity(1))
+                .fill(TuneAVTheme.mutedSurface.opacity(0.82))
             VStack(spacing: 1) {
                 Image(systemName: "timer")
                     .font(.system(size: remainingMinutes == nil ? 18 : 15, weight: .black))

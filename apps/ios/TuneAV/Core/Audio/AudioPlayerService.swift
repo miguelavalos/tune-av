@@ -860,8 +860,6 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
             while !Task.isCancelled {
                 guard self.currentStation?.id == station.id else { return }
-                if self.currentTrackSource == .stream { return }
-
                 let track = await nowPlayingService.fetchTrack(for: station)
                 guard !Task.isCancelled else { return }
 
@@ -877,7 +875,6 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private func applyFallbackTrack(_ track: NowPlayingTrack, for station: Station) {
         guard currentStation?.id == station.id else { return }
         guard !shouldPreserveUITestTrackMetadata else { return }
-        guard currentTrackSource != .stream else { return }
 
         let normalizedArtist = TuneAVTrackMetadataParser.sanitizeArtist(track.artist)
         guard let normalizedTitle = TuneAVTrackMetadataParser.sanitizeTitle(track.title, artist: normalizedArtist) else { return }
@@ -889,6 +886,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
             : normalizedArtist
 
         if currentTrackTitle == normalizedTitle && currentTrackArtist == resolvedArtist {
+            return
+        }
+
+        if currentTrackSource == .stream,
+           !TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: currentTrackTitle,
+                currentArtist: currentTrackArtist,
+                fallbackTitle: normalizedTitle,
+                fallbackArtist: resolvedArtist
+           ) {
             return
         }
 
