@@ -2,6 +2,8 @@ import AVBrandFoundation
 import SwiftUI
 
 enum TuneAVTheme {
+    static let brandPalette = AVBrandPalette()
+
     static let brandBlack = AVBrandColor.ink
     static let brandGreen = AVBrandColor.accentBase
     static let brandGraphite = AVBrandColor.ink
