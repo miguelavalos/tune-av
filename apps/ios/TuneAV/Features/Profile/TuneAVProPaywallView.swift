@@ -14,42 +14,31 @@ struct TuneAVProPaywallView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    paywallHeader
-                    paywallOfferCard
+        AVPaywallSheetScaffold(
+            navigationTitle: L10n.string("paywall.navigationTitle"),
+            closeTitle: L10n.string("paywall.close"),
+            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
+            onClose: { dismiss() }
+        ) {
+            paywallHeader
+            paywallOfferCard
 
-                    if accessController.isWaitingForSubscriptionReconciliation {
-                        AVPaywallStatusRow(systemImage: "clock.arrow.circlepath", message: reconciliationStatus)
-                    } else if let error = accessController.subscriptionError?.errorDescription {
-                        AVPaywallStatusRow(systemImage: "exclamationmark.triangle", message: error)
-                    }
+            if accessController.isWaitingForSubscriptionReconciliation {
+                AVPaywallStatusRow(systemImage: "clock.arrow.circlepath", message: reconciliationStatus)
+            } else if let error = accessController.subscriptionError?.errorDescription {
+                AVPaywallStatusRow(systemImage: "exclamationmark.triangle", message: error)
+            }
 
-                    AVPaywallBenefitList(items: benefitItems)
+            AVPaywallBenefitList(items: benefitItems)
 
-                    AVPaywallLegalLinks(links: legalLinkItems)
-                }
-                .padding(.horizontal, 22)
-                .padding(.top, 18)
-                .padding(.bottom, 24)
-            }
-            .accessibilityIdentifier("paywall.sheet")
-            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-            .navigationTitle(L10n.string("paywall.navigationTitle"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.string("paywall.close")) { dismiss() }
-                }
-            }
-            .task {
-                await accessController.loadMonthlySubscriptionOffer()
-            }
-            .onChange(of: accessController.accessMode) { _, mode in
-                if mode == .signedInPro {
-                    dismiss()
-                }
+            AVPaywallLegalLinks(links: legalLinkItems)
+        }
+        .task {
+            await accessController.loadMonthlySubscriptionOffer()
+        }
+        .onChange(of: accessController.accessMode) { _, mode in
+            if mode == .signedInPro {
+                dismiss()
             }
         }
     }
