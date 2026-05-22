@@ -3,10 +3,13 @@ import Foundation
 import ImageIO
 import MediaPlayer
 import Network
+import OSLog
 import UIKit
 
 @MainActor
 final class AudioPlayerService: NSObject, ObservableObject {
+    private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "audio")
+
     struct PlaybackQueue: Equatable {
         typealias Source = TuneAVPlaybackQueueSource
 
@@ -97,6 +100,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private var nowPlayingArtworkImage: UIImage?
     private var nowPlayingArtworkSourceURL: URL?
     private var lastNowPlayingInfoSignature: String?
+    private var attemptedStreamFallbackURLs: Set<String> = []
     private static let maxCachedNowPlayingStations = 80
     private static let nowPlayingArtworkImageCache: NSCache<NSURL, UIImage> = {
         let cache = NSCache<NSURL, UIImage>()
@@ -171,7 +175,13 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     func play(station: Station, queue: PlaybackQueue? = nil) {
-        if case .loading = status, currentStation?.id == station.id {
+        play(station: station, queue: queue, resetStreamFallbacks: true)
+    }
+
+    private func play(station: Station, queue: PlaybackQueue? = nil, resetStreamFallbacks: Bool) {
+        if case .loading = status,
+           currentStation?.id == station.id,
+           currentStation?.streamURL == station.streamURL {
             return
         }
 
@@ -182,6 +192,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
         guard let url = URL(string: station.streamURL) else {
             setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.invalidURL))
             return
+        }
+
+        if resetStreamFallbacks {
+            attemptedStreamFallbackURLs = [station.streamURL]
+        } else {
+            attemptedStreamFallbackURLs.insert(station.streamURL)
         }
 
         if currentStation?.id != station.id {
@@ -512,6 +528,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
                     self.activateSessionIfNeeded()
                     self.updateNowPlayingInfo()
                 case .failed:
+                    self.logPlayerItemFailure(item, context: "status_failed")
+                    if self.retryAlternateStreamSchemeIfAvailable(context: "status_failed") {
+                        return
+                    }
                     self.setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.streamLoadFailed))
                 case .unknown:
                     self.setStatus(.loading)
@@ -564,7 +584,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.streamInterrupted))
+                guard let self else { return }
+                self.logPlayerItemFailure(item, context: "failed_to_end")
+                if self.retryAlternateStreamSchemeIfAvailable(context: "failed_to_end") {
+                    return
+                }
+                self.setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.streamInterrupted))
             }
         }
 
@@ -592,10 +617,96 @@ final class AudioPlayerService: NSObject, ObservableObject {
             await MainActor.run {
                 guard let self else { return }
                 if case .loading = self.status {
+                    self.logPlayerItemFailure(self.player?.currentItem, context: "loading_timeout")
+                    if self.retryAlternateStreamSchemeIfAvailable(context: "loading_timeout") {
+                        return
+                    }
                     self.setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.streamTimeout))
                 }
             }
         }
+    }
+
+    private func retryAlternateStreamSchemeIfAvailable(context: String) -> Bool {
+        guard
+            userRequestedPlayback,
+            let station = currentStation,
+            let alternateURL = alternateStreamSchemeURL(for: station.streamURL),
+            !attemptedStreamFallbackURLs.contains(alternateURL)
+        else {
+            return false
+        }
+
+        let fallbackStation = stationWithAlternateStreamURL(station, streamURL: alternateURL)
+        Self.logger.info(
+            "Retrying alternate stream scheme context=\(context, privacy: .public) station_id=\(station.id, privacy: .private) stream_url=\(alternateURL, privacy: .private)"
+        )
+        play(station: fallbackStation, queue: playbackQueue, resetStreamFallbacks: false)
+        return true
+    }
+
+    private func alternateStreamSchemeURL(for streamURL: String) -> String? {
+        guard var components = URLComponents(string: streamURL) else { return nil }
+        switch components.scheme?.lowercased() {
+        case "http":
+            components.scheme = "https"
+        case "https":
+            components.scheme = "http"
+        default:
+            return nil
+        }
+        return components.string
+    }
+
+    private func stationWithAlternateStreamURL(_ station: Station, streamURL: String) -> Station {
+        Station(
+            id: station.id,
+            name: station.name,
+            country: station.country,
+            countryCode: station.countryCode,
+            state: station.state,
+            language: station.language,
+            languageCodes: station.languageCodes,
+            tags: station.tags,
+            streamURL: streamURL,
+            faviconURL: station.faviconURL,
+            bitrate: station.bitrate,
+            codec: station.codec,
+            homepageURL: station.homepageURL,
+            votes: station.votes,
+            clickCount: station.clickCount,
+            clickTrend: station.clickTrend,
+            isHLS: station.isHLS,
+            hasExtendedInfo: station.hasExtendedInfo,
+            hasSSLError: station.hasSSLError,
+            lastCheckOKAt: station.lastCheckOKAt,
+            geoLatitude: station.geoLatitude,
+            geoLongitude: station.geoLongitude
+        )
+    }
+
+    private func logPlayerItemFailure(_ item: AVPlayerItem?, context: String) {
+        let stationID = currentStation?.id ?? "unknown"
+        let streamURL = currentStation?.streamURL ?? "unknown"
+        let itemError = item?.error?.localizedDescription ?? "none"
+        let errorEvents = playerItemErrorLogSummary(item)
+
+        Self.logger.error(
+            "Playback failure context=\(context, privacy: .public) station_id=\(stationID, privacy: .private) stream_url=\(streamURL, privacy: .private) item_error=\(itemError, privacy: .private) error_events=\(errorEvents, privacy: .private)"
+        )
+    }
+
+    private func playerItemErrorLogSummary(_ item: AVPlayerItem?) -> String {
+        guard let events = item?.errorLog()?.events, !events.isEmpty else { return "none" }
+        return events.map(playerItemErrorEventSummary(_:)).joined(separator: " || ")
+    }
+
+    private func playerItemErrorEventSummary(_ event: AVPlayerItemErrorLogEvent) -> String {
+        let statusCode = event.errorStatusCode == 0 ? "no_status" : String(event.errorStatusCode)
+        let domain = event.errorDomain
+        let comment = event.errorComment ?? "no_comment"
+        let uri = event.uri ?? "no_uri"
+        return [statusCode, domain, comment, uri].joined(separator: "|")
     }
 
     private func setFailure(_ message: String) {

@@ -119,7 +119,11 @@ struct AviExpandedFooterPlayerView: View {
     private var playPauseButton: some View {
         Button {
             AVHaptics.perform(.primaryAction)
-            audioPlayer.togglePlayback()
+            if shouldRestartWithVisibleStation {
+                playStationFromQueue(station, playbackQueueSource, playbackQueueStations)
+            } else {
+                audioPlayer.togglePlayback()
+            }
         } label: {
             ZStack {
                 Circle()
@@ -138,6 +142,11 @@ struct AviExpandedFooterPlayerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("avi.footerPlayer.playPause")
+    }
+
+    private var shouldRestartWithVisibleStation: Bool {
+        guard let currentStation = audioPlayer.currentStation else { return false }
+        return currentStation.id == station.id && currentStation.streamURL != station.streamURL
     }
 
     @ViewBuilder

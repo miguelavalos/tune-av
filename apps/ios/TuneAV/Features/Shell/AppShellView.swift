@@ -1741,7 +1741,8 @@ private extension Station {
 
         components.query = nil
         components.fragment = nil
-        return components.url?.absoluteString
+        components.scheme = "stream"
+        return components.string?
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             .lowercased()
     }
@@ -1809,7 +1810,13 @@ extension Array where Element == Station {
             }
             return candidateCanonicalID == stationCanonicalID
         } ?? first { candidate in
-            candidate.streamURL == station.streamURL
+            guard
+                let candidateStreamKey = candidate.normalizedStreamEnrichmentURLKey,
+                let stationStreamKey = station.normalizedStreamEnrichmentURLKey
+            else {
+                return false
+            }
+            return candidateStreamKey == stationStreamKey
         }
     }
 
@@ -1818,6 +1825,12 @@ extension Array where Element == Station {
         return filter { station in
             seenIDs.insert(station.id).inserted
         }
+    }
+}
+
+private extension Station {
+    var normalizedStreamEnrichmentURLKey: String? {
+        enrichmentLookupKeys.first { $0.hasPrefix("stream:") }
     }
 }
 

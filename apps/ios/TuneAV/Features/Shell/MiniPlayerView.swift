@@ -33,7 +33,11 @@ struct MiniPlayerView: View {
 
             Button {
                 AVHaptics.perform(.primaryAction)
-                audioPlayer.togglePlayback()
+                if shouldRestartWithVisibleStation {
+                    audioPlayer.play(station: station, queue: audioPlayer.playbackQueue)
+                } else {
+                    audioPlayer.togglePlayback()
+                }
             } label: {
                 ZStack {
                     Circle()
@@ -58,6 +62,11 @@ struct MiniPlayerView: View {
                 audioPlayer.playNextInQueue()
             }
         }
+    }
+
+    private var shouldRestartWithVisibleStation: Bool {
+        guard let currentStation = audioPlayer.currentStation else { return false }
+        return currentStation.id == station.id && currentStation.streamURL != station.streamURL
     }
 
     @ViewBuilder
