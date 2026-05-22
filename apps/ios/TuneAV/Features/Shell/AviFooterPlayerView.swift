@@ -65,14 +65,14 @@ struct AviExpandedFooterPlayerView: View {
 
     var body: some View {
         AVExpandedFooterPlayerScaffold(
-            stationTitle: station.name,
+            primaryTitle: station.name,
             subtitle: artistLine,
             title: titleLine,
             isSubtitleHighlighted: trackArtworkExists,
             artworkAccessibilityLabel: L10n.string("shell.accessibility.zoomArtwork"),
             accessibilityLabel: L10n.string("shell.miniPlayer.accessibility.label", station.name),
             accessibilityHint: L10n.string("shell.miniPlayer.accessibility.hint"),
-            stationAction: showArtworkZoom,
+            primaryAction: showArtworkZoom,
             artworkAction: showArtworkZoom,
             metadataAction: showArtworkZoom
         ) {
