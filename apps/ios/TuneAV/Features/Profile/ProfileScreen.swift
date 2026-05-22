@@ -122,7 +122,7 @@ struct ProfileScreen: View {
     }
 
     private var profileSummaryCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.account.title"),
                 subtitle: accountIdentityDetail
@@ -153,12 +153,10 @@ struct ProfileScreen: View {
 
             accountActionButton
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private var cloudSyncCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.sync.title"),
                 subtitle: L10n.string("profile.sync.subtitle.short")
@@ -192,8 +190,6 @@ struct ProfileScreen: View {
 
             cloudSyncRetryButton
         }
-        .padding(22)
-        .background(profileCardBackground)
         .accessibilityIdentifier("profile.sync.card")
     }
 
@@ -282,7 +278,7 @@ struct ProfileScreen: View {
     }
 
     private var proPlanCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.pro.title"),
                 subtitle: proPlanSubtitle
@@ -308,8 +304,6 @@ struct ProfileScreen: View {
 
             proPlanAction
         }
-        .padding(22)
-        .background(profileCardBackground)
         .accessibilityIdentifier("profile.pro.card")
     }
 
@@ -369,7 +363,7 @@ struct ProfileScreen: View {
     }
 
     private var appPreferencesCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.preferences.title"),
                 subtitle: L10n.string("profile.preferences.subtitle")
@@ -443,12 +437,10 @@ struct ProfileScreen: View {
                 )
             }
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private var localDataCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.local.title"),
                 subtitle: L10n.string("profile.local.subtitle")
@@ -503,8 +495,6 @@ struct ProfileScreen: View {
             )
             .disabled(isClearingLocalData)
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private func localCountDetail(count: Int, limit: Int?, singular: String, plural: String) -> String {
@@ -519,7 +509,7 @@ struct ProfileScreen: View {
     }
 
     private var helpAndLegalCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        AVSettingsCard {
             sectionHeader(
                 title: L10n.string("profile.help.title"),
                 subtitle: L10n.string("profile.help.subtitle")
@@ -567,12 +557,10 @@ struct ProfileScreen: View {
                 }
             }
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private var accountSafetyCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        AVSettingsCard(spacing: 12) {
             sectionHeader(
                 title: L10n.string("profile.safety.title"),
                 subtitle: L10n.string("profile.safety.subtitle")
@@ -586,16 +574,10 @@ struct ProfileScreen: View {
             )
             .accessibilityIdentifier("profile.safety.delete")
         }
-        .padding(22)
-        .background(profileCardBackground)
     }
 
     private func sectionHeader(title: String, subtitle: String) -> some View {
         AVSettingsSectionHeader(title: title, subtitle: subtitle)
-    }
-
-    private var profileCardBackground: some View {
-        AVSettingsCardBackground()
     }
 
     private var displayName: String {
