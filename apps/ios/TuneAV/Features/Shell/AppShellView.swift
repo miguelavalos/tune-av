@@ -4419,20 +4419,11 @@ struct AviScreen: View {
             HStack(spacing: 8) {
                 SelectedStationFeedbackStatus(feedback: selectedFeedback)
 
-                Button(action: clearFeedback) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundStyle(TuneAVTheme.textSecondary)
-                        .frame(width: 38, height: 38)
-                        .background(TuneAVTheme.shellBackground, in: Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.string("shell.stationFeedback.clear"))
-                .accessibilityIdentifier("stationFeedback.clear")
+                AVAviFeedbackClearButton(
+                    accessibilityLabel: L10n.string("shell.stationFeedback.clear"),
+                    accessibilityIdentifier: "stationFeedback.clear",
+                    action: clearFeedback
+                )
             }
             .frame(height: 38)
         } else {
