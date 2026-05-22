@@ -3926,12 +3926,13 @@ struct AviScreen: View {
         }
         .foregroundStyle(TuneAVTheme.textPrimary)
         .frame(width: 70, height: 34)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background(TuneAVTheme.elevatedSurface, in: Capsule())
         .overlay {
             Capsule()
                 .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
         }
         .contentShape(Capsule())
+        .buttonStyle(.plain)
         .transaction { transaction in
             transaction.animation = nil
         }
@@ -4319,12 +4320,12 @@ struct AviScreen: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: isShowingAviActions ? 424 : 166, alignment: .top)
+            .frame(height: isShowingAviActions ? 424 : 190, alignment: .top)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 570 : 300, alignment: .top)
+        .frame(height: isShowingAviActions ? 570 : 324, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
@@ -4414,7 +4415,7 @@ struct AviScreen: View {
                 feedback: selectedFeedback,
                 station: station
             )
-            .frame(height: 38)
+            .frame(height: 62, alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -4485,7 +4486,7 @@ struct AviScreen: View {
                     )
                     .accessibilityIdentifier("avi.fullPlayer.discoveryNoSave")
 
-                    AVAviFeedbackCompactActionButton(
+                    fullPlayerDiscoveryCompactButton(
                         title: L10n.string("player.discovery.saveShort"),
                         systemImage: "bookmark",
                         accessibilityIdentifier: "avi.fullPlayer.saveAfterNoSave"
@@ -4496,6 +4497,7 @@ struct AviScreen: View {
                         }
                     }
                 }
+                .frame(height: 42)
             } else if isCurrentTrackSaved(for: station) {
                 HStack(spacing: 8) {
                     AVAviFeedbackInfoRow(
@@ -4505,7 +4507,7 @@ struct AviScreen: View {
                         isAction: false
                     )
 
-                    AVAviFeedbackCompactActionButton(
+                    fullPlayerDiscoveryCompactButton(
                         title: L10n.string("player.discovery.unsaveShort"),
                         systemImage: "bookmark.slash",
                         accessibilityIdentifier: "avi.fullPlayer.unsaveSong"
@@ -4516,9 +4518,10 @@ struct AviScreen: View {
                         }
                     }
                 }
+                .frame(height: 42)
             } else {
                 HStack(spacing: 8) {
-                    AVAviFeedbackDecisionButton(
+                    fullPlayerDiscoveryDecisionButton(
                         title: currentTrackSaveActionTitle(for: station),
                         systemImage: currentTrackSaveActionSystemImage(for: station),
                         isSelected: isCurrentTrackSaved(for: station),
@@ -4530,7 +4533,7 @@ struct AviScreen: View {
                         }
                     }
 
-                    AVAviFeedbackDecisionButton(
+                    fullPlayerDiscoveryDecisionButton(
                         title: L10n.string("player.discovery.noSave"),
                         systemImage: "xmark",
                         isSelected: false,
@@ -4540,6 +4543,7 @@ struct AviScreen: View {
                         showAviReaction(.notForMe)
                     }
                 }
+                .frame(height: 42)
 
                 if let aviDiscoveryDecision {
                     Text(aviDiscoveryDecision.localizedHint)
@@ -4551,7 +4555,70 @@ struct AviScreen: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
+    }
+
+    private func fullPlayerDiscoveryCompactButton(
+        title: String,
+        systemImage: String,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            fullPlayerDiscoveryButtonLabel(title: title, systemImage: systemImage)
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .frame(width: 126, height: 42)
+                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func fullPlayerDiscoveryDecisionButton(
+        title: String,
+        systemImage: String,
+        isSelected: Bool,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            fullPlayerDiscoveryButtonLabel(title: title, systemImage: systemImage)
+                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .background(
+                    isSelected ? TuneAVTheme.highlight : TuneAVTheme.cardSurface,
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    private func fullPlayerDiscoveryButtonLabel(title: String, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .black))
+
+            Text(title)
+                .font(.system(size: 11, weight: .black))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .minimumScaleFactor(0.72)
+                .allowsTightening(true)
+        }
+        .padding(.horizontal, 8)
     }
 
     private func compactAviActionsSheet(for station: Station) -> some View {
