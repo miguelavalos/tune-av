@@ -10,7 +10,7 @@ private func stationFeedbackHapticEvent(for feedback: TuneAVStationFeedback?) ->
     case .liked:
         return .positiveFeedback
     case .notForMe:
-        return .notForMe
+        return .dismissiveFeedback
     case .disliked:
         return .negativeFeedback
     case nil:
