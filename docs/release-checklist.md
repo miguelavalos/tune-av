@@ -103,7 +103,29 @@ from the public Tune AV iOS repository.
    generic DerivedData. It must also write an app-size report for the archived
    `TuneAV.app` and stay within the configured size budget.
 
-8. For CI evidence, run the manual GitHub Actions workflow
+8. Create the signed App Store archive and upload it with the checked-in export
+   options. Use a fresh build number for each upload:
+
+   ```bash
+   cd apps/ios
+   xcodebuild archive \
+     -project TuneAV.xcodeproj \
+     -scheme TuneAV \
+     -configuration Release \
+     -destination 'generic/platform=iOS' \
+     -archivePath "$PWD/build/TuneAV.xcarchive"
+
+   xcodebuild -exportArchive \
+     -archivePath "$PWD/build/TuneAV.xcarchive" \
+     -exportPath "$PWD/build/AppStore" \
+     -exportOptionsPlist "$PWD/Config/ExportOptionsUpload.plist"
+   ```
+
+   The export options use App Store Connect upload destination, automatic
+   signing, the production team ID, symbol upload, and no automatic version/build
+   mutation.
+
+9. For CI evidence, run the manual GitHub Actions workflow
    `iOS Archive Privacy Evidence`. Keep the uploaded
    `ios-archive-privacy-evidence` artifact with the release record.
 
