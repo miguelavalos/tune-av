@@ -4759,36 +4759,21 @@ struct AviScreen: View {
     private func focusedRadioQuickActions(for station: Station) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Button(action: openPlayer) {
-                    Label(
-                        isFocusedStationActive ? L10n.string("player.header.nowPlaying") : L10n.string("shell.avi.actions.playRadio"),
-                        systemImage: isFocusedStationActive ? "waveform" : "play.fill"
-                    )
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(TuneAVTheme.brandBlack)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(TuneAVTheme.highlight, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("avi.detail.radio.play")
+                AVAviPrimaryActionButton(
+                    title: isFocusedStationActive ? L10n.string("player.header.nowPlaying") : L10n.string("shell.avi.actions.playRadio"),
+                    systemImage: isFocusedStationActive ? "waveform" : "play.fill",
+                    accessibilityIdentifier: "avi.detail.radio.play",
+                    action: openPlayer
+                )
 
-                Button {
+                AVAviIconActionButton(
+                    systemImage: stationSaveActionSystemImage(for: station),
+                    isSelected: libraryStore.isFavorite(station),
+                    accessibilityLabel: stationSaveActionTitle(for: station),
+                    accessibilityIdentifier: "avi.detail.radio.save"
+                ) {
                     toggleFavorite(station)
-                } label: {
-                    Image(systemName: stationSaveActionSystemImage(for: station))
-                        .font(.system(size: 16, weight: .black))
-                        .foregroundStyle(libraryStore.isFavorite(station) ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
-                        .frame(width: 44, height: 44)
-                        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(libraryStore.isFavorite(station) ? TuneAVTheme.highlight.opacity(0.34) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                        }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(stationSaveActionTitle(for: station))
-                .accessibilityIdentifier("avi.detail.radio.save")
             }
 
             StationFeedbackControl(
