@@ -614,7 +614,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let errorEvents = playerItemErrorLogSummary(item)
 
         Self.logger.error(
-            "Playback failure context=\(context, privacy: .public) station_id=\(stationID, privacy: .private) stream_url=\(streamURL, privacy: .private) item_error=\(itemError, privacy: .private) error_events=\(errorEvents, privacy: .private)"
+            "Playback failure context=\(context, privacy: .private) station_id=\(stationID, privacy: .private) stream_url=\(streamURL, privacy: .private) item_error=\(itemError, privacy: .private) error_events=\(errorEvents, privacy: .private)"
         )
     }
 
