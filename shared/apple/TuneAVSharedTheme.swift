@@ -2,10 +2,10 @@ import AVBrandFoundation
 import SwiftUI
 
 enum TuneAVTheme {
-    static let brandBlack = AVBrandColor.brandBlack
-    static let brandGreen = AVBrandColor.brandAccent
-    static let brandGraphite = AVBrandColor.brandGraphite
-    static let brandWhite = AVBrandColor.brandWhite
+    static let brandBlack = AVBrandColor.ink
+    static let brandGreen = AVBrandColor.accentBase
+    static let brandGraphite = AVBrandColor.ink
+    static let brandWhite = AVBrandColor.canvas
 
     static let neutral50 = AVBrandColor.neutral50
     static let neutral100 = AVBrandColor.neutral100
@@ -34,7 +34,7 @@ enum TuneAVTheme {
 
     static let shellBackground = AVBrandSurface.shellBackground
     static let onboardingBackground = AVBrandSurface.onboardingBackground
-    static let signalGradient = AVBrandSurface.signalGradient
+    static let signalGradient = AVBrandSurface.accentGradient
 
     static let softShadow = AVBrandColor.softShadow
 }
