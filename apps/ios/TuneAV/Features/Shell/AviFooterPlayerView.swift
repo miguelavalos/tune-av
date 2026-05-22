@@ -95,14 +95,14 @@ struct AviExpandedFooterPlayerView: View {
             queueSourceButton
 
             queueButton(systemImage: "backward.fill", accessibilityIdentifier: "avi.footerPlayer.previous") {
-                AVHaptics.perform(.queueStep)
+                AVHaptics.perform(.step)
                 audioPlayer.playPreviousInQueue()
             }
 
             playPauseButton
 
             queueButton(systemImage: "forward.fill", accessibilityIdentifier: "avi.footerPlayer.next") {
-                AVHaptics.perform(.queueStep)
+                AVHaptics.perform(.step)
                 audioPlayer.playNextInQueue()
             }
 
@@ -114,7 +114,7 @@ struct AviExpandedFooterPlayerView: View {
 
     private var playPauseButton: some View {
         Button {
-            AVHaptics.perform(.playbackToggle)
+            AVHaptics.perform(.primaryAction)
             audioPlayer.togglePlayback()
         } label: {
             ZStack {

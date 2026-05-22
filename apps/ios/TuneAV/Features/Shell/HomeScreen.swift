@@ -100,7 +100,7 @@ struct HomeScreen: View {
     }
 
     private func togglePlayback() {
-        AVHaptics.perform(.playbackToggle)
+        AVHaptics.perform(.primaryAction)
         audioPlayer.togglePlayback()
     }
 

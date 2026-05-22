@@ -72,11 +72,11 @@ enum AviScreenReaction: Equatable {
         case .newTrack:
             return nil
         case .recognizedTrack, .liked, .saved:
-            return .save
+            return .affirm
         case .curious:
             return .selection
         case .disliked, .notForMe:
-            return .dislike
+            return .negativeFeedback
         case .warning:
             return .warning
         }

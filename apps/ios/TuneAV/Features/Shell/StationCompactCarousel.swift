@@ -269,7 +269,7 @@ private struct StationCompactCard: View {
 
     private func playCompactStation() {
         if audioPlayer.isCurrent(station) {
-            AVHaptics.perform(.playbackToggle)
+            AVHaptics.perform(.primaryAction)
             audioPlayer.togglePlayback()
         } else {
             playAction()
