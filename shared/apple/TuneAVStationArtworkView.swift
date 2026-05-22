@@ -1,4 +1,5 @@
 import ImageIO
+import OSLog
 import SwiftUI
 
 #if canImport(UIKit)
@@ -709,6 +710,7 @@ actor TuneAVArtworkImagePipeline {
 
     private static let maxArtworkResponseBytes = 5 * 1024 * 1024
     private static let failedLookupTTL: TimeInterval = 60
+    private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "artwork")
 
     private let session: URLSession
     private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
@@ -775,18 +777,39 @@ actor TuneAVArtworkImagePipeline {
             let (data, response) = try await session.data(for: request)
             guard !Task.isCancelled else { return nil }
             guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                logger.debug("Artwork request failed url=\(safeURLDescription(url), privacy: .public) status=\(statusCode, privacy: .public)")
                 return nil
             }
             if httpResponse.expectedContentLength > Self.maxArtworkResponseBytes {
+                logger.debug("Artwork response too large url=\(safeURLDescription(url), privacy: .public) expected_bytes=\(httpResponse.expectedContentLength, privacy: .public)")
                 return nil
             }
             guard data.count <= Self.maxArtworkResponseBytes else {
+                logger.debug("Artwork payload too large url=\(safeURLDescription(url), privacy: .public) bytes=\(data.count, privacy: .public)")
                 return nil
             }
-            return downsampleImage(data: data, maxPixelSize: maxPixelSize)
+            let image = downsampleImage(data: data, maxPixelSize: maxPixelSize)
+            if image == nil {
+                logger.debug("Artwork decode failed url=\(safeURLDescription(url), privacy: .public) bytes=\(data.count, privacy: .public) content_type=\(httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "unknown", privacy: .public)")
+            }
+            return image
         } catch {
+            logger.debug("Artwork request error url=\(safeURLDescription(url), privacy: .public) error=\(safeErrorCode(error), privacy: .public)")
             return nil
         }
+    }
+
+    private static func safeURLDescription(_ url: URL) -> String {
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.query = nil
+        components?.fragment = nil
+        return components?.string ?? "\(url.host ?? "unknown")\(url.path)"
+    }
+
+    private static func safeErrorCode(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(nsError.domain):\(nsError.code)"
     }
 
     private static func downsampleImage(data: Data, maxPixelSize: Int) -> TuneAVPlatformImage? {
