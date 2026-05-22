@@ -194,8 +194,9 @@ The macOS target is configured for Mac App Store distribution:
 - Hardened Runtime is enabled.
 - The app has outbound network client entitlement for radio streams and Account
   AV calls.
-- Broad ATS remains enabled for third-party radio stream compatibility and must
-  be explained in App Review notes if still present at submission.
+- Remote radio stream compatibility is controlled by the backend. App Store
+  builds should receive HTTPS-playable stream URLs only; HTTP-only stations are
+  not treated as playable.
 - Account deletion is native in the Profile account safety section and uses
   Account AV eligibility responses before allowing destructive actions.
 

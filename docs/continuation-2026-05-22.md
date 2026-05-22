@@ -96,7 +96,8 @@ recording review evidence.
 - Confirm sandbox purchase/restore/reconciliation.
 - Confirm App Privacy answers match the submitted build.
 - Confirm third-party SDK privacy/signature evidence.
-- Prepare App Review notes, especially the ATS media-stream compatibility note.
+- Prepare App Review notes explaining that iOS receives HTTPS-playable streams
+  from the backend and HTTP-only station streams are not exposed as playable.
 - Capture final screenshots from the exact submitted build.
 
 ## Recommended Next Step
