@@ -12,6 +12,7 @@ struct WrapTagsRow: View {
                     .shellChip(isHighlighted: highlighted, horizontalPadding: 12, verticalPadding: 8)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -44,7 +45,7 @@ struct FlowLayout: Layout {
     var verticalSpacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
+        let maxWidth = resolvedMaxWidth(from: proposal)
         var lineWidth: CGFloat = 0
         var lineHeight: CGFloat = 0
         var totalHeight: CGFloat = 0
@@ -89,5 +90,13 @@ struct FlowLayout: Layout {
             origin.x += size.width + horizontalSpacing
             lineHeight = max(lineHeight, size.height)
         }
+    }
+
+    private func resolvedMaxWidth(from proposal: ProposedViewSize) -> CGFloat {
+        let conservativeCardWidth = UIScreen.main.bounds.width - 104
+        guard let width = proposal.width, width.isFinite, width > 0 else {
+            return conservativeCardWidth
+        }
+        return min(width, conservativeCardWidth)
     }
 }
