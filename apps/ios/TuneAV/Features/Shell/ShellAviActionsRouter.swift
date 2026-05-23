@@ -8,7 +8,7 @@ struct ShellAviActionsRouter {
     let openArtistSearch: () -> Void
     let openStationSearch: (Station) -> Void
     let runProActionOutsideFullPlayer: ProActionRunner
-    let showStationDetails: (Station, [Station]) -> Void
+    let showStationDetails: (Station, [Station], StationDetailSection) -> Void
     let openStationWebsiteOrSearch: (Station) -> Void
     let showRelatedStations: (Station) -> Void
     let stopPlayback: () -> Void
@@ -49,13 +49,13 @@ struct ShellAviActionsRouter {
     }
 
     func showRadioDetails(for station: Station) {
-        showStationDetails(station, [station])
+        showStationDetails(station, [station], .about)
         closeAviActions()
     }
 
     func showHistory(for station: Station) {
         runProActionOutsideFullPlayer {
-            showStationDetails(station, [station])
+            showStationDetails(station, [station], .history)
             closeAviActions()
         }
     }

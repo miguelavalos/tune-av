@@ -31,7 +31,7 @@ final class LibraryStore: ObservableObject {
     private static let feedbackSyncRetryBaseDelay: TimeInterval = 5
     private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
     private static let feedbackSyncRetryJitterFraction = 0.2
-    private static let maxCloudDiscoveryRecords = 30
+    private static let maxCloudDiscoveryRecords = 1_000
     private static let maxCloudTombstonesPerResource = 5
     private static let cloudPushDebounce: Duration = .seconds(2)
 
@@ -1597,7 +1597,6 @@ final class LibraryStore: ObservableObject {
 
     private func cloudBoundedDiscoveryRecords(_ records: [DiscoveredTrackRecord]) -> [DiscoveredTrackRecord] {
         records
-            .filter { $0.markedInterestedAt != nil || $0.hiddenAt != nil || $0.deletedAt != nil }
             .sorted { lhs, rhs in
                 let lhsPinned = lhs.markedInterestedAt != nil
                 let rhsPinned = rhs.markedInterestedAt != nil
@@ -1824,7 +1823,6 @@ final class LibraryStore: ObservableObject {
 
     private func cloudDiscoveryRecords() -> [DiscoveredTrackRecord] {
         discoveries
-            .filter { $0.markedInterestedAt != nil || $0.hiddenAt != nil }
             .sorted { lhs, rhs in
                 let lhsPinned = lhs.markedInterestedAt != nil
                 let rhsPinned = rhs.markedInterestedAt != nil

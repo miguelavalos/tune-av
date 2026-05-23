@@ -3232,8 +3232,8 @@ final class SharedAppleSupportTests: XCTestCase {
                 events.append("pro")
                 action()
             },
-            showStationDetails: { station, queue in
-                events.append("details:\(station.id):\(queue.map(\.id).joined(separator: ","))")
+            showStationDetails: { station, queue, initialSection in
+                events.append("details:\(station.id):\(queue.map(\.id).joined(separator: ",")):\(initialSection.accessibilityID)")
             },
             openStationWebsiteOrSearch: { station in events.append("web:\(station.id)") },
             showRelatedStations: { station in events.append("related:\(station.id)") },
@@ -3243,6 +3243,8 @@ final class SharedAppleSupportTests: XCTestCase {
         router.searchLyrics(for: station)
         router.searchPublicInfo(for: station)
         router.openWebsite(for: station)
+        router.showRadioDetails(for: station)
+        router.showHistory(for: station)
         router.findRelatedRadios(for: station)
         router.closeSignal()
 
@@ -3255,6 +3257,11 @@ final class SharedAppleSupportTests: XCTestCase {
             "pro",
             "reaction:curious",
             "web:nova",
+            "details:nova:nova:about",
+            "close",
+            "pro",
+            "details:nova:nova:history",
+            "close",
             "reaction:curious",
             "related:nova",
             "close",

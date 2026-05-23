@@ -453,6 +453,31 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.savedDiscoveriesCount, 0)
     }
 
+    func testToggleDiscoveredTrackSavedPersistsCurrentTrackArtwork() throws {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "test-station",
+            name: "Test Radio",
+            country: "Spain",
+            language: "Spanish",
+            tags: "rock",
+            streamURL: "https://example.com/stream.mp3"
+        )
+        let artworkURL = try XCTUnwrap(URL(string: "https://example.com/artwork.jpg"))
+
+        let didSave = store.toggleDiscoveredTrackSaved(
+            title: "Sweet Song",
+            artist: "The Tests",
+            station: station,
+            artworkURL: artworkURL,
+            savedLimit: 10,
+            discoveryLimit: 25
+        )
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(store.discoveries.first?.resolvedArtworkURL, artworkURL)
+    }
+
     func testMusicLibraryHidesLegacyStationMetadataDiscoveries() {
         let station = Station(
             id: "radio-bob-classic-rock",

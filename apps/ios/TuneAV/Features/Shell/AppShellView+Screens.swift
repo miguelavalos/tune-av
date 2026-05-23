@@ -229,7 +229,7 @@ extension AppShellView {
         playStationFromQueue: @escaping (Station, AudioPlayerService.PlaybackQueue.Source, [Station]) -> Void,
         toggleFavorite: @escaping (Station) -> Void,
         setStationFeedback: @escaping (Station, TuneAVStationFeedback?) -> Void,
-        showStationDetails: @escaping (Station, [Station]) -> Void,
+        showStationDetails: @escaping (Station, [Station], StationDetailSection) -> Void,
         openDiscoveryInfo: @escaping (DiscoveredTrack) -> Void,
         openDiscoveryStation: @escaping (DiscoveredTrack) -> Void,
         openAccount: @escaping () -> Void,

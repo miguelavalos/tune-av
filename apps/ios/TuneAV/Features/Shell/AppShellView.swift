@@ -412,7 +412,10 @@ struct AppShellView: View {
     }
 
     private func musicStationArtworkURL(_ discovery: DiscoveredTrack) -> URL? {
-        nil
+        guard let station = libraryStore.station(for: discovery.stationID) else {
+            return discovery.resolvedStationArtworkURL
+        }
+        return enrichedStation(station).displayArtworkURL ?? discovery.resolvedStationArtworkURL
     }
 
     private func musicTrackFeedback(_ discovery: DiscoveredTrack) -> TuneAVStationFeedback? {
@@ -472,7 +475,7 @@ struct AppShellView: View {
             playStationFromQueue: playStation(_:queueSource:queue:),
             toggleFavorite: toggleFavorite(_:),
             setStationFeedback: setStationFeedbackWithHaptic(_:feedback:),
-            showStationDetails: showAviStationDetails(_:queue:),
+            showStationDetails: showAviStationDetails(_:queue:initialSection:),
             openDiscoveryInfo: { discovery in
                 openDiscoveryInfo(discovery)
             },
@@ -518,8 +521,17 @@ struct AppShellView: View {
         playStation(station, queueSource: .homeDiscovery, queue: queue)
     }
 
-    private func showAviStationDetails(_ station: Station, queue: [Station]) {
-        showStationDetails(station, queueSource: .homeDiscovery, queue: queue)
+    private func showAviStationDetails(
+        _ station: Station,
+        queue: [Station],
+        initialSection: StationDetailSection = .about
+    ) {
+        showStationDetails(
+            station,
+            queueSource: .homeDiscovery,
+            queue: queue,
+            initialSection: initialSection
+        )
     }
 
     private func openAccountProfile() {
@@ -1908,6 +1920,20 @@ extension TuneAVPlaybackQueueSource {
     }
 }
 
+private enum ArtistDetailSection: Equatable {
+    case info
+    case songs
+
+    var accessibilityID: String {
+        switch self {
+        case .info:
+            return "info"
+        case .songs:
+            return "songs"
+        }
+    }
+}
+
 struct AviScreen: View {
     private static let artistDetailPageSize = 12
 
@@ -1952,7 +1978,7 @@ struct AviScreen: View {
     let playStationFromQueue: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]) -> Void
     let toggleFavorite: (Station) -> Void
     let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
-    let showStationDetails: (Station, [Station]) -> Void
+    let showStationDetails: (Station, [Station], StationDetailSection) -> Void
     let openDiscoveryInfo: (DiscoveredTrack) -> Void
     let openDiscoveryStation: (DiscoveredTrack) -> Void
     let openAccount: () -> Void
@@ -1981,6 +2007,7 @@ struct AviScreen: View {
     @State private var visibleArtistStationLimit = artistDetailPageSize
     @State private var visibleFocusedRadioHistoryLimit = artistDetailPageSize
     @State private var selectedStationDetailSection: StationDetailSection = .about
+    @State private var selectedArtistDetailSection: ArtistDetailSection = .info
     @State private var openArtistDetailAviActionsID: String?
     @State private var isShowingPlanComparison = false
 
@@ -2074,14 +2101,16 @@ struct AviScreen: View {
         }
         .onChange(of: isNowPlayingFullPlayer) { _, isFullPlayer in
             isActionPanelOpen = isFullPlayer && isShowingAviActions
+            if isFullPlayer {
+                resetNestedMusicNavigation()
+            }
         }
         .onChange(of: focusedMusicDetail?.id) { _, _ in
-            nestedMusicDetail = nil
-            resetArtistDetailLimits()
+            resetNestedMusicNavigation()
         }
         .onChange(of: focusedStation?.id) { _, _ in
+            resetNestedMusicNavigation()
             visibleFocusedRadioHistoryLimit = Self.artistDetailPageSize
-            openArtistDetailAviActionsID = nil
             selectedStationDetailSection = focusedStationDetailSection
         }
         .onChange(of: focusedStationDetailSection) { _, section in
@@ -2221,7 +2250,7 @@ struct AviScreen: View {
                         AVAviPromptButton(
                             title: L10n.string("shell.avi.preview.prompt.history"),
                             systemImage: "clock.arrow.circlepath",
-                            action: { showStationDetails(currentStation, [currentStation]) }
+                            action: { showStationDetails(currentStation, [currentStation], .history) }
                         )
                     }
                 }
@@ -2345,7 +2374,8 @@ struct AviScreen: View {
     }
 
     private var activeMusicDetail: SelectedMusicAviDetail? {
-        nestedMusicDetail ?? focusedMusicDetail
+        guard !isNowPlayingFullPlayer else { return nil }
+        return nestedMusicDetail ?? focusedMusicDetail
     }
 
     private var activeDetailScrollID: String {
@@ -2378,6 +2408,12 @@ struct AviScreen: View {
         visibleArtistSongLimit = Self.artistDetailPageSize
         visibleArtistStationLimit = Self.artistDetailPageSize
         openArtistDetailAviActionsID = nil
+    }
+
+    private func resetNestedMusicNavigation() {
+        nestedMusicDetail = nil
+        resetArtistDetailLimits()
+        selectedArtistDetailSection = .info
     }
 
     private var focusedDetailIsEmpty: Bool {
@@ -2529,7 +2565,7 @@ struct AviScreen: View {
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
             runProAviActionOutsideFullPlayer {
-                showStationDetails(station, [station])
+                showStationDetails(station, [station], .history)
             }
         }
 
@@ -2629,7 +2665,7 @@ struct AviScreen: View {
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
             runProAviActionOutsideFullPlayer {
-                showStationDetails(station, [station])
+                showStationDetails(station, [station], .history)
             }
         }
     }
@@ -2875,11 +2911,18 @@ struct AviScreen: View {
 
     private func focusedArtistInfo(_ summary: DiscoveryArtistSummary) -> some View {
         return VStack(alignment: .leading, spacing: 12) {
-            focusedArtistArticle(summary)
+            focusedArtistSectionPicker(for: summary)
+
+            switch selectedArtistDetailSection {
+            case .info:
+                focusedArtistInfoContent(summary)
+            case .songs:
+                artistSongsBlock(summary)
+            }
         }
     }
 
-    private func focusedArtistArticle(_ summary: DiscoveryArtistSummary) -> some View {
+    private func focusedArtistInfoContent(_ summary: DiscoveryArtistSummary) -> some View {
         let discoveries = artistDiscoveries(for: summary)
         let savedSongs = discoveries.filter(\.isMarkedInteresting)
         let stationCount = artistStationSummaries(for: summary).count
@@ -2895,10 +2938,86 @@ struct AviScreen: View {
         } services: {
             focusedMusicAviServices(for: .artist(summary))
         } savedSongs: {
-            artistSavedSongsBlock(summary, savedSongs: savedSongs)
+            EmptyView()
         } stations: {
             artistStationsBlock(summary)
         }
+    }
+
+    private func focusedArtistSectionPicker(for summary: DiscoveryArtistSummary) -> some View {
+        let artistDiscoveries = artistDiscoveries(for: summary)
+
+        return HStack(spacing: 6) {
+            focusedArtistSectionButton(
+                .info,
+                title: L10n.string("shell.stationDetail.section.about"),
+                systemImage: "info.circle.fill",
+                badge: nil
+            )
+            focusedArtistSectionButton(
+                .songs,
+                title: L10n.string("shell.music.mode.songs"),
+                systemImage: "music.note.list",
+                badge: artistDiscoveries.isEmpty ? nil : "\(artistDiscoveries.count)"
+            )
+        }
+        .padding(4)
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.82), lineWidth: 1)
+        }
+        .accessibilityIdentifier("avi.artistDetail.sections")
+    }
+
+    private func focusedArtistSectionButton(
+        _ section: ArtistDetailSection,
+        title: String,
+        systemImage: String,
+        badge: String?
+    ) -> some View {
+        let isSelected = selectedArtistDetailSection == section
+
+        return Button {
+            AVHaptics.perform(.impactLight)
+            selectedArtistDetailSection = section
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .black))
+
+                Text(title)
+                    .font(.system(size: 13, weight: .black))
+                    .lineLimit(1)
+
+                if let badge {
+                    Text(badge)
+                        .font(.system(size: 11, weight: .black))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            (isSelected ? TuneAVTheme.highlight.opacity(0.12) : TuneAVTheme.cardSurface),
+                            in: Capsule(style: .continuous)
+                        )
+                }
+            }
+            .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface.opacity(0.7))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        isSelected ? TuneAVTheme.highlight.opacity(0.38) : TuneAVTheme.borderSubtle.opacity(0.78),
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("avi.artistDetail.section.\(section.accessibilityID)")
     }
 
     private func focusedArtistSummaryCard(_ summary: DiscoveryArtistSummary, discoveries: [DiscoveredTrack]) -> some View {
@@ -3010,54 +3129,20 @@ struct AviScreen: View {
     }
 
     @ViewBuilder
-    private func artistSavedSongsBlock(_ summary: DiscoveryArtistSummary, savedSongs: [DiscoveredTrack]) -> some View {
-        let visibleSavedSongs = Array(savedSongs.prefix(visibleArtistSongLimit))
-        let remainingCount = max(0, savedSongs.count - visibleSavedSongs.count)
-        if !savedSongs.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.string("shell.avi.music.artist.savedSongs"))
-                    .font(.system(size: 16, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
+    private func artistSongsBlock(_ summary: DiscoveryArtistSummary) -> some View {
+        let artistDiscoveries = artistDiscoveries(for: summary)
+        let visibleSongs = Array(artistDiscoveries.prefix(visibleArtistSongLimit))
+        let remainingCount = max(0, artistDiscoveries.count - visibleSongs.count)
 
-                ForEach(visibleSavedSongs) { discovery in
-                    DiscoveryTrackCard(
-                        discovery: discovery,
-                        stationArtworkURL: nil,
-                        feedback: libraryStore.feedback(for: discovery),
-                        showsSaveButton: false,
-                        openAviActionsID: $openArtistDetailAviActionsID,
-                        openTrackInfo: { nestedMusicDetail = .track(discovery) },
-                        openArtistInfo: { nestedMusicDetail = .artist(discoveryArtistSummary(for: discovery)) },
-                        openStationInfo: { openDiscoveryStation(discovery) },
-                        toggleSaved: { toggleDiscoverySaved(discovery) },
-                        openYouTube: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
-                            }
-                        },
-                        openLyrics: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
-                            }
-                        },
-                        openAppleMusic: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
-                            }
-                        },
-                        openSpotify: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
-                            }
-                        },
-                        hideAction: nil,
-                        removeAction: nil
-                    )
+        if !artistDiscoveries.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(visibleSongs) { discovery in
+                    artistDiscoveryTrackCard(discovery)
                 }
 
                 if remainingCount > 0 {
                     ShowMoreButton(
-                        title: L10n.string("shell.avi.music.artist.savedSongs"),
+                        title: L10n.string("shell.music.mode.songs"),
                         remainingCount: remainingCount,
                         action: {
                             visibleArtistSongLimit += Self.artistDetailPageSize
@@ -3067,16 +3152,59 @@ struct AviScreen: View {
             }
             .padding(14)
             .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        } else {
+            Text(L10n.string("shell.library.discoveries.empty"))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
+    }
+
+    private func artistDiscoveryTrackCard(_ discovery: DiscoveredTrack) -> some View {
+        DiscoveryTrackCard(
+            discovery: discovery,
+            stationArtworkURL: nil,
+            feedback: libraryStore.feedback(for: discovery),
+            showsSaveButton: false,
+            openAviActionsID: $openArtistDetailAviActionsID,
+            openTrackInfo: { nestedMusicDetail = .track(discovery) },
+            openArtistInfo: { nestedMusicDetail = .artist(discoveryArtistSummary(for: discovery)) },
+            openStationInfo: { openDiscoveryStation(discovery) },
+            toggleSaved: { toggleDiscoverySaved(discovery) },
+            openYouTube: {
+                runProAviAction {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
+                }
+            },
+            openLyrics: {
+                runProAviAction {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
+                }
+            },
+            openAppleMusic: {
+                runProAviAction {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
+                }
+            },
+            openSpotify: {
+                runProAviAction {
+                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
+                }
+            },
+            hideAction: nil,
+            removeAction: nil
+        )
     }
 
     @ViewBuilder
     private func artistStationsBlock(_ summary: DiscoveryArtistSummary) -> some View {
         let stations = artistStationSummaries(for: summary)
         let visibleStations = Array(stations.prefix(visibleArtistStationLimit))
-        let resolvedVisibleStations = visibleStations.compactMap { station -> (station: Station, count: Int)? in
+        let resolvedVisibleStations = visibleStations.compactMap { station -> (station: Station, count: Int, latestDiscovery: DiscoveredTrack?)? in
             guard let resolvedStation = artistStation(for: station.id) else { return nil }
-            return (resolvedStation, station.count)
+            return (resolvedStation, station.count, station.latestDiscovery)
         }
         let remainingCount = max(0, stations.count - visibleStations.count)
         if !resolvedVisibleStations.isEmpty {
@@ -3089,7 +3217,9 @@ struct AviScreen: View {
                     StationListActionRow(
                         station: station.station,
                         isFavorite: favoriteStations.contains { $0.id == station.station.id },
-                        nowPlayingTrack: nil,
+                        nowPlayingTrack: station.latestDiscovery.map {
+                            NowPlayingTrack(title: $0.title, artist: $0.artistDisplayText)
+                        },
                         stationFeedback: stationFeedback[station.station.id],
                         toggleFavorite: { toggleFavorite(station.station) },
                         playAction: { playStation(station.station, [station.station]) },
@@ -3098,7 +3228,7 @@ struct AviScreen: View {
                                 browserRouter.openURL(url)
                             }
                         },
-                        detailsAction: { showStationDetails(station.station, [station.station]) }
+                        detailsAction: { showStationDetails(station.station, [station.station], .about) }
                     )
                 }
 
@@ -3143,7 +3273,7 @@ struct AviScreen: View {
                                 browserRouter.openURL(url)
                             }
                         },
-                        detailsAction: { showStationDetails(station.station, [station.station]) }
+                        detailsAction: { showStationDetails(station.station, [station.station], .about) }
                     )
                 }
             }
@@ -3194,15 +3324,23 @@ struct AviScreen: View {
             .sorted { $0.playedAt > $1.playedAt }
     }
 
-    private func artistStationSummaries(for summary: DiscoveryArtistSummary) -> [(id: String, name: String, count: Int)] {
+    private func artistStationSummaries(for summary: DiscoveryArtistSummary) -> [(id: String, name: String, count: Int, latestDiscovery: DiscoveredTrack?)] {
         let grouped = Dictionary(grouping: artistDiscoveries(for: summary), by: \.stationID)
         return grouped
             .map { stationID, discoveries in
-                (id: stationID, name: discoveries.first?.stationName ?? stationID, count: discoveries.count)
+                let latestDiscovery = discoveries.sorted { $0.playedAt > $1.playedAt }.first
+                return (
+                    id: stationID,
+                    name: latestDiscovery?.stationName ?? stationID,
+                    count: discoveries.count,
+                    latestDiscovery: latestDiscovery
+                )
             }
             .sorted {
-                if $0.count != $1.count {
-                    return $0.count > $1.count
+                if let lhsDate = $0.latestDiscovery?.playedAt,
+                   let rhsDate = $1.latestDiscovery?.playedAt,
+                   lhsDate != rhsDate {
+                    return lhsDate > rhsDate
                 }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
@@ -3698,7 +3836,7 @@ struct AviScreen: View {
                         openAviActionsID: $openArtistDetailAviActionsID,
                         openTrackInfo: { nestedMusicDetail = .track(discovery) },
                         openArtistInfo: { nestedMusicDetail = .artist(discoveryArtistSummary(for: discovery)) },
-                        openStationInfo: { showStationDetails(station, [station]) },
+                        openStationInfo: { showStationDetails(station, [station], .about) },
                         toggleSaved: { toggleDiscoverySaved(discovery) },
                         openYouTube: {
                             runProAviAction {
@@ -4887,7 +5025,7 @@ struct AviScreen: View {
 
     private func fullPlayerRadioDetailLink(for station: Station) -> some View {
         Button {
-            showStationDetails(station, [station])
+            showStationDetails(station, [station], .about)
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "info.circle.fill")
@@ -5159,8 +5297,8 @@ struct AviScreen: View {
             openArtistSearch: openAviArtistSearch,
             openStationSearch: openAviStationSearch,
             runProActionOutsideFullPlayer: runProAviActionOutsideFullPlayer,
-            showStationDetails: { station, queue in
-                showStationDetails(station, queue)
+            showStationDetails: { station, queue, initialSection in
+                showStationDetails(station, queue, initialSection)
             },
             openStationWebsiteOrSearch: { station in
                 browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
@@ -5372,7 +5510,7 @@ struct AviScreen: View {
             title: currentTrackTitle,
             artist: currentTrackArtist,
             station: station,
-            artworkURL: nil,
+            artworkURL: currentTrackArtworkURL,
             savedLimit: state.limit,
             discoveryLimit: accessController.limits.discoveredTracks
         )
@@ -5432,7 +5570,7 @@ struct AviScreen: View {
                     }
                     AVAviActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
                         runProAviActionOutsideFullPlayer {
-                            showStationDetails(station, [station])
+                            showStationDetails(station, [station], .history)
                         }
                     }
                     AVAviActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
@@ -5547,7 +5685,7 @@ struct AviScreen: View {
                                     playStation(result.station, relatedStationResults.map(\.station))
                                 },
                                 detailsAction: {
-                                    showStationDetails(result.station, relatedStationResults.map(\.station))
+                                    showStationDetails(result.station, relatedStationResults.map(\.station), .about)
                                 }
                             )
                         }
@@ -5617,7 +5755,7 @@ struct AviScreen: View {
                     .accessibilityIdentifier("avi.recommendation.play")
 
                     Button {
-                        showStationDetails(recommendation.station, recommendationQueue)
+                        showStationDetails(recommendation.station, recommendationQueue, .about)
                     } label: {
                         Image(systemName: "info.circle.fill")
                             .font(.system(size: 18, weight: .bold))
@@ -5665,7 +5803,7 @@ struct AviScreen: View {
                                     setStationFeedback(recommendation.station, nil)
                                 },
                                 detailsAction: {
-                                    showStationDetails(recommendation.station, recommendationQueue)
+                                    showStationDetails(recommendation.station, recommendationQueue, .about)
                                 }
                             )
                         }
