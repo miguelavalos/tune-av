@@ -540,6 +540,8 @@
 "shell.search.discoveryMode.music" = "Musik";
 "shell.search.loading.detail" = "Ergebnisse werden aktualisiert, ohne die Seite zu verschieben.";
 "shell.search.loading.title" = "Sender werden gesucht";
+"shell.search.updating.detail" = "Die aktuelle Liste bleibt sichtbar, während der neue Modus lädt.";
+"shell.search.updating.title" = "Ergebnisse werden aktualisiert";
 "shell.search.results.count.one" = "%d Treffer für \"%@\".";
 "shell.search.results.count.other" = "%d Treffer für \"%@\".";
 "shell.search.section.browse.subtitle" = "Wähle ein Land oder Genre oder gib einen Sendernamen ein, um das Live-Verzeichnis zu durchsuchen.";

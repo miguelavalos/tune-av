@@ -82,6 +82,10 @@ struct SearchScreen: View {
                 ) {
                     if !results.isEmpty {
                         LazyVStack(spacing: 8) {
+                            if isLoading {
+                                SearchUpdatingCard()
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                             ForEach(Array(results.enumerated()), id: \.element.id) { index, station in
                                 StationListActionRow(
                                     station: station,
@@ -93,6 +97,8 @@ struct SearchScreen: View {
                                     openWebsiteAction: { openStationWebsite(station) },
                                     detailsAction: { showStationDetails(station, .searchResults, results) }
                                 )
+                                .opacity(isLoading ? 0.48 : 1)
+                                .allowsHitTesting(!isLoading)
                                 .zIndex(Double(results.count - index))
                             }
                             if hasMoreResults {
@@ -117,6 +123,8 @@ struct SearchScreen: View {
                         )
                     }
                 }
+                .animation(.easeInOut(duration: 0.18), value: isLoading)
+                .animation(.easeInOut(duration: 0.18), value: results.map(\.id))
             }
             .shellScreenContentPadding(bottom: bottomContentPadding)
         }

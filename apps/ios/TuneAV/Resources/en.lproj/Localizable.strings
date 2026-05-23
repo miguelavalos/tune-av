@@ -587,6 +587,8 @@
 "shell.search.field.defaultPrompt" = "Search stations, countries, languages";
 "shell.search.loading.detail" = "Refreshing results without shifting the page.";
 "shell.search.loading.title" = "Searching stations";
+"shell.search.updating.detail" = "Keeping the current list visible while the new mode loads.";
+"shell.search.updating.title" = "Updating results";
 "shell.search.results.count.one" = "%d match for \"%@\".";
 "shell.search.results.count.other" = "%d matches for \"%@\".";
 "shell.search.section.browse.subtitle" = "Choose a country or genre, or type a station name to search the live directory.";

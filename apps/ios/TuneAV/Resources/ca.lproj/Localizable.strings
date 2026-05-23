@@ -540,6 +540,8 @@
 "shell.search.discoveryMode.music" = "Música";
 "shell.search.loading.detail" = "S'estan actualitzant els resultats sense moure la pàgina.";
 "shell.search.loading.title" = "Cercant emissores";
+"shell.search.updating.detail" = "Mantenim la llista actual visible mentre es carrega el mode nou.";
+"shell.search.updating.title" = "Actualitzant resultats";
 "shell.search.results.count.one" = "%d resultat per a \"%@\".";
 "shell.search.results.count.other" = "%d resultats per a \"%@\".";
 "shell.search.section.browse.subtitle" = "Tria un país o un gènere, o escriu el nom d'una emissora per cercar al directori en directe.";

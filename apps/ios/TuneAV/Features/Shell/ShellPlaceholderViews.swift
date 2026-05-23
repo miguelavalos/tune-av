@@ -49,6 +49,40 @@ struct SearchLoadingCard: View {
     }
 }
 
+struct SearchUpdatingCard: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(TuneAVTheme.highlight)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.string("shell.search.updating.title"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(L10n.string("shell.search.updating.detail"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(TuneAVTheme.cardSurface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+                }
+        )
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct StationRowSkeletonCard: View {
     let accentWidth: CGFloat
 

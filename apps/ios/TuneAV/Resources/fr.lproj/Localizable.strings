@@ -540,6 +540,8 @@
 "shell.search.discoveryMode.music" = "Musique";
 "shell.search.loading.detail" = "Actualisation des résultats sans déplacer la page.";
 "shell.search.loading.title" = "Recherche des stations";
+"shell.search.updating.detail" = "La liste actuelle reste visible pendant le chargement du nouveau mode.";
+"shell.search.updating.title" = "Actualisation des résultats";
 "shell.search.results.count.one" = "%d résultat pour \"%@\".";
 "shell.search.results.count.other" = "%d résultats pour \"%@\".";
 "shell.search.section.browse.subtitle" = "Choisissez un pays ou un genre, ou saisissez le nom d'une station pour chercher dans l'annuaire en direct.";

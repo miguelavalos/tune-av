@@ -587,6 +587,8 @@
 "shell.search.field.defaultPrompt" = "Buscar emisoras, países e idiomas";
 "shell.search.loading.detail" = "Actualizando resultados sin mover la página.";
 "shell.search.loading.title" = "Buscando emisoras";
+"shell.search.updating.detail" = "Mantenemos la lista actual visible mientras carga el nuevo modo.";
+"shell.search.updating.title" = "Actualizando resultados";
 "shell.search.results.count.one" = "%d resultado para \"%@\".";
 "shell.search.results.count.other" = "%d resultados para \"%@\".";
 "shell.search.section.browse.subtitle" = "Elige un país o un género, o escribe el nombre de una emisora para buscar en el directorio en directo.";
