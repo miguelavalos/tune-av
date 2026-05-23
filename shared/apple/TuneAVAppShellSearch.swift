@@ -214,14 +214,8 @@ enum TuneAVStationMusicClassifier {
         return normalizedTokens(from: station.tagsList).first { nonMusicSignals.contains($0) }
     }
 
-    static func isExplicitNonMusicIntent(query: String, tag: String?) -> Bool {
-        let values = [query, tag].compactMap { $0 }
-        return normalizedTokens(from: values).contains { nonMusicSignals.contains($0) }
-    }
-
     static func orderedForDiscoveryMode(_ stations: [Station], mode: TuneAVStationDiscoveryMode, request: AppShellSearchRequest) -> [Station] {
         guard mode == .music else { return stations }
-        guard !isExplicitNonMusicIntent(query: request.query, tag: request.tag) else { return stations }
 
         let scored = stations.map { station in
             (station: station, score: musicScore(station))
@@ -236,13 +230,7 @@ enum TuneAVStationMusicClassifier {
             }
             .map(\.station)
 
-        if !musicStations.isEmpty {
-            return musicStations
-        }
-
-        return scored
-            .sorted { lhs, rhs in lhs.score > rhs.score }
-            .map(\.station)
+        return musicStations
     }
 
     private static func normalizedTokens(from values: [String]) -> [String] {

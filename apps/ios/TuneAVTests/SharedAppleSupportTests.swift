@@ -1399,6 +1399,34 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testStationServiceSendsDiscoveryModeToAVALSYS() async throws {
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/v1/tune/stations/search")
+            XCTAssertEqual(self.queryValue("q", in: request.url), "sport")
+            XCTAssertEqual(self.queryValue("mode", in: request.url), "music")
+
+            let body = #"""
+            {
+              "stations": [],
+              "provider": "radioBrowser",
+              "generatedAt": "2026-05-09T10:00:00Z"
+            }
+            """#.data(using: .utf8)!
+
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+
+        let service = TuneAVStationService(
+            session: testURLSession(),
+            avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
+            backendGate: makeBackendGate()
+        )
+
+        _ = try await service.searchStations(
+            filters: TuneAVStationSearchFilters(query: "sport", mode: "music", limit: 5)
+        )
+    }
+
     func testStationServiceDeduplicatesAVALSYSStationVariantsAndPrefersArtwork() async throws {
         TuneAVTestURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.url?.host, "api.test")
@@ -2605,6 +2633,48 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(
             AppShellSearch.localUITestSearchResults(samples: [jazz, news], request: request).map(\.id),
             ["jazz-es"]
+        )
+    }
+
+    func testMusicSearchModeFiltersLocalNonMusicIntentSamples() {
+        let sports = Station(
+            id: "sports-us",
+            name: "Sport Daily Radio",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "sports,talk",
+            streamURL: "https://example.com/sports"
+        )
+        let music = Station(
+            id: "sport-rock",
+            name: "Sport Rock Radio",
+            country: "United States",
+            countryCode: "US",
+            language: "English",
+            tags: "rock,music",
+            streamURL: "https://example.com/rock"
+        )
+        let musicRequest = AppShellSearchRequest(
+            query: "sport",
+            tag: nil,
+            countryCode: nil,
+            discoveryMode: .music
+        )
+        let allRadioRequest = AppShellSearchRequest(
+            query: "sport",
+            tag: nil,
+            countryCode: nil,
+            discoveryMode: .allRadio
+        )
+
+        XCTAssertEqual(
+            AppShellSearch.localUITestSearchResults(samples: [sports, music], request: musicRequest).map(\.id),
+            ["sport-rock"]
+        )
+        XCTAssertEqual(
+            AppShellSearch.localUITestSearchResults(samples: [sports, music], request: allRadioRequest).map(\.id),
+            ["sports-us", "sport-rock"]
         )
     }
 
