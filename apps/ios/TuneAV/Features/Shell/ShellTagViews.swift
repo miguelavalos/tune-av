@@ -93,7 +93,7 @@ struct FlowLayout: Layout {
     }
 
     private func resolvedMaxWidth(from proposal: ProposedViewSize) -> CGFloat {
-        let conservativeCardWidth = UIScreen.main.bounds.width - 104
+        let conservativeCardWidth: CGFloat = 320
         guard let width = proposal.width, width.isFinite, width > 0 else {
             return conservativeCardWidth
         }
