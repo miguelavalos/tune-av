@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-05-22
+Date: 2026-05-23
 
 This is the public source of truth for the current Tune AV iOS app. It describes
 what exists in this repository without exposing private backend, signing, or
@@ -118,8 +118,7 @@ Latest full local verification known to the maintainers, run on 2026-05-22:
 - Tune AV Debug build/run on `iPhone 17 / iOS 26.5`, with Home shell snapshot
   showing header, tabs, Avi entry, Home hero, and scrollable content.
 
-Latest release readiness verification known to the maintainers, run on
-2026-05-22:
+Latest release readiness verification known to the maintainers:
 
 - `bun run ios:release:preflight`: passed with `0 failure(s), 0 warning(s)`.
 - `bun run ios:release:preflight -- --with-archive`: unsigned Release archive
@@ -127,10 +126,11 @@ Latest release readiness verification known to the maintainers, run on
   PhoneNumberKit privacy manifests, and app-size gate reported `24.82 MiB`.
 - App Store upload export options are checked in at
   `apps/ios/Config/ExportOptionsUpload.plist`.
+- Tune AV iOS `1.0` build `8` was submitted to Apple App Review on 2026-05-23
+  and is pending review.
 
-These checks prove repository behavior only. They do not prove App Store
-Connect processing, live StoreKit subscription availability, RevenueCat
-dashboard mapping, webhook delivery, or App Review metadata.
+The public repository does not contain private App Store Connect, signing,
+RevenueCat dashboard, webhook, or App Review evidence.
 
 Signed device installs should use:
 
@@ -147,8 +147,8 @@ install, and launch the app.
 - keep screenshots and public App Store copy aligned with the shipped iOS build;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
-- complete App Review evidence outside the public repository: signed upload,
-  build processing, TestFlight assignment, third-party SDK
-  manifests/signatures, App Privacy answers, subscription sandbox lifecycle,
-  real-device smoke, review notes, and final screenshots;
+- keep App Review evidence outside the public repository: signed upload, build
+  processing, TestFlight assignment, third-party SDK manifests/signatures, App
+  Privacy answers, subscription sandbox lifecycle, real-device smoke, review
+  notes, and final screenshots;
 - keep macOS documentation secondary until macOS is actively being released.

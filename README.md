@@ -48,11 +48,10 @@ shared/
 Use [docs/ios-current-state.md](docs/ios-current-state.md) as the public source
 of truth for the current iOS app.
 
-As of 2026-05-22, Tune AV iOS is in App Store submission preparation. The
-shared Apple foundation work for the first release candidate has been extracted
-into `apps-av/apple`, the release preflight with archive evidence passes, and
-the remaining work is operational: signed upload, TestFlight processing, final
-App Review metadata, and real-device release smoke.
+As of 2026-05-23, Tune AV iOS `1.0` build `8` has been submitted to Apple App
+Review and is pending review. Private App Store Connect, signing,
+subscription-dashboard, and review-evidence details remain outside this public
+repository.
 
 ## Local Setup
 

@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases begin.
 
 ## Unreleased
 
+- Submit Tune AV iOS `1.0` build `8` to Apple App Review on 2026-05-23.
 - Prepare the iOS App Store upload path with checked-in export options and
   documented signed archive/export commands.
 - Complete the Tune AV shared-foundation extraction pass for the first release
@@ -28,9 +29,9 @@ This project follows semantic versioning once public releases begin.
 - Align macOS Profile, player artwork details, preferred genre, and multilingual UI with the iOS app.
 - Move the macOS app source from `apps/macos/TuneAVMac` to `apps/macos`.
 
-## 1.0 (iOS App Review submitted 2026-05-07)
+## 1.0 (iOS App Review submitted 2026-05-23)
 
-- Submitted the first iOS build to Apple App Review.
+- Submitted Tune AV iOS `1.0` build `8` to Apple App Review.
 - Shipped the first App Store review candidate for iOS with radio playback, search, library, music discoveries, Account AV sign-in, local mode, and account safety flows.
 
 ## Repository Bootstrap
