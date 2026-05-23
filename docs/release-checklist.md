@@ -122,29 +122,57 @@ Latest local evidence, dated 2026-05-22:
    generic DerivedData. It must also write an app-size report for the archived
    `TuneAV.app` and stay within the configured size budget.
 
-8. Create the signed App Store archive and upload it with the checked-in export
-   options. Use a fresh build number for each upload:
+8. When the user asks for a TestFlight build, create the signed App Store
+   archive in Xcode's Organizer archive directory, not only under the repository
+   `build/` directory. Use a fresh build number for each upload and name the
+   archive path with the build number so it is easy to identify locally:
 
    ```bash
-   cd apps/ios
+   cd "$(git rev-parse --show-toplevel)"
+   archive_date="$(date +%Y-%m-%d)"
+   archive_path="$HOME/Library/Developer/Xcode/Archives/$archive_date/TuneAV-v<BUILD_NUMBER>.xcarchive"
+   mkdir -p "$(dirname "$archive_path")"
+
    xcodebuild archive \
-     -project TuneAV.xcodeproj \
+     -project apps/ios/TuneAV.xcodeproj \
      -scheme TuneAV \
      -configuration Release \
      -destination 'generic/platform=iOS' \
-     -archivePath "$PWD/build/TuneAV.xcarchive"
+     -archivePath "$archive_path"
+   ```
+
+   This location makes the archive visible in Xcode Organizer. If an archive is
+   created elsewhere for a one-off reason, copy or recreate it under
+   `~/Library/Developer/Xcode/Archives/<YYYY-MM-DD>/` before reporting the build
+   as ready.
+
+9. After the archive succeeds, ask the user before uploading. The question must
+   be explicit and short:
+
+   ```text
+   Archive listo en Xcode Organizer. ¿Lo subes tú manualmente o lo subo yo ahora?
+   ```
+
+   Do not auto-upload unless the user clearly asks for automatic upload in that
+   turn. If the user chooses manual upload, stop after validating the archive and
+   give the archive path. If the user chooses automatic upload, upload with the
+   checked-in export options:
+
+   ```bash
+   cd "$(git rev-parse --show-toplevel)"
 
    xcodebuild -exportArchive \
-     -archivePath "$PWD/build/TuneAV.xcarchive" \
-     -exportPath "$PWD/build/AppStore" \
-     -exportOptionsPlist "$PWD/Config/ExportOptionsUpload.plist"
+     -archivePath "$archive_path" \
+     -exportPath "$PWD/build/AppStore-v<BUILD_NUMBER>" \
+     -exportOptionsPlist "$PWD/apps/ios/Config/ExportOptionsUpload.plist" \
+     -allowProvisioningUpdates
    ```
 
    The export options use App Store Connect upload destination, automatic
    signing, the production team ID, symbol upload, and no automatic version/build
    mutation.
 
-9. For CI evidence, run the manual GitHub Actions workflow
+10. For CI evidence, run the manual GitHub Actions workflow
    `iOS Archive Privacy Evidence`. Keep the uploaded
    `ios-archive-privacy-evidence` artifact with the release record.
 
