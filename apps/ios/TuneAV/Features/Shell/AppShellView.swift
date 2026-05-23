@@ -3607,19 +3607,21 @@ struct AviScreen: View {
             focusedRadioSectionButton(
                 .about,
                 title: L10n.string("shell.stationDetail.section.about"),
+                systemImage: "info.circle.fill",
                 badge: nil
             )
             focusedRadioSectionButton(
                 .history,
                 title: L10n.string("shell.stationDetail.tab.history"),
+                systemImage: "clock.arrow.circlepath",
                 badge: stationDiscoveries.isEmpty ? nil : "\(stationDiscoveries.count)"
             )
         }
         .padding(4)
-        .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle.opacity(0.58), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(TuneAVTheme.borderSubtle.opacity(0.82), lineWidth: 1)
         }
         .accessibilityIdentifier("avi.stationDetail.sections")
     }
@@ -3627,6 +3629,7 @@ struct AviScreen: View {
     private func focusedRadioSectionButton(
         _ section: StationDetailSection,
         title: String,
+        systemImage: String,
         badge: String?
     ) -> some View {
         let isSelected = selectedStationDetailSection == section
@@ -3636,6 +3639,9 @@ struct AviScreen: View {
             selectedStationDetailSection = section
         } label: {
             HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .black))
+
                 Text(title)
                     .font(.system(size: 13, weight: .black))
                     .lineLimit(1)
@@ -3646,17 +3652,24 @@ struct AviScreen: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(
-                            (isSelected ? TuneAVTheme.highlight.opacity(0.18) : TuneAVTheme.elevatedSurface),
+                            (isSelected ? TuneAVTheme.highlight.opacity(0.12) : TuneAVTheme.cardSurface),
                             in: Capsule(style: .continuous)
                         )
                 }
             }
-            .foregroundStyle(isSelected ? TuneAVTheme.textPrimary : TuneAVTheme.textSecondary)
+            .foregroundStyle(isSelected ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 11)
             .background(
-                isSelected ? TuneAVTheme.elevatedSurface : Color.clear,
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? TuneAVTheme.highlight.opacity(0.1) : TuneAVTheme.cardSurface.opacity(0.7))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        isSelected ? TuneAVTheme.highlight.opacity(0.38) : TuneAVTheme.borderSubtle.opacity(0.78),
+                        lineWidth: 1
+                    )
             )
         }
         .buttonStyle(.plain)
