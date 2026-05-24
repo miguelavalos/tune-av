@@ -25,6 +25,7 @@ typealias MacMeAccessResponse = MeAccessResponse
 typealias MacAppAccess = AppAccess
 typealias MacAccessRefreshError = TuneAVAccessClientError
 
+@MainActor
 final class TuneAVAccessClient {
     private let baseURL: URL?
     private let tokenProvider: () async throws -> String?

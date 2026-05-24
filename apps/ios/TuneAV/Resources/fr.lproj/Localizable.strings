@@ -3,6 +3,8 @@
 "common.cancel" = "Annuler";
 "common.done" = "OK";
 "common.more" = "Plus";
+"common.seeAll" = "Voir";
+"common.share" = "Partager";
 "common.no" = "Non";
 "common.yes" = "Oui";
 "browser.openExternal" = "Ouvrir dans le navigateur";
@@ -1067,3 +1069,5 @@
 "shell.avi.header.reading.summary" = "Donnez un indice à Avi avec votre feedback.";
 "shell.avi.header.discover.title" = "Prêt à découvrir";
 "shell.avi.header.discover.summary" = "Avi est prêt quand vous touchez lecture.";
+"home.hero.subtitle" = "Radio en direct pour votre journée.";
+"player.play" = "Lire";

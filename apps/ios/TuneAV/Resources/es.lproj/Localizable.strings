@@ -3,6 +3,8 @@
 "common.cancel" = "Cancelar";
 "common.done" = "Listo";
 "common.more" = "Más";
+"common.seeAll" = "Ver";
+"common.share" = "Compartir";
 "common.no" = "No";
 "common.yes" = "Sí";
 "browser.openExternal" = "Abrir en navegador";
@@ -1067,3 +1069,5 @@
 "shell.avi.header.reading.summary" = "Dale una pista con tu feedback.";
 "shell.avi.header.discover.title" = "Lista para descubrir";
 "shell.avi.header.discover.summary" = "Avi está lista cuando pulses reproducir.";
+"home.hero.subtitle" = "Radio en directo para hoy.";
+"player.play" = "Reproducir";
