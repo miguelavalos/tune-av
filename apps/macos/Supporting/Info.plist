@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ACCOUNTAV_API_BASE_URL</key>
+	<string>$(ACCOUNTAV_API_BASE_URL)</string>
+	<key>ACCOUNTAV_MANAGEMENT_URL</key>
+	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
+	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
+	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -18,8 +24,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -31,32 +35,26 @@
 			</array>
 		</dict>
 	</array>
-	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
-	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
-	<key>TUNEAV_APP_IDENTIFIER_PREFIX</key>
-	<string>$(TUNEAV_APP_IDENTIFIER_PREFIX)</string>
-	<key>TUNEAV_SUPPORT_EMAIL</key>
-	<string>$(TUNEAV_SUPPORT_EMAIL)</string>
-	<key>SUPPORTAV_BASE_URL</key>
-	<string>$(SUPPORTAV_BASE_URL)</string>
-	<key>ACCOUNTAV_API_BASE_URL</key>
-	<string>$(ACCOUNTAV_API_BASE_URL)</string>
-	<key>ACCOUNTAV_MANAGEMENT_URL</key>
-	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
-	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
-	<string>$(TUNEAV_DELETE_ACCOUNT_URL)</string>
-	<key>TUNEAV_TERMS_URL</key>
-	<string>$(TUNEAV_TERMS_URL)</string>
-	<key>TUNEAV_PRIVACY_URL</key>
-	<string>$(TUNEAV_PRIVACY_URL)</string>
-	<key>TUNEAV_OPEN_SOURCE_URL</key>
-	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
+		<key>NSAllowsArbitraryLoadsForMedia</key>
 		<true/>
 	</dict>
+	<key>SUPPORTAV_BASE_URL</key>
+	<string>$(SUPPORTAV_BASE_URL)</string>
+	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
+	<string>$(TUNEAV_DELETE_ACCOUNT_URL)</string>
+	<key>TUNEAV_OPEN_SOURCE_URL</key>
+	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
+	<key>TUNEAV_PRIVACY_URL</key>
+	<string>$(TUNEAV_PRIVACY_URL)</string>
+	<key>TUNEAV_SUPPORT_EMAIL</key>
+	<string>$(TUNEAV_SUPPORT_EMAIL)</string>
+	<key>TUNEAV_TERMS_URL</key>
+	<string>$(TUNEAV_TERMS_URL)</string>
 </dict>
 </plist>

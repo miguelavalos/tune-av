@@ -1,100 +1,99 @@
 import AccountAV
-import AppKit
+import AVBrandFoundation
 import SwiftUI
 
 @main
 struct TuneAVMacApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var libraryStore = LibraryStore()
-    @StateObject private var audioPlayer = AudioPlayerService()
-    @StateObject private var accountController = MacAccountController()
+    @NSApplicationDelegateAdaptor(TuneAVMacAppDelegate.self) private var appDelegate
     @StateObject private var languageController = AppLanguageController()
-    private let launchContext = MacLaunchContext.current
+    @StateObject private var model = TuneAVMacModel()
 
     init() {
         AccountAVClerk.configureIfPossible(
-            publishableKey: MacAppConfig.avAccountKey,
-            bundleIdentifier: MacAppConfig.bundleIdentifier,
-            keychainAccessGroup: MacAppConfig.keychainAccessGroup
+            publishableKey: TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY"),
+            bundleIdentifier: Bundle.main.bundleIdentifier
         )
     }
 
     var body: some Scene {
         WindowGroup("Tune AV") {
-            ContentView()
-                .environmentObject(libraryStore)
-                .environmentObject(audioPlayer)
-                .environmentObject(accountController)
+            MacRootView()
                 .environmentObject(languageController)
+                .environmentObject(model)
                 .environment(\.locale, languageController.locale)
-                .frame(minWidth: AppWindowDefaults.minimumWidth, minHeight: AppWindowDefaults.minimumHeight)
+                .avBrandPalette(TuneAVTheme.brandPalette)
+                .frame(minWidth: 1360, minHeight: 760)
                 .task {
-                    await accountController.refreshSession()
-                    if launchContext.isUITesting, let status = launchContext.uiTestCloudSyncStatus {
-                        switch status {
-                        case "conflict":
-                            libraryStore.setCloudSyncStatusForUITests(.conflict)
-                        case "failed":
-                            libraryStore.setCloudSyncStatusForUITests(.failed)
-                        case "synced":
-                            libraryStore.setCloudSyncStatusForUITests(.synced(.now))
-                        default:
-                            libraryStore.setCloudSyncStatusForUITests(.idle)
-                        }
-                        return
-                    }
-                    await libraryStore.configureBackendClients(
-                        tokenProvider: accountController.currentToken,
-                        refreshCloudLibrary: true
-                    )
+                    await model.startAutomaticLibrarySync()
                 }
         }
-        .defaultSize(width: AppWindowDefaults.defaultWidth, height: AppWindowDefaults.defaultHeight)
+        .defaultSize(width: 1360, height: 800)
+        .commands {
+            CommandMenu("Navigation") {
+                Button(L10n.string("tab.home")) {
+                    model.selectedSection = .home
+                }
+                .keyboardShortcut("1", modifiers: [.command])
 
-        Settings {
-            SettingsView()
-                .environmentObject(libraryStore)
-                .environmentObject(languageController)
-                .environment(\.locale, languageController.locale)
+                Button(L10n.string("tab.search")) {
+                    model.selectedSection = .search
+                }
+                .keyboardShortcut("2", modifiers: [.command])
+
+                Button(L10n.string("tab.library")) {
+                    model.selectedSection = .library
+                }
+                .keyboardShortcut("3", modifiers: [.command])
+
+                Button(L10n.string("tab.music")) {
+                    model.selectedSection = .music
+                }
+                .keyboardShortcut("4", modifiers: [.command])
+
+                Button(L10n.string("tab.profile")) {
+                    model.selectedSection = .profile
+                }
+                .keyboardShortcut("5", modifiers: [.command])
+
+                Button(L10n.string("shell.header.settings")) {
+                    model.selectedSection = .settings
+                }
+                .keyboardShortcut(",", modifiers: [.command])
+            }
+
+            CommandMenu("Playback") {
+                Button(model.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play")) {
+                    model.togglePlayback()
+                }
+                .keyboardShortcut(.space, modifiers: [])
+
+                Button(L10n.string("player.control.previous")) {
+                    model.playPreviousInQueue()
+                }
+                .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+                .disabled(!model.canCyclePlaybackQueue)
+
+                Button(L10n.string("player.control.next")) {
+                    model.playNextInQueue()
+                }
+                .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+                .disabled(!model.canCyclePlaybackQueue)
+
+                Divider()
+
+                Button(model.currentDiscoveryIsSaved ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")) {
+                    _ = model.toggleCurrentDiscoverySaved()
+                }
+                .keyboardShortcut("s", modifiers: [.command])
+                .disabled(!model.hasCurrentDiscovery)
+            }
         }
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class TuneAVMacAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        resetMainWindowToDefaultWidth()
-    }
-
-    private func resetMainWindowToDefaultWidth() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            guard let window = NSApp.windows.first(where: { $0.title == "Tune AV" }) ?? NSApp.windows.first else {
-                return
-            }
-
-            let currentFrame = window.frame
-            let screenFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? currentFrame
-            let targetSize = NSSize(
-                width: min(AppWindowDefaults.defaultWidth, screenFrame.width * 0.92),
-                height: min(AppWindowDefaults.defaultHeight, screenFrame.height * 0.9)
-            )
-            let origin = NSPoint(
-                x: screenFrame.midX - targetSize.width / 2,
-                y: screenFrame.midY - targetSize.height / 2
-            )
-
-            window.contentMinSize = NSSize(width: AppWindowDefaults.minimumWidth, height: AppWindowDefaults.minimumHeight)
-            window.setFrame(NSRect(origin: origin, size: targetSize), display: true, animate: false)
-        }
     }
 }
-
-private enum AppWindowDefaults {
-    static let minimumWidth: CGFloat = 1260
-    static let minimumHeight: CGFloat = 720
-    static let defaultWidth: CGFloat = 1440
-    static let defaultHeight: CGFloat = 820
-}
-
-typealias MacLaunchContext = TuneAVLaunchContext
