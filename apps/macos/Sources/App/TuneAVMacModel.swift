@@ -179,7 +179,6 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks = storage.loadDiscoveries()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
-        accountUser = accountService.currentUser
         resolveLocalAccessState()
         configureSystemNowPlaying()
     }
@@ -900,7 +899,6 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func startAutomaticLibrarySync() async {
-        await refreshAccount()
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.startupCompleted(
                 accountAvailable: accountService.isAvailable,
@@ -910,10 +908,11 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func refreshAccount() async {
-        _ = try? await accountService.getToken()
+        let token = try? await accountService.getToken()
         accountUser = accountService.currentUser
         resolveLocalAccessState()
-        await refreshAccessState()
+        guard let token, !token.isEmpty else { return }
+        await refreshAccessState(tokenOverride: token)
     }
 
     func signInWithApple() async {
@@ -1349,7 +1348,7 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func refreshAccessState() async {
+    private func refreshAccessState(tokenOverride: String? = nil) async {
         guard accountUser != nil else {
             applyResolvedAccess(.guest)
             return
@@ -1364,9 +1363,15 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         do {
+            let resolvedToken = tokenOverride
             let client = TuneAVAccessClient(
                 baseURL: baseURL,
-                tokenProvider: { [accountService] in try await accountService.getToken() },
+                tokenProvider: { [self] in
+                    if let resolvedToken {
+                        return resolvedToken
+                    }
+                    return try await accountService.getToken()
+                },
                 urlSession: TuneAVURLSessions.account
             )
             let access = try await client.fetchTuneAVAccess()

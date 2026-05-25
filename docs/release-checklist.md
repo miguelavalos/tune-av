@@ -1,7 +1,7 @@
-# iOS Release Checklist
+# Tune AV Release Checklist
 
-Use this checklist before creating a public GitHub release or App Store build
-from the public Tune AV iOS repository.
+Use this checklist before creating a public GitHub release or Apple-platform
+archive from the public Tune AV repository.
 
 ## Repository Hygiene
 
@@ -236,8 +236,110 @@ Store portal plans, provider setup, signing steps, production config, service
 smoke tests, implementation plans, and review-response material belong outside
 this public repository.
 
+## Local Keychain Debugging
+
+When validating Tune AV macOS on a release owner's machine:
+
+1. Never run global Keychain inspection such as `security dump-keychain`.
+2. Never enumerate generic passwords broadly just to "see what exists".
+3. Only operate on exact Tune AV / Clerk entries when cleanup is required.
+4. If a Keychain prompt names the `security` CLI, treat it as a debugging-side
+   effect, not as product evidence by itself.
+
+For Tune AV macOS, the allowed targeted Clerk cleanup keys are:
+
+- service `com.avalsys.tuneav.mac` or `com.avalsys.tuneav.mac.dev`
+- accounts `cachedClient`, `cachedClientServerDate`, `cachedEnvironment`,
+  `clerkDeviceToken`, `clerkDeviceTokenSynced`, `AttestKeyId`
+
+Reason:
+
+- broad Keychain inspection on a real Mac can trigger prompts for unrelated
+  credentials such as GitHub, Raycast, browser data, scoped bookmarks, and
+  other non-Tune AV secrets;
+- that behavior is diagnostic noise and must not be confused with Tune AV's
+  own runtime access pattern.
+
 Before App Review, the private release owner must separately confirm App Store
 Connect build processing, internal-only TestFlight assignment, live subscription
 availability, RevenueCat mapping/webhooks, real-device TestFlight smoke, sandbox
 purchase/restore/reconciliation, SDK privacy/signature evidence, App Privacy
 answers, review notes, and submitted-build screenshots.
+
+## macOS Distribution Preparation
+
+Use this section when preparing Tune AV macOS for real distribution, even if the
+current milestone is still local-only QA.
+
+### Release Hygiene
+
+1. Run `bun install`.
+2. Run the public hygiene check:
+
+   ```bash
+   bun run config:hygiene
+   ```
+
+3. Confirm no generated config files are present in tracked git state:
+   - `apps/ios/Config/Local.xcconfig`
+   - `apps/macos/Config/Local.xcconfig`
+   - `.env`
+   - `.env.*`
+4. Confirm no exported certificates, provisioning profiles, notarization logs,
+   stapled `.app` bundles, `.pkg` installers, or local archive artifacts are
+   present in tracked files.
+
+### Preflight
+
+1. Regenerate or refresh `apps/macos/Config/Local.xcconfig` from private config.
+2. Confirm the file stays ignored and local-only.
+3. Restrict permissions:
+
+   ```bash
+   chmod 600 apps/macos/Config/Local.xcconfig
+   ```
+
+4. Run the macOS release preflight:
+
+   ```bash
+   bun run macos:release:preflight
+   ```
+
+5. Before the first real distribution attempt, run the archive-inclusive
+   preflight:
+
+   ```bash
+   bun run macos:release:preflight -- --with-archive
+   ```
+
+   This archive is intentionally unsigned. Its purpose is to catch bundle,
+   archive-layout, and release-config regressions before Organizer signing.
+
+### Local Final Build For Your Own Mac
+
+If the goal is only a final build for your own Mac:
+
+1. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode.
+2. Use the `TuneAVMac` scheme with `Release`.
+3. Use your Apple team with automatic signing.
+4. Prefer `Apple Development` over `Sign to Run Locally`.
+5. Archive in Xcode Organizer and validate that the app launches on your Mac.
+
+That path is sufficient for serious local QA, but it is not the same thing as a
+distribution build for other machines.
+
+### Distribution Archive
+
+When macOS distribution is actually in scope:
+
+1. Create the signed archive in Xcode Organizer with the `TuneAVMac` scheme.
+2. Confirm the archive bundle identifier is `com.avalsys.tuneav.mac`.
+3. Confirm the archive is signed with a real Apple certificate, not ad-hoc
+   signing and not `Sign to Run Locally`.
+4. Export with the distribution identity required by the intended channel.
+5. If the app is meant to run outside your own Mac or outside Organizer,
+   notarize the exported artifact, staple the notarization ticket, and validate
+   the final exported app from private release tooling, not from this public
+   repository.
+6. Only call the build distribution-ready after the exported app passes launch
+   and policy validation on a clean machine or clean user context.

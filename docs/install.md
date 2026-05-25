@@ -165,6 +165,11 @@ feature parity with Tune AV iOS, implemented with native macOS UI patterns.
 The generated file is `apps/macos/Config/Local.xcconfig`. It is gitignored and
 must be regenerated locally instead of hand-maintained.
 
+If you are only validating the app on your own Mac, a `Release` archive signed
+with `Apple Development` is acceptable. Prefer `Apple Development` over `Sign to
+Run Locally`; the latter is only an ad-hoc fallback and should not be treated as
+the final local QA build.
+
 Account AV sign-in uses the shared `AccountAV` package. The macOS bundle
 registers its bundle identifier as a URL scheme for the auth callback, so
 matching redirect/callback configuration must exist in the operator account
@@ -186,6 +191,22 @@ To build and launch the app locally:
 ./scripts/build-and-run-macos.sh --verify
 ```
 
+To validate the production-flavored macOS config without archiving:
+
+```bash
+bun run macos:release:preflight
+```
+
+To include an unsigned structural archive in the preflight:
+
+```bash
+bun run macos:release:preflight -- --with-archive
+```
+
+The unsigned archive path is useful for checking that the `Release` target,
+bundle identifier, and archive layout are still correct before doing a real
+signed Organizer archive.
+
 ### Mac App Store Posture
 
 The macOS target is configured for Mac App Store distribution:
@@ -203,3 +224,22 @@ The macOS target is configured for Mac App Store distribution:
 Do not add StoreKit purchase UI until the subscription release is explicitly in
 scope. Until then, macOS should consume Account AV access state the same way iOS
 does.
+
+### Distribution Preparation
+
+For a future distribution-ready build, keep the local-development and
+distribution steps separate:
+
+1. Keep using your local `Apple Development` signing identity for day-to-day
+   QA on your own Mac.
+2. Run `bun run macos:release:preflight` before creating a real distribution
+   archive.
+3. Create the final signed archive from Xcode Organizer with the `TuneAVMac`
+   scheme and `Release` configuration so Xcode can resolve the correct Apple
+   team, certificate, and provisioning state.
+4. For direct distribution outside your own Mac, use a distribution identity
+   rather than `Apple Development`, then export, notarize, staple, and validate
+   the exported app before calling it release-ready.
+
+The actual export, notarization, stapling, and distribution release steps belong
+in private operational tooling rather than this public repository.
