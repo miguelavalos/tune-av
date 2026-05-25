@@ -1,3 +1,4 @@
+import AccountAV
 import AVBrandFoundation
 import SwiftUI
 
@@ -6,6 +7,13 @@ struct TuneAVMacApp: App {
     @NSApplicationDelegateAdaptor(TuneAVMacAppDelegate.self) private var appDelegate
     @StateObject private var languageController = AppLanguageController()
     @StateObject private var model = TuneAVMacModel()
+
+    init() {
+        AccountAVClerk.configureIfPossible(
+            publishableKey: TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY"),
+            bundleIdentifier: Bundle.main.bundleIdentifier
+        )
+    }
 
     var body: some Scene {
         WindowGroup("Tune AV") {

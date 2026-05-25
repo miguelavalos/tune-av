@@ -899,6 +899,8 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func startAutomaticLibrarySync() async {
+        accountUser = accountService.currentUser
+        resolveLocalAccessState()
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.startupCompleted(
                 accountAvailable: accountService.isAvailable,
@@ -908,9 +910,10 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func refreshAccount() async {
-        let token = try? await accountService.getToken()
         accountUser = accountService.currentUser
         resolveLocalAccessState()
+        guard accountUser != nil else { return }
+        let token = try? await accountService.getToken()
         guard let token, !token.isEmpty else { return }
         await refreshAccessState(tokenOverride: token)
     }
