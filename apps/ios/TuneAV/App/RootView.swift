@@ -11,7 +11,6 @@ struct RootView: View {
     @State private var authOptionsArePresented = false
     @State private var automaticGuestOnboardingIsPresented = false
     @State private var isShowingAccountOnboarding = false
-    @State private var splashTransition = AVSplashTransitionState()
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
@@ -44,15 +43,10 @@ struct RootView: View {
                     synchronizeLibraryNow: refreshLibrarySync
                 )
                     .environmentObject(accessController)
-                    .overlay {
-                        if splashTransition.isShowing {
-                            TuneAVSplashView()
-                                .transition(.opacity)
-                                .zIndex(1)
-                        }
-                    }
-                    .task {
-                        await showInitialSplashIfNeeded()
+                    .avSplashTransition(policy: splashPolicy) { startedAt in
+                        logStartupOperation("splash", startedAt: startedAt)
+                    } splash: {
+                        TuneAVSplashView()
                     }
             }
         }
@@ -248,20 +242,6 @@ struct RootView: View {
 
     private func updateIdleTimer(for phase: ScenePhase) {
         UIApplication.shared.isIdleTimerDisabled = phase == .active && libraryStore.settings.keepScreenAwake
-    }
-
-    private func showInitialSplashIfNeeded() async {
-        let splashPolicy = splashPolicy
-        guard splashTransition.beginIfNeeded(policy: splashPolicy) else { return }
-        let startedAt = Date()
-        try? await Task.sleep(for: splashPolicy.displayDuration)
-
-        await MainActor.run {
-            withAnimation(splashPolicy.dismissAnimation) {
-                splashTransition.dismiss()
-            }
-        }
-        logStartupOperation("splash", startedAt: startedAt)
     }
 
     private func refreshActiveAccountStateIfNeeded() async {

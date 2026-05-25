@@ -30,6 +30,7 @@ struct ProfileScreen: View {
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var themeController: AppThemeController
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.avCommonAppExperience) private var appExperience
     @Environment(\.openURL) private var openExternalURL
 
     let mode: Mode
@@ -48,20 +49,16 @@ struct ProfileScreen: View {
     private let genreTags = TuneAVMusicGenreCatalog.visibleTags
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                ShellBrandHeader(statusTitle: statusTitle, activeItem: headerActiveItem)
-
-                AVSettingsScreenHeader(title: screenTitle, subtitle: screenSubtitle)
-
-                screenContent
-            }
-            .shellScreenContentPadding(bottom: bottomContentPadding)
-        }
-        .shellScreenScrollBehavior()
-        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .overlay(alignment: .top) {
-            profileTopSafeAreaShield
+        AVSettingsProfileScreenScaffold(
+            title: screenTitle,
+            subtitle: screenSubtitle,
+            bottomContentPadding: bottomContentPadding,
+            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
+            showsTopSafeAreaShield: true
+        ) {
+            ShellBrandHeader(statusTitle: statusTitle, activeItem: headerActiveItem)
+        } content: {
+            screenContent
         }
         .alert(L10n.string("profile.alert.signOutFailed.title"), isPresented: $isShowingSignOutError) {
             Button(L10n.string("profile.alert.close"), role: .cancel) {}
@@ -81,8 +78,17 @@ struct ProfileScreen: View {
                 .environmentObject(accessController)
         }
         .sheet(isPresented: $isShowingLocalDataActions) {
-            LocalDataManagementSheet(
-                clearAllTitle: localDataClearAllActionTitle,
+            AVSettingsMaintenanceSheet(
+                title: L10n.string("profile.localDataSheet.title"),
+                subtitle: L10n.string("profile.localDataSheet.subtitle"),
+                closeTitle: L10n.string("profile.alert.clearData.cancel"),
+                groupTitle: L10n.string("profile.localDataSheet.partialTitle"),
+                actions: localDataMaintenanceActions,
+                destructiveSectionTitle: L10n.string("profile.localDataSheet.dangerTitle"),
+                destructiveTitle: localDataClearAllActionTitle,
+                destructiveDetail: L10n.string("profile.alert.clearData.message"),
+                destructiveTarget: LocalDataClearTarget.all,
+                backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
                 alertTitle: clearLibraryAlertTitle(for:),
                 alertMessage: clearLibraryAlertMessage(for:),
                 confirmTitle: clearLibraryConfirmTitle(for:),
@@ -90,16 +96,6 @@ struct ProfileScreen: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-        }
-    }
-
-    private var profileTopSafeAreaShield: some View {
-        GeometryReader { proxy in
-            TuneAVTheme.shellBackground
-                .frame(height: proxy.safeAreaInsets.top)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .ignoresSafeArea(edges: .top)
-                .allowsHitTesting(false)
         }
     }
 
@@ -123,12 +119,10 @@ struct ProfileScreen: View {
     }
 
     private var profileSummaryCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.account.title"),
-                subtitle: accountIdentityDetail
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.account.title"),
+            subtitle: accountIdentityDetail
+        ) {
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
 
@@ -157,12 +151,10 @@ struct ProfileScreen: View {
     }
 
     private var cloudSyncCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.sync.title"),
-                subtitle: L10n.string("profile.sync.subtitle.short")
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.sync.title"),
+            subtitle: L10n.string("profile.sync.subtitle.short")
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 AVSettingsInfoRow(
                     systemImage: cloudSyncIcon,
@@ -278,12 +270,10 @@ struct ProfileScreen: View {
     }
 
     private var proPlanCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.pro.title"),
-                subtitle: proPlanSubtitle
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.pro.title"),
+            subtitle: proPlanSubtitle
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 AVSettingsInfoRow(
                     systemImage: "heart.text.square",
@@ -363,12 +353,10 @@ struct ProfileScreen: View {
     }
 
     private var appPreferencesCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.preferences.title"),
-                subtitle: L10n.string("profile.preferences.subtitle")
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.preferences.title"),
+            subtitle: L10n.string("profile.preferences.subtitle")
+        ) {
             AVSettingsInfoRow(
                 systemImage: "globe",
                 title: L10n.string("profile.preferences.language.title"),
@@ -440,12 +428,10 @@ struct ProfileScreen: View {
     }
 
     private var localDataCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.local.title"),
-                subtitle: L10n.string("profile.local.subtitle")
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.local.title"),
+            subtitle: L10n.string("profile.local.subtitle")
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 AVSettingsInfoRow(
                     systemImage: "heart.text.square",
@@ -509,63 +495,33 @@ struct ProfileScreen: View {
     }
 
     private var helpAndLegalCard: some View {
-        AVSettingsCard {
-            sectionHeader(
-                title: L10n.string("profile.help.title"),
-                subtitle: L10n.string("profile.help.subtitle")
-            )
-
-            VStack(spacing: 12) {
-                AVSettingsInfoRow(
-                    systemImage: "chevron.left.forwardslash.chevron.right",
-                    title: L10n.string("profile.help.opensource.title"),
-                    detail: L10n.string("profile.help.opensource.detail")
-                )
-
-                if let openSourceURL = AppConfig.openSourceURL {
-                    AVSettingsActionRow(
-                        systemImage: "book.pages",
-                        title: L10n.string("profile.help.sourceCode.title"),
-                        detail: L10n.string("profile.help.sourceCode.detail"),
-                        action: { open(openSourceURL) }
-                    )
-                }
-
-                if let supportURL = AppConfig.supportURL {
-                    AVSettingsActionRow(
-                        systemImage: "questionmark.bubble",
-                        title: L10n.string("profile.help.support.title"),
-                        detail: L10n.string("profile.help.support.detail"),
-                        action: { open(supportURL) }
-                    )
-                }
-                if let termsURL = AppConfig.termsURL {
-                    AVSettingsActionRow(
-                        systemImage: "doc.text",
-                        title: L10n.string("profile.help.terms.title"),
-                        detail: L10n.string("profile.help.terms.detail"),
-                        action: { open(termsURL) }
-                    )
-                }
-                if let privacyURL = AppConfig.privacyURL {
-                    AVSettingsActionRow(
-                        systemImage: "hand.raised",
-                        title: L10n.string("profile.help.privacy.title"),
-                        detail: L10n.string("profile.help.privacy.detail"),
-                        action: { open(privacyURL) }
-                    )
-                }
-            }
-        }
+        AVSettingsHelpLegalSection(
+            title: L10n.string("profile.help.title"),
+            subtitle: L10n.string("profile.help.subtitle"),
+            openSourceTitle: L10n.string("profile.help.opensource.title"),
+            openSourceDetail: L10n.string("profile.help.opensource.detail"),
+            sourceCodeURL: AppConfig.openSourceURL,
+            sourceCodeTitle: L10n.string("profile.help.sourceCode.title"),
+            sourceCodeDetail: L10n.string("profile.help.sourceCode.detail"),
+            legalLinks: appExperience.legalLinks,
+            supportTitle: L10n.string("profile.help.support.title"),
+            supportDetail: L10n.string("profile.help.support.detail"),
+            privacyTitle: L10n.string("profile.help.privacy.title"),
+            privacyDetail: L10n.string("profile.help.privacy.detail"),
+            termsTitle: L10n.string("profile.help.terms.title"),
+            termsDetail: L10n.string("profile.help.terms.detail"),
+            accountDeletionTitle: L10n.string("profile.safety.delete.title"),
+            accountDeletionDetail: L10n.string("profile.safety.delete.detail"),
+            openURL: open
+        )
     }
 
     private var accountSafetyCard: some View {
-        AVSettingsCard(spacing: 12) {
-            sectionHeader(
-                title: L10n.string("profile.safety.title"),
-                subtitle: L10n.string("profile.safety.subtitle")
-            )
-
+        AVSettingsSectionCard(
+            title: L10n.string("profile.safety.title"),
+            subtitle: L10n.string("profile.safety.subtitle"),
+            spacing: 12
+        ) {
             AVSettingsActionRow(
                 systemImage: "exclamationmark.shield",
                 title: L10n.string("profile.safety.delete.title"),
@@ -574,10 +530,6 @@ struct ProfileScreen: View {
             )
             .accessibilityIdentifier("profile.safety.delete")
         }
-    }
-
-    private func sectionHeader(title: String, subtitle: String) -> some View {
-        AVSettingsSectionHeader(title: title, subtitle: subtitle)
     }
 
     private var displayName: String {
@@ -1039,6 +991,35 @@ struct ProfileScreen: View {
         }
     }
 
+    private var localDataMaintenanceActions: [AVSettingsMaintenanceAction<LocalDataClearTarget>] {
+        [
+            AVSettingsMaintenanceAction(
+                systemImage: "heart.text.square",
+                title: L10n.string("profile.actions.clearFavorites"),
+                detail: L10n.string("profile.alert.clearFavorites.message"),
+                target: .favorites
+            ),
+            AVSettingsMaintenanceAction(
+                systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+                title: L10n.string("profile.actions.clearRecents"),
+                detail: L10n.string("profile.alert.clearRecents.message"),
+                target: .recents
+            ),
+            AVSettingsMaintenanceAction(
+                systemImage: "music.note.list",
+                title: L10n.string("profile.actions.clearDiscoveries"),
+                detail: L10n.string("profile.alert.clearDiscoveries.message"),
+                target: .discoveries
+            ),
+            AVSettingsMaintenanceAction(
+                systemImage: "slider.horizontal.3",
+                title: L10n.string("profile.actions.resetSettings"),
+                detail: L10n.string("profile.alert.resetSettings.message"),
+                target: .settings
+            )
+        ]
+    }
+
     private var accountDeletionViewModel: AccountDeletionViewModel {
         AccountDeletionViewModel(
             api: accountDeletionAPI,
@@ -1066,118 +1047,6 @@ struct ProfileScreen: View {
 
         isSigningOut = false
     }
-}
-
-private struct LocalDataManagementSheet: View {
-    let clearAllTitle: String
-    let alertTitle: (ProfileScreen.LocalDataClearTarget) -> String
-    let alertMessage: (ProfileScreen.LocalDataClearTarget) -> String
-    let confirmTitle: (ProfileScreen.LocalDataClearTarget) -> String
-    let onConfirmTarget: (ProfileScreen.LocalDataClearTarget) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var pendingTarget: ProfileScreen.LocalDataClearTarget?
-
-    var body: some View {
-        AVSettingsSheetScaffold(
-            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
-            closeTitle: L10n.string("profile.alert.clearData.cancel"),
-            onClose: { dismiss() }
-        ) {
-            AVSettingsSheetHeader(
-                title: L10n.string("profile.localDataSheet.title"),
-                subtitle: L10n.string("profile.localDataSheet.subtitle")
-            )
-
-            maintenanceGroup(
-                title: L10n.string("profile.localDataSheet.partialTitle"),
-                rows: [
-                    LocalDataMaintenanceRow(
-                        systemImage: "heart.text.square",
-                        title: L10n.string("profile.actions.clearFavorites"),
-                        detail: L10n.string("profile.alert.clearFavorites.message"),
-                        target: .favorites
-                    ),
-                    LocalDataMaintenanceRow(
-                        systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
-                        title: L10n.string("profile.actions.clearRecents"),
-                        detail: L10n.string("profile.alert.clearRecents.message"),
-                        target: .recents
-                    ),
-                    LocalDataMaintenanceRow(
-                        systemImage: "music.note.list",
-                        title: L10n.string("profile.actions.clearDiscoveries"),
-                        detail: L10n.string("profile.alert.clearDiscoveries.message"),
-                        target: .discoveries
-                    ),
-                    LocalDataMaintenanceRow(
-                        systemImage: "slider.horizontal.3",
-                        title: L10n.string("profile.actions.resetSettings"),
-                        detail: L10n.string("profile.alert.resetSettings.message"),
-                        target: .settings
-                    )
-                ]
-            )
-
-            AVSettingsDestructiveActionCard(
-                sectionTitle: L10n.string("profile.localDataSheet.dangerTitle"),
-                systemImage: "trash",
-                title: clearAllTitle,
-                detail: L10n.string("profile.alert.clearData.message")
-            ) {
-                pendingTarget = .all
-            }
-        }
-        .alert(
-            pendingTarget.map(alertTitle) ?? "",
-            isPresented: pendingTargetIsPresented
-        ) {
-            Button(L10n.string("profile.alert.clearData.cancel"), role: .cancel) {
-                pendingTarget = nil
-            }
-            Button(pendingTarget.map(confirmTitle) ?? "", role: .destructive) {
-                guard let target = pendingTarget else { return }
-                onConfirmTarget(target)
-                pendingTarget = nil
-                dismiss()
-            }
-        } message: {
-            if let pendingTarget {
-                Text(alertMessage(pendingTarget))
-            }
-        }
-    }
-
-    private func maintenanceGroup(title: String, rows: [LocalDataMaintenanceRow]) -> some View {
-        AVSettingsGroupedActionList(title: title) {
-            ForEach(rows.indices, id: \.self) { index in
-                let row = rows[index]
-
-                AVSettingsGroupedActionRow(
-                    systemImage: row.systemImage,
-                    title: row.title,
-                    detail: row.detail,
-                    showsDivider: index < rows.count - 1
-                ) {
-                    pendingTarget = row.target
-                }
-            }
-        }
-    }
-
-    private var pendingTargetIsPresented: Binding<Bool> {
-        Binding(
-            get: { pendingTarget != nil },
-            set: { if !$0 { pendingTarget = nil } }
-        )
-    }
-}
-
-private struct LocalDataMaintenanceRow {
-    let systemImage: String
-    let title: String
-    let detail: String
-    let target: ProfileScreen.LocalDataClearTarget
 }
 
 private extension URL {

@@ -2,6 +2,8 @@ import AVAppShellFoundation
 import SwiftUI
 
 struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
+    @Environment(\.avCommonAppExperience) private var appExperience
+
     let selectedTab: AppShellTab
     let hasFooterPlayer: Bool
     let hasAviActiveContext: Bool
@@ -14,15 +16,13 @@ struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
     @ViewBuilder let footerPlayer: () -> FooterPlayer
 
     var body: some View {
-        AVAppShellScaffold(
+        AVAppShellConfiguredScaffold(
             selectedTabID: selectedTab,
             tabs: footerTabs,
             assistantID: AppShellTab.avi,
-            assistantAccessibilityLabel: L10n.string("shell.avi.title"),
-            assistantAccessibilityIdentifier: "tab.avi",
+            assistant: footerAssistant,
             hasAssistantActiveContext: hasAviActiveContext,
-            footerBackdropHeight: footerBackdropHeight,
-            footerPlayerTabSpacing: footerPlayerTabSpacing,
+            footerConfiguration: footerConfiguration,
             onSelectTab: { tab in
                 if tab == .search {
                     searchAction()
@@ -32,12 +32,15 @@ struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
             },
             onSelectAssistant: aviAction,
             content: content,
-            footerPlayer: footerPlayer,
-            assistantIcon: { _ in
-                Image("AviFooterIcon")
-                    .resizable()
-                    .scaledToFit()
-            }
+            footerPlayer: footerPlayer
+        )
+    }
+
+    private var footerAssistant: AVAppShellConfiguredAssistant {
+        AVAppShellConfiguredAssistant(
+            name: appExperience.identity.assistantName,
+            accessibilityIdentifier: "tab.avi",
+            assetName: appExperience.visualAssets?.footerAssistantName ?? "AviFooterIcon"
         )
     }
 
@@ -68,5 +71,12 @@ struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
                 accessibilityIdentifier: "tab.search"
             )
         ]
+    }
+
+    private var footerConfiguration: AVAppShellFooterConfiguration {
+        AVAppShellFooterConfiguration(
+            backdropHeight: footerBackdropHeight,
+            playerTabSpacing: footerPlayerTabSpacing
+        )
     }
 }

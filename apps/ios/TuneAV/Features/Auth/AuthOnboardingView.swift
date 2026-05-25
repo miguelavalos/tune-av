@@ -1,4 +1,3 @@
-import AuthenticationServices
 import AVSettingsFoundation
 import SwiftUI
 import os
@@ -10,184 +9,63 @@ struct AuthOnboardingView: View {
     let onContinueWithGoogle: () async throws -> Void
     let onSkip: () -> Void
 
-    @State private var activeProvider: AuthProvider?
-    @State private var errorMessage = ""
-    @State private var isShowingError = false
-    @State private var signInTask: Task<Void, Never>?
-    @GestureState private var authOptionsDragOffset: CGFloat = 0
+    @StateObject private var signInCoordinator = AVAuthSignInCoordinator()
 
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                TuneAVTheme.onboardingBackground.ignoresSafeArea()
-
-                OnboardingBackdrop()
-                    .overlay {
-                        LinearGradient(
-                            colors: [
-                                TuneAVTheme.neutral50.opacity(0.16),
-                                TuneAVTheme.neutral50.opacity(authOptionsArePresented ? 0.54 : 0.28),
-                                TuneAVTheme.neutral50.opacity(authOptionsArePresented ? 0.94 : 0.86)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-                    .blur(radius: authOptionsArePresented ? 6 : 0)
-                    .ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(height: max(proxy.safeAreaInsets.top + 44, 62))
-
-                    DiscoveryHero(compact: authOptionsArePresented)
-
-                    Spacer(minLength: authOptionsArePresented ? 18 : 246)
-
-                    if authOptionsArePresented {
-                        AuthOptionsPanel(
-                            accountIsAvailable: accountIsAvailable,
-                            legalConsentText: legalConsentText,
-                            activeProvider: activeProvider,
-                            onAppleTap: startAppleSignIn,
-                            onGoogleTap: startGoogleSignIn,
-                            onSkip: onSkip
-                        )
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, max(4, proxy.safeAreaInsets.bottom - 10))
-                        .offset(y: authOptionsDragOffset)
-                        .gesture(authOptionsDismissGesture)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        CallToActionSection(
-                            accountIsAvailable: accountIsAvailable,
-                            accountAction: {
-                                withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-                                    authOptionsArePresented = true
-                                }
-                            },
-                            skipAction: onSkip
-                        )
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, max(16, proxy.safeAreaInsets.bottom + 6))
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                BrandHeaderBadge()
-                    .padding(.top, 24)
-                    .frame(maxHeight: .infinity, alignment: .top)
+        AVAuthConfiguredOnboardingScreen(
+            authOptionsArePresented: $authOptionsArePresented,
+            primaryAction: accountIsAvailable ? showAuthOptions : onSkip,
+            secondaryAction: onSkip,
+            brandWidth: 160,
+            ctaCompanionOffset: CGSize(width: -2, height: -112),
+            authPanel: {
+                AuthOptionsPanel(
+                    accountIsAvailable: accountIsAvailable,
+                    legalConsentText: legalConsentText,
+                    activeProvider: signInCoordinator.activeProvider,
+                    onAppleTap: startAppleSignIn,
+                    onGoogleTap: startGoogleSignIn,
+                    onSkip: onSkip
+                )
             }
-        }
-        .animation(.spring(response: 0.36, dampingFraction: 0.88), value: authOptionsArePresented)
-        .alert(L10n.string("auth.alert.continueFailed.title"), isPresented: $isShowingError) {
+        )
+        .alert(L10n.string("auth.alert.continueFailed.title"), isPresented: $signInCoordinator.isShowingError) {
             Button(L10n.string("auth.alert.close"), role: .cancel) {}
         } message: {
-            Text(errorMessage)
+            Text(signInCoordinator.errorMessage)
         }
         .onDisappear {
-            signInTask?.cancel()
-            signInTask = nil
+            signInCoordinator.cancel()
+        }
+    }
+
+    private func showAuthOptions() {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            authOptionsArePresented = true
         }
     }
 
     private func startAppleSignIn() {
-        guard accountIsAvailable else {
-            errorMessage = AVAccountServiceError.unavailable.localizedDescription
-            isShowingError = true
-            return
-        }
-        guard activeProvider == nil else { return }
-        activeProvider = .apple
-        signInTask?.cancel()
-
-        signInTask = Task {
-            do {
-                try await onContinueWithApple()
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    authOptionsArePresented = false
-                    activeProvider = nil
-                    signInTask = nil
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                guard !error.isAuthenticationCancellation else {
-                    await MainActor.run {
-                        activeProvider = nil
-                        signInTask = nil
-                    }
-                    return
-                }
-                logAuthError(error, provider: "apple")
-                await MainActor.run {
-                    activeProvider = nil
-                    signInTask = nil
-                    errorMessage = error.localizedDescription
-                    isShowingError = true
-                }
-            }
-        }
+        startSignIn(provider: .apple, operation: onContinueWithApple)
     }
 
     private func startGoogleSignIn() {
-        guard accountIsAvailable else {
-            errorMessage = AVAccountServiceError.unavailable.localizedDescription
-            isShowingError = true
-            return
-        }
-        guard activeProvider == nil else { return }
-        activeProvider = .google
-        signInTask?.cancel()
-
-        signInTask = Task {
-            do {
-                try await onContinueWithGoogle()
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    authOptionsArePresented = false
-                    activeProvider = nil
-                    signInTask = nil
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                guard !error.isAuthenticationCancellation else {
-                    await MainActor.run {
-                        activeProvider = nil
-                        signInTask = nil
-                    }
-                    return
-                }
-                logAuthError(error, provider: "google")
-                await MainActor.run {
-                    activeProvider = nil
-                    signInTask = nil
-                    errorMessage = error.localizedDescription
-                    isShowingError = true
-                }
-            }
-        }
+        startSignIn(provider: .google, operation: onContinueWithGoogle)
     }
 
-    private var authOptionsDismissGesture: some Gesture {
-        DragGesture(minimumDistance: 10)
-            .updating($authOptionsDragOffset) { value, state, _ in
-                state = max(0, value.translation.height)
-            }
-            .onEnded { value in
-                let shouldDismiss =
-                    value.translation.height > 120 ||
-                    value.predictedEndTranslation.height > 180
-
-                guard shouldDismiss else { return }
-
-                withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-                    authOptionsArePresented = false
-                }
-            }
+    private func startSignIn(provider: AVAuthProvider, operation: @escaping () async throws -> Void) {
+        signInCoordinator.start(
+            provider: provider,
+            isAvailable: accountIsAvailable,
+            unavailableMessage: AVAccountServiceError.unavailable.localizedDescription,
+            operation: operation,
+            onSuccess: {
+                authOptionsArePresented = false
+            },
+            onFailure: logAuthError
+        )
     }
 
     private var legalConsentText: AttributedString {
@@ -196,268 +74,54 @@ struct AuthOnboardingView: View {
         return L10n.markdown("auth.legalConsent", termsURL, privacyURL)
     }
 
-    private func logAuthError(_ error: Error, provider: String) {
+    private func logAuthError(_ error: Error, provider: AVAuthProvider) {
         let nsError = error as NSError
         let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
         let underlyingDomain = underlyingError?.domain ?? "none"
         let underlyingCode = underlyingError?.code ?? 0
+        let providerName = provider == .apple ? "apple" : "google"
         authLogger.error(
-            "Account AV \(provider, privacy: .public) failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) underlying_domain=\(underlyingDomain, privacy: .public) underlying_code=\(underlyingCode, privacy: .public)"
+            "Account AV \(providerName, privacy: .public) failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) underlying_domain=\(underlyingDomain, privacy: .public) underlying_code=\(underlyingCode, privacy: .public)"
         )
-    }
-}
-
-private extension Error {
-    var isAuthenticationCancellation: Bool {
-        let nsError = self as NSError
-        if nsError.domain == ASAuthorizationError.errorDomain,
-           nsError.code == ASAuthorizationError.Code.canceled.rawValue {
-            return true
-        }
-
-        if nsError.domain.contains("AuthenticationServices"),
-           nsError.code == ASAuthorizationError.Code.unknown.rawValue {
-            return true
-        }
-
-        if nsError.domain == ASWebAuthenticationSessionError.errorDomain,
-           nsError.code == ASWebAuthenticationSessionError.Code.canceledLogin.rawValue {
-            return true
-        }
-
-        if nsError.domain == NSURLErrorDomain,
-           nsError.code == NSURLErrorCancelled {
-            return true
-        }
-
-        let description = nsError.localizedDescription.lowercased()
-        if description.contains("cancel") || description.contains("cancelad") {
-            return true
-        }
-
-        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
-            return underlying.isAuthenticationCancellation
-        }
-
-        return false
-    }
-}
-
-private enum AuthProvider {
-    case apple
-    case google
-}
-
-private struct DiscoveryHero: View {
-    let compact: Bool
-
-    var body: some View {
-        AVOnboardingHeroText(
-            title: L10n.string("auth.feature.title"),
-            subtitle: L10n.string("auth.feature.subtitle")
-        )
-    }
-}
-
-private struct BrandHeaderBadge: View {
-    var body: some View {
-        HStack {
-            Image("AuthWordmark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 160, height: 54)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Tune AV")
-    }
-}
-
-private struct CallToActionSection: View {
-    let accountIsAvailable: Bool
-    let accountAction: () -> Void
-    let skipAction: () -> Void
-
-    var body: some View {
-        AVOnboardingCallToActionSection(
-            primaryTitle: L10n.string("auth.cta.continue"),
-            secondaryTitle: L10n.string("auth.cta.skip"),
-            primaryAction: accountIsAvailable ? accountAction : skipAction,
-            secondaryAction: skipAction
-        ) {
-            AviOnboardingCompanion()
-                .offset(x: -2, y: -112)
-                .allowsHitTesting(false)
-        }
-    }
-}
-
-private struct AviOnboardingCompanion: View {
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            Capsule(style: .continuous)
-                .fill(TuneAVTheme.brandGraphite.opacity(0.1))
-                .frame(width: 82, height: 11)
-                .blur(radius: 5)
-                .offset(x: 4, y: 2)
-
-            Image("AviV2OnboardingCTA")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 146, height: 146)
-                .shadow(color: TuneAVTheme.brandGraphite.opacity(0.12), radius: 10, y: 7)
-        }
-        .frame(width: 146, height: 150)
-        .accessibilityHidden(true)
     }
 }
 
 private struct AuthOptionsPanel: View {
     let accountIsAvailable: Bool
     let legalConsentText: AttributedString
-    let activeProvider: AuthProvider?
+    let activeProvider: AVAuthProvider?
     let onAppleTap: () -> Void
     let onGoogleTap: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
-        AVAuthOptionsPanelScaffold(
+        AVAuthOptionsPanel(
             title: L10n.string("auth.options.title"),
             subtitle: L10n.string("auth.options.subtitle"),
             legalConsentText: legalConsentText,
             unavailableMessage: accountIsAvailable ? nil : L10n.string("auth.options.unavailable"),
             skipTitle: L10n.string("auth.options.skip"),
-            actionsAreDisabled: !accountIsAvailable,
+            appleTitle: L10n.string("auth.provider.apple"),
+            googleTitle: L10n.string("auth.provider.google"),
+            isBusy: activeProvider != nil,
+            activeProvider: activeProvider,
+            isAvailable: accountIsAvailable,
+            onApple: onAppleTap,
+            onGoogle: onGoogleTap,
             onSkip: onSkip
         ) {
-            AVAuthProviderButton(
-                title: L10n.string("auth.provider.apple"),
-                isLoading: activeProvider == .apple,
-                style: .dark,
-                action: onAppleTap
-            ) {
-                Image(systemName: "applelogo")
-                    .font(.system(size: 17, weight: .bold))
-            }
-
-            AVAuthProviderButton(
-                title: L10n.string("auth.provider.google"),
-                isLoading: activeProvider == .google,
-                style: .light,
-                action: onGoogleTap
-            ) {
-                GoogleBadge()
-            }
-        } accessory: {
-            AviSheetPeekCompanion()
+            AVAuthConfiguredCompanionArtwork(
+                placement: .authPanel,
+                imageWidth: 126,
+                imageHeight: 126,
+                frameWidth: 140,
+                frameHeight: 110,
+                imageOffset: CGSize(width: 0, height: -5),
+                groundShadowColor: nil
+            )
                 .offset(x: -44, y: -91)
                 .allowsHitTesting(false)
         }
-    }
-}
-
-private struct AviSheetPeekCompanion: View {
-    var body: some View {
-        Image("AviV2LoginSheetPeek")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 126, height: 126)
-            .shadow(color: TuneAVTheme.brandGraphite.opacity(0.1), radius: 8, y: 5)
-            .offset(y: -5)
-        .frame(width: 140, height: 110)
-        .accessibilityHidden(true)
-    }
-}
-
-private struct GoogleBadge: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(.white)
-
-            Text("G")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.26, green: 0.52, blue: 0.96),
-                            Color(red: 0.22, green: 0.74, blue: 0.35),
-                            Color(red: 0.99, green: 0.84, blue: 0.21),
-                            Color(red: 0.92, green: 0.31, blue: 0.23)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .frame(width: 20, height: 20)
-    }
-}
-
-private struct OnboardingBackdrop: View {
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.97, green: 0.94, blue: 0.86),
-                        TuneAVTheme.neutral50,
-                        Color(red: 0.9, green: 0.93, blue: 0.89)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                Image("AviOnboardingHeroStatic")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .offset(y: 50)
-                    .clipped()
-                    .mask {
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black.opacity(0.18), location: 0.1),
-                                .init(color: .black, location: 0.23),
-                                .init(color: .black, location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-                    .opacity(0.82)
-                    .saturation(0.92)
-
-                VStack {
-                    Spacer()
-
-                    CurvedWave()
-                        .stroke(TuneAVTheme.highlight.opacity(0.1), lineWidth: 2)
-                        .frame(height: 180)
-
-                    CurvedWave(offset: 50)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1.5)
-                        .frame(height: 210)
-                        .offset(y: -24)
-                }
-                .ignoresSafeArea(edges: .bottom)
-            }
-        }
-    }
-}
-
-private struct CurvedWave: Shape {
-    var offset: CGFloat = 0
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: -40, y: rect.height * 0.72 - offset))
-        path.addCurve(
-            to: CGPoint(x: rect.width + 40, y: rect.height * 0.86 - offset),
-            control1: CGPoint(x: rect.width * 0.25, y: rect.height * 0.12 - offset),
-            control2: CGPoint(x: rect.width * 0.75, y: rect.height * 0.18 - offset)
-        )
-        return path
     }
 }
 

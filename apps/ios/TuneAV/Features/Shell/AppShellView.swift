@@ -2137,47 +2137,24 @@ struct AviScreen: View {
         .accessibilityIdentifier("avi.preview")
     }
 
+    private var aviPreviewLandingContent: AVAviLandingContent {
+        AVAviLandingContent(
+            eyebrow: L10n.string("shell.avi.preview.eyebrow"),
+            title: L10n.string("shell.avi.preview.title"),
+            detail: L10n.string("shell.avi.preview.detail"),
+            chips: [
+                AVAviLandingChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform"),
+                AVAviLandingChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark"),
+                AVAviLandingChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
+            ],
+            accessibilityIdentifier: "avi.preview.hero"
+        )
+    }
+
     private var aviPreviewHero: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L10n.string("shell.avi.preview.eyebrow"))
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(TuneAVTheme.highlight)
-                        .textCase(.uppercase)
-
-                    Text(L10n.string("shell.avi.preview.title"))
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .foregroundStyle(TuneAVTheme.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                aviHeroImage(width: 62)
-                    .padding(7)
-                    .background(TuneAVTheme.highlight.opacity(0.09), in: Circle())
-            }
-
-            HStack(spacing: 8) {
-                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.listen"), systemImage: "waveform")
-                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.save"), systemImage: "bookmark")
-                AVAviPreviewChip(title: L10n.string("shell.avi.preview.chip.search"), systemImage: "magnifyingglass")
-            }
-
-            Text(L10n.string("shell.avi.preview.detail"))
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
+        AVAviLandingHeroCard(content: aviPreviewLandingContent) {
+            aviHeroImage(width: 62)
         }
-        .padding(18)
-        .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(TuneAVTheme.borderSubtle.opacity(0.45), lineWidth: 1)
-        }
-        .shadow(color: TuneAVTheme.softShadow.opacity(0.12), radius: 14, y: 7)
     }
 
     private var aviPreviewCurrentContext: some View {

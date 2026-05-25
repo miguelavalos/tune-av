@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import SwiftUI
 
 struct HomeHeaderContent: View {
@@ -5,33 +6,27 @@ struct HomeHeaderContent: View {
     let openAvi: () -> Void
 
     var body: some View {
-        ShellBrandHeader(statusTitle: state.statusTitle)
-
-        VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.string("shell.home.title"))
-                .font(.system(size: 30, weight: .black))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-
-            Text(L10n.string("shell.home.subtitle"))
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(TuneAVTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-
-        HomeAviBrief(
-            currentStation: state.currentStation,
-            recentCount: state.recentCount,
-            favoriteCount: state.favoriteCount,
-            emotion: TuneAVAviEmotionResolver.homeEmotion(
+        AVAppShellHomeHeader(
+            title: L10n.string("shell.home.title"),
+            subtitle: L10n.string("shell.home.subtitle")
+        ) {
+            ShellBrandHeader(statusTitle: state.statusTitle)
+        } content: {
+            HomeAviBrief(
                 currentStation: state.currentStation,
                 recentCount: state.recentCount,
-                favoriteCount: state.favoriteCount
-            ),
-            openAvi: openAvi
-        )
+                favoriteCount: state.favoriteCount,
+                emotion: TuneAVAviEmotionResolver.homeEmotion(
+                    currentStation: state.currentStation,
+                    recentCount: state.recentCount,
+                    favoriteCount: state.favoriteCount
+                ),
+                openAvi: openAvi
+            )
 
-        if state.showsLiveNowPanel {
-            LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
+            if state.showsLiveNowPanel {
+                LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
+            }
         }
     }
 }

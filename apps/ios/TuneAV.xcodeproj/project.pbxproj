@@ -26,6 +26,7 @@
 		13E78839BA278A2B9CD1BC4A /* TuneAVAppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */; };
 		151635FADD47D1B88D07889F /* TuneAVAccessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */; };
 		1727D18F65585D40F28D2394 /* AviReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97D4A7D40F1763112C81473 /* AviReactionState.swift */; };
+		17912B0620CDFDBC0CB529B1 /* TuneAppExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E776CAB08E5F3EB77F75FF /* TuneAppExperience.swift */; };
 		184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */; };
 		19D12529EFE7CA401E3471B3 /* TuneAVAppShellSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */; };
 		1BEA0ADD69D85ECAAF67FDA6 /* FeedbackBadgeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2142EBD775E3AAAED9E58 /* FeedbackBadgeViews.swift */; };
@@ -372,6 +373,7 @@
 		DA32EAF81A20F877B3162053 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
 		DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviRecommendationViews.swift; sourceTree = "<group>"; };
 		DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
+		E0E776CAB08E5F3EB77F75FF /* TuneAppExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAppExperience.swift; sourceTree = "<group>"; };
 		E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodSuggestionBuilder.swift; sourceTree = "<group>"; };
 		E2EBF8F04CC78A6F55E19FFB /* ShellCellularPlaybackGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCellularPlaybackGate.swift; sourceTree = "<group>"; };
 		E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeaturedStationBuilder.swift; sourceTree = "<group>"; };
@@ -721,6 +723,7 @@
 				E76489FBB943FD3200A86D0B /* PrivacyInfo.xcprivacy */,
 				198A05B4515ED79560A09DEF /* RootView.swift */,
 				65AC473434C326DBD6A3A0C8 /* SubscriptionPurchasingService.swift */,
+				E0E776CAB08E5F3EB77F75FF /* TuneAppExperience.swift */,
 				2DD1D5DB93174C34E51A3031 /* TuneAV.entitlements */,
 				91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */,
 				A8DB50889CB95CD07ACBBE26 /* TuneAVAppDataService.swift */,
@@ -1054,6 +1057,7 @@
 				60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */,
 				0E8962EDE4E9D460672144A8 /* TuneAVUpgradePrompt.swift in Sources */,
 				699AFAE222C5B2AB4DF681F7 /* TuneAVUpgradePromptContent.swift in Sources */,
+				17912B0620CDFDBC0CB529B1 /* TuneAppExperience.swift in Sources */,
 				F2190F523E542A07E42C34D6 /* TuneAviPopoverActionsPanel.swift in Sources */,
 				5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */,
 			);

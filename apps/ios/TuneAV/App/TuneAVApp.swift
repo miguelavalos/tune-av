@@ -38,7 +38,7 @@ struct TuneAVApp: App {
                     .environment(\.locale, languageController.locale)
                     .environmentObject(audioPlayer)
                     .environmentObject(libraryStore)
-                    .avBrandPalette(TuneAVTheme.brandPalette)
+                    .avCommonAppExperience(TuneAppExperience.experience)
                     .preferredColorScheme(themeController.currentTheme.preferredColorScheme)
             }
         }

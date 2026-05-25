@@ -76,17 +76,14 @@ struct TuneAVProPaywallView: View {
     }
 
     private var paywallAviAvatar: some View {
-        AVAviAvatarBadge(
+        AVAviAssetAvatarBadge(
+            assetName: "AviV2HeadNeutral",
             imageSize: 54,
             badgeSize: 68,
             padding: 7,
             backgroundStyle: .accentSoft,
             strokeStyle: .accentSoft
-        ) {
-            Image("AviV2HeadNeutral")
-                .resizable()
-                .scaledToFit()
-        }
+        )
     }
 
     private func primaryAction() {

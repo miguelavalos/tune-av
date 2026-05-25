@@ -7,14 +7,15 @@ struct HomeAviBrief: View {
     let favoriteCount: Int
     let emotion: TuneAVAviEmotion
     let openAvi: () -> Void
+    @Environment(\.avCommonAppExperience) private var appExperience
 
     var body: some View {
-        AVAviCompanionCard(
-            title: L10n.string("shell.home.aviBrief.title"),
+        AVAviHomeBriefCard(
+            identity: appExperience.identity,
             detail: briefDetail,
             actionAccessibilityLabel: L10n.string("shell.home.aviBrief.action"),
             accessibilityIdentifier: "home.aviBrief.open",
-            action: openAvi
+            openAvi: openAvi
         ) {
             AviStableEmotionImage(emotion: emotion, assetVariant: .head, width: 58, height: 58)
         }

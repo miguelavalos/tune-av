@@ -1,18 +1,19 @@
+import AVAppShellFoundation
 import SwiftUI
 
-let shellScreenHorizontalPadding: CGFloat = 20
-let shellScreenTopPadding: CGFloat = 24
+let shellScreenHorizontalPadding: CGFloat = AVAppShellScreenMetric.horizontalPadding
+let shellScreenTopPadding: CGFloat = AVAppShellScreenMetric.topPadding
 
 extension View {
     func shellScreenContentPadding(bottom bottomPadding: CGFloat) -> some View {
-        padding(.horizontal, shellScreenHorizontalPadding)
-            .padding(.top, shellScreenTopPadding)
-            .padding(.bottom, bottomPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        avShellScreenContentPadding(
+            horizontal: shellScreenHorizontalPadding,
+            top: shellScreenTopPadding,
+            bottom: bottomPadding
+        )
     }
 
     func shellScreenScrollBehavior() -> some View {
-        contentMargins(.horizontal, 0, for: .scrollContent)
-            .scrollIndicators(.hidden)
+        avShellScreenScrollBehavior()
     }
 }

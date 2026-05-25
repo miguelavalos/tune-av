@@ -18,43 +18,30 @@ struct AppShellChromeRequest: Equatable {
     let item: ShellBrandHeaderActiveItem
 }
 
-enum ShellBrandHeaderActiveItem {
-    case settings
-    case account
-}
+typealias ShellBrandHeaderActiveItem = AVAppShellChromeItem
 
 struct ShellBrandHeader: View {
     @EnvironmentObject private var chromeActions: AppShellChromeActions
+    @Environment(\.avCommonAppExperience) private var appExperience
 
     let statusTitle: String
     var activeItem: ShellBrandHeaderActiveItem?
 
     var body: some View {
-        AVAppShellBrandHeaderScaffold {
-            AVAppShellIconButton(
-                systemName: "gearshape.fill",
-                accessibilityLabel: L10n.string("shell.header.settings"),
-                accessibilityValue: activeItem == .settings ? L10n.string("common.selected") : "",
-                accessibilityIdentifier: "header.settings",
-                isSelected: activeItem == .settings,
-                fontSize: 15,
-                action: chromeActions.openSettings
-            )
-        } logo: {
-            Image("HeaderWordmark")
-                .resizable()
-                .scaledToFit()
-        } trailing: {
-            AVAppShellIconButton(
-                systemName: "person.crop.circle.fill",
-                accessibilityLabel: L10n.string("shell.header.account"),
-                accessibilityValue: activeItem == .account ? L10n.string("common.selected") : "",
-                accessibilityIdentifier: "header.account",
-                isSelected: activeItem == .account,
-                fontSize: 16,
-                action: chromeActions.openAccount
-            )
-        }
+        AVAppShellAssetBrandHeader(
+            identity: appExperience.identity,
+            logoAssetName: appExperience.visualAssets?.headerLogoName ?? "HeaderWordmark",
+            activeItem: activeItem,
+            settingsAccessibilityLabel: L10n.string("shell.header.settings"),
+            accountAccessibilityLabel: L10n.string("shell.header.account"),
+            selectedAccessibilityValue: L10n.string("common.selected"),
+            openSettings: {
+                chromeActions.openSettings()
+            },
+            openAccount: {
+                chromeActions.openAccount()
+            }
+        )
     }
 }
 

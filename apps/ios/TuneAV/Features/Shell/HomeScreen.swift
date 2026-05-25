@@ -1,3 +1,4 @@
+import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
@@ -31,34 +32,35 @@ struct HomeScreen: View {
         let screenState = homeScreenState
         let heroActionRouter = homeHeroActionRouter
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HomeHeaderContent(
-                    state: screenState.headerContentState,
-                    openAvi: openAvi
-                )
-                HomeHeroContent(
-                    state: screenState.heroContentState,
-                    playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
-                    favoriteAction: toggleFavorite,
-                    feedbackAction: heroActionRouter.setFeedback,
-                    detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
-                )
-                HomeRecommendationSections(
-                    derivedState: screenState.derivedState,
-                    favoriteStationIDs: favoriteStationIDs,
-                    nowPlayingTracks: nowPlayingTracks,
-                    stationFeedback: stationFeedback,
-                    openSearchTag: openSearchTag,
-                    playStation: playStation,
-                    toggleFavorite: toggleFavorite,
-                    showStationDetails: showStationDetails
-                )
-            }
-            .shellScreenContentPadding(bottom: bottomContentPadding)
+        AVAppShellScrollableScreenScaffold(
+            alignment: .leading,
+            spacing: 24,
+            bottomPadding: bottomContentPadding
+        ) {
+            TuneAVTheme.shellBackground
+        } content: {
+            HomeHeaderContent(
+                state: screenState.headerContentState,
+                openAvi: openAvi
+            )
+            HomeHeroContent(
+                state: screenState.heroContentState,
+                playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
+                favoriteAction: toggleFavorite,
+                feedbackAction: heroActionRouter.setFeedback,
+                detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
+            )
+            HomeRecommendationSections(
+                derivedState: screenState.derivedState,
+                favoriteStationIDs: favoriteStationIDs,
+                nowPlayingTracks: nowPlayingTracks,
+                stationFeedback: stationFeedback,
+                openSearchTag: openSearchTag,
+                playStation: playStation,
+                toggleFavorite: toggleFavorite,
+                showStationDetails: showStationDetails
+            )
         }
-        .shellScreenScrollBehavior()
-        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .refreshable {
             await refreshHome()
         }
