@@ -118,7 +118,7 @@
 		473B194F4640945709B1E509 /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4800B97412F65A7D48DA7259 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
 		48D0FA3E128C4AEA1553F371 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
-		4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuneAVMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F7D3468222B7241B3A1EE7A /* Tune AV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tune AV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
 		53A7AC7B73C839883433878A /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
 		555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDateCoding.swift; sourceTree = "<group>"; };
@@ -166,7 +166,7 @@
 		E80A66F42DA2B6DE1F514487 /* TuneAVAppShellHomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellHomeFeed.swift; sourceTree = "<group>"; };
 		E8310E584FFDAC25B7D1AB5D /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
 		E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
-		ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuneAVMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TuneAVMacTests.xctest; path = "Tune AV.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED33F71C5D0D6F973B532EAC /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
 		EDC7CA0264359FBBE98CFE98 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		F2DE0A373AB37620B340E29C /* TuneAVSleepTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSleepTimerController.swift; sourceTree = "<group>"; };
@@ -198,7 +198,7 @@
 		136D76E4AA0D7D097C00BC2A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */,
+				4F7D3468222B7241B3A1EE7A /* Tune AV.app */,
 				ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */,
 			);
 			name = Products;
@@ -432,7 +432,7 @@
 				03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */,
 			);
 			productName = TuneAVMac;
-			productReference = 4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */;
+			productReference = 4F7D3468222B7241B3A1EE7A /* Tune AV.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
