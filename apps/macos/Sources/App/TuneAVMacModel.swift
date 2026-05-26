@@ -1066,6 +1066,22 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
+    func fetchAccountDeletionSummary() async throws -> AccountSummary {
+        try await accountRequest(path: "/v1/me")
+    }
+
+    func requestAccountDeletion() async throws -> DeleteAccountRequestResponse {
+        try await accountRequest(path: "/v1/me/delete-account-request", method: "POST")
+    }
+
+    func finalizeAccountDeletion() async throws -> DeleteAccountFinalizeResponse {
+        try await accountRequest(path: "/v1/me/delete-account-finalize", method: "POST")
+    }
+
+    func signOutAfterAccountDeletion() async {
+        await signOut()
+    }
+
     private func recordRecent(_ station: Station) {
         recentStations.removeAll { $0.id == station.id }
         recentStations.insert(station, at: 0)
@@ -1556,6 +1572,30 @@ final class TuneAVMacModel: ObservableObject {
             }
             return data
         }
+    }
+
+    private func accountRequest<T: Decodable>(path: String, method: String = "GET") async throws -> T {
+        guard let token = try await accountService.getToken(), !token.isEmpty else {
+            throw TuneAVAppDataClientError.missingToken
+        }
+
+        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
+            throw TuneAVAppDataClientError.missingBaseURL
+        }
+
+        var request = URLRequest(url: Self.accountAPIURL(baseURL: baseURL, path: path))
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
+
+        let (data, response) = try await TuneAVURLSessions.account.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard 200..<300 ~= httpResponse.statusCode else {
+            throw TuneAVAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
     private nonisolated static func accountAPIURL(baseURL: URL, path: String) -> URL {

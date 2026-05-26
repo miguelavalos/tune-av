@@ -58,6 +58,7 @@ private struct MacSettingsPickerSurface: View {
 struct MacProfileView: View {
     @EnvironmentObject private var model: TuneAVMacModel
     @Environment(\.openURL) private var openURL
+    @State private var isShowingAccountDeletion = false
 
     var body: some View {
         ScrollView {
@@ -74,6 +75,10 @@ struct MacProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .sheet(isPresented: $isShowingAccountDeletion) {
+            MacAccountDeletionSheet()
+                .environmentObject(model)
+        }
     }
 
     private var header: some View {
@@ -185,15 +190,13 @@ struct MacProfileView: View {
                 subtitle: L10n.string("profile.safety.subtitle")
             )
 
-            if let deleteAccountURL {
-                AVSettingsActionRow(
-                    systemImage: "exclamationmark.shield",
-                    title: L10n.string("profile.safety.delete.title"),
-                    detail: L10n.string("profile.safety.delete.detail"),
-                    action: { openURL(deleteAccountURL) }
-                )
-                .accessibilityIdentifier("profile.safety.delete")
-            }
+            AVSettingsActionRow(
+                systemImage: "exclamationmark.shield",
+                title: L10n.string("profile.safety.delete.title"),
+                detail: L10n.string("profile.safety.delete.detail"),
+                action: { isShowingAccountDeletion = true }
+            )
+            .accessibilityIdentifier("profile.safety.delete")
         }
     }
 
@@ -353,6 +356,352 @@ struct MacProfileView: View {
         )
     }
 
+}
+
+private struct MacAccountDeletionSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var model: TuneAVMacModel
+    @StateObject private var viewModel = MacAccountDeletionViewModel()
+
+    var body: some View {
+        AVSettingsSheetScaffold(
+            spacing: 18,
+            horizontalPadding: 24,
+            topPadding: 24,
+            bottomPadding: 24,
+            backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
+            closeTitle: L10n.string("common.done"),
+            closeAccessibilityIdentifier: "accountDeletion.done",
+            onClose: { dismiss() }
+        ) {
+            AVSettingsScreenHeader(
+                title: L10n.string("accountDeletion.title"),
+                subtitle: L10n.string("accountDeletion.subtitle"),
+                titleAccessibilityIdentifier: "accountDeletion.title"
+            )
+
+            if viewModel.isLoading {
+                AVSettingsLoadingState(L10n.string("accountDeletion.loading"))
+            } else {
+                AVSettingsNoticeCard(
+                    systemImage: "person.2.badge.gearshape",
+                    title: L10n.string("accountDeletion.shared.title"),
+                    detail: L10n.string("accountDeletion.shared.detail")
+                )
+
+                stateContent
+            }
+        }
+        .frame(minWidth: 520, idealWidth: 620, maxWidth: 720, minHeight: 560)
+        .task {
+            await viewModel.load(using: model)
+        }
+        .onChange(of: viewModel.didCompleteDeletion) { _, didComplete in
+            guard didComplete else { return }
+            dismiss()
+        }
+        .accessibilityIdentifier("accountDeletion.sheet")
+    }
+
+    @ViewBuilder
+    private var stateContent: some View {
+        if let errorMessage = viewModel.errorMessage {
+            AVSettingsStatusCard(
+                systemImage: "exclamationmark.triangle",
+                title: L10n.string("accountDeletion.error.title"),
+                detail: errorMessage
+            )
+            .accessibilityIdentifier("accountDeletion.status.error")
+        }
+
+        switch viewModel.resolvedEligibility?.status {
+        case .eligible:
+            eligibleContent
+        case .inProgress:
+            inProgressContent
+        case .completed:
+            AVSettingsStatusCard(
+                systemImage: "checkmark.circle",
+                title: L10n.string("accountDeletion.completed.title"),
+                detail: L10n.string("accountDeletion.completed.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.completed")
+        case .blocked:
+            blockedContent
+        case .unavailable, .none:
+            unavailableContent
+        }
+    }
+
+    private var eligibleContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AVSettingsStatusCard(
+                systemImage: "checkmark.shield",
+                title: L10n.string("accountDeletion.eligible.title"),
+                detail: L10n.string("accountDeletion.eligible.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.eligible")
+
+            impactNotice
+            warningsList
+
+            Text(L10n.string("accountDeletion.confirm.instructions"))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+
+            AVSettingsTextField(
+                "DELETE",
+                text: $viewModel.confirmationText,
+                accessibilityIdentifier: "accountDeletion.confirmation"
+            )
+
+            AVSettingsButton(
+                title: viewModel.isSubmitting
+                    ? L10n.string("accountDeletion.deleting")
+                    : L10n.string("accountDeletion.deleteButton"),
+                style: .destructivePrimary,
+                isLoading: viewModel.isSubmitting
+            ) {
+                Task { await viewModel.requestDeletion(using: model) }
+            }
+            .disabled(!viewModel.canRequestDeletion || viewModel.isSubmitting)
+            .opacity(viewModel.canRequestDeletion ? 1 : 0.45)
+            .accessibilityIdentifier("accountDeletion.deleteButton")
+        }
+    }
+
+    private var inProgressContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AVSettingsStatusCard(
+                systemImage: "clock.badge.exclamationmark",
+                title: L10n.string("accountDeletion.inProgress.title"),
+                detail: L10n.string("accountDeletion.inProgress.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.inProgress")
+
+            blockersList
+            warningsList
+
+            if viewModel.canFinalizeDeletion {
+                AVSettingsButton(
+                    title: viewModel.isSubmitting
+                        ? L10n.string("accountDeletion.finalizing")
+                        : L10n.string("accountDeletion.finalizeButton"),
+                    style: .primary,
+                    isLoading: viewModel.isSubmitting
+                ) {
+                    Task { await viewModel.finalizeDeletion(using: model) }
+                }
+                .disabled(viewModel.isSubmitting)
+                .accessibilityIdentifier("accountDeletion.finalizeButton")
+            }
+        }
+    }
+
+    private var blockedContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AVSettingsStatusCard(
+                systemImage: "lock.shield",
+                title: L10n.string("accountDeletion.blocked.title"),
+                detail: L10n.string("accountDeletion.blocked.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.blocked")
+
+            blockersList
+            warningsList
+            accountWebsiteButton
+        }
+    }
+
+    private var unavailableContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AVSettingsStatusCard(
+                systemImage: "safari",
+                title: L10n.string("accountDeletion.unavailable.title"),
+                detail: L10n.string("accountDeletion.unavailable.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.unavailable")
+
+            warningsList
+            accountWebsiteButton
+        }
+    }
+
+    @ViewBuilder
+    private var impactNotice: some View {
+        if viewModel.hasHighImpactDeletionWarnings {
+            AVSettingsStatusCard(
+                systemImage: "exclamationmark.octagon.fill",
+                title: L10n.string("accountDeletion.impact.high.title"),
+                detail: L10n.string("accountDeletion.impact.high.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.impact.high")
+        } else if viewModel.hasLinkedAppDeletionWarnings {
+            AVSettingsStatusCard(
+                systemImage: "exclamationmark.triangle.fill",
+                title: L10n.string("accountDeletion.impact.linkedApps.title"),
+                detail: L10n.string("accountDeletion.impact.linkedApps.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.impact.linkedApps")
+        }
+    }
+
+    private var blockersList: some View {
+        AVSettingsDetailList(items: viewModel.blockers.map(detailItem(for:)))
+    }
+
+    private var warningsList: some View {
+        AVSettingsDetailList(items: viewModel.warnings.map(detailItem(for:)))
+    }
+
+    private func detailItem(for item: AccountDeletionBlocker) -> AVSettingsDetailListItem {
+        AVSettingsDetailListItem(
+            id: item.type.rawValue,
+            title: item.label,
+            detail: item.detail,
+            linkTitle: item.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
+            linkDestination: item.managementUrl,
+            accessibilityIdentifier: "accountDeletion.\(item.type.rawValue)"
+        )
+    }
+
+    @ViewBuilder
+    private var accountWebsiteButton: some View {
+        if let deleteAccountURL {
+            AVSettingsLinkButton(
+                title: L10n.string("accountDeletion.accountWebsiteLink"),
+                systemImage: "safari",
+                destination: deleteAccountURL
+            )
+            .accessibilityIdentifier("accountDeletion.accountWebsiteLink")
+        }
+    }
+
+    private var deleteAccountURL: URL? {
+        TuneAVBundleConfig.deleteAccountURL(
+            explicitURL: TuneAVBundleConfig.urlValue(for: "TUNEAV_DELETE_ACCOUNT_URL"),
+            accountManagementURL: TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
+        )
+    }
+}
+
+@MainActor
+private final class MacAccountDeletionViewModel: ObservableObject {
+    @Published private(set) var resolvedEligibility: AccountDeletionEligibility?
+    @Published private(set) var summary: AccountSummary?
+    @Published private(set) var isLoading = true
+    @Published private(set) var isSubmitting = false
+    @Published private(set) var errorMessage: String?
+    @Published var confirmationText = ""
+    @Published private(set) var didCompleteDeletion = false
+
+    var canRequestDeletion: Bool {
+        TuneAVAccountDeletionPolicy.canRequestDeletion(
+            eligibility: resolvedEligibility,
+            confirmationText: confirmationText
+        )
+    }
+
+    var canFinalizeDeletion: Bool {
+        TuneAVAccountDeletionPolicy.canFinalizeDeletion(eligibility: resolvedEligibility, summary: summary)
+    }
+
+    var blockers: [AccountDeletionBlocker] {
+        resolvedEligibility?.blockers ?? []
+    }
+
+    var warnings: [AccountDeletionBlocker] {
+        resolvedEligibility?.warnings ?? []
+    }
+
+    var hasHighImpactDeletionWarnings: Bool {
+        warnings.contains { warning in
+            switch warning.type {
+            case .activeAiCredits, .activeProAccess, .activeBillingSubscription:
+                return true
+            case .linkedApp, .identityProvider, .deletionInProgress, .eligibilityUnavailable:
+                return false
+            }
+        }
+    }
+
+    var hasLinkedAppDeletionWarnings: Bool {
+        warnings.contains { $0.type == .linkedApp }
+    }
+
+    func load(using model: TuneAVMacModel) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let accountSummary = try await model.fetchAccountDeletionSummary()
+            summary = accountSummary
+            resolvedEligibility = TuneAVAccountDeletionPolicy.resolvedEligibility(
+                from: accountSummary,
+                copy: Self.deletionCopy
+            )
+        } catch {
+            errorMessage = L10n.string("accountDeletion.statusUpdateFailed.detail")
+            resolvedEligibility = TuneAVAccountDeletionPolicy.unavailableEligibility(copy: Self.deletionCopy)
+        }
+
+        isLoading = false
+    }
+
+    func requestDeletion(using model: TuneAVMacModel) async {
+        guard canRequestDeletion, isSubmitting == false else { return }
+        isSubmitting = true
+        errorMessage = nil
+
+        do {
+            let response = try await model.requestAccountDeletion()
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
+                didCompleteDeletion = true
+                await model.signOutAfterAccountDeletion()
+            } else {
+                resolvedEligibility = response.deleteAccountEligibility ?? resolvedEligibility
+            }
+        } catch {
+            errorMessage = L10n.string("accountDeletion.error.request")
+        }
+
+        isSubmitting = false
+    }
+
+    func finalizeDeletion(using model: TuneAVMacModel) async {
+        guard isSubmitting == false else { return }
+        isSubmitting = true
+        errorMessage = nil
+
+        do {
+            let response = try await model.finalizeAccountDeletion()
+            if TuneAVAccountDeletionPolicy.didCompleteDeletion(eligibility: response.deleteAccountEligibility, job: response.job) {
+                didCompleteDeletion = true
+                await model.signOutAfterAccountDeletion()
+            } else {
+                resolvedEligibility = response.deleteAccountEligibility ?? resolvedEligibility
+            }
+        } catch {
+            errorMessage = L10n.string("accountDeletion.error.finalize")
+        }
+
+        isSubmitting = false
+    }
+
+    private static var deletionCopy: TuneAVAccountDeletionPolicy.Copy {
+        TuneAVAccountDeletionPolicy.Copy(
+            linkedAppTitle: L10n.string("accountDeletion.blocker.linkedApp.title"),
+            linkedAppDetail: L10n.string("accountDeletion.blocker.linkedApp.detail"),
+            proTitle: L10n.string("accountDeletion.blocker.pro.title"),
+            proDetail: L10n.string("accountDeletion.blocker.pro.detail"),
+            subscriptionTitle: L10n.string("accountDeletion.blocker.subscription.title"),
+            subscriptionDetail: L10n.string("accountDeletion.blocker.subscription.detail"),
+            jobTitle: L10n.string("accountDeletion.blocker.job.title"),
+            unavailableTitle: L10n.string("accountDeletion.unavailable.title"),
+            unavailableDetail: L10n.string("accountDeletion.unavailable.detail"),
+        )
+    }
 }
 
 private struct MacProfileCard<Content: View>: View {
