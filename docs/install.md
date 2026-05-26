@@ -88,15 +88,50 @@ production operator profiles. The guarded installer does this automatically.
 
 ### Run on simulator
 
+Always regenerate and validate the selected environment before a simulator run:
+
+```bash
+bun run ios:config:prod
+bun run ios:check:prod
+```
+
+Build the simulator app with Xcode's default simulator signing enabled:
+
 ```bash
 xcodebuild -project apps/ios/TuneAV.xcodeproj \
   -scheme TuneAV \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+  -derivedDataPath /tmp/TuneAV-prod-sim \
   build
 ```
 
+Install and launch the generated production bundle:
+
+```bash
+xcrun simctl install booted /tmp/TuneAV-prod-sim/Build/Products/Debug-iphonesimulator/TuneAV.app
+xcrun simctl launch booted com.avalsys.tuneav
+```
+
 You can also open `apps/ios/TuneAV.xcodeproj` in Xcode and run `TuneAV`.
+
+Do not pass `CODE_SIGNING_ALLOWED=NO` for Account AV or Clerk simulator smoke
+tests. That creates an unsigned app without the simulated Keychain entitlements
+Clerk needs to persist its device token; Google or Apple sign-in can then fail
+with `unexpectedStatus(-34018)` followed by `signed_out` / `You are signed out`.
+Use Xcode's default simulator signing so the build produces
+`TuneAV.app-Simulated.xcent` with the production bundle identifier and Keychain
+access group.
+
+If a simulator has already run an unsigned Tune AV build and Clerk reports
+`authentication_invalid` or `signed_out` on launch, remove the stale app state
+before reinstalling the signed simulator build:
+
+```bash
+xcrun simctl uninstall booted com.avalsys.tuneav
+xcrun simctl install booted /tmp/TuneAV-prod-sim/Build/Products/Debug-iphonesimulator/TuneAV.app
+xcrun simctl launch booted com.avalsys.tuneav
+```
 
 ### Manual Install On A Connected iOS Device
 
@@ -145,7 +180,7 @@ If iOS refuses to open the app after install, trust the developer profile once o
 ### Known local-dev constraints
 
 - Sign in with Apple is enabled in entitlements. Device provisioning must support that capability for the bundle identifier you use.
-- Do not use unsigned compile-only builds to validate Google or Apple sign-in. Clerk native auth stores client and device tokens in Keychain, so auth smoke tests need a signed app with Keychain and Apple Sign In entitlements active.
+- Do not use unsigned compile-only builds to validate Google or Apple sign-in. Clerk native auth stores client and device tokens in Keychain, so auth smoke tests need a signed app with Keychain and Apple Sign In entitlements active. On simulator, leave Xcode simulator signing enabled; do not add `CODE_SIGNING_ALLOWED=NO`.
 - If the build hangs in `Resolve Package Graph`, restart Xcode and retry from a clean terminal.
 
 ## macOS
