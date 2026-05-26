@@ -39,6 +39,21 @@ final class AccountDeletionViewModel: ObservableObject {
         resolvedEligibility?.warnings ?? []
     }
 
+    var hasHighImpactDeletionWarnings: Bool {
+        warnings.contains { warning in
+            switch warning.type {
+            case .activeAiCredits, .activeProAccess, .activeBillingSubscription:
+                return true
+            case .linkedApp, .identityProvider, .deletionInProgress, .eligibilityUnavailable:
+                return false
+            }
+        }
+    }
+
+    var hasLinkedAppDeletionWarnings: Bool {
+        warnings.contains { $0.type == .linkedApp }
+    }
+
     var canUnlinkCurrentApp: Bool {
         guard let summary, !isSubmitting else { return false }
         return TuneAVAccountDeletionPolicy.canUnlinkCurrentApp(from: summary)
@@ -57,6 +72,10 @@ final class AccountDeletionViewModel: ObservableObject {
                 try await completeLocalSignOut()
             }
         } catch {
+            if case AVAccountAPIClientError.missingToken = error {
+                try? await completeLocalSignOut()
+                return
+            }
             errorMessage = L10n.string("accountDeletion.error.load")
             resolvedEligibility = TuneAVAccountDeletionPolicy.unavailableEligibility(copy: Self.deletionCopy)
         }

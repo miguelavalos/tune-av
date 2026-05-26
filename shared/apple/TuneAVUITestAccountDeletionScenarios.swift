@@ -56,6 +56,36 @@ enum TuneAVUITestAccountDeletionScenarios {
                     currentJob: nil
                 )
             )
+        case "active_credits":
+            AccountSummary(
+                id: TuneAVUITestEnvironment.accountUserId,
+                emailAddress: TuneAVUITestEnvironment.accountUserEmailAddress,
+                displayName: TuneAVUITestEnvironment.accountUserDisplayName,
+                linkedApps: [LinkedAccountApp(appId: "tuneav", label: "Apps AV")],
+                access: [
+                    AppAccess(
+                        appId: "tuneav",
+                        accessMode: .signedInFree,
+                        planTier: .free,
+                        capabilities: .forMode(.signedInFree),
+                        limits: .forMode(.signedInFree)
+                    )
+                ],
+                deleteAccountEligibility: AccountDeletionEligibility(
+                    status: .eligible,
+                    blockers: [],
+                    warnings: [
+                        AccountDeletionBlocker(
+                            type: .activeAiCredits,
+                            appId: "momentsav",
+                            label: "Moments AV credits",
+                            detail: "Account deletion permanently removes 12 AI credits, including 3 reserved credits. This cannot be undone.",
+                            managementUrl: nil
+                        )
+                    ],
+                    currentJob: nil
+                )
+            )
         case "completed":
             AccountSummary(
                 id: TuneAVUITestEnvironment.accountUserId,

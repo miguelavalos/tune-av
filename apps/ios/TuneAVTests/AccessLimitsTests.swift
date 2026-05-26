@@ -575,6 +575,29 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
+    func testStaleSignedInAccountClearsWhenTokenIsUnavailable() async {
+        let accountService = MutableStubAccountService(
+            user: AccountUser(id: "stale-user", displayName: "Stale User", emailAddress: "stale@example.com"),
+            token: nil
+        )
+        let controller = AccessController(
+            accountService: accountService,
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertFalse(controller.isSignedIn)
+        XCTAssertNil(controller.accountUser)
+        XCTAssertNil(controller.accountSession)
+        XCTAssertEqual(controller.accessMode, .guest)
+        XCTAssertEqual(controller.planTier, .free)
+        XCTAssertTrue(accountService.didSignOut)
+    }
+
+    @MainActor
     func testSignOutFromProAccountReturnsToGuestLocalOnlyAccess() async throws {
         let accountService = MutableStubAccountService(
             user: AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
@@ -870,12 +893,13 @@ private struct AccessLimitsContract: Decodable {
 @MainActor
 private struct StubAccountService: AVAccountService {
     let user: AccountUser?
+    var token: String? = "test-token"
 
     var isAvailable: Bool { true }
     var currentUser: AccountUser? { user }
 
     func getToken() async throws -> String? {
-        nil
+        token
     }
 
     func signInWithApple() async throws {}
@@ -918,16 +942,19 @@ private final class MutableStubEntitlementService: EntitlementService {
 @MainActor
 private final class MutableStubAccountService: AVAccountService {
     private var user: AccountUser?
+    private let token: String?
+    private(set) var didSignOut = false
 
-    init(user: AccountUser?) {
+    init(user: AccountUser?, token: String? = "test-token") {
         self.user = user
+        self.token = token
     }
 
     var isAvailable: Bool { true }
     var currentUser: AccountUser? { user }
 
     func getToken() async throws -> String? {
-        nil
+        token
     }
 
     func signInWithApple() async throws {}
@@ -935,6 +962,7 @@ private final class MutableStubAccountService: AVAccountService {
     func signInWithGoogle() async throws {}
 
     func signOut() async throws {
+        didSignOut = true
         user = nil
     }
 }

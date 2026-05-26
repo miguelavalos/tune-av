@@ -97,7 +97,7 @@ struct TuneAVAccountDeletionPolicy {
         }
 
         if let currentDeletionJob = summary.currentDeletionJob,
-           !inactiveDeletionJobStatuses.contains(currentDeletionJob.status) {
+           failedDeletionJobStatuses.contains(currentDeletionJob.status) {
             blockers.append(
                 AccountDeletionBlocker(
                     type: .deletionInProgress,
@@ -107,13 +107,20 @@ struct TuneAVAccountDeletionPolicy {
                     managementUrl: nil
                 )
             )
+
+            return AccountDeletionEligibility(status: .blocked, blockers: blockers, warnings: warnings, currentJob: currentDeletionJob)
+        }
+
+        if let currentDeletionJob = summary.currentDeletionJob,
+           !inactiveDeletionJobStatuses.contains(currentDeletionJob.status) {
+            return AccountDeletionEligibility(status: .inProgress, blockers: blockers, warnings: warnings, currentJob: currentDeletionJob)
         }
 
         if blockers.isEmpty {
             return AccountDeletionEligibility(status: .eligible, blockers: [], warnings: warnings, currentJob: summary.currentDeletionJob)
         }
 
-        return AccountDeletionEligibility(status: .unavailable, blockers: blockers, warnings: warnings, currentJob: summary.currentDeletionJob)
+        return AccountDeletionEligibility(status: .blocked, blockers: blockers, warnings: warnings, currentJob: summary.currentDeletionJob)
     }
 
     static func unavailableEligibility(copy: Copy) -> AccountDeletionEligibility {
@@ -131,5 +138,6 @@ struct TuneAVAccountDeletionPolicy {
     }
 
     private static let activeBillingStatuses = Set(["active", "trialing", "pastDue", "past_due"])
-    private static let inactiveDeletionJobStatuses = Set(["completed", "cancelled", "failed"])
+    private static let inactiveDeletionJobStatuses = Set(["completed", "cancelled"])
+    private static let failedDeletionJobStatuses = Set(["failed", "blocked"])
 }

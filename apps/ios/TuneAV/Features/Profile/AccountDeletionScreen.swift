@@ -91,7 +91,7 @@ struct AccountDeletionScreen: View {
                 )
                 .accessibilityIdentifier("accountDeletion.status.completed")
             case .unavailable, .none:
-                blockedContent(title: L10n.string("accountDeletion.unavailable.title"))
+                unavailableContent
             }
         }
     }
@@ -105,6 +105,7 @@ struct AccountDeletionScreen: View {
             )
             .accessibilityIdentifier("accountDeletion.status.eligible")
 
+            irreversibleImpactNotice
             warningList
 
             Text(L10n.string("accountDeletion.confirm.instructions"))
@@ -131,6 +132,25 @@ struct AccountDeletionScreen: View {
             .disabled(!viewModel.canRequestDeletion || viewModel.isSubmitting)
             .opacity(viewModel.canRequestDeletion ? 1 : 0.45)
             .accessibilityIdentifier("accountDeletion.deleteButton")
+        }
+    }
+
+    @ViewBuilder
+    private var irreversibleImpactNotice: some View {
+        if viewModel.hasHighImpactDeletionWarnings {
+            AVSettingsStatusCard(
+                systemImage: "exclamationmark.octagon.fill",
+                title: L10n.string("accountDeletion.impact.high.title"),
+                detail: L10n.string("accountDeletion.impact.high.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.impact.high")
+        } else if viewModel.hasLinkedAppDeletionWarnings {
+            AVSettingsStatusCard(
+                systemImage: "exclamationmark.triangle.fill",
+                title: L10n.string("accountDeletion.impact.linkedApps.title"),
+                detail: L10n.string("accountDeletion.impact.linkedApps.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.impact.linkedApps")
         }
     }
 
@@ -197,17 +217,49 @@ struct AccountDeletionScreen: View {
         }
     }
 
+    private var unavailableContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AVSettingsStatusCard(
+                systemImage: "safari",
+                title: L10n.string("accountDeletion.unavailable.title"),
+                detail: L10n.string("accountDeletion.unavailable.detail")
+            )
+            .accessibilityIdentifier("accountDeletion.status.unavailable")
+            warningList
+
+            if let accountURL = AppConfig.deleteAccountURL {
+                AVSettingsLinkButton(
+                    title: L10n.string("accountDeletion.accountWebsiteLink"),
+                    systemImage: "safari",
+                    destination: accountURL
+                )
+                .accessibilityIdentifier("accountDeletion.accountWebsiteLink")
+            }
+        }
+    }
+
     private var blockerList: some View {
         AVSettingsDetailList(items: viewModel.blockers.map { blocker in
             AVSettingsDetailListItem(
                 id: blocker.type.rawValue,
                 title: blocker.label,
-                detail: blocker.detail,
+                detail: blockerDetail(for: blocker),
                 linkTitle: blocker.managementUrl == nil ? nil : L10n.string("accountDeletion.manageLink"),
                 linkDestination: blocker.managementUrl,
                 accessibilityIdentifier: "accountDeletion.blocker.\(blocker.type.rawValue)"
             )
         })
+    }
+
+    private func blockerDetail(for blocker: AccountDeletionBlocker) -> String? {
+        switch blocker.type {
+        case .eligibilityUnavailable:
+            return L10n.string("accountDeletion.blocked.detail")
+        case .deletionInProgress:
+            return blocker.detail
+        case .linkedApp, .activeAiCredits, .activeProAccess, .activeBillingSubscription, .identityProvider:
+            return blocker.detail
+        }
     }
 
     private var warningList: some View {

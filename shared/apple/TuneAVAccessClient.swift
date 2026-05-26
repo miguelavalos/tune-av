@@ -10,6 +10,39 @@ struct AppAccess: Decodable {
     let planTier: PlanTier
     let capabilities: AccessCapabilities
     let limits: AccessLimits
+
+    enum CodingKeys: String, CodingKey {
+        case appId
+        case accessMode
+        case planTier
+        case capabilities
+        case limits
+    }
+
+    init(
+        appId: String,
+        accessMode: AccessMode,
+        planTier: PlanTier,
+        capabilities: AccessCapabilities,
+        limits: AccessLimits
+    ) {
+        self.appId = appId
+        self.accessMode = accessMode
+        self.planTier = planTier
+        self.capabilities = capabilities
+        self.limits = limits
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        appId = try container.decode(String.self, forKey: .appId)
+        accessMode = try container.decode(AccessMode.self, forKey: .accessMode)
+        planTier = try container.decode(PlanTier.self, forKey: .planTier)
+        capabilities = try container.decodeIfPresent(AccessCapabilities.self, forKey: .capabilities)
+            ?? .forMode(accessMode)
+        limits = try container.decodeIfPresent(AccessLimits.self, forKey: .limits)
+            ?? .forMode(accessMode)
+    }
 }
 
 extension AppAccess: Equatable {}

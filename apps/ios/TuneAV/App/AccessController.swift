@@ -108,6 +108,20 @@ final class AccessController: ObservableObject {
                 authLogger.debug("No active Account AV session during access refresh error=\(Self.safeErrorCode(error), privacy: .public)")
             }
         }
+        if accountUser != nil {
+            do {
+                guard let token = try await accountService.getToken(), !token.isEmpty else {
+                    guard generation == accessRefreshGeneration else { return }
+                    await clearUnavailableAccountSession(reason: "missing_token")
+                    return
+                }
+            } catch {
+                guard generation == accessRefreshGeneration else { return }
+                authLogger.error("Account AV session is unavailable during access refresh error=\(Self.safeErrorCode(error), privacy: .public)")
+                await clearUnavailableAccountSession(reason: "token_error")
+                return
+            }
+        }
         resolveAccessState()
         let userForRefresh = accountUser
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
@@ -246,6 +260,18 @@ final class AccessController: ObservableObject {
 
     private func resolveAccessState() {
         applyResolvedAccess(entitlementService.resolveAccess(for: accountUser))
+    }
+
+    private func clearUnavailableAccountSession(reason: String) async {
+        authLogger.error("Clearing unavailable Account AV session reason=\(reason, privacy: .public)")
+        try? await accountService.signOut()
+        accessRefreshGeneration += 1
+        accountUser = nil
+        subscriptionOffer = nil
+        subscriptionError = nil
+        isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
+        resolveAccessState()
     }
 
     private func applyResolvedAccess(_ resolvedAccess: ResolvedAccess) {

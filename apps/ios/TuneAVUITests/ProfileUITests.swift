@@ -107,6 +107,7 @@ final class ProfileUITests: TuneAVUITestCase {
         openAccountDeletion(in: app)
 
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.impact.linkedApps"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.warning.linkedApp"].exists)
         XCTAssertTrue(app.buttons["accountDeletion.deleteButton"].exists)
     }
@@ -124,7 +125,26 @@ final class ProfileUITests: TuneAVUITestCase {
         openAccountDeletion(in: app)
 
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.impact.high"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.warning.activeProAccess"].exists)
+        XCTAssertTrue(app.buttons["accountDeletion.deleteButton"].exists)
+    }
+
+    func testDeleteAccountWarnsStronglyForActiveCreditsButDoesNotBlock() {
+        let app = launchApp(
+            preferredTab: "settings",
+            extraEnvironment: [
+                "TUNEAV_UI_TESTS_ACCOUNT_MODE": "free",
+                "TUNEAV_UI_TEST_ACCOUNT_DELETION": "active_credits"
+            ]
+        )
+
+        openAccountProfile(in: app)
+        openAccountDeletion(in: app)
+
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.status.eligible"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.impact.high"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["accountDeletion.warning.activeAiCredits"].exists)
         XCTAssertTrue(app.buttons["accountDeletion.deleteButton"].exists)
     }
 

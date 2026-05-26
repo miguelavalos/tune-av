@@ -176,6 +176,7 @@ struct AccountDeletionBlocker: Decodable, Equatable, Identifiable {
 
     enum BlockerType: String, Decodable {
         case linkedApp
+        case activeAiCredits
         case activeProAccess
         case activeBillingSubscription
         case identityProvider
