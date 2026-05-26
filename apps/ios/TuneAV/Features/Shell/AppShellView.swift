@@ -2035,7 +2035,7 @@ struct AviScreen: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, shellScreenTopPadding + 18)
+                .padding(.top, shellScreenTopPadding + 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
@@ -2452,7 +2452,6 @@ struct AviScreen: View {
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     fullPlayerAviFeedbackBlock(for: focusedStation)
-                    relatedStationsPanel
                 }
             }
         }
@@ -4457,12 +4456,12 @@ struct AviScreen: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: isShowingAviActions ? 424 : 190, alignment: .top)
+            .frame(height: isShowingAviActions ? 424 : 156, alignment: .top)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 570 : 324, alignment: .top)
+        .frame(height: isShowingAviActions ? 570 : 300, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
@@ -4552,7 +4551,7 @@ struct AviScreen: View {
                 feedback: selectedFeedback,
                 station: station
             )
-            .frame(height: 62, alignment: .top)
+            .frame(height: 42, alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
