@@ -665,6 +665,7 @@
 "profile.sync.detail.needsAttention" = "Actualise pour résoudre.";
 "profile.sync.detail.pending" = "L'envoi se fera automatiquement.";
 "profile.sync.detail.ready" = "Synchronise quand tu veux.";
+"profile.sync.detail.signInAgain" = "Reconnecte-toi pour synchroniser ta bibliothèque Tune AV.";
 "profile.sync.detail.synced" = "Tes données sont enregistrées.";
 "profile.sync.detail.syncing" = "Mise à jour de tes données.";
 "profile.sync.detail.updating" = "Ta bibliothèque reste à jour.";

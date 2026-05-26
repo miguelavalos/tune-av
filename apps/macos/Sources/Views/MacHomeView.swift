@@ -107,7 +107,11 @@ private struct MacHomeHeroCard: View {
 
                 HStack(spacing: 10) {
                     Button {
-                        model.play(station, queue: [station] + model.aviPickStations + model.aroundYouStations)
+                        if model.currentStation?.id == station.id {
+                            model.togglePlayback()
+                        } else {
+                            model.play(station, queue: [station] + model.aviPickStations + model.aroundYouStations)
+                        }
                     } label: {
                         Image(systemName: model.isPlaying && model.currentStation?.id == station.id ? "pause.fill" : "play.fill")
                             .font(.system(size: 18, weight: .black))

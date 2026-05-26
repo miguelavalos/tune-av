@@ -6,6 +6,7 @@ import SwiftUI
 struct TuneAVMacApp: App {
     @NSApplicationDelegateAdaptor(TuneAVMacAppDelegate.self) private var appDelegate
     @StateObject private var languageController = AppLanguageController()
+    @StateObject private var themeController = AppThemeController()
     @StateObject private var model = TuneAVMacModel()
 
     init() {
@@ -19,9 +20,11 @@ struct TuneAVMacApp: App {
         WindowGroup("Tune AV") {
             MacRootView()
                 .environmentObject(languageController)
+                .environmentObject(themeController)
                 .environmentObject(model)
                 .environment(\.locale, languageController.locale)
                 .avBrandPalette(TuneAVTheme.brandPalette)
+                .preferredColorScheme(themeController.currentTheme.preferredColorScheme)
                 .frame(minWidth: 1360, minHeight: 760)
                 .task {
                     await model.startAutomaticLibrarySync()

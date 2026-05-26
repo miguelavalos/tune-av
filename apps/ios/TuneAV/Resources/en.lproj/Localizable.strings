@@ -706,6 +706,7 @@
 "profile.sync.detail.needsAttention" = "Refresh to resolve it.";
 "profile.sync.detail.pending" = "It will send automatically.";
 "profile.sync.detail.ready" = "Sync whenever you want.";
+"profile.sync.detail.signInAgain" = "Sign in again to sync your Tune AV library.";
 "profile.sync.detail.synced" = "Your data is saved.";
 "profile.sync.detail.syncing" = "Updating your data.";
 "profile.sync.detail.updating" = "Keeping your library current.";

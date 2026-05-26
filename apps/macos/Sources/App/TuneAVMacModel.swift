@@ -1054,9 +1054,15 @@ final class TuneAVMacModel: ObservableObject {
         } catch TuneAVAppDataClientError.missingBaseURL {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = "Missing Account AV API base URL."
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 401 || statusCode == 403 {
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
+        } catch TuneAVAppDataClientError.requestFailed {
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         } catch {
             cloudSyncStatus = .failed
-            cloudSyncErrorMessage = error.localizedDescription
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         }
     }
 

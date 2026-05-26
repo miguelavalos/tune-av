@@ -445,6 +445,7 @@ private struct MacProfileInfoRow: View {
 struct MacSettingsView: View {
     @EnvironmentObject private var model: TuneAVMacModel
     @EnvironmentObject private var languageController: AppLanguageController
+    @EnvironmentObject private var themeController: AppThemeController
     @Environment(\.openURL) private var openURL
 
     @AppStorage("tuneav.mac.openLastStationOnLaunch") private var openLastStationOnLaunch = true
@@ -457,7 +458,8 @@ struct MacSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 header
-                preferencesCard
+                appPreferencesCard
+                tunePreferencesCard
                 localDataCard
                 helpCard
             }
@@ -474,7 +476,7 @@ struct MacSettingsView: View {
         )
     }
 
-    private var preferencesCard: some View {
+    private var appPreferencesCard: some View {
         AVSettingsCard {
             AVSettingsSectionHeader(
                 title: L10n.string("profile.preferences.title"),
@@ -490,6 +492,23 @@ struct MacSettingsView: View {
             languageSelector
 
             AVSettingsInfoRow(
+                systemImage: "circle.lefthalf.filled",
+                title: L10n.string("profile.preferences.theme.title"),
+                detail: L10n.string("profile.preferences.theme.detail")
+            )
+
+            themeSelector
+        }
+    }
+
+    private var tunePreferencesCard: some View {
+        AVSettingsCard {
+            AVSettingsSectionHeader(
+                title: L10n.string("profile.productPreferences.title"),
+                subtitle: L10n.string("profile.productPreferences.subtitle")
+            )
+
+            AVSettingsInfoRow(
                 systemImage: "music.note.list",
                 title: L10n.string("profile.preferences.preferredGenre.title"),
                 detail: L10n.string("profile.preferences.preferredGenre.detail", preferredGenreLabel)
@@ -499,6 +518,13 @@ struct MacSettingsView: View {
 
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
+
+            AVSettingsToggleRow(
+                systemImage: "macwindow",
+                title: L10n.string("profile.preferences.keepScreenAwake.title"),
+                detail: L10n.string("profile.preferences.keepScreenAwake.detail"),
+                isOn: $keepWindowAwake
+            )
 
             AVSettingsToggleRow(
                 systemImage: "clock.arrow.circlepath",
@@ -512,13 +538,6 @@ struct MacSettingsView: View {
                 title: L10n.string("profile.preferences.autoSkipUnstableStreams.title"),
                 detail: L10n.string("profile.preferences.autoSkipUnstableStreams.detail"),
                 isOn: $autoSkipUnstableStreams
-            )
-
-            AVSettingsToggleRow(
-                systemImage: "macwindow",
-                title: L10n.string("profile.preferences.keepScreenAwake.title"),
-                detail: L10n.string("profile.preferences.keepScreenAwake.detail"),
-                isOn: $keepWindowAwake
             )
         }
     }
@@ -689,6 +708,13 @@ struct MacSettingsView: View {
         )
     }
 
+    private var themeSelection: Binding<AppTheme> {
+        Binding(
+            get: { themeController.currentTheme },
+            set: { themeController.select($0) }
+        )
+    }
+
     private var languageSelector: some View {
         Menu {
             ForEach(AppLanguage.allCases) { language in
@@ -745,6 +771,41 @@ struct MacSettingsView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var themeSelector: some View {
+        HStack(spacing: 10) {
+            ForEach(AppTheme.allCases) { theme in
+                AVSettingsOptionButton(
+                    title: themeLabel(for: theme),
+                    systemImage: themeSymbol(for: theme),
+                    isSelected: themeController.currentTheme == theme,
+                    action: { themeSelection.wrappedValue = theme }
+                )
+            }
+        }
+    }
+
+    private func themeLabel(for theme: AppTheme) -> String {
+        switch theme {
+        case .system:
+            L10n.string("profile.preferences.theme.system")
+        case .light:
+            L10n.string("profile.preferences.theme.light")
+        case .dark:
+            L10n.string("profile.preferences.theme.dark")
+        }
+    }
+
+    private func themeSymbol(for theme: AppTheme) -> String {
+        switch theme {
+        case .system:
+            "circle.lefthalf.filled"
+        case .light:
+            "sun.max"
+        case .dark:
+            "moon"
+        }
     }
 
     private var supportURL: URL? {
