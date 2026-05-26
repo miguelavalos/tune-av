@@ -200,6 +200,16 @@ struct MacProfileView: View {
                 )
             }
 
+            if let deleteAccountURL {
+                AVSettingsActionRow(
+                    systemImage: "trash",
+                    title: L10n.string("profile.safety.delete.title"),
+                    detail: L10n.string("profile.safety.delete.detail"),
+                    action: { openURL(deleteAccountURL) }
+                )
+                .accessibilityIdentifier("profile.safety.delete")
+            }
+
             AVSettingsButton(
                 title: L10n.string("profile.actions.signOut"),
                 style: .secondary,
@@ -331,6 +341,13 @@ struct MacProfileView: View {
 
     private var accountManagementURL: URL? {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
+    }
+
+    private var deleteAccountURL: URL? {
+        TuneAVBundleConfig.deleteAccountURL(
+            explicitURL: TuneAVBundleConfig.urlValue(for: "TUNEAV_DELETE_ACCOUNT_URL"),
+            accountManagementURL: accountManagementURL
+        )
     }
 
 }
