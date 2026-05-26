@@ -245,6 +245,8 @@
 "profile.preferences.preferredGenre.title" = "Bevorzugtes Start-Genre";
 "profile.preferences.subtitle" = "Lege fest, wie Tune AV auf diesem Gerät angezeigt wird.";
 "profile.preferences.title" = "App-Einstellungen";
+"profile.productPreferences.subtitle" = "Passe Hören, Wiedergabe und Stream-Verhalten auf diesem Gerät an.";
+"profile.productPreferences.title" = "Tune AV Einstellungen";
 "profile.local.storagePolicy.local" = "In diesem Modus bleiben deine Hördaten auf diesem Gerät.";
 "profile.local.storagePolicy.remote" = "Premium-Funktionen können konto­verbundene Kontinuität hinzufügen.";
 "profile.local.storagePolicy.title" = "Speicherrichtlinie";

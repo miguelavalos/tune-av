@@ -280,6 +280,8 @@
 "profile.preferences.sleepTimer.title" = "Sleep timer";
 "profile.preferences.subtitle" = "Pick how Tune AV is shown on this device.";
 "profile.preferences.title" = "App preferences";
+"profile.productPreferences.subtitle" = "Tune listening, playback, and stream behavior on this device.";
+"profile.productPreferences.title" = "Tune AV preferences";
 "profile.local.storagePolicy.local" = "Your listening data stays on this device in this mode.";
 "profile.local.storagePolicy.remote" = "Premium features can add account-connected continuity.";
 "profile.local.storagePolicy.title" = "Storage policy";

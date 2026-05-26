@@ -245,6 +245,8 @@
 "profile.preferences.preferredGenre.title" = "Gènere preferit d'Inici";
 "profile.preferences.subtitle" = "Tria com es mostra Tune AV en aquest dispositiu.";
 "profile.preferences.title" = "Preferències de l'app";
+"profile.productPreferences.subtitle" = "Ajusta l'escolta, la reproducció i el comportament dels streams en aquest dispositiu.";
+"profile.productPreferences.title" = "Preferències de Tune AV";
 "profile.local.storagePolicy.local" = "En aquest mode les dades d'escolta es queden en aquest dispositiu.";
 "profile.local.storagePolicy.remote" = "Les funcions premium poden afegir continuïtat connectada al compte.";
 "profile.local.storagePolicy.title" = "Política d'emmagatzematge";

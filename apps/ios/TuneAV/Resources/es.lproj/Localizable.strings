@@ -280,6 +280,8 @@
 "profile.preferences.sleepTimer.title" = "Temporizador de apagado";
 "profile.preferences.subtitle" = "Elige cómo se muestra Tune AV en este dispositivo.";
 "profile.preferences.title" = "Preferencias de la app";
+"profile.productPreferences.subtitle" = "Ajusta la escucha, reproducción y comportamiento de streams en este dispositivo.";
+"profile.productPreferences.title" = "Preferencias de Tune AV";
 "profile.local.storagePolicy.local" = "En este modo tus datos de escucha se quedan en este dispositivo.";
 "profile.local.storagePolicy.remote" = "Las funciones premium pueden añadir continuidad conectada a tu cuenta.";
 "profile.local.storagePolicy.title" = "Política de almacenamiento";

@@ -113,6 +113,7 @@ struct ProfileScreen: View {
             }
         case .settings:
             appPreferencesCard
+            tunePreferencesCard
             localDataCard
             helpAndLegalCard
         }
@@ -366,6 +367,21 @@ struct ProfileScreen: View {
             languageSelector
 
             AVSettingsInfoRow(
+                systemImage: "circle.lefthalf.filled",
+                title: L10n.string("profile.preferences.theme.title"),
+                detail: L10n.string("profile.preferences.theme.detail")
+            )
+
+            themeSelector
+        }
+    }
+
+    private var tunePreferencesCard: some View {
+        AVSettingsSectionCard(
+            title: L10n.string("profile.productPreferences.title"),
+            subtitle: L10n.string("profile.productPreferences.subtitle")
+        ) {
+            AVSettingsInfoRow(
                 systemImage: "music.note.list",
                 title: L10n.string("profile.preferences.preferredGenre.title"),
                 detail: L10n.string(
@@ -375,14 +391,6 @@ struct ProfileScreen: View {
             )
 
             preferredGenreSelector
-
-            AVSettingsInfoRow(
-                systemImage: "circle.lefthalf.filled",
-                title: L10n.string("profile.preferences.theme.title"),
-                detail: L10n.string("profile.preferences.theme.detail")
-            )
-
-            themeSelector
 
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
