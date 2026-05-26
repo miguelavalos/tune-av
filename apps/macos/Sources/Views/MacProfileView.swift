@@ -66,6 +66,9 @@ struct MacProfileView: View {
                 profileSummaryCard
                 proPlanCard
                 syncCard
+                if model.accountUser != nil {
+                    accountSafetyCard
+                }
             }
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,7 +111,7 @@ struct MacProfileView: View {
                 detail: accountPlanDetail
             )
 
-            accountActions
+            accountActionButton
         }
     }
 
@@ -175,8 +178,27 @@ struct MacProfileView: View {
         }
     }
 
+    private var accountSafetyCard: some View {
+        AVSettingsCard {
+            AVSettingsSectionHeader(
+                title: L10n.string("profile.safety.title"),
+                subtitle: L10n.string("profile.safety.subtitle")
+            )
+
+            if let deleteAccountURL {
+                AVSettingsActionRow(
+                    systemImage: "exclamationmark.shield",
+                    title: L10n.string("profile.safety.delete.title"),
+                    detail: L10n.string("profile.safety.delete.detail"),
+                    action: { openURL(deleteAccountURL) }
+                )
+                .accessibilityIdentifier("profile.safety.delete")
+            }
+        }
+    }
+
     @ViewBuilder
-    private var accountActions: some View {
+    private var accountActionButton: some View {
         if model.accountUser == nil {
             HStack(spacing: 10) {
                 AVSettingsButton(
@@ -191,25 +213,6 @@ struct MacProfileView: View {
                 )
             }
         } else {
-            if let accountURL = accountManagementURL {
-                AVSettingsActionRow(
-                    systemImage: "person.crop.circle.badge.gearshape",
-                    title: L10n.string("profile.pro.manage"),
-                    detail: accountDetail,
-                    action: { openURL(accountURL) }
-                )
-            }
-
-            if let deleteAccountURL {
-                AVSettingsActionRow(
-                    systemImage: "trash",
-                    title: L10n.string("profile.safety.delete.title"),
-                    detail: L10n.string("profile.safety.delete.detail"),
-                    action: { openURL(deleteAccountURL) }
-                )
-                .accessibilityIdentifier("profile.safety.delete")
-            }
-
             AVSettingsButton(
                 title: L10n.string("profile.actions.signOut"),
                 style: .secondary,
