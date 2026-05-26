@@ -240,6 +240,7 @@ final class TuneAVMacModel: ObservableObject {
             featuredStations = try await stationService.popularStations(
                 filters: TuneAVStationSearchFilters(query: "", limit: 18, allowsEmptySearch: true)
             )
+            rememberStationEnrichment(featuredStations)
         } catch {
             errorMessage = error.localizedDescription
             featuredStations = Station.samples
@@ -325,6 +326,7 @@ final class TuneAVMacModel: ObservableObject {
                 hasMoreSearchResults = page.hasMore
                 searchNextCursor = page.nextCursor
             }
+            rememberStationEnrichment(searchResults)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -358,7 +360,9 @@ final class TuneAVMacModel: ObservableObject {
                 )
             )
             let existingIDs = Set(searchResults.map(\.id))
-            searchResults.append(contentsOf: page.stations.filter { !existingIDs.contains($0.id) })
+            let newStations = page.stations.filter { !existingIDs.contains($0.id) }
+            searchResults.append(contentsOf: newStations)
+            rememberStationEnrichment(newStations)
             searchTotalCount = page.total ?? searchTotalCount
             hasMoreSearchResults = page.hasMore
             searchNextCursor = page.nextCursor
@@ -1064,6 +1068,61 @@ final class TuneAVMacModel: ObservableObject {
         markLocalLibraryUpdated()
     }
 
+    private func rememberStationEnrichment(_ stations: [Station]) {
+        guard !stations.isEmpty else { return }
+
+        let enrichedByKey = stations.reduce(into: [String: Station]()) { result, station in
+            for key in station.macEnrichmentLookupKeys {
+                guard station.isPreferredMacEnrichment(over: result[key]) else { continue }
+                result[key] = station
+            }
+        }
+        guard !enrichedByKey.isEmpty else { return }
+
+        var didUpdateFavorites = false
+        favoriteStations = favoriteStations.map { station in
+            guard let enriched = bestEnrichedStation(for: station, in: enrichedByKey),
+                  enriched.isPreferredMacEnrichment(over: station)
+            else {
+                return station
+            }
+            didUpdateFavorites = true
+            return enriched
+        }
+
+        var didUpdateRecents = false
+        recentStations = recentStations.map { station in
+            guard let enriched = bestEnrichedStation(for: station, in: enrichedByKey),
+                  enriched.isPreferredMacEnrichment(over: station)
+            else {
+                return station
+            }
+            didUpdateRecents = true
+            return enriched
+        }
+
+        if let currentStation,
+           let enriched = bestEnrichedStation(for: currentStation, in: enrichedByKey),
+           enriched.isPreferredMacEnrichment(over: currentStation) {
+            self.currentStation = enriched
+        }
+
+        guard didUpdateFavorites || didUpdateRecents else { return }
+        if didUpdateFavorites {
+            storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
+        }
+        if didUpdateRecents {
+            storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
+        }
+        markLocalLibraryUpdated()
+    }
+
+    private func bestEnrichedStation(for station: Station, in enrichedByKey: [String: Station]) -> Station? {
+        station.macEnrichmentLookupKeys
+            .compactMap { enrichedByKey[$0] }
+            .max { $0.macEnrichmentRank < $1.macEnrichmentRank }
+    }
+
     private func sanitizedQueue(_ queue: [Station], currentStation: Station) -> [Station] {
         var seenIDs = Set<String>()
         let stations = queue.filter { station in
@@ -1763,5 +1822,93 @@ extension MacDiscoveredTrack: TuneAVMusicLibraryDiscovery {
 
     var resolvedStationArtworkURL: URL? {
         TuneAVDiscoveredTrackSupport.resolvedURL(stationArtworkURL)
+    }
+}
+
+private extension Station {
+    var macEnrichmentLookupKeys: [String] {
+        var keys: [String] = []
+        appendMacEnrichmentIDKeys(id, to: &keys)
+        if let canonicalStationId {
+            appendMacEnrichmentIDKeys(canonicalStationId, to: &keys)
+        }
+        if let streamKey = normalizedMacEnrichmentURLKey(streamURL) {
+            keys.append("stream:\(streamKey)")
+        }
+        if let homepageURL, let homepageKey = normalizedMacEnrichmentURLKey(homepageURL) {
+            keys.append("homepage:\(homepageKey)")
+        }
+        return keys
+    }
+
+    var macEnrichmentRank: Int {
+        var rank = 0
+
+        if canonicalStationId != nil { rank += 1 }
+        if category != nil { rank += 1 }
+        if visibility != nil { rank += 1 }
+        if qualityScore != nil { rank += 1 }
+        if enrichmentStatus == "enriched" { rank += 4 }
+        else if enrichmentStatus != nil { rank += 1 }
+
+        if let artwork, artwork.status != "none" || artwork.url != nil {
+            rank += 2
+        }
+
+        if let editorial {
+            rank += 6
+            if editorial.discoveryProfile != nil { rank += 4 }
+            rank += min(editorial.programming.count, 3)
+            rank += min(editorial.audience.count, 2)
+            rank += min(editorial.secondaryFormats.count, 2)
+        }
+
+        return rank
+    }
+
+    func isPreferredMacEnrichment(over current: Station?) -> Bool {
+        guard let current else { return true }
+        if let isNewer = metadataFreshnessCompared(to: current) {
+            return isNewer
+        }
+        if displayArtworkURL != nil, current.displayArtworkURL == nil {
+            return true
+        }
+        if displayArtworkURL == nil, current.displayArtworkURL != nil {
+            return false
+        }
+        return macEnrichmentRank > current.macEnrichmentRank
+    }
+
+    private func appendMacEnrichmentIDKeys(_ rawID: String, to keys: inout [String]) {
+        let trimmedID = rawID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedID.isEmpty else { return }
+
+        keys.append("id:\(trimmedID)")
+
+        if trimmedID.hasPrefix("st_rb_") {
+            let radioBrowserID = String(trimmedID.dropFirst("st_rb_".count)).replacingOccurrences(of: "_", with: "-")
+            if radioBrowserID != trimmedID {
+                keys.append("id:\(radioBrowserID)")
+            }
+        } else if trimmedID.contains("-") {
+            keys.append("id:st_rb_\(trimmedID.replacingOccurrences(of: "-", with: "_"))")
+        }
+    }
+
+    private func normalizedMacEnrichmentURLKey(_ rawURL: String) -> String? {
+        guard
+            let url = URL(string: rawURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return nil
+        }
+
+        components.query = nil
+        components.fragment = nil
+        components.scheme = "stream"
+        return components.string?
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            .lowercased()
     }
 }

@@ -450,6 +450,78 @@ struct StationRecord: Codable, Equatable {
     let lastCheckOKAt: String?
     let geoLatitude: Double?
     let geoLongitude: Double?
+    let canonicalStationId: String?
+    let category: String?
+    let visibility: String?
+    let qualityScore: Int?
+    let enrichmentStatus: String?
+    let metadataUpdatedAt: String?
+    let artwork: StationArtwork?
+    let editorial: StationEditorial?
+
+    init(
+        id: String,
+        name: String,
+        country: String,
+        countryCode: String?,
+        state: String?,
+        language: String,
+        languageCodes: String?,
+        tags: String,
+        streamURL: String,
+        faviconURL: String?,
+        bitrate: Int?,
+        codec: String?,
+        homepageURL: String?,
+        votes: Int?,
+        clickCount: Int?,
+        clickTrend: Int?,
+        isHLS: Bool?,
+        hasExtendedInfo: Bool?,
+        hasSSLError: Bool?,
+        lastCheckOKAt: String?,
+        geoLatitude: Double?,
+        geoLongitude: Double?,
+        canonicalStationId: String? = nil,
+        category: String? = nil,
+        visibility: String? = nil,
+        qualityScore: Int? = nil,
+        enrichmentStatus: String? = nil,
+        metadataUpdatedAt: String? = nil,
+        artwork: StationArtwork? = nil,
+        editorial: StationEditorial? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.country = country
+        self.countryCode = countryCode
+        self.state = state
+        self.language = language
+        self.languageCodes = languageCodes
+        self.tags = tags
+        self.streamURL = streamURL
+        self.faviconURL = faviconURL
+        self.bitrate = bitrate
+        self.codec = codec
+        self.homepageURL = homepageURL
+        self.votes = votes
+        self.clickCount = clickCount
+        self.clickTrend = clickTrend
+        self.isHLS = isHLS
+        self.hasExtendedInfo = hasExtendedInfo
+        self.hasSSLError = hasSSLError
+        self.lastCheckOKAt = lastCheckOKAt
+        self.geoLatitude = geoLatitude
+        self.geoLongitude = geoLongitude
+        self.canonicalStationId = canonicalStationId
+        self.category = category
+        self.visibility = visibility
+        self.qualityScore = qualityScore
+        self.enrichmentStatus = enrichmentStatus
+        self.metadataUpdatedAt = metadataUpdatedAt
+        self.artwork = artwork
+        self.editorial = editorial
+    }
 }
 
 extension Station {
@@ -476,7 +548,15 @@ extension Station {
             hasSSLError: record.hasSSLError,
             lastCheckOKAt: record.lastCheckOKAt,
             geoLatitude: record.geoLatitude,
-            geoLongitude: record.geoLongitude
+            geoLongitude: record.geoLongitude,
+            canonicalStationId: record.canonicalStationId,
+            category: record.category,
+            visibility: record.visibility,
+            qualityScore: record.qualityScore,
+            enrichmentStatus: record.enrichmentStatus,
+            metadataUpdatedAt: record.metadataUpdatedAt,
+            artwork: record.artwork,
+            editorial: record.editorial
         )
     }
 
@@ -503,7 +583,15 @@ extension Station {
             hasSSLError: hasSSLError,
             lastCheckOKAt: lastCheckOKAt,
             geoLatitude: geoLatitude,
-            geoLongitude: geoLongitude
+            geoLongitude: geoLongitude,
+            canonicalStationId: canonicalStationId,
+            category: category,
+            visibility: visibility,
+            qualityScore: qualityScore,
+            enrichmentStatus: enrichmentStatus,
+            metadataUpdatedAt: metadataUpdatedAt,
+            artwork: artwork,
+            editorial: editorial
         )
     }
 }
