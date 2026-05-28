@@ -1040,6 +1040,9 @@
 "station.quality.mayLag" = "Pot trigar";
 "station.quality.unstable" = "Inestable ara";
 "player.control.listen" = "Escoltar";
+"profile.pro.subscription.activeThrough" = "Pro està actiu fins al %@.";
+"profile.pro.subscription.billingIssue" = "Hi ha un problema de facturació. Gestiona la subscripció al teu compte de l'App Store.";
+"profile.pro.subscription.title" = "Subscripció";
 "shell.avi.header.ready.label" = "A PUNT";
 "shell.avi.header.ready.title" = "Avi espera un senyal";
 "shell.avi.header.ready.summary" = "Cerca una ràdio i Avi començarà a llegir-la.";

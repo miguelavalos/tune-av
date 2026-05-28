@@ -25,12 +25,14 @@ enum PlanTier: String, Codable {
 }
 
 struct TuneAVResolvedAccess: Equatable {
+    let platformUserId: String?
     let planTier: PlanTier
     let accessMode: AccessMode
     let capabilities: AccessCapabilities
     let limits: AccessLimits
 
     static let guest = TuneAVResolvedAccess(
+        platformUserId: nil,
         planTier: .free,
         accessMode: .guest,
         capabilities: .forMode(.guest),
@@ -39,6 +41,7 @@ struct TuneAVResolvedAccess: Equatable {
 
     static func localFallback(for accessMode: AccessMode) -> TuneAVResolvedAccess {
         TuneAVResolvedAccess(
+            platformUserId: nil,
             planTier: accessMode == .signedInPro ? .pro : .free,
             accessMode: accessMode,
             capabilities: .forMode(accessMode),

@@ -1,7 +1,14 @@
 import Foundation
 
 struct MeAccessResponse: Decodable {
+    let viewer: MeAccessViewer?
     let apps: [AppAccess]
+}
+
+struct MeAccessViewer: Decodable, Equatable {
+    let isAuthenticated: Bool
+    let userId: String?
+    let identityProvider: String?
 }
 
 struct AppAccess: Decodable {

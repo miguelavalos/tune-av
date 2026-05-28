@@ -1040,6 +1040,9 @@
 "station.quality.mayLag" = "Peut tarder";
 "station.quality.unstable" = "Instable";
 "player.control.listen" = "Écouter";
+"profile.pro.subscription.activeThrough" = "Pro est actif jusqu'au %@.";
+"profile.pro.subscription.billingIssue" = "Il y a un problème de facturation. Gérez l'abonnement dans votre compte App Store.";
+"profile.pro.subscription.title" = "Abonnement";
 "shell.avi.header.ready.label" = "PRÊT";
 "shell.avi.header.ready.title" = "Avi attend un signal";
 "shell.avi.header.ready.summary" = "Cherchez une radio et Avi commencera à la lire.";

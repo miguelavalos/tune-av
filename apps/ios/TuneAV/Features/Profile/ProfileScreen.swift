@@ -46,6 +46,7 @@ struct ProfileScreen: View {
     @State private var browserDestination: BrowserDestination?
     @State private var isShowingAccountDeletion = false
     @State private var isShowingProPaywall = false
+    @State private var accountSummary: AccountSummary?
     private let genreTags = TuneAVMusicGenreCatalog.visibleTags
 
     var body: some View {
@@ -96,6 +97,9 @@ struct ProfileScreen: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .task(id: accessController.accessMode) {
+            await refreshAccountSummaryIfNeeded()
         }
     }
 
@@ -291,6 +295,14 @@ struct ProfileScreen: View {
                     title: L10n.string("profile.pro.avi.title"),
                     detail: L10n.string("profile.pro.avi.detail")
                 )
+                if let subscriptionStatusDetail {
+                    AVSettingsInfoRow(
+                        systemImage: "calendar.badge.clock",
+                        title: L10n.string("profile.pro.subscription.title"),
+                        detail: subscriptionStatusDetail
+                    )
+                    .accessibilityIdentifier("profile.pro.subscriptionStatus")
+                }
             }
 
             proPlanAction
@@ -706,6 +718,28 @@ struct ProfileScreen: View {
         }
     }
 
+    private var subscriptionStatusDetail: String? {
+        guard accessController.accessMode == .signedInPro else { return nil }
+        guard let subscription = accountSummary?.billing?.subscriptions.first(where: { subscription in
+            subscription.appId == "tuneav" && subscription.planTier == .pro
+        }) else {
+            return nil
+        }
+
+        if subscription.status == "pastDue" {
+            return L10n.string("profile.pro.subscription.billingIssue")
+        }
+
+        if let expiresAt = subscription.expiresAt ?? subscription.renewsAt,
+           let formattedDate = Self.subscriptionDateFormatter.string(fromISO8601: expiresAt) {
+            return L10n.string("profile.pro.subscription.activeThrough", formattedDate)
+        }
+
+        return nil
+    }
+
+    private static let subscriptionDateFormatter = TuneAVSubscriptionDateFormatter()
+
     private var cloudSyncIcon: String {
         switch libraryStore.cloudSyncStatus {
         case .idle:
@@ -1042,6 +1076,19 @@ struct ProfileScreen: View {
         return AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
     }
 
+    private func refreshAccountSummaryIfNeeded() async {
+        guard accessController.accessMode != .guest else {
+            accountSummary = nil
+            return
+        }
+
+        do {
+            accountSummary = try await accountDeletionAPI.fetchAccountSummary()
+        } catch {
+            accountSummary = nil
+        }
+    }
+
     private func signOut() async {
         guard isSigningOut == false else { return }
         isSigningOut = true
@@ -1054,6 +1101,21 @@ struct ProfileScreen: View {
         }
 
         isSigningOut = false
+    }
+}
+
+private struct TuneAVSubscriptionDateFormatter {
+    private let isoFormatter = ISO8601DateFormatter()
+    private let displayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
+    func string(fromISO8601 value: String) -> String? {
+        guard let date = isoFormatter.date(from: value) else { return nil }
+        return displayFormatter.string(from: date)
     }
 }
 

@@ -525,6 +525,7 @@ final class AccessLimitsTests: XCTestCase {
         let controller = AccessController(
             accountService: StubAccountService(user: user),
             entitlementService: StubEntitlementService(access: ResolvedAccess(
+                platformUserId: nil,
                 planTier: .pro,
                 accessMode: .signedInPro,
                 capabilities: .forMode(.signedInPro),
@@ -676,6 +677,34 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .signedInPro)
         XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
         XCTAssertNil(controller.subscriptionReconciliationSource)
+    }
+
+    @MainActor
+    func testSubscriptionPurchasingUsesPlatformUserIdAfterAccessRefresh() async {
+        let user = AccountUser(id: "clerk-user-id", displayName: "Free User", emailAddress: "free@example.com")
+        let entitlementService = MutableStubEntitlementService(access: ResolvedAccess(
+            platformUserId: "appsav-internal-user-id",
+            planTier: .free,
+            accessMode: .signedInFree,
+            capabilities: .forMode(.signedInFree),
+            limits: .forMode(.signedInFree)
+        ))
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            entitlementService: entitlementService,
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        await controller.loadMonthlySubscriptionOffer()
+        await controller.purchaseMonthlyPro()
+
+        XCTAssertEqual(controller.platformUserId, "appsav-internal-user-id")
+        XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, ["appsav-internal-user-id"])
+        XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, ["appsav-internal-user-id"])
     }
 
     @MainActor
@@ -1010,6 +1039,7 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
 
 private extension ResolvedAccess {
     static let signedInFree = ResolvedAccess(
+        platformUserId: nil,
         planTier: .free,
         accessMode: .signedInFree,
         capabilities: .forMode(.signedInFree),
@@ -1017,6 +1047,7 @@ private extension ResolvedAccess {
     )
 
     static let signedInPro = ResolvedAccess(
+        platformUserId: nil,
         planTier: .pro,
         accessMode: .signedInPro,
         capabilities: .forMode(.signedInPro),

@@ -116,9 +116,65 @@ struct AccountBillingSummary: Decodable, Equatable {
 struct AccountBillingSubscription: Decodable, Equatable, Identifiable {
     let id: String
     let appId: String?
+    let planId: String?
+    let planTier: PlanTier?
     let provider: String?
     let status: String
+    let renewsAt: String?
+    let expiresAt: String?
     let managementUrl: URL?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case appId
+        case planId
+        case name
+        case planTier
+        case provider
+        case status
+        case renewsAt
+        case expiresAt
+        case managementUrl
+        case manageUrl
+    }
+
+    init(
+        id: String,
+        appId: String? = nil,
+        planId: String? = nil,
+        planTier: PlanTier? = nil,
+        provider: String? = nil,
+        status: String,
+        renewsAt: String? = nil,
+        expiresAt: String? = nil,
+        managementUrl: URL? = nil
+    ) {
+        self.id = id
+        self.appId = appId
+        self.planId = planId
+        self.planTier = planTier
+        self.provider = provider
+        self.status = status
+        self.renewsAt = renewsAt
+        self.expiresAt = expiresAt
+        self.managementUrl = managementUrl
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        appId = try container.decodeIfPresent(String.self, forKey: .appId)
+        planId = try container.decodeIfPresent(String.self, forKey: .planId)
+            ?? container.decodeIfPresent(String.self, forKey: .name)
+        planTier = try container.decodeIfPresent(PlanTier.self, forKey: .planTier)
+        provider = try container.decodeIfPresent(String.self, forKey: .provider)
+        status = try container.decode(String.self, forKey: .status)
+        renewsAt = try container.decodeIfPresent(String.self, forKey: .renewsAt)
+        expiresAt = try container.decodeIfPresent(String.self, forKey: .expiresAt)
+        managementUrl = try container.decodeIfPresent(URL.self, forKey: .managementUrl)
+            ?? container.decodeIfPresent(URL.self, forKey: .manageUrl)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+            ?? [appId, planId, provider, status].compactMap { $0 }.joined(separator: ":")
+    }
 }
 
 struct AccountDeletionEligibility: Decodable, Equatable {

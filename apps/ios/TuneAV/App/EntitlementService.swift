@@ -24,6 +24,7 @@ struct LocalEntitlementService: EntitlementService {
     private func resolvedAccess(for planTier: PlanTier) -> ResolvedAccess {
         let accessMode: AccessMode = planTier == .pro ? .signedInPro : .signedInFree
         return ResolvedAccess(
+            platformUserId: nil,
             planTier: planTier,
             accessMode: accessMode,
             capabilities: AccessCapabilities.forMode(accessMode),
@@ -37,6 +38,7 @@ struct LocalEntitlementService: EntitlementService {
 
         let accessMode: AccessMode = uiTestEnvironment.isProAccount ? .signedInPro : .signedInFree
         return ResolvedAccess(
+            platformUserId: nil,
             planTier: accessMode == .signedInPro ? .pro : .free,
             accessMode: accessMode,
             capabilities: .forMode(accessMode),
@@ -85,6 +87,7 @@ final class PlatformBackedEntitlementService: EntitlementService {
 
             authLogger.info("Resolved Tune AV access mode \(tuneAVAccess.accessMode.rawValue, privacy: .public)")
             return ResolvedAccess(
+                platformUserId: payload.viewer?.userId,
                 planTier: tuneAVAccess.planTier,
                 accessMode: tuneAVAccess.accessMode,
                 capabilities: tuneAVAccess.capabilities,

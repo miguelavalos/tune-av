@@ -1032,6 +1032,9 @@
 "profile.pro.library.title" = "Más memoria musical";
 "profile.pro.manage" = "Gestionar suscripción";
 "profile.pro.signIn" = "Iniciar sesión primero";
+"profile.pro.subscription.activeThrough" = "Pro está activo hasta el %@.";
+"profile.pro.subscription.billingIssue" = "Hay un problema de facturación. Gestiona la suscripción en tu cuenta del App Store.";
+"profile.pro.subscription.title" = "Suscripción";
 "profile.pro.subtitle.free" = "Dale a Avi más memoria, más acciones y Cloud Sync.";
 "profile.pro.subtitle.guest" = "Inicia sesión para comparar Pro después de probar Avi y guardar radios.";
 "profile.pro.subtitle.pro" = "Tu acceso Pro está activo. Gestiona la facturación en tu cuenta del App Store.";

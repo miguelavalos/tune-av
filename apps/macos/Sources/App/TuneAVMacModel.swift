@@ -1461,6 +1461,7 @@ final class TuneAVMacModel: ObservableObject {
             let access = try await client.fetchTuneAVAccess()
             applyResolvedAccess(
                 TuneAVResolvedAccess(
+                    platformUserId: nil,
                     planTier: access.planTier,
                     accessMode: access.accessMode,
                     capabilities: access.capabilities,

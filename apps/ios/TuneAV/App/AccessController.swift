@@ -14,6 +14,7 @@ final class AccessController: ObservableObject {
     @Published private(set) var accountUser: AccountUser?
     @Published private(set) var accountSession: AccountSession?
     @Published private(set) var limits: AccessLimits
+    @Published private(set) var platformUserId: String?
     @Published private(set) var subscriptionOffer: TuneAVSubscriptionOffer?
     @Published private(set) var subscriptionError: TuneAVSubscriptionPurchaseError?
     @Published private(set) var isSubscriptionOperationInProgress: Bool
@@ -64,6 +65,7 @@ final class AccessController: ObservableObject {
         self.capabilities = AccessCapabilities.forMode(.guest)
         self.accountSession = nil
         self.limits = AccessLimits.forMode(.guest)
+        self.platformUserId = nil
         self.subscriptionOffer = nil
         self.subscriptionError = nil
         self.isSubscriptionOperationInProgress = false
@@ -136,7 +138,7 @@ final class AccessController: ObservableObject {
         }
 
         do {
-            subscriptionOffer = try await subscriptionPurchasing.loadMonthlyOffer(for: accountUser)
+            subscriptionOffer = try await subscriptionPurchasing.loadMonthlyOffer(for: subscriptionAccountUser)
             subscriptionError = nil
         } catch let error as TuneAVSubscriptionPurchaseError {
             subscriptionError = error
@@ -147,13 +149,13 @@ final class AccessController: ObservableObject {
 
     func purchaseMonthlyPro() async {
         await runSubscriptionOperation(source: .purchase) {
-            try await subscriptionPurchasing.purchaseMonthlyPro(for: accountUser)
+            try await subscriptionPurchasing.purchaseMonthlyPro(for: subscriptionAccountUser)
         }
     }
 
     func restorePurchases() async {
         await runSubscriptionOperation(source: .restore) {
-            try await subscriptionPurchasing.restorePurchases(for: accountUser)
+            try await subscriptionPurchasing.restorePurchases(for: subscriptionAccountUser)
         }
     }
 
@@ -166,6 +168,7 @@ final class AccessController: ObservableObject {
         try await accountService.signOut()
         accessRefreshGeneration += 1
         accountUser = nil
+        platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
         isWaitingForSubscriptionReconciliation = false
@@ -267,6 +270,7 @@ final class AccessController: ObservableObject {
         try? await accountService.signOut()
         accessRefreshGeneration += 1
         accountUser = nil
+        platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
         isWaitingForSubscriptionReconciliation = false
@@ -280,10 +284,14 @@ final class AccessController: ObservableObject {
             accessMode = .guest
             capabilities = AccessCapabilities.forMode(.guest)
             limits = TuneAVAccessLimitPolicy.resolvedLimits(.forMode(.guest), accessMode: .guest)
+            platformUserId = nil
             accountSession = nil
             return
         }
 
+        if let resolvedPlatformUserId = resolvedAccess.platformUserId, !resolvedPlatformUserId.isEmpty {
+            platformUserId = resolvedPlatformUserId
+        }
         planTier = resolvedAccess.planTier
         accessMode = resolvedAccess.accessMode
         capabilities = resolvedAccess.capabilities
@@ -297,6 +305,16 @@ final class AccessController: ObservableObject {
             planTier: planTier,
             accessMode: accessMode,
             capabilities: capabilities
+        )
+    }
+
+    private var subscriptionAccountUser: AccountUser? {
+        guard let accountUser else { return nil }
+        guard let platformUserId, !platformUserId.isEmpty else { return accountUser }
+        return AccountUser(
+            id: platformUserId,
+            displayName: accountUser.displayName,
+            emailAddress: accountUser.emailAddress
         )
     }
 
