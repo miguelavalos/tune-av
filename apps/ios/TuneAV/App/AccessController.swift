@@ -29,6 +29,8 @@ final class AccessController: ObservableObject {
     private let userDefaults: UserDefaults
     private let guestOnboardingPolicy: GuestOnboardingPolicy
     private let now: () -> Date
+    private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
+    private let sleepNanoseconds: (UInt64) async -> Void
     private let dailyUsageLimiter: TuneAVDailyUsageLimiter
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
@@ -40,7 +42,16 @@ final class AccessController: ObservableObject {
         subscriptionPurchasing: TuneAVSubscriptionPurchasing = RevenueCatTuneAVSubscriptionPurchasing(),
         userDefaults: UserDefaults = .standard,
         guestOnboardingPolicy: GuestOnboardingPolicy = GuestOnboardingPolicy(),
-        now: @escaping () -> Date = Date.init
+        now: @escaping () -> Date = Date.init,
+        subscriptionReconciliationRetryDelaysNanoseconds: [UInt64] = [
+            1_000_000_000,
+            2_000_000_000,
+            3_000_000_000,
+            5_000_000_000
+        ],
+        sleepNanoseconds: @escaping (UInt64) async -> Void = { nanoseconds in
+            try? await Task.sleep(nanoseconds: nanoseconds)
+        }
     ) {
         let currentUser = accountService.currentUser
 
@@ -54,6 +65,8 @@ final class AccessController: ObservableObject {
         self.userDefaults = userDefaults
         self.guestOnboardingPolicy = guestOnboardingPolicy
         self.now = now
+        self.subscriptionReconciliationRetryDelaysNanoseconds = subscriptionReconciliationRetryDelaysNanoseconds
+        self.sleepNanoseconds = sleepNanoseconds
         self.dailyUsageLimiter = TuneAVDailyUsageLimiter(
             defaults: userDefaults,
             keyStyle: .dayBucket(prefix: "tuneav.featureUsage."),
@@ -247,11 +260,7 @@ final class AccessController: ObservableObject {
             isWaitingForSubscriptionReconciliation = true
             subscriptionReconciliationSource = source
             await syncFromAccountProvider()
-            if accessMode == .signedInPro {
-                isWaitingForSubscriptionReconciliation = false
-                subscriptionReconciliationSource = nil
-                upgradePrompt = nil
-            }
+            await retrySubscriptionReconciliationIfNeeded()
         } catch let error as TuneAVSubscriptionPurchaseError {
             if error != .purchaseCancelled {
                 subscriptionError = error
@@ -259,6 +268,35 @@ final class AccessController: ObservableObject {
         } catch {
             subscriptionError = .underlying(error.localizedDescription)
         }
+    }
+
+    private func retrySubscriptionReconciliationIfNeeded() async {
+        guard accessMode != .signedInPro else {
+            clearSubscriptionReconciliationState()
+            return
+        }
+
+        let reconciliationAccountUser = accountUser
+        for delay in subscriptionReconciliationRetryDelaysNanoseconds {
+            guard isWaitingForSubscriptionReconciliation else { return }
+            guard accountUser == reconciliationAccountUser else { return }
+
+            await sleepNanoseconds(delay)
+            guard isWaitingForSubscriptionReconciliation else { return }
+            guard accountUser == reconciliationAccountUser else { return }
+
+            await syncFromAccountProvider()
+            if accessMode == .signedInPro {
+                clearSubscriptionReconciliationState()
+                return
+            }
+        }
+    }
+
+    private func clearSubscriptionReconciliationState() {
+        isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
+        upgradePrompt = nil
     }
 
     private func resolveAccessState() {
@@ -297,8 +335,7 @@ final class AccessController: ObservableObject {
         capabilities = resolvedAccess.capabilities
         limits = TuneAVAccessLimitPolicy.resolvedLimits(resolvedAccess.limits, accessMode: resolvedAccess.accessMode)
         if resolvedAccess.accessMode == .signedInPro {
-            isWaitingForSubscriptionReconciliation = false
-            subscriptionReconciliationSource = nil
+            clearSubscriptionReconciliationState()
         }
         accountSession = AccountSession(
             user: accountUser,

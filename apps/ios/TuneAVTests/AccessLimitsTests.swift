@@ -656,7 +656,8 @@ final class AccessLimitsTests: XCTestCase {
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
-            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
         )
 
         await controller.loadMonthlySubscriptionOffer()
@@ -695,7 +696,8 @@ final class AccessLimitsTests: XCTestCase {
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
-            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
         )
 
         await controller.syncFromAccountProvider()
@@ -708,6 +710,37 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
+    func testPurchaseRetriesAccessRefreshUntilBackendEntitlementIsVisible() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let entitlementService = SequenceStubEntitlementService(accesses: [
+            .signedInFree,
+            .signedInFree,
+            .signedInPro
+        ])
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        var sleepCalls: [UInt64] = []
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            entitlementService: entitlementService,
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: [1, 2],
+            sleepNanoseconds: { delay in
+                sleepCalls.append(delay)
+            }
+        )
+
+        await controller.purchaseMonthlyPro()
+
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+        XCTAssertEqual(entitlementService.refreshCount, 3)
+        XCTAssertEqual(sleepCalls, [1, 2])
+    }
+
+    @MainActor
     func testRestoreRefreshesAccessWithRestoreReconciliationSource() async {
         let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
         let entitlementService = MutableStubEntitlementService(access: .signedInFree)
@@ -717,7 +750,8 @@ final class AccessLimitsTests: XCTestCase {
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
-            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
         )
 
         await controller.restorePurchases()
@@ -965,6 +999,26 @@ private final class MutableStubEntitlementService: EntitlementService {
 
     func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
         resolveAccess(for: user)
+    }
+}
+
+@MainActor
+private final class SequenceStubEntitlementService: EntitlementService {
+    private let accesses: [ResolvedAccess]
+    private(set) var refreshCount = 0
+
+    init(accesses: [ResolvedAccess]) {
+        self.accesses = accesses
+    }
+
+    func resolveAccess(for user: AccountUser?) -> ResolvedAccess {
+        user == nil ? .guest : accesses.first ?? .signedInFree
+    }
+
+    func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
+        guard user != nil else { return .guest }
+        defer { refreshCount += 1 }
+        return accesses[min(refreshCount, accesses.count - 1)]
     }
 }
 

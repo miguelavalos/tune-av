@@ -1,4 +1,6 @@
 import Foundation
+import OSLog
+import StoreKit
 
 #if canImport(RevenueCat)
 import RevenueCat
@@ -114,6 +116,7 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
     private let offeringIDProvider: () -> String?
     private let monthlyPackageIDProvider: () -> String?
     private var configuredUserID: String?
+    private let purchaseLogger = Logger(subsystem: "com.avalsys.tuneav", category: "subscription")
 
     init(
         apiKeyProvider: @escaping () -> String? = { AppConfig.revenueCatPublicAPIKey },
@@ -146,11 +149,17 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
         try await prepare(for: user)
         let package = try await loadMonthlyPackage()
+        let productIdentifier = package.storeProduct.productIdentifier
+        let revenueCatPrice = package.storeProduct.localizedPriceString
+        let localizedPrice = await storeKitDisplayPrice(for: productIdentifier) ?? revenueCatPrice
+        purchaseLogger.info(
+            "Loaded RevenueCat monthly offer product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public) displayPrice=\(localizedPrice, privacy: .public) currency=\(package.storeProduct.currencyCode ?? "unknown", privacy: .public)"
+        )
         return TuneAVSubscriptionOffer(
             identifier: package.identifier,
-            productIdentifier: package.storeProduct.productIdentifier,
+            productIdentifier: productIdentifier,
             localizedTitle: package.storeProduct.localizedTitle,
-            localizedPrice: package.storeProduct.localizedPriceString
+            localizedPrice: localizedPrice
         )
     }
 
@@ -158,17 +167,25 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         let userID = try requireUserID(user)
         try await prepare(for: user)
         let package = try await loadMonthlyPackage()
+        purchaseLogger.info(
+            "Starting RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public) price=\(package.storeProduct.localizedPriceString, privacy: .public)"
+        )
         let result = try await purchase(package)
         guard !result.userCancelled else {
             throw TuneAVSubscriptionPurchaseError.purchaseCancelled
         }
+        purchaseLogger.info(
+            "Finished RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public)"
+        )
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
     }
 
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let userID = try requireUserID(user)
         try await prepare(for: user)
+        purchaseLogger.info("Starting RevenueCat restore userID=\(userID, privacy: .private)")
         _ = try await restorePurchases()
+        purchaseLogger.info("Finished RevenueCat restore userID=\(userID, privacy: .private)")
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
     }
 
@@ -259,11 +276,28 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         }
     }
 
+    private func storeKitDisplayPrice(for productIdentifier: String) async -> String? {
+        do {
+            let products = try await StoreKit.Product.products(for: [productIdentifier])
+            return products.first(where: { $0.id == productIdentifier })?.displayPrice
+        } catch {
+            purchaseLogger.error(
+                "Unable to load StoreKit display price product=\(productIdentifier, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
+            )
+            return nil
+        }
+    }
+
     private static func purchaseError(from error: Error?) -> TuneAVSubscriptionPurchaseError {
         guard let error else {
             return .underlying(L10n.string("subscription.error.unknown"))
         }
         return .underlying(error.localizedDescription)
+    }
+
+    private static func safeErrorCode(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(nsError.domain):\(nsError.code)"
     }
 }
 #else
