@@ -5,9 +5,10 @@ SwiftUI iOS app for Tune AV.
 Use [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
 current public state document for the iOS app.
 
-Current release status, dated 2026-05-23: iOS `1.0` build `8` has been
-submitted to Apple App Review and is pending review. `Config/ExportOptionsUpload.plist`
-remains the checked-in export options file for signed App Store Connect upload.
+Current release status, dated 2026-05-28: iOS `1.0` build `13` has been
+uploaded to App Store Connect and attached to App Review after the subscription
+metadata/paywall update. `Config/ExportOptionsUpload.plist` remains the
+checked-in export options file for signed App Store Connect upload.
 
 ## Local Config
 

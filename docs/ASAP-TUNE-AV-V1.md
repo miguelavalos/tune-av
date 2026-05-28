@@ -299,12 +299,12 @@ Verification:
 
 Purpose: freeze the first Tune AV version for TestFlight and App Store.
 
-Status: local RC verification complete on 2026-05-22. `apps-av/apple` builds,
-Tune unit/UI smoke checks pass, release preflight passes, unsigned Release
-archive succeeds, strict archive privacy evidence passes, and App Store upload
-export options are checked in. Pending items are signed upload, TestFlight
-processing, real-device release smoke, App Privacy/subscription confirmation,
-review notes, and final screenshots.
+Status: App Review resubmission active on 2026-05-28. `apps-av/apple` builds,
+Tune unit/UI smoke checks pass, release preflight passes, strict archive privacy
+evidence passes, App Store upload export options are checked in, and iOS `1.0`
+build `13` has been uploaded after the subscription metadata/paywall update.
+Remaining review work is tracked outside the public repository with private App
+Store Connect, TestFlight, App Review, and provider evidence.
 
 Run and verify `docs/release-checklist.md`.
 

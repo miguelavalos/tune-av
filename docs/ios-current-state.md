@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-05-23
+Date: 2026-05-28
 
 This is the public source of truth for the current Tune AV iOS app. It describes
 what exists in this repository without exposing private backend, signing, or
@@ -126,8 +126,11 @@ Latest release readiness verification known to the maintainers:
   PhoneNumberKit privacy manifests, and app-size gate reported `24.82 MiB`.
 - App Store upload export options are checked in at
   `apps/ios/Config/ExportOptionsUpload.plist`.
-- Tune AV iOS `1.0` build `8` was submitted to Apple App Review on 2026-05-23
-  and is pending review.
+- Tune AV iOS `1.0` build `13` was uploaded to App Store Connect on 2026-05-28
+  and attached to App Review after the subscription metadata/paywall update.
+- The public app now keeps subscription price display on official StoreKit /
+  RevenueCat localized product data; App Review evidence and private provider
+  setup remain outside this repository.
 
 The public repository does not contain private App Store Connect, signing,
 RevenueCat dashboard, webhook, or App Review evidence.
