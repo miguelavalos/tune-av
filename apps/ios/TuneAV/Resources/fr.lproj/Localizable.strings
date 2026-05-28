@@ -929,6 +929,7 @@
 "paywall.restore.loading" = "Restauration…";
 "paywall.status.purchasePending" = "Achat reçu. Tune AV débloquera Pro après l'actualisation de ton accès.";
 "paywall.status.restorePending" = "Restauration terminée. Si ton compte App Store a un abonnement actif, Tune AV débloquera Pro après confirmation de l'accès par Apps AV.";
+"paywall.subscriptionTerms" = "Tune AV Pro est un abonnement mensuel auto-renouvelable. Tu seras facturé %@ pour chaque période d'un mois jusqu'à annulation dans les réglages de l'App Store.";
 "paywall.subtitle" = "Améliore ton compte Tune AV connecté. L'app débloque Pro seulement quand Apps AV confirme l'accès.";
 "paywall.terms" = "Conditions";
 "paywall.title" = "Plus de place pour tes radios et ta musique";

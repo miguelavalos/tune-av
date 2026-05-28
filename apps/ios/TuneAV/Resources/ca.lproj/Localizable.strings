@@ -929,6 +929,7 @@
 "paywall.restore.loading" = "Restaurant…";
 "paywall.status.purchasePending" = "Compra rebuda. Tune AV desbloquejarà Pro quan s'actualitzi l'accés del compte.";
 "paywall.status.restorePending" = "Restauració completada. Si l'App Store té una subscripció activa per a aquest compte, Tune AV desbloquejarà Pro quan Apps AV confirmi l'accés.";
+"paywall.subscriptionTerms" = "Tune AV Pro és una subscripció mensual amb renovació automàtica. Se't cobrarà %@ per cada període d'1 mes fins que cancel·lis als ajustos de l'App Store.";
 "paywall.subtitle" = "Millora el teu compte de Tune AV amb sessió. L'app només desbloqueja Pro quan Apps AV confirma l'accés.";
 "paywall.terms" = "Termes";
 "paywall.title" = "Més espai per a les teves ràdios i música";

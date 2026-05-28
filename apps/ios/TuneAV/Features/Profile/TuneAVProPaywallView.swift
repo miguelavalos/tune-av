@@ -22,6 +22,7 @@ struct TuneAVProPaywallView: View {
         ) {
             paywallHeader
             paywallOfferCard
+            subscriptionTermsRow
 
             if accessController.isWaitingForSubscriptionReconciliation {
                 AVPaywallStatusRow(systemImage: "clock.arrow.circlepath", message: reconciliationStatus)
@@ -72,6 +73,17 @@ struct TuneAVProPaywallView: View {
             } else {
                 EmptyView()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var subscriptionTermsRow: some View {
+        if accessController.isSignedIn, let offer = accessController.subscriptionOffer {
+            AVPaywallStatusRow(
+                systemImage: "calendar.badge.clock",
+                message: L10n.string("paywall.subscriptionTerms", offer.localizedPrice)
+            )
+            .accessibilityIdentifier("paywall.subscriptionTerms")
         }
     }
 

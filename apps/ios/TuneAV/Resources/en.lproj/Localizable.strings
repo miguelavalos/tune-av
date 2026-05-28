@@ -1022,6 +1022,7 @@
 "paywall.scene.title" = "More memory for Avi";
 "paywall.status.purchasePending" = "Purchase received. Tune AV will unlock Pro after your account access refreshes.";
 "paywall.status.restorePending" = "Restore completed. If your App Store account has an active subscription, Tune AV will unlock Pro after Apps AV confirms access.";
+"paywall.subscriptionTerms" = "Tune AV Pro is a monthly auto-renewable subscription. You will be charged %@ for each 1-month period until you cancel in App Store settings.";
 "paywall.subtitle" = "Upgrade your signed-in Tune AV account for more Avi actions, more saved music, and Cloud Sync.";
 "paywall.terms" = "Terms";
 "paywall.title" = "Give Avi more room to remember";
