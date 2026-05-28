@@ -18,6 +18,11 @@ struct TuneAVPurchaseOutcome: Equatable {
     let customerUserID: String
 }
 
+private struct TuneAVLocalizedPrice: Equatable {
+    let value: String
+    let source: String
+}
+
 enum TuneAVSubscriptionPurchaseError: LocalizedError, Equatable {
     case missingAccountUser
     case missingConfiguration
@@ -151,15 +156,18 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         let package = try await loadMonthlyPackage()
         let productIdentifier = package.storeProduct.productIdentifier
         let revenueCatPrice = package.storeProduct.localizedPriceString
-        let localizedPrice = await storeKitDisplayPrice(for: productIdentifier) ?? revenueCatPrice
+        let localizedPrice = await localizedDisplayPrice(
+            for: productIdentifier,
+            revenueCatPrice: revenueCatPrice
+        )
         purchaseLogger.info(
-            "Loaded RevenueCat monthly offer product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public) displayPrice=\(localizedPrice, privacy: .public) currency=\(package.storeProduct.currencyCode ?? "unknown", privacy: .public)"
+            "Loaded monthly offer product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public) displayPrice=\(localizedPrice.value, privacy: .public) priceSource=\(localizedPrice.source, privacy: .public) revenueCatCurrency=\(package.storeProduct.currencyCode ?? "unknown", privacy: .public)"
         )
         return TuneAVSubscriptionOffer(
             identifier: package.identifier,
             productIdentifier: productIdentifier,
             localizedTitle: package.storeProduct.localizedTitle,
-            localizedPrice: localizedPrice
+            localizedPrice: localizedPrice.value
         )
     }
 
@@ -276,13 +284,37 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         }
     }
 
-    private func storeKitDisplayPrice(for productIdentifier: String) async -> String? {
+    private func localizedDisplayPrice(
+        for productIdentifier: String,
+        revenueCatPrice: String
+    ) async -> TuneAVLocalizedPrice {
+        if let storeKit2Price = await storeKit2DisplayPrice(for: productIdentifier) {
+            return TuneAVLocalizedPrice(value: storeKit2Price, source: "storekit2")
+        }
+
+        if let storeKit1Price = await StoreKit1LocalizedPriceLoader.displayPrice(for: productIdentifier) {
+            return TuneAVLocalizedPrice(value: storeKit1Price, source: "storekit1")
+        }
+
+        purchaseLogger.error(
+            "Falling back to RevenueCat localized price product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public)"
+        )
+        return TuneAVLocalizedPrice(value: revenueCatPrice, source: "revenuecat")
+    }
+
+    private func storeKit2DisplayPrice(for productIdentifier: String) async -> String? {
         do {
             let products = try await StoreKit.Product.products(for: [productIdentifier])
-            return products.first(where: { $0.id == productIdentifier })?.displayPrice
+            guard let product = products.first(where: { $0.id == productIdentifier }) else {
+                purchaseLogger.error(
+                    "StoreKit 2 did not return product=\(productIdentifier, privacy: .public) count=\(products.count, privacy: .public)"
+                )
+                return nil
+            }
+            return product.displayPrice
         } catch {
             purchaseLogger.error(
-                "Unable to load StoreKit display price product=\(productIdentifier, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
+                "Unable to load StoreKit 2 display price product=\(productIdentifier, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
             )
             return nil
         }
@@ -303,3 +335,52 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
 #else
 typealias RevenueCatTuneAVSubscriptionPurchasing = NoopTuneAVSubscriptionPurchasing
 #endif
+
+private final class StoreKit1LocalizedPriceLoader: NSObject, SKProductsRequestDelegate {
+    private var request: SKProductsRequest?
+    private var continuation: CheckedContinuation<String?, Never>?
+    private let productIdentifier: String
+
+    private init(productIdentifier: String) {
+        self.productIdentifier = productIdentifier
+    }
+
+    static func displayPrice(for productIdentifier: String) async -> String? {
+        let loader = StoreKit1LocalizedPriceLoader(productIdentifier: productIdentifier)
+        return await withCheckedContinuation { continuation in
+            loader.continuation = continuation
+            let request = SKProductsRequest(productIdentifiers: [productIdentifier])
+            loader.request = request
+            request.delegate = loader
+            request.start()
+        }
+    }
+
+    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+        guard let product = response.products.first(where: { $0.productIdentifier == productIdentifier }) else {
+            resume(with: nil)
+            return
+        }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = product.priceLocale
+        resume(with: formatter.string(from: product.price))
+    }
+
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        resume(with: nil)
+    }
+
+    func requestDidFinish(_ request: SKRequest) {
+        resume(with: nil)
+    }
+
+    private func resume(with value: String?) {
+        guard let continuation else { return }
+        self.continuation = nil
+        request?.cancel()
+        request = nil
+        continuation.resume(returning: value)
+    }
+}
