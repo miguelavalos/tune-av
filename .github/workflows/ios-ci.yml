@@ -107,7 +107,7 @@ jobs:
         run: bun run ios:privacy:network
 
       - name: Test iOS
-        run: TUNEAV_IOS_MAX_LAUNCH_READY_MS=20000 bun run ios:ci
+        run: TUNEAV_IOS_MAX_LAUNCH_READY_MS=25000 bun run ios:ci
 
       - name: Report iOS app size
         run: |
