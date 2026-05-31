@@ -32,7 +32,7 @@ jobs:
           bun-version: 1.3.13
 
       - name: Cache iOS UI smoke Swift packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: .derived-data/ios-ui-smoke/SourcePackages
           key: ${{ runner.os }}-ios-ui-smoke-${{ hashFiles('apps/ios/TuneAV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'apps/ios/TuneAV.xcodeproj/project.pbxproj', 'apps/ios/**/*.swift', 'shared/**/*.swift') }}
@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload iOS UI smoke result bundles
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: ios-ui-smoke-xcresults
           path: .derived-data/ios-ui-smoke/TestResults/*.xcresult
