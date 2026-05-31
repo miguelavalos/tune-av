@@ -58,7 +58,7 @@ light:
 - avoid repeated `MPNowPlayingInfoCenter` writes for duplicate metadata;
 - filter noisy broadcast metadata before showing it.
 
-## Review Checklist
+## Merge Checklist
 
 Before merging playback-adjacent UI:
 

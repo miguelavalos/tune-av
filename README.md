@@ -1,11 +1,11 @@
 # Tune AV
 
-Open-source native product repo for Tune AV.
+Open-source native client repo for Tune AV.
 
-This repository contains the active Tune AV iOS client, shared Apple-domain code,
-local playback, persistence flows, and public app configuration. Non-public
-operational, signing, backend, subscription-dashboard, and release-evidence
-material lives outside this repository.
+This repository contains the active SwiftUI iOS client, shared Apple UI code,
+local playback, local persistence, public assets, and frontend documentation.
+Non-public service operations, release operations, signing material, service
+configuration, and approval records do not belong in this repo.
 
 The app to treat as current is `apps/ios`.
 
@@ -18,40 +18,38 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 ```text
 apps/
   ios/      SwiftUI iOS app
-  macos/    SwiftUI macOS app for Mac App Store distribution
+  macos/    SwiftUI macOS app kept for parity work
 docs/
   ios-current-state.md
   ios-animation-and-assets.md
   install.md
   release-checklist.md
 shared/
-  apple/     Swift Modules and Apple-domain shared code
-  contracts/ Platform-neutral contracts reserved for client parity
+  apple/     Swift modules shared by Apple targets
+  contracts/ Platform-neutral client contracts when needed
 ```
 
 ## What Is Included
 
 - local-first listening experience
-- favorites, recents, and on-device settings
-- optional account UI surfaces
+- favorites, recents, discoveries, and on-device settings
+- optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
+- shared SwiftUI shell, branding, settings, Avi, and text-fit helpers
 - secondary macOS files retained for future/parity work
 
-## Current state
+## Current State
 
-- `apps/ios` is the current Tune AV app
-- `shared/apple` is the shared Swift implementation root for Apple-domain behavior
-- `shared/contracts` is reserved for platform-neutral contracts when a non-Apple consumer exists
-- the repo keeps user library storage local by default
-- account, subscription, analytics, and cloud-sync behavior is optional and configuration-gated
+- `apps/ios` is the current Tune AV app.
+- `shared/apple` is the shared Swift implementation root for Apple-domain UI
+  behavior.
+- `shared/contracts` is reserved for platform-neutral client contracts.
+- User library storage is local by default.
+- Network-backed and premium behaviors are optional, configuration-gated, and
+  documented publicly only at the client-behavior level.
 
 Use [docs/ios-current-state.md](docs/ios-current-state.md) as the public source
 of truth for the current iOS app.
-
-As of 2026-05-23, Tune AV iOS `1.0` build `8` has been submitted to Apple App
-Review and is pending review. Private App Store Connect, signing,
-subscription-dashboard, and review-evidence details remain outside this public
-repository.
 
 ## Local Setup
 
@@ -59,22 +57,25 @@ repository.
 
 1. Install repo tooling:
    `bun install`
-2. If your local build needs signing or account values, create `apps/ios/Config/Local.xcconfig` outside git.
+2. If your local build needs private runtime values, create
+   `apps/ios/Config/Local.xcconfig` outside git.
 3. Open `apps/ios/TuneAV.xcodeproj` in Xcode and run the `TuneAV` scheme.
 
-The tracked debug configuration uses neutral defaults and optional `Local.xcconfig` overrides.
+The tracked debug configuration uses neutral defaults and optional
+`Local.xcconfig` overrides.
 
 macOS files may exist in the repository, but macOS is secondary to the iOS app
-for the current documentation and release flow.
+for current public documentation.
 
 ## Local Secrets
 
-This public repo does not carry private bootstrap examples or generated local config.
+This public repo does not carry private bootstrap examples or generated local
+config.
 
-- private bootstrap material belongs outside this public repository
-- generated native local files stay local-only
-- do not add `.env.example`, bootstrap examples, or example secret files to this public repo
-- keep non-public operational and planning material in private repositories
+- Private bootstrap material belongs outside this public repository.
+- Generated native local files stay local-only.
+- Do not add `.env.example`, bootstrap examples, or example secret files.
+- Keep non-public operations and planning material in private repositories.
 
 Run `bun run config:hygiene` before pushing config-related changes.
 
@@ -83,19 +84,15 @@ See [docs/install.md](docs/install.md) for setup details.
 For playback-adjacent UI and Avi asset work, follow
 [docs/ios-animation-and-assets.md](docs/ios-animation-and-assets.md).
 
-## Third-Party Services And Data Sources
+## Third-Party Data Shown In The Client
 
-- Station discovery currently relies on `Radio Browser`.
-- Playback relies on direct third-party station stream hosts that Tune AV does not control.
-- Artwork resolution may use Apple `iTunes Search`.
-- Favicon fallback resolution may use Google's favicon endpoint when station metadata does not provide a usable icon.
-- Optional account-connected behavior is configuration-gated. Public docs should avoid operational service details.
+- Station discovery can show public radio-directory data.
+- Playback uses direct third-party station stream hosts that Tune AV does not
+  control.
+- Artwork and favicon fallbacks can come from public metadata sources.
 
-## Account Deletion Support
-
-- Public deletion support URL: `https://tune-av.avalsys.com/delete-account`
-- Local-only users can remove on-device data from inside the app or by deleting the app.
-- Account-connected deletion details are handled by private service operations. The public deletion page remains the support fallback.
+Public docs should describe only the client behavior that users and contributors
+can see or test locally.
 
 ## Contributing And Security
 
@@ -103,5 +100,4 @@ For playback-adjacent UI and Avi asset work, follow
 - Security policy: [SECURITY.md](SECURITY.md)
 - Support policy: [SUPPORT.md](SUPPORT.md)
 - Current iOS state: [docs/ios-current-state.md](docs/ios-current-state.md)
-- Release checklist: [docs/release-checklist.md](docs/release-checklist.md)
-- Continuation plan: [docs/continuation-2026-05-22.md](docs/continuation-2026-05-22.md)
+- Client checklist: [docs/release-checklist.md](docs/release-checklist.md)

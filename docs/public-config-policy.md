@@ -1,58 +1,57 @@
 # Public Configuration Policy
 
-Tune AV iOS is maintained in a public repository. Public code must not reveal private backend infrastructure.
+Tune AV clients are maintained in a public repository. Public code and docs must
+not reveal private infrastructure or operator-only details.
 
 ## Do Not Commit
 
 Never commit:
 
-- Private backend base URLs.
-- Preview, staging, or production backend hostnames.
-- API keys, tokens, bootstrap credentials, team secrets, or provider secrets.
-- Generated local config files.
-- Operator-only runbooks that include private project identifiers.
-- Local machine paths that reveal private infrastructure layout.
+- private base URLs;
+- non-public hostnames;
+- API keys, tokens, bootstrap credentials, team secrets, or service secrets;
+- generated local config files;
+- operator-only runbooks or private project identifiers;
+- local machine paths that reveal private infrastructure layout;
+- release, approval, distribution, or service-console status.
 
 ## Allowed In Public Code
 
 Public code can contain:
 
-- Public bundle identifiers.
-- Public legal/support URLs.
-- Public documentation that explains where configuration comes from.
-- Environment variable names.
-- Validation rules for URL shape, such as requiring `https`.
-- Generic references to private local configuration.
+- public bundle identifiers already required by the client project;
+- public documentation that explains where configuration comes from;
+- environment variable names;
+- validation rules for URL shape, such as requiring `https`;
+- generic references to generated local configuration.
 
-Environment variable names are allowed because they describe the contract, not the secret value.
+Environment variable names are allowed because they describe the contract, not
+the private value.
 
-## iOS Runtime Configuration
+## Runtime Configuration
 
-iOS should read backend configuration from generated local settings, not hardcoded source constants.
+Native clients should read non-public runtime values from generated local
+settings, not hardcoded source constants.
 
-Current rule:
-
-- `ACCOUNTAV_API_BASE_URL` is read from bundle configuration.
-- If the value is missing, backend-backed station search should fail closed or fall back to public catalog behavior where supported.
-- The public repo should not contain a default private backend URL.
-
-`apps/ios/Config/Local.xcconfig` is generated local output. It must stay untracked.
+`apps/ios/Config/Local.xcconfig` and `apps/macos/Config/Local.xcconfig` are
+generated local output. They must stay untracked.
 
 ## Script Rules
 
 Scripts may:
 
-- Read private configuration from the local private environment.
-- Generate local iOS config.
-- Validate that production uses `https`.
-- Reject obvious local, preview, or development values for production.
+- read configuration from the local private environment;
+- generate local native config;
+- validate URL shape and required fields;
+- reject obvious local or development values when the selected profile requires
+  a different runtime shape.
 
 Scripts must not:
 
-- Hardcode private backend hosts.
-- Print secrets unless explicitly required for a local operator action.
-- Write private values into tracked files.
-- Treat generated local config as reusable documentation.
+- hardcode private hosts;
+- print secrets;
+- write private values into tracked files;
+- treat generated local config as reusable documentation.
 
 ## Documentation Rules
 
@@ -64,18 +63,18 @@ Use wording like:
 Generated from local private config.
 ```
 
-Do not document concrete private endpoints, tokens, project IDs, or dashboards in this repo.
+Do not document concrete private endpoints, tokens, project IDs, service
+consoles, release status, approval status, service-console status, or distribution
+evidence in this repo.
 
-## Review Checklist
+## Pre-Commit Check
 
 Before commit or push:
 
 ```bash
 git diff --check
-git diff -U0 | rg '^\+.*(https?://api-|SECRET|TOKEN|PASSWORD)' || true
-git grep -n 'api-account-av\|account-av-preview\|account-av\.avalsys' -- . || true
+bun run config:hygiene
 ```
 
-Expected result: no private backend endpoints or secrets in tracked files.
-
-Public Tune AV legal/support URLs may still appear if they are intentionally user-facing.
+Expected result: no private endpoints, secrets, generated config, or operations
+material in tracked files.
