@@ -84,6 +84,20 @@ read_optional_config() {
   "$varlock_bin" printenv --path "$suite_root/services/api" "$name" 2>/dev/null || true
 }
 
+read_required_config() {
+  local name="$1"
+  local value
+
+  value="$(read_optional_config "$name")"
+  if [ -n "$value" ]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  echo "Missing $name for $profile profile." >&2
+  exit 1
+}
+
 read_support_base_url() {
   local value="${SUPPORTAV_BASE_URL:-}"
   if [ -n "$value" ]; then
@@ -145,28 +159,30 @@ fi
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
 support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
-revenuecat_public_api_key="$(read_optional_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
-revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-default}"
-revenuecat_monthly_package_id="${TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:-\$rc_monthly}"
+revenuecat_public_api_key="$(read_required_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
+revenuecat_offering_id="$(read_required_config TUNEAV_REVENUECAT_OFFERING_ID)"
+revenuecat_monthly_package_id="$(read_required_config TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
 if [ "$env_name" = "prod" ]; then
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 else
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 fi
 
-if [ "$env_name" = "prod" ]; then
-  if [ -z "$revenuecat_public_api_key" ]; then
-    echo "Missing TUNEAV_REVENUECAT_PUBLIC_API_KEY for production profile." >&2
-    exit 1
-  fi
-  if [[ "$revenuecat_public_api_key" != appl_* ]]; then
-    echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must be a RevenueCat public app key with appl_ prefix." >&2
-    exit 1
-  fi
-  if [[ "$revenuecat_public_api_key" == sk_* ]]; then
-    echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must not be a RevenueCat secret key." >&2
-    exit 1
-  fi
+if [[ "$revenuecat_public_api_key" != appl_* ]]; then
+  echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must be a RevenueCat public app key with appl_ prefix." >&2
+  exit 1
+fi
+if [[ "$revenuecat_public_api_key" == sk_* ]]; then
+  echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must not be a RevenueCat secret key." >&2
+  exit 1
+fi
+if [ -z "$revenuecat_offering_id" ]; then
+  echo "TUNEAV_REVENUECAT_OFFERING_ID must not be empty." >&2
+  exit 1
+fi
+if [ -z "$revenuecat_monthly_package_id" ]; then
+  echo "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID must not be empty." >&2
+  exit 1
 fi
 
 escape_xcconfig_url() {

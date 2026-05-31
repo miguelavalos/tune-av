@@ -38,6 +38,8 @@ required_vars=(
   ACCOUNTAV_MANAGEMENT_URL
   ACCOUNTAV_PUBLISHABLE_KEY
   TUNEAV_REVENUECAT_PUBLIC_API_KEY
+  TUNEAV_REVENUECAT_OFFERING_ID
+  TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID
 )
 
 missing=0
@@ -76,8 +78,8 @@ escape_xcconfig_url() {
   printf '%s' "$1" | sed 's#/#$(XCCONFIG_SLASH)#g'
 }
 
-tuneav_revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-default}"
-tuneav_revenuecat_monthly_package_id="${TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:-\$rc_monthly}"
+tuneav_revenuecat_offering_id="$TUNEAV_REVENUECAT_OFFERING_ID"
+tuneav_revenuecat_monthly_package_id="$TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID"
 tuneav_premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
 tuneav_support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
 supportav_base_url="${SUPPORTAV_BASE_URL:-https://support-av.avalsys.com}"
