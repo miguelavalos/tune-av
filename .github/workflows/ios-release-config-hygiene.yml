@@ -58,6 +58,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Checkout Account AV
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: miguelavalos/account-av
+          path: account-av
+
+      - name: Checkout Apps AV
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: miguelavalos/apps-av
+          path: apps-av
+
+      - name: Link local packages
+        run: |
+          ln -s "$GITHUB_WORKSPACE/account-av" "$GITHUB_WORKSPACE/../account-av"
+          ln -s "$GITHUB_WORKSPACE/apps-av" "$GITHUB_WORKSPACE/../apps-av"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
