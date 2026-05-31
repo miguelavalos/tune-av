@@ -714,7 +714,7 @@ actor TuneAVArtworkImagePipeline {
 
     private let session: URLSession
     private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
-    private var inFlight: [String: Task<TuneAVPlatformImage?, Never>] = [:]
+    private var inFlight: [String: Task<TuneAVPlatformImageBox?, Never>] = [:]
     private var failedLookups: [String: FailedLookup] = [:]
 
     init(session: URLSession = TuneAVURLSessions.artwork) {
@@ -736,27 +736,28 @@ actor TuneAVArtworkImagePipeline {
         }
 
         if let task = inFlight[key] {
-            return await task.value.map(Image.init(platformImage:))
+            return await task.value.map { Image(platformImage: $0.image) }
         }
 
         let task = Task { [session] in
             await Self.loadImage(from: url, maxPixelSize: maxPixelSize, session: session)
+                .map(TuneAVPlatformImageBox.init)
         }
         inFlight[key] = task
 
-        let loadedImage = await task.value
+        let loadedImageBox = await task.value
         inFlight[key] = nil
-        if let loadedImage {
+        if let loadedImageBox {
             failedLookups[key] = nil
             cache.setObject(
-                TuneAVPlatformImageBox(loadedImage),
+                loadedImageBox,
                 forKey: key as NSString,
                 cost: maxPixelSize * maxPixelSize * 4
             )
         } else {
             failedLookups[key] = FailedLookup(expiresAt: Date().addingTimeInterval(Self.failedLookupTTL))
         }
-        return loadedImage.map(Image.init(platformImage:))
+        return loadedImageBox.map { Image(platformImage: $0.image) }
     }
 
     func clearMemoryCache() {
@@ -835,7 +836,7 @@ actor TuneAVArtworkImagePipeline {
     }
 }
 
-private final class TuneAVPlatformImageBox {
+private final class TuneAVPlatformImageBox: @unchecked Sendable {
     let image: TuneAVPlatformImage
 
     init(_ image: TuneAVPlatformImage) {
