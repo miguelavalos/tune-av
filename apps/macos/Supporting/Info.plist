@@ -52,8 +52,8 @@
 	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
 	<key>TUNEAV_PRIVACY_URL</key>
 	<string>$(TUNEAV_PRIVACY_URL)</string>
-	<key>TUNEAV_SUPPORT_EMAIL</key>
-	<string>$(TUNEAV_SUPPORT_EMAIL)</string>
+	<key>SUPPORT_EMAIL_TO</key>
+	<string>$(SUPPORT_EMAIL_TO)</string>
 	<key>TUNEAV_TERMS_URL</key>
 	<string>$(TUNEAV_TERMS_URL)</string>
 </dict>

@@ -90,7 +90,7 @@ targets:
         TUNEAV_TERMS_URL: $(TUNEAV_TERMS_URL)
         TUNEAV_PRIVACY_URL: $(TUNEAV_PRIVACY_URL)
         TUNEAV_OPEN_SOURCE_URL: $(TUNEAV_OPEN_SOURCE_URL)
-        TUNEAV_SUPPORT_EMAIL: $(TUNEAV_SUPPORT_EMAIL)
+        SUPPORT_EMAIL_TO: $(SUPPORT_EMAIL_TO)
         LSApplicationCategoryType: public.app-category.music
         NSAppTransportSecurity:
           NSAllowsArbitraryLoadsForMedia: true

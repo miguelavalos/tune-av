@@ -5248,7 +5248,7 @@ struct AviScreen: View {
     }
 
     private var signalEyebrow: String {
-        isFocusedStationActive ? "Encontrado en directo" : "Info de radio"
+        isFocusedStationActive ? L10n.string("shell.stationDetail.signal.liveFound") : L10n.string("shell.stationInfo.title")
     }
 
     private var aviActionsPanelState: ShellAviActionsPanelState {

@@ -7,7 +7,7 @@ struct MacStationCollectionView: View {
 
     let title: String
     let stations: [Station]
-    var emptyMessage: String = "No stations yet."
+    var emptyMessage: String = L10n.string("mac.stations.empty")
 
     private let columns = [
         GridItem(.adaptive(minimum: 258, maximum: 340), spacing: 12, alignment: .top)
@@ -559,7 +559,7 @@ struct MacNowPlayingBar: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.nowPlayingDisplayLines?.trackTitleLine ?? model.currentStation?.name ?? "Tune AV")
+                Text(model.nowPlayingDisplayLines?.trackTitleLine ?? model.currentStation?.name ?? L10n.string("app.name"))
                     .font(.headline)
                     .foregroundStyle(TuneAVTheme.textPrimary)
                     .lineLimit(1)
@@ -632,11 +632,11 @@ struct MacNowPlayingBar: View {
         case .idle:
             return nil
         case .loading:
-            return "Loading stream"
+            return L10n.string("audio.status.loading")
         case .playing:
-            return "Live"
+            return L10n.string("shell.status.live")
         case .paused:
-            return "Paused"
+            return L10n.string("audio.status.paused")
         case let .failed(message):
             return message
         }

@@ -91,7 +91,7 @@ delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
 terms_url="$(setting TUNEAV_TERMS_URL)"
 privacy_url="$(setting TUNEAV_PRIVACY_URL)"
 open_source_url="$(setting TUNEAV_OPEN_SOURCE_URL)"
-support_email="$(setting TUNEAV_SUPPORT_EMAIL)"
+support_email="$(setting SUPPORT_EMAIL_TO)"
 development_team="$(setting DEVELOPMENT_TEAM)"
 code_sign_style="$(setting CODE_SIGN_STYLE)"
 enable_hardened_runtime="$(setting ENABLE_HARDENED_RUNTIME)"
@@ -107,7 +107,7 @@ for item in \
   "TUNEAV_TERMS_URL:$terms_url" \
   "TUNEAV_PRIVACY_URL:$privacy_url" \
   "TUNEAV_OPEN_SOURCE_URL:$open_source_url" \
-  "TUNEAV_SUPPORT_EMAIL:$support_email"; do
+  "SUPPORT_EMAIL_TO:$support_email"; do
   require_present "${item%%:*}" "${item#*:}"
 done
 
@@ -136,7 +136,7 @@ done
 if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
   [[ "$support_base_url" == https://* ]] || fail "URL did not resolve as https://*: $support_base_url"
 fi
-[[ "$support_email" == *"@"* ]] || fail "TUNEAV_SUPPORT_EMAIL must look like an email address"
+[[ "$support_email" == *"@"* ]] || fail "SUPPORT_EMAIL_TO must look like an email address"
 
 redacted_key=""
 if [ -n "$publishable_key" ]; then

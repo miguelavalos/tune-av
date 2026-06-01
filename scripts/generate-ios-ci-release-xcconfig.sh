@@ -81,7 +81,7 @@ escape_xcconfig_url() {
 tuneav_revenuecat_offering_id="$TUNEAV_REVENUECAT_OFFERING_ID"
 tuneav_revenuecat_monthly_package_id="$TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID"
 tuneav_premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
-tuneav_support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
+support_email_to="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 supportav_base_url="${SUPPORTAV_BASE_URL:-https://support-av.avalsys.com}"
 
 umask 077
@@ -95,7 +95,7 @@ TUNEAV_BUNDLE_IDENTIFIER = com.avalsys.tuneav
 AVALSYS_APPLE_DEVELOPMENT_TEAM = \$(inherited)
 ACCOUNTAV_PUBLISHABLE_KEY = $ACCOUNTAV_PUBLISHABLE_KEY
 TUNEAV_PREMIUM_PRODUCT_IDS = $tuneav_premium_product_ids
-TUNEAV_SUPPORT_EMAIL = $tuneav_support_email
+SUPPORT_EMAIL_TO = $support_email_to
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$supportav_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$ACCOUNTAV_API_BASE_URL")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = 1

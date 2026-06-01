@@ -205,12 +205,12 @@ struct MacProfileView: View {
         if model.accountUser == nil {
             HStack(spacing: 10) {
                 AVSettingsButton(
-                    title: "Sign in with Apple",
+                    title: L10n.string("auth.provider.apple"),
                     style: .primary,
                     action: { Task { await model.signInWithApple() } }
                 )
                 AVSettingsButton(
-                    title: "Sign in with Google",
+                    title: L10n.string("auth.provider.google"),
                     style: .secondary,
                     action: { Task { await model.signInWithGoogle() } }
                 )
@@ -1161,7 +1161,7 @@ struct MacSettingsView: View {
         TuneAVBundleConfig.supportURL(
             explicitURL: TuneAVBundleConfig.urlValue(for: "SUPPORTAV_BASE_URL", requireSupportedAVAccountBaseURL: true)
                 ?? URL(string: "https://support-av.avalsys.com/"),
-            email: TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL") ?? "support@avalsys.com"
+            email: TuneAVBundleConfig.nonEmptyStringValue(for: "SUPPORT_EMAIL_TO") ?? "support@avalsys.com"
         )
     }
 

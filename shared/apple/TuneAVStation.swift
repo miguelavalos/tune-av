@@ -378,7 +378,7 @@ extension Station {
         if let codec, !codec.isEmpty { badges.append(codec) }
         if let bitrate, bitrate > 0 { badges.append("\(bitrate) kbps") }
         if isHLS == true { badges.append("HLS") }
-        if hasExtendedInfo == true { badges.append("Extended info") }
+        if hasExtendedInfo == true { badges.append(L10n.string("shell.stationDetail.badge.extendedInfo")) }
         return badges
     }
 

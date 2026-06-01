@@ -17,7 +17,7 @@ struct TuneAVMacApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Tune AV") {
+        WindowGroup(L10n.string("app.name")) {
             MacRootView()
                 .environmentObject(languageController)
                 .environmentObject(themeController)
@@ -32,7 +32,7 @@ struct TuneAVMacApp: App {
         }
         .defaultSize(width: 1360, height: 800)
         .commands {
-            CommandMenu("Navigation") {
+            CommandMenu(L10n.string("mac.menu.navigation")) {
                 Button(L10n.string("tab.home")) {
                     model.selectedSection = .home
                 }
@@ -64,7 +64,7 @@ struct TuneAVMacApp: App {
                 .keyboardShortcut(",", modifiers: [.command])
             }
 
-            CommandMenu("Playback") {
+            CommandMenu(L10n.string("mac.menu.playback")) {
                 Button(model.isPlaying ? L10n.string("player.control.pause") : L10n.string("player.control.play")) {
                     model.togglePlayback()
                 }

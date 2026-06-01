@@ -157,7 +157,7 @@ if [ -z "$development_team" ]; then
   development_team="\$(inherited)"
 fi
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
-support_email="${TUNEAV_SUPPORT_EMAIL:-support@avalsys.com}"
+support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
 revenuecat_public_api_key="$(read_required_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="$(read_required_config TUNEAV_REVENUECAT_OFFERING_ID)"
@@ -200,7 +200,7 @@ TUNEAV_BUNDLE_IDENTIFIER = $bundle_identifier
 AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
 TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
-TUNEAV_SUPPORT_EMAIL = $support_email
+SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = $listening_analytics_uploads

@@ -8,7 +8,7 @@ enum AppConfig {
     }
 
     static var supportEmail: String? {
-        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_SUPPORT_EMAIL")
+        TuneAVBundleConfig.nonEmptyStringValue(for: "SUPPORT_EMAIL_TO")
     }
 
     static var supportBaseURL: URL? {

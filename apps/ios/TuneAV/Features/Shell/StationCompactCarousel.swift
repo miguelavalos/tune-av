@@ -120,7 +120,7 @@ private struct StationCompactCard: View {
             return L10n.string("player.station.savedShort")
         }
         if audioPlayer.isCurrent(station) {
-            return isPlayingCurrentStation ? "En directo ahora" : "Pausada"
+            return isPlayingCurrentStation ? L10n.string("player.track.liveNow") : L10n.string("audio.status.paused")
         }
         return L10n.string("shell.station.row.nearRecents")
     }

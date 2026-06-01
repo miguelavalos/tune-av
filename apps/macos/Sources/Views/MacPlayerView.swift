@@ -910,15 +910,15 @@ private struct MacPlaybackStatusView: View {
         case .idle:
             EmptyView()
         case .loading:
-            Label("Loading stream", systemImage: "dot.radiowaves.left.and.right")
+            Label(L10n.string("audio.status.loading"), systemImage: "dot.radiowaves.left.and.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(TuneAVTheme.textSecondary)
         case .playing:
-            Label("Live", systemImage: "waveform")
+            Label(L10n.string("shell.status.live"), systemImage: "waveform")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(TuneAVTheme.highlight)
         case .paused:
-            Label("Paused", systemImage: "pause.fill")
+            Label(L10n.string("audio.status.paused"), systemImage: "pause.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(TuneAVTheme.textSecondary)
         case let .failed(message):
@@ -926,7 +926,7 @@ private struct MacPlaybackStatusView: View {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .lineLimit(1)
 
-                Button("Retry") {
+                Button(L10n.string("player.retry")) {
                     model.retryCurrentStation()
                 }
                 .buttonStyle(.bordered)

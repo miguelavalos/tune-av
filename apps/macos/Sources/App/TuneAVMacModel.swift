@@ -151,7 +151,7 @@ final class TuneAVMacModel: ObservableObject {
     private let systemNowPlayingController = MacNowPlayingSystemController()
     private let accountService = ClerkAccountAVService(
         publishableKeyProvider: { TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY") },
-        fallbackDisplayName: "Tune AV",
+        fallbackDisplayName: L10n.string("app.name"),
         loggerSubsystem: "com.avalsys.tuneav"
     )
     private var localLibraryUpdatedAt: Date = .distantPast
@@ -544,7 +544,7 @@ final class TuneAVMacModel: ObservableObject {
 
     func play(_ station: Station, queue: [Station]? = nil, source: TuneAVPlaybackQueueSource? = nil) {
         guard let url = URL(string: station.streamURL) else {
-            setPlaybackFailure("Invalid stream URL.", shouldAutoSkip: false)
+            setPlaybackFailure(L10n.string("audio.error.invalidURL"), shouldAutoSkip: false)
             return
         }
 
@@ -1002,7 +1002,7 @@ final class TuneAVMacModel: ObservableObject {
     func synchronizeLibraryNow() async {
         guard accountService.isAvailable else {
             cloudSyncStatus = .failed
-            cloudSyncErrorMessage = "Account AV is not configured."
+            cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
             return
         }
 
@@ -1050,10 +1050,10 @@ final class TuneAVMacModel: ObservableObject {
             accountUser = accountService.currentUser
         } catch TuneAVAppDataClientError.missingToken {
             cloudSyncStatus = .failed
-            cloudSyncErrorMessage = "Sign in to sync your Tune AV library."
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
         } catch TuneAVAppDataClientError.missingBaseURL {
             cloudSyncStatus = .failed
-            cloudSyncErrorMessage = "Missing Account AV API base URL."
+            cloudSyncErrorMessage = L10n.string("mac.sync.error.missingBaseURL")
         } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 401 || statusCode == 403 {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
@@ -1205,7 +1205,7 @@ final class TuneAVMacModel: ObservableObject {
             queue: .main
         ) { [weak self] notification in
             let message = (notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error)?.localizedDescription
-                ?? "Stream playback failed."
+                ?? L10n.string("audio.error.streamLoadFailed")
             Task { @MainActor in
                 self?.setPlaybackFailure(message, shouldAutoSkip: true)
             }
@@ -1230,7 +1230,7 @@ final class TuneAVMacModel: ObservableObject {
         case .readyToPlay:
             setPlaybackStatus(player.timeControlStatus == .playing ? .playing : .loading)
         case .failed:
-            setPlaybackFailure(item.error?.localizedDescription ?? "Stream playback failed.", shouldAutoSkip: true)
+            setPlaybackFailure(item.error?.localizedDescription ?? L10n.string("audio.error.streamLoadFailed"), shouldAutoSkip: true)
         case .unknown:
             setPlaybackStatus(.loading)
         @unknown default:

@@ -93,8 +93,8 @@ struct MacRootView: View {
         .onChange(of: model.selectedSection) { _, _ in
             model.closeStationDetail()
         }
-        .alert("Tune AV", isPresented: errorIsPresented) {
-            Button("OK") {
+        .alert(L10n.string("app.name"), isPresented: errorIsPresented) {
+            Button(L10n.string("common.ok")) {
                 model.errorMessage = nil
             }
         } message: {

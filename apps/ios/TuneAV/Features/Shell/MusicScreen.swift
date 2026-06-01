@@ -101,7 +101,7 @@ struct MusicScreen: View {
             Button(L10n.string("shell.library.discoveries.clear.confirmAction"), role: .destructive) {
                 clearDiscoveries()
             }
-            .accessibilityIdentifier("Borrar descubrimientos")
+            .accessibilityIdentifier("clear-discoveries")
 
             Button(L10n.string("common.cancel"), role: .cancel) {}
         } message: {
