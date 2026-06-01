@@ -43,7 +43,12 @@ evidence, and service smoke tests belong outside this public repository.
    bun run ios:tests
    ```
 
-3. Run a simulator build:
+3. Run the localization release audit:
+   - compare every shipped `apps/ios/TuneAV/Resources/*.lproj/Localizable.strings` key set with `en.lproj`;
+   - verify every `L10n.string(...)` reference in the submitted iOS target, macOS target, and shared Apple sources resolves;
+   - scan Swift/SwiftUI for user-visible hardcoded `Text`, `Button`, `Label`, navigation title, alert, empty-state, accessibility, and paywall copy.
+
+4. Run a simulator build:
 
    ```bash
    cd apps/ios
@@ -57,11 +62,11 @@ evidence, and service smoke tests belong outside this public repository.
    The simulator destination is an example. Replace it with an installed
    destination from `xcodebuild -showdestinations` when needed.
 
-4. Run targeted UI tests when changes touch shell navigation, limits, playback
+5. Run targeted UI tests when changes touch shell navigation, limits, playback
    queue, search, Profile, paywall presentation, account UI, deletion entry, or
    discovery behavior.
 
-5. Smoke-test visible client flows:
+6. Smoke-test visible client flows:
    - first launch;
    - Home;
    - Search;

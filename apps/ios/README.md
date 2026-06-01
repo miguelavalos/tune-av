@@ -53,3 +53,5 @@ Optional account-connected behavior:
 - Hardcoded Swift strings are only acceptable for non-visible technical values such as SF Symbols, accessibility identifiers, persistence keys, cache keys, asset names, debug messages, test fixtures, and external provider data shown as returned
 - No extra `InfoPlist.strings` are needed right now because the visible app name stays `Tune AV` across locales and the current build has no localized permission prompts
 - Dynamic catalog content such as station names, countries, languages, tags, and external metadata is shown as returned by the provider and is not translated by the app
+- Before any App Store Review submission, run a localization audit: every shipped `.lproj/Localizable.strings` file must have the same key set as `en.lproj`, every `L10n.string(...)` reference used by the submitted targets must resolve, and Swift/SwiftUI must not contain user-visible hardcoded copy outside the technical exceptions above
+- Include iOS, macOS, and shared Apple sources in the audit when shared code or macOS surfaces changed
