@@ -1109,3 +1109,7 @@
 "mac.sync.error.accountUnavailable" = "Account AV is not configured.";
 "mac.sync.error.missingBaseURL" = "Missing Account AV API base URL.";
 "app.name" = "Tune AV";
+"accountAPI.error.missingToken" = "Missing Apps AV account token.";
+"accountAPI.error.missingBaseURL" = "Missing Apps AV API base URL.";
+"accountAPI.error.requestFailed" = "Apps AV API request failed with status %d.";
+"stationService.error.requestFailed" = "Station service request failed with status %d.";

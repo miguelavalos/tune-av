@@ -1109,3 +1109,7 @@
 "mac.sync.error.accountUnavailable" = "Account AV no està configurat.";
 "mac.sync.error.missingBaseURL" = "Falta l'URL base de l'API d'Account AV.";
 "app.name" = "Tune AV";
+"accountAPI.error.missingToken" = "Falta el testimoni del compte d'Apps AV.";
+"accountAPI.error.missingBaseURL" = "Falta l'URL base de l'API d'Apps AV.";
+"accountAPI.error.requestFailed" = "La sol·licitud a l'API d'Apps AV ha fallat amb l'estat %d.";
+"stationService.error.requestFailed" = "La sol·licitud al servei d'emissores ha fallat amb l'estat %d.";

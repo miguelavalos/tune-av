@@ -56,7 +56,7 @@ struct TuneAVStationService {
             case .invalidResponse(let message):
                 return message
             case .requestFailed(let statusCode):
-                return "Station service request failed with status \(statusCode)."
+                return L10n.string("stationService.error.requestFailed", statusCode)
             }
         }
     }

@@ -17,11 +17,11 @@ enum AVAccountAPIClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingToken:
-            "Missing Apps AV account token."
+            L10n.string("accountAPI.error.missingToken")
         case .missingBaseURL:
-            "Missing Apps AV API base URL."
+            L10n.string("accountAPI.error.missingBaseURL")
         case .requestFailed(let statusCode):
-            "Apps AV API request failed with status \(statusCode)."
+            L10n.string("accountAPI.error.requestFailed", statusCode)
         }
     }
 }
