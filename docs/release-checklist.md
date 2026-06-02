@@ -7,6 +7,11 @@ frontend build/test checks, and local client validation.
 Release operations, approval status, private service configuration, entitlement
 evidence, and service smoke tests belong outside this public repository.
 
+Tune AV follows the public
+[Apps AV Apple Product App Patterns](https://github.com/miguelavalos/apps-av/blob/main/docs/apple-product-app-patterns.md)
+guide for Account AV, shared Apple packages, app shell, settings, and
+public-safe config hygiene.
+
 ## Repository Hygiene
 
 1. Run `bun install`.
