@@ -2021,22 +2021,26 @@ struct AviScreen: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             if isNowPlayingFullPlayer {
-                VStack(alignment: .leading, spacing: 16) {
-                    if focusedDetailIsEmpty || activeMusicDetail != nil {
-                        aviContextHeader
-                    }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if focusedDetailIsEmpty || activeMusicDetail != nil {
+                            aviContextHeader
+                        }
 
-                    if focusedDetailIsEmpty {
-                        aviLandingContent
-                    } else if let activeMusicDetail {
-                        focusedMusicExperience(activeMusicDetail)
-                    } else {
+                        if focusedDetailIsEmpty {
+                            aviLandingContent
+                        } else if let activeMusicDetail {
+                            focusedMusicExperience(activeMusicDetail)
+                        } else {
                             focusedSignalExperience
+                        }
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, aviScrollBottomPadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, shellScreenTopPadding + 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .shellScreenScrollBehavior()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
                 ScrollViewReader { proxy in

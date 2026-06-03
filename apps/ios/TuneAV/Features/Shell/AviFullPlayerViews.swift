@@ -16,26 +16,52 @@ struct FullPlayerAviHeader: View {
     }
 
     var body: some View {
-        AVAviFocusedHeaderScaffold(
-            label: label,
-            title: title,
-            summary: summary,
-            accessibilityValue: accessibilityState
-        ) {
+        HStack(alignment: .center, spacing: 12) {
             AviReactionEmotionImage(
                 emotion: emotion,
                 reactionEmotion: reactionEmotion,
                 reactionStartedAt: reactionStartedAt,
-                width: 82,
-                height: 82
+                width: 64,
+                height: 64
             )
-                .frame(width: 86, height: 86)
+                .frame(width: 68, height: 68)
                 .background(TuneAVTheme.highlight.opacity(0.12), in: Circle())
                 .overlay {
                     Circle().stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
                 }
                 .accessibilityLabel(L10n.string("shell.avi.title"))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label)
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(TuneAVTheme.highlight)
+                    .textCase(.uppercase)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .allowsTightening(true)
+
+                Text(title)
+                    .font(.system(size: 19, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                    .allowsTightening(true)
+                    .truncationMode(.tail)
+
+                Text(summary)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.76)
+                    .allowsTightening(true)
+                    .truncationMode(.tail)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(height: 76)
+        .accessibilityElement(children: .contain)
+        .accessibilityValue(accessibilityState)
+        .accessibilityIdentifier("avi.focused.header")
     }
 }
 
