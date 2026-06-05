@@ -576,10 +576,64 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testStaleSignedInAccountClearsWhenTokenIsUnavailable() async {
+    func testSignedInAccountIsPreservedWhenSessionIsTemporarilyUnavailable() async {
+        let user = AccountUser(id: "stale-user", displayName: "Stale User", emailAddress: "stale@example.com")
         let accountService = MutableStubAccountService(
-            user: AccountUser(id: "stale-user", displayName: "Stale User", emailAddress: "stale@example.com"),
-            token: nil
+            user: user,
+            restoreResult: .temporarilyUnavailable(nil)
+        )
+        let controller = AccessController(
+            accountService: accountService,
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertTrue(controller.isSignedIn)
+        XCTAssertEqual(controller.accountUser, user)
+        XCTAssertEqual(controller.accountSession?.user, user)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertEqual(controller.planTier, .pro)
+        XCTAssertTrue(controller.isAccountSessionTemporarilyUnavailable)
+        XCTAssertFalse(accountService.didSignOut)
+    }
+
+    @MainActor
+    func testLastKnownAccountUserPreservesColdStartDuringTemporarySessionFailure() async {
+        let userDefaults = isolatedUserDefaults()
+        let user = AccountUser(id: "cached-user", displayName: "Cached User", emailAddress: "cached@example.com")
+        let signedInController = AccessController(
+            accountService: StubAccountService(user: user),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await signedInController.syncFromAccountProvider()
+
+        let restoredController = AccessController(
+            accountService: MutableStubAccountService(user: nil, restoreResult: .temporarilyUnavailable(nil)),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await restoredController.syncFromAccountProvider()
+
+        XCTAssertTrue(restoredController.isSignedIn)
+        XCTAssertEqual(restoredController.accountUser, user)
+        XCTAssertEqual(restoredController.accountSession?.user, user)
+        XCTAssertEqual(restoredController.accessMode, .signedInPro)
+        XCTAssertTrue(restoredController.isAccountSessionTemporarilyUnavailable)
+    }
+
+    @MainActor
+    func testSignedInAccountClearsWhenSessionIsConfirmedSignedOut() async {
+        let accountService = MutableStubAccountService(
+            user: AccountUser(id: "signed-out-user", displayName: "Signed Out User", emailAddress: "signedout@example.com"),
+            restoreResult: .signedOut
         )
         let controller = AccessController(
             accountService: accountService,
@@ -595,7 +649,8 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertNil(controller.accountSession)
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.planTier, .free)
-        XCTAssertTrue(accountService.didSignOut)
+        XCTAssertFalse(controller.isAccountSessionTemporarilyUnavailable)
+        XCTAssertFalse(accountService.didSignOut)
     }
 
     @MainActor
@@ -623,6 +678,33 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .guest)
         XCTAssertEqual(controller.capabilities, .forMode(.guest))
         XCTAssertEqual(controller.limits, .forMode(.guest))
+    }
+
+    @MainActor
+    func testManualSignOutClearsLastKnownAccountUserSnapshot() async throws {
+        let userDefaults = isolatedUserDefaults()
+        let user = AccountUser(id: "snapshot-user", displayName: "Snapshot User", emailAddress: "snapshot@example.com")
+        let accountService = MutableStubAccountService(user: user)
+        let controller = AccessController(
+            accountService: accountService,
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        try await controller.signOut()
+
+        let restoredController = AccessController(
+            accountService: MutableStubAccountService(user: nil, restoreResult: .temporarilyUnavailable(nil)),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        XCTAssertFalse(restoredController.isSignedIn)
+        XCTAssertNil(restoredController.accountUser)
+        XCTAssertEqual(restoredController.accessMode, .guest)
     }
 
     @MainActor
@@ -961,6 +1043,11 @@ private struct StubAccountService: AVAccountService {
     var isAvailable: Bool { true }
     var currentUser: AccountUser? { user }
 
+    func restoreSession() async -> AVAccountSessionRestoreResult {
+        guard let user else { return .signedOut }
+        return .active(user)
+    }
+
     func getToken() async throws -> String? {
         token
     }
@@ -1026,15 +1113,25 @@ private final class SequenceStubEntitlementService: EntitlementService {
 private final class MutableStubAccountService: AVAccountService {
     private var user: AccountUser?
     private let token: String?
+    private let restoreResult: AVAccountSessionRestoreResult?
     private(set) var didSignOut = false
 
-    init(user: AccountUser?, token: String? = "test-token") {
+    init(user: AccountUser?, token: String? = "test-token", restoreResult: AVAccountSessionRestoreResult? = nil) {
         self.user = user
         self.token = token
+        self.restoreResult = restoreResult
     }
 
     var isAvailable: Bool { true }
     var currentUser: AccountUser? { user }
+
+    func restoreSession() async -> AVAccountSessionRestoreResult {
+        if let restoreResult {
+            return restoreResult
+        }
+        guard let user else { return .signedOut }
+        return .active(user)
+    }
 
     func getToken() async throws -> String? {
         token

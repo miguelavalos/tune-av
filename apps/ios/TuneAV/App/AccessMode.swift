@@ -9,7 +9,7 @@ struct AccountSession: Equatable {
     let capabilities: AccessCapabilities
 }
 
-struct AccountUser: Equatable {
+struct AccountUser: Codable, Equatable {
     let id: String
     let displayName: String
     let emailAddress: String?

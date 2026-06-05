@@ -134,6 +134,7 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var hasMoreSearchResults = false
     @Published private(set) var searchNextCursor: String?
     @Published private(set) var accountUser: AccountAVUser?
+    @Published private(set) var isAccountSessionTemporarilyUnavailable = false
     @Published private(set) var accessMode: AccessMode = .guest
     @Published private(set) var planTier: PlanTier = .free
     @Published private(set) var capabilities: AccessCapabilities = .forMode(.guest)
@@ -171,6 +172,8 @@ final class TuneAVMacModel: ObservableObject {
         keyStyle: .dayBucket(prefix: "tuneav.featureUsage."),
         limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures
     )
+    private let accountUserDefaults = UserDefaults.standard
+    private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
     init() {
         favoriteStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.favoritesKey)
@@ -179,6 +182,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks = storage.loadDiscoveries()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
+        accountUser = accountService.currentUser ?? Self.lastKnownAccountUser(from: accountUserDefaults)
         resolveLocalAccessState()
         configureSystemNowPlaying()
     }
@@ -903,8 +907,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func startAutomaticLibrarySync() async {
-        accountUser = accountService.currentUser
-        resolveLocalAccessState()
+        await restoreAccountSessionForAccessRefresh()
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.startupCompleted(
                 accountAvailable: accountService.isAvailable,
@@ -914,12 +917,9 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func refreshAccount() async {
-        accountUser = accountService.currentUser
-        resolveLocalAccessState()
-        guard accountUser != nil else { return }
-        let token = try? await accountService.getToken()
-        guard let token, !token.isEmpty else { return }
-        await refreshAccessState(tokenOverride: token)
+        let restoredSessionIsActive = await restoreAccountSessionForAccessRefresh()
+        guard restoredSessionIsActive else { return }
+        await refreshAccessState()
     }
 
     func signInWithApple() async {
@@ -952,7 +952,9 @@ final class TuneAVMacModel: ObservableObject {
             try await accountService.signOut()
         }
         cloudSyncStatus = .idle
-        accountUser = accountService.currentUser
+        accountUser = nil
+        isAccountSessionTemporarilyUnavailable = false
+        clearLastKnownAccountUser()
         resolveLocalAccessState()
     }
 
@@ -1048,6 +1050,9 @@ final class TuneAVMacModel: ObservableObject {
             lastCloudSyncAt = .now
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
             accountUser = accountService.currentUser
+            if let accountUser {
+                persistLastKnownAccountUser(accountUser)
+            }
         } catch TuneAVAppDataClientError.missingToken {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
@@ -1424,7 +1429,7 @@ final class TuneAVMacModel: ObservableObject {
         do {
             cloudSyncErrorMessage = nil
             try await action()
-            accountUser = accountService.currentUser
+            _ = await restoreAccountSessionForAccessRefresh()
             resolveLocalAccessState()
             await refreshAccessState()
         } catch {
@@ -1495,6 +1500,9 @@ final class TuneAVMacModel: ObservableObject {
         accessMode = resolvedAccess.accessMode
         capabilities = resolvedAccess.capabilities
         limits = TuneAVAccessLimitPolicy.resolvedLimits(resolvedAccess.limits, accessMode: resolvedAccess.accessMode)
+        if let accountUser, resolvedAccess.accessMode != .guest {
+            persistLastKnownAccountUser(accountUser)
+        }
         if resolvedAccess.accessMode == .signedInPro {
             upgradePrompt = nil
         }
@@ -1691,6 +1699,50 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
+    @discardableResult
+    private func restoreAccountSessionForAccessRefresh() async -> Bool {
+        switch await accountService.restoreSession() {
+        case .active(let user):
+            accountUser = user
+            isAccountSessionTemporarilyUnavailable = false
+            persistLastKnownAccountUser(user)
+            resolveLocalAccessState()
+            return true
+        case .temporarilyUnavailable(let user):
+            if let user {
+                accountUser = user
+                persistLastKnownAccountUser(user)
+            }
+            isAccountSessionTemporarilyUnavailable = true
+            resolveLocalAccessState()
+            return false
+        case .signedOut, .invalidated:
+            accountUser = nil
+            isAccountSessionTemporarilyUnavailable = false
+            clearLastKnownAccountUser()
+            resolveLocalAccessState()
+            return false
+        }
+    }
+
+    private static func lastKnownAccountUser(from userDefaults: UserDefaults) -> AccountAVUser? {
+        guard let data = userDefaults.data(forKey: "tuneav.mac.account.lastKnownUser"),
+              let snapshot = try? JSONDecoder().decode(MacLastKnownAccountUser.self, from: data) else {
+            return nil
+        }
+        return snapshot.accountUser
+    }
+
+    private func persistLastKnownAccountUser(_ user: AccountAVUser) {
+        let snapshot = MacLastKnownAccountUser(user: user)
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        accountUserDefaults.set(data, forKey: lastKnownAccountUserKey)
+    }
+
+    private func clearLastKnownAccountUser() {
+        accountUserDefaults.removeObject(forKey: lastKnownAccountUserKey)
+    }
+
     private func scheduleCloudSync(delay: Duration) {
         pendingCloudSyncTask?.cancel()
         pendingCloudSyncTask = Task { [weak self] in
@@ -1714,6 +1766,22 @@ final class TuneAVMacModel: ObservableObject {
 struct MacHomeMoodGenreSuggestion: Hashable {
     let tag: String
     let title: String
+}
+
+private struct MacLastKnownAccountUser: Codable {
+    let id: String
+    let displayName: String
+    let emailAddress: String?
+
+    init(user: AccountAVUser) {
+        id = user.id
+        displayName = user.displayName
+        emailAddress = user.emailAddress
+    }
+
+    var accountUser: AccountAVUser {
+        AccountAVUser(id: id, displayName: displayName, emailAddress: emailAddress)
+    }
 }
 
 struct TuneAVMacLibraryStorage {

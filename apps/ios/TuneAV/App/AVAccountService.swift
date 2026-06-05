@@ -6,10 +6,18 @@ protocol AVAccountService {
     var isAvailable: Bool { get }
     var currentUser: AccountUser? { get }
 
+    func restoreSession() async -> AVAccountSessionRestoreResult
     func getToken() async throws -> String?
     func signInWithApple() async throws
     func signInWithGoogle() async throws
     func signOut() async throws
+}
+
+enum AVAccountSessionRestoreResult: Equatable {
+    case signedOut
+    case active(AccountUser)
+    case temporarilyUnavailable(AccountUser?)
+    case invalidated
 }
 
 enum AVAccountServiceError: LocalizedError {
@@ -41,12 +49,26 @@ struct DefaultAVAccountService: AVAccountService {
         if let uiTestAccountUser = Self.uiTestAccountUser {
             return uiTestAccountUser
         }
-        guard let user = accountService.currentUser else { return nil }
-        return AccountUser(
-            id: user.id,
-            displayName: user.displayName,
-            emailAddress: user.emailAddress
-        )
+        return Self.accountUser(from: accountService.currentUser)
+    }
+
+    func restoreSession() async -> AVAccountSessionRestoreResult {
+        guard !Self.shouldForceGuestForUITests else { return .signedOut }
+        if let uiTestAccountUser = Self.uiTestAccountUser {
+            return .active(uiTestAccountUser)
+        }
+
+        switch await accountService.restoreSession() {
+        case .signedOut:
+            return .signedOut
+        case .active(let user):
+            guard let user = Self.accountUser(from: user) else { return .signedOut }
+            return .active(user)
+        case .temporarilyUnavailable(let user):
+            return .temporarilyUnavailable(Self.accountUser(from: user))
+        case .invalidated:
+            return .invalidated
+        }
     }
 
     func getToken() async throws -> String? {
@@ -97,6 +119,15 @@ struct DefaultAVAccountService: AVAccountService {
             id: TuneAVUITestEnvironment.accountUserId,
             displayName: TuneAVUITestEnvironment.accountUserDisplayName,
             emailAddress: TuneAVUITestEnvironment.accountUserEmailAddress
+        )
+    }
+
+    private static func accountUser(from user: AccountAVUser?) -> AccountUser? {
+        guard let user else { return nil }
+        return AccountUser(
+            id: user.id,
+            displayName: user.displayName,
+            emailAddress: user.emailAddress
         )
     }
 }

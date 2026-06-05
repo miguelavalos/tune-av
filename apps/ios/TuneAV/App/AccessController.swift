@@ -17,6 +17,7 @@ final class AccessController: ObservableObject {
     @Published private(set) var platformUserId: String?
     @Published private(set) var subscriptionOffer: TuneAVSubscriptionOffer?
     @Published private(set) var subscriptionError: TuneAVSubscriptionPurchaseError?
+    @Published private(set) var isAccountSessionTemporarilyUnavailable: Bool
     @Published private(set) var isSubscriptionOperationInProgress: Bool
     @Published private(set) var isWaitingForSubscriptionReconciliation: Bool
     @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
@@ -34,6 +35,7 @@ final class AccessController: ObservableObject {
     private let dailyUsageLimiter: TuneAVDailyUsageLimiter
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
+    private let lastKnownAccountUserKey = "tuneav.account.lastKnownUser"
     private var accessRefreshGeneration = 0
 
     init(
@@ -53,7 +55,7 @@ final class AccessController: ObservableObject {
             try? await Task.sleep(nanoseconds: nanoseconds)
         }
     ) {
-        let currentUser = accountService.currentUser
+        let currentUser = accountService.currentUser ?? Self.lastKnownAccountUser(from: userDefaults)
 
         self.accountService = accountService
         self.entitlementService = entitlementService
@@ -81,6 +83,7 @@ final class AccessController: ObservableObject {
         self.platformUserId = nil
         self.subscriptionOffer = nil
         self.subscriptionError = nil
+        self.isAccountSessionTemporarilyUnavailable = false
         self.isSubscriptionOperationInProgress = false
         self.isWaitingForSubscriptionReconciliation = false
         self.subscriptionReconciliationSource = nil
@@ -112,31 +115,30 @@ final class AccessController: ObservableObject {
     func syncFromAccountProvider() async {
         accessRefreshGeneration += 1
         let generation = accessRefreshGeneration
-        accountUser = accountService.currentUser
-        if accountUser == nil {
-            do {
-                _ = try await accountService.getToken()
-                guard generation == accessRefreshGeneration else { return }
-                accountUser = accountService.currentUser
-            } catch {
-                guard generation == accessRefreshGeneration else { return }
-                authLogger.debug("No active Account AV session during access refresh error=\(Self.safeErrorCode(error), privacy: .public)")
+
+        switch await accountService.restoreSession() {
+        case .active(let user):
+            guard generation == accessRefreshGeneration else { return }
+            accountUser = user
+            persistLastKnownAccountUser(user)
+            isAccountSessionTemporarilyUnavailable = false
+        case .temporarilyUnavailable(let restoredUser):
+            guard generation == accessRefreshGeneration else { return }
+            if let restoredUser {
+                accountUser = restoredUser
+                persistLastKnownAccountUser(restoredUser)
             }
+            isAccountSessionTemporarilyUnavailable = true
+            authLogger.error("Account AV session is temporarily unavailable during access refresh")
+            resolveAccessState()
+            return
+        case .signedOut, .invalidated:
+            guard generation == accessRefreshGeneration else { return }
+            clearSignedOutAccountState()
+            resolveAccessState()
+            return
         }
-        if accountUser != nil {
-            do {
-                guard let token = try await accountService.getToken(), !token.isEmpty else {
-                    guard generation == accessRefreshGeneration else { return }
-                    await clearUnavailableAccountSession(reason: "missing_token")
-                    return
-                }
-            } catch {
-                guard generation == accessRefreshGeneration else { return }
-                authLogger.error("Account AV session is unavailable during access refresh error=\(Self.safeErrorCode(error), privacy: .public)")
-                await clearUnavailableAccountSession(reason: "token_error")
-                return
-            }
-        }
+
         resolveAccessState()
         let userForRefresh = accountUser
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
@@ -184,9 +186,11 @@ final class AccessController: ObservableObject {
         platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
+        isAccountSessionTemporarilyUnavailable = false
         isWaitingForSubscriptionReconciliation = false
         subscriptionReconciliationSource = nil
         resolveAccessState()
+        clearLastKnownAccountUser()
     }
 
     func markGuestOnboardingPromptShown() {
@@ -303,17 +307,15 @@ final class AccessController: ObservableObject {
         applyResolvedAccess(entitlementService.resolveAccess(for: accountUser))
     }
 
-    private func clearUnavailableAccountSession(reason: String) async {
-        authLogger.error("Clearing unavailable Account AV session reason=\(reason, privacy: .public)")
-        try? await accountService.signOut()
-        accessRefreshGeneration += 1
+    private func clearSignedOutAccountState() {
         accountUser = nil
         platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
+        isAccountSessionTemporarilyUnavailable = false
         isWaitingForSubscriptionReconciliation = false
         subscriptionReconciliationSource = nil
-        resolveAccessState()
+        clearLastKnownAccountUser()
     }
 
     private func applyResolvedAccess(_ resolvedAccess: ResolvedAccess) {
@@ -343,6 +345,7 @@ final class AccessController: ObservableObject {
             accessMode: accessMode,
             capabilities: capabilities
         )
+        persistLastKnownAccountUser(accountUser)
     }
 
     private var subscriptionAccountUser: AccountUser? {
@@ -358,5 +361,19 @@ final class AccessController: ObservableObject {
     private static func safeErrorCode(_ error: Error) -> String {
         let nsError = error as NSError
         return "\(nsError.domain):\(nsError.code)"
+    }
+
+    private static func lastKnownAccountUser(from userDefaults: UserDefaults) -> AccountUser? {
+        guard let data = userDefaults.data(forKey: "tuneav.account.lastKnownUser") else { return nil }
+        return try? JSONDecoder().decode(AccountUser.self, from: data)
+    }
+
+    private func persistLastKnownAccountUser(_ user: AccountUser) {
+        guard let data = try? JSONEncoder().encode(user) else { return }
+        userDefaults.set(data, forKey: lastKnownAccountUserKey)
+    }
+
+    private func clearLastKnownAccountUser() {
+        userDefaults.removeObject(forKey: lastKnownAccountUserKey)
     }
 }
