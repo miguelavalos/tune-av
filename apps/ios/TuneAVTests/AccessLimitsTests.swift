@@ -857,10 +857,15 @@ final class AccessLimitsTests: XCTestCase {
         await controller.syncFromAccountProvider()
         await controller.loadMonthlySubscriptionOffer()
         await controller.purchaseMonthlyPro()
+        await controller.restorePurchases()
 
         XCTAssertEqual(controller.platformUserId, "appsav-internal-user-id")
         XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, ["appsav-internal-user-id"])
         XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, ["appsav-internal-user-id"])
+        XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, ["appsav-internal-user-id"])
+        XCTAssertFalse(subscriptionPurchasing.loadedOfferUserIDs.contains(providerUser.id))
+        XCTAssertFalse(subscriptionPurchasing.purchaseUserIDs.contains(providerUser.id))
+        XCTAssertFalse(subscriptionPurchasing.restoreUserIDs.contains(providerUser.id))
     }
 
     @MainActor
