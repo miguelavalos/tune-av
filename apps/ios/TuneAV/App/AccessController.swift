@@ -2,6 +2,39 @@ import Foundation
 import OSLog
 
 @MainActor
+protocol AccountProfileResolving {
+    func resolveCurrentAccountUser() async throws -> AccountUser
+}
+
+enum AccountProfileResolverError: Error, Equatable {
+    case missingInternalUserId
+}
+
+@MainActor
+final class PlatformAccountProfileResolver: AccountProfileResolving {
+    private let apiClient: AVAccountAPIClient
+
+    init(apiClient: AVAccountAPIClient) {
+        self.apiClient = apiClient
+    }
+
+    func resolveCurrentAccountUser() async throws -> AccountUser {
+        let summary = try await apiClient.fetchAccountSummary()
+        guard let id = summary.id, !id.isEmpty else {
+            throw AccountProfileResolverError.missingInternalUserId
+        }
+        let displayName = summary.displayName.flatMap { value -> String? in
+            value.isEmpty ? nil : value
+        } ?? L10n.string("app.name")
+        return AccountUser(
+            id: id,
+            displayName: displayName,
+            emailAddress: summary.emailAddress
+        )
+    }
+}
+
+@MainActor
 final class AccessController: ObservableObject {
     enum SubscriptionReconciliationSource: Equatable {
         case purchase
@@ -26,6 +59,7 @@ final class AccessController: ObservableObject {
     let accountService: AVAccountService
 
     private let entitlementService: EntitlementService
+    private let accountProfileResolver: AccountProfileResolving
     private let subscriptionPurchasing: TuneAVSubscriptionPurchasing
     private let userDefaults: UserDefaults
     private let guestOnboardingPolicy: GuestOnboardingPolicy
@@ -40,6 +74,7 @@ final class AccessController: ObservableObject {
 
     init(
         accountService: AVAccountService = DefaultAVAccountService(),
+        accountProfileResolver: AccountProfileResolving? = nil,
         entitlementService: EntitlementService? = nil,
         subscriptionPurchasing: TuneAVSubscriptionPurchasing = RevenueCatTuneAVSubscriptionPurchasing(),
         userDefaults: UserDefaults = .standard,
@@ -55,9 +90,13 @@ final class AccessController: ObservableObject {
             try? await Task.sleep(nanoseconds: nanoseconds)
         }
     ) {
-        let currentUser = accountService.currentUser ?? Self.lastKnownAccountUser(from: userDefaults)
+        let currentUser = Self.lastKnownAccountUser(from: userDefaults)
 
         self.accountService = accountService
+        self.accountProfileResolver = accountProfileResolver
+            ?? PlatformAccountProfileResolver(
+                apiClient: AVAccountAPIClient(getToken: { try await accountService.getToken() })
+            )
         self.entitlementService = entitlementService
             ?? PlatformBackedEntitlementService(
                 fallback: LocalEntitlementService(),
@@ -117,17 +156,27 @@ final class AccessController: ObservableObject {
         let generation = accessRefreshGeneration
 
         switch await accountService.restoreSession() {
-        case .active(let user):
+        case .active(let providerUser):
             guard generation == accessRefreshGeneration else { return }
-            accountUser = user
-            persistLastKnownAccountUser(user)
-            isAccountSessionTemporarilyUnavailable = false
-        case .temporarilyUnavailable(let restoredUser):
-            guard generation == accessRefreshGeneration else { return }
-            if let restoredUser {
-                accountUser = restoredUser
-                persistLastKnownAccountUser(restoredUser)
+            guard let resolvedUser = await resolveInternalAccountUser(providerUser: providerUser) else {
+                isAccountSessionTemporarilyUnavailable = true
+                if accountUser == nil {
+                    accountSession = nil
+                    platformUserId = nil
+                    subscriptionOffer = nil
+                    subscriptionError = nil
+                    isWaitingForSubscriptionReconciliation = false
+                    subscriptionReconciliationSource = nil
+                    clearLastKnownAccountUser()
+                    resolveAccessState()
+                }
+                return
             }
+            accountUser = resolvedUser
+            persistLastKnownAccountUser(resolvedUser)
+            isAccountSessionTemporarilyUnavailable = false
+        case .temporarilyUnavailable:
+            guard generation == accessRefreshGeneration else { return }
             isAccountSessionTemporarilyUnavailable = true
             authLogger.error("Account AV session is temporarily unavailable during access refresh")
             resolveAccessState()
@@ -305,6 +354,19 @@ final class AccessController: ObservableObject {
 
     private func resolveAccessState() {
         applyResolvedAccess(entitlementService.resolveAccess(for: accountUser))
+    }
+
+    private func resolveInternalAccountUser(providerUser: AccountUser) async -> AccountUser? {
+        if TuneAVUITestEnvironment.current.hasAccountOverride {
+            return providerUser
+        }
+
+        do {
+            return try await accountProfileResolver.resolveCurrentAccountUser()
+        } catch {
+            authLogger.error("Unable to resolve internal Account AV user error=\(Self.safeErrorCode(error), privacy: .public)")
+            return nil
+        }
     }
 
     private func clearSignedOutAccountState() {

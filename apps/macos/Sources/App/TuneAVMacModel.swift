@@ -182,7 +182,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks = storage.loadDiscoveries()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
-        accountUser = accountService.currentUser ?? Self.lastKnownAccountUser(from: accountUserDefaults)
+        accountUser = Self.lastKnownAccountUser(from: accountUserDefaults)
         resolveLocalAccessState()
         configureSystemNowPlaying()
     }
@@ -1049,7 +1049,6 @@ final class TuneAVMacModel: ObservableObject {
 
             lastCloudSyncAt = .now
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
-            accountUser = accountService.currentUser
             if let accountUser {
                 persistLastKnownAccountUser(accountUser)
             }
@@ -1583,8 +1582,18 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func accountRequest<T: Decodable>(path: String, method: String = "GET") async throws -> T {
-        guard let token = try await accountService.getToken(), !token.isEmpty else {
+    private func accountRequest<T: Decodable>(
+        path: String,
+        method: String = "GET",
+        tokenOverride: String? = nil
+    ) async throws -> T {
+        let resolvedToken: String?
+        if let tokenOverride {
+            resolvedToken = tokenOverride
+        } else {
+            resolvedToken = try await accountService.getToken()
+        }
+        guard let token = resolvedToken, !token.isEmpty else {
             throw TuneAVAppDataClientError.missingToken
         }
 
@@ -1702,17 +1711,20 @@ final class TuneAVMacModel: ObservableObject {
     @discardableResult
     private func restoreAccountSessionForAccessRefresh() async -> Bool {
         switch await accountService.restoreSession() {
-        case .active(let user):
+        case .active(let providerUser):
+            guard let user = await resolveInternalAccountUser(providerUser: providerUser) else {
+                isAccountSessionTemporarilyUnavailable = true
+                if accountUser == nil {
+                    resolveLocalAccessState()
+                }
+                return false
+            }
             accountUser = user
             isAccountSessionTemporarilyUnavailable = false
             persistLastKnownAccountUser(user)
             resolveLocalAccessState()
             return true
-        case .temporarilyUnavailable(let user):
-            if let user {
-                accountUser = user
-                persistLastKnownAccountUser(user)
-            }
+        case .temporarilyUnavailable:
             isAccountSessionTemporarilyUnavailable = true
             resolveLocalAccessState()
             return false
@@ -1722,6 +1734,29 @@ final class TuneAVMacModel: ObservableObject {
             clearLastKnownAccountUser()
             resolveLocalAccessState()
             return false
+        }
+    }
+
+    private func resolveInternalAccountUser(providerUser: AccountAVUser) async -> AccountAVUser? {
+        if TuneAVUITestEnvironment.current.hasAccountOverride {
+            return providerUser
+        }
+
+        do {
+            let summary: AccountSummary = try await accountRequest(path: "/v1/me")
+            guard let id = summary.id, !id.isEmpty else {
+                return nil
+            }
+            let displayName = summary.displayName.flatMap { value -> String? in
+                value.isEmpty ? nil : value
+            } ?? providerUser.displayName
+            return AccountAVUser(
+                id: id,
+                displayName: displayName,
+                emailAddress: summary.emailAddress ?? providerUser.emailAddress
+            )
+        } catch {
+            return nil
         }
     }
 

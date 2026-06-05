@@ -384,6 +384,7 @@ final class AccessLimitsTests: XCTestCase {
         let userDefaults = isolatedUserDefaults()
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -406,6 +407,7 @@ final class AccessLimitsTests: XCTestCase {
         var currentDate = fixedDate("2026-04-30T10:00:00Z")
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: userDefaults,
             now: { currentDate }
@@ -424,6 +426,7 @@ final class AccessLimitsTests: XCTestCase {
     func testDailyMusicActionCountersUseOneAviActionBudget() {
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -457,6 +460,7 @@ final class AccessLimitsTests: XCTestCase {
     func testDailyFeatureUsageKeysOnlyCountUniqueUses() {
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -479,6 +483,7 @@ final class AccessLimitsTests: XCTestCase {
     func testPreviouslyUsedDailyFeatureKeyRemainsAllowedAfterLimitIsReached() {
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -507,6 +512,7 @@ final class AccessLimitsTests: XCTestCase {
     func testUpgradePromptUsesTheBlockedFeatureAndConfiguredLimit() {
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -520,10 +526,11 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testProDailyFeaturesRemainAllowedWithoutDailyLimit() {
+    func testProDailyFeaturesRemainAllowedWithoutDailyLimit() async {
         let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
         let controller = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: ResolvedAccess(
                 platformUserId: nil,
                 planTier: .pro,
@@ -534,6 +541,7 @@ final class AccessLimitsTests: XCTestCase {
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
         )
+        await controller.syncFromAccountProvider()
 
         for _ in 0..<25 {
             controller.recordDailyFeatureUse(.appleMusicSearch)
@@ -548,6 +556,7 @@ final class AccessLimitsTests: XCTestCase {
         let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
         let controller = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -576,16 +585,66 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
+    func testActiveProviderSessionPublishesInternalAccountUserId() async {
+        let providerUser = AccountUser(id: "user_clerk_subject", displayName: "Clerk User", emailAddress: "clerk@example.com")
+        let internalUser = AccountUser(id: "appsav-internal-user-id", displayName: "Internal User", emailAddress: "internal@example.com")
+        let controller = AccessController(
+            accountService: StubAccountService(user: providerUser),
+            accountProfileResolver: StubAccountProfileResolver(user: internalUser),
+            entitlementService: StubEntitlementService(access: .signedInFree),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertEqual(controller.accountUser?.id, "appsav-internal-user-id")
+        XCTAssertEqual(controller.accountSession?.user.id, "appsav-internal-user-id")
+        XCTAssertNotEqual(controller.accountUser?.id, providerUser.id)
+        XCTAssertFalse(controller.isAccountSessionTemporarilyUnavailable)
+    }
+
+    @MainActor
+    func testProviderSessionDoesNotPublishProviderUserIdWhenInternalResolutionFails() async {
+        let providerUser = AccountUser(id: "user_clerk_subject", displayName: "Clerk User", emailAddress: "clerk@example.com")
+        let controller = AccessController(
+            accountService: StubAccountService(user: providerUser),
+            accountProfileResolver: StubAccountProfileResolver(error: AccountProfileResolverError.missingInternalUserId),
+            entitlementService: StubEntitlementService(access: .signedInFree),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertNil(controller.accountUser)
+        XCTAssertNil(controller.accountSession)
+        XCTAssertEqual(controller.accessMode, .guest)
+        XCTAssertTrue(controller.isAccountSessionTemporarilyUnavailable)
+    }
+
+    @MainActor
     func testSignedInAccountIsPreservedWhenSessionIsTemporarilyUnavailable() async {
+        let userDefaults = isolatedUserDefaults()
         let user = AccountUser(id: "stale-user", displayName: "Stale User", emailAddress: "stale@example.com")
+        let signedInController = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+        await signedInController.syncFromAccountProvider()
+
         let accountService = MutableStubAccountService(
-            user: user,
+            user: nil,
             restoreResult: .temporarilyUnavailable(nil)
         )
         let controller = AccessController(
             accountService: accountService,
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
-            userDefaults: isolatedUserDefaults(),
+            userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
         )
 
@@ -606,6 +665,7 @@ final class AccessLimitsTests: XCTestCase {
         let user = AccountUser(id: "cached-user", displayName: "Cached User", emailAddress: "cached@example.com")
         let signedInController = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -615,6 +675,7 @@ final class AccessLimitsTests: XCTestCase {
 
         let restoredController = AccessController(
             accountService: MutableStubAccountService(user: nil, restoreResult: .temporarilyUnavailable(nil)),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -631,12 +692,14 @@ final class AccessLimitsTests: XCTestCase {
 
     @MainActor
     func testSignedInAccountClearsWhenSessionIsConfirmedSignedOut() async {
+        let signedOutUser = AccountUser(id: "signed-out-user", displayName: "Signed Out User", emailAddress: "signedout@example.com")
         let accountService = MutableStubAccountService(
-            user: AccountUser(id: "signed-out-user", displayName: "Signed Out User", emailAddress: "signedout@example.com"),
+            user: signedOutUser,
             restoreResult: .signedOut
         )
         let controller = AccessController(
             accountService: accountService,
+            accountProfileResolver: StubAccountProfileResolver(user: signedOutUser),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -655,11 +718,13 @@ final class AccessLimitsTests: XCTestCase {
 
     @MainActor
     func testSignOutFromProAccountReturnsToGuestLocalOnlyAccess() async throws {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
         let accountService = MutableStubAccountService(
-            user: AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+            user: user
         )
         let controller = AccessController(
             accountService: accountService,
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: isolatedUserDefaults(),
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -687,6 +752,7 @@ final class AccessLimitsTests: XCTestCase {
         let accountService = MutableStubAccountService(user: user)
         let controller = AccessController(
             accountService: accountService,
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -697,6 +763,7 @@ final class AccessLimitsTests: XCTestCase {
 
         let restoredController = AccessController(
             accountService: MutableStubAccountService(user: nil, restoreResult: .temporarilyUnavailable(nil)),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: StubEntitlementService(access: .signedInPro),
             userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
@@ -712,6 +779,7 @@ final class AccessLimitsTests: XCTestCase {
         let subscriptionPurchasing = StubSubscriptionPurchasing()
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
             entitlementService: StubEntitlementService(access: .guest),
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
@@ -735,6 +803,7 @@ final class AccessLimitsTests: XCTestCase {
         let subscriptionPurchasing = StubSubscriptionPurchasing()
         let controller = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
@@ -742,6 +811,7 @@ final class AccessLimitsTests: XCTestCase {
             subscriptionReconciliationRetryDelaysNanoseconds: []
         )
 
+        await controller.syncFromAccountProvider()
         await controller.loadMonthlySubscriptionOffer()
 
         XCTAssertEqual(controller.subscriptionOffer?.localizedPrice, "$4.99")
@@ -764,7 +834,8 @@ final class AccessLimitsTests: XCTestCase {
 
     @MainActor
     func testSubscriptionPurchasingUsesPlatformUserIdAfterAccessRefresh() async {
-        let user = AccountUser(id: "clerk-user-id", displayName: "Free User", emailAddress: "free@example.com")
+        let providerUser = AccountUser(id: "clerk-user-id", displayName: "Free User", emailAddress: "free@example.com")
+        let user = AccountUser(id: "appsav-internal-user-id", displayName: "Free User", emailAddress: "free@example.com")
         let entitlementService = MutableStubEntitlementService(access: ResolvedAccess(
             platformUserId: "appsav-internal-user-id",
             planTier: .free,
@@ -774,7 +845,8 @@ final class AccessLimitsTests: XCTestCase {
         ))
         let subscriptionPurchasing = StubSubscriptionPurchasing()
         let controller = AccessController(
-            accountService: StubAccountService(user: user),
+            accountService: StubAccountService(user: providerUser),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
@@ -803,6 +875,7 @@ final class AccessLimitsTests: XCTestCase {
         var sleepCalls: [UInt64] = []
         let controller = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
@@ -813,13 +886,14 @@ final class AccessLimitsTests: XCTestCase {
             }
         )
 
+        await controller.syncFromAccountProvider()
         await controller.purchaseMonthlyPro()
 
         XCTAssertEqual(controller.accessMode, .signedInPro)
         XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
         XCTAssertNil(controller.subscriptionReconciliationSource)
         XCTAssertEqual(entitlementService.refreshCount, 3)
-        XCTAssertEqual(sleepCalls, [1, 2])
+        XCTAssertEqual(sleepCalls, [1])
     }
 
     @MainActor
@@ -829,6 +903,7 @@ final class AccessLimitsTests: XCTestCase {
         let subscriptionPurchasing = StubSubscriptionPurchasing()
         let controller = AccessController(
             accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
             entitlementService: entitlementService,
             subscriptionPurchasing: subscriptionPurchasing,
             userDefaults: isolatedUserDefaults(),
@@ -836,6 +911,7 @@ final class AccessLimitsTests: XCTestCase {
             subscriptionReconciliationRetryDelaysNanoseconds: []
         )
 
+        await controller.syncFromAccountProvider()
         await controller.restorePurchases()
 
         XCTAssertEqual(controller.accessMode, .signedInFree)
@@ -1041,7 +1117,7 @@ private struct StubAccountService: AVAccountService {
     var token: String? = "test-token"
 
     var isAvailable: Bool { true }
-    var currentUser: AccountUser? { user }
+    var providerSessionUser: AccountUser? { user }
 
     func restoreSession() async -> AVAccountSessionRestoreResult {
         guard let user else { return .signedOut }
@@ -1057,6 +1133,27 @@ private struct StubAccountService: AVAccountService {
     func signInWithGoogle() async throws {}
 
     func signOut() async throws {}
+}
+
+@MainActor
+private struct StubAccountProfileResolver: AccountProfileResolving {
+    var user: AccountUser?
+    var error: Error?
+
+    init(user: AccountUser? = nil, error: Error? = nil) {
+        self.user = user
+        self.error = error
+    }
+
+    func resolveCurrentAccountUser() async throws -> AccountUser {
+        if let error {
+            throw error
+        }
+        guard let user else {
+            throw AccountProfileResolverError.missingInternalUserId
+        }
+        return user
+    }
 }
 
 @MainActor
@@ -1123,7 +1220,7 @@ private final class MutableStubAccountService: AVAccountService {
     }
 
     var isAvailable: Bool { true }
-    var currentUser: AccountUser? { user }
+    var providerSessionUser: AccountUser? { user }
 
     func restoreSession() async -> AVAccountSessionRestoreResult {
         if let restoreResult {
