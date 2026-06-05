@@ -36,6 +36,9 @@ apps/ios/Config/Local.xcconfig
 !/apps/macos/
 !/apps/macos/**
 
+# Keep Finder metadata ignored after broad source re-includes.
+**/.DS_Store
+
 # macOS local config is generated outside this public repository.
 apps/macos/Config/Local.xcconfig
 apps/macos/Provisioning/
