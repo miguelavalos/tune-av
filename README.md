@@ -7,6 +7,10 @@ local playback, local persistence, public assets, and frontend documentation.
 Non-public service operations, release operations, signing material, service
 configuration, and approval records do not belong in this repo.
 
+Before validating signed account, subscription, purchase, backend, or deletion
+workflows, read [AGENTS.md](AGENTS.md). Those workflows are governed by private
+AVALSYS runbooks and must not be replaced with an invented local backend flow.
+
 The app to treat as current is `apps/ios`.
 
 ## License
