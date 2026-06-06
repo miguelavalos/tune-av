@@ -67,6 +67,9 @@ struct RootView: View {
         .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
             updateIdleTimer(for: scenePhase)
         }
+        .onReceive(proLibraryObserver.$projection.compactMap { $0 }) { projection in
+            libraryStore.applyProRealtimeProjection(projection)
+        }
         .onChange(of: accessController.accessMode) { _, _ in
             libraryStore.configureLocalFeedbackRetention(for: accessController.accessMode)
             authOptionsArePresented = false
