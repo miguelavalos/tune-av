@@ -19,7 +19,8 @@ Runs the local Tune AV iOS release preflight:
 - iOS platform security gate;
 - iOS network privacy gate;
 - iOS release privacy gate;
-- optional archive build plus strict archive privacy evidence and app-size gates.
+- optional archive build plus strict archive privacy evidence, Sentry dSYM repair,
+  and app-size gates.
 
 Generate apps/ios/Config/Local.xcconfig for production before running:
   bun run ios:config:prod
@@ -122,6 +123,10 @@ if [ "$with_archive" -eq 1 ]; then
 
   archive_app_path="$archive_path/Products/Applications/TuneAV.app"
   if [ -d "$archive_app_path" ]; then
+    run_step "Archive Sentry dSYM repair" \
+      scripts/repair-ios-archive-sentry-dsym.sh \
+        --archive "$archive_path"
+
     run_step "Archive app size gate" \
       env \
         TUNEAV_IOS_APP_PATH="$archive_app_path" \
