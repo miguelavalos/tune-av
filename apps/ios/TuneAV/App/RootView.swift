@@ -15,6 +15,8 @@ struct RootView: View {
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
     @State private var lastAutomaticLibrarySyncRequestedAt: Date?
+    @State private var realtimeSessionTask: Task<Void, Never>?
+    @StateObject private var proLibraryObserver = TuneAVProLibraryObserver()
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
     private let launchContext = LaunchContext.current
@@ -83,6 +85,7 @@ struct RootView: View {
                 }
             } else {
                 cancelScheduledLibrarySync()
+                stopProRealtimeSync()
                 libraryStore.setAppDataService(nil)
                 libraryStore.setBackendService(nil)
                 clearTuneBackendService()
@@ -145,6 +148,7 @@ struct RootView: View {
 
         libraryStore.setBackendService(appDataService, userID: accessController.accountUser?.id)
         libraryStore.setAppDataService(appDataService)
+        startProRealtimeSyncIfNeeded()
         await libraryStore.refreshCloudLibraryIfNeeded()
         await libraryStore.refreshUserSummary(force: true)
     }
@@ -190,6 +194,42 @@ struct RootView: View {
     private func cancelScheduledLibrarySync() {
         librarySyncTask?.cancel()
         librarySyncTask = nil
+    }
+
+    private func startProRealtimeSyncIfNeeded() {
+        guard proLibraryObserver.isConfigured,
+              accessController.capabilities.canUseCloudSync,
+              let ownerUserId = accessController.accountUser?.id else {
+            stopProRealtimeSync()
+            return
+        }
+
+        realtimeSessionTask?.cancel()
+        TuneAVRealtimeSessionStore.shared.clear()
+        proLibraryObserver.clear()
+        let client = TuneAVRealtimeSessionClient(
+            apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
+        )
+        guard client.isConfigured else { return }
+
+        realtimeSessionTask = Task { @MainActor in
+            do {
+                let realtimeSessionId = try await client.createRealtimeSession()
+                guard accessController.accountUser?.id == ownerUserId,
+                      accessController.capabilities.canUseCloudSync else { return }
+                TuneAVRealtimeSessionStore.shared.update(ownerUserId: ownerUserId, realtimeSessionId: realtimeSessionId)
+                proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
+            } catch {
+                proLibraryObserver.clear()
+            }
+        }
+    }
+
+    private func stopProRealtimeSync() {
+        realtimeSessionTask?.cancel()
+        realtimeSessionTask = nil
+        TuneAVRealtimeSessionStore.shared.clear()
+        proLibraryObserver.clear()
     }
 
     private func refreshTuneBackendService() async {

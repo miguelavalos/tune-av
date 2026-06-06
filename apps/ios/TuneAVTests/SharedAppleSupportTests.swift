@@ -2,6 +2,37 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testAppDataClientSurfacesConflictWithoutRetryingStaleResourcePush() async throws {
+        let recorder = AppDataRequestRecorder(conflictPath: "/v1/apps/tuneav/data/favorites")
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, method, body, headers in
+                try await recorder.request(path: path, method: method, body: body, headers: headers)
+            }
+        )
+        _ = try await client.pullLibrary()
+
+        do {
+            try await client.pushLibrary(
+                TuneAVLibrarySnapshot(
+                    favorites: [FavoriteStationRecord(station: Self.stationRecord(id: "local"), createdAt: "2026-06-06T10:00:00Z")],
+                    recents: [],
+                    discoveries: [],
+                    settings: .empty
+                )
+            )
+            XCTFail("Expected conflict")
+        } catch TuneAVAppDataError.conflict {
+        }
+
+        let calls = await recorder.calls
+        XCTAssertEqual(
+            calls.filter { $0 == "PUT /v1/apps/tuneav/data/favorites" }.count,
+            1
+        )
+        XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/recents"))
+    }
+
     func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {
         let bundleURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
@@ -257,6 +288,33 @@ final class SharedAppleSupportTests: XCTestCase {
                 demoStation: nil
             ),
             []
+        )
+    }
+
+    private static func stationRecord(id: String) -> StationRecord {
+        StationRecord(
+            id: id,
+            name: id,
+            country: "US",
+            countryCode: "US",
+            state: nil,
+            language: "English",
+            languageCodes: "en",
+            tags: "test",
+            streamURL: "https://example.com/\(id).mp3",
+            faviconURL: nil,
+            bitrate: nil,
+            codec: nil,
+            homepageURL: nil,
+            votes: nil,
+            clickCount: nil,
+            clickTrend: nil,
+            isHLS: false,
+            hasExtendedInfo: nil,
+            hasSSLError: nil,
+            lastCheckOKAt: nil,
+            geoLatitude: nil,
+            geoLongitude: nil
         )
     }
 
@@ -5167,6 +5225,57 @@ private actor AsyncCounter {
 
     func currentValue() -> Int {
         value
+    }
+}
+
+private actor AppDataRequestRecorder {
+    private let conflictPath: String
+    private var hasReturnedConflict = false
+    private(set) var calls: [String] = []
+
+    init(conflictPath: String) {
+        self.conflictPath = conflictPath
+    }
+
+    func request(path: String, method: String, body: Data?, headers: [String: String]) async throws -> Data {
+        calls.append("\(method) \(path)")
+        if method == "PUT", path == conflictPath, !hasReturnedConflict {
+            hasReturnedConflict = true
+            throw TuneAVAppDataClientError.requestFailed(statusCode: 409)
+        }
+
+        return responseData(for: path, method: method)
+    }
+
+    private func responseData(for path: String, method: String) -> Data {
+        let entries: String
+        switch path {
+        case "/v1/apps/tuneav/data/favorites":
+            entries = method == "GET"
+                ? #"[{"station":{"id":"remote","name":"remote","country":"US","countryCode":"US","state":null,"language":"English","languageCodes":"en","tags":"test","streamURL":"https://example.com/remote.mp3","faviconURL":null,"bitrate":null,"codec":null,"homepageURL":null,"votes":null,"clickCount":null,"clickTrend":null,"isHLS":false,"hasExtendedInfo":null,"hasSSLError":null,"lastCheckOKAt":null,"geoLatitude":null,"geoLongitude":null},"createdAt":"2026-06-06T09:00:00Z","deletedAt":null}]"#
+                : #"[]"#
+        case "/v1/apps/tuneav/data/settings":
+            entries = #"[{"preferredCountry":"","preferredLanguage":"","preferredTag":"","lastPlayedStationID":null,"lastOpenedStationID":null,"lastOpenedStationPresentation":null,"sleepTimerMinutes":null,"keepScreenAwake":false,"warnBeforeCellularPlayback":false,"openLastStationOnLaunch":false,"autoSkipUnstableStreams":false,"updatedAt":"1970-01-01T00:00:00.000Z"}]"#
+        default:
+            entries = #"[]"#
+        }
+
+        let resource = path.split(separator: "/").last.map(String.init) ?? "unknown"
+        let json = """
+        {
+          "data": {
+            "appId": "tuneav",
+            "resource": "\(resource)",
+            "deviceId": "test-device",
+            "sentAt": "2026-06-06T10:00:00Z",
+            "entries": \(entries)
+          },
+          "updatedAt": "2026-06-06T10:00:00Z",
+          "revision": 1,
+          "etag": "\\"revision-1\\""
+        }
+        """
+        return Data(json.utf8)
     }
 }
 

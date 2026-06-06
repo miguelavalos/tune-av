@@ -20,6 +20,10 @@ enum AppConfig {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL", requireSupportedAVAccountBaseURL: true)
     }
 
+    static var tuneConvexURL: String {
+        TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
+    }
+
     static var isListeningAnalyticsUploadEnabled: Bool {
         TuneAVBundleConfig.boolValue(for: "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS")
     }

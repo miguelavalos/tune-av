@@ -54,7 +54,7 @@
 		3B63D88278E41045F3E5950D /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20097A1515219B62D4EC2C9 /* ProfileScreen.swift */; };
 		3C962943456FE4780AB75913 /* HomeMoodSuggestionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */; };
 		3DCE3D361352CA6F90075E8D /* ShellTagViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */; };
-		3F1D99675A1137D27A95B2F1 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
+		3F1D99675A1137D27A95B2F1 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B3D80F48D83AA5BCA01116A /* ClerkKitUI */; };
 		3F9A20636CE17A83BFE8E8C4 /* AppShellTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458EF57C362E247FF5234C69 /* AppShellTab.swift */; };
 		4313B398CF2F95B8E38D6106 /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98CAF748E6FB7BE85AAAEE3 /* TuneAVL10n.swift */; };
 		449BEE1D1AC9DFA1B312EEFD /* HomeHeroActionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D283A1ECFA0D863F088C738F /* HomeHeroActionBuilder.swift */; };
@@ -84,7 +84,7 @@
 		6B51A97DF1E04E02390583FD /* TuneAVNowPlayingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */; };
 		6C021BFA6934CAF149EAC91E /* ShellSearchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9032055EBEFD359E9A0B4A08 /* ShellSearchViews.swift */; };
 		6C281077597DCDF4A556D5AC /* LibraryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6FA815423F3608CDA5F3E3 /* LibraryScreen.swift */; };
-		6CBE730AF3B680922FEAB021 /* ClerkKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B3D80F48D83AA5BCA01116A /* ClerkKitUI */; };
+		6CBE730AF3B680922FEAB021 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6EEF535130BB799019CE99 /* ClerkKit */; };
 		6CDABBA82C29779079C4D6B6 /* TuneAVAudioPlaybackPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */; };
 		6ED492E9D66AF3FA9840552A /* AviMusicDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A9CB23A3D623ABA8858E3B /* AviMusicDetailViews.swift */; };
 		753E16848B55643A3634E922 /* TuneAVProPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 447FB9154FC56A647BD11EEA /* TuneAVProPaywallView.swift */; };
@@ -95,7 +95,7 @@
 		77FAFD8E96B4506517898653 /* ProfileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */; };
 		7A1CC0DDEC30317BB62F0C0B /* TuneAVUITestAccountDeletionScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E72DA3D66622D24493F5809 /* TuneAVUITestAccountDeletionScenarios.swift */; };
 		7B0060FA0D191CE8C1500F8D /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */; };
-		7D3E648D556B20163DE57A82 /* ClerkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6EEF535130BB799019CE99 /* ClerkKit */; };
+		7D3E648D556B20163DE57A82 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 2F10CFE2C4ADF21A65C6D064 /* ConvexMobile */; };
 		7F95781EA9741CC5BC958DAB /* TuneAVSleepTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */; };
 		8173B6F9E09CBB364BA4A5AF /* AVAccountAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A712F782B9CC6A3143D2B122 /* AVAccountAPIClient.swift */; };
 		8315851166D4B5F324552123 /* AVAppShellFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 6941B5FACEE428F30B3447EC /* AVAppShellFoundation */; };
@@ -152,6 +152,7 @@
 		C8D6B63B482564E9094BB3AE /* AviReactionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EAA921786FA4DFF4281138 /* AviReactionAnimation.swift */; };
 		CBFA20E7AA1D0A3393D3C587 /* TuneAVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */; };
 		CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */; };
+		D082D1A8748F11E3DDF8F4BD /* TuneAVRealtimeSessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E097077E4E918A5AE9478846 /* TuneAVRealtimeSessionClient.swift */; };
 		D0F4865A251C1F99784D6491 /* TuneAVBundleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */; };
 		D2528A14030A3AF11F0F76B9 /* TuneAVSavedStationIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88BE8A291767D3B19DB2920 /* TuneAVSavedStationIcon.swift */; };
 		D3264A153516D09FC8471043 /* AppShellMusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */; };
@@ -167,11 +168,13 @@
 		DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */; };
 		E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */; };
 		E58B3F8E72B91F1B0F207DC9 /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 459263F3E9B809F0A8546FC1 /* TuneAVEighties80sNowPlaying.swift */; };
+		E5C4D748CC02BA53A6F57B65 /* TuneAVProRealtimeSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7C3BCEA02DDA7AB9688F62 /* TuneAVProRealtimeSync.swift */; };
 		E5F0639AD50A6DDD7F572BEF /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32EAF81A20F877B3162053 /* TuneAVStation.swift */; };
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
 		E7D7607B8EE4E16D37231FC7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E76489FBB943FD3200A86D0B /* PrivacyInfo.xcprivacy */; };
 		E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */; };
 		EA9DBA4A455ABB83A5F88B82 /* MusicArtworkViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFCB35806DC5978C2E878A6 /* MusicArtworkViews.swift */; };
+		EAC793522DA585DC9B75C243 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
 		EAE9D01817FC237C047D5B4D /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 9744CD1D4ACE67E92FC87D91 /* AVPaywallFoundation */; };
 		EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
@@ -290,6 +293,7 @@
 		6A7CBB3F4E1C56B85A3C8D0B /* TuneAVDailyUsageLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDailyUsageLimiter.swift; sourceTree = "<group>"; };
 		6C3DB46280DA5D6542F3E2F1 /* TuneAVTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TuneAVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D34076181B4D7F27E738D66 /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
+		6D7C3BCEA02DDA7AB9688F62 /* TuneAVProRealtimeSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVProRealtimeSync.swift; sourceTree = "<group>"; };
 		6E5B7205103D0AD0DBDCD03B /* ShellTagViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTagViews.swift; sourceTree = "<group>"; };
 		6ECEE2B4FACAC9EA16B737B1 /* TuneAVAppShellHomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellHomeFeed.swift; sourceTree = "<group>"; };
 		6FCA3DA2875984A5F8B9A885 /* TuneAVExternalSearchURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVExternalSearchURL.swift; sourceTree = "<group>"; };
@@ -375,6 +379,7 @@
 		DA32EAF81A20F877B3162053 /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
 		DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviRecommendationViews.swift; sourceTree = "<group>"; };
 		DBECCDC32515839963A81F3E /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
+		E097077E4E918A5AE9478846 /* TuneAVRealtimeSessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVRealtimeSessionClient.swift; sourceTree = "<group>"; };
 		E0E776CAB08E5F3EB77F75FF /* TuneAppExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAppExperience.swift; sourceTree = "<group>"; };
 		E14D4FFF93E6250EC70BD1E8 /* HomeMoodSuggestionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodSuggestionBuilder.swift; sourceTree = "<group>"; };
 		E2EBF8F04CC78A6F55E19FFB /* ShellCellularPlaybackGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCellularPlaybackGate.swift; sourceTree = "<group>"; };
@@ -414,9 +419,10 @@
 				24EEDB706E71B99255210B3B /* AVSettingsFoundation in Frameworks */,
 				1128115FFD9AD7844185A94C /* AVAviFoundation in Frameworks */,
 				EAE9D01817FC237C047D5B4D /* AVPaywallFoundation in Frameworks */,
-				7D3E648D556B20163DE57A82 /* ClerkKit in Frameworks */,
-				6CBE730AF3B680922FEAB021 /* ClerkKitUI in Frameworks */,
-				3F1D99675A1137D27A95B2F1 /* RevenueCat in Frameworks */,
+				7D3E648D556B20163DE57A82 /* ConvexMobile in Frameworks */,
+				6CBE730AF3B680922FEAB021 /* ClerkKit in Frameworks */,
+				3F1D99675A1137D27A95B2F1 /* ClerkKitUI in Frameworks */,
+				EAC793522DA585DC9B75C243 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -732,6 +738,8 @@
 				91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */,
 				A8DB50889CB95CD07ACBBE26 /* TuneAVAppDataService.swift */,
 				F24273B1AA0D400CEC6E0D9E /* TuneAVDiagnostics.swift */,
+				6D7C3BCEA02DDA7AB9688F62 /* TuneAVProRealtimeSync.swift */,
+				E097077E4E918A5AE9478846 /* TuneAVRealtimeSessionClient.swift */,
 				B8A8A74CF9078AA2D12F7466 /* TuneAVSplashView.swift */,
 			);
 			path = App;
@@ -826,6 +834,7 @@
 				90D6E680E4FC3B4E34986388 /* AVSettingsFoundation */,
 				0BE28C43132ACB7F967EA14B /* AVAviFoundation */,
 				9744CD1D4ACE67E92FC87D91 /* AVPaywallFoundation */,
+				2F10CFE2C4ADF21A65C6D064 /* ConvexMobile */,
 				9C6EEF535130BB799019CE99 /* ClerkKit */,
 				4B3D80F48D83AA5BCA01116A /* ClerkKitUI */,
 				6794F21337B7CE6C965181CA /* RevenueCat */,
@@ -867,6 +876,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				7DE25E285B2E624DD931BE52 /* XCRemoteSwiftPackageReference "clerk-ios" */,
+				0832B72D605637EC82CB8DFB /* XCRemoteSwiftPackageReference "convex-swift" */,
 				BDE1153F2A79285C223AC4C0 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				A1F83CEFB4AD63696729E31E /* XCLocalSwiftPackageReference "../../../account-av" */,
 				B98985C4701A7E1BEA33B767 /* XCLocalSwiftPackageReference "../../../apps-av/apple" */,
@@ -1045,6 +1055,8 @@
 				BB0512F4EA6C02C44AB73D75 /* TuneAVOverviewSectionViews.swift in Sources */,
 				CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */,
 				753E16848B55643A3634E922 /* TuneAVProPaywallView.swift in Sources */,
+				E5C4D748CC02BA53A6F57B65 /* TuneAVProRealtimeSync.swift in Sources */,
+				D082D1A8748F11E3DDF8F4BD /* TuneAVRealtimeSessionClient.swift in Sources */,
 				8F1A8A26BBE4A617B23DAEC8 /* TuneAVSavedDiscoveryPolicy.swift in Sources */,
 				D2528A14030A3AF11F0F76B9 /* TuneAVSavedStationIcon.swift in Sources */,
 				35E62D1CAA5B80E2C3B64C47 /* TuneAVServiceAliases.swift in Sources */,
@@ -1413,6 +1425,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0832B72D605637EC82CB8DFB /* XCRemoteSwiftPackageReference "convex-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/get-convex/convex-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.8.1;
+			};
+		};
 		7DE25E285B2E624DD931BE52 /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/clerk/clerk-ios";
@@ -1439,6 +1459,11 @@
 		170B941249EAB674488EB58E /* AVHaptics */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AVHaptics;
+		};
+		2F10CFE2C4ADF21A65C6D064 /* ConvexMobile */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0832B72D605637EC82CB8DFB /* XCRemoteSwiftPackageReference "convex-swift" */;
+			productName = ConvexMobile;
 		};
 		321C1010CFADDB13248FB756 /* AVLaunchFoundation */ = {
 			isa = XCSwiftPackageProductDependency;

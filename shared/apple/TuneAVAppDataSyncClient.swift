@@ -137,14 +137,9 @@ actor TuneAVAppDataSyncClient {
         )
     }
 
-    private func pushResource<Entry: Codable>(_ resource: TuneAVAppDataResource, entries: [Entry]) async throws {
-        try await pushResource(resource, entries: entries, allowsConflictRetry: true)
-    }
-
     private func pushResource<Entry: Codable>(
         _ resource: TuneAVAppDataResource,
-        entries: [Entry],
-        allowsConflictRetry: Bool
+        entries: [Entry]
     ) async throws {
         let envelope = TuneAVAppDataEnvelopePayload(
             appId: appId,
@@ -171,12 +166,7 @@ actor TuneAVAppDataSyncClient {
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
         } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
-            guard allowsConflictRetry else {
-                throw TuneAVAppDataError.conflict
-            }
-
-            _ = try await pullResource(resource, entryType: Entry.self)
-            try await pushResource(resource, entries: entries, allowsConflictRetry: false)
+            throw TuneAVAppDataError.conflict
         }
     }
 
