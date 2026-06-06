@@ -162,6 +162,7 @@ support_base_url="$(read_support_base_url)"
 revenuecat_public_api_key="$(read_required_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="$(read_required_config TUNEAV_REVENUECAT_OFFERING_ID)"
 revenuecat_monthly_package_id="$(read_required_config TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
+tuneav_convex_url="$(read_required_config TUNEAV_CONVEX_URL)"
 tuneav_ios_sentry_dsn="$(read_optional_config TUNEAV_IOS_SENTRY_DSN)"
 if [ "$env_name" = "prod" ]; then
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
@@ -185,6 +186,10 @@ if [ -z "$revenuecat_monthly_package_id" ]; then
   echo "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID must not be empty." >&2
   exit 1
 fi
+case "$tuneav_convex_url" in
+  https://*.convex.cloud) ;;
+  *) echo "TUNEAV_CONVEX_URL must be a Convex cloud URL." >&2; exit 1 ;;
+esac
 
 escape_xcconfig_url() {
   printf '%s' "$1" | sed 's#/#$(XCCONFIG_SLASH)#g'
@@ -204,6 +209,7 @@ TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
 SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
+TUNEAV_CONVEX_URL = $(escape_xcconfig_url "$tuneav_convex_url")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = $listening_analytics_uploads
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$management_url")
 TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/delete-account")

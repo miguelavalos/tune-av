@@ -93,6 +93,7 @@ require_present() {
 product_bundle_identifier="$(setting PRODUCT_BUNDLE_IDENTIFIER)"
 tuneav_bundle_identifier="$(setting TUNEAV_BUNDLE_IDENTIFIER)"
 api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
+tuneav_convex_url="$(setting TUNEAV_CONVEX_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
 support_base_url="$(setting SUPPORTAV_BASE_URL)"
@@ -110,6 +111,7 @@ for item in \
   "PRODUCT_BUNDLE_IDENTIFIER:$product_bundle_identifier" \
   "TUNEAV_BUNDLE_IDENTIFIER:$tuneav_bundle_identifier" \
   "ACCOUNTAV_API_BASE_URL:$api_base_url" \
+  "TUNEAV_CONVEX_URL:$tuneav_convex_url" \
   "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:$listening_analytics_uploads" \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
   "ACCOUNTAV_PUBLISHABLE_KEY:$publishable_key" \
@@ -127,6 +129,7 @@ done
 [[ "$revenuecat_public_api_key" != sk_* ]] || fail "TUNEAV_REVENUECAT_PUBLIC_API_KEY must not be a RevenueCat secret key"
 [ "$revenuecat_offering_id" = "default" ] || fail "TUNEAV_REVENUECAT_OFFERING_ID must be default, got $revenuecat_offering_id"
 [ "$revenuecat_monthly_package_id" = '$rc_monthly' ] || fail "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID must be literal \$rc_monthly, got $revenuecat_monthly_package_id"
+[[ "$tuneav_convex_url" == https://*.convex.cloud ]] || fail "TUNEAV_CONVEX_URL must be a Convex cloud URL"
 
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
@@ -138,7 +141,7 @@ if [ "$env_name" = "prod" ]; then
   fi
   [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after signed-in backend smoke and App Privacy update"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
-  if printf '%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
+  if printf '%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tuneav_convex_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
     fail "prod settings contain preview/local/dev values"
   fi
 else
@@ -179,6 +182,7 @@ Tune AV iOS runtime config ($env_name)
   tune bundle: $tuneav_bundle_identifier
   development team: $redacted_development_team
   Account AV API: $api_base_url
+  Tune AV Convex: $tuneav_convex_url
   Account AV management: $management_url
   Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key

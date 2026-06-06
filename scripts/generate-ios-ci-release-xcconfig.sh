@@ -37,6 +37,7 @@ required_vars=(
   ACCOUNTAV_API_BASE_URL
   ACCOUNTAV_MANAGEMENT_URL
   ACCOUNTAV_PUBLISHABLE_KEY
+  TUNEAV_CONVEX_URL
   TUNEAV_REVENUECAT_PUBLIC_API_KEY
   TUNEAV_REVENUECAT_OFFERING_ID
   TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID
@@ -61,6 +62,10 @@ esac
 case "$ACCOUNTAV_MANAGEMENT_URL" in
   https://*) ;;
   *) echo "FAIL ACCOUNTAV_MANAGEMENT_URL must use HTTPS." >&2; exit 1 ;;
+esac
+case "$TUNEAV_CONVEX_URL" in
+  https://*.convex.cloud) ;;
+  *) echo "FAIL TUNEAV_CONVEX_URL must be a Convex cloud URL." >&2; exit 1 ;;
 esac
 case "$ACCOUNTAV_PUBLISHABLE_KEY" in
   pk_live_*) ;;
@@ -98,6 +103,7 @@ TUNEAV_PREMIUM_PRODUCT_IDS = $tuneav_premium_product_ids
 SUPPORT_EMAIL_TO = $support_email_to
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$supportav_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$ACCOUNTAV_API_BASE_URL")
+TUNEAV_CONVEX_URL = $(escape_xcconfig_url "$TUNEAV_CONVEX_URL")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = 1
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$ACCOUNTAV_MANAGEMENT_URL")
 TUNEAV_DELETE_ACCOUNT_URL = https:\$(XCCONFIG_SLASH)\$(XCCONFIG_SLASH)tune-av.avalsys.com\$(XCCONFIG_SLASH)delete-account
@@ -107,6 +113,7 @@ TUNEAV_OPEN_SOURCE_URL = https:\$(XCCONFIG_SLASH)\$(XCCONFIG_SLASH)github.com\$(
 TUNEAV_REVENUECAT_PUBLIC_API_KEY = $TUNEAV_REVENUECAT_PUBLIC_API_KEY
 TUNEAV_REVENUECAT_OFFERING_ID = $tuneav_revenuecat_offering_id
 TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $tuneav_revenuecat_monthly_package_id
+TUNEAV_IOS_SENTRY_DSN = ${TUNEAV_IOS_SENTRY_DSN:-}
 EOF
 
 chmod 600 "$output_path"
