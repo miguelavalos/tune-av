@@ -149,6 +149,8 @@ final class TuneAVMacModel: ObservableObject {
     private let player = AVPlayer()
     private let trackArtworkService = TuneAVTrackArtworkService()
     private let storage = TuneAVMacLibraryStorage()
+    private let tombstoneEncoder = JSONEncoder()
+    private let tombstoneDecoder = JSONDecoder()
     private let systemNowPlayingController = MacNowPlayingSystemController()
     private let accountService = ClerkAccountAVService(
         publishableKeyProvider: { TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY") },
@@ -163,6 +165,7 @@ final class TuneAVMacModel: ObservableObject {
     private var playbackNotificationObservers: [NSObjectProtocol] = []
     private var playbackFailuresInCurrentQueue = Set<String>()
     private var currentTrackFeedbackByID: [String: TuneAVStationFeedback] = [:]
+    private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var pendingCloudSyncTask: Task<Void, Never>?
     private var cloudSyncPollingTask: Task<Void, Never>?
@@ -181,6 +184,7 @@ final class TuneAVMacModel: ObservableObject {
         recentStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.recentsKey)
         stationFeedback = storage.loadStationFeedback()
         discoveredTracks = storage.loadDiscoveries()
+        libraryTombstones = storage.loadTombstones()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
         accountUser = Self.lastKnownAccountUser(from: accountUserDefaults)
@@ -758,8 +762,10 @@ final class TuneAVMacModel: ObservableObject {
 
     func toggleFavorite(_ station: Station) {
         if favoriteStations.contains(station) {
+            rememberFavoriteDeletion(for: station)
             favoriteStations.removeAll { $0 == station }
         } else {
+            removeTombstone(resource: "favorites", identityKey: stationIdentityKey(for: station))
             favoriteStations.insert(station, at: 0)
         }
         storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
@@ -778,12 +784,14 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func clearFavorites() {
+        favoriteStations.forEach(rememberFavoriteDeletion(for:))
         favoriteStations = []
         storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
         markLocalLibraryUpdated()
     }
 
     func clearRecents() {
+        recentStations.forEach(rememberRecentDeletion(for:))
         recentStations = []
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         markLocalLibraryUpdated()
@@ -846,10 +854,13 @@ final class TuneAVMacModel: ObservableObject {
         let now = Date.now
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks[index].playedAt = now
             discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
             discoveredTracks[index].hiddenAt = nil
+            discoveredTracks[index].updatedAt = now
         } else {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks.insert(
                 MacDiscoveredTrack(
                     title: normalizedTitle,
@@ -883,9 +894,12 @@ final class TuneAVMacModel: ObservableObject {
         currentTrackFeedbackByID[discoveryID] = feedback
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks[index].playedAt = now
             discoveredTracks[index].hiddenAt = feedback == .notForMe ? now : nil
+            discoveredTracks[index].updatedAt = now
         } else if feedback == .notForMe {
+            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks.insert(
                 MacDiscoveredTrack(
                     title: normalizedTitle,
@@ -905,6 +919,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func clearDiscoveredTracks() {
+        discoveredTracks.forEach(rememberDiscoveryDeletion(for:))
         discoveredTracks = []
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
@@ -912,8 +927,10 @@ final class TuneAVMacModel: ObservableObject {
 
     func toggleDiscoverySaved(_ discovery: MacDiscoveredTrack) {
         guard let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) else { return }
-        discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? Date.now : nil
+        let now = Date.now
+        discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
         discoveredTracks[index].hiddenAt = nil
+        discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
@@ -921,20 +938,25 @@ final class TuneAVMacModel: ObservableObject {
 
     func hideDiscovery(_ discovery: MacDiscoveredTrack) {
         guard let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) else { return }
-        discoveredTracks[index].hiddenAt = Date.now
+        let now = Date.now
+        discoveredTracks[index].hiddenAt = now
+        discoveredTracks[index].updatedAt = now
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
     }
 
     func restoreDiscovery(_ discovery: MacDiscoveredTrack) {
         guard let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) else { return }
+        let now = Date.now
         discoveredTracks[index].hiddenAt = nil
+        discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
     }
 
     func removeDiscovery(_ discovery: MacDiscoveredTrack) {
+        rememberDiscoveryDeletion(for: discovery)
         discoveredTracks.removeAll { $0.discoveryID == discovery.discoveryID }
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
@@ -1156,6 +1178,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func recordRecent(_ station: Station) {
+        removeTombstone(resource: "recents", identityKey: stationIdentityKey(for: station))
         recentStations.removeAll { $0.id == station.id }
         recentStations.insert(station, at: 0)
         recentStations = Array(recentStations.prefix(12))
@@ -1468,6 +1491,7 @@ final class TuneAVMacModel: ObservableObject {
             if let currentArtworkURL {
                 discoveredTracks[index].artworkURL = currentArtworkURL
             }
+            discoveredTracks[index].updatedAt = now
         } else {
             discoveredTracks.insert(discovery, at: 0)
         }
@@ -1810,11 +1834,11 @@ final class TuneAVMacModel: ObservableObject {
         return TuneAVLibrarySnapshot(
             favorites: favoriteStations.map {
                 FavoriteStationRecord(station: $0.appDataRecord, createdAt: updatedAt)
-            },
+            } + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
             recents: recentStations.map {
                 RecentStationRecord(station: $0.appDataRecord, lastPlayedAt: updatedAt)
-            },
-            discoveries: discoveredTracks.map(\.record),
+            } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
+            discoveries: discoveredTracks.map(\.record) + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
             settings: AppSettingsRecord(
                 preferredCountry: selectedSearchCountryCode ?? "",
                 preferredLanguage: L10n.locale.language.languageCode?.identifier ?? "",
@@ -1831,8 +1855,10 @@ final class TuneAVMacModel: ObservableObject {
     private func cloudBoundedSnapshot(_ snapshot: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: snapshot.favorites,
-            recents: Array(snapshot.recents.prefix(24)),
-            discoveries: Array(snapshot.discoveries.prefix(1_000)),
+            recents: Array(snapshot.recents.filter { $0.deletedAt == nil }.prefix(24))
+                + snapshot.recents.filter { $0.deletedAt != nil },
+            discoveries: Array(snapshot.discoveries.filter { $0.deletedAt == nil }.prefix(1_000))
+                + snapshot.discoveries.filter { $0.deletedAt != nil },
             settings: snapshot.settings
         )
     }
@@ -1840,6 +1866,35 @@ final class TuneAVMacModel: ObservableObject {
     private func applyLibrarySnapshot(_ snapshot: TuneAVLibrarySnapshot) {
         cloudSyncTrigger.setApplyingCloudSnapshot(true)
         defer { cloudSyncTrigger.setApplyingCloudSnapshot(false) }
+
+        libraryTombstones = []
+
+        for favorite in snapshot.favorites where favorite.deletedAt != nil {
+            rememberTombstone(
+                resource: "favorites",
+                identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(favorite.station),
+                payload: favorite,
+                deletedAt: favorite.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
+            )
+        }
+
+        for recent in snapshot.recents where recent.deletedAt != nil {
+            rememberTombstone(
+                resource: "recents",
+                identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(recent.station),
+                payload: recent,
+                deletedAt: recent.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
+            )
+        }
+
+        for discovery in snapshot.discoveries where discovery.deletedAt != nil {
+            rememberTombstone(
+                resource: "discoveries",
+                identityKey: discovery.discoveryID,
+                payload: discovery,
+                deletedAt: discovery.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
+            )
+        }
 
         favoriteStations = snapshot.favorites
             .filter { $0.deletedAt == nil }
@@ -1856,7 +1911,97 @@ final class TuneAVMacModel: ObservableObject {
         storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         storage.saveDiscoveries(discoveredTracks)
+        storage.saveTombstones(libraryTombstones)
         markLocalLibraryUpdated(Date.now)
+    }
+
+    private func rememberFavoriteDeletion(for station: Station) {
+        let deletedAt = Date.now
+        rememberTombstone(
+            resource: "favorites",
+            identityKey: stationIdentityKey(for: station),
+            payload: FavoriteStationRecord(
+                station: station.appDataRecord,
+                deletedAt: TuneAVDateCoding.string(from: deletedAt)
+            ),
+            deletedAt: deletedAt
+        )
+    }
+
+    private func rememberRecentDeletion(for station: Station) {
+        let deletedAt = Date.now
+        rememberTombstone(
+            resource: "recents",
+            identityKey: stationIdentityKey(for: station),
+            payload: RecentStationRecord(
+                station: station.appDataRecord,
+                deletedAt: TuneAVDateCoding.string(from: deletedAt)
+            ),
+            deletedAt: deletedAt
+        )
+    }
+
+    private func rememberDiscoveryDeletion(for discovery: MacDiscoveredTrack) {
+        let deletedAt = Date.now
+        rememberTombstone(
+            resource: "discoveries",
+            identityKey: discovery.discoveryID,
+            payload: DiscoveredTrackRecord(
+                discoveryID: discovery.discoveryID,
+                title: discovery.title,
+                artist: discovery.artist,
+                stationID: discovery.stationID,
+                stationName: discovery.stationName,
+                artworkURL: discovery.artworkURL,
+                stationArtworkURL: discovery.stationArtworkURL,
+                playedAt: TuneAVDateCoding.string(from: discovery.playedAt),
+                markedInterestedAt: discovery.markedInterestedAt.map(TuneAVDateCoding.string(from:)),
+                hiddenAt: discovery.hiddenAt.map(TuneAVDateCoding.string(from:)),
+                deletedAt: TuneAVDateCoding.string(from: deletedAt),
+                updatedAt: TuneAVDateCoding.string(from: deletedAt)
+            ),
+            deletedAt: deletedAt
+        )
+    }
+
+    private func rememberTombstone<Payload: Encodable>(
+        resource: String,
+        identityKey: String,
+        payload: Payload,
+        deletedAt: Date
+    ) {
+        libraryTombstones = TuneAVLibraryTombstoneCoding.upserting(
+            resource: resource,
+            identityKey: identityKey,
+            payload: payload,
+            deletedAt: deletedAt,
+            into: libraryTombstones,
+            encoder: tombstoneEncoder
+        )
+        storage.saveTombstones(libraryTombstones)
+    }
+
+    private func removeTombstone(resource: String, identityKey: String) {
+        let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
+        libraryTombstones.removeAll { $0.resourceKey == resourceKey }
+        storage.saveTombstones(libraryTombstones)
+    }
+
+    private func tombstoneRecords<Record: Decodable>(resource: String, type: Record.Type) -> [Record] {
+        let retainedTombstones = libraryTombstones
+            .filter { $0.resource == resource }
+            .sorted { $0.deletedAt > $1.deletedAt }
+            .prefix(1_000)
+        return TuneAVLibraryTombstoneCoding.records(
+            for: resource,
+            in: Array(retainedTombstones),
+            as: type,
+            decoder: tombstoneDecoder
+        )
+    }
+
+    private func stationIdentityKey(for station: Station) -> String {
+        TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
     }
 
     private func markLocalLibraryUpdated(_ date: Date = .now) {
@@ -2035,6 +2180,7 @@ struct TuneAVMacLibraryStorage {
     static let recentsKey = "tuneav.mac.library.recents"
     static let discoveriesKey = "tuneav.mac.library.discoveries"
     static let stationFeedbackKey = "tuneav.mac.library.stationFeedback"
+    static let tombstonesKey = "tuneav.mac.library.tombstones"
     static let localLibraryUpdatedAtKey = "tuneav.mac.library.updatedAt"
 
     private let defaults: UserDefaults
@@ -2076,6 +2222,16 @@ struct TuneAVMacLibraryStorage {
     func saveStationFeedback(_ feedback: [String: TuneAVStationFeedback]) {
         guard let data = try? encoder.encode(feedback) else { return }
         defaults.set(data, forKey: Self.stationFeedbackKey)
+    }
+
+    func loadTombstones() -> [TuneAVLibraryTombstone] {
+        guard let data = defaults.data(forKey: Self.tombstonesKey) else { return [] }
+        return (try? decoder.decode([TuneAVLibraryTombstone].self, from: data)) ?? []
+    }
+
+    func saveTombstones(_ tombstones: [TuneAVLibraryTombstone]) {
+        guard let data = try? encoder.encode(tombstones) else { return }
+        defaults.set(data, forKey: Self.tombstonesKey)
     }
 
     func loadDate(forKey key: String) -> Date? {
@@ -2124,6 +2280,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
     var playedAt: Date
     var markedInterestedAt: Date?
     var hiddenAt: Date?
+    var updatedAt: Date
 
     var id: String { discoveryID }
 
@@ -2134,7 +2291,8 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
         artworkURL: URL? = nil,
         playedAt: Date = .now,
         markedInterestedAt: Date? = nil,
-        hiddenAt: Date? = nil
+        hiddenAt: Date? = nil,
+        updatedAt: Date? = nil
     ) {
         let normalizedArtist = TuneAVDiscoveredTrackSupport.normalizedValue(artist)
         let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(title) ?? title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2148,6 +2306,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
         self.playedAt = playedAt
         self.markedInterestedAt = markedInterestedAt
         self.hiddenAt = hiddenAt
+        self.updatedAt = updatedAt ?? [playedAt, markedInterestedAt, hiddenAt].compactMap { $0 }.max() ?? playedAt
     }
 
     init?(record: DiscoveredTrackRecord) {
@@ -2164,6 +2323,9 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
         self.playedAt = TuneAVDateCoding.date(from: record.playedAt)
         self.markedInterestedAt = record.markedInterestedAt.map(TuneAVDateCoding.date(from:))
         self.hiddenAt = record.hiddenAt.map(TuneAVDateCoding.date(from:))
+        self.updatedAt = record.updatedAt.map(TuneAVDateCoding.date(from:))
+            ?? [playedAt, markedInterestedAt, hiddenAt].compactMap { $0 }.max()
+            ?? playedAt
     }
 
     static func makeID(title: String, artist: String?, stationID: String) -> String {
@@ -2181,7 +2343,8 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
             stationArtworkURL: stationArtworkURL,
             playedAt: TuneAVDateCoding.string(from: playedAt),
             markedInterestedAt: markedInterestedAt.map(TuneAVDateCoding.string(from:)),
-            hiddenAt: hiddenAt.map(TuneAVDateCoding.string(from:))
+            hiddenAt: hiddenAt.map(TuneAVDateCoding.string(from:)),
+            updatedAt: TuneAVDateCoding.string(from: updatedAt)
         )
     }
 }

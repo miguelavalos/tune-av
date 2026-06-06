@@ -151,6 +151,76 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
+    func testMacSyncMergeKeepsFavoriteDeletionTombstoneNewest() {
+        let local = librarySnapshot(
+            favorites: [
+                FavoriteStationRecord(
+                    station: stationRecord(id: "favorite"),
+                    deletedAt: "2026-05-23T11:00:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T11:00:00Z"
+        )
+        let remote = librarySnapshot(
+            favorites: [favoriteRecord(id: "favorite", createdAt: "2026-05-23T10:00:00Z")],
+            updatedAt: "2026-05-23T10:00:00Z"
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
+
+        XCTAssertEqual(merged.favorites.count, 1)
+        XCTAssertEqual(merged.favorites.first?.station.id, "favorite")
+        XCTAssertEqual(merged.favorites.first?.deletedAt, "2026-05-23T11:00:00Z")
+    }
+
+    func testMacSyncMergeKeepsDiscoveryUnsaveWhenUpdatedAtIsNewest() {
+        let local = librarySnapshot(
+            discoveries: [
+                discoveryRecord(
+                    id: "track",
+                    playedAt: "2026-05-23T10:00:00Z",
+                    updatedAt: "2026-05-23T11:00:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T11:00:00Z"
+        )
+        let remote = librarySnapshot(
+            discoveries: [
+                discoveryRecord(
+                    id: "track",
+                    playedAt: "2026-05-23T10:00:00Z",
+                    markedInterestedAt: "2026-05-23T10:30:00Z",
+                    updatedAt: "2026-05-23T10:30:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T10:30:00Z"
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
+
+        XCTAssertEqual(merged.discoveries.count, 1)
+        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.discoveries.first?.updatedAt, "2026-05-23T11:00:00Z")
+    }
+
+    func testMacLibraryStoragePersistsTombstones() {
+        let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let storage = TuneAVMacLibraryStorage(defaults: defaults)
+        let tombstone = TuneAVLibraryTombstone(
+            resource: "favorites",
+            identityKey: "id:favorite",
+            payloadJSON: "{}",
+            deletedAt: fixedDate("2026-05-23T11:00:00Z")
+        )
+
+        storage.saveTombstones([tombstone])
+
+        XCTAssertEqual(storage.loadTombstones(), [tombstone])
+    }
+
     private func fixedDate(_ iso8601: String) -> Date {
         ISO8601DateFormatter().date(from: iso8601)!
     }
@@ -194,6 +264,30 @@ final class MacCloudSyncTests: XCTestCase {
         RecentStationRecord(
             station: stationRecord(id: id),
             lastPlayedAt: lastPlayedAt
+        )
+    }
+
+    private func discoveryRecord(
+        id: String,
+        playedAt: String,
+        markedInterestedAt: String? = nil,
+        hiddenAt: String? = nil,
+        deletedAt: String? = nil,
+        updatedAt: String? = nil
+    ) -> DiscoveredTrackRecord {
+        DiscoveredTrackRecord(
+            discoveryID: id,
+            title: "Song \(id)",
+            artist: "Artist \(id)",
+            stationID: "station-\(id)",
+            stationName: "Station \(id)",
+            artworkURL: nil,
+            stationArtworkURL: nil,
+            playedAt: playedAt,
+            markedInterestedAt: markedInterestedAt,
+            hiddenAt: hiddenAt,
+            deletedAt: deletedAt,
+            updatedAt: updatedAt
         )
     }
 

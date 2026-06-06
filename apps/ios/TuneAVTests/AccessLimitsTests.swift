@@ -350,6 +350,36 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
     }
 
+    func testLibrarySnapshotMergerKeepsDiscoveryUnsaveWhenUpdatedAtIsNewest() {
+        let local = librarySnapshot(
+            discoveries: [
+                discoveryRecord(
+                    id: "los-40-track",
+                    playedAt: "2026-04-30T10:00:00Z",
+                    updatedAt: "2026-04-30T10:30:00Z"
+                )
+            ],
+            updatedAt: "2026-04-30T10:30:00Z"
+        )
+        let remote = librarySnapshot(
+            discoveries: [
+                discoveryRecord(
+                    id: "los-40-track",
+                    playedAt: "2026-04-30T10:00:00Z",
+                    markedInterestedAt: "2026-04-30T10:05:00Z",
+                    updatedAt: "2026-04-30T10:05:00Z"
+                )
+            ],
+            updatedAt: "2026-04-30T10:05:00Z"
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
+
+        XCTAssertEqual(merged.discoveries.count, 1)
+        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.discoveries.first?.updatedAt, "2026-04-30T10:30:00Z")
+    }
+
     func testLibrarySnapshotMergerKeepsDiscoveryDeletionWhenItIsNewestChange() {
         let local = librarySnapshot(
             discoveries: [
@@ -1011,7 +1041,8 @@ final class AccessLimitsTests: XCTestCase {
         playedAt: String,
         markedInterestedAt: String? = nil,
         hiddenAt: String? = nil,
-        deletedAt: String? = nil
+        deletedAt: String? = nil,
+        updatedAt: String? = nil
     ) -> DiscoveredTrackRecord {
         DiscoveredTrackRecord(
             discoveryID: id,
@@ -1024,7 +1055,8 @@ final class AccessLimitsTests: XCTestCase {
             playedAt: playedAt,
             markedInterestedAt: markedInterestedAt,
             hiddenAt: hiddenAt,
-            deletedAt: deletedAt
+            deletedAt: deletedAt,
+            updatedAt: updatedAt
         )
     }
 

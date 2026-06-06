@@ -158,6 +158,7 @@ enum TuneAVLibrarySnapshotMerger {
 
     private static func discoveryUpdateDate(_ discovery: DiscoveredTrackRecord) -> Date {
         [
+            discovery.updatedAt,
             discovery.playedAt,
             discovery.markedInterestedAt,
             discovery.hiddenAt,
@@ -291,6 +292,7 @@ struct DiscoveredTrackRecord: Codable, Equatable {
     let markedInterestedAt: String?
     let hiddenAt: String?
     let deletedAt: String?
+    let updatedAt: String?
 
     init(
         discoveryID: String,
@@ -303,7 +305,8 @@ struct DiscoveredTrackRecord: Codable, Equatable {
         playedAt: String,
         markedInterestedAt: String? = nil,
         hiddenAt: String? = nil,
-        deletedAt: String? = nil
+        deletedAt: String? = nil,
+        updatedAt: String? = nil
     ) {
         self.discoveryID = discoveryID
         self.title = title
@@ -316,6 +319,7 @@ struct DiscoveredTrackRecord: Codable, Equatable {
         self.markedInterestedAt = markedInterestedAt
         self.hiddenAt = hiddenAt
         self.deletedAt = deletedAt
+        self.updatedAt = updatedAt
     }
 }
 

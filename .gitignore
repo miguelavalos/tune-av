@@ -17,6 +17,7 @@ DerivedData/
 .derived-data-appstore-screens/
 .derived-data-device/
 .derived-data-verify/
+.build/
 build/
 *.xcresult
 *.xcworkspace/xcuserdata/

@@ -339,6 +339,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func toggleDiscoverySaved(_ discovery: DiscoveredTrack, savedLimit: Int? = nil) -> Bool {
+        let now = Date.now
         if discovery.isMarkedInteresting {
             discovery.markedInterestedAt = nil
         } else {
@@ -346,10 +347,11 @@ final class LibraryStore: ObservableObject {
                 return false
             }
 
-            discovery.markedInterestedAt = .now
+            discovery.markedInterestedAt = now
             discovery.hiddenAt = nil
         }
 
+        discovery.updatedAt = now
         saveAndRefresh(.discoveries)
         return true
     }
@@ -375,14 +377,18 @@ final class LibraryStore: ObservableObject {
 
     func hideDiscovery(_ discovery: DiscoveredTrack) {
         guard discovery.hiddenAt == nil || discovery.isMarkedInteresting else { return }
-        discovery.hiddenAt = .now
+        let now = Date.now
+        discovery.hiddenAt = now
         discovery.markedInterestedAt = nil
+        discovery.updatedAt = now
         saveAndRefresh(.discoveries)
     }
 
     func restoreDiscovery(_ discovery: DiscoveredTrack) {
         guard discovery.hiddenAt != nil else { return }
+        let now = Date.now
         discovery.hiddenAt = nil
+        discovery.updatedAt = now
         saveAndRefresh(.discoveries)
     }
 
@@ -498,6 +504,7 @@ final class LibraryStore: ObservableObject {
             }
             existing.artworkURL = nextArtworkURL ?? existing.artworkURL
             existing.stationArtworkURL = nil
+            existing.updatedAt = now
         } else {
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
             context.insert(
@@ -1658,11 +1665,11 @@ final class LibraryStore: ObservableObject {
                     return lhsPinned
                 }
 
-                let lhsDate = [lhs.markedInterestedAt, lhs.hiddenAt, lhs.deletedAt, lhs.playedAt]
+                let lhsDate = [lhs.updatedAt, lhs.markedInterestedAt, lhs.hiddenAt, lhs.deletedAt, lhs.playedAt]
                     .compactMap { $0 }
                     .map(TuneAVDateCoding.date(from:))
                     .max() ?? .distantPast
-                let rhsDate = [rhs.markedInterestedAt, rhs.hiddenAt, rhs.deletedAt, rhs.playedAt]
+                let rhsDate = [rhs.updatedAt, rhs.markedInterestedAt, rhs.hiddenAt, rhs.deletedAt, rhs.playedAt]
                     .compactMap { $0 }
                     .map(TuneAVDateCoding.date(from:))
                     .max() ?? .distantPast
@@ -1681,7 +1688,8 @@ final class LibraryStore: ObservableObject {
                 [
                     discovery.playedAt,
                     discovery.markedInterestedAt,
-                    discovery.hiddenAt
+                    discovery.hiddenAt,
+                    discovery.updatedAt
                 ].compactMap { $0 }
             } +
             [settings.updatedAt]
@@ -1810,7 +1818,8 @@ final class LibraryStore: ObservableObject {
                 playedAt: TuneAVAppDataService.isoString(from: discovery.playedAt),
                 markedInterestedAt: discovery.markedInterestedAt.map(TuneAVAppDataService.isoString(from:)),
                 hiddenAt: discovery.hiddenAt.map(TuneAVAppDataService.isoString(from:)),
-                deletedAt: TuneAVAppDataService.isoString(from: deletedAt)
+                deletedAt: TuneAVAppDataService.isoString(from: deletedAt),
+                updatedAt: TuneAVAppDataService.isoString(from: deletedAt)
             ),
             deletedAt: deletedAt
         )

@@ -310,6 +310,7 @@ final class DiscoveredTrack {
     var playedAt: Date
     var markedInterestedAt: Date?
     var hiddenAt: Date?
+    var updatedAt: Date = Date.distantPast
 
     init(
         title: String,
@@ -318,7 +319,8 @@ final class DiscoveredTrack {
         artworkURL: URL?,
         playedAt: Date = .now,
         markedInterestedAt: Date? = nil,
-        hiddenAt: Date? = nil
+        hiddenAt: Date? = nil,
+        updatedAt: Date? = nil
     ) {
         let normalizedArtist = TuneAVDiscoveredTrackSupport.normalizedValue(artist)
         let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(title) ?? title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -332,6 +334,7 @@ final class DiscoveredTrack {
         self.playedAt = playedAt
         self.markedInterestedAt = markedInterestedAt
         self.hiddenAt = hiddenAt
+        self.updatedAt = updatedAt ?? [playedAt, markedInterestedAt, hiddenAt].compactMap { $0 }.max() ?? playedAt
     }
 
     init(record: DiscoveredTrackRecord) {
@@ -346,6 +349,9 @@ final class DiscoveredTrack {
         self.playedAt = Self.date(from: record.playedAt)
         self.markedInterestedAt = record.markedInterestedAt.map(Self.date(from:))
         self.hiddenAt = record.hiddenAt.map(Self.date(from:))
+        self.updatedAt = record.updatedAt.map(Self.date(from:))
+            ?? [playedAt, markedInterestedAt, hiddenAt].compactMap { $0 }.max()
+            ?? playedAt
     }
 
     static func makeID(title: String, artist: String?, stationID: String) -> String {
@@ -393,7 +399,8 @@ extension DiscoveredTrack: TuneAVMusicLibraryDiscovery {
             stationArtworkURL: stationArtworkURL,
             playedAt: Self.isoString(from: playedAt),
             markedInterestedAt: markedInterestedAt.map(Self.isoString(from:)),
-            hiddenAt: hiddenAt.map(Self.isoString(from:))
+            hiddenAt: hiddenAt.map(Self.isoString(from:)),
+            updatedAt: Self.isoString(from: updatedAt)
         )
     }
     private static func isoString(from date: Date) -> String {
