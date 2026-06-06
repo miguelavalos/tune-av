@@ -246,6 +246,12 @@ final class TuneAVMacModel: ObservableObject {
             )
             rememberStationEnrichment(featuredStations)
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.discovery",
+                operation: "load_featured",
+                step: "popular_stations"
+            )
             errorMessage = error.localizedDescription
             featuredStations = Station.samples
         }
@@ -333,6 +339,18 @@ final class TuneAVMacModel: ObservableObject {
             rememberStationEnrichment(searchResults)
             errorMessage = nil
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.discovery",
+                operation: "search",
+                step: query.isEmpty ? "browse" : "query",
+                data: [
+                    "has_query": String(!query.isEmpty),
+                    "has_tag": String(!tag.isEmpty),
+                    "has_country": String(!countryCode.isEmpty),
+                    "mode": mode,
+                ]
+            )
             errorMessage = error.localizedDescription
             searchResults = searchFallbackStations(query: query, tag: tag, countryCode: countryCode)
             searchTotalCount = searchResults.count
@@ -372,6 +390,18 @@ final class TuneAVMacModel: ObservableObject {
             searchNextCursor = page.nextCursor
             errorMessage = nil
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.discovery",
+                operation: "load_more_search",
+                step: "page",
+                data: [
+                    "has_query": String(!query.isEmpty),
+                    "has_tag": String(!tag.isEmpty),
+                    "has_country": String(!countryCode.isEmpty),
+                    "mode": searchDiscoveryMode.rawValue,
+                ]
+            )
             errorMessage = error.localizedDescription
             hasMoreSearchResults = false
             searchNextCursor = nil
@@ -1053,18 +1083,50 @@ final class TuneAVMacModel: ObservableObject {
                 persistLastKnownAccountUser(accountUser)
             }
         } catch TuneAVAppDataClientError.missingToken {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.missingToken,
+                feature: "tune.mac.sync",
+                operation: "synchronize_library",
+                step: "auth"
+            )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
         } catch TuneAVAppDataClientError.missingBaseURL {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.missingBaseURL,
+                feature: "tune.mac.sync",
+                operation: "synchronize_library",
+                step: "configuration"
+            )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.missingBaseURL")
         } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 401 || statusCode == 403 {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
+                feature: "tune.mac.sync",
+                operation: "synchronize_library",
+                step: "http_status",
+                data: ["status_code": String(statusCode)]
+            )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
-        } catch TuneAVAppDataClientError.requestFailed {
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode) {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
+                feature: "tune.mac.sync",
+                operation: "synchronize_library",
+                step: "http_status",
+                data: ["status_code": String(statusCode)]
+            )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.sync",
+                operation: "synchronize_library",
+                step: "unknown"
+            )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         }
@@ -1265,6 +1327,17 @@ final class TuneAVMacModel: ObservableObject {
 
     private func setPlaybackFailure(_ message: String, shouldAutoSkip: Bool) {
         player.pause()
+        TuneAVMacDiagnostics.capture(
+            player.currentItem?.error ?? NSError(domain: "TuneAVMacAudio", code: 2),
+            feature: "tune.mac.audio",
+            operation: "playback",
+            step: shouldAutoSkip ? "stream_failure" : "manual_failure",
+            data: [
+                "queue_source": String(describing: playbackQueueSource),
+                "failed_count": String(playbackFailuresInCurrentQueue.count),
+                "can_auto_skip": String(shouldAutoSkip),
+            ]
+        )
         setPlaybackStatus(.failed(message))
         errorMessage = message
 
@@ -1432,6 +1505,12 @@ final class TuneAVMacModel: ObservableObject {
             resolveLocalAccessState()
             await refreshAccessState()
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.account",
+                operation: "account_action",
+                step: "provider"
+            )
             cloudSyncErrorMessage = error.localizedDescription
         }
     }
@@ -1473,6 +1552,12 @@ final class TuneAVMacModel: ObservableObject {
                 )
             )
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.account",
+                operation: "refresh_access",
+                step: "access_client"
+            )
             resolveLocalAccessState()
         }
     }
@@ -1712,6 +1797,7 @@ final class TuneAVMacModel: ObservableObject {
     private func restoreAccountSessionForAccessRefresh() async -> Bool {
         switch await accountService.restoreSession() {
         case .active(let providerUser):
+            TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_active")
             guard let user = await resolveInternalAccountUser(providerUser: providerUser) else {
                 isAccountSessionTemporarilyUnavailable = true
                 if accountUser == nil {
@@ -1720,18 +1806,22 @@ final class TuneAVMacModel: ObservableObject {
                 return false
             }
             accountUser = user
+            TuneAVMacDiagnostics.setUserContext(id: user.id)
             isAccountSessionTemporarilyUnavailable = false
             persistLastKnownAccountUser(user)
             resolveLocalAccessState()
             return true
         case .temporarilyUnavailable:
+            TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_temporarily_unavailable")
             isAccountSessionTemporarilyUnavailable = true
             resolveLocalAccessState()
             return false
         case .signedOut, .invalidated:
+            TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_signed_out")
             accountUser = nil
             isAccountSessionTemporarilyUnavailable = false
             clearLastKnownAccountUser()
+            TuneAVMacDiagnostics.clearUserContext()
             resolveLocalAccessState()
             return false
         }
@@ -1756,6 +1846,12 @@ final class TuneAVMacModel: ObservableObject {
                 emailAddress: summary.emailAddress ?? providerUser.emailAddress
             )
         } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.account",
+                operation: "resolve_internal_user",
+                step: "account_profile"
+            )
             return nil
         }
     }

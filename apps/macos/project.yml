@@ -74,6 +74,8 @@ targets:
         product: AVAviFoundation
       - package: AppsAV
         product: AVPaywallFoundation
+      - package: AppsAV
+        product: AVDiagnosticsFoundation
     info:
       path: Supporting/Info.plist
       properties:
@@ -86,6 +88,8 @@ targets:
         ACCOUNTAV_API_BASE_URL: $(ACCOUNTAV_API_BASE_URL)
         ACCOUNTAV_MANAGEMENT_URL: $(ACCOUNTAV_MANAGEMENT_URL)
         SUPPORTAV_BASE_URL: $(SUPPORTAV_BASE_URL)
+        TUNEAV_CONFIG_ENVIRONMENT: $(TUNEAV_CONFIG_ENVIRONMENT)
+        TUNEAV_MACOS_SENTRY_DSN: $(TUNEAV_MACOS_SENTRY_DSN)
         TUNEAV_DELETE_ACCOUNT_URL: $(TUNEAV_DELETE_ACCOUNT_URL)
         TUNEAV_TERMS_URL: $(TUNEAV_TERMS_URL)
         TUNEAV_PRIVACY_URL: $(TUNEAV_PRIVACY_URL)

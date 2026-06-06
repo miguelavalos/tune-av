@@ -1,4 +1,5 @@
 import AccountAV
+import AVDiagnosticsFoundation
 import AVBrandFoundation
 import SwiftUI
 
@@ -10,6 +11,7 @@ struct TuneAVMacApp: App {
     @StateObject private var model = TuneAVMacModel()
 
     init() {
+        AVDiagnostics.configure(TuneAVMacConfig.diagnosticsConfiguration)
         AccountAVClerk.configureIfPossible(
             publishableKey: TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY"),
             bundleIdentifier: Bundle.main.bundleIdentifier
