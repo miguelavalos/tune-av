@@ -94,7 +94,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: TuneAV/App/TuneAV.entitlements
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 935PM55U6R
+        DEVELOPMENT_TEAM: "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)"
         FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]: "$(SDKROOT)/Developer/Library/Frameworks"
         INFOPLIST_FILE: TuneAV/App/Info.plist
         GENERATE_INFOPLIST_FILE: NO
