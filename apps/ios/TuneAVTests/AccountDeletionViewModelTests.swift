@@ -189,6 +189,43 @@ final class AccountDeletionViewModelTests: XCTestCase {
         XCTAssertEqual(summary.access.first?.limits, .forMode(.signedInFree))
         XCTAssertEqual(summary.deleteAccountEligibility?.status, .eligible)
     }
+
+    func testAccountSummaryDecodesNestedBackendUser() throws {
+        let json = """
+        {
+          "user": {
+            "id": "internal-user-1",
+            "identityProvider": "clerk",
+            "email": "review@example.com",
+            "displayName": "Review User",
+            "identityManaged": true,
+            "deletionRequestedAt": null
+          },
+          "apps": [],
+          "access": [],
+          "billing": [],
+          "linkedApps": [],
+          "subscriptions": [],
+          "isAdmin": false,
+          "deleteAccountMode": "ready",
+          "currentDeletionJob": null,
+          "deleteAccountEligibility": {
+            "status": "eligible",
+            "blockers": [],
+            "warnings": [],
+            "currentJob": null
+          },
+          "generatedAt": "2026-06-06T14:36:59.000Z"
+        }
+        """.data(using: .utf8)!
+
+        let summary = try JSONDecoder().decode(AccountSummary.self, from: json)
+
+        XCTAssertEqual(summary.id, "internal-user-1")
+        XCTAssertEqual(summary.emailAddress, "review@example.com")
+        XCTAssertEqual(summary.displayName, "Review User")
+        XCTAssertEqual(summary.deleteAccountEligibility?.status, .eligible)
+    }
 }
 
 private struct MockAccountDeletionAPI: AccountDeletionAPI {

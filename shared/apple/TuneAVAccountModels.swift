@@ -35,6 +35,7 @@ struct AccountSummary: Decodable, Equatable {
         case email
         case displayName
         case name
+        case user
         case linkedApps
         case apps
         case access
@@ -65,11 +66,14 @@ struct AccountSummary: Decodable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(String.self, forKey: .id)
+        let user = try container.decodeIfPresent(AccountSummaryUser.self, forKey: .user)
+        id = try container.decodeIfPresent(String.self, forKey: .id) ?? user?.id
         emailAddress = try container.decodeIfPresent(String.self, forKey: .emailAddress)
             ?? container.decodeIfPresent(String.self, forKey: .email)
+            ?? user?.emailAddress
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
             ?? container.decodeIfPresent(String.self, forKey: .name)
+            ?? user?.displayName
         linkedApps = try container.decodeIfPresent([LinkedAccountApp].self, forKey: .linkedApps) ?? []
         access = try container.decodeIfPresent([AppAccess].self, forKey: .access)
             ?? container.decodeIfPresent([AppAccess].self, forKey: .apps)
@@ -77,6 +81,29 @@ struct AccountSummary: Decodable, Equatable {
         billing = try container.decodeIfPresent(AccountBillingSummary.self, forKey: .billing)
         currentDeletionJob = try container.decodeIfPresent(AccountDeletionJob.self, forKey: .currentDeletionJob)
         deleteAccountEligibility = try container.decodeIfPresent(AccountDeletionEligibility.self, forKey: .deleteAccountEligibility)
+    }
+}
+
+private struct AccountSummaryUser: Decodable, Equatable {
+    let id: String?
+    let emailAddress: String?
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case emailAddress
+        case displayName
+        case name
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        emailAddress = try container.decodeIfPresent(String.self, forKey: .emailAddress)
+            ?? container.decodeIfPresent(String.self, forKey: .email)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+            ?? container.decodeIfPresent(String.self, forKey: .name)
     }
 }
 
