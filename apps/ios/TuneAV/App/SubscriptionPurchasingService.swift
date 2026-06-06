@@ -152,49 +152,73 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
     }
 
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
-        try await prepare(for: user)
-        let package = try await loadMonthlyPackage()
-        let productIdentifier = package.storeProduct.productIdentifier
-        let revenueCatPrice = package.storeProduct.localizedPriceString
-        let localizedPrice = await localizedDisplayPrice(
-            for: productIdentifier,
-            revenueCatPrice: revenueCatPrice
-        )
-        purchaseLogger.info(
-            "Loaded monthly offer product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public) displayPrice=\(localizedPrice.value, privacy: .public) priceSource=\(localizedPrice.source, privacy: .public) revenueCatCurrency=\(package.storeProduct.currencyCode ?? "unknown", privacy: .public)"
-        )
-        return TuneAVSubscriptionOffer(
-            identifier: package.identifier,
-            productIdentifier: productIdentifier,
-            localizedTitle: package.storeProduct.localizedTitle,
-            localizedPrice: localizedPrice.value
-        )
+        TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "load_offer")
+        do {
+            try await prepare(for: user)
+            let package = try await loadMonthlyPackage()
+            let productIdentifier = package.storeProduct.productIdentifier
+            let revenueCatPrice = package.storeProduct.localizedPriceString
+            let localizedPrice = await localizedDisplayPrice(
+                for: productIdentifier,
+                revenueCatPrice: revenueCatPrice
+            )
+            purchaseLogger.info(
+                "Loaded monthly offer product=\(productIdentifier, privacy: .public) revenueCatPrice=\(revenueCatPrice, privacy: .public) displayPrice=\(localizedPrice.value, privacy: .public) priceSource=\(localizedPrice.source, privacy: .public) revenueCatCurrency=\(package.storeProduct.currencyCode ?? "unknown", privacy: .public)"
+            )
+            return TuneAVSubscriptionOffer(
+                identifier: package.identifier,
+                productIdentifier: productIdentifier,
+                localizedTitle: package.storeProduct.localizedTitle,
+                localizedPrice: localizedPrice.value
+            )
+        } catch {
+            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "load_offer", step: "revenuecat")
+            throw error
+        }
     }
 
     func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let userID = try requireUserID(user)
-        try await prepare(for: user)
-        let package = try await loadMonthlyPackage()
-        purchaseLogger.info(
-            "Starting RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public) price=\(package.storeProduct.localizedPriceString, privacy: .public)"
-        )
-        let result = try await purchase(package)
-        guard !result.userCancelled else {
-            throw TuneAVSubscriptionPurchaseError.purchaseCancelled
+        do {
+            try await prepare(for: user)
+            let package = try await loadMonthlyPackage()
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "purchase", data: ["product_key": "pro_monthly"])
+            purchaseLogger.info(
+                "Starting RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public) price=\(package.storeProduct.localizedPriceString, privacy: .public)"
+            )
+            let result = try await purchase(package)
+            guard !result.userCancelled else {
+                TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "purchase_cancelled", data: ["product_key": "pro_monthly"])
+                throw TuneAVSubscriptionPurchaseError.purchaseCancelled
+            }
+            purchaseLogger.info(
+                "Finished RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public)"
+            )
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "purchase_completed", data: ["product_key": "pro_monthly"])
+            return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
+        } catch {
+            if let purchaseError = error as? TuneAVSubscriptionPurchaseError, purchaseError == .purchaseCancelled {
+                throw error
+            }
+            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "purchase", step: "revenuecat", data: ["product_key": "pro_monthly"])
+            throw error
         }
-        purchaseLogger.info(
-            "Finished RevenueCat purchase userID=\(userID, privacy: .private) product=\(package.storeProduct.productIdentifier, privacy: .public)"
-        )
-        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
     }
 
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let userID = try requireUserID(user)
-        try await prepare(for: user)
-        purchaseLogger.info("Starting RevenueCat restore userID=\(userID, privacy: .private)")
-        _ = try await restorePurchases()
-        purchaseLogger.info("Finished RevenueCat restore userID=\(userID, privacy: .private)")
-        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
+        do {
+            try await prepare(for: user)
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "restore")
+            purchaseLogger.info("Starting RevenueCat restore userID=\(userID, privacy: .private)")
+            _ = try await restorePurchases()
+            purchaseLogger.info("Finished RevenueCat restore userID=\(userID, privacy: .private)")
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "restore_completed")
+            return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
+        } catch {
+            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "restore", step: "revenuecat")
+            throw error
+        }
     }
 
     private func requireUserID(_ user: AccountUser?) throws -> String {
@@ -316,6 +340,7 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
             purchaseLogger.error(
                 "Unable to load StoreKit 2 display price product=\(productIdentifier, privacy: .public) error=\(Self.safeErrorCode(error), privacy: .public)"
             )
+            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "load_price", step: "storekit2", data: ["product_key": "pro_monthly"])
             return nil
         }
     }

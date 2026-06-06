@@ -157,6 +157,7 @@ final class AccessController: ObservableObject {
 
         switch await accountService.restoreSession() {
         case .active(let providerUser):
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_active")
             guard generation == accessRefreshGeneration else { return }
             guard let resolvedUser = await resolveInternalAccountUser(providerUser: providerUser) else {
                 isAccountSessionTemporarilyUnavailable = true
@@ -173,16 +174,19 @@ final class AccessController: ObservableObject {
                 return
             }
             accountUser = resolvedUser
+            TuneAVDiagnostics.setUserContext(id: resolvedUser.id)
             persistLastKnownAccountUser(resolvedUser)
             isAccountSessionTemporarilyUnavailable = false
         case .temporarilyUnavailable:
             guard generation == accessRefreshGeneration else { return }
             isAccountSessionTemporarilyUnavailable = true
             authLogger.error("Account AV session is temporarily unavailable during access refresh")
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_temporarily_unavailable")
             resolveAccessState()
             return
         case .signedOut, .invalidated:
             guard generation == accessRefreshGeneration else { return }
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_signed_out")
             clearSignedOutAccountState()
             resolveAccessState()
             return
@@ -207,6 +211,7 @@ final class AccessController: ObservableObject {
         } catch let error as TuneAVSubscriptionPurchaseError {
             subscriptionError = error
         } catch {
+            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "load_offer", step: "unknown")
             subscriptionError = .underlying(error.localizedDescription)
         }
     }
@@ -308,6 +313,7 @@ final class AccessController: ObservableObject {
         }
 
         do {
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: source.diagnosticsOperation)
             let outcome = try await operation()
             guard outcome.shouldRefreshAccess else { return }
             isWaitingForSubscriptionReconciliation = true
@@ -319,6 +325,12 @@ final class AccessController: ObservableObject {
                 subscriptionError = error
             }
         } catch {
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.subscription",
+                operation: source.diagnosticsOperation,
+                step: "unknown"
+            )
             subscriptionError = .underlying(error.localizedDescription)
         }
     }
@@ -365,6 +377,12 @@ final class AccessController: ObservableObject {
             return try await accountProfileResolver.resolveCurrentAccountUser()
         } catch {
             authLogger.error("Unable to resolve internal Account AV user error=\(Self.safeErrorCode(error), privacy: .public)")
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.account",
+                operation: "resolve_internal_user",
+                step: "account_profile"
+            )
             return nil
         }
     }
@@ -378,6 +396,7 @@ final class AccessController: ObservableObject {
         isWaitingForSubscriptionReconciliation = false
         subscriptionReconciliationSource = nil
         clearLastKnownAccountUser()
+        TuneAVDiagnostics.clearUserContext()
     }
 
     private func applyResolvedAccess(_ resolvedAccess: ResolvedAccess) {
@@ -437,5 +456,16 @@ final class AccessController: ObservableObject {
 
     private func clearLastKnownAccountUser() {
         userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+    }
+}
+
+private extension AccessController.SubscriptionReconciliationSource {
+    var diagnosticsOperation: String {
+        switch self {
+        case .purchase:
+            return "purchase"
+        case .restore:
+            return "restore"
+        }
     }
 }

@@ -22,6 +22,12 @@ struct PersistenceController {
         do {
             container = try ModelContainer(for: schema, configurations: [configuration])
         } catch {
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.persistence",
+                operation: "initialize",
+                step: inMemory ? "swiftdata_in_memory" : "swiftdata_disk"
+            )
             fatalError("Could not create SwiftData container: \(error)")
         }
     }

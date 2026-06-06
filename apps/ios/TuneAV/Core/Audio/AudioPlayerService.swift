@@ -185,6 +185,15 @@ final class AudioPlayerService: NSObject, ObservableObject {
         }
 
         guard let url = URL(string: station.streamURL) else {
+            TuneAVDiagnostics.capture(
+                NSError(domain: "TuneAVAudio", code: 1),
+                feature: "tune.audio",
+                operation: "play",
+                step: "invalid_stream_url",
+                data: [
+                    "queue_source": String(describing: playbackQueue.source),
+                ]
+            )
             setFailure(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.invalidURL))
             return
         }
@@ -612,9 +621,22 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let streamURL = currentStation?.streamURL ?? "unknown"
         let itemError = item?.error?.localizedDescription ?? "none"
         let errorEvents = playerItemErrorLogSummary(item)
+        let primaryEvent = playerItemPrimaryErrorEvent(item)
 
         Self.logger.error(
             "Playback failure context=\(context, privacy: .private) station_id=\(stationID, privacy: .private) stream_url=\(streamURL, privacy: .private) item_error=\(itemError, privacy: .private) error_events=\(errorEvents, privacy: .private)"
+        )
+        TuneAVDiagnostics.capture(
+            item?.error ?? NSError(domain: "TuneAVAudio", code: 2),
+            feature: "tune.audio",
+            operation: "playback",
+            step: context,
+            data: [
+                "queue_source": String(describing: playbackQueue.source),
+                "failure_count": String(consecutiveFailureCount),
+                "event_status_code": primaryEvent.statusCode,
+                "event_domain": primaryEvent.domain,
+            ]
         )
     }
 
@@ -629,6 +651,16 @@ final class AudioPlayerService: NSObject, ObservableObject {
         let comment = event.errorComment ?? "no_comment"
         let uri = event.uri ?? "no_uri"
         return [statusCode, domain, comment, uri].joined(separator: "|")
+    }
+
+    private func playerItemPrimaryErrorEvent(_ item: AVPlayerItem?) -> (statusCode: String, domain: String) {
+        guard let event = item?.errorLog()?.events.first else {
+            return ("none", "none")
+        }
+        return (
+            event.errorStatusCode == 0 ? "no_status" : String(event.errorStatusCode),
+            event.errorDomain
+        )
     }
 
     private func setFailure(_ message: String) {
@@ -729,6 +761,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.audio",
+                operation: "audio_session",
+                step: "activate"
+            )
             setStatus(.failed(L10n.string(TuneAVAudioPlaybackPolicy.ErrorKey.activateAudio)))
         }
     }

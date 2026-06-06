@@ -133,6 +133,16 @@ final class AVAccountAPIClient {
         do {
             (data, response, attempts) = try await performDataTask(for: request, operation: operation, method: method)
         } catch {
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.account_api",
+                operation: operation,
+                step: "network",
+                data: [
+                    "method": method,
+                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
+                ]
+            )
             recordNetworkEvent(
                 NetworkEvent(
                     kind: .failed,
@@ -148,6 +158,17 @@ final class AVAccountAPIClient {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            TuneAVDiagnostics.capture(
+                URLError(.badServerResponse),
+                feature: "tune.account_api",
+                operation: operation,
+                step: "response",
+                data: [
+                    "method": method,
+                    "attempts": String(attempts),
+                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
+                ]
+            )
             recordNetworkEvent(
                 NetworkEvent(
                     kind: .failed,
@@ -163,6 +184,19 @@ final class AVAccountAPIClient {
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
+            let error = AVAccountAPIClientError.requestFailed(statusCode: httpResponse.statusCode)
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.account_api",
+                operation: operation,
+                step: "http_status",
+                data: [
+                    "method": method,
+                    "status_code": String(httpResponse.statusCode),
+                    "attempts": String(attempts),
+                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
+                ]
+            )
             recordNetworkEvent(
                 NetworkEvent(
                     kind: .failed,
@@ -174,7 +208,7 @@ final class AVAccountAPIClient {
                     errorCode: nil
                 )
             )
-            throw AVAccountAPIClientError.requestFailed(statusCode: httpResponse.statusCode)
+            throw error
         }
 
         recordNetworkEvent(
