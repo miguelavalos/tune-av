@@ -43,7 +43,7 @@ final class LibraryStore: ObservableObject {
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
-    private var lastAppliedProRealtimeProjectionVersion: Int?
+    private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
     private var pushTask: Task<Void, Never>?
     private var cloudLibraryRefreshTask: Task<Void, Never>?
     private var cloudLibraryRefreshedAt: Date?
@@ -1015,8 +1015,11 @@ final class LibraryStore: ObservableObject {
     }
 
     func applyProRealtimeProjection(_ projection: TuneAVProLibraryProjection) {
-        guard lastAppliedProRealtimeProjectionVersion != projection.projectionVersion else { return }
-        lastAppliedProRealtimeProjectionVersion = projection.projectionVersion
+        if let lastAppliedProRealtimeProjectionUpdatedAt,
+           projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
+            return
+        }
+        lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
 
         applyRemoteSnapshot(
             TuneAVLibrarySnapshot(

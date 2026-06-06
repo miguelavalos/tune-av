@@ -28,6 +28,8 @@
     "ios:ui-smoke": "./scripts/run-ios-ui-tests.sh",
     "ios:tests": "cd apps/ios && xcodebuild test -project TuneAV.xcodeproj -scheme TuneAV -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -only-testing:TuneAVTests CODE_SIGNING_ALLOWED=NO",
     "macos:ci": "./scripts/macos-ci-test.sh",
+    "macos:config:dev": "./scripts/generate-macos-local-xcconfig.sh --env dev",
+    "macos:config:prod": "./scripts/generate-macos-local-xcconfig.sh --env prod",
     "macos:platform:security": "node ./scripts/check-macos-platform-security.mjs",
     "macos:archive:check": "./scripts/check-macos-archive-signing.sh",
     "macos:check:prod": "./scripts/check-macos-runtime-config.sh --env prod --configuration Release",

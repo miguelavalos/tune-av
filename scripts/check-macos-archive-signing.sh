@@ -72,6 +72,11 @@ archive_name="$(plist_print "$archive_path/Info.plist" "Name")"
 archive_bundle_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:CFBundleIdentifier")"
 archive_signing_identity="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:SigningIdentity")"
 archive_team_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:Team")"
+app_bundle_id="$(plist_print "$app_path/Contents/Info.plist" "CFBundleIdentifier")"
+
+if [ -z "$archive_bundle_id" ]; then
+  archive_bundle_id="$app_bundle_id"
+fi
 
 if [ "$archive_bundle_id" != "$expected_bundle_id" ]; then
   echo "FAIL archive bundle identifier must be $expected_bundle_id, got ${archive_bundle_id:-<missing>}." >&2
