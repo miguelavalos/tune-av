@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1600"
-   version = "1.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -26,7 +27,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "NO">
+      shouldUseLaunchSchemeArgsEnv = "NO"
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -36,13 +38,6 @@
             ReferencedContainer = "container:TuneAV.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS"
-            value = "$(TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS)"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -50,22 +45,32 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0F8C9984E9E0658CC334CE6C"
-               BuildableName = "TuneAV.xctest"
+               BuildableName = "TuneAVTests.xctest"
                BlueprintName = "TuneAVTests"
                ReferencedContainer = "container:TuneAV.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "316183D806635298B7A4759D"
-               BuildableName = "TuneAV.xctest"
+               BuildableName = "TuneAVUITests.xctest"
                BlueprintName = "TuneAVUITests"
                ReferencedContainer = "container:TuneAV.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS"
+            value = "$(TUNEAV_UI_TEST_MAX_LAUNCH_READY_MS)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -87,6 +92,8 @@
             ReferencedContainer = "container:TuneAV.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -104,6 +111,8 @@
             ReferencedContainer = "container:TuneAV.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

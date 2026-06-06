@@ -239,7 +239,7 @@ final class TuneAVProLibraryObserver: ObservableObject {
                 } catch {
                     await MainActor.run {
                         guard self?.observationGeneration == generation else { return }
-                        Self.logger.error("Tune AV Pro Convex subscription failed error=\(error.localizedDescription, privacy: .public)")
+                        Self.logger.error("Tune AV Pro Convex subscription failed errorType=\(String(describing: type(of: error)), privacy: .public)")
                         self?.projection = nil
                         self?.errorMessage = error.localizedDescription
                     }
@@ -247,7 +247,7 @@ final class TuneAVProLibraryObserver: ObservableObject {
             }
         } catch {
             guard observationGeneration == generation else { return }
-            Self.logger.error("Tune AV Pro Convex subscription setup failed error=\(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Tune AV Pro Convex subscription setup failed errorType=\(String(describing: type(of: error)), privacy: .public)")
             projection = nil
             errorMessage = error.localizedDescription
         }

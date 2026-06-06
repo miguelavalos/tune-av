@@ -239,7 +239,7 @@ struct RootView: View {
                 proRealtimeLogger.info("Created Tune AV Pro realtime session ownerUserId=\(ownerUserId, privacy: .private(mask: .hash))")
                 proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
             } catch {
-                proRealtimeLogger.error("Tune AV Pro realtime session failed error=\(error.localizedDescription, privacy: .public)")
+                proRealtimeLogger.error("Tune AV Pro realtime session failed errorType=\(String(describing: type(of: error)), privacy: .public)")
                 activeRealtimeSessionOwnerUserID = nil
                 proLibraryObserver.clear()
             }

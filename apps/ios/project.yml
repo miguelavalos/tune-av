@@ -106,7 +106,7 @@ targets:
         Debug:
           CODE_SIGN_IDENTITY: Apple Development
         Release:
-          CODE_SIGN_IDENTITY: Apple Development
+          CODE_SIGN_IDENTITY: Apple Distribution
 
   TuneAVUITests:
     type: bundle.ui-testing
