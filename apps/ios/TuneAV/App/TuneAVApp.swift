@@ -1,3 +1,4 @@
+import AVDiagnosticsFoundation
 import AVBrandFoundation
 import SwiftData
 import SwiftUI
@@ -16,6 +17,7 @@ struct TuneAVApp: App {
         let launchContext = LaunchContext.current
         self.launchContext = launchContext
         AppConfig.configureAVAccountIfPossible()
+        AVDiagnostics.configure(AppConfig.diagnosticsConfiguration)
         let persistenceController = launchContext.isUITesting ? PersistenceController(inMemory: true) : PersistenceController.shared
         self.persistenceController = persistenceController
         _libraryStore = StateObject(wrappedValue: LibraryStore(container: persistenceController.container))

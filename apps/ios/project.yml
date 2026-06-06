@@ -65,6 +65,8 @@ targets:
       - package: AppsAV
         product: AVHaptics
       - package: AppsAV
+        product: AVDiagnosticsFoundation
+      - package: AppsAV
         product: AVBrandFoundation
       - package: AppsAV
         product: AVAppShellFoundation

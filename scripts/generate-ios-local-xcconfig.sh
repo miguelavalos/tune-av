@@ -162,6 +162,7 @@ support_base_url="$(read_support_base_url)"
 revenuecat_public_api_key="$(read_required_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="$(read_required_config TUNEAV_REVENUECAT_OFFERING_ID)"
 revenuecat_monthly_package_id="$(read_required_config TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
+tuneav_ios_sentry_dsn="$(read_optional_config TUNEAV_IOS_SENTRY_DSN)"
 if [ "$env_name" = "prod" ]; then
   listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
 else
@@ -212,6 +213,7 @@ TUNEAV_OPEN_SOURCE_URL = $(escape_xcconfig_url "https://github.com/miguelavalos/
 TUNEAV_REVENUECAT_PUBLIC_API_KEY = $revenuecat_public_api_key
 TUNEAV_REVENUECAT_OFFERING_ID = $revenuecat_offering_id
 TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $revenuecat_monthly_package_id
+TUNEAV_IOS_SENTRY_DSN = $(escape_xcconfig_url "$tuneav_ios_sentry_dsn")
 EOF
 )"
 

@@ -31,6 +31,10 @@
 	<string>13</string>
 	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
 	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
+	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
+	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
+	<key>TUNEAV_IOS_SENTRY_DSN</key>
+	<string>$(TUNEAV_IOS_SENTRY_DSN)</string>
 	<key>SUPPORT_EMAIL_TO</key>
 	<string>$(SUPPORT_EMAIL_TO)</string>
 	<key>SUPPORTAV_BASE_URL</key>
