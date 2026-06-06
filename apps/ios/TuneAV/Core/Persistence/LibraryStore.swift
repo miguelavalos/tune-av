@@ -32,7 +32,6 @@ final class LibraryStore: ObservableObject {
     private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
     private static let feedbackSyncRetryJitterFraction = 0.2
     private static let maxCloudDiscoveryRecords = 1_000
-    private static let maxCloudTombstonesPerResource = 5
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
@@ -1651,7 +1650,8 @@ final class LibraryStore: ObservableObject {
         TuneAVLibrarySnapshot(
             favorites: snapshot.favorites,
             recents: snapshot.recents,
-            discoveries: cloudBoundedDiscoveryRecords(snapshot.discoveries),
+            discoveries: cloudBoundedDiscoveryRecords(snapshot.discoveries.filter { $0.deletedAt == nil })
+                + snapshot.discoveries.filter { $0.deletedAt != nil },
             settings: snapshot.settings
         )
     }
@@ -1862,7 +1862,6 @@ final class LibraryStore: ObservableObject {
         let sharedTombstones = tombstones()
             .filter { $0.resource == resource }
             .sorted { $0.deletedAt > $1.deletedAt }
-            .prefix(Self.maxCloudTombstonesPerResource)
             .map(\.sharedTombstone)
         return TuneAVLibraryTombstoneCoding.records(for: resource, in: sharedTombstones, as: type, decoder: tombstoneDecoder)
     }
