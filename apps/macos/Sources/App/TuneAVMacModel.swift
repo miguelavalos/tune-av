@@ -165,6 +165,7 @@ final class TuneAVMacModel: ObservableObject {
     private var currentTrackFeedbackByID: [String: TuneAVStationFeedback] = [:]
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var pendingCloudSyncTask: Task<Void, Never>?
+    private var cloudSyncPollingTask: Task<Void, Never>?
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
@@ -188,6 +189,8 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     deinit {
+        pendingCloudSyncTask?.cancel()
+        cloudSyncPollingTask?.cancel()
         sleepTimerTask?.cancel()
         trackArtworkTask?.cancel()
     }
@@ -771,7 +774,7 @@ final class TuneAVMacModel: ObservableObject {
         guard stationFeedback[station.id] != feedback else { return }
         stationFeedback[station.id] = feedback
         storage.saveStationFeedback(stationFeedback)
-        markLocalLibraryUpdated()
+        syncProStationFeedback(feedback, stationID: station.id)
     }
 
     func clearFavorites() {
@@ -898,6 +901,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated()
+        syncProTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
     }
 
     func clearDiscoveredTracks() {
@@ -941,7 +945,8 @@ final class TuneAVMacModel: ObservableObject {
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.startupCompleted(
                 accountAvailable: accountService.isAvailable,
-                hasUser: accountUser != nil
+                hasUser: accountUser != nil,
+                hasProAccess: hasProCloudSyncAccess
             )
         )
     }
@@ -959,7 +964,8 @@ final class TuneAVMacModel: ObservableObject {
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.signInCompleted(
                 accountAvailable: accountService.isAvailable,
-                hasUser: accountUser != nil
+                hasUser: accountUser != nil,
+                hasProAccess: hasProCloudSyncAccess
             )
         )
     }
@@ -971,7 +977,8 @@ final class TuneAVMacModel: ObservableObject {
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.signInCompleted(
                 accountAvailable: accountService.isAvailable,
-                hasUser: accountUser != nil
+                hasUser: accountUser != nil,
+                hasProAccess: hasProCloudSyncAccess
             )
         )
     }
@@ -1589,6 +1596,9 @@ final class TuneAVMacModel: ObservableObject {
         }
         if resolvedAccess.accessMode == .signedInPro {
             upgradePrompt = nil
+            startCloudSyncPolling()
+        } else {
+            stopCloudSyncPolling()
         }
     }
 
@@ -1665,6 +1675,88 @@ final class TuneAVMacModel: ObservableObject {
             }
             return data
         }
+    }
+
+    private func syncProStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+        Task { [weak self] in
+            do {
+                try await self?.sendFeedbackRequest(
+                    path: "/v1/tune/feedback/stations/\(stationID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? stationID)",
+                    payload: TuneAVMacFeedbackRequest(deviceId: "tuneav-mac", feedback: feedback?.backendValue)
+                )
+            } catch {
+                TuneAVMacDiagnostics.capture(
+                    error,
+                    feature: "tune.mac.sync",
+                    operation: "station_feedback",
+                    step: "upload"
+                )
+            }
+        }
+    }
+
+    private func syncProTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String, artist: String?, stationID: String?) {
+        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+        let key = Self.trackFeedbackKey(title: title, artist: artist)
+        Task { [weak self] in
+            do {
+                try await self?.sendFeedbackRequest(
+                    path: "/v1/tune/feedback/tracks/\(key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key)",
+                    payload: TuneAVMacTrackFeedbackRequest(
+                        deviceId: "tuneav-mac",
+                        title: title,
+                        artist: artist,
+                        stationId: stationID,
+                        feedback: feedback?.backendValue
+                    )
+                )
+            } catch {
+                TuneAVMacDiagnostics.capture(
+                    error,
+                    feature: "tune.mac.sync",
+                    operation: "track_feedback",
+                    step: "upload"
+                )
+            }
+        }
+    }
+
+    private func sendFeedbackRequest<Payload: Encodable>(path: String, payload: Payload) async throws {
+        guard let token = try await accountService.getToken(), !token.isEmpty else {
+            throw TuneAVAppDataClientError.missingToken
+        }
+
+        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
+            throw TuneAVAppDataClientError.missingBaseURL
+        }
+
+        var request = URLRequest(url: Self.accountAPIURL(baseURL: baseURL, path: path))
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let (_, response) = try await TuneAVURLSessions.account.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard 200..<300 ~= httpResponse.statusCode else {
+            throw TuneAVAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+    }
+
+    private nonisolated static func trackFeedbackKey(title: String, artist: String?) -> String {
+        [title, artist ?? ""]
+            .map { value in
+                value
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .lowercased()
+            }
+            .joined(separator: "::")
     }
 
     private func accountRequest<T: Decodable>(
@@ -1761,9 +1853,6 @@ final class TuneAVMacModel: ObservableObject {
             .compactMap(MacDiscoveredTrack.init(record:))
             .sorted { $0.playedAt > $1.playedAt }
 
-        selectedSearchCountryCode = TuneAVCountry.sanitizedCode(snapshot.settings.preferredCountry)
-        activeSearchTag = snapshot.settings.preferredTag.isEmpty ? nil : snapshot.settings.preferredTag
-
         storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         storage.saveDiscoveries(discoveredTracks)
@@ -1776,9 +1865,14 @@ final class TuneAVMacModel: ObservableObject {
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.localLibraryChanged(
                 accountAvailable: accountService.isAvailable,
-                hasUser: accountUser != nil
+                hasUser: accountUser != nil,
+                hasProAccess: hasProCloudSyncAccess
             )
         )
+    }
+
+    private var hasProCloudSyncAccess: Bool {
+        accountUser != nil && accessMode == .signedInPro
     }
 
     private func handleCloudSyncTriggerAction(_ action: MacCloudSyncTrigger.Action) {
@@ -1887,6 +1981,27 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
+    private func startCloudSyncPolling() {
+        guard cloudSyncPollingTask == nil else { return }
+        cloudSyncPollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(15))
+                    guard !Task.isCancelled else { return }
+                    guard let self, self.hasProCloudSyncAccess, self.cloudSyncStatus != .syncing else { continue }
+                    await self.synchronizeLibraryNow()
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+
+    private func stopCloudSyncPolling() {
+        cloudSyncPollingTask?.cancel()
+        cloudSyncPollingTask = nil
+    }
+
     private func sortedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {
         discoveries.sorted { first, second in
             first.playedAt > second.playedAt
@@ -1969,6 +2084,32 @@ struct TuneAVMacLibraryStorage {
 
     func saveDate(_ date: Date, forKey key: String) {
         defaults.set(date, forKey: key)
+    }
+}
+
+private struct TuneAVMacFeedbackRequest: Encodable {
+    let deviceId: String
+    let feedback: String?
+}
+
+private struct TuneAVMacTrackFeedbackRequest: Encodable {
+    let deviceId: String
+    let title: String
+    let artist: String?
+    let stationId: String?
+    let feedback: String?
+}
+
+private extension TuneAVStationFeedback {
+    var backendValue: String {
+        switch self {
+        case .liked:
+            return "liked"
+        case .notForMe:
+            return "not_for_me"
+        case .disliked:
+            return "disliked"
+        }
     }
 }
 

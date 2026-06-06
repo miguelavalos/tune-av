@@ -6,11 +6,11 @@ final class MacCloudSyncTests: XCTestCase {
         var trigger = MacCloudSyncTrigger()
 
         XCTAssertEqual(
-            trigger.startupCompleted(accountAvailable: true, hasUser: true),
+            trigger.startupCompleted(accountAvailable: true, hasUser: true, hasProAccess: true),
             .schedule(MacCloudSyncTrigger.startupDelay)
         )
         XCTAssertEqual(
-            trigger.startupCompleted(accountAvailable: true, hasUser: true),
+            trigger.startupCompleted(accountAvailable: true, hasUser: true, hasProAccess: true),
             .none
         )
     }
@@ -19,7 +19,16 @@ final class MacCloudSyncTests: XCTestCase {
         var trigger = MacCloudSyncTrigger()
 
         XCTAssertEqual(
-            trigger.startupCompleted(accountAvailable: true, hasUser: false),
+            trigger.startupCompleted(accountAvailable: true, hasUser: false, hasProAccess: false),
+            .none
+        )
+    }
+
+    func testStartupDoesNotSyncForSignedInFreeUsers() {
+        var trigger = MacCloudSyncTrigger()
+
+        XCTAssertEqual(
+            trigger.startupCompleted(accountAvailable: true, hasUser: true, hasProAccess: false),
             .none
         )
     }
@@ -28,7 +37,7 @@ final class MacCloudSyncTests: XCTestCase {
         let trigger = MacCloudSyncTrigger()
 
         XCTAssertEqual(
-            trigger.signInCompleted(accountAvailable: true, hasUser: true),
+            trigger.signInCompleted(accountAvailable: true, hasUser: true, hasProAccess: true),
             .schedule(MacCloudSyncTrigger.startupDelay)
         )
     }
@@ -37,11 +46,15 @@ final class MacCloudSyncTests: XCTestCase {
         let trigger = MacCloudSyncTrigger()
 
         XCTAssertEqual(
-            trigger.localLibraryChanged(accountAvailable: true, hasUser: true),
+            trigger.localLibraryChanged(accountAvailable: true, hasUser: true, hasProAccess: true),
             .schedule(MacCloudSyncTrigger.localChangeDelay)
         )
         XCTAssertEqual(
-            trigger.localLibraryChanged(accountAvailable: true, hasUser: false),
+            trigger.localLibraryChanged(accountAvailable: true, hasUser: false, hasProAccess: false),
+            .none
+        )
+        XCTAssertEqual(
+            trigger.localLibraryChanged(accountAvailable: true, hasUser: true, hasProAccess: false),
             .none
         )
     }
@@ -52,7 +65,7 @@ final class MacCloudSyncTests: XCTestCase {
         trigger.setApplyingCloudSnapshot(true)
 
         XCTAssertEqual(
-            trigger.localLibraryChanged(accountAvailable: true, hasUser: true),
+            trigger.localLibraryChanged(accountAvailable: true, hasUser: true, hasProAccess: true),
             .none
         )
     }
@@ -79,6 +92,41 @@ final class MacCloudSyncTests: XCTestCase {
 
         XCTAssertEqual(Set(merged.favorites.map(\.station.id)), ["local-favorite", "remote-favorite"])
         XCTAssertEqual(merged.recents.map(\.station.id), ["remote-recent", "local-recent"])
+    }
+
+    func testMacSyncMergeKeepsSettingsDeviceLocal() {
+        let local = librarySnapshot(
+            favorites: [favoriteRecord(id: "local-favorite")],
+            settings: AppSettingsRecord(
+                preferredCountry: "ES",
+                preferredLanguage: "ca",
+                preferredTag: "rock",
+                lastPlayedStationID: "local-station",
+                sleepTimerMinutes: 30,
+                keepScreenAwake: true,
+                warnBeforeCellularPlayback: true,
+                openLastStationOnLaunch: true,
+                autoSkipUnstableStreams: true,
+                updatedAt: "2026-05-23T09:00:00Z"
+            ),
+            updatedAt: "2026-05-23T09:00:00Z"
+        )
+        let remote = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote-favorite")],
+            settings: AppSettingsRecord(
+                preferredCountry: "US",
+                preferredLanguage: "en",
+                preferredTag: "news",
+                lastPlayedStationID: "remote-station",
+                sleepTimerMinutes: nil,
+                updatedAt: "2026-05-23T10:00:00Z"
+            ),
+            updatedAt: "2026-05-23T10:00:00Z"
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
+
+        XCTAssertEqual(merged.settings, local.settings)
     }
 
     func testMacSyncPlannerPushesLocalWhenRemoteIsEmpty() {
@@ -111,13 +159,14 @@ final class MacCloudSyncTests: XCTestCase {
         favorites: [FavoriteStationRecord] = [],
         recents: [RecentStationRecord] = [],
         discoveries: [DiscoveredTrackRecord] = [],
+        settings: AppSettingsRecord? = nil,
         updatedAt: String
     ) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: favorites,
             recents: recents,
             discoveries: discoveries,
-            settings: AppSettingsRecord(
+            settings: settings ?? AppSettingsRecord(
                 preferredCountry: "",
                 preferredLanguage: "",
                 preferredTag: "",

@@ -13,19 +13,19 @@ struct MacCloudSyncTrigger {
     private(set) var hasStarted = false
     private(set) var isApplyingCloudSnapshot = false
 
-    mutating func startupCompleted(accountAvailable: Bool, hasUser: Bool) -> Action {
+    mutating func startupCompleted(accountAvailable: Bool, hasUser: Bool, hasProAccess: Bool) -> Action {
         guard !hasStarted else { return .none }
         hasStarted = true
-        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, delay: Self.startupDelay)
+        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.startupDelay)
     }
 
-    func signInCompleted(accountAvailable: Bool, hasUser: Bool) -> Action {
-        syncAction(accountAvailable: accountAvailable, hasUser: hasUser, delay: Self.startupDelay)
+    func signInCompleted(accountAvailable: Bool, hasUser: Bool, hasProAccess: Bool) -> Action {
+        syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.startupDelay)
     }
 
-    func localLibraryChanged(accountAvailable: Bool, hasUser: Bool) -> Action {
+    func localLibraryChanged(accountAvailable: Bool, hasUser: Bool, hasProAccess: Bool) -> Action {
         guard !isApplyingCloudSnapshot else { return .none }
-        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, delay: Self.localChangeDelay)
+        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.localChangeDelay)
     }
 
     func signOutStarted() -> Action {
@@ -36,8 +36,8 @@ struct MacCloudSyncTrigger {
         isApplyingCloudSnapshot = isApplying
     }
 
-    private func syncAction(accountAvailable: Bool, hasUser: Bool, delay: Duration) -> Action {
-        guard accountAvailable, hasUser else { return .none }
+    private func syncAction(accountAvailable: Bool, hasUser: Bool, hasProAccess: Bool, delay: Duration) -> Action {
+        guard accountAvailable, hasUser, hasProAccess else { return .none }
         return .schedule(delay)
     }
 }

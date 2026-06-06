@@ -12,13 +12,11 @@ enum TuneAVAppDataResource: String, CaseIterable {
     case favorites
     case recents
     case discoveries
-    case settings
 
     static let syncResources: [TuneAVAppDataResource] = [
         .favorites,
         .recents,
-        .discoveries,
-        .settings
+        .discoveries
     ]
 }
 
@@ -78,19 +76,17 @@ actor TuneAVAppDataSyncClient {
         let favorites = try await pullResource(.favorites, entryType: FavoriteStationRecord.self)
         let recents = try await pullResource(.recents, entryType: RecentStationRecord.self)
         let discoveries = try await pullResource(.discoveries, entryType: DiscoveredTrackRecord.self)
-        let settings = try await pullResource(.settings, entryType: AppSettingsRecord.self)
 
         let snapshot = TuneAVLibrarySnapshot(
             favorites: favorites.entries,
             recents: recents.entries,
             discoveries: discoveries.entries,
-            settings: settings.entries.first ?? .empty
+            settings: .empty
         )
         let updatedAt = [
             favorites.updatedAt,
             recents.updatedAt,
-            discoveries.updatedAt,
-            settings.updatedAt
+            discoveries.updatedAt
         ].max() ?? .distantPast
 
         return TuneAVLibraryDocument(
@@ -99,8 +95,7 @@ actor TuneAVAppDataSyncClient {
             revision: [
                 favorites.revision,
                 recents.revision,
-                discoveries.revision,
-                settings.revision
+                discoveries.revision
             ].max() ?? 0,
             etag: nil
         )
@@ -110,7 +105,6 @@ actor TuneAVAppDataSyncClient {
         try await pushResource(.favorites, entries: snapshot.favorites)
         try await pushResource(.recents, entries: snapshot.recents)
         try await pushResource(.discoveries, entries: snapshot.discoveries)
-        try await pushResource(.settings, entries: [snapshot.settings])
     }
 
     func overwriteLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {

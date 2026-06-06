@@ -89,7 +89,7 @@ enum TuneAVLibrarySnapshotMerger {
             favorites: mergedFavorites(local.favorites, remote.favorites),
             recents: mergedRecents(local.recents, remote.recents),
             discoveries: mergedDiscoveries(local.discoveries, remote.discoveries),
-            settings: newestSettings(local.settings, remote.settings)
+            settings: local.settings
         )
     }
 
@@ -127,10 +127,6 @@ enum TuneAVLibrarySnapshotMerger {
         )
         .sorted { $0.date > $1.date }
         .map(\.record)
-    }
-
-    private static func newestSettings(_ local: AppSettingsRecord, _ remote: AppSettingsRecord) -> AppSettingsRecord {
-        date(local.updatedAt) >= date(remote.updatedAt) ? local : remote
     }
 
     private static func datedRecords<Record>(
@@ -224,7 +220,7 @@ struct TuneAVLibrarySnapshot: Codable, Equatable {
     let settings: AppSettingsRecord
 
     var hasMeaningfulContent: Bool {
-        !favorites.isEmpty || !recents.isEmpty || !discoveries.isEmpty || settings.hasMeaningfulContent
+        hasLibraryCollections
     }
 
     var hasLibraryCollections: Bool {

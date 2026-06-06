@@ -63,6 +63,7 @@ final class LibraryStore: ObservableObject {
     private var stationFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
+    private var shouldSyncFeedbackToCloud = false
 
     private enum RefreshScope {
         case favorites
@@ -391,6 +392,7 @@ final class LibraryStore: ObservableObject {
 
     func configureLocalFeedbackRetention(for accessMode: AccessMode) {
         let retention = TuneAVLocalFeedbackRetention.forMode(accessMode)
+        shouldSyncFeedbackToCloud = accessMode == .signedInPro
         guard retention != localFeedbackRetention else { return }
         localFeedbackRetention = retention
         pruneLocalFeedbackIfNeeded()
@@ -409,6 +411,7 @@ final class LibraryStore: ObservableObject {
         stationFeedbackRecords = nextRecords
         stationFeedback = nextRecords.mapValues(\.feedback)
         Self.saveStationFeedbackRecords(nextRecords)
+        guard shouldSyncFeedbackToCloud else { return }
         rememberPendingStationFeedbackUpload(feedback, stationID: station.id)
         syncStationFeedback(feedback, stationID: station.id)
     }
@@ -437,6 +440,7 @@ final class LibraryStore: ObservableObject {
         trackFeedbackRecords = nextRecords
         trackFeedback = nextRecords.mapValues(\.feedback)
         Self.saveTrackFeedbackRecords(nextRecords)
+        guard shouldSyncFeedbackToCloud else { return }
         let normalizedTitle = normalizedTrackValue(title)
         let normalizedArtist = normalizedTrackValue(artist)
         rememberPendingTrackFeedbackUpload(feedback, feedbackKey: key, title: normalizedTitle, artist: normalizedArtist, stationID: nil)
@@ -1029,8 +1033,36 @@ final class LibraryStore: ObservableObject {
                 settings: librarySnapshot().settings
             )
         )
+        applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)
         cloudLibraryRefreshedAt = .now
         setCloudSyncStatus(.synced(.now))
+    }
+
+    private func applyProRealtimeFeedback(
+        stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
+        trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
+    ) {
+        let nextStationRecords = Dictionary(
+            uniqueKeysWithValues: remoteStationFeedback.map {
+                ($0.stationID, TuneAVLocalFeedbackRecord(feedback: $0.feedback, updatedAt: $0.updatedAt ?? TuneAVDateCoding.string(from: .now)))
+            }
+        )
+        if nextStationRecords != stationFeedbackRecords {
+            stationFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextStationRecords, maxCount: localFeedbackRetention.stationFeedbackLimit)
+            stationFeedback = stationFeedbackRecords.mapValues(\.feedback)
+            Self.saveStationFeedbackRecords(stationFeedbackRecords)
+        }
+
+        let nextTrackRecords = Dictionary(
+            uniqueKeysWithValues: remoteTrackFeedback.map {
+                ($0.trackKey, TuneAVLocalFeedbackRecord(feedback: $0.feedback, updatedAt: $0.updatedAt ?? TuneAVDateCoding.string(from: .now)))
+            }
+        )
+        if nextTrackRecords != trackFeedbackRecords {
+            trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: localFeedbackRetention.trackFeedbackLimit)
+            trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+            Self.saveTrackFeedbackRecords(trackFeedbackRecords)
+        }
     }
 
     private func performCloudLibraryRefresh(using appDataService: TuneAVAppDataService) async {
@@ -1337,6 +1369,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard shouldSyncFeedbackToCloud else { return }
         guard let backendService, backendService.isConfigured() else { return }
 
         let token = UUID()
@@ -1390,6 +1423,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func syncTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?, stationID: String?) {
+        guard shouldSyncFeedbackToCloud else { return }
         guard
             let backendService,
             backendService.isConfigured(),
@@ -1725,19 +1759,6 @@ final class LibraryStore: ObservableObject {
 
             context.insert(DiscoveredTrack(record: discovery))
         }
-
-        settings.preferredCountry = snapshot.settings.preferredCountry
-        settings.preferredLanguage = snapshot.settings.preferredLanguage
-        settings.preferredTag = snapshot.settings.preferredTag
-        settings.lastPlayedStationID = snapshot.settings.lastPlayedStationID
-        settings.lastOpenedStationID = snapshot.settings.lastOpenedStationID
-        settings.lastOpenedStationPresentation = snapshot.settings.lastOpenedStationPresentation
-        settings.sleepTimerMinutes = nil
-        settings.keepScreenAwake = snapshot.settings.keepScreenAwake
-        settings.warnBeforeCellularPlayback = snapshot.settings.warnBeforeCellularPlayback
-        settings.openLastStationOnLaunch = snapshot.settings.openLastStationOnLaunch
-        settings.autoSkipUnstableStreams = snapshot.settings.autoSkipUnstableStreams
-        settings.updatedAt = Self.date(from: snapshot.settings.updatedAt)
 
         try? context.save()
         refresh()

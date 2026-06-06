@@ -33,6 +33,41 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/recents"))
     }
 
+    func testAppDataClientKeepsSettingsDeviceLocal() async throws {
+        let recorder = AppDataRequestRecorder(conflictPath: "/none")
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, method, body, headers in
+                try await recorder.request(path: path, method: method, body: body, headers: headers)
+            }
+        )
+
+        _ = try await client.pullLibrary()
+        try await client.pushLibrary(
+            TuneAVLibrarySnapshot(
+                favorites: [],
+                recents: [],
+                discoveries: [],
+                settings: AppSettingsRecord(
+                    preferredCountry: "ES",
+                    preferredLanguage: "ca",
+                    preferredTag: "rock",
+                    lastPlayedStationID: "local-station",
+                    sleepTimerMinutes: 30,
+                    keepScreenAwake: true,
+                    warnBeforeCellularPlayback: true,
+                    openLastStationOnLaunch: true,
+                    autoSkipUnstableStreams: true,
+                    updatedAt: "2026-06-06T10:00:00Z"
+                )
+            )
+        )
+
+        let calls = await recorder.calls
+        XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/settings"))
+        XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
+    }
+
     func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {
         let bundleURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
