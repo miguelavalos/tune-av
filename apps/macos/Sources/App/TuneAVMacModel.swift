@@ -176,7 +176,7 @@ final class TuneAVMacModel: ObservableObject {
     private var pendingCloudSyncTask: Task<Void, Never>?
     private var cloudSyncPollingTask: Task<Void, Never>?
     private var proRealtimeSessionTask: Task<Void, Never>?
-    private var proRealtimeObservationTask: Task<Void, Never>?
+    private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
     private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
     private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
@@ -211,7 +211,6 @@ final class TuneAVMacModel: ObservableObject {
         pendingCloudSyncTask?.cancel()
         cloudSyncPollingTask?.cancel()
         proRealtimeSessionTask?.cancel()
-        proRealtimeObservationTask?.cancel()
         sleepTimerTask?.cancel()
         trackArtworkTask?.cancel()
     }
@@ -1200,17 +1199,15 @@ final class TuneAVMacModel: ObservableObject {
 
         activeProRealtimeSessionOwnerUserID = ownerUserId
         proRealtimeSessionTask?.cancel()
-        proRealtimeObservationTask?.cancel()
+        proRealtimeProjectionCancellable?.cancel()
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
 
-        proRealtimeObservationTask = Task { [weak self] in
-            guard let self else { return }
-            for await projection in self.proLibraryObserver.$projection.compactMap({ $0 }).values {
-                guard !Task.isCancelled else { return }
-                self.applyProRealtimeProjection(projection)
+        proRealtimeProjectionCancellable = proLibraryObserver.$projection
+            .compactMap { $0 }
+            .sink { [weak self] projection in
+                self?.applyProRealtimeProjection(projection)
             }
-        }
 
         proRealtimeSessionTask = Task { [weak self] in
             do {
@@ -1242,8 +1239,8 @@ final class TuneAVMacModel: ObservableObject {
     private func stopProRealtimeSync() {
         proRealtimeSessionTask?.cancel()
         proRealtimeSessionTask = nil
-        proRealtimeObservationTask?.cancel()
-        proRealtimeObservationTask = nil
+        proRealtimeProjectionCancellable?.cancel()
+        proRealtimeProjectionCancellable = nil
         activeProRealtimeSessionOwnerUserID = nil
         lastAppliedProRealtimeProjectionUpdatedAt = nil
         TuneAVRealtimeSessionStore.shared.clear()

@@ -41,7 +41,13 @@ xcodebuild \
   -destination 'platform=macOS' \
   build
 
-APP_PATH="$(find "$DERIVED_DATA" -path "*/Build/Products/$CONFIGURATION/$APP_NAME.app" -type d -print -quit)"
+APP_PATH="$(
+  find "$DERIVED_DATA" -path "*/Build/Products/$CONFIGURATION/$APP_NAME.app" ! -path "*/Index.noindex/*" -type d -print0 |
+    xargs -0 stat -f '%m %N' |
+    sort -nr |
+    head -n 1 |
+    cut -d' ' -f2-
+)"
 
 if [[ -z "$APP_PATH" ]]; then
   echo "Could not find built app bundle for $APP_NAME" >&2
