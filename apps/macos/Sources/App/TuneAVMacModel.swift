@@ -256,9 +256,9 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     var recentAndFavoriteStations: [Station] {
-        var seenIDs = Set<String>()
+        var seenKeys = Set<String>()
         return (recentStations + favoriteStations).filter { station in
-            seenIDs.insert(station.id).inserted
+            seenKeys.insert(stationIdentityKey(for: station)).inserted
         }
     }
 
@@ -773,11 +773,12 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func toggleFavorite(_ station: Station) {
-        if favoriteStations.contains(station) {
-            rememberFavoriteDeletion(for: station)
-            favoriteStations.removeAll { $0 == station }
+        let identityKey = stationIdentityKey(for: station)
+        if let existing = favoriteStations.first(where: { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }) {
+            rememberFavoriteDeletion(for: existing)
+            favoriteStations.removeAll { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
         } else {
-            removeTombstone(resource: "favorites", identityKey: stationIdentityKey(for: station))
+            removeTombstone(resource: "favorites", identityKey: identityKey)
             favoriteStations.insert(station, at: 0)
         }
         storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
@@ -785,7 +786,8 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func isFavorite(_ station: Station) -> Bool {
-        favoriteStations.contains(station)
+        let identityKey = stationIdentityKey(for: station)
+        return favoriteStations.contains { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
     }
 
     func setFeedback(_ feedback: TuneAVStationFeedback?, for station: Station) {
@@ -1271,8 +1273,9 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func recordRecent(_ station: Station) {
-        removeTombstone(resource: "recents", identityKey: stationIdentityKey(for: station))
-        recentStations.removeAll { $0.id == station.id }
+        let identityKey = stationIdentityKey(for: station)
+        removeTombstone(resource: "recents", identityKey: identityKey)
+        recentStations.removeAll { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
         recentStations.insert(station, at: 0)
         recentStations = Array(recentStations.prefix(12))
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
