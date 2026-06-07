@@ -989,7 +989,10 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func startAutomaticLibrarySync() async {
-        await restoreAccountSessionForAccessRefresh()
+        let restoredSessionIsActive = await restoreAccountSessionForAccessRefresh()
+        if restoredSessionIsActive {
+            await refreshAccessState()
+        }
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.startupCompleted(
                 accountAvailable: accountService.isAvailable,
