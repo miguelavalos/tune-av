@@ -62,14 +62,6 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
     }
 }
 
-enum TuneAVRealtimeProjectionFreshness {
-    static func shouldApply(sourceUpdatedAt: Double?, localLibraryUpdatedAt: Date) -> Bool {
-        guard let sourceUpdatedAt else { return true }
-        let sourceDate = Date(timeIntervalSince1970: sourceUpdatedAt / 1_000)
-        return localLibraryUpdatedAt <= sourceDate
-    }
-}
-
 enum TuneAVRealtimeProjectionMerger {
     static func mergedSnapshot(
         projection: TuneAVProLibraryProjection,

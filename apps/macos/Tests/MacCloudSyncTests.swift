@@ -274,24 +274,6 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
-    func testRealtimeProjectionFreshnessRejectsProjectionOlderThanLocalMutation() {
-        XCTAssertFalse(
-            TuneAVRealtimeProjectionFreshness.shouldApply(
-                sourceUpdatedAt: 1_000,
-                localLibraryUpdatedAt: fixedDate("2026-05-23T11:00:00Z")
-            )
-        )
-    }
-
-    func testRealtimeProjectionFreshnessAllowsMissingSourceTimestamp() {
-        XCTAssertTrue(
-            TuneAVRealtimeProjectionFreshness.shouldApply(
-                sourceUpdatedAt: nil,
-                localLibraryUpdatedAt: fixedDate("2026-05-23T11:00:00Z")
-            )
-        )
-    }
-
     func testRealtimeProjectionMergerKeepsLocalAndRemoteFavoritesWhenProjectionSourceIsOlder() {
         let local = librarySnapshot(
             favorites: [favoriteRecord(id: "local-favorite", createdAt: "2026-05-23T11:00:00Z")],
