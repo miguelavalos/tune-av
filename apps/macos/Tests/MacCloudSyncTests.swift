@@ -221,6 +221,20 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(storage.loadTombstones(), [tombstone])
     }
 
+    func testMacLibraryStoragePersistsFavoriteRecordsWithPerItemCreatedAt() {
+        let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let storage = TuneAVMacLibraryStorage(defaults: defaults)
+        let favorite = favoriteRecord(id: "favorite", createdAt: "2026-05-23T10:00:00Z")
+
+        storage.saveFavoriteRecords([favorite])
+
+        XCTAssertEqual(storage.loadFavoriteRecords(), [favorite])
+        XCTAssertEqual(storage.loadStations(forKey: TuneAVMacLibraryStorage.favoritesKey).map(\.id), ["favorite"])
+    }
+
     func testMacLibraryStoragePersistsTrackFeedbackRecords() {
         let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

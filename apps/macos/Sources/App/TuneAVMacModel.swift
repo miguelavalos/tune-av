@@ -170,6 +170,7 @@ final class TuneAVMacModel: ObservableObject {
     private var playerTimeControlObserver: NSKeyValueObservation?
     private var playbackNotificationObservers: [NSObjectProtocol] = []
     private var playbackFailuresInCurrentQueue = Set<String>()
+    private var favoriteRecords: [FavoriteStationRecord] = []
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
@@ -191,7 +192,8 @@ final class TuneAVMacModel: ObservableObject {
     private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
     init() {
-        favoriteStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.favoritesKey)
+        favoriteRecords = storage.loadFavoriteRecords()
+        favoriteStations = favoriteRecords.map { Station(record: $0.station) }
         recentStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.recentsKey)
         stationFeedback = storage.loadStationFeedback()
         trackFeedbackRecords = storage.loadTrackFeedbackRecords()
@@ -777,11 +779,20 @@ final class TuneAVMacModel: ObservableObject {
         if let existing = favoriteStations.first(where: { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }) {
             rememberFavoriteDeletion(for: existing)
             favoriteStations.removeAll { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
+            favoriteRecords.removeAll { TuneAVLibrarySnapshotMerger.stationIdentityKey($0.station) == identityKey }
         } else {
             removeTombstone(resource: "favorites", identityKey: identityKey)
             favoriteStations.insert(station, at: 0)
+            favoriteRecords.removeAll { TuneAVLibrarySnapshotMerger.stationIdentityKey($0.station) == identityKey }
+            favoriteRecords.insert(
+                FavoriteStationRecord(
+                    station: station.appDataRecord,
+                    createdAt: TuneAVDateCoding.string(from: .now)
+                ),
+                at: 0
+            )
         }
-        storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
+        storage.saveFavoriteRecords(favoriteRecords)
         markLocalLibraryUpdated()
     }
 
@@ -800,7 +811,8 @@ final class TuneAVMacModel: ObservableObject {
     func clearFavorites() {
         favoriteStations.forEach(rememberFavoriteDeletion(for:))
         favoriteStations = []
-        storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
+        favoriteRecords = []
+        storage.saveFavoriteRecords(favoriteRecords)
         markLocalLibraryUpdated()
     }
 
@@ -1294,15 +1306,21 @@ final class TuneAVMacModel: ObservableObject {
         guard !enrichedByKey.isEmpty else { return }
 
         var didUpdateFavorites = false
-        favoriteStations = favoriteStations.map { station in
+        favoriteRecords = favoriteRecords.map { record in
+            let station = Station(record: record.station)
             guard let enriched = bestEnrichedStation(for: station, in: enrichedByKey),
                   enriched.isPreferredMacEnrichment(over: station)
             else {
-                return station
+                return record
             }
             didUpdateFavorites = true
-            return enriched
+            return FavoriteStationRecord(
+                station: enriched.appDataRecord,
+                createdAt: record.createdAt,
+                deletedAt: record.deletedAt
+            )
         }
+        favoriteStations = favoriteRecords.map { Station(record: $0.station) }
 
         var didUpdateRecents = false
         recentStations = recentStations.map { station in
@@ -1323,7 +1341,7 @@ final class TuneAVMacModel: ObservableObject {
 
         guard didUpdateFavorites || didUpdateRecents else { return }
         if didUpdateFavorites {
-            storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
+            storage.saveFavoriteRecords(favoriteRecords)
         }
         if didUpdateRecents {
             storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
@@ -1878,9 +1896,7 @@ final class TuneAVMacModel: ObservableObject {
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
         let updatedAt = TuneAVDateCoding.string(from: localLibraryUpdatedAt)
         return TuneAVLibrarySnapshot(
-            favorites: favoriteStations.map {
-                FavoriteStationRecord(station: $0.appDataRecord, createdAt: updatedAt)
-            } + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
+            favorites: favoriteRecords + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
             recents: recentStations.map {
                 RecentStationRecord(station: $0.appDataRecord, lastPlayedAt: updatedAt)
             } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
@@ -1942,8 +1958,10 @@ final class TuneAVMacModel: ObservableObject {
             )
         }
 
-        favoriteStations = snapshot.favorites
+        favoriteRecords = snapshot.favorites
             .filter { $0.deletedAt == nil }
+
+        favoriteStations = favoriteRecords
             .map { Station(record: $0.station) }
 
         recentStations = snapshot.recents
@@ -1954,7 +1972,7 @@ final class TuneAVMacModel: ObservableObject {
             .compactMap(MacDiscoveredTrack.init(record:))
             .sorted { $0.playedAt > $1.playedAt }
 
-        storage.save(favoriteStations, forKey: TuneAVMacLibraryStorage.favoritesKey)
+        storage.saveFavoriteRecords(favoriteRecords)
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         storage.saveDiscoveries(discoveredTracks)
         storage.saveTombstones(libraryTombstones)
@@ -2269,6 +2287,7 @@ private struct MacLastKnownAccountUser: Codable {
 
 struct TuneAVMacLibraryStorage {
     static let favoritesKey = "tuneav.mac.library.favorites"
+    static let favoriteRecordsKey = "tuneav.mac.library.favoriteRecords.v1"
     static let recentsKey = "tuneav.mac.library.recents"
     static let discoveriesKey = "tuneav.mac.library.discoveries"
     static let stationFeedbackKey = "tuneav.mac.library.stationFeedback"
@@ -2293,6 +2312,28 @@ struct TuneAVMacLibraryStorage {
     func save(_ stations: [Station], forKey key: String) {
         guard let data = try? encoder.encode(stations) else { return }
         defaults.set(data, forKey: key)
+    }
+
+    func loadFavoriteRecords() -> [FavoriteStationRecord] {
+        if let data = defaults.data(forKey: Self.favoriteRecordsKey),
+           let records = try? decoder.decode([FavoriteStationRecord].self, from: data) {
+            return records.filter { $0.deletedAt == nil }
+        }
+
+        let legacyStations = loadStations(forKey: Self.favoritesKey)
+        guard !legacyStations.isEmpty else { return [] }
+        let createdAt = loadDate(forKey: Self.localLibraryUpdatedAtKey)
+            .map(TuneAVDateCoding.string(from:))
+            ?? TuneAVDateCoding.string(from: .now)
+        return legacyStations.map {
+            FavoriteStationRecord(station: $0.appDataRecord, createdAt: createdAt)
+        }
+    }
+
+    func saveFavoriteRecords(_ records: [FavoriteStationRecord]) {
+        guard let data = try? encoder.encode(records) else { return }
+        defaults.set(data, forKey: Self.favoriteRecordsKey)
+        save(records.filter { $0.deletedAt == nil }.map { Station(record: $0.station) }, forKey: Self.favoritesKey)
     }
 
     func loadDiscoveries() -> [MacDiscoveredTrack] {
