@@ -1033,22 +1033,11 @@ final class LibraryStore: ObservableObject {
             return
         }
 
-        guard TuneAVRealtimeProjectionFreshness.shouldApply(
-            sourceUpdatedAt: projection.sourceUpdatedAt,
-            localLibraryUpdatedAt: latestLocalLibraryUpdateAt()
-        ) else {
-            scheduleCloudPushIfNeeded()
-            return
-        }
-
         lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
-
         applyRemoteSnapshot(
-            TuneAVLibrarySnapshot(
-                favorites: projection.favorites,
-                recents: projection.recents,
-                discoveries: projection.discoveries,
-                settings: librarySnapshot().settings
+            TuneAVRealtimeProjectionMerger.mergedSnapshot(
+                projection: projection,
+                localSnapshot: librarySnapshot()
             )
         )
         applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)

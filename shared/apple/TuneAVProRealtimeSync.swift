@@ -70,6 +70,23 @@ enum TuneAVRealtimeProjectionFreshness {
     }
 }
 
+enum TuneAVRealtimeProjectionMerger {
+    static func mergedSnapshot(
+        projection: TuneAVProLibraryProjection,
+        localSnapshot: TuneAVLibrarySnapshot
+    ) -> TuneAVLibrarySnapshot {
+        TuneAVLibrarySnapshotMerger.merged(
+            local: localSnapshot,
+            remote: TuneAVLibrarySnapshot(
+                favorites: projection.favorites,
+                recents: projection.recents,
+                discoveries: projection.discoveries,
+                settings: localSnapshot.settings
+            )
+        )
+    }
+}
+
 struct TuneAVStationFeedbackRecord: Codable, Equatable {
     let stationID: String
     let feedback: TuneAVStationFeedback

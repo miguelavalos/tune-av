@@ -453,6 +453,50 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertTrue(store.favoriteStations().isEmpty)
     }
 
+    func testProRealtimeProjectionOlderThanLocalLibraryChangeStillAppliesUnrelatedRemoteFavorite() {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let localStation = Station(
+            id: "local-favorite",
+            name: "Local Favorite",
+            country: "Spain",
+            language: "Spanish",
+            tags: "test",
+            streamURL: "https://example.com/local.mp3"
+        )
+        let remoteStation = Station(
+            id: "remote-favorite",
+            name: "Remote Favorite",
+            country: "Spain",
+            language: "Spanish",
+            tags: "test",
+            streamURL: "https://example.com/remote.mp3"
+        )
+
+        store.toggleFavorite(for: localStation)
+        XCTAssertTrue(store.isFavorite(localStation))
+
+        let staleProjection = TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            favorites: [
+                FavoriteStationRecord(
+                    station: remoteStation.appDataRecord,
+                    createdAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 1))
+                )
+            ],
+            recents: [],
+            discoveries: [],
+            projectionVersion: 1,
+            sourceUpdatedAt: 1_000,
+            updatedAt: 2_000
+        )
+
+        store.applyProRealtimeProjection(staleProjection)
+
+        XCTAssertTrue(store.isFavorite(localStation))
+        XCTAssertTrue(store.isFavorite(remoteStation))
+        XCTAssertEqual(Set(store.favoriteStations().map(\.id)), ["local-favorite", "remote-favorite"])
+    }
+
     func testToggleDiscoveredTrackSavedSavesAndUnsavesCurrentTrack() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let station = Station(

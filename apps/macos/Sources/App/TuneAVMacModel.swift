@@ -1967,27 +1967,11 @@ final class TuneAVMacModel: ObservableObject {
             return
         }
 
-        guard TuneAVRealtimeProjectionFreshness.shouldApply(
-            sourceUpdatedAt: projection.sourceUpdatedAt,
-            localLibraryUpdatedAt: latestLocalLibraryMutationAt
-        ) else {
-            handleCloudSyncTriggerAction(
-                cloudSyncTrigger.localLibraryChanged(
-                    accountAvailable: accountService.isAvailable,
-                    hasUser: accountUser != nil,
-                    hasProAccess: hasProCloudSyncAccess
-                )
-            )
-            return
-        }
-
         lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
         applyLibrarySnapshot(
-            TuneAVLibrarySnapshot(
-                favorites: projection.favorites,
-                recents: projection.recents,
-                discoveries: projection.discoveries,
-                settings: librarySnapshot().settings
+            TuneAVRealtimeProjectionMerger.mergedSnapshot(
+                projection: projection,
+                localSnapshot: librarySnapshot()
             )
         )
         applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)
