@@ -200,7 +200,8 @@ final class TuneAVMacModel: ObservableObject {
         libraryTombstones = storage.loadTombstones()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
-        latestLocalLibraryMutationAt = localLibraryUpdatedAt
+        latestLocalLibraryMutationAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryMutationAtKey)
+            ?? (libraryTombstones.isEmpty ? .distantPast : localLibraryUpdatedAt)
         accountUser = Self.lastKnownAccountUser(from: accountUserDefaults)
         resolveLocalAccessState()
         configureSystemNowPlaying()
@@ -1250,11 +1251,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func createRealtimeSession() async throws -> String {
-        let response: TuneAVRealtimeSessionResponse = try await accountRequest(
-            path: "/v1/tune/workspace/realtime-sessions",
-            method: "POST"
-        )
-        return response.realtimeSessionId
+        try await makeAccountAPIClient().createTuneAVRealtimeSession()
     }
 
     func fetchAccountDeletionSummary() async throws -> AccountSummary {
@@ -2101,6 +2098,7 @@ final class TuneAVMacModel: ObservableObject {
         localLibraryUpdatedAt = date
         latestLocalLibraryMutationAt = date
         storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
+        storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryMutationAtKey)
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.localLibraryChanged(
                 accountAvailable: accountService.isAvailable,
@@ -2282,6 +2280,7 @@ struct TuneAVMacLibraryStorage {
     static let trackFeedbackKey = "tuneav.mac.library.trackFeedback.v1"
     static let tombstonesKey = "tuneav.mac.library.tombstones"
     static let localLibraryUpdatedAtKey = "tuneav.mac.library.updatedAt"
+    static let localLibraryMutationAtKey = "tuneav.mac.library.localMutationAt.v1"
 
     private let defaults: UserDefaults
     private let encoder = JSONEncoder()
@@ -2465,10 +2464,6 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
             updatedAt: TuneAVDateCoding.string(from: updatedAt)
         )
     }
-}
-
-private struct TuneAVRealtimeSessionResponse: Decodable {
-    let realtimeSessionId: String
 }
 
 extension MacDiscoveredTrack: TuneAVMusicLibraryDiscovery {

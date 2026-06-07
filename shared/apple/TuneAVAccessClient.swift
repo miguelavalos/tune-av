@@ -109,6 +109,16 @@ final class TuneAVAccessClient {
         return tuneAVAccess
     }
 
+    func createTuneAVRealtimeSession() async throws -> String {
+        let response: TuneAVSharedRealtimeSessionResponse = try await request(
+            path: "/v1/tune/workspace/realtime-sessions",
+            method: "POST",
+            body: Data("{}".utf8),
+            headers: ["Content-Type": "application/json"]
+        )
+        return response.realtimeSessionId
+    }
+
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
@@ -395,6 +405,10 @@ final class TuneAVAccessClient {
             try await Task.sleep(nanoseconds: backoffNanoseconds)
         }
     }
+}
+
+private struct TuneAVSharedRealtimeSessionResponse: Decodable {
+    let realtimeSessionId: String
 }
 
 private extension URLError.Code {

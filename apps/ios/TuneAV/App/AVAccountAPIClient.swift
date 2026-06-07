@@ -76,6 +76,10 @@ final class AVAccountAPIClient {
         try await request(path: "/v1/apps/tuneav/link", method: "DELETE")
     }
 
+    func createTuneAVRealtimeSession() async throws -> String {
+        try await sharedClient().createTuneAVRealtimeSession()
+    }
+
     func request<T: Decodable>(
         path: String,
         method: String = "GET",

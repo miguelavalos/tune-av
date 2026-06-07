@@ -13,16 +13,6 @@ struct TuneAVRealtimeSessionClient {
     }
 
     func createRealtimeSession() async throws -> String {
-        let response: TuneAVRealtimeSessionResponse = try await apiClient.request(
-            path: "/v1/tune/workspace/realtime-sessions",
-            method: "POST",
-            body: Data("{}".utf8),
-            headers: ["Content-Type": "application/json"]
-        )
-        return response.realtimeSessionId
+        try await apiClient.createTuneAVRealtimeSession()
     }
-}
-
-private struct TuneAVRealtimeSessionResponse: Decodable {
-    let realtimeSessionId: String
 }
