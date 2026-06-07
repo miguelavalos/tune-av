@@ -1573,6 +1573,9 @@ final class TuneAVMacModel: ObservableObject {
             station: currentStation,
             artworkURL: currentTrackArtworkURL
         )
+        guard !hasTombstone(resource: "discoveries", identityKey: discovery.discoveryID) else {
+            return
+        }
         let now = Date.now
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) {
@@ -2075,6 +2078,11 @@ final class TuneAVMacModel: ObservableObject {
         let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
         libraryTombstones.removeAll { $0.resourceKey == resourceKey }
         storage.saveTombstones(libraryTombstones)
+    }
+
+    private func hasTombstone(resource: String, identityKey: String) -> Bool {
+        let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
+        return libraryTombstones.contains { $0.resourceKey == resourceKey }
     }
 
     private func tombstoneRecords<Record: Decodable>(resource: String, type: Record.Type) -> [Record] {
