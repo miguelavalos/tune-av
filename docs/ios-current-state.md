@@ -31,6 +31,18 @@ Current app shape:
   launch/splash support, settings/account surfaces, Avi controls, paywall/limit
   surfaces, and text-fit hardening.
 
+## Branding And First Run
+
+Tune AV follows the shared Apps AV first-run sequence:
+
+```text
+native launch logo + icon -> product splash with Avi -> onboarding
+```
+
+The public repo can use Tune AV as an implementation reference for sequence and
+runtime checks. New Apps AV products must still use product-specific icon, logo,
+splash, onboarding, and Avi artwork approved in their own brand handoff.
+
 ## Access Presentation
 
 The public fallback policy is:

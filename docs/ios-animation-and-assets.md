@@ -88,6 +88,28 @@ markdown report under `.derived-data/ios-launch-performance-profile/report.md`.
 Keep the same simulator/runtime when comparing commits. Tighten
 `TUNEAV_IOS_MAX_LAUNCH_READY_MS` only after the median is stable in CI history.
 
+## Branding And First Run Assets
+
+Tune AV follows the shared Apps AV first-run sequence:
+
+```text
+native launch logo + icon -> product splash with Avi -> onboarding
+```
+
+Use Tune AV as a public reference for the structure of that sequence, not as a
+source of final assets for another app. The native launch frame is the short
+identity frame. It should show the Tune AV logo lockup and product icon/mark,
+centered on the shared launch background.
+
+The splash artwork is product-specific and places Avi in the app's assistant
+role. For Tune AV, Avi can be listening or guiding radio playback. Onboarding
+may reuse the same concept, but should avoid duplicating Avi when Avi is already
+rendered near the primary call-to-action.
+
+When changing launch, splash, onboarding, icon, logo, or Avi assets, verify a
+clean simulator install and watch all three first-run stages. Do not validate
+only the final onboarding screenshot.
+
 ## Avi Frame Animation Contract
 
 Tune AV plays Avi motion as PNG frame loops. The runtime looks for production
