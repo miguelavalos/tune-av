@@ -144,6 +144,10 @@ development_team="$(read_optional_config AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 if [ -z "$development_team" ]; then
   development_team="\$(inherited)"
 fi
+if [ "$development_team" = "346677S99H" ]; then
+  echo "Warning: replacing stale non-Avalsys Apple team 346677S99H with 935PM55U6R." >&2
+  development_team="935PM55U6R"
+fi
 keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
