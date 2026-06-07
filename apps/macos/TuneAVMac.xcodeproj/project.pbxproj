@@ -628,14 +628,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 935PM55U6R;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).mac.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
 				PRODUCT_MODULE_NAME = TuneAVMacTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
@@ -793,14 +796,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 935PM55U6R;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).mac.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
 				PRODUCT_MODULE_NAME = TuneAVMacTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
