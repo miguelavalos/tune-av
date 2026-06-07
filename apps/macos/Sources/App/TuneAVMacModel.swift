@@ -1657,16 +1657,9 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         do {
-            let resolvedToken = tokenOverride
-            let client = TuneAVAccessClient(
+            let client = makeAccountAPIClient(
                 baseURL: baseURL,
-                tokenProvider: { [self] in
-                    if let resolvedToken {
-                        return resolvedToken
-                    }
-                    return try await accountService.getToken()
-                },
-                urlSession: TuneAVURLSessions.account
+                tokenOverride: tokenOverride
             )
             let access = try await client.fetchTuneAVAccess()
             applyResolvedAccess(
@@ -1769,35 +1762,24 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func makeAppDataSyncClient() -> TuneAVAppDataSyncClient {
-        TuneAVAppDataSyncClient(deviceId: "tuneav-mac") { [accountService] path, method, body, headers in
-            guard let token = try await accountService.getToken(), !token.isEmpty else {
+        TuneAVAppDataSyncClient(deviceId: "tuneav-mac") { [weak self] path, method, body, headers in
+            guard let self else { throw TuneAVAppDataClientError.missingToken }
+            do {
+                return try await self.makeAccountAPIClient().requestData(
+                    path: path,
+                    method: method,
+                    body: body,
+                    headers: headers
+                )
+            } catch TuneAVAccessClientError.missingToken {
                 throw TuneAVAppDataClientError.missingToken
-            }
-
-            guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
+            } catch TuneAVAccessClientError.missingBaseURL {
                 throw TuneAVAppDataClientError.missingBaseURL
+            } catch TuneAVAccessClientError.requestFailed(let statusCode) {
+                throw TuneAVAppDataClientError.requestFailed(statusCode: statusCode)
+            } catch {
+                throw error
             }
-
-            var request = URLRequest(url: Self.accountAPIURL(baseURL: baseURL, path: path))
-            request.httpMethod = method
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
-            for (field, value) in headers {
-                request.setValue(value, forHTTPHeaderField: field)
-            }
-            if let body {
-                request.httpBody = body
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            }
-
-            let (data, response) = try await TuneAVURLSessions.account.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw URLError(.badServerResponse)
-            }
-            guard 200..<300 ~= httpResponse.statusCode else {
-                throw TuneAVAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
-            }
-            return data
         }
     }
 
@@ -1847,28 +1829,11 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func sendFeedbackRequest<Payload: Encodable>(path: String, payload: Payload) async throws {
-        guard let token = try await accountService.getToken(), !token.isEmpty else {
-            throw TuneAVAppDataClientError.missingToken
-        }
-
-        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
-            throw TuneAVAppDataClientError.missingBaseURL
-        }
-
-        var request = URLRequest(url: Self.accountAPIURL(baseURL: baseURL, path: path))
-        request.httpMethod = "PUT"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(payload)
-
-        let (_, response) = try await TuneAVURLSessions.account.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        guard 200..<300 ~= httpResponse.statusCode else {
-            throw TuneAVAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
-        }
+        _ = try await makeAccountAPIClient().requestData(
+            path: path,
+            method: "PUT",
+            body: try JSONEncoder().encode(payload)
+        )
     }
 
     private nonisolated static func trackFeedbackKey(title: String, artist: String?) -> String {
@@ -1888,45 +1853,23 @@ final class TuneAVMacModel: ObservableObject {
         method: String = "GET",
         tokenOverride: String? = nil
     ) async throws -> T {
-        let resolvedToken: String?
-        if let tokenOverride {
-            resolvedToken = tokenOverride
-        } else {
-            resolvedToken = try await accountService.getToken()
-        }
-        guard let token = resolvedToken, !token.isEmpty else {
-            throw TuneAVAppDataClientError.missingToken
-        }
-
-        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
-            throw TuneAVAppDataClientError.missingBaseURL
-        }
-
-        var request = URLRequest(url: Self.accountAPIURL(baseURL: baseURL, path: path))
-        request.httpMethod = method
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
-
-        let (data, response) = try await TuneAVURLSessions.account.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        guard 200..<300 ~= httpResponse.statusCode else {
-            throw TuneAVAppDataClientError.requestFailed(statusCode: httpResponse.statusCode)
-        }
-        return try JSONDecoder().decode(T.self, from: data)
+        try await makeAccountAPIClient(tokenOverride: tokenOverride).request(path: path, method: method)
     }
 
-    private nonisolated static func accountAPIURL(baseURL: URL, path: String) -> URL {
-        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let pathAndQuery = sanitizedPath.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
-        let url = baseURL.appending(path: String(pathAndQuery.first ?? ""))
-        guard pathAndQuery.count == 2,
-              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-        components.percentEncodedQuery = String(pathAndQuery[1])
-        return components.url ?? url
+    private func makeAccountAPIClient(
+        baseURL: URL? = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL"),
+        tokenOverride: String? = nil
+    ) -> TuneAVAccessClient {
+        TuneAVAccessClient(
+            baseURL: baseURL,
+            tokenProvider: { [self] in
+                if let tokenOverride {
+                    return tokenOverride
+                }
+                return try await accountService.getToken()
+            },
+            urlSession: TuneAVURLSessions.account
+        )
     }
 
     private func librarySnapshot() -> TuneAVLibrarySnapshot {

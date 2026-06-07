@@ -2,6 +2,67 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    @MainActor
+    func testAccessClientSendsSharedAccountHeadersAndBuildsURL() async throws {
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.example.test/v1/me/access?include=apps")
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-123")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "x-appsav-app-id"), "tuneav")
+
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let data = Data(
+                """
+                {
+                  "viewer": {
+                    "isAuthenticated": true,
+                    "userId": "user-1",
+                    "identityProvider": "clerk"
+                  },
+                  "apps": [
+                    {
+                      "appId": "tuneav",
+                      "accessMode": "signedInPro",
+                      "planTier": "pro",
+                      "capabilities": {
+                        "isSignedIn": true,
+                        "canUseBackend": true,
+                        "canUsePremiumFeatures": true,
+                        "canUseCloudSync": true,
+                        "canManagePlan": true
+                      },
+                      "limits": {}
+                    }
+                  ]
+                }
+                """.utf8
+            )
+            return (response, data)
+        }
+
+        let client = TuneAVAccessClient(
+            baseURL: URL(string: "https://api.example.test"),
+            tokenProvider: { "token-123" },
+            urlSession: testURLSession(),
+            retryPolicy: .disabled
+        )
+
+        let payload: MeAccessResponse = try await client.request(path: "/v1/me/access?include=apps")
+        let access = try XCTUnwrap(payload.apps.first)
+
+        XCTAssertEqual(access.appId, "tuneav")
+        XCTAssertEqual(access.accessMode, .signedInPro)
+        XCTAssertEqual(access.planTier, .pro)
+        XCTAssertTrue(access.capabilities.canUseCloudSync)
+    }
+
     func testAppDataClientSurfacesConflictWithoutRetryingStaleResourcePush() async throws {
         let recorder = AppDataRequestRecorder(conflictPath: "/v1/apps/tuneav/data/favorites")
         let client = TuneAVAppDataSyncClient(
