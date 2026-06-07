@@ -484,6 +484,9 @@ final class LibraryStore: ObservableObject {
             artist: normalizedArtist,
             stationID: station.id
         )
+        guard markInteresting || !hasTombstone(resource: "discoveries", identityKey: discoveryID) else {
+            return
+        }
 
         let now = Date.now
         let nextArtworkURL = artworkURL?.absoluteString
@@ -1873,6 +1876,11 @@ final class LibraryStore: ObservableObject {
         for tombstone in tombstones() where tombstone.resourceKey == resourceKey {
             context.delete(tombstone)
         }
+    }
+
+    private func hasTombstone(resource: String, identityKey: String) -> Bool {
+        let resourceKey = TuneAVLibraryTombstone.resourceKey(resource: resource, identityKey: identityKey)
+        return tombstones().contains { $0.resourceKey == resourceKey }
     }
 
     private func tombstoneRecords<Record: Decodable>(resource: String, type: Record.Type) -> [Record] {
