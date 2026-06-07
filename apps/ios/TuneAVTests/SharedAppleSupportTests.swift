@@ -3631,6 +3631,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackInitialDelay, .seconds(4))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackPollingInterval, .seconds(25))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.cachedNowPlayingMaximumAge, 30 * 60)
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.streamNowPlayingMaximumAge, 120)
 
         XCTAssertTrue(
             TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(
@@ -3711,6 +3712,28 @@ final class SharedAppleSupportTests: XCTestCase {
                 currentArtist: "Artist",
                 fallbackTitle: "Other Song",
                 fallbackArtist: "Artist"
+            )
+        )
+    }
+
+    func testAudioPlaybackPolicyAllowsDifferentFallbackSongWhenStreamTrackIsStale() {
+        XCTAssertFalse(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Lose control",
+                currentArtist: "Teddy Swims",
+                fallbackTitle: "Dime donde estas",
+                fallbackArtist: "Alvaro de Luna",
+                currentTrackAge: TuneAVAudioPlaybackPolicy.streamNowPlayingMaximumAge - 1
+            )
+        )
+
+        XCTAssertTrue(
+            TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
+                currentTitle: "Lose control",
+                currentArtist: "Teddy Swims",
+                fallbackTitle: "Dime donde estas",
+                fallbackArtist: "Alvaro de Luna",
+                currentTrackAge: TuneAVAudioPlaybackPolicy.streamNowPlayingMaximumAge
             )
         )
     }

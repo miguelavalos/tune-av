@@ -95,6 +95,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     private let nowPlayingService = NowPlayingService()
     private let trackArtworkService = TrackArtworkService()
     private var currentTrackSource: TrackSource?
+    private var currentStreamTrackMetadataAt: Date?
     private var cachedNowPlayingByStationID: [String: TuneAVCachedNowPlayingState] = [:]
     private var cachedNowPlayingStationIDs: [String] = []
     private var nowPlayingArtworkImage: UIImage?
@@ -320,6 +321,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         metadataOutput = nil
         metadataDelegate = nil
         currentTrackSource = nil
+        currentStreamTrackMetadataAt = nil
         setStatus(.idle)
         setLastErrorMessage(nil)
         setAutoSkipNotice(nil)
@@ -736,6 +738,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
         setCurrentTrackIdentity(title: nil, artist: nil)
         setCurrentTrackArtworkMetadata(albumTitle: nil, artworkURL: nil, artistURL: nil)
         currentTrackSource = nil
+        currentStreamTrackMetadataAt = nil
         nowPlayingArtworkImage = nil
         nowPlayingArtworkSourceURL = nil
         lastNowPlayingInfoSignature = nil
@@ -862,6 +865,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
         if resolvedFromStream {
             currentTrackSource = .stream
+            currentStreamTrackMetadataAt = Date()
         }
 
         if TuneAVTrackMetadataParser.valueLooksLikeBroadcastMetadata(resolvedTitle, stationName: currentStation?.name) {
@@ -884,6 +888,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
 
         if !resolvedFromStream, currentTrackSource == .stream {
             currentTrackSource = nil
+            currentStreamTrackMetadataAt = nil
         }
     }
 
@@ -932,13 +937,15 @@ final class AudioPlayerService: NSObject, ObservableObject {
                 currentTitle: currentTrackTitle,
                 currentArtist: currentTrackArtist,
                 fallbackTitle: normalizedTitle,
-                fallbackArtist: resolvedArtist
+                fallbackArtist: resolvedArtist,
+                currentTrackAge: currentStreamTrackMetadataAge
            ) {
             return
         }
 
         setCurrentTrackIdentity(title: normalizedTitle, artist: resolvedArtist)
         currentTrackSource = .fallback
+        currentStreamTrackMetadataAt = nil
         persistCurrentNowPlayingState()
         resolveArtworkForCurrentTrack()
         updateNowPlayingInfo()
@@ -1107,6 +1114,12 @@ final class AudioPlayerService: NSObject, ObservableObject {
         ))
         restoreCachedNowPlayingArtworkImage(for: cachedState.artworkURL)
         currentTrackSource = sanitizedTitle != nil || sanitizedArtist != nil ? .cached : nil
+        currentStreamTrackMetadataAt = nil
+    }
+
+    private var currentStreamTrackMetadataAge: TimeInterval? {
+        guard currentTrackSource == .stream, let currentStreamTrackMetadataAt else { return nil }
+        return Date().timeIntervalSince(currentStreamTrackMetadataAt)
     }
 
     private func restoreCachedNowPlayingArtworkImage(for artworkURL: URL?) {
