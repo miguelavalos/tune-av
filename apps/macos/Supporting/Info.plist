@@ -4,6 +4,8 @@
 <dict>
 	<key>ACCOUNTAV_API_BASE_URL</key>
 	<string>$(ACCOUNTAV_API_BASE_URL)</string>
+	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
+	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
 	<key>ACCOUNTAV_MANAGEMENT_URL</key>
 	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
 	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>

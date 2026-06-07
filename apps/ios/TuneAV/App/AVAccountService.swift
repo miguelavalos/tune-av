@@ -34,6 +34,7 @@ enum AVAccountServiceError: LocalizedError {
 struct DefaultAVAccountService: AVAccountService {
     private let accountService = ClerkAccountAVService(
         publishableKeyProvider: { AppConfig.avAccountKey },
+        keychainServiceProvider: { TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_SERVICE") },
         fallbackDisplayName: L10n.string("account.displayName.listener"),
         loggerSubsystem: "com.avalsys.tuneav"
     )

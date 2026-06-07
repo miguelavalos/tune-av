@@ -14,7 +14,8 @@ struct TuneAVMacApp: App {
         AVDiagnostics.configure(TuneAVMacConfig.diagnosticsConfiguration)
         AccountAVClerk.configureIfPossible(
             publishableKey: TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY"),
-            bundleIdentifier: Bundle.main.bundleIdentifier
+            bundleIdentifier: Bundle.main.bundleIdentifier,
+            keychainService: TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_SERVICE")
         )
     }
 

@@ -81,6 +81,12 @@ struct TuneAVStationFeedbackRecord: Codable, Equatable {
         case updatedAt
     }
 
+    init(stationID: String, feedback: TuneAVStationFeedback, updatedAt: String? = nil) {
+        self.stationID = stationID
+        self.feedback = feedback
+        self.updatedAt = updatedAt
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         stationID = try container.decode(String.self, forKey: .stationID)
@@ -104,6 +110,22 @@ struct TuneAVTrackFeedbackRecord: Codable, Equatable {
         case stationID
         case feedback
         case updatedAt
+    }
+
+    init(
+        trackKey: String,
+        title: String,
+        artist: String? = nil,
+        stationID: String? = nil,
+        feedback: TuneAVStationFeedback,
+        updatedAt: String? = nil
+    ) {
+        self.trackKey = trackKey
+        self.title = title
+        self.artist = artist
+        self.stationID = stationID
+        self.feedback = feedback
+        self.updatedAt = updatedAt
     }
 
     init(from decoder: Decoder) throws {

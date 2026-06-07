@@ -1057,22 +1057,14 @@ final class LibraryStore: ObservableObject {
         stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
         trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
     ) {
-        let nextStationRecords = Dictionary(
-            uniqueKeysWithValues: remoteStationFeedback.map {
-                ($0.stationID, TuneAVLocalFeedbackRecord(feedback: $0.feedback, updatedAt: $0.updatedAt ?? TuneAVDateCoding.string(from: .now)))
-            }
-        )
+        let nextStationRecords = TuneAVRealtimeFeedbackProjection.stationFeedbackRecords(from: remoteStationFeedback)
         if nextStationRecords != stationFeedbackRecords {
             stationFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextStationRecords, maxCount: localFeedbackRetention.stationFeedbackLimit)
             stationFeedback = stationFeedbackRecords.mapValues(\.feedback)
             Self.saveStationFeedbackRecords(stationFeedbackRecords)
         }
 
-        let nextTrackRecords = Dictionary(
-            uniqueKeysWithValues: remoteTrackFeedback.map {
-                ($0.trackKey, TuneAVLocalFeedbackRecord(feedback: $0.feedback, updatedAt: $0.updatedAt ?? TuneAVDateCoding.string(from: .now)))
-            }
-        )
+        let nextTrackRecords = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback)
         if nextTrackRecords != trackFeedbackRecords {
             trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: localFeedbackRetention.trackFeedbackLimit)
             trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
@@ -1978,11 +1970,6 @@ enum LibraryStoreListeningSessionBuffer {
     }
 }
 
-struct TuneAVLocalFeedbackRecord: Codable, Equatable {
-    let feedback: TuneAVStationFeedback
-    let updatedAt: String
-}
-
 struct TuneAVPendingFeedbackUpload: Codable, Equatable {
     enum Kind: String, Codable {
         case station
@@ -2022,11 +2009,6 @@ struct TuneAVSyncDiagnostics: Equatable {
     }
 }
 
-struct TuneAVLocalFeedbackLoadResult: Equatable {
-    let records: [String: TuneAVLocalFeedbackRecord]
-    let needsPersistence: Bool
-}
-
 struct TuneAVLocalFeedbackRetention: Equatable {
     let stationFeedbackLimit: Int
     let trackFeedbackLimit: Int
@@ -2040,37 +2022,6 @@ struct TuneAVLocalFeedbackRetention: Equatable {
         case .signedInPro:
             TuneAVLocalFeedbackRetention(stationFeedbackLimit: 300, trackFeedbackLimit: 300)
         }
-    }
-}
-
-enum TuneAVLocalFeedbackStore {
-    static func bounded(
-        _ records: [String: TuneAVLocalFeedbackRecord],
-        maxCount: Int
-    ) -> [String: TuneAVLocalFeedbackRecord] {
-        guard maxCount > 0 else { return [:] }
-        guard records.count > maxCount else { return records }
-
-        let retainedKeys = Set(
-            records
-                .sorted {
-                    if $0.value.updatedAt == $1.value.updatedAt {
-                        return $0.key > $1.key
-                    }
-                    return TuneAVDateCoding.date(from: $0.value.updatedAt) > TuneAVDateCoding.date(from: $1.value.updatedAt)
-                }
-                .prefix(maxCount)
-                .map(\.key)
-        )
-        return records.filter { retainedKeys.contains($0.key) }
-    }
-
-    static func records(
-        fromLegacy feedback: [String: TuneAVStationFeedback],
-        updatedAt: Date
-    ) -> [String: TuneAVLocalFeedbackRecord] {
-        let timestamp = TuneAVDateCoding.string(from: updatedAt)
-        return feedback.mapValues { TuneAVLocalFeedbackRecord(feedback: $0, updatedAt: timestamp) }
     }
 }
 

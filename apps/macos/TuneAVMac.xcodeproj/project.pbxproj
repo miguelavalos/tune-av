@@ -49,6 +49,7 @@
 		7D1AAB0B317C266DDC8688B4 /* MacCloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17334A568C86EE82A2ECDDFE /* MacCloudSyncTests.swift */; };
 		86361103BE48CA0FF0A0BAAB /* AVAviFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 837F67518FC0C2DF85357A9D /* AVAviFoundation */; };
 		88E8CC612CD4876CE13715BC /* TuneAVAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCFBB4C4C085969BC3C55B3B /* TuneAVAccountModels.swift */; };
+		89B2ADE63963CF8103793420 /* TuneAVLocalFeedbackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3590A93D4505151DCD668777 /* TuneAVLocalFeedbackStore.swift */; };
 		89E869B7F01A0BEE7657350D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8310E584FFDAC25B7D1AB5D /* Localizable.strings */; };
 		8C96ACF4E362BA6B58AF6698 /* MacHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4186E1C0F2B5E1F3A2066A71 /* MacHomeView.swift */; };
 		8DEC02A9A9F73926CC97E2D0 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC7CA0264359FBBE98CFE98 /* TuneAVPlaybackQueueLogic.swift */; };
@@ -117,6 +118,7 @@
 		25043C9B00B0BE381CA0C859 /* TuneAVEighties80sNowPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVEighties80sNowPlaying.swift; sourceTree = "<group>"; };
 		2C7D3F1E4C73F0AFA606C8E3 /* TuneAVSavedStationIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSavedStationIcon.swift; sourceTree = "<group>"; };
 		30EE7710AA11913E59C7F507 /* TuneAVStationArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationArtworkView.swift; sourceTree = "<group>"; };
+		3590A93D4505151DCD668777 /* TuneAVLocalFeedbackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLocalFeedbackStore.swift; sourceTree = "<group>"; };
 		3DF7A60DA73D3726DCAD2331 /* TuneAVMacDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMacDiagnostics.swift; sourceTree = "<group>"; };
 		4186E1C0F2B5E1F3A2066A71 /* MacHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacHomeView.swift; sourceTree = "<group>"; };
 		41E1A55B511C4D08B33974A4 /* TuneAVLibraryTombstone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryTombstone.swift; sourceTree = "<group>"; };
@@ -342,6 +344,7 @@
 				00C4509340FBCDAC730F4CFE /* TuneAVLibraryStationLogic.swift */,
 				C4B4987CBF8EC41105DBEEB4 /* TuneAVLibrarySync.swift */,
 				41E1A55B511C4D08B33974A4 /* TuneAVLibraryTombstone.swift */,
+				3590A93D4505151DCD668777 /* TuneAVLocalFeedbackStore.swift */,
 				D9700299F754578BD6E345C9 /* TuneAVMusicLibraryLogic.swift */,
 				43020E23D4675B7E49C389AF /* TuneAVNowPlayingService.swift */,
 				E6EF830E1C7E4B9705454FDC /* TuneAVOverviewSectionViews.swift */,
@@ -549,6 +552,7 @@
 				E2172617569AE8FD4167CC02 /* TuneAVLibraryStationLogic.swift in Sources */,
 				755B50D75DD9898A7DFE44E1 /* TuneAVLibrarySync.swift in Sources */,
 				3C66F4B67C2C0F312AD7236C /* TuneAVLibraryTombstone.swift in Sources */,
+				89B2ADE63963CF8103793420 /* TuneAVLocalFeedbackStore.swift in Sources */,
 				7D04E09AD5DD321B60222524 /* TuneAVMacApp.swift in Sources */,
 				4A10A61F68707CB985292183 /* TuneAVMacConfig.swift in Sources */,
 				64D37DDAA306EF5273ADD398 /* TuneAVMacDiagnostics.swift in Sources */,

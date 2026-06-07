@@ -31,6 +31,8 @@
 	<string>20</string>
 	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
 	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
+	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
+	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
 	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
 	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
 	<key>TUNEAV_IOS_SENTRY_DSN</key>

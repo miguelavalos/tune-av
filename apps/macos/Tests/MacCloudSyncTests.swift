@@ -221,6 +221,59 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(storage.loadTombstones(), [tombstone])
     }
 
+    func testMacLibraryStoragePersistsTrackFeedbackRecords() {
+        let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let storage = TuneAVMacLibraryStorage(defaults: defaults)
+        let feedback = [
+            "song::artist": TuneAVLocalFeedbackRecord(
+                feedback: .liked,
+                updatedAt: "2026-05-23T11:00:00Z"
+            )
+        ]
+
+        storage.saveTrackFeedbackRecords(feedback)
+
+        XCTAssertEqual(storage.loadTrackFeedbackRecords(), feedback)
+    }
+
+    func testRealtimeFeedbackProjectionMapsStationAndTrackFeedback() {
+        let stationFeedback = TuneAVRealtimeFeedbackProjection.stationFeedback(
+            from: [
+                TuneAVStationFeedbackRecord(
+                    stationID: "station",
+                    feedback: .notForMe,
+                    updatedAt: "2026-05-23T11:00:00Z"
+                )
+            ]
+        )
+        let trackFeedback = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(
+            from: [
+                TuneAVTrackFeedbackRecord(
+                    trackKey: "song::artist",
+                    title: "Song",
+                    artist: "Artist",
+                    stationID: "station",
+                    feedback: .liked,
+                    updatedAt: "2026-05-23T11:01:00Z"
+                )
+            ]
+        )
+
+        XCTAssertEqual(stationFeedback, ["station": .notForMe])
+        XCTAssertEqual(
+            trackFeedback,
+            [
+                "song::artist": TuneAVLocalFeedbackRecord(
+                    feedback: .liked,
+                    updatedAt: "2026-05-23T11:01:00Z"
+                )
+            ]
+        )
+    }
+
     func testRealtimeProjectionFreshnessRejectsProjectionOlderThanLocalMutation() {
         XCTAssertFalse(
             TuneAVRealtimeProjectionFreshness.shouldApply(

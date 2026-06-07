@@ -144,6 +144,7 @@ development_team="$(read_optional_config AVALSYS_APPLE_DEVELOPMENT_TEAM)"
 if [ -z "$development_team" ]; then
   development_team="\$(inherited)"
 fi
+keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
 tuneav_macos_sentry_dsn="$(read_optional_config TUNEAV_MACOS_SENTRY_DSN)"
@@ -193,6 +194,7 @@ TUNEAV_CONFIG_ENVIRONMENT = $env_name
 TUNEAV_BUNDLE_IDENTIFIER = $bundle_identifier
 AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
+ACCOUNTAV_KEYCHAIN_SERVICE = $keychain_service
 SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")

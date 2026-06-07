@@ -104,6 +104,8 @@ extension TuneAVPlaybackQueueSource {
 
 @MainActor
 final class TuneAVMacModel: ObservableObject {
+    private static let maxLocalTrackFeedbackRecords = 300
+
     @Published var selectedSection: MacRootSection = .home
     @Published var stationDetailRoute: MacStationDetailRoute?
     @Published var homeStationListRoute: MacHomeStationListRoute?
@@ -113,6 +115,7 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var favoriteStations: [Station] = []
     @Published private(set) var recentStations: [Station] = []
     @Published private(set) var stationFeedback: [String: TuneAVStationFeedback] = [:]
+    @Published private(set) var trackFeedback: [String: TuneAVStationFeedback] = [:]
     @Published private(set) var discoveredTracks: [MacDiscoveredTrack] = []
     @Published private(set) var currentStation: Station?
     @Published private(set) var currentTrackTitle: String?
@@ -155,6 +158,7 @@ final class TuneAVMacModel: ObservableObject {
     private let systemNowPlayingController = MacNowPlayingSystemController()
     private let accountService = ClerkAccountAVService(
         publishableKeyProvider: { TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY") },
+        keychainServiceProvider: { TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_SERVICE") },
         fallbackDisplayName: L10n.string("app.name"),
         loggerSubsystem: "com.avalsys.tuneav"
     )
@@ -166,7 +170,7 @@ final class TuneAVMacModel: ObservableObject {
     private var playerTimeControlObserver: NSKeyValueObservation?
     private var playbackNotificationObservers: [NSObjectProtocol] = []
     private var playbackFailuresInCurrentQueue = Set<String>()
-    private var currentTrackFeedbackByID: [String: TuneAVStationFeedback] = [:]
+    private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var pendingCloudSyncTask: Task<Void, Never>?
@@ -190,6 +194,8 @@ final class TuneAVMacModel: ObservableObject {
         favoriteStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.favoritesKey)
         recentStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.recentsKey)
         stationFeedback = storage.loadStationFeedback()
+        trackFeedbackRecords = storage.loadTrackFeedbackRecords()
+        trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
         discoveredTracks = storage.loadDiscoveries()
         libraryTombstones = storage.loadTombstones()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
@@ -509,7 +515,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     var currentDiscoveryFeedback: TuneAVStationFeedback? {
-        if let discoveryID = currentDiscoveryFeedbackID, let feedback = currentTrackFeedbackByID[discoveryID] {
+        if let feedbackKey = currentTrackFeedbackKey, let feedback = trackFeedback[feedbackKey] {
             return feedback
         }
         guard let currentDiscoveryIndex else { return nil }
@@ -582,15 +588,11 @@ final class TuneAVMacModel: ObservableObject {
         return discoveredTracks.firstIndex { $0.discoveryID == discoveryID }
     }
 
-    private var currentDiscoveryFeedbackID: String? {
-        guard let currentStation, let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(currentTrackTitle) else {
+    private var currentTrackFeedbackKey: String? {
+        guard let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(currentTrackTitle) else {
             return nil
         }
-        return MacDiscoveredTrack.makeID(
-            title: normalizedTitle,
-            artist: TuneAVDiscoveredTrackSupport.normalizedValue(currentTrackArtist),
-            stationID: currentStation.id
-        )
+        return Self.trackFeedbackKey(title: normalizedTitle, artist: TuneAVDiscoveredTrackSupport.normalizedValue(currentTrackArtist))
     }
 
     func play(_ station: Station, queue: [Station]? = nil, source: TuneAVPlaybackQueueSource? = nil) {
@@ -813,6 +815,9 @@ final class TuneAVMacModel: ObservableObject {
         clearDiscoveredTracks()
         stationFeedback = [:]
         storage.saveStationFeedback(stationFeedback)
+        trackFeedbackRecords = [:]
+        trackFeedback = [:]
+        storage.saveTrackFeedbackRecords(trackFeedbackRecords)
     }
 
     func playPreviousInQueue() {
@@ -901,7 +906,18 @@ final class TuneAVMacModel: ObservableObject {
             stationID: currentStation.id
         )
         let now = Date.now
-        currentTrackFeedbackByID[discoveryID] = feedback
+        let feedbackKey = Self.trackFeedbackKey(title: normalizedTitle, artist: normalizedArtist)
+        if let feedback {
+            trackFeedbackRecords[feedbackKey] = TuneAVLocalFeedbackRecord(
+                feedback: feedback,
+                updatedAt: TuneAVDateCoding.string(from: now)
+            )
+        } else {
+            trackFeedbackRecords[feedbackKey] = nil
+        }
+        trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(trackFeedbackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
+        trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        storage.saveTrackFeedbackRecords(trackFeedbackRecords)
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
             removeTombstone(resource: "discoveries", identityKey: discoveryID)
@@ -2026,6 +2042,25 @@ final class TuneAVMacModel: ObservableObject {
                 settings: librarySnapshot().settings
             )
         )
+        applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)
+    }
+
+    func applyProRealtimeFeedback(
+        stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
+        trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
+    ) {
+        let nextStationFeedback = TuneAVRealtimeFeedbackProjection.stationFeedback(from: remoteStationFeedback)
+        if nextStationFeedback != stationFeedback {
+            stationFeedback = nextStationFeedback
+            storage.saveStationFeedback(stationFeedback)
+        }
+
+        let nextTrackRecords = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback)
+        if nextTrackRecords != trackFeedbackRecords {
+            trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
+            trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+            storage.saveTrackFeedbackRecords(trackFeedbackRecords)
+        }
     }
 
     private func rememberFavoriteDeletion(for station: Station) {
@@ -2299,6 +2334,7 @@ struct TuneAVMacLibraryStorage {
     static let recentsKey = "tuneav.mac.library.recents"
     static let discoveriesKey = "tuneav.mac.library.discoveries"
     static let stationFeedbackKey = "tuneav.mac.library.stationFeedback"
+    static let trackFeedbackKey = "tuneav.mac.library.trackFeedback.v1"
     static let tombstonesKey = "tuneav.mac.library.tombstones"
     static let localLibraryUpdatedAtKey = "tuneav.mac.library.updatedAt"
 
@@ -2341,6 +2377,24 @@ struct TuneAVMacLibraryStorage {
     func saveStationFeedback(_ feedback: [String: TuneAVStationFeedback]) {
         guard let data = try? encoder.encode(feedback) else { return }
         defaults.set(data, forKey: Self.stationFeedbackKey)
+    }
+
+    func loadTrackFeedbackRecords() -> [String: TuneAVLocalFeedbackRecord] {
+        guard let data = defaults.data(forKey: Self.trackFeedbackKey) else { return [:] }
+        if let records = try? decoder.decode([String: TuneAVLocalFeedbackRecord].self, from: data) {
+            return records
+        }
+        let migrated = (try? decoder.decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+        return TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now)
+    }
+
+    func saveTrackFeedbackRecords(_ feedback: [String: TuneAVLocalFeedbackRecord]) {
+        guard !feedback.isEmpty else {
+            defaults.removeObject(forKey: Self.trackFeedbackKey)
+            return
+        }
+        guard let data = try? encoder.encode(feedback) else { return }
+        defaults.set(data, forKey: Self.trackFeedbackKey)
     }
 
     func loadTombstones() -> [TuneAVLibraryTombstone] {

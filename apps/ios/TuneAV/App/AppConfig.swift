@@ -82,7 +82,10 @@ enum AppConfig {
     }
 
     static func configureAVAccountIfPossible() {
-        AccountAVClerk.configureIfPossible(publishableKey: avAccountKey)
+        AccountAVClerk.configureIfPossible(
+            publishableKey: avAccountKey,
+            keychainService: TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_SERVICE")
+        )
     }
 
     private static var diagnosticsEnvironment: AVDiagnosticsEnvironment {
