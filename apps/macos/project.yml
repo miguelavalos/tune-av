@@ -121,13 +121,20 @@ targets:
   TuneAVMacTests:
     type: bundle.unit-test
     platform: macOS
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
     sources:
       - path: Tests
     dependencies:
       - target: TuneAVMac
     settings:
       base:
+        CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 935PM55U6R
         GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_NAME: TuneAVMacTests
         PRODUCT_MODULE_NAME: TuneAVMacTests
-        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER).mac.tests"
+        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER).tests"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV"

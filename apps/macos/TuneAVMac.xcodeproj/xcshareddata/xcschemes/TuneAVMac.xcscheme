@@ -43,7 +43,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B9752E2B6FBEB98CD63C9995"
-               BuildableName = "Tune AV.xctest"
+               BuildableName = "TuneAVMacTests.xctest"
                BlueprintName = "TuneAVMacTests"
                ReferencedContainer = "container:TuneAVMac.xcodeproj">
             </BuildableReference>

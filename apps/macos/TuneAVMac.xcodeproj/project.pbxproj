@@ -127,7 +127,7 @@
 		473B194F4640945709B1E509 /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4800B97412F65A7D48DA7259 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
 		48D0FA3E128C4AEA1553F371 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
-		4F7D3468222B7241B3A1EE7A /* Tune AV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tune AV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuneAVMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
 		53A7AC7B73C839883433878A /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
 		555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDateCoding.swift; sourceTree = "<group>"; };
@@ -176,7 +176,7 @@
 		E80A66F42DA2B6DE1F514487 /* TuneAVAppShellHomeFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellHomeFeed.swift; sourceTree = "<group>"; };
 		E8310E584FFDAC25B7D1AB5D /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
 		E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
-		ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TuneAVMacTests.xctest; path = "Tune AV.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuneAVMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED33F71C5D0D6F973B532EAC /* TuneAVDiscoveredTrackSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiscoveredTrackSupport.swift; sourceTree = "<group>"; };
 		EDC7CA0264359FBBE98CFE98 /* TuneAVPlaybackQueueLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVPlaybackQueueLogic.swift; sourceTree = "<group>"; };
 		F2DE0A373AB37620B340E29C /* TuneAVSleepTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSleepTimerController.swift; sourceTree = "<group>"; };
@@ -210,7 +210,7 @@
 		136D76E4AA0D7D097C00BC2A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4F7D3468222B7241B3A1EE7A /* Tune AV.app */,
+				4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */,
 				ED140AFD890712B1BA114AF7 /* TuneAVMacTests.xctest */,
 			);
 			name = Products;
@@ -450,7 +450,7 @@
 				C3ACDA28829A3904A1B6ED47 /* ConvexMobile */,
 			);
 			productName = TuneAVMac;
-			productReference = 4F7D3468222B7241B3A1EE7A /* Tune AV.app */;
+			productReference = 4F7D3468222B7241B3A1EE7A /* TuneAVMac.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -461,6 +461,16 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					B9752E2B6FBEB98CD63C9995 = {
+						DevelopmentTeam = 935PM55U6R;
+						ProvisioningStyle = Automatic;
+					};
+					EBE22FA1202AF7A8388ADDA4 = {
+						DevelopmentTeam = 935PM55U6R;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 38555D51036CECCC8C9AAAD7 /* Build configuration list for PBXProject "TuneAVMac" */;
 			developmentRegion = en;
@@ -604,8 +614,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 935PM55U6R;
@@ -619,13 +627,13 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = TuneAVMac;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 			};
 			name = Release;
 		};
 		540B1B2C09E3F03CD42F0317 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -638,8 +646,9 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_MODULE_NAME = TuneAVMacTests;
+				PRODUCT_NAME = TuneAVMacTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
 			};
@@ -651,8 +660,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = 935PM55U6R;
@@ -666,7 +673,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PRODUCT_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = TuneAVMac;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -794,6 +800,7 @@
 		};
 		EF53A3FCEE84F5E0EBD4266F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0E97EC2159E8FB931BC135DB /* Release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -806,8 +813,9 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.avalsys.tuneav.mac.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_MODULE_NAME = TuneAVMacTests;
+				PRODUCT_NAME = TuneAVMacTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tune AV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tune AV";
 			};
