@@ -85,6 +85,7 @@ product_bundle_identifier="$(setting PRODUCT_BUNDLE_IDENTIFIER)"
 tuneav_bundle_identifier="$(setting TUNEAV_BUNDLE_IDENTIFIER)"
 api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
+tuneav_convex_url="$(setting TUNEAV_CONVEX_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
 support_base_url="$(setting SUPPORTAV_BASE_URL)"
 delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
@@ -102,6 +103,7 @@ for item in \
   "TUNEAV_BUNDLE_IDENTIFIER:$tuneav_bundle_identifier" \
   "ACCOUNTAV_API_BASE_URL:$api_base_url" \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
+  "TUNEAV_CONVEX_URL:$tuneav_convex_url" \
   "ACCOUNTAV_PUBLISHABLE_KEY:$publishable_key" \
   "TUNEAV_DELETE_ACCOUNT_URL:$delete_account_url" \
   "TUNEAV_TERMS_URL:$terms_url" \
@@ -133,6 +135,7 @@ fi
 for url in "$api_base_url" "$management_url" "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
   [[ "$url" == https://* ]] || fail "URL did not resolve as https://*: $url"
 done
+[[ "$tuneav_convex_url" == https://*.convex.cloud ]] || fail "TUNEAV_CONVEX_URL must be a Convex cloud URL"
 if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
   [[ "$support_base_url" == https://* ]] || fail "URL did not resolve as https://*: $support_base_url"
 fi
@@ -159,6 +162,7 @@ Tune AV macOS runtime config ($env_name)
   App Sandbox: $enable_app_sandbox
   Hardened Runtime: $enable_hardened_runtime
   Account AV API: $api_base_url
+  Tune AV Convex: $tuneav_convex_url
   Account AV management: $management_url
   Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key

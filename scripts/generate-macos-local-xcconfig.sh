@@ -147,6 +147,11 @@ fi
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
 tuneav_macos_sentry_dsn="$(read_optional_config TUNEAV_MACOS_SENTRY_DSN)"
+tuneav_convex_url="$(read_optional_config TUNEAV_CONVEX_URL)"
+if [ -z "$tuneav_convex_url" ]; then
+  echo "Missing TUNEAV_CONVEX_URL for profile $profile." >&2
+  exit 1
+fi
 
 if [ "$env_name" = "prod" ] && [[ "$publishable_key" != pk_live_* ]]; then
   echo "Production ACCOUNTAV_PUBLISHABLE_KEY must start with pk_live_." >&2
@@ -169,6 +174,10 @@ case "$support_email" in
   *@*) ;;
   *) echo "SUPPORT_EMAIL_TO must look like an email address." >&2; exit 1 ;;
 esac
+case "$tuneav_convex_url" in
+  https://*.convex.cloud) ;;
+  *) echo "TUNEAV_CONVEX_URL must be a Convex cloud URL." >&2; exit 1 ;;
+esac
 
 escape_xcconfig_url() {
   printf '%s' "$1" | sed 's#/#$(XCCONFIG_SLASH)#g'
@@ -188,6 +197,7 @@ SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$management_url")
+TUNEAV_CONVEX_URL = $(escape_xcconfig_url "$tuneav_convex_url")
 TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/delete-account")
 TUNEAV_TERMS_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/terms")
 TUNEAV_PRIVACY_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/privacy")
