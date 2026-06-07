@@ -5,45 +5,29 @@ import OSLog
 
 struct TuneAVProLibraryProjection: Decodable, Equatable {
     let ownerUserId: String
-    let favorites: [FavoriteStationRecord]
-    let recents: [RecentStationRecord]
-    let discoveries: [DiscoveredTrackRecord]
-    let stationFeedback: [TuneAVStationFeedbackRecord]
-    let trackFeedback: [TuneAVTrackFeedbackRecord]
     let projectionVersion: Int
+    let resource: String?
     let sourceUpdatedAt: Double?
     let updatedAt: Double
 
     private enum CodingKeys: String, CodingKey {
         case ownerUserId
-        case favorites
-        case recents
-        case discoveries
-        case stationFeedback
-        case trackFeedback
         case projectionVersion
+        case resource
         case sourceUpdatedAt
         case updatedAt
     }
 
     init(
         ownerUserId: String,
-        favorites: [FavoriteStationRecord],
-        recents: [RecentStationRecord],
-        discoveries: [DiscoveredTrackRecord],
-        stationFeedback: [TuneAVStationFeedbackRecord] = [],
-        trackFeedback: [TuneAVTrackFeedbackRecord] = [],
         projectionVersion: Int,
+        resource: String? = nil,
         sourceUpdatedAt: Double?,
         updatedAt: Double
     ) {
         self.ownerUserId = ownerUserId
-        self.favorites = favorites
-        self.recents = recents
-        self.discoveries = discoveries
-        self.stationFeedback = stationFeedback
-        self.trackFeedback = trackFeedback
         self.projectionVersion = projectionVersion
+        self.resource = resource
         self.sourceUpdatedAt = sourceUpdatedAt
         self.updatedAt = updatedAt
     }
@@ -51,31 +35,10 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         ownerUserId = try container.decode(String.self, forKey: .ownerUserId)
-        favorites = try container.decode([FavoriteStationRecord].self, forKey: .favorites)
-        recents = try container.decode([RecentStationRecord].self, forKey: .recents)
-        discoveries = try container.decode([DiscoveredTrackRecord].self, forKey: .discoveries)
-        stationFeedback = try container.decodeIfPresent([TuneAVStationFeedbackRecord].self, forKey: .stationFeedback) ?? []
-        trackFeedback = try container.decodeIfPresent([TuneAVTrackFeedbackRecord].self, forKey: .trackFeedback) ?? []
         projectionVersion = try container.decode(Int.self, forKey: .projectionVersion)
+        resource = try container.decodeIfPresent(String.self, forKey: .resource)
         sourceUpdatedAt = try container.decodeIfPresent(Double.self, forKey: .sourceUpdatedAt)
         updatedAt = try container.decode(Double.self, forKey: .updatedAt)
-    }
-}
-
-enum TuneAVRealtimeProjectionMerger {
-    static func mergedSnapshot(
-        projection: TuneAVProLibraryProjection,
-        localSnapshot: TuneAVLibrarySnapshot
-    ) -> TuneAVLibrarySnapshot {
-        TuneAVLibrarySnapshotMerger.merged(
-            local: localSnapshot,
-            remote: TuneAVLibrarySnapshot(
-                favorites: projection.favorites,
-                recents: projection.recents,
-                discoveries: projection.discoveries,
-                settings: localSnapshot.settings
-            )
-        )
     }
 }
 
@@ -146,6 +109,12 @@ struct TuneAVTrackFeedbackRecord: Codable, Equatable {
         feedback = try TuneAVStationFeedback(backendValue: container.decode(String.self, forKey: .feedback))
         updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
     }
+}
+
+struct TuneAVFeedbackSnapshot: Decodable, Equatable {
+    let generatedAt: String
+    let stationFeedback: [TuneAVStationFeedbackRecord]
+    let trackFeedback: [TuneAVTrackFeedbackRecord]
 }
 
 private extension TuneAVStationFeedback {
@@ -292,7 +261,7 @@ final class TuneAVProLibraryObserver: ObservableObject {
                             guard self?.observationGeneration == generation else { return }
                             if let projection {
                                 Self.logger.info(
-                                    "Received Tune AV Pro Convex projection favorites=\(projection.favorites.count, privacy: .public) recents=\(projection.recents.count, privacy: .public) discoveries=\(projection.discoveries.count, privacy: .public) updatedAt=\(projection.updatedAt, privacy: .public)"
+                                    "Received Tune AV Pro Convex invalidation resource=\(projection.resource ?? "unknown", privacy: .public) updatedAt=\(projection.updatedAt, privacy: .public)"
                                 )
                             } else {
                                 Self.logger.info("Received empty Tune AV Pro Convex projection")

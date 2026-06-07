@@ -1027,22 +1027,41 @@ final class LibraryStore: ObservableObject {
         cloudLibraryRefreshTask = nil
     }
 
-    func applyProRealtimeProjection(_ projection: TuneAVProLibraryProjection) {
+    func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
         if let lastAppliedProRealtimeProjectionUpdatedAt,
            projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
             return
         }
 
         lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
-        applyRemoteSnapshot(
-            TuneAVRealtimeProjectionMerger.mergedSnapshot(
-                projection: projection,
-                localSnapshot: librarySnapshot()
+        if projection.resource?.hasPrefix("feedback.") == true {
+            await refreshCloudFeedbackIfNeeded(force: true)
+            return
+        }
+
+        await refreshCloudLibraryIfNeeded(force: true)
+    }
+
+    func refreshCloudFeedbackIfNeeded(force: Bool = false) async {
+        guard let backendService, backendService.isConfigured() else { return }
+
+        if !force,
+           let userSummaryFetchedAt,
+           Date().timeIntervalSince(userSummaryFetchedAt) < Self.userSummaryRefreshInterval {
+            return
+        }
+
+        do {
+            let snapshot = try await backendService.fetchFeedbackSnapshot()
+            guard self.backendService === backendService else { return }
+            applyProRealtimeFeedback(
+                stationFeedback: snapshot.stationFeedback,
+                trackFeedback: snapshot.trackFeedback
             )
-        )
-        applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)
-        cloudLibraryRefreshedAt = .now
-        setCloudSyncStatus(.synced(.now))
+            await refreshUserSummary(force: true)
+        } catch {
+            return
+        }
     }
 
     private func applyProRealtimeFeedback(

@@ -415,88 +415,6 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.favoriteStations().first?.metadataUpdatedAt, "2026-05-21T10:00:00Z")
     }
 
-    func testProRealtimeProjectionOlderThanLocalLibraryChangeDoesNotResurrectDeletedFavorite() {
-        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
-        let station = Station(
-            id: "stale-favorite",
-            name: "Stale Favorite",
-            country: "Spain",
-            language: "Spanish",
-            tags: "test",
-            streamURL: "https://example.com/stale.mp3"
-        )
-
-        store.toggleFavorite(for: station)
-        XCTAssertTrue(store.isFavorite(station))
-
-        store.toggleFavorite(for: station)
-        XCTAssertFalse(store.isFavorite(station))
-
-        let staleProjection = TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            favorites: [
-                FavoriteStationRecord(
-                    station: station.appDataRecord,
-                    createdAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 1))
-                )
-            ],
-            recents: [],
-            discoveries: [],
-            projectionVersion: 1,
-            sourceUpdatedAt: 1_000,
-            updatedAt: 2_000
-        )
-
-        store.applyProRealtimeProjection(staleProjection)
-
-        XCTAssertFalse(store.isFavorite(station))
-        XCTAssertTrue(store.favoriteStations().isEmpty)
-    }
-
-    func testProRealtimeProjectionOlderThanLocalLibraryChangeStillAppliesUnrelatedRemoteFavorite() {
-        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
-        let localStation = Station(
-            id: "local-favorite",
-            name: "Local Favorite",
-            country: "Spain",
-            language: "Spanish",
-            tags: "test",
-            streamURL: "https://example.com/local.mp3"
-        )
-        let remoteStation = Station(
-            id: "remote-favorite",
-            name: "Remote Favorite",
-            country: "Spain",
-            language: "Spanish",
-            tags: "test",
-            streamURL: "https://example.com/remote.mp3"
-        )
-
-        store.toggleFavorite(for: localStation)
-        XCTAssertTrue(store.isFavorite(localStation))
-
-        let staleProjection = TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            favorites: [
-                FavoriteStationRecord(
-                    station: remoteStation.appDataRecord,
-                    createdAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 1))
-                )
-            ],
-            recents: [],
-            discoveries: [],
-            projectionVersion: 1,
-            sourceUpdatedAt: 1_000,
-            updatedAt: 2_000
-        )
-
-        store.applyProRealtimeProjection(staleProjection)
-
-        XCTAssertTrue(store.isFavorite(localStation))
-        XCTAssertTrue(store.isFavorite(remoteStation))
-        XCTAssertEqual(Set(store.favoriteStations().map(\.id)), ["local-favorite", "remote-favorite"])
-    }
-
     func testToggleDiscoveredTrackSavedSavesAndUnsavesCurrentTrack() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let station = Station(
@@ -558,6 +476,57 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertTrue(didSave)
         XCTAssertEqual(store.discoveries.first?.resolvedArtworkURL, artworkURL)
+    }
+
+    func testCloudPushIncludesMarkedInterestedAtWhenSavingExistingHistoryDiscovery() async throws {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "st_rb_960c37c6_0601_11e8_ae97_52543be04c81",
+            name: "Cadena 100",
+            country: "Spain",
+            language: "Spanish",
+            tags: "pop",
+            streamURL: "https://example.com/cadena100.mp3"
+        )
+
+        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+        store.recordDiscoveredTrack(
+            title: "Lose control",
+            artist: "Teddy Swims",
+            station: station,
+            artworkURL: nil,
+            discoveryLimit: 100
+        )
+
+        XCTAssertTrue(store.toggleDiscoveredTrackSaved(
+            title: "Lose control",
+            artist: "Teddy Swims",
+            station: station,
+            artworkURL: nil,
+            savedLimit: 10,
+            discoveryLimit: 100
+        ))
+
+        try await Task.sleep(for: .milliseconds(2_800))
+
+        let pushedDiscoveries = try XCTUnwrap(recorder.lastPutEntries(for: "/v1/apps/tuneav/data/discoveries"))
+        let pushedDiscovery = try XCTUnwrap(pushedDiscoveries.first { entry in
+            entry["discoveryID"] as? String == "teddy-swims-lose-control-st-rb-960c37c6-0601-11e8-ae97-52543be04c81"
+        })
+        XCTAssertNotNil(pushedDiscovery["markedInterestedAt"])
+        XCTAssertEqual(pushedDiscovery["title"] as? String, "Lose control")
+        XCTAssertEqual(pushedDiscovery["artist"] as? String, "Teddy Swims")
     }
 
     func testMusicLibraryHidesLegacyStationMetadataDiscoveries() {
@@ -661,5 +630,111 @@ final class LibraryStoreTests: XCTestCase {
             endedReason: endedReason,
             trackDetectedCount: 1
         )
+    }
+}
+
+private func libraryStoreTestURLSession() -> URLSession {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [LibraryStoreTestURLProtocol.self]
+    return URLSession(configuration: configuration)
+}
+
+private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var putEntriesByPath: [String: [[String: Any]]] = [:]
+
+    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
+        let path = request.url?.path ?? ""
+        let method = request.httpMethod ?? "GET"
+
+        if method == "PUT", let body = request.httpBody ?? request.httpBodyStreamData() {
+            let payload = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+            let entries = payload?["entries"] as? [[String: Any]] ?? []
+            lock.lock()
+            putEntriesByPath[path] = entries
+            lock.unlock()
+        }
+
+        let resource = path.split(separator: "/").last.map(String.init) ?? "unknown"
+        let response = """
+        {
+          "data": {
+            "appId": "tuneav",
+            "resource": "\(resource)",
+            "deviceId": "test-device",
+            "sentAt": "2026-06-07T17:52:00Z",
+            "entries": []
+          },
+          "updatedAt": "2026-06-07T17:52:00Z",
+          "revision": 1,
+          "etag": "\\"revision-1\\""
+        }
+        """
+
+        return (
+            HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json", "ETag": "\"revision-1\""]
+            )!,
+            Data(response.utf8)
+        )
+    }
+
+    func lastPutEntries(for path: String) -> [[String: Any]]? {
+        lock.lock()
+        defer { lock.unlock() }
+        return putEntriesByPath[path]
+    }
+}
+
+private final class LibraryStoreTestURLProtocol: URLProtocol {
+    nonisolated(unsafe)
+    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let handler = Self.requestHandler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        do {
+            let (response, data) = try handler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {}
+}
+
+private extension URLRequest {
+    func httpBodyStreamData() -> Data? {
+        guard let stream = httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1_024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 {
+                break
+            }
+            data.append(buffer, count: count)
+        }
+        return data
     }
 }

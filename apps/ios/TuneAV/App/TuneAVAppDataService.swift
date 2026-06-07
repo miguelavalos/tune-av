@@ -51,6 +51,10 @@ final class TuneAVAppDataService {
         try await apiClient.request(path: "/v1/tune/me/summary?limit=\(limit)")
     }
 
+    func fetchFeedbackSnapshot() async throws -> TuneAVFeedbackSnapshot {
+        try await apiClient.request(path: "/v1/tune/feedback")
+    }
+
     func setStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) async throws {
         let payload = TuneAVFeedbackRequest(deviceId: "tuneav-ios", feedback: feedback?.backendValue)
         let idempotencyKey = Self.idempotencyKey(parts: ["station-feedback", stationID, feedback?.backendValue ?? "clear"])

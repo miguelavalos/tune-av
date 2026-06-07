@@ -288,29 +288,6 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
-    func testRealtimeProjectionMergerKeepsLocalAndRemoteFavoritesWhenProjectionSourceIsOlder() {
-        let local = librarySnapshot(
-            favorites: [favoriteRecord(id: "local-favorite", createdAt: "2026-05-23T11:00:00Z")],
-            updatedAt: "2026-05-23T11:00:00Z"
-        )
-        let projection = TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            favorites: [favoriteRecord(id: "remote-favorite", createdAt: "2026-05-23T10:00:00Z")],
-            recents: [],
-            discoveries: [],
-            projectionVersion: 1,
-            sourceUpdatedAt: fixedDate("2026-05-23T10:00:00Z").timeIntervalSince1970 * 1_000,
-            updatedAt: fixedDate("2026-05-23T10:00:01Z").timeIntervalSince1970 * 1_000
-        )
-
-        let merged = TuneAVRealtimeProjectionMerger.mergedSnapshot(
-            projection: projection,
-            localSnapshot: local
-        )
-
-        XCTAssertEqual(Set(merged.favorites.map(\.station.id)), ["local-favorite", "remote-favorite"])
-    }
-
     private func fixedDate(_ iso8601: String) -> Date {
         ISO8601DateFormatter().date(from: iso8601)!
     }

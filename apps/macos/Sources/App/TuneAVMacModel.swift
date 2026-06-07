@@ -1223,7 +1223,9 @@ final class TuneAVMacModel: ObservableObject {
         proRealtimeProjectionCancellable = proLibraryObserver.$projection
             .compactMap { $0 }
             .sink { [weak self] projection in
-                self?.applyProRealtimeProjection(projection)
+                Task { @MainActor [weak self] in
+                    await self?.handleProRealtimeInvalidation(projection)
+                }
             }
 
         proRealtimeSessionTask = Task { [weak self] in
@@ -1979,20 +1981,38 @@ final class TuneAVMacModel: ObservableObject {
         markCloudLibraryApplied()
     }
 
-    private func applyProRealtimeProjection(_ projection: TuneAVProLibraryProjection) {
+    private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
         if let lastAppliedProRealtimeProjectionUpdatedAt,
            projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
             return
         }
 
         lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
-        applyLibrarySnapshot(
-            TuneAVRealtimeProjectionMerger.mergedSnapshot(
-                projection: projection,
-                localSnapshot: librarySnapshot()
+        if projection.resource?.hasPrefix("feedback.") == true {
+            await refreshProFeedbackNow()
+            return
+        }
+
+        await synchronizeLibraryNow()
+    }
+
+    private func refreshProFeedbackNow() async {
+        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+
+        do {
+            let snapshot: TuneAVFeedbackSnapshot = try await makeAccountAPIClient().request(path: "/v1/tune/feedback")
+            applyProRealtimeFeedback(
+                stationFeedback: snapshot.stationFeedback,
+                trackFeedback: snapshot.trackFeedback
             )
-        )
-        applyProRealtimeFeedback(stationFeedback: projection.stationFeedback, trackFeedback: projection.trackFeedback)
+        } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.sync",
+                operation: "feedback_snapshot",
+                step: "download"
+            )
+        }
     }
 
     func applyProRealtimeFeedback(

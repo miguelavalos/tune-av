@@ -311,6 +311,8 @@ final class TuneAVAccessClient {
             return "v1.tune.feedback.stations.item"
         case let route where route.count == 5 && route.prefix(4) == ["v1", "tune", "feedback", "tracks"]:
             return "v1.tune.feedback.tracks.item"
+        case ["v1", "tune", "feedback"]:
+            return "v1.tune.feedback"
         case ["v1", "tune", "analytics", "listening-sessions"]:
             return "v1.tune.analytics.listening_sessions"
         case ["v1", "tune", "workspace", "realtime-sessions"]:

@@ -71,7 +71,9 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
         }
         .onReceive(proLibraryObserver.$projection.compactMap { $0 }) { projection in
-            libraryStore.applyProRealtimeProjection(projection)
+            Task { @MainActor in
+                await libraryStore.handleProRealtimeInvalidation(projection)
+            }
         }
         .onReceive(proLibraryObserver.$errorMessage.compactMap { $0 }) { errorMessage in
             proRealtimeLogger.error("Tune AV Pro realtime observer error=\(errorMessage, privacy: .public)")
