@@ -1029,6 +1029,15 @@ final class LibraryStore: ObservableObject {
            projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
             return
         }
+
+        guard TuneAVRealtimeProjectionFreshness.shouldApply(
+            sourceUpdatedAt: projection.sourceUpdatedAt,
+            localLibraryUpdatedAt: latestLocalLibraryUpdateAt()
+        ) else {
+            scheduleCloudPushIfNeeded()
+            return
+        }
+
         lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
 
         applyRemoteSnapshot(
@@ -1693,6 +1702,22 @@ final class LibraryStore: ObservableObject {
                 ].compactMap { $0 }
             } +
             [settings.updatedAt]
+        return timestamps.max() ?? .distantPast
+    }
+
+    private func latestLocalLibraryUpdateAt() -> Date {
+        let timestamps =
+            favorites.map(\.createdAt) +
+            recents.map(\.lastPlayedAt) +
+            tombstones().map(\.deletedAt) +
+            discoveries.flatMap { discovery in
+                [
+                    discovery.playedAt,
+                    discovery.markedInterestedAt,
+                    discovery.hiddenAt,
+                    discovery.updatedAt
+                ].compactMap { $0 }
+            }
         return timestamps.max() ?? .distantPast
     }
 

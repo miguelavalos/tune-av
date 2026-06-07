@@ -181,7 +181,7 @@ struct MacStationArtworkCard: View {
 
     private var stationQualityBadges: some View {
         HStack(spacing: 5) {
-            ForEach(compactBadges.prefix(2), id: \.self) { badge in
+            ForEach(Array(compactBadges.prefix(2).enumerated()), id: \.offset) { _, badge in
                 Text(badge)
                     .font(.system(size: 10, weight: .black))
                     .foregroundStyle(TuneAVTheme.textSecondary)
@@ -447,7 +447,7 @@ struct MacCompactStationCard: View {
 
     private var stationQualityBadges: some View {
         HStack(spacing: 5) {
-            ForEach(compactBadges.prefix(2), id: \.self) { badge in
+            ForEach(Array(compactBadges.prefix(2).enumerated()), id: \.offset) { _, badge in
                 Text(badge)
                     .font(.system(size: 10, weight: .black))
                     .foregroundStyle(TuneAVTheme.textSecondary)

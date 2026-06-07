@@ -415,6 +415,44 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.favoriteStations().first?.metadataUpdatedAt, "2026-05-21T10:00:00Z")
     }
 
+    func testProRealtimeProjectionOlderThanLocalLibraryChangeDoesNotResurrectDeletedFavorite() {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "stale-favorite",
+            name: "Stale Favorite",
+            country: "Spain",
+            language: "Spanish",
+            tags: "test",
+            streamURL: "https://example.com/stale.mp3"
+        )
+
+        store.toggleFavorite(for: station)
+        XCTAssertTrue(store.isFavorite(station))
+
+        store.toggleFavorite(for: station)
+        XCTAssertFalse(store.isFavorite(station))
+
+        let staleProjection = TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            favorites: [
+                FavoriteStationRecord(
+                    station: station.appDataRecord,
+                    createdAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: 1))
+                )
+            ],
+            recents: [],
+            discoveries: [],
+            projectionVersion: 1,
+            sourceUpdatedAt: 1_000,
+            updatedAt: 2_000
+        )
+
+        store.applyProRealtimeProjection(staleProjection)
+
+        XCTAssertFalse(store.isFavorite(station))
+        XCTAssertTrue(store.favoriteStations().isEmpty)
+    }
+
     func testToggleDiscoveredTrackSavedSavesAndUnsavesCurrentTrack() {
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
         let station = Station(

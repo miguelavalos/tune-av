@@ -26,6 +26,28 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
         case updatedAt
     }
 
+    init(
+        ownerUserId: String,
+        favorites: [FavoriteStationRecord],
+        recents: [RecentStationRecord],
+        discoveries: [DiscoveredTrackRecord],
+        stationFeedback: [TuneAVStationFeedbackRecord] = [],
+        trackFeedback: [TuneAVTrackFeedbackRecord] = [],
+        projectionVersion: Int,
+        sourceUpdatedAt: Double?,
+        updatedAt: Double
+    ) {
+        self.ownerUserId = ownerUserId
+        self.favorites = favorites
+        self.recents = recents
+        self.discoveries = discoveries
+        self.stationFeedback = stationFeedback
+        self.trackFeedback = trackFeedback
+        self.projectionVersion = projectionVersion
+        self.sourceUpdatedAt = sourceUpdatedAt
+        self.updatedAt = updatedAt
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         ownerUserId = try container.decode(String.self, forKey: .ownerUserId)
@@ -37,6 +59,14 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
         projectionVersion = try container.decode(Int.self, forKey: .projectionVersion)
         sourceUpdatedAt = try container.decodeIfPresent(Double.self, forKey: .sourceUpdatedAt)
         updatedAt = try container.decode(Double.self, forKey: .updatedAt)
+    }
+}
+
+enum TuneAVRealtimeProjectionFreshness {
+    static func shouldApply(sourceUpdatedAt: Double?, localLibraryUpdatedAt: Date) -> Bool {
+        guard let sourceUpdatedAt else { return true }
+        let sourceDate = Date(timeIntervalSince1970: sourceUpdatedAt / 1_000)
+        return localLibraryUpdatedAt <= sourceDate
     }
 }
 
@@ -200,7 +230,11 @@ final class TuneAVProLibraryObserver: ObservableObject {
     private var observationTask: Task<Void, Never>?
     private var observationGeneration = 0
 
-    init(client: TuneAVProRealtimeClient = TuneAVProRealtimeClient(deploymentURL: AppConfig.tuneConvexURL)) {
+    init(deploymentURL: String) {
+        client = TuneAVProRealtimeClient(deploymentURL: deploymentURL)
+    }
+
+    init(client: TuneAVProRealtimeClient) {
         self.client = client
     }
 

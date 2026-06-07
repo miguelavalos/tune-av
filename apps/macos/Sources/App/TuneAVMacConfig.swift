@@ -13,6 +13,10 @@ enum TuneAVMacConfig {
         )
     }
 
+    static var tuneConvexURL: String {
+        TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
+    }
+
     private static var diagnosticsEnvironment: AVDiagnosticsEnvironment {
         switch TuneAVBundleConfig.stringValue(for: "TUNEAV_CONFIG_ENVIRONMENT").lowercased() {
         case "prod", "production":

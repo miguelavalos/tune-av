@@ -597,7 +597,7 @@ private struct MacStationDetailTagCloud: View {
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(tags, id: \.self) { tag in
+            ForEach(Array(tags.enumerated()), id: \.offset) { _, tag in
                 Text(tag)
                     .font(.system(size: 11, weight: .black))
                     .lineLimit(1)

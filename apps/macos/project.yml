@@ -2,7 +2,7 @@ name: TuneAVMac
 options:
   bundleIdPrefix: com.avalsys
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "26.2"
   xcodeVersion: "16.0"
 
 settings:
@@ -16,6 +16,9 @@ packages:
     path: ../../../account-av
   AppsAV:
     path: ../../../apps-av/apple
+  ConvexMobile:
+    url: https://github.com/get-convex/convex-swift
+    from: 0.8.1
 
 schemes:
   TuneAVMac:
@@ -76,6 +79,8 @@ targets:
         product: AVPaywallFoundation
       - package: AppsAV
         product: AVDiagnosticsFoundation
+      - package: ConvexMobile
+        product: ConvexMobile
     info:
       path: Supporting/Info.plist
       properties:
@@ -89,6 +94,7 @@ targets:
         ACCOUNTAV_MANAGEMENT_URL: $(ACCOUNTAV_MANAGEMENT_URL)
         SUPPORTAV_BASE_URL: $(SUPPORTAV_BASE_URL)
         TUNEAV_CONFIG_ENVIRONMENT: $(TUNEAV_CONFIG_ENVIRONMENT)
+        TUNEAV_CONVEX_URL: $(TUNEAV_CONVEX_URL)
         TUNEAV_MACOS_SENTRY_DSN: $(TUNEAV_MACOS_SENTRY_DSN)
         TUNEAV_DELETE_ACCOUNT_URL: $(TUNEAV_DELETE_ACCOUNT_URL)
         TUNEAV_TERMS_URL: $(TUNEAV_TERMS_URL)

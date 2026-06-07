@@ -1,5 +1,6 @@
 import AccountAV
 import AVFoundation
+import Combine
 import Foundation
 
 enum MacPlaybackStatus: Equatable {
@@ -158,6 +159,7 @@ final class TuneAVMacModel: ObservableObject {
         loggerSubsystem: "com.avalsys.tuneav"
     )
     private var localLibraryUpdatedAt: Date = .distantPast
+    private var latestLocalLibraryMutationAt: Date = .distantPast
     private var metadataOutput: AVPlayerItemMetadataOutput?
     private var metadataDelegate: TuneAVStreamMetadataDelegate?
     private var playerItemStatusObserver: NSKeyValueObservation?
@@ -169,6 +171,11 @@ final class TuneAVMacModel: ObservableObject {
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var pendingCloudSyncTask: Task<Void, Never>?
     private var cloudSyncPollingTask: Task<Void, Never>?
+    private var proRealtimeSessionTask: Task<Void, Never>?
+    private var proRealtimeObservationTask: Task<Void, Never>?
+    private var activeProRealtimeSessionOwnerUserID: String?
+    private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
+    private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
@@ -187,6 +194,7 @@ final class TuneAVMacModel: ObservableObject {
         libraryTombstones = storage.loadTombstones()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
+        latestLocalLibraryMutationAt = localLibraryUpdatedAt
         accountUser = Self.lastKnownAccountUser(from: accountUserDefaults)
         resolveLocalAccessState()
         configureSystemNowPlaying()
@@ -195,6 +203,8 @@ final class TuneAVMacModel: ObservableObject {
     deinit {
         pendingCloudSyncTask?.cancel()
         cloudSyncPollingTask?.cancel()
+        proRealtimeSessionTask?.cancel()
+        proRealtimeObservationTask?.cancel()
         sleepTimerTask?.cancel()
         trackArtworkTask?.cancel()
     }
@@ -1007,6 +1017,7 @@ final class TuneAVMacModel: ObservableObject {
 
     func signOut() async {
         handleCloudSyncTriggerAction(cloudSyncTrigger.signOutStarted())
+        stopProRealtimeSync()
         await performAccountAction {
             try await accountService.signOut()
         }
@@ -1159,6 +1170,75 @@ final class TuneAVMacModel: ObservableObject {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         }
+    }
+
+    private func startProRealtimeSyncIfNeeded() {
+        guard hasProCloudSyncAccess else {
+            stopProRealtimeSync()
+            return
+        }
+        guard proLibraryObserver.isConfigured else { return }
+        guard let ownerUserId = accountUser?.id, !ownerUserId.isEmpty else { return }
+        guard activeProRealtimeSessionOwnerUserID != ownerUserId else { return }
+
+        activeProRealtimeSessionOwnerUserID = ownerUserId
+        proRealtimeSessionTask?.cancel()
+        proRealtimeObservationTask?.cancel()
+        TuneAVRealtimeSessionStore.shared.clear()
+        proLibraryObserver.clear()
+
+        proRealtimeObservationTask = Task { [weak self] in
+            guard let self else { return }
+            for await projection in self.proLibraryObserver.$projection.compactMap({ $0 }).values {
+                guard !Task.isCancelled else { return }
+                self.applyProRealtimeProjection(projection)
+            }
+        }
+
+        proRealtimeSessionTask = Task { [weak self] in
+            do {
+                guard let self else { return }
+                let realtimeSessionId = try await self.createRealtimeSession()
+                guard self.accountUser?.id == ownerUserId,
+                      self.hasProCloudSyncAccess else { return }
+                TuneAVRealtimeSessionStore.shared.update(
+                    ownerUserId: ownerUserId,
+                    realtimeSessionId: realtimeSessionId
+                )
+                self.proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
+            } catch {
+                await MainActor.run {
+                    guard self?.activeProRealtimeSessionOwnerUserID == ownerUserId else { return }
+                    self?.activeProRealtimeSessionOwnerUserID = nil
+                    self?.proLibraryObserver.clear()
+                    TuneAVMacDiagnostics.capture(
+                        error,
+                        feature: "tune.mac.sync",
+                        operation: "pro_realtime",
+                        step: "session"
+                    )
+                }
+            }
+        }
+    }
+
+    private func stopProRealtimeSync() {
+        proRealtimeSessionTask?.cancel()
+        proRealtimeSessionTask = nil
+        proRealtimeObservationTask?.cancel()
+        proRealtimeObservationTask = nil
+        activeProRealtimeSessionOwnerUserID = nil
+        lastAppliedProRealtimeProjectionUpdatedAt = nil
+        TuneAVRealtimeSessionStore.shared.clear()
+        proLibraryObserver.clear()
+    }
+
+    private func createRealtimeSession() async throws -> String {
+        let response: TuneAVRealtimeSessionResponse = try await accountRequest(
+            path: "/v1/tune/workspace/realtime-sessions",
+            method: "POST"
+        )
+        return response.realtimeSessionId
     }
 
     func fetchAccountDeletionSummary() async throws -> AccountSummary {
@@ -1621,8 +1701,10 @@ final class TuneAVMacModel: ObservableObject {
         if resolvedAccess.accessMode == .signedInPro {
             upgradePrompt = nil
             startCloudSyncPolling()
+            startProRealtimeSyncIfNeeded()
         } else {
             stopCloudSyncPolling()
+            stopProRealtimeSync()
         }
     }
 
@@ -1912,7 +1994,38 @@ final class TuneAVMacModel: ObservableObject {
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         storage.saveDiscoveries(discoveredTracks)
         storage.saveTombstones(libraryTombstones)
-        markLocalLibraryUpdated(Date.now)
+        markCloudLibraryApplied()
+    }
+
+    private func applyProRealtimeProjection(_ projection: TuneAVProLibraryProjection) {
+        if let lastAppliedProRealtimeProjectionUpdatedAt,
+           projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
+            return
+        }
+
+        guard TuneAVRealtimeProjectionFreshness.shouldApply(
+            sourceUpdatedAt: projection.sourceUpdatedAt,
+            localLibraryUpdatedAt: latestLocalLibraryMutationAt
+        ) else {
+            handleCloudSyncTriggerAction(
+                cloudSyncTrigger.localLibraryChanged(
+                    accountAvailable: accountService.isAvailable,
+                    hasUser: accountUser != nil,
+                    hasProAccess: hasProCloudSyncAccess
+                )
+            )
+            return
+        }
+
+        lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
+        applyLibrarySnapshot(
+            TuneAVLibrarySnapshot(
+                favorites: projection.favorites,
+                recents: projection.recents,
+                discoveries: projection.discoveries,
+                settings: librarySnapshot().settings
+            )
+        )
     }
 
     private func rememberFavoriteDeletion(for station: Station) {
@@ -2006,6 +2119,7 @@ final class TuneAVMacModel: ObservableObject {
 
     private func markLocalLibraryUpdated(_ date: Date = .now) {
         localLibraryUpdatedAt = date
+        latestLocalLibraryMutationAt = date
         storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.localLibraryChanged(
@@ -2014,6 +2128,11 @@ final class TuneAVMacModel: ObservableObject {
                 hasProAccess: hasProCloudSyncAccess
             )
         )
+    }
+
+    private func markCloudLibraryApplied(_ date: Date = .now) {
+        localLibraryUpdatedAt = date
+        storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
     }
 
     private var hasProCloudSyncAccess: Bool {
@@ -2347,6 +2466,10 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
             updatedAt: TuneAVDateCoding.string(from: updatedAt)
         )
     }
+}
+
+private struct TuneAVRealtimeSessionResponse: Decodable {
+    let realtimeSessionId: String
 }
 
 extension MacDiscoveredTrack: TuneAVMusicLibraryDiscovery {

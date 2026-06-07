@@ -221,6 +221,24 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(storage.loadTombstones(), [tombstone])
     }
 
+    func testRealtimeProjectionFreshnessRejectsProjectionOlderThanLocalMutation() {
+        XCTAssertFalse(
+            TuneAVRealtimeProjectionFreshness.shouldApply(
+                sourceUpdatedAt: 1_000,
+                localLibraryUpdatedAt: fixedDate("2026-05-23T11:00:00Z")
+            )
+        )
+    }
+
+    func testRealtimeProjectionFreshnessAllowsMissingSourceTimestamp() {
+        XCTAssertTrue(
+            TuneAVRealtimeProjectionFreshness.shouldApply(
+                sourceUpdatedAt: nil,
+                localLibraryUpdatedAt: fixedDate("2026-05-23T11:00:00Z")
+            )
+        )
+    }
+
     private func fixedDate(_ iso8601: String) -> Date {
         ISO8601DateFormatter().date(from: iso8601)!
     }
