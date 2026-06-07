@@ -1678,6 +1678,7 @@ final class TuneAVMacModel: ObservableObject {
                     limits: access.limits
                 )
             )
+            cloudSyncErrorMessage = nil
         } catch {
             TuneAVMacDiagnostics.capture(
                 error,
@@ -1685,6 +1686,7 @@ final class TuneAVMacModel: ObservableObject {
                 operation: "refresh_access",
                 step: "access_client"
             )
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
             resolveLocalAccessState()
         }
     }

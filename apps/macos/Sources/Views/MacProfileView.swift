@@ -258,13 +258,25 @@ struct MacProfileView: View {
     }
 
     private var accountPlanDetail: String {
-        model.accountUser == nil
-            ? L10n.string("profile.summary.plan.detail.guest")
-            : L10n.string("profile.accountSurface.free")
+        switch model.accessMode {
+        case .guest:
+            return L10n.string("profile.summary.plan.detail.guest")
+        case .signedInFree:
+            return L10n.string("profile.summary.plan.detail.free")
+        case .signedInPro:
+            return L10n.string("profile.summary.plan.detail.pro")
+        }
     }
 
     private var proPlanSubtitle: String {
-        model.accountUser == nil ? L10n.string("profile.pro.subtitle.guest") : L10n.string("profile.pro.subtitle.free")
+        switch model.accessMode {
+        case .guest:
+            return L10n.string("profile.pro.subtitle.guest")
+        case .signedInFree:
+            return L10n.string("profile.pro.subtitle.free")
+        case .signedInPro:
+            return L10n.string("profile.pro.subtitle.pro")
+        }
     }
 
     private var syncSubtitle: String {
