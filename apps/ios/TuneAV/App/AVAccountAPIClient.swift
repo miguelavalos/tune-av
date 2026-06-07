@@ -92,196 +92,73 @@ final class AVAccountAPIClient {
         body: Data? = nil,
         headers: [String: String] = [:]
     ) async throws -> Data {
-        guard let token = try await getToken(), !token.isEmpty else {
-            throw AVAccountAPIClientError.missingToken
-        }
-
-        guard let baseURL = baseURLProvider() else {
-            throw AVAccountAPIClientError.missingBaseURL
-        }
-
-        let url = Self.url(baseURL: baseURL, path: path)
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("tuneav", forHTTPHeaderField: "x-appsav-app-id")
-        for (field, value) in headers {
-            request.setValue(value, forHTTPHeaderField: field)
-        }
-        if let body {
-            request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
-
         let operation = Self.operationName(method: method, path: path)
         let startedAt = Date()
-        recordNetworkEvent(
-            NetworkEvent(
-                kind: .started,
-                operation: operation,
-                method: method,
-                statusCode: nil,
-                durationMilliseconds: nil,
-                attempt: 1,
-                errorCode: nil
-            )
-        )
-
-        let data: Data
-        let response: URLResponse
-        let attempts: Int
         do {
-            (data, response, attempts) = try await performDataTask(for: request, operation: operation, method: method)
-        } catch {
-            TuneAVDiagnostics.capture(
-                error,
-                feature: "tune.account_api",
-                operation: operation,
-                step: "network",
-                data: [
-                    "method": method,
-                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
-                ]
-            )
-            recordNetworkEvent(
-                NetworkEvent(
-                    kind: .failed,
-                    operation: operation,
-                    method: method,
-                    statusCode: nil,
-                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
-                    attempt: nil,
-                    errorCode: Self.sanitizedErrorCode(error)
-                )
-            )
-            throw error
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            TuneAVDiagnostics.capture(
-                URLError(.badServerResponse),
-                feature: "tune.account_api",
-                operation: operation,
-                step: "response",
-                data: [
-                    "method": method,
-                    "attempts": String(attempts),
-                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
-                ]
-            )
-            recordNetworkEvent(
-                NetworkEvent(
-                    kind: .failed,
-                    operation: operation,
-                    method: method,
-                    statusCode: nil,
-                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
-                    attempt: attempts,
-                    errorCode: "bad_server_response"
-                )
-            )
-            throw URLError(.badServerResponse)
-        }
-
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            let error = AVAccountAPIClientError.requestFailed(statusCode: httpResponse.statusCode)
-            TuneAVDiagnostics.capture(
-                error,
-                feature: "tune.account_api",
-                operation: operation,
-                step: "http_status",
-                data: [
-                    "method": method,
-                    "status_code": String(httpResponse.statusCode),
-                    "attempts": String(attempts),
-                    "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
-                ]
-            )
-            recordNetworkEvent(
-                NetworkEvent(
-                    kind: .failed,
-                    operation: operation,
-                    method: method,
-                    statusCode: httpResponse.statusCode,
-                    durationMilliseconds: Self.durationMilliseconds(since: startedAt),
-                    attempt: attempts,
-                    errorCode: nil
-                )
-            )
-            throw error
-        }
-
-        recordNetworkEvent(
-            NetworkEvent(
-                kind: .completed,
-                operation: operation,
+            return try await sharedClient().requestData(
+                path: path,
                 method: method,
-                statusCode: httpResponse.statusCode,
-                durationMilliseconds: Self.durationMilliseconds(since: startedAt),
-                attempt: attempts,
-                errorCode: nil
+                body: body,
+                headers: headers
             )
-        )
-        return data
+        } catch TuneAVAccessClientError.missingToken {
+            let error = AVAccountAPIClientError.missingToken
+            captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
+            throw error
+        } catch TuneAVAccessClientError.missingBaseURL {
+            let error = AVAccountAPIClientError.missingBaseURL
+            captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
+            throw error
+        } catch TuneAVAccessClientError.requestFailed(let statusCode) {
+            let error = AVAccountAPIClientError.requestFailed(statusCode: statusCode)
+            captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
+            throw error
+        } catch {
+            captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
+            throw error
+        }
     }
 
-    private func performDataTask(for request: URLRequest, operation: String, method: String) async throws -> (Data, URLResponse, Int) {
-        var attempt = 1
-
-        while true {
-            do {
-                let (data, response) = try await urlSession.data(for: request)
-                if let httpResponse = response as? HTTPURLResponse,
-                   retryPolicy.shouldRetry(statusCode: httpResponse.statusCode, attempt: attempt),
-                   !Task.isCancelled {
-                    recordNetworkEvent(
-                        NetworkEvent(
-                            kind: .retrying,
-                            operation: operation,
-                            method: method,
-                            statusCode: httpResponse.statusCode,
-                            durationMilliseconds: nil,
-                            attempt: attempt + 1,
-                            errorCode: nil
-                        )
-                    )
-                    try await retryPolicy.sleep(beforeAttempt: attempt + 1)
-                    attempt += 1
-                    continue
-                }
-                return (data, response, attempt)
-            } catch {
-                guard retryPolicy.shouldRetry(error: error, attempt: attempt), !Task.isCancelled else {
-                    throw error
-                }
-                recordNetworkEvent(
-                    NetworkEvent(
-                        kind: .retrying,
-                        operation: operation,
-                        method: method,
-                        statusCode: nil,
-                        durationMilliseconds: nil,
-                        attempt: attempt + 1,
-                        errorCode: Self.sanitizedErrorCode(error)
-                    )
-                )
-                try await retryPolicy.sleep(beforeAttempt: attempt + 1)
-                attempt += 1
+    private func sharedClient() -> TuneAVAccessClient {
+        TuneAVAccessClient(
+            baseURL: baseURLProvider(),
+            tokenProvider: getToken,
+            urlSession: urlSession,
+            decoder: decoder,
+            retryPolicy: TuneAVAccessClient.RetryPolicy(
+                maxAttempts: retryPolicy.maxAttempts,
+                backoffNanoseconds: retryPolicy.backoffNanoseconds
+            ),
+            metricsSink: TuneAVAccessClient.MetricsSink { [weak self] event in
+                self?.recordNetworkEvent(NetworkEvent(
+                    kind: NetworkEvent.Kind(rawValue: event.kind.rawValue) ?? .failed,
+                    operation: event.operation,
+                    method: event.method,
+                    statusCode: event.statusCode,
+                    durationMilliseconds: event.durationMilliseconds,
+                    attempt: event.attempt,
+                    errorCode: event.errorCode
+                ))
             }
-        }
+        )
     }
 
-    private static func url(baseURL: URL, path: String) -> URL {
-        let sanitizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        let pathAndQuery = sanitizedPath.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
-        let url = baseURL.appending(path: String(pathAndQuery.first ?? ""))
-        guard pathAndQuery.count == 2,
-              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-
-        components.percentEncodedQuery = String(pathAndQuery[1])
-        return components.url ?? url
+    private func captureNetworkError(
+        _ error: Error,
+        operation: String,
+        method: String,
+        startedAt: Date
+    ) {
+        TuneAVDiagnostics.capture(
+            error,
+            feature: "tune.account_api",
+            operation: operation,
+            step: "network",
+            data: [
+                "method": method,
+                "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
+            ]
+        )
     }
 
     private func recordNetworkEvent(_ event: NetworkEvent) {
@@ -300,23 +177,6 @@ final class AVAccountAPIClient {
 
     private static func durationMilliseconds(since startedAt: Date) -> Int {
         max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
-    }
-
-    private static func sanitizedErrorCode(_ error: Error) -> String {
-        if let urlError = error as? URLError {
-            return urlError.code.metricName
-        }
-        if let clientError = error as? AVAccountAPIClientError {
-            switch clientError {
-            case .missingToken:
-                return "missing_token"
-            case .missingBaseURL:
-                return "missing_base_url"
-            case .requestFailed:
-                return "request_failed"
-            }
-        }
-        return "network_error"
     }
 
     private static func operationName(method: String, path: String) -> String {

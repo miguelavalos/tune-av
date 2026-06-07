@@ -73,6 +73,7 @@ final class TuneAVAccessClient {
     private let urlSession: URLSession
     private let decoder: JSONDecoder
     private let retryPolicy: RetryPolicy
+    private let metricsSink: MetricsSink
     private let logger = Logger(subsystem: "com.avalsys.tuneav", category: "account-network")
 
     init(
@@ -80,13 +81,15 @@ final class TuneAVAccessClient {
         tokenProvider: @escaping () async throws -> String?,
         urlSession: URLSession = .shared,
         decoder: JSONDecoder = JSONDecoder(),
-        retryPolicy: RetryPolicy = .account
+        retryPolicy: RetryPolicy = .account,
+        metricsSink: MetricsSink = .osLog
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.urlSession = urlSession
         self.decoder = decoder
         self.retryPolicy = retryPolicy
+        self.metricsSink = metricsSink
     }
 
     var isConfigured: Bool {
@@ -143,17 +146,69 @@ final class TuneAVAccessClient {
         }
 
         let operation = Self.operationName(method: method, path: path)
-        let (data, response, attempts) = try await performDataTask(for: request, operation: operation, method: method)
+        let startedAt = Date()
+        recordNetworkEvent(NetworkEvent(
+            kind: .started,
+            operation: operation,
+            method: method,
+            statusCode: nil,
+            durationMilliseconds: nil,
+            attempt: 1,
+            errorCode: nil
+        ))
+
+        let data: Data
+        let response: URLResponse
+        let attempts: Int
+        do {
+            (data, response, attempts) = try await performDataTask(for: request, operation: operation, method: method)
+        } catch {
+            recordNetworkEvent(NetworkEvent(
+                kind: .failed,
+                operation: operation,
+                method: method,
+                statusCode: nil,
+                durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                attempt: nil,
+                errorCode: Self.sanitizedErrorCode(error)
+            ))
+            throw error
+        }
+
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Account API request failed operation=\(operation, privacy: .public) method=\(method, privacy: .public) error=bad_server_response")
+            recordNetworkEvent(NetworkEvent(
+                kind: .failed,
+                operation: operation,
+                method: method,
+                statusCode: nil,
+                durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                attempt: attempts,
+                errorCode: "bad_server_response"
+            ))
             throw URLError(.badServerResponse)
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            logger.error("Account API request failed operation=\(operation, privacy: .public) method=\(method, privacy: .public) status=\(httpResponse.statusCode, privacy: .public) attempts=\(attempts, privacy: .public)")
+            recordNetworkEvent(NetworkEvent(
+                kind: .failed,
+                operation: operation,
+                method: method,
+                statusCode: httpResponse.statusCode,
+                durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+                attempt: attempts,
+                errorCode: nil
+            ))
             throw TuneAVAccessClientError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        logger.info("Account API request completed operation=\(operation, privacy: .public) method=\(method, privacy: .public) status=\(httpResponse.statusCode, privacy: .public) attempts=\(attempts, privacy: .public)")
+        recordNetworkEvent(NetworkEvent(
+            kind: .completed,
+            operation: operation,
+            method: method,
+            statusCode: httpResponse.statusCode,
+            durationMilliseconds: Self.durationMilliseconds(since: startedAt),
+            attempt: attempts,
+            errorCode: nil
+        ))
         return data
     }
 
@@ -166,7 +221,15 @@ final class TuneAVAccessClient {
                 if let httpResponse = response as? HTTPURLResponse,
                    retryPolicy.shouldRetry(statusCode: httpResponse.statusCode, attempt: attempt),
                    !Task.isCancelled {
-                    logger.info("Account API request retrying operation=\(operation, privacy: .public) method=\(method, privacy: .public) attempt=\(attempt + 1, privacy: .public) status=\(httpResponse.statusCode, privacy: .public)")
+                    recordNetworkEvent(NetworkEvent(
+                        kind: .retrying,
+                        operation: operation,
+                        method: method,
+                        statusCode: httpResponse.statusCode,
+                        durationMilliseconds: nil,
+                        attempt: attempt + 1,
+                        errorCode: nil
+                    ))
                     try await retryPolicy.sleep(beforeAttempt: attempt + 1)
                     attempt += 1
                     continue
@@ -176,10 +239,32 @@ final class TuneAVAccessClient {
                 guard retryPolicy.shouldRetry(error: error, attempt: attempt), !Task.isCancelled else {
                     throw error
                 }
-                logger.info("Account API request retrying operation=\(operation, privacy: .public) method=\(method, privacy: .public) attempt=\(attempt + 1, privacy: .public) error=\(Self.sanitizedErrorCode(error), privacy: .public)")
+                recordNetworkEvent(NetworkEvent(
+                    kind: .retrying,
+                    operation: operation,
+                    method: method,
+                    statusCode: nil,
+                    durationMilliseconds: nil,
+                    attempt: attempt + 1,
+                    errorCode: Self.sanitizedErrorCode(error)
+                ))
                 try await retryPolicy.sleep(beforeAttempt: attempt + 1)
                 attempt += 1
             }
+        }
+    }
+
+    private func recordNetworkEvent(_ event: NetworkEvent) {
+        metricsSink.record(event)
+        switch event.kind {
+        case .started:
+            logger.debug("Account API request started operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public)")
+        case .retrying:
+            logger.info("Account API request retrying operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) attempt=\(event.attempt ?? 0, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public)")
+        case .completed:
+            logger.info("Account API request completed operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) duration_ms=\(event.durationMilliseconds ?? 0, privacy: .public) attempts=\(event.attempt ?? 0, privacy: .public)")
+        case .failed:
+            logger.error("Account API request failed operation=\(event.operation, privacy: .public) method=\(event.method, privacy: .public) status=\(event.statusCode ?? 0, privacy: .public) duration_ms=\(event.durationMilliseconds ?? 0, privacy: .public) attempts=\(event.attempt ?? 0, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public)")
         }
     }
 
@@ -210,10 +295,14 @@ final class TuneAVAccessClient {
             return "v1.me.delete_account_request"
         case ["v1", "me", "delete-account-finalize"]:
             return "v1.me.delete_account_finalize"
+        case ["v1", "apps", "tuneav", "link"]:
+            return "v1.apps.tuneav.link"
         case let route where route.count == 5 && route.prefix(4) == ["v1", "tune", "feedback", "stations"]:
             return "v1.tune.feedback.stations.item"
         case let route where route.count == 5 && route.prefix(4) == ["v1", "tune", "feedback", "tracks"]:
             return "v1.tune.feedback.tracks.item"
+        case ["v1", "tune", "analytics", "listening-sessions"]:
+            return "v1.tune.analytics.listening_sessions"
         case ["v1", "tune", "workspace", "realtime-sessions"]:
             return "v1.tune.workspace.realtime_sessions"
         case ["v1", "tune", "me", "summary"]:
@@ -240,6 +329,33 @@ final class TuneAVAccessClient {
             }
         }
         return "network_error"
+    }
+
+    private static func durationMilliseconds(since startedAt: Date) -> Int {
+        max(0, Int(Date().timeIntervalSince(startedAt) * 1_000))
+    }
+
+    struct MetricsSink: Sendable {
+        let record: @MainActor @Sendable (NetworkEvent) -> Void
+
+        static let osLog = MetricsSink { _ in }
+    }
+
+    struct NetworkEvent: Equatable, Sendable {
+        enum Kind: String, Sendable {
+            case started
+            case retrying
+            case completed
+            case failed
+        }
+
+        let kind: Kind
+        let operation: String
+        let method: String
+        let statusCode: Int?
+        let durationMilliseconds: Int?
+        let attempt: Int?
+        let errorCode: String?
     }
 
     struct RetryPolicy {
