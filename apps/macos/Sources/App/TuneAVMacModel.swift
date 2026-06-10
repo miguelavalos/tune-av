@@ -2174,10 +2174,6 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func resolveInternalAccountUser(providerUser: AccountAVUser) async -> AccountAVUser? {
-        if TuneAVUITestEnvironment.current.hasAccountOverride {
-            return providerUser
-        }
-
         do {
             let summary: AccountSummary = try await accountRequest(path: "/v1/me")
             guard let id = summary.id, !id.isEmpty else {

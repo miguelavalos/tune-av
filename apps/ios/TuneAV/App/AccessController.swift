@@ -176,7 +176,6 @@ final class AccessController: ObservableObject {
             configuration: .tuneAV,
             provider: TuneProductAccountProvider(accountService: accountService),
             resolver: TuneProductAccountResolver(
-                accountService: accountService,
                 profileResolver: accountProfileResolver
             ),
             persistence: TuneProductAccountPersistence(userDefaults: userDefaults, key: lastKnownAccountUserKey),
@@ -414,25 +413,6 @@ final class AccessController: ObservableObject {
         applyResolvedAccess(entitlementService.resolveAccess(for: accountUser))
     }
 
-    private func resolveInternalAccountUser(providerUser: AccountUser) async -> AccountUser? {
-        if TuneAVUITestEnvironment.current.hasAccountOverride {
-            return providerUser
-        }
-
-        do {
-            return try await accountProfileResolver.resolveCurrentAccountUser()
-        } catch {
-            authLogger.error("Unable to resolve internal Account AV user error=\(Self.safeErrorCode(error), privacy: .public)")
-            TuneAVDiagnostics.capture(
-                error,
-                feature: "tune.account",
-                operation: "resolve_internal_user",
-                step: "account_profile"
-            )
-            return nil
-        }
-    }
-
     private func clearSignedOutAccountState() {
         accountUser = nil
         platformUserId = nil
@@ -551,7 +531,6 @@ private struct TuneProductAccountProvider: AVProductAccountProviderSessioning {
 
 @MainActor
 private struct TuneProductAccountResolver: AVProductAccountResolving {
-    let accountService: AVAccountService
     let profileResolver: AccountProfileResolving
 
     func resolveProductAccount(
@@ -560,11 +539,6 @@ private struct TuneProductAccountResolver: AVProductAccountResolving {
     ) async throws -> AVProductAccountUser {
         _ = providerToken
         _ = configuration
-
-        if TuneAVUITestEnvironment.current.hasAccountOverride,
-           let providerUser = accountService.providerSessionUser {
-            return providerUser.productAccountUser
-        }
 
         let accountUser = try await profileResolver.resolveCurrentAccountUser()
         return accountUser.productAccountUser
