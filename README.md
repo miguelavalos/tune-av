@@ -36,7 +36,8 @@ shared/
 ## What Is Included
 
 - local-first listening experience
-- favorites, recents, discoveries, and on-device settings
+- local-first favorites, recents, automatic discoveries, and on-device settings
+- Pro cloud sync for explicitly saved stations and saved songs only
 - optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
 - shared SwiftUI shell, branding, settings, Avi, and text-fit helpers

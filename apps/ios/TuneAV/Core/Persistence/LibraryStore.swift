@@ -73,6 +73,15 @@ final class LibraryStore: ObservableObject {
         case recentsAndSettings
         case discoveriesAndSettings
         case all
+
+        var shouldPushCloud: Bool {
+            switch self {
+            case .favorites, .all:
+                return true
+            case .recents, .discoveries, .settings, .favoritesAndRecents, .recentsAndSettings, .discoveriesAndSettings:
+                return false
+            }
+        }
     }
 
     init(container: ModelContainer) {
@@ -248,7 +257,7 @@ final class LibraryStore: ObservableObject {
             context.insert(FavoriteStation(station: station))
         }
 
-        saveAndRefresh(.favorites)
+        saveAndRefresh(.favorites, syncsCloud: true)
     }
 
     func rememberStationSnapshots(_ stations: [Station]) {
@@ -273,11 +282,9 @@ final class LibraryStore: ObservableObject {
 
     func recordPlayback(of station: Station, recentLimit: Int? = nil) {
         let identityKey = Self.stationIdentityKey(for: station)
-        removeTombstone(resource: "recents", identityKey: identityKey)
         if let existing = recents.first(where: { $0.stationID == station.id || Self.stationIdentityKey(for: Station(recent: $0)) == identityKey }) {
             updateRecent(existing, with: station)
             for duplicate in recents where duplicate !== existing && Self.stationIdentityKey(for: Station(recent: duplicate)) == identityKey {
-                rememberRecentDeletion(for: Station(recent: duplicate))
                 context.delete(duplicate)
             }
         } else {
@@ -351,7 +358,7 @@ final class LibraryStore: ObservableObject {
         }
 
         discovery.updatedAt = now
-        saveAndRefresh(.discoveries)
+        saveAndRefresh(.discoveries, syncsCloud: true)
         return true
     }
 
@@ -484,10 +491,6 @@ final class LibraryStore: ObservableObject {
             artist: normalizedArtist,
             stationID: station.id
         )
-        guard markInteresting || !hasTombstone(resource: "discoveries", identityKey: discoveryID) else {
-            return
-        }
-
         let now = Date.now
         let nextArtworkURL = artworkURL?.absoluteString
 
@@ -498,7 +501,9 @@ final class LibraryStore: ObservableObject {
                 return
             }
 
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
+            if markInteresting {
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+            }
             existing.playedAt = now
             if markInteresting {
                 existing.markedInterestedAt = existing.markedInterestedAt ?? now
@@ -508,7 +513,9 @@ final class LibraryStore: ObservableObject {
             existing.stationArtworkURL = nil
             existing.updatedAt = now
         } else {
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
+            if markInteresting {
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+            }
             context.insert(
                 DiscoveredTrack(
                     title: normalizedTitle,
@@ -521,25 +528,30 @@ final class LibraryStore: ObservableObject {
         }
 
         trimDiscoveries(limit: discoveryLimit ?? 100)
-        saveAndRefresh(.discoveries)
+        saveAndRefresh(.discoveries, syncsCloud: markInteresting)
     }
 
     func removeDiscovery(_ discovery: DiscoveredTrack) {
-        rememberDiscoveryDeletion(for: discovery)
+        if discovery.isMarkedInteresting {
+            rememberSavedDiscoveryDeletion(for: discovery)
+        }
         context.delete(discovery)
-        saveAndRefresh(.discoveries)
+        saveAndRefresh(.discoveries, syncsCloud: discovery.isMarkedInteresting)
     }
 
     func clearDiscoveries() {
         guard !discoveries.isEmpty else { return }
 
+        let removedSavedDiscovery = discoveries.contains(where: \.isMarkedInteresting)
         for discovery in discoveries {
-            rememberDiscoveryDeletion(for: discovery)
+            if discovery.isMarkedInteresting {
+                rememberSavedDiscoveryDeletion(for: discovery)
+            }
             context.delete(discovery)
         }
 
         discoveries = []
-        saveAndRefresh(.discoveries)
+        saveAndRefresh(.discoveries, syncsCloud: removedSavedDiscovery)
     }
 
     func station(for stationID: String?) -> Station? {
@@ -563,13 +575,12 @@ final class LibraryStore: ObservableObject {
         }
 
         if recents.contains(where: { $0.stationID == station.id }) == false {
-            removeTombstone(resource: "recents", identityKey: Self.stationIdentityKey(for: station))
             context.insert(RecentStation(station: station))
         }
 
         settings.lastPlayedStationID = station.id
         settings.updatedAt = .now
-        saveAndRefresh(.all)
+        saveAndRefresh(.all, syncsCloud: favorite)
     }
 
     func favoriteStations() -> [Station] {
@@ -651,9 +662,6 @@ final class LibraryStore: ObservableObject {
 
     func clearRecents(propagatesToCloud: Bool = false) {
         for recent in recents {
-            if propagatesToCloud {
-                rememberRecentDeletion(for: Station(recent: recent))
-            }
             context.delete(recent)
         }
         settings.lastPlayedStationID = nil
@@ -664,13 +672,14 @@ final class LibraryStore: ObservableObject {
     }
 
     func clearDiscoveries(propagatesToCloud: Bool = false) {
+        let removedSavedDiscovery = discoveries.contains(where: \.isMarkedInteresting)
         for discovery in discoveries {
-            if propagatesToCloud {
-                rememberDiscoveryDeletion(for: discovery)
+            if propagatesToCloud, discovery.isMarkedInteresting {
+                rememberSavedDiscoveryDeletion(for: discovery)
             }
             context.delete(discovery)
         }
-        saveAndRefresh(.discoveries)
+        saveAndRefresh(.discoveries, syncsCloud: propagatesToCloud && removedSavedDiscovery)
     }
 
     func resetSettings() {
@@ -698,15 +707,14 @@ final class LibraryStore: ObservableObject {
         }
 
         for recent in recents {
-            if propagatesToCloud {
-                rememberRecentDeletion(for: Station(recent: recent))
-            }
             context.delete(recent)
         }
 
+        var removedSavedDiscovery = false
         for discovery in discoveries {
-            if propagatesToCloud {
-                rememberDiscoveryDeletion(for: discovery)
+            if propagatesToCloud, discovery.isMarkedInteresting {
+                rememberSavedDiscoveryDeletion(for: discovery)
+                removedSavedDiscovery = true
             }
             context.delete(discovery)
         }
@@ -730,7 +738,7 @@ final class LibraryStore: ObservableObject {
         settings.autoSkipUnstableStreams = false
         settings.updatedAt = .now
 
-        saveAndRefresh()
+        saveAndRefresh(.all, syncsCloud: propagatesToCloud && (removedSavedDiscovery || !favorites.isEmpty))
     }
 
     func setAppDataService(_ service: TuneAVAppDataService?) {
@@ -1178,7 +1186,6 @@ final class LibraryStore: ObservableObject {
 
     private func trimRecents(limit: Int) {
         for item in TuneAVCollectionRules.overflow(in: recents, limit: limit, sortedBy: { $0.lastPlayedAt > $1.lastPlayedAt }) {
-            rememberRecentDeletion(for: Station(recent: item))
             context.delete(item)
         }
     }
@@ -1225,7 +1232,6 @@ final class LibraryStore: ObservableObject {
 
     private func trimDiscoveries(limit: Int) {
         for item in TuneAVCollectionRules.overflow(in: discoveries, limit: limit, sortedBy: { $0.playedAt > $1.playedAt }) {
-            rememberDiscoveryDeletion(for: item)
             context.delete(item)
         }
     }
@@ -1328,11 +1334,13 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    private func saveAndRefresh(_ scope: RefreshScope = .all) {
+    private func saveAndRefresh(_ scope: RefreshScope = .all, syncsCloud: Bool? = nil) {
         guard context.hasChanges else { return }
         try? context.save()
         refresh(scope)
-        scheduleCloudPushIfNeeded()
+        if syncsCloud ?? scope.shouldPushCloud {
+            scheduleCloudPushIfNeeded()
+        }
     }
 
     private func scheduleCloudPushIfNeeded() {
@@ -1634,37 +1642,15 @@ final class LibraryStore: ObservableObject {
                     createdAt: TuneAVAppDataService.isoString(from: $0.createdAt)
                 )
             } + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
-            recents: recents.map {
-                RecentStationRecord(
-                    station: Station(recent: $0).appDataRecord,
-                    lastPlayedAt: TuneAVAppDataService.isoString(from: $0.lastPlayedAt)
-                )
-            } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
-            discoveries: cloudDiscoveryRecords() + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
-            settings: AppSettingsRecord(
-                preferredCountry: settings.preferredCountry,
-                preferredLanguage: settings.preferredLanguage,
-                preferredTag: settings.preferredTag,
-                lastPlayedStationID: settings.lastPlayedStationID,
-                lastOpenedStationID: settings.lastOpenedStationID,
-                lastOpenedStationPresentation: settings.lastOpenedStationPresentation,
-                sleepTimerMinutes: nil,
-                keepScreenAwake: settings.keepScreenAwake,
-                warnBeforeCellularPlayback: settings.warnBeforeCellularPlayback,
-                openLastStationOnLaunch: settings.openLastStationOnLaunch,
-                autoSkipUnstableStreams: settings.autoSkipUnstableStreams,
-                updatedAt: TuneAVAppDataService.isoString(from: settings.updatedAt)
-            )
+            savedDiscoveries: savedDiscoveryRecords() + tombstoneRecords(resource: "savedDiscoveries", type: DiscoveredTrackRecord.self)
         )
     }
 
     private func cloudBoundedSnapshot(_ snapshot: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: snapshot.favorites,
-            recents: snapshot.recents,
-            discoveries: cloudBoundedDiscoveryRecords(snapshot.discoveries.filter { $0.deletedAt == nil })
-                + snapshot.discoveries.filter { $0.deletedAt != nil },
-            settings: snapshot.settings
+            savedDiscoveries: cloudBoundedDiscoveryRecords(snapshot.savedDiscoveries.filter { $0.deletedAt == nil })
+                + snapshot.savedDiscoveries.filter { $0.deletedAt != nil }
         )
     }
 
@@ -1694,32 +1680,19 @@ final class LibraryStore: ObservableObject {
     private func latestLocalUpdateAt() -> Date {
         let timestamps =
             favorites.map(\.createdAt) +
-            recents.map(\.lastPlayedAt) +
-            tombstones().map(\.deletedAt) +
-            discoveries.flatMap { discovery in
-                [
-                    discovery.playedAt,
-                    discovery.markedInterestedAt,
-                    discovery.hiddenAt,
-                    discovery.updatedAt
-                ].compactMap { $0 }
-            } +
-            [settings.updatedAt]
+            tombstones().filter { $0.resource == "favorites" || $0.resource == "savedDiscoveries" }.map(\.deletedAt) +
+            discoveries.filter(\.isMarkedInteresting).flatMap { discovery in
+                [discovery.markedInterestedAt, discovery.updatedAt].compactMap { $0 }
+            }
         return timestamps.max() ?? .distantPast
     }
 
     private func latestLocalLibraryUpdateAt() -> Date {
         let timestamps =
             favorites.map(\.createdAt) +
-            recents.map(\.lastPlayedAt) +
-            tombstones().map(\.deletedAt) +
-            discoveries.flatMap { discovery in
-                [
-                    discovery.playedAt,
-                    discovery.markedInterestedAt,
-                    discovery.hiddenAt,
-                    discovery.updatedAt
-                ].compactMap { $0 }
+            tombstones().filter { $0.resource == "favorites" || $0.resource == "savedDiscoveries" }.map(\.deletedAt) +
+            discoveries.filter(\.isMarkedInteresting).flatMap { discovery in
+                [discovery.markedInterestedAt, discovery.updatedAt].compactMap { $0 }
             }
         return timestamps.max() ?? .distantPast
     }
@@ -1732,15 +1705,7 @@ final class LibraryStore: ObservableObject {
             context.delete(favorite)
         }
 
-        for recent in recents {
-            context.delete(recent)
-        }
-
-        for discovery in discoveries {
-            context.delete(discovery)
-        }
-
-        for tombstone in tombstones() {
+        for tombstone in tombstones() where tombstone.resource == "favorites" || tombstone.resource == "savedDiscoveries" {
             context.delete(tombstone)
         }
 
@@ -1763,37 +1728,31 @@ final class LibraryStore: ObservableObject {
             )
         }
 
-        for recent in snapshot.recents {
-            if let deletedAt = recent.deletedAt {
-                rememberTombstone(
-                    resource: "recents",
-                    identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(recent.station),
-                    payload: recent,
-                    deletedAt: Self.date(from: deletedAt)
-                )
-                continue
-            }
-
-            context.insert(
-                RecentStation(
-                    station: Station(record: recent.station),
-                    lastPlayedAt: recent.lastPlayedAt.map(Self.date(from:)) ?? .distantPast
-                )
-            )
-        }
-
-        for discovery in snapshot.discoveries {
+        let localDiscoveriesByID = Dictionary(discoveries.map { ($0.discoveryID, $0) }, uniquingKeysWith: { first, _ in first })
+        for discovery in snapshot.savedDiscoveries {
             if let deletedAt = discovery.deletedAt {
                 rememberTombstone(
-                    resource: "discoveries",
+                    resource: "savedDiscoveries",
                     identityKey: discovery.discoveryID,
                     payload: discovery,
                     deletedAt: Self.date(from: deletedAt)
                 )
+                if let existing = localDiscoveriesByID[discovery.discoveryID] {
+                    existing.markedInterestedAt = nil
+                    existing.updatedAt = Self.date(from: deletedAt)
+                }
                 continue
             }
 
-            context.insert(DiscoveredTrack(record: discovery))
+            if let existing = localDiscoveriesByID[discovery.discoveryID] {
+                existing.markedInterestedAt = discovery.markedInterestedAt.map(Self.date(from:)) ?? Self.date(from: discovery.updatedAt ?? discovery.playedAt)
+                existing.hiddenAt = nil
+                existing.artworkURL = discovery.artworkURL ?? existing.artworkURL
+                existing.stationArtworkURL = discovery.stationArtworkURL ?? existing.stationArtworkURL
+                existing.updatedAt = discovery.updatedAt.map(Self.date(from:)) ?? existing.updatedAt
+            } else {
+                context.insert(DiscoveredTrack(record: discovery))
+            }
         }
 
         try? context.save()
@@ -1817,23 +1776,10 @@ final class LibraryStore: ObservableObject {
         )
     }
 
-    private func rememberRecentDeletion(for station: Station) {
+    private func rememberSavedDiscoveryDeletion(for discovery: DiscoveredTrack) {
         let deletedAt = Date.now
         rememberTombstone(
-            resource: "recents",
-            identityKey: Self.stationIdentityKey(for: station),
-            payload: RecentStationRecord(
-                station: station.appDataRecord,
-                deletedAt: TuneAVAppDataService.isoString(from: deletedAt)
-            ),
-            deletedAt: deletedAt
-        )
-    }
-
-    private func rememberDiscoveryDeletion(for discovery: DiscoveredTrack) {
-        let deletedAt = Date.now
-        rememberTombstone(
-            resource: "discoveries",
+            resource: "savedDiscoveries",
             identityKey: discovery.discoveryID,
             payload: DiscoveredTrackRecord(
                 discoveryID: discovery.discoveryID,
@@ -1903,15 +1849,13 @@ final class LibraryStore: ObservableObject {
         (try? context.fetch(FetchDescriptor<LibrarySyncTombstone>())) ?? []
     }
 
-    private func cloudDiscoveryRecords() -> [DiscoveredTrackRecord] {
+    private func savedDiscoveryRecords() -> [DiscoveredTrackRecord] {
         discoveries
+            .filter(\.isMarkedInteresting)
             .sorted { lhs, rhs in
-                let lhsPinned = lhs.markedInterestedAt != nil
-                let rhsPinned = rhs.markedInterestedAt != nil
-                if lhsPinned != rhsPinned {
-                    return lhsPinned
-                }
-                return lhs.playedAt > rhs.playedAt
+                let lhsDate = [lhs.updatedAt, lhs.markedInterestedAt, lhs.playedAt].compactMap { $0 }.max() ?? lhs.playedAt
+                let rhsDate = [rhs.updatedAt, rhs.markedInterestedAt, rhs.playedAt].compactMap { $0 }.max() ?? rhs.playedAt
+                return lhsDate > rhsDate
             }
             .prefix(Self.maxCloudDiscoveryRecords)
             .map(\.appDataRecord)

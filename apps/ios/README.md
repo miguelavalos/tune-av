@@ -37,7 +37,7 @@ Optional account-connected behavior:
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
 - optional RevenueCat monthly Pro purchase/restore flow when configured
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
-- Pro cloud sync and backend-backed summary/analytics only when Account AV backend config is available
+- Pro cloud sync for saved stations/songs and backend-backed summary/analytics only when Account AV backend config is available
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 - shared app shell, launch, settings/account, Avi feedback/actions, paywall, and
   text-fit foundations are consumed from `apps-av/apple` where they are

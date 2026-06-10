@@ -520,7 +520,7 @@ final class LibraryStoreTests: XCTestCase {
 
         try await Task.sleep(for: .milliseconds(2_800))
 
-        let pushedDiscoveries = try XCTUnwrap(recorder.lastPutEntries(for: "/v1/apps/tuneav/data/discoveries"))
+        let pushedDiscoveries = try XCTUnwrap(recorder.lastPutEntries(for: "/v1/apps/tuneav/data/savedDiscoveries"))
         let pushedDiscovery = try XCTUnwrap(pushedDiscoveries.first { entry in
             entry["discoveryID"] as? String == "teddy-swims-lose-control-st-rb-960c37c6-0601-11e8-ae97-52543be04c81"
         })

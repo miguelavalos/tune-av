@@ -51,7 +51,7 @@ The public fallback policy is:
 | --- | --- | ---: | --- |
 | Guest | local-only | 5 | no |
 | Signed-in Free | account-connected | 15 | no |
-| Signed-in Pro | account-connected Pro | unlimited in-app policy | yes, when configured |
+| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations and saved songs only, when configured |
 
 Premium access is displayed by the client only after configured entitlement
 state is available. The public repo does not document private entitlement

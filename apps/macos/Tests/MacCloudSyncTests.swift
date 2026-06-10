@@ -79,54 +79,19 @@ final class MacCloudSyncTests: XCTestCase {
     func testMacSyncMergeKeepsLocalAndRemoteLibraryItems() {
         let local = librarySnapshot(
             favorites: [favoriteRecord(id: "local-favorite")],
-            recents: [recentRecord(id: "local-recent", lastPlayedAt: "2026-05-23T09:00:00Z")],
+            savedDiscoveries: [discoveryRecord(id: "local-track", playedAt: "2026-05-23T09:00:00Z", markedInterestedAt: "2026-05-23T09:01:00Z")],
             updatedAt: "2026-05-23T09:00:00Z"
         )
         let remote = librarySnapshot(
             favorites: [favoriteRecord(id: "remote-favorite")],
-            recents: [recentRecord(id: "remote-recent", lastPlayedAt: "2026-05-23T10:00:00Z")],
+            savedDiscoveries: [discoveryRecord(id: "remote-track", playedAt: "2026-05-23T10:00:00Z", markedInterestedAt: "2026-05-23T10:01:00Z")],
             updatedAt: "2026-05-23T10:00:00Z"
         )
 
         let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
 
         XCTAssertEqual(Set(merged.favorites.map(\.station.id)), ["local-favorite", "remote-favorite"])
-        XCTAssertEqual(merged.recents.map(\.station.id), ["remote-recent", "local-recent"])
-    }
-
-    func testMacSyncMergeKeepsSettingsDeviceLocal() {
-        let local = librarySnapshot(
-            favorites: [favoriteRecord(id: "local-favorite")],
-            settings: AppSettingsRecord(
-                preferredCountry: "ES",
-                preferredLanguage: "ca",
-                preferredTag: "rock",
-                lastPlayedStationID: "local-station",
-                sleepTimerMinutes: 30,
-                keepScreenAwake: true,
-                warnBeforeCellularPlayback: true,
-                openLastStationOnLaunch: true,
-                autoSkipUnstableStreams: true,
-                updatedAt: "2026-05-23T09:00:00Z"
-            ),
-            updatedAt: "2026-05-23T09:00:00Z"
-        )
-        let remote = librarySnapshot(
-            favorites: [favoriteRecord(id: "remote-favorite")],
-            settings: AppSettingsRecord(
-                preferredCountry: "US",
-                preferredLanguage: "en",
-                preferredTag: "news",
-                lastPlayedStationID: "remote-station",
-                sleepTimerMinutes: nil,
-                updatedAt: "2026-05-23T10:00:00Z"
-            ),
-            updatedAt: "2026-05-23T10:00:00Z"
-        )
-
-        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
-
-        XCTAssertEqual(merged.settings, local.settings)
+        XCTAssertEqual(Set(merged.savedDiscoveries.map(\.discoveryID)), ["local-track", "remote-track"])
     }
 
     func testMacSyncPlannerPushesLocalWhenRemoteIsEmpty() {
@@ -173,9 +138,9 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(merged.favorites.first?.deletedAt, "2026-05-23T11:00:00Z")
     }
 
-    func testMacSyncMergeKeepsDiscoveryUnsaveWhenUpdatedAtIsNewest() {
+    func testMacSyncMergeKeepsSavedDiscoveryUnsaveWhenUpdatedAtIsNewest() {
         let local = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "track",
                     playedAt: "2026-05-23T10:00:00Z",
@@ -185,7 +150,7 @@ final class MacCloudSyncTests: XCTestCase {
             updatedAt: "2026-05-23T11:00:00Z"
         )
         let remote = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "track",
                     playedAt: "2026-05-23T10:00:00Z",
@@ -198,9 +163,9 @@ final class MacCloudSyncTests: XCTestCase {
 
         let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
 
-        XCTAssertEqual(merged.discoveries.count, 1)
-        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
-        XCTAssertEqual(merged.discoveries.first?.updatedAt, "2026-05-23T11:00:00Z")
+        XCTAssertEqual(merged.savedDiscoveries.count, 1)
+        XCTAssertNil(merged.savedDiscoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.savedDiscoveries.first?.updatedAt, "2026-05-23T11:00:00Z")
     }
 
     func testMacLibraryStoragePersistsTombstones() {
@@ -294,23 +259,12 @@ final class MacCloudSyncTests: XCTestCase {
 
     private func librarySnapshot(
         favorites: [FavoriteStationRecord] = [],
-        recents: [RecentStationRecord] = [],
-        discoveries: [DiscoveredTrackRecord] = [],
-        settings: AppSettingsRecord? = nil,
+        savedDiscoveries: [DiscoveredTrackRecord] = [],
         updatedAt: String
     ) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: favorites,
-            recents: recents,
-            discoveries: discoveries,
-            settings: settings ?? AppSettingsRecord(
-                preferredCountry: "",
-                preferredLanguage: "",
-                preferredTag: "",
-                lastPlayedStationID: nil,
-                sleepTimerMinutes: nil,
-                updatedAt: updatedAt
-            )
+            savedDiscoveries: savedDiscoveries
         )
     }
 

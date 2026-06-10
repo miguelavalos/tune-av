@@ -10,16 +10,14 @@ enum CloudSyncStatus: Equatable {
 
 struct CloudSyncConflictSummary: Equatable {
     let localFavoritesCount: Int
-    let localRecentsCount: Int
-    let localDiscoveriesCount: Int
+    let localSavedDiscoveriesCount: Int
     let localUpdatedAt: Date
     let cloudFavoritesCount: Int?
-    let cloudRecentsCount: Int?
-    let cloudDiscoveriesCount: Int?
+    let cloudSavedDiscoveriesCount: Int?
     let cloudUpdatedAt: Date?
 
     var hasCloudSnapshot: Bool {
-        cloudFavoritesCount != nil || cloudRecentsCount != nil || cloudDiscoveriesCount != nil
+        cloudFavoritesCount != nil || cloudSavedDiscoveriesCount != nil
     }
 }
 
@@ -87,9 +85,7 @@ enum TuneAVLibrarySnapshotMerger {
     static func merged(local: TuneAVLibrarySnapshot, remote: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: mergedFavorites(local.favorites, remote.favorites),
-            recents: mergedRecents(local.recents, remote.recents),
-            discoveries: mergedDiscoveries(local.discoveries, remote.discoveries),
-            settings: local.settings
+            savedDiscoveries: mergedSavedDiscoveries(local.savedDiscoveries, remote.savedDiscoveries)
         )
     }
 
@@ -105,19 +101,7 @@ enum TuneAVLibrarySnapshotMerger {
         .map(\.record)
     }
 
-    private static func mergedRecents(
-        _ local: [RecentStationRecord],
-        _ remote: [RecentStationRecord]
-    ) -> [RecentStationRecord] {
-        newestDatedByKey(
-            datedRecords(local + remote, date: recentUpdateDate),
-            key: { stationIdentityKey($0.station) }
-        )
-        .sorted { $0.date > $1.date }
-        .map(\.record)
-    }
-
-    private static func mergedDiscoveries(
+    private static func mergedSavedDiscoveries(
         _ local: [DiscoveredTrackRecord],
         _ remote: [DiscoveredTrackRecord]
     ) -> [DiscoveredTrackRecord] {
@@ -176,13 +160,6 @@ enum TuneAVLibrarySnapshotMerger {
             .max() ?? .distantPast
     }
 
-    private static func recentUpdateDate(_ recent: RecentStationRecord) -> Date {
-        [recent.lastPlayedAt, recent.deletedAt]
-            .compactMap { $0 }
-            .map(date)
-            .max() ?? .distantPast
-    }
-
     static func stationIdentityKey(_ station: StationRecord) -> String {
         if let streamURL = normalizedIdentityValue(station.streamURL) {
             return "stream:\(streamURL)"
@@ -216,43 +193,33 @@ enum TuneAVAppDataError: Error {
 
 struct TuneAVLibrarySnapshot: Codable, Equatable {
     let favorites: [FavoriteStationRecord]
-    let recents: [RecentStationRecord]
-    let discoveries: [DiscoveredTrackRecord]
-    let settings: AppSettingsRecord
+    let savedDiscoveries: [DiscoveredTrackRecord]
 
     var hasMeaningfulContent: Bool {
         hasLibraryCollections
     }
 
     var hasLibraryCollections: Bool {
-        !favorites.isEmpty || !recents.isEmpty || !discoveries.isEmpty
+        !favorites.isEmpty || !savedDiscoveries.isEmpty
     }
 
     init(
         favorites: [FavoriteStationRecord],
-        recents: [RecentStationRecord],
-        discoveries: [DiscoveredTrackRecord] = [],
-        settings: AppSettingsRecord
+        savedDiscoveries: [DiscoveredTrackRecord] = []
     ) {
         self.favorites = favorites
-        self.recents = recents
-        self.discoveries = discoveries
-        self.settings = settings
+        self.savedDiscoveries = savedDiscoveries
     }
 
     private enum CodingKeys: String, CodingKey {
         case favorites
-        case recents
-        case discoveries
-        case settings
+        case savedDiscoveries
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         favorites = try container.decode([FavoriteStationRecord].self, forKey: .favorites)
-        recents = try container.decode([RecentStationRecord].self, forKey: .recents)
-        discoveries = try container.decodeIfPresent([DiscoveredTrackRecord].self, forKey: .discoveries) ?? []
-        settings = try container.decode(AppSettingsRecord.self, forKey: .settings)
+        savedDiscoveries = try container.decodeIfPresent([DiscoveredTrackRecord].self, forKey: .savedDiscoveries) ?? []
     }
 }
 
@@ -320,110 +287,6 @@ struct DiscoveredTrackRecord: Codable, Equatable {
         self.hiddenAt = hiddenAt
         self.deletedAt = deletedAt
         self.updatedAt = updatedAt
-    }
-}
-
-struct AppSettingsRecord: Codable, Equatable {
-    let preferredCountry: String
-    let preferredLanguage: String
-    let preferredTag: String
-    let lastPlayedStationID: String?
-    let lastOpenedStationID: String?
-    let lastOpenedStationPresentation: String?
-    let sleepTimerMinutes: Int?
-    let keepScreenAwake: Bool
-    let warnBeforeCellularPlayback: Bool
-    let openLastStationOnLaunch: Bool
-    let autoSkipUnstableStreams: Bool
-    let updatedAt: String
-
-    init(
-        preferredCountry: String,
-        preferredLanguage: String,
-        preferredTag: String,
-        lastPlayedStationID: String?,
-        lastOpenedStationID: String? = nil,
-        lastOpenedStationPresentation: String? = nil,
-        sleepTimerMinutes: Int?,
-        keepScreenAwake: Bool = false,
-        warnBeforeCellularPlayback: Bool = false,
-        openLastStationOnLaunch: Bool = false,
-        autoSkipUnstableStreams: Bool = false,
-        updatedAt: String
-    ) {
-        self.preferredCountry = preferredCountry
-        self.preferredLanguage = preferredLanguage
-        self.preferredTag = preferredTag
-        self.lastPlayedStationID = lastPlayedStationID
-        self.lastOpenedStationID = lastOpenedStationID
-        self.lastOpenedStationPresentation = lastOpenedStationPresentation
-        self.sleepTimerMinutes = sleepTimerMinutes
-        self.keepScreenAwake = keepScreenAwake
-        self.warnBeforeCellularPlayback = warnBeforeCellularPlayback
-        self.openLastStationOnLaunch = openLastStationOnLaunch
-        self.autoSkipUnstableStreams = autoSkipUnstableStreams
-        self.updatedAt = updatedAt
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case preferredCountry
-        case preferredLanguage
-        case preferredTag
-        case lastPlayedStationID
-        case lastOpenedStationID
-        case lastOpenedStationPresentation
-        case sleepTimerMinutes
-        case keepScreenAwake
-        case warnBeforeCellularPlayback
-        case openLastStationOnLaunch
-        case autoSkipUnstableStreams
-        case updatedAt
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        preferredCountry = try container.decodeIfPresent(String.self, forKey: .preferredCountry) ?? ""
-        preferredLanguage = try container.decodeIfPresent(String.self, forKey: .preferredLanguage) ?? ""
-        preferredTag = try container.decodeIfPresent(String.self, forKey: .preferredTag) ?? ""
-        lastPlayedStationID = try container.decodeIfPresent(String.self, forKey: .lastPlayedStationID)
-        lastOpenedStationID = try container.decodeIfPresent(String.self, forKey: .lastOpenedStationID)
-        lastOpenedStationPresentation = try container.decodeIfPresent(String.self, forKey: .lastOpenedStationPresentation)
-        sleepTimerMinutes = try container.decodeIfPresent(Int.self, forKey: .sleepTimerMinutes)
-        keepScreenAwake = try container.decodeIfPresent(Bool.self, forKey: .keepScreenAwake) ?? false
-        warnBeforeCellularPlayback = try container.decodeIfPresent(Bool.self, forKey: .warnBeforeCellularPlayback) ?? false
-        openLastStationOnLaunch = try container.decodeIfPresent(Bool.self, forKey: .openLastStationOnLaunch) ?? false
-        autoSkipUnstableStreams = try container.decodeIfPresent(Bool.self, forKey: .autoSkipUnstableStreams) ?? false
-        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt) ?? "1970-01-01T00:00:00.000Z"
-    }
-
-    var hasMeaningfulContent: Bool {
-        !preferredCountry.isEmpty ||
-            !preferredLanguage.isEmpty ||
-            !preferredTag.isEmpty ||
-            lastPlayedStationID != nil ||
-            lastOpenedStationID != nil ||
-            lastOpenedStationPresentation != nil ||
-            keepScreenAwake ||
-            warnBeforeCellularPlayback ||
-            openLastStationOnLaunch ||
-            autoSkipUnstableStreams
-    }
-
-    static var empty: AppSettingsRecord {
-        AppSettingsRecord(
-            preferredCountry: "",
-            preferredLanguage: "",
-            preferredTag: "",
-            lastPlayedStationID: nil,
-            lastOpenedStationID: nil,
-            lastOpenedStationPresentation: nil,
-            sleepTimerMinutes: nil,
-            keepScreenAwake: false,
-            warnBeforeCellularPlayback: false,
-            openLastStationOnLaunch: false,
-            autoSkipUnstableStreams: false,
-            updatedAt: "1970-01-01T00:00:00.000Z"
-        )
     }
 }
 

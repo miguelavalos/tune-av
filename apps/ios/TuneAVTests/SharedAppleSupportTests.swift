@@ -77,9 +77,7 @@ final class SharedAppleSupportTests: XCTestCase {
             try await client.pushLibrary(
                 TuneAVLibrarySnapshot(
                     favorites: [FavoriteStationRecord(station: Self.stationRecord(id: "local"), createdAt: "2026-06-06T10:00:00Z")],
-                    recents: [],
-                    discoveries: [],
-                    settings: .empty
+                    savedDiscoveries: []
                 )
             )
             XCTFail("Expected conflict")
@@ -92,9 +90,10 @@ final class SharedAppleSupportTests: XCTestCase {
             1
         )
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/recents"))
+        XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/discoveries"))
     }
 
-    func testAppDataClientKeepsSettingsDeviceLocal() async throws {
+    func testAppDataClientOnlySyncsFavoritesAndSavedDiscoveries() async throws {
         let recorder = AppDataRequestRecorder(conflictPath: "/none")
         let client = TuneAVAppDataSyncClient(
             deviceId: "test-device",
@@ -107,24 +106,30 @@ final class SharedAppleSupportTests: XCTestCase {
         try await client.pushLibrary(
             TuneAVLibrarySnapshot(
                 favorites: [],
-                recents: [],
-                discoveries: [],
-                settings: AppSettingsRecord(
-                    preferredCountry: "ES",
-                    preferredLanguage: "ca",
-                    preferredTag: "rock",
-                    lastPlayedStationID: "local-station",
-                    sleepTimerMinutes: 30,
-                    keepScreenAwake: true,
-                    warnBeforeCellularPlayback: true,
-                    openLastStationOnLaunch: true,
-                    autoSkipUnstableStreams: true,
-                    updatedAt: "2026-06-06T10:00:00Z"
-                )
+                savedDiscoveries: [
+                    DiscoveredTrackRecord(
+                        discoveryID: "song-1",
+                        title: "Song 1",
+                        artist: "Artist",
+                        stationID: "station-1",
+                        stationName: "Station 1",
+                        artworkURL: nil,
+                        stationArtworkURL: nil,
+                        playedAt: "2026-06-06T09:00:00Z",
+                        markedInterestedAt: "2026-06-06T09:01:00Z",
+                        updatedAt: "2026-06-06T09:01:00Z"
+                    )
+                ]
             )
         )
 
         let calls = await recorder.calls
+        XCTAssertTrue(calls.contains("GET /v1/apps/tuneav/data/favorites"))
+        XCTAssertTrue(calls.contains("GET /v1/apps/tuneav/data/savedDiscoveries"))
+        XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/data/favorites"))
+        XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/data/savedDiscoveries"))
+        XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/recents"))
+        XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/discoveries"))
         XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/settings"))
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
     }
@@ -5373,8 +5378,8 @@ private actor AppDataRequestRecorder {
             entries = method == "GET"
                 ? #"[{"station":{"id":"remote","name":"remote","country":"US","countryCode":"US","state":null,"language":"English","languageCodes":"en","tags":"test","streamURL":"https://example.com/remote.mp3","faviconURL":null,"bitrate":null,"codec":null,"homepageURL":null,"votes":null,"clickCount":null,"clickTrend":null,"isHLS":false,"hasExtendedInfo":null,"hasSSLError":null,"lastCheckOKAt":null,"geoLatitude":null,"geoLongitude":null},"createdAt":"2026-06-06T09:00:00Z","deletedAt":null}]"#
                 : #"[]"#
-        case "/v1/apps/tuneav/data/settings":
-            entries = #"[{"preferredCountry":"","preferredLanguage":"","preferredTag":"","lastPlayedStationID":null,"lastOpenedStationID":null,"lastOpenedStationPresentation":null,"sleepTimerMinutes":null,"keepScreenAwake":false,"warnBeforeCellularPlayback":false,"openLastStationOnLaunch":false,"autoSkipUnstableStreams":false,"updatedAt":"1970-01-01T00:00:00.000Z"}]"#
+        case "/v1/apps/tuneav/data/savedDiscoveries":
+            entries = #"[]"#
         default:
             entries = #"[]"#
         }

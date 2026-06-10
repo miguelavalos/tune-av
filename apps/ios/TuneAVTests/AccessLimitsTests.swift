@@ -289,41 +289,9 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(merged.favorites.first?.deletedAt, "2026-04-30T10:30:00Z")
     }
 
-    func testLibrarySnapshotMergerKeepsNewestRecentForSameStation() {
+    func testLibrarySnapshotMergerKeepsNewestSavedDiscoveryAction() {
         let local = librarySnapshot(
-            recents: [recentRecord(id: "los-40", lastPlayedAt: "2026-04-30T10:10:00Z")],
-            updatedAt: "2026-04-30T10:10:00Z"
-        )
-        let remote = librarySnapshot(
-            recents: [recentRecord(id: "los-40", lastPlayedAt: "2026-04-30T09:10:00Z")],
-            updatedAt: "2026-04-30T09:10:00Z"
-        )
-
-        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
-
-        XCTAssertEqual(merged.recents.count, 1)
-        XCTAssertEqual(merged.recents.first?.lastPlayedAt, "2026-04-30T10:10:00Z")
-    }
-
-    func testLibrarySnapshotMergerKeepsRecentDeletionWhenItIsNewestChange() {
-        let local = librarySnapshot(
-            recents: [recentRecord(id: "los-40", deletedAt: "2026-04-30T10:30:00Z")],
-            updatedAt: "2026-04-30T10:30:00Z"
-        )
-        let remote = librarySnapshot(
-            recents: [recentRecord(id: "los-40", lastPlayedAt: "2026-04-30T10:10:00Z")],
-            updatedAt: "2026-04-30T10:10:00Z"
-        )
-
-        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
-
-        XCTAssertEqual(merged.recents.count, 1)
-        XCTAssertEqual(merged.recents.first?.deletedAt, "2026-04-30T10:30:00Z")
-    }
-
-    func testLibrarySnapshotMergerKeepsNewestDiscoveryAction() {
-        let local = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
@@ -333,11 +301,11 @@ final class AccessLimitsTests: XCTestCase {
             updatedAt: "2026-04-30T10:05:00Z"
         )
         let remote = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
-                    hiddenAt: "2026-04-30T10:10:00Z"
+                    markedInterestedAt: "2026-04-30T10:10:00Z"
                 )
             ],
             updatedAt: "2026-04-30T10:10:00Z"
@@ -345,14 +313,13 @@ final class AccessLimitsTests: XCTestCase {
 
         let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
 
-        XCTAssertEqual(merged.discoveries.count, 1)
-        XCTAssertEqual(merged.discoveries.first?.hiddenAt, "2026-04-30T10:10:00Z")
-        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.savedDiscoveries.count, 1)
+        XCTAssertEqual(merged.savedDiscoveries.first?.markedInterestedAt, "2026-04-30T10:10:00Z")
     }
 
-    func testLibrarySnapshotMergerKeepsDiscoveryUnsaveWhenUpdatedAtIsNewest() {
+    func testLibrarySnapshotMergerKeepsSavedDiscoveryUnsaveWhenUpdatedAtIsNewest() {
         let local = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
@@ -362,7 +329,7 @@ final class AccessLimitsTests: XCTestCase {
             updatedAt: "2026-04-30T10:30:00Z"
         )
         let remote = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
@@ -375,14 +342,14 @@ final class AccessLimitsTests: XCTestCase {
 
         let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
 
-        XCTAssertEqual(merged.discoveries.count, 1)
-        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
-        XCTAssertEqual(merged.discoveries.first?.updatedAt, "2026-04-30T10:30:00Z")
+        XCTAssertEqual(merged.savedDiscoveries.count, 1)
+        XCTAssertNil(merged.savedDiscoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.savedDiscoveries.first?.updatedAt, "2026-04-30T10:30:00Z")
     }
 
-    func testLibrarySnapshotMergerKeepsDiscoveryDeletionWhenItIsNewestChange() {
+    func testLibrarySnapshotMergerKeepsSavedDiscoveryDeletionWhenItIsNewestChange() {
         let local = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
@@ -392,7 +359,7 @@ final class AccessLimitsTests: XCTestCase {
             updatedAt: "2026-04-30T10:30:00Z"
         )
         let remote = librarySnapshot(
-            discoveries: [
+            savedDiscoveries: [
                 discoveryRecord(
                     id: "los-40-track",
                     playedAt: "2026-04-30T10:00:00Z",
@@ -404,9 +371,9 @@ final class AccessLimitsTests: XCTestCase {
 
         let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
 
-        XCTAssertEqual(merged.discoveries.count, 1)
-        XCTAssertEqual(merged.discoveries.first?.deletedAt, "2026-04-30T10:30:00Z")
-        XCTAssertNil(merged.discoveries.first?.markedInterestedAt)
+        XCTAssertEqual(merged.savedDiscoveries.count, 1)
+        XCTAssertEqual(merged.savedDiscoveries.first?.deletedAt, "2026-04-30T10:30:00Z")
+        XCTAssertNil(merged.savedDiscoveries.first?.markedInterestedAt)
     }
 
     @MainActor
@@ -992,22 +959,12 @@ final class AccessLimitsTests: XCTestCase {
 
     private func librarySnapshot(
         favorites: [FavoriteStationRecord] = [],
-        recents: [RecentStationRecord] = [],
-        discoveries: [DiscoveredTrackRecord] = [],
+        savedDiscoveries: [DiscoveredTrackRecord] = [],
         updatedAt: String
     ) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: favorites,
-            recents: recents,
-            discoveries: discoveries,
-            settings: AppSettingsRecord(
-                preferredCountry: "",
-                preferredLanguage: "",
-                preferredTag: "",
-                lastPlayedStationID: nil,
-                sleepTimerMinutes: nil,
-                updatedAt: updatedAt
-            )
+            savedDiscoveries: savedDiscoveries
         )
     }
 

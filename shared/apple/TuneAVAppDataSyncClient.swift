@@ -10,13 +10,11 @@ typealias MacAppDataClientError = TuneAVAppDataClientError
 
 enum TuneAVAppDataResource: String, CaseIterable {
     case favorites
-    case recents
-    case discoveries
+    case savedDiscoveries
 
     static let syncResources: [TuneAVAppDataResource] = [
         .favorites,
-        .recents,
-        .discoveries
+        .savedDiscoveries
     ]
 }
 
@@ -74,19 +72,15 @@ actor TuneAVAppDataSyncClient {
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {
         let favorites = try await pullResource(.favorites, entryType: FavoriteStationRecord.self)
-        let recents = try await pullResource(.recents, entryType: RecentStationRecord.self)
-        let discoveries = try await pullResource(.discoveries, entryType: DiscoveredTrackRecord.self)
+        let savedDiscoveries = try await pullResource(.savedDiscoveries, entryType: DiscoveredTrackRecord.self)
 
         let snapshot = TuneAVLibrarySnapshot(
             favorites: favorites.entries,
-            recents: recents.entries,
-            discoveries: discoveries.entries,
-            settings: .empty
+            savedDiscoveries: savedDiscoveries.entries
         )
         let updatedAt = [
             favorites.updatedAt,
-            recents.updatedAt,
-            discoveries.updatedAt
+            savedDiscoveries.updatedAt
         ].max() ?? .distantPast
 
         return TuneAVLibraryDocument(
@@ -94,8 +88,7 @@ actor TuneAVAppDataSyncClient {
             updatedAt: updatedAt,
             revision: [
                 favorites.revision,
-                recents.revision,
-                discoveries.revision
+                savedDiscoveries.revision
             ].max() ?? 0,
             etag: nil
         )
@@ -103,8 +96,7 @@ actor TuneAVAppDataSyncClient {
 
     func pushLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
         try await pushResource(.favorites, entries: snapshot.favorites)
-        try await pushResource(.recents, entries: snapshot.recents)
-        try await pushResource(.discoveries, entries: snapshot.discoveries)
+        try await pushResource(.savedDiscoveries, entries: snapshot.savedDiscoveries)
     }
 
     func overwriteLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {

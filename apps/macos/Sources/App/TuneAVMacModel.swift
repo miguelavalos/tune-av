@@ -793,7 +793,7 @@ final class TuneAVMacModel: ObservableObject {
             )
         }
         storage.saveFavoriteRecords(favoriteRecords)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: true)
     }
 
     func isFavorite(_ station: Station) -> Bool {
@@ -813,14 +813,13 @@ final class TuneAVMacModel: ObservableObject {
         favoriteStations = []
         favoriteRecords = []
         storage.saveFavoriteRecords(favoriteRecords)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: true)
     }
 
     func clearRecents() {
-        recentStations.forEach(rememberRecentDeletion(for:))
         recentStations = []
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
     }
 
     func clearLocalLibraryData() {
@@ -883,13 +882,13 @@ final class TuneAVMacModel: ObservableObject {
         let now = Date.now
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
+            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
             discoveredTracks[index].playedAt = now
             discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
             discoveredTracks[index].hiddenAt = nil
             discoveredTracks[index].updatedAt = now
         } else {
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
+            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
             discoveredTracks.insert(
                 MacDiscoveredTrack(
                     title: normalizedTitle,
@@ -904,7 +903,7 @@ final class TuneAVMacModel: ObservableObject {
 
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: true)
         return currentDiscoveryIsSaved
     }
 
@@ -934,12 +933,10 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveTrackFeedbackRecords(trackFeedbackRecords)
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks[index].playedAt = now
             discoveredTracks[index].hiddenAt = feedback == .notForMe ? now : nil
             discoveredTracks[index].updatedAt = now
         } else if feedback == .notForMe {
-            removeTombstone(resource: "discoveries", identityKey: discoveryID)
             discoveredTracks.insert(
                 MacDiscoveredTrack(
                     title: normalizedTitle,
@@ -954,26 +951,32 @@ final class TuneAVMacModel: ObservableObject {
 
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
         syncProTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
     }
 
     func clearDiscoveredTracks() {
-        discoveredTracks.forEach(rememberDiscoveryDeletion(for:))
+        discoveredTracks.filter(\.isMarkedInteresting).forEach(rememberSavedDiscoveryDeletion(for:))
+        let removedSavedDiscovery = discoveredTracks.contains(where: \.isMarkedInteresting)
         discoveredTracks = []
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: removedSavedDiscovery)
     }
 
     func toggleDiscoverySaved(_ discovery: MacDiscoveredTrack) {
         guard let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) else { return }
         let now = Date.now
+        if discoveredTracks[index].isMarkedInteresting {
+            rememberSavedDiscoveryDeletion(for: discoveredTracks[index])
+        } else {
+            removeTombstone(resource: "savedDiscoveries", identityKey: discovery.discoveryID)
+        }
         discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
         discoveredTracks[index].hiddenAt = nil
         discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: true)
     }
 
     func hideDiscovery(_ discovery: MacDiscoveredTrack) {
@@ -982,7 +985,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks[index].hiddenAt = now
         discoveredTracks[index].updatedAt = now
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
     }
 
     func restoreDiscovery(_ discovery: MacDiscoveredTrack) {
@@ -992,14 +995,16 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
     }
 
     func removeDiscovery(_ discovery: MacDiscoveredTrack) {
-        rememberDiscoveryDeletion(for: discovery)
+        if discovery.isMarkedInteresting {
+            rememberSavedDiscoveryDeletion(for: discovery)
+        }
         discoveredTracks.removeAll { $0.discoveryID == discovery.discoveryID }
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: discovery.isMarkedInteresting)
     }
 
     func startAutomaticLibrarySync() async {
@@ -1288,12 +1293,11 @@ final class TuneAVMacModel: ObservableObject {
 
     private func recordRecent(_ station: Station) {
         let identityKey = stationIdentityKey(for: station)
-        removeTombstone(resource: "recents", identityKey: identityKey)
         recentStations.removeAll { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
         recentStations.insert(station, at: 0)
         recentStations = Array(recentStations.prefix(12))
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
     }
 
     private func rememberStationEnrichment(_ stations: [Station]) {
@@ -1348,7 +1352,7 @@ final class TuneAVMacModel: ObservableObject {
         if didUpdateRecents {
             storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         }
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: didUpdateFavorites)
     }
 
     private func bestEnrichedStation(for station: Station, in enrichedByKey: [String: Station]) -> Station? {
@@ -1596,9 +1600,6 @@ final class TuneAVMacModel: ObservableObject {
             station: currentStation,
             artworkURL: currentTrackArtworkURL
         )
-        guard !hasTombstone(resource: "discoveries", identityKey: discovery.discoveryID) else {
-            return
-        }
         let now = Date.now
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) {
@@ -1618,7 +1619,7 @@ final class TuneAVMacModel: ObservableObject {
         trimDiscoveriesToAccessLimit()
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated()
+        markLocalLibraryUpdated(syncsCloud: false)
     }
 
     private func trimDiscoveriesToAccessLimit() {
@@ -1896,34 +1897,18 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
-        let updatedAt = TuneAVDateCoding.string(from: localLibraryUpdatedAt)
         return TuneAVLibrarySnapshot(
             favorites: favoriteRecords + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
-            recents: recentStations.map {
-                RecentStationRecord(station: $0.appDataRecord, lastPlayedAt: updatedAt)
-            } + tombstoneRecords(resource: "recents", type: RecentStationRecord.self),
-            discoveries: discoveredTracks.map(\.record) + tombstoneRecords(resource: "discoveries", type: DiscoveredTrackRecord.self),
-            settings: AppSettingsRecord(
-                preferredCountry: selectedSearchCountryCode ?? "",
-                preferredLanguage: L10n.locale.language.languageCode?.identifier ?? "",
-                preferredTag: activeSearchTag ?? "",
-                lastPlayedStationID: currentStation?.id,
-                sleepTimerMinutes: activeSleepTimerMinutes,
-                openLastStationOnLaunch: true,
-                autoSkipUnstableStreams: true,
-                updatedAt: updatedAt
-            )
+            savedDiscoveries: discoveredTracks.filter(\.isMarkedInteresting).map(\.record)
+                + tombstoneRecords(resource: "savedDiscoveries", type: DiscoveredTrackRecord.self)
         )
     }
 
     private func cloudBoundedSnapshot(_ snapshot: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
         TuneAVLibrarySnapshot(
             favorites: snapshot.favorites,
-            recents: Array(snapshot.recents.filter { $0.deletedAt == nil }.prefix(24))
-                + snapshot.recents.filter { $0.deletedAt != nil },
-            discoveries: Array(snapshot.discoveries.filter { $0.deletedAt == nil }.prefix(1_000))
-                + snapshot.discoveries.filter { $0.deletedAt != nil },
-            settings: snapshot.settings
+            savedDiscoveries: Array(snapshot.savedDiscoveries.filter { $0.deletedAt == nil }.prefix(1_000))
+                + snapshot.savedDiscoveries.filter { $0.deletedAt != nil }
         )
     }
 
@@ -1942,18 +1927,9 @@ final class TuneAVMacModel: ObservableObject {
             )
         }
 
-        for recent in snapshot.recents where recent.deletedAt != nil {
+        for discovery in snapshot.savedDiscoveries where discovery.deletedAt != nil {
             rememberTombstone(
-                resource: "recents",
-                identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(recent.station),
-                payload: recent,
-                deletedAt: recent.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
-            )
-        }
-
-        for discovery in snapshot.discoveries where discovery.deletedAt != nil {
-            rememberTombstone(
-                resource: "discoveries",
+                resource: "savedDiscoveries",
                 identityKey: discovery.discoveryID,
                 payload: discovery,
                 deletedAt: discovery.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
@@ -1966,16 +1942,29 @@ final class TuneAVMacModel: ObservableObject {
         favoriteStations = favoriteRecords
             .map { Station(record: $0.station) }
 
-        recentStations = snapshot.recents
-            .filter { $0.deletedAt == nil }
-            .map { Station(record: $0.station) }
-
-        discoveredTracks = snapshot.discoveries
-            .compactMap(MacDiscoveredTrack.init(record:))
-            .sorted { $0.playedAt > $1.playedAt }
+        let savedDiscoveriesByID = Dictionary(
+            snapshot.savedDiscoveries.filter { $0.deletedAt == nil }.map { ($0.discoveryID, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let deletedSavedDiscoveryIDs = Set(snapshot.savedDiscoveries.compactMap { $0.deletedAt == nil ? nil : $0.discoveryID })
+        var nextDiscoveries = discoveredTracks.map { discovery in
+            var nextDiscovery = discovery
+            if let savedRecord = savedDiscoveriesByID[discovery.discoveryID] {
+                nextDiscovery = MacDiscoveredTrack(record: savedRecord) ?? discovery
+            } else if deletedSavedDiscoveryIDs.contains(discovery.discoveryID) {
+                nextDiscovery.markedInterestedAt = nil
+            }
+            return nextDiscovery
+        }
+        let existingDiscoveryIDs = Set(nextDiscoveries.map(\.discoveryID))
+        nextDiscoveries.append(
+            contentsOf: savedDiscoveriesByID.values
+                .filter { !existingDiscoveryIDs.contains($0.discoveryID) }
+                .compactMap(MacDiscoveredTrack.init(record:))
+        )
+        discoveredTracks = sortedDiscoveries(nextDiscoveries)
 
         storage.saveFavoriteRecords(favoriteRecords)
-        storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
         storage.saveDiscoveries(discoveredTracks)
         storage.saveTombstones(libraryTombstones)
         markCloudLibraryApplied()
@@ -2046,23 +2035,10 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
-    private func rememberRecentDeletion(for station: Station) {
+    private func rememberSavedDiscoveryDeletion(for discovery: MacDiscoveredTrack) {
         let deletedAt = Date.now
         rememberTombstone(
-            resource: "recents",
-            identityKey: stationIdentityKey(for: station),
-            payload: RecentStationRecord(
-                station: station.appDataRecord,
-                deletedAt: TuneAVDateCoding.string(from: deletedAt)
-            ),
-            deletedAt: deletedAt
-        )
-    }
-
-    private func rememberDiscoveryDeletion(for discovery: MacDiscoveredTrack) {
-        let deletedAt = Date.now
-        rememberTombstone(
-            resource: "discoveries",
+            resource: "savedDiscoveries",
             identityKey: discovery.discoveryID,
             payload: DiscoveredTrackRecord(
                 discoveryID: discovery.discoveryID,
@@ -2127,11 +2103,12 @@ final class TuneAVMacModel: ObservableObject {
         TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
     }
 
-    private func markLocalLibraryUpdated(_ date: Date = .now) {
+    private func markLocalLibraryUpdated(_ date: Date = .now, syncsCloud: Bool = false) {
         localLibraryUpdatedAt = date
         latestLocalLibraryMutationAt = date
         storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
         storage.saveDate(date, forKey: TuneAVMacLibraryStorage.localLibraryMutationAtKey)
+        guard syncsCloud else { return }
         handleCloudSyncTriggerAction(
             cloudSyncTrigger.localLibraryChanged(
                 accountAvailable: accountService.isAvailable,
