@@ -81,6 +81,8 @@ targets:
         product: AVAviFoundation
       - package: AppsAV
         product: AVPaywallFoundation
+      - package: AppsAV
+        product: AVProductAccountFoundation
       - package: ConvexMobile
         product: ConvexMobile
       - package: Clerk

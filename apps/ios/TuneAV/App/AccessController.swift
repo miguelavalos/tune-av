@@ -1,3 +1,4 @@
+import AVProductAccountFoundation
 import Foundation
 import OSLog
 
@@ -135,6 +136,21 @@ final class AccessController: ObservableObject {
         accountUser != nil
     }
 
+    var productAccountState: AVProductAccountState {
+        if isAccountSessionTemporarilyUnavailable, let accountUser {
+            return .temporarilyUnavailable(AVProductAccountSession(
+                user: accountUser.productAccountUser,
+                isTemporarilyUnavailable: true
+            ))
+        }
+
+        if let accountUser {
+            return .signedIn(AVProductAccountSession(user: accountUser.productAccountUser))
+        }
+
+        return .guest
+    }
+
     var isLocalOnly: Bool {
         capabilities.isLocalOnly
     }
@@ -155,38 +171,68 @@ final class AccessController: ObservableObject {
         accessRefreshGeneration += 1
         let generation = accessRefreshGeneration
 
-        switch await accountService.restoreSession() {
-        case .active(let providerUser):
+        let diagnostics = TuneProductAccountDiagnostics()
+        let sessionController = AVProductAccountSessionController(
+            configuration: .tuneAV,
+            provider: TuneProductAccountProvider(accountService: accountService),
+            resolver: TuneProductAccountResolver(
+                accountService: accountService,
+                profileResolver: accountProfileResolver
+            ),
+            persistence: TuneProductAccountPersistence(userDefaults: userDefaults, key: lastKnownAccountUserKey),
+            diagnostics: diagnostics
+        )
+
+        let productAccountState = await sessionController.restore()
+        let diagnosticEvents = await diagnostics.events
+
+        guard generation == accessRefreshGeneration else { return }
+
+        if diagnosticEvents.contains(.providerSessionActive) {
             TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_active")
-            guard generation == accessRefreshGeneration else { return }
-            guard let resolvedUser = await resolveInternalAccountUser(providerUser: providerUser) else {
-                isAccountSessionTemporarilyUnavailable = true
-                if accountUser == nil {
-                    accountSession = nil
-                    platformUserId = nil
-                    subscriptionOffer = nil
-                    subscriptionError = nil
-                    isWaitingForSubscriptionReconciliation = false
-                    subscriptionReconciliationSource = nil
-                    clearLastKnownAccountUser()
-                    resolveAccessState()
-                }
-                return
-            }
-            accountUser = resolvedUser
-            TuneAVDiagnostics.setUserContext(id: resolvedUser.id)
-            persistLastKnownAccountUser(resolvedUser)
+        }
+
+        if diagnosticEvents.contains(.providerSessionUnavailable) ||
+            diagnosticEvents.contains(.providerTokenUnavailable) ||
+            diagnosticEvents.contains(.productUserResolutionTemporarilyUnavailable) {
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_temporarily_unavailable")
+        }
+
+        if diagnosticEvents.contains(.providerSignedOut), productAccountState.user != nil {
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_signed_out_preserved_local_user")
+            authLogger.error("Account AV reported signed out while a local account user exists; preserving local account state")
+        } else if diagnosticEvents.contains(.providerSignedOut) {
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_signed_out")
+        }
+
+        switch productAccountState {
+        case .signedIn(let session):
+            accountUser = AccountUser(productAccountUser: session.user)
+            TuneAVDiagnostics.setUserContext(id: session.user.id)
             isAccountSessionTemporarilyUnavailable = false
-        case .temporarilyUnavailable:
-            guard generation == accessRefreshGeneration else { return }
+        case .temporarilyUnavailable(let session):
+            accountUser = AccountUser(productAccountUser: session.user)
+            TuneAVDiagnostics.setUserContext(id: session.user.id)
             isAccountSessionTemporarilyUnavailable = true
             authLogger.error("Account AV session is temporarily unavailable during access refresh")
-            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_temporarily_unavailable")
-            resolveAccessState()
-            return
-        case .signedOut, .invalidated:
-            guard generation == accessRefreshGeneration else { return }
-            TuneAVDiagnostics.addBreadcrumb(feature: "tune.account", operation: "restore_signed_out")
+        case .restoring(let lastKnownUser):
+            accountUser = lastKnownUser.map(AccountUser.init(productAccountUser:))
+            isAccountSessionTemporarilyUnavailable = lastKnownUser != nil
+        case .guest:
+            if diagnosticEvents.contains(.productUserResolutionTemporarilyUnavailable) ||
+                diagnosticEvents.contains(.providerTokenUnavailable) ||
+                diagnosticEvents.contains(.providerSessionUnavailable) {
+                isAccountSessionTemporarilyUnavailable = true
+                accountSession = nil
+                platformUserId = nil
+                subscriptionOffer = nil
+                subscriptionError = nil
+                isWaitingForSubscriptionReconciliation = false
+                subscriptionReconciliationSource = nil
+                resolveAccessState()
+                return
+            }
+
             clearSignedOutAccountState()
             resolveAccessState()
             return
@@ -456,6 +502,104 @@ final class AccessController: ObservableObject {
 
     private func clearLastKnownAccountUser() {
         userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+    }
+}
+
+private extension AVProductAccountConfiguration {
+    static let tuneAV = AVProductAccountConfiguration(
+        appIdentifier: "tuneav",
+        appDisplayName: "Tune AV",
+        allowsGuestMode: true
+    )
+}
+
+private extension AccountUser {
+    init(productAccountUser user: AVProductAccountUser) {
+        self.init(id: user.id, displayName: user.displayName, emailAddress: user.emailAddress)
+    }
+
+    var productAccountUser: AVProductAccountUser {
+        AVProductAccountUser(id: id, displayName: displayName, emailAddress: emailAddress)
+    }
+}
+
+@MainActor
+private struct TuneProductAccountProvider: AVProductAccountProviderSessioning {
+    let accountService: AVAccountService
+
+    func restoreProviderSession() async -> AVProductAccountProviderRestoreResult {
+        switch await accountService.restoreSession() {
+        case .signedOut:
+            return .signedOut
+        case .active:
+            return .active
+        case .temporarilyUnavailable:
+            return .temporarilyUnavailable
+        case .invalidated:
+            return .invalidated
+        }
+    }
+
+    func getProviderToken() async throws -> String? {
+        try await accountService.getToken()
+    }
+
+    func signOutProvider() async throws {
+        try await accountService.signOut()
+    }
+}
+
+@MainActor
+private struct TuneProductAccountResolver: AVProductAccountResolving {
+    let accountService: AVAccountService
+    let profileResolver: AccountProfileResolving
+
+    func resolveProductAccount(
+        providerToken: String,
+        configuration: AVProductAccountConfiguration
+    ) async throws -> AVProductAccountUser {
+        _ = providerToken
+        _ = configuration
+
+        if TuneAVUITestEnvironment.current.hasAccountOverride,
+           let providerUser = accountService.providerSessionUser {
+            return providerUser.productAccountUser
+        }
+
+        let accountUser = try await profileResolver.resolveCurrentAccountUser()
+        return accountUser.productAccountUser
+    }
+}
+
+@MainActor
+private struct TuneProductAccountPersistence: AVProductAccountPersistence {
+    let userDefaults: UserDefaults
+    let key: String
+
+    func loadLastKnownUser() async -> AVProductAccountUser? {
+        guard let data = userDefaults.data(forKey: key),
+              let user = try? JSONDecoder().decode(AccountUser.self, from: data) else {
+            return nil
+        }
+        return user.productAccountUser
+    }
+
+    func saveLastKnownUser(_ user: AVProductAccountUser) async throws {
+        let accountUser = AccountUser(productAccountUser: user)
+        guard let data = try? JSONEncoder().encode(accountUser) else { return }
+        userDefaults.set(data, forKey: key)
+    }
+
+    func clearLastKnownUser() async throws {
+        userDefaults.removeObject(forKey: key)
+    }
+}
+
+private actor TuneProductAccountDiagnostics: AVProductAccountDiagnostics {
+    private(set) var events: [AVProductAccountDiagnosticEvent] = []
+
+    func recordAccountEvent(_ event: AVProductAccountDiagnosticEvent) {
+        events.append(event)
     }
 }
 

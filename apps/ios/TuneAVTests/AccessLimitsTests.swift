@@ -688,28 +688,39 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testSignedInAccountClearsWhenSessionIsConfirmedSignedOut() async {
+    func testSignedInAccountIsPreservedWhenProviderReportsSignedOut() async {
+        let userDefaults = isolatedUserDefaults()
         let signedOutUser = AccountUser(id: "signed-out-user", displayName: "Signed Out User", emailAddress: "signedout@example.com")
+        let signedInController = AccessController(
+            accountService: MutableStubAccountService(user: signedOutUser),
+            accountProfileResolver: StubAccountProfileResolver(user: signedOutUser),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await signedInController.syncFromAccountProvider()
+
         let accountService = MutableStubAccountService(
-            user: signedOutUser,
+            user: nil,
             restoreResult: .signedOut
         )
         let controller = AccessController(
             accountService: accountService,
             accountProfileResolver: StubAccountProfileResolver(user: signedOutUser),
             entitlementService: StubEntitlementService(access: .signedInPro),
-            userDefaults: isolatedUserDefaults(),
+            userDefaults: userDefaults,
             now: { self.fixedDate("2026-04-30T10:00:00Z") }
         )
 
         await controller.syncFromAccountProvider()
 
-        XCTAssertFalse(controller.isSignedIn)
-        XCTAssertNil(controller.accountUser)
-        XCTAssertNil(controller.accountSession)
-        XCTAssertEqual(controller.accessMode, .guest)
-        XCTAssertEqual(controller.planTier, .free)
-        XCTAssertFalse(controller.isAccountSessionTemporarilyUnavailable)
+        XCTAssertTrue(controller.isSignedIn)
+        XCTAssertEqual(controller.accountUser, signedOutUser)
+        XCTAssertEqual(controller.accountSession?.user, signedOutUser)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertEqual(controller.planTier, .pro)
+        XCTAssertTrue(controller.isAccountSessionTemporarilyUnavailable)
         XCTAssertFalse(accountService.didSignOut)
     }
 

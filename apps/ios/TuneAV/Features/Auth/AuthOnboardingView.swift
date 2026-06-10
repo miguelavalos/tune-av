@@ -1,21 +1,21 @@
+import AVProductAccountFoundation
 import AVSettingsFoundation
+import AuthenticationServices
 import SwiftUI
 import os
 
 struct AuthOnboardingView: View {
-    @Binding var authOptionsArePresented: Bool
+    @Binding var authPresentationState: AVProductAccountAuthPresentationState
     let accountIsAvailable: Bool
     let onContinueWithApple: () async throws -> Void
     let onContinueWithGoogle: () async throws -> Void
     let onSkip: () -> Void
 
-    @StateObject private var signInCoordinator = AVAuthSignInCoordinator()
-
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
 
     var body: some View {
         AVAuthConfiguredOnboardingScreen(
-            authOptionsArePresented: $authOptionsArePresented,
+            authOptionsArePresented: authOptionsArePresentedBinding,
             primaryAction: accountIsAvailable ? showAuthOptions : onSkip,
             secondaryAction: onSkip,
             brandWidth: 160,
@@ -24,26 +24,23 @@ struct AuthOnboardingView: View {
                 AuthOptionsPanel(
                     accountIsAvailable: accountIsAvailable,
                     legalConsentText: legalConsentText,
-                    activeProvider: signInCoordinator.activeProvider,
+                    activeProvider: activeProvider,
                     onAppleTap: startAppleSignIn,
                     onGoogleTap: startGoogleSignIn,
                     onSkip: onSkip
                 )
             }
         )
-        .alert(L10n.string("auth.alert.continueFailed.title"), isPresented: $signInCoordinator.isShowingError) {
+        .alert(L10n.string("auth.alert.continueFailed.title"), isPresented: isShowingErrorBinding) {
             Button(L10n.string("auth.alert.close"), role: .cancel) {}
         } message: {
-            Text(signInCoordinator.errorMessage)
-        }
-        .onDisappear {
-            signInCoordinator.cancel()
+            Text(errorMessage)
         }
     }
 
     private func showAuthOptions() {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-            authOptionsArePresented = true
+            authPresentationState = .onboardingOptions
         }
     }
 
@@ -56,16 +53,75 @@ struct AuthOnboardingView: View {
     }
 
     private func startSignIn(provider: AVAuthProvider, operation: @escaping () async throws -> Void) {
-        signInCoordinator.start(
-            provider: provider,
-            isAvailable: accountIsAvailable,
-            unavailableMessage: AVAccountServiceError.unavailable.localizedDescription,
-            operation: operation,
-            onSuccess: {
-                authOptionsArePresented = false
-            },
-            onFailure: logAuthError
+        guard accountIsAvailable else {
+            authPresentationState = .error(
+                message: AVAccountServiceError.unavailable.localizedDescription,
+                optionsExpanded: true
+            )
+            return
+        }
+        guard authPresentationState.activeProvider == nil else { return }
+
+        let authProvider: AVProductAccountAuthProvider = provider == .apple ? .apple : .google
+        authPresentationState = .busy(.provider(authProvider))
+
+        Task { @MainActor in
+            do {
+                try await operation()
+                authPresentationState = .hidden
+            } catch {
+                guard !error.avTuneIsAuthenticationCancellation else {
+                    authPresentationState = .onboardingOptions
+                    return
+                }
+
+                logAuthError(error, provider: provider)
+                authPresentationState = .error(message: error.localizedDescription, optionsExpanded: true)
+            }
+        }
+    }
+
+    private var authOptionsArePresentedBinding: Binding<Bool> {
+        Binding(
+            get: { authPresentationState.optionsAreExpanded },
+            set: { isPresented in
+                guard authPresentationState.activeProvider == nil else { return }
+                authPresentationState = isPresented ? .onboardingOptions : .onboardingCollapsed
+            }
         )
+    }
+
+    private var isShowingErrorBinding: Binding<Bool> {
+        Binding(
+            get: {
+                if case .error = authPresentationState {
+                    return true
+                }
+                return false
+            },
+            set: { isPresented in
+                guard !isPresented else { return }
+                authPresentationState = .onboardingOptions
+            }
+        )
+    }
+
+    private var activeProvider: AVAuthProvider? {
+        switch authPresentationState.activeProvider {
+        case .apple:
+            .apple
+        case .google:
+            .google
+        case nil:
+            nil
+        }
+    }
+
+    private var errorMessage: String {
+        if case .error(let message, _) = authPresentationState {
+            return message
+        }
+        return ""
     }
 
     private var legalConsentText: AttributedString {
@@ -83,6 +139,42 @@ struct AuthOnboardingView: View {
         authLogger.error(
             "Account AV \(providerName, privacy: .public) failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) underlying_domain=\(underlyingDomain, privacy: .public) underlying_code=\(underlyingCode, privacy: .public)"
         )
+    }
+}
+
+private extension Error {
+    var avTuneIsAuthenticationCancellation: Bool {
+        let nsError = self as NSError
+        if nsError.domain == ASAuthorizationError.errorDomain,
+           nsError.code == ASAuthorizationError.Code.canceled.rawValue {
+            return true
+        }
+
+        if nsError.domain.contains("AuthenticationServices"),
+           nsError.code == ASAuthorizationError.Code.unknown.rawValue {
+            return true
+        }
+
+        if nsError.domain == ASWebAuthenticationSessionError.errorDomain,
+           nsError.code == ASWebAuthenticationSessionError.Code.canceledLogin.rawValue {
+            return true
+        }
+
+        if nsError.domain == NSURLErrorDomain,
+           nsError.code == NSURLErrorCancelled {
+            return true
+        }
+
+        let description = nsError.localizedDescription.lowercased()
+        if description.contains("cancel") || description.contains("cancelad") {
+            return true
+        }
+
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            return underlying.avTuneIsAuthenticationCancellation
+        }
+
+        return false
     }
 }
 
@@ -127,7 +219,7 @@ private struct AuthOptionsPanel: View {
 
 #Preview("Collapsed") {
     AuthOnboardingView(
-        authOptionsArePresented: .constant(false),
+        authPresentationState: .constant(.onboardingCollapsed),
         accountIsAvailable: true,
         onContinueWithApple: { },
         onContinueWithGoogle: { },
@@ -137,7 +229,7 @@ private struct AuthOptionsPanel: View {
 
 #Preview("Expanded") {
     AuthOnboardingView(
-        authOptionsArePresented: .constant(true),
+        authPresentationState: .constant(.onboardingOptions),
         accountIsAvailable: true,
         onContinueWithApple: { },
         onContinueWithGoogle: { },

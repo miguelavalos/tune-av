@@ -1,5 +1,6 @@
 import AVLaunchFoundation
 import AVPaywallFoundation
+import AVProductAccountFoundation
 import OSLog
 import SwiftUI
 import UIKit
@@ -8,9 +9,8 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
-    @State private var authOptionsArePresented = false
+    @State private var authPresentationState: AVProductAccountAuthPresentationState = .hidden
     @State private var automaticGuestOnboardingIsPresented = false
-    @State private var isShowingAccountOnboarding = false
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
@@ -30,13 +30,13 @@ struct RootView: View {
         Group {
             if shouldShowOnboarding {
                 AuthOnboardingView(
-                    authOptionsArePresented: $authOptionsArePresented,
+                    authPresentationState: $authPresentationState,
                     accountIsAvailable: accessController.accountIsAvailable,
                     onContinueWithApple: startAppleSignIn,
                     onContinueWithGoogle: startGoogleSignIn,
                     onSkip: {
                         automaticGuestOnboardingIsPresented = false
-                        isShowingAccountOnboarding = false
+                        authPresentationState = .hidden
                         accessController.skipForNow()
                     }
                 )
@@ -80,11 +80,10 @@ struct RootView: View {
         }
         .onChange(of: accessController.accessMode) { _, _ in
             libraryStore.configureLocalFeedbackRetention(for: accessController.accessMode)
-            authOptionsArePresented = false
+            authPresentationState = .hidden
 
             if accessController.accessMode != .guest {
                 automaticGuestOnboardingIsPresented = false
-                isShowingAccountOnboarding = false
                 guard scenePhase == .active else { return }
                 if accessController.capabilities.canUseCloudSync {
                     lastAutomaticLibrarySyncRequestedAt = .now
@@ -112,12 +111,15 @@ struct RootView: View {
 
     private var shouldShowOnboarding: Bool {
         guard !launchContext.shouldDisableOnboarding else { return false }
-        return isShowingAccountOnboarding || automaticGuestOnboardingIsPresented
+        let rootGate = AVProductAccountAuthFlowRootGate(
+            accountState: accessController.productAccountState,
+            authPresentationState: authPresentationState
+        )
+        return rootGate.shouldShowOnboarding || automaticGuestOnboardingIsPresented
     }
 
     private func startSignInFlow(showAuthOptions: Bool = false) {
-        authOptionsArePresented = showAuthOptions
-        isShowingAccountOnboarding = true
+        authPresentationState = showAuthOptions ? .onboardingOptions : .onboardingCollapsed
     }
 
     private func startAppleSignIn() async throws {
@@ -125,7 +127,7 @@ struct RootView: View {
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
         await refreshLibrarySync()
-        isShowingAccountOnboarding = false
+        authPresentationState = .hidden
     }
 
     private func startGoogleSignIn() async throws {
@@ -133,7 +135,7 @@ struct RootView: View {
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
         await refreshLibrarySync()
-        isShowingAccountOnboarding = false
+        authPresentationState = .hidden
     }
 
     private func refreshLibrarySync() async {
