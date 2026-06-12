@@ -2,8 +2,9 @@
 
 Open-source native client repo for Tune AV.
 
-This repository contains the active SwiftUI iOS client, shared Apple UI code,
-local playback, local persistence, public assets, and frontend documentation.
+This repository contains the active SwiftUI iOS and macOS clients, shared Apple
+UI code, local playback, local persistence, public assets, and frontend
+documentation.
 Non-public service operations, release operations, signing material, service
 configuration, and approval records do not belong in this repo.
 
@@ -11,7 +12,9 @@ Before validating signed account, subscription, purchase, backend, or deletion
 workflows, read [AGENTS.md](AGENTS.md). Those workflows are governed by private
 AVALSYS runbooks and must not be replaced with an invented local backend flow.
 
-The app to treat as current is `apps/ios`.
+The current Apple clients are `apps/ios` and `apps/macos`. iOS remains the
+primary mobile target; macOS shares the same product behavior where practical
+and uses native macOS presentation differences.
 
 ## License
 
@@ -22,7 +25,7 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 ```text
 apps/
   ios/      SwiftUI iOS app
-  macos/    SwiftUI macOS app kept for parity work
+  macos/    SwiftUI macOS app, Apple Silicon release target
 docs/
   ios-current-state.md
   ios-animation-and-assets.md
@@ -41,11 +44,14 @@ shared/
 - optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
 - shared SwiftUI shell, branding, settings, Avi, and text-fit helpers
-- secondary macOS files retained for future/parity work
+- macOS project and public Xcode configuration for Apple Silicon builds
 
 ## Current State
 
-- `apps/ios` is the current Tune AV app.
+- `apps/ios` is the current Tune AV iOS app.
+- `apps/macos` is the current Tune AV macOS app. The macOS release target is
+  Apple Silicon-only while the current Convex Swift binary dependency does not
+  provide an Intel macOS slice.
 - `shared/apple` is the shared Swift implementation root for Apple-domain UI
   behavior.
 - `shared/contracts` is reserved for platform-neutral client contracts.
@@ -54,7 +60,7 @@ shared/
   documented publicly only at the client-behavior level.
 
 Use [docs/ios-current-state.md](docs/ios-current-state.md) as the public source
-of truth for the current iOS app.
+of truth for current Apple client behavior and verification state.
 
 ## Local Setup
 
@@ -69,8 +75,16 @@ of truth for the current iOS app.
 The tracked debug configuration uses neutral defaults and optional
 `Local.xcconfig` overrides.
 
-macOS files may exist in the repository, but macOS is secondary to the iOS app
-for current public documentation.
+### macOS
+
+1. Install repo tooling:
+   `bun install`
+2. If your local build needs private runtime values, create
+   `apps/macos/Config/Local.xcconfig` outside git.
+3. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode and run the `TuneAVMac`
+   scheme.
+
+The macOS target is configured for Apple Silicon builds.
 
 ## Local Secrets
 

@@ -1,15 +1,17 @@
 # Tune AV iOS Current State
 
-Date: 2026-05-31
+Date: 2026-06-12
 
-This is the public source of truth for the current Tune AV iOS client. It
+This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
-approval status, signing, service setup, service consoles, and private
-evidence belong outside this repository.
+approval status, signing, service setup, service consoles, and private evidence
+belong outside this repository.
 
 ## App Scope
 
-Tune AV iOS is a SwiftUI radio app in `apps/ios/TuneAV`.
+Tune AV iOS is a SwiftUI radio app in `apps/ios/TuneAV`. Tune AV macOS is a
+SwiftUI macOS app in `apps/macos` that shares product behavior where practical
+and uses native macOS presentation differences.
 
 Current app shape:
 
@@ -30,6 +32,8 @@ Current app shape:
 - app-neutral shared Apple UI foundations for brand tokens, shell structure,
   launch/splash support, settings/account surfaces, Avi controls, paywall/limit
   surfaces, and text-fit hardening.
+- macOS Apple Silicon release target while the current Convex Swift binary
+  dependency does not provide an Intel macOS slice.
 
 ## Branding And First Run
 
@@ -66,7 +70,7 @@ Public docs may mention configuration flow and local file names, but must not
 document private hostnames, API keys, project IDs, service-console URLs, signing
 material, release status, or generated config contents.
 
-## Active iOS Docs
+## Active Apple Client Docs
 
 - [install.md](install.md): local simulator, guarded iOS device install, and
   macOS setup.
@@ -76,8 +80,8 @@ material, release status, or generated config contents.
   animation rules and Avi PNG frame-loop asset contract.
 - [station-enrichment-contract.md](station-enrichment-contract.md): public iOS
   display expectations for enriched station UI.
-- [release-checklist.md](release-checklist.md): public repository hygiene and
-  client verification gates.
+- [release-checklist.md](release-checklist.md): public repository hygiene,
+  iOS/macOS client verification gates, and archive preflights.
 
 ## Verification
 
@@ -86,6 +90,7 @@ Public local checks:
 ```bash
 bun run config:hygiene
 bun run ios:tests
+bun run macos:tests
 ```
 
 For simulator build-only checks:
@@ -102,14 +107,24 @@ The destination above is an example. Use `xcodebuild -showdestinations` or
 Xcode's Devices window and replace the name/OS with an installed simulator when
 the local Xcode image set differs.
 
-Latest local client verification known to the maintainers, run on 2026-05-22:
+Release-readiness preflights with generated production config present:
 
-- shared Apple package build passed;
-- `TuneAVTests`: 286 tests, 0 failures;
-- `HomeUITests/testTogglingFavoriteKeepsHomeInteractive`: 1 UI test, 0
-  failures;
-- Tune AV Debug build/run launched successfully, with Home shell snapshot
-  showing header, tabs, Avi entry, Home hero, and scrollable content.
+```bash
+bun run ios:release:preflight
+bun run ios:release:preflight -- --with-archive
+bun run macos:release:preflight
+bun run macos:release:preflight -- --with-archive
+```
+
+Latest local client verification known to the maintainers, run on 2026-06-12:
+
+- Convex client configuration checks passed with generated production config;
+- iOS production runtime config, release privacy gate, archive privacy
+  evidence, Sentry dSYM repair, and app-size gate passed;
+- iOS unit tests: 309 tests, 0 failures;
+- macOS production runtime config, platform security, and unsigned Release
+  archive preflight passed;
+- macOS unit tests: 16 tests, 0 failures.
 
 Signed device installs should use:
 
@@ -127,4 +142,5 @@ build, install, and launch the app.
 - continue testing playback and artwork behavior on real devices;
 - keep public docs focused on client behavior, local setup, and local
   verification;
-- keep macOS documentation secondary until macOS client work is active again.
+- keep macOS release documentation aligned with the Apple Silicon-only target
+  until the Convex Swift dependency supports Intel macOS archives.

@@ -84,6 +84,20 @@ public-safe config hygiene.
    - Profile/settings;
    - local data clearing.
 
+7. For release-readiness checks with generated production config present, run:
+
+   ```bash
+   bun run ios:release:preflight
+   bun run ios:release:preflight -- --with-archive
+   ```
+
+   The archive preflight validates release config hygiene, sensitive config
+   hygiene, platform security, network privacy, strict archive privacy evidence,
+   Sentry dSYM repair, and app-size budgets. The executable budget is a local
+   regression guard and can be overridden with
+   `TUNEAV_IOS_MAX_EXECUTABLE_SIZE_BYTES` when maintainers intentionally change
+   the release budget.
+
 ## iOS Network And ATS Behavior
 
 Tune AV should not load arbitrary remote HTTP pages in iOS.
@@ -98,8 +112,10 @@ Client checks:
 
 ## macOS Client Checks
 
-macOS is secondary in the current public repo, but keep it from regressing when
-touching shared Apple code.
+macOS shares the product behavior where practical and uses native macOS
+presentation differences. The current macOS release target is Apple
+Silicon-only because the current Convex Swift binary dependency does not provide
+an Intel macOS slice.
 
 1. Run:
 
@@ -107,10 +123,20 @@ touching shared Apple code.
    bun run macos:tests
    ```
 
-2. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
+2. For release-readiness checks with generated production config present, run:
+
+   ```bash
+   bun run macos:release:preflight
+   bun run macos:release:preflight -- --with-archive
+   ```
+
+   The archive preflight validates release config hygiene, platform security,
+   archive creation, and bundle identifier evidence.
+
+3. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
    run the `TuneAVMac` scheme locally.
 
-3. Confirm no generated macOS local config or build products are tracked.
+4. Confirm no generated macOS local config or build products are tracked.
 
 ## Public Source Release
 

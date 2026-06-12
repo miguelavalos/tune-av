@@ -1,7 +1,7 @@
 # Tune AV Installation
 
 This guide is for local simulator runs, connected iOS device installs, and the
-secondary macOS client target.
+macOS client target.
 
 ## iOS
 
@@ -131,8 +131,10 @@ on the phone:
 
 ## macOS
 
-Tune AV macOS is secondary to the iOS client and is kept for parity work with
-native macOS UI patterns.
+Tune AV macOS shares product behavior with the iOS client where practical and
+uses native macOS UI patterns where the platforms differ. The current macOS
+release target is Apple Silicon-only because the current Convex Swift binary
+dependency does not provide an Intel macOS slice.
 
 ### Requirements
 
@@ -160,6 +162,13 @@ To build and launch the app locally:
 
 ```bash
 ./scripts/build-and-run-macos.sh --verify
+```
+
+For release-readiness checks with generated production config present:
+
+```bash
+bun run macos:release:preflight
+bun run macos:release:preflight -- --with-archive
 ```
 
 ### Local QA
