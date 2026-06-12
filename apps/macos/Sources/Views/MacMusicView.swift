@@ -98,6 +98,10 @@ struct MacMusicView: View {
     @State private var isConfirmingClear = false
     @State private var copiedShareText = false
     @State private var openAviActionsID: String?
+    @State private var cachedVisibleDiscoveries: [MacDiscoveredTrack] = []
+    @State private var cachedSavedDiscoveries: [MacDiscoveredTrack] = []
+    @State private var cachedTopDiscoveries: [MacDiscoveredTrack] = []
+    @State private var cachedArtistSummaries: [TuneAVDiscoveryArtistSummary] = []
     @AppStorage("tuneav.music.sort") private var sortRawValue = Sort.recent.rawValue
 
     var body: some View {
@@ -126,6 +130,15 @@ struct MacMusicView: View {
         }
         .onChange(of: mode) { _, _ in resetVisibleLimits() }
         .onChange(of: sortRawValue) { _, _ in resetVisibleLimits() }
+        .task {
+            refreshCachedLibraryViews()
+        }
+        .onChange(of: model.discoveredTracks) { _, _ in
+            refreshCachedLibraryViews()
+        }
+        .onChange(of: model.stationFeedback) { _, _ in
+            refreshCachedTopDiscoveries()
+        }
     }
 
     private var overview: some View {
@@ -424,20 +437,44 @@ struct MacMusicView: View {
     }
 
     private var visibleDiscoveries: [MacDiscoveredTrack] {
-        TuneAVMusicLibraryLogic.visibleDiscoveries(model.discoveredTracks)
+        cachedVisibleDiscoveries
     }
 
     private var savedDiscoveries: [MacDiscoveredTrack] {
-        TuneAVMusicLibraryLogic.savedDiscoveries(model.discoveredTracks)
+        cachedSavedDiscoveries
     }
 
     private var filteredDiscoveries: [MacDiscoveredTrack] {
-        let filtered = TuneAVMusicLibraryLogic.filteredDiscoveries(
-            model.discoveredTracks,
-            mode: mode.libraryMode,
-            query: query,
-            selectedArtistName: selectedArtistName
-        )
+        let baseDiscoveries: [MacDiscoveredTrack]
+        switch mode {
+        case .songs, .artists:
+            baseDiscoveries = savedDiscoveries
+        case .top, .history:
+            baseDiscoveries = visibleDiscoveries
+        }
+
+        let artistFilteredDiscoveries: [MacDiscoveredTrack]
+        if let selectedArtistName {
+            artistFilteredDiscoveries = baseDiscoveries.filter {
+                $0.artistDisplayText.compare(
+                    selectedArtistName,
+                    options: [.caseInsensitive, .diacriticInsensitive]
+                ) == .orderedSame
+            }
+        } else {
+            artistFilteredDiscoveries = baseDiscoveries
+        }
+
+        let filtered: [MacDiscoveredTrack]
+        if let trimmedQuery = TuneAVText.normalizedValue(query) {
+            filtered = artistFilteredDiscoveries.filter { discovery in
+                discovery.title.localizedCaseInsensitiveContains(trimmedQuery)
+                    || discovery.artist?.localizedCaseInsensitiveContains(trimmedQuery) == true
+                    || discovery.stationName.localizedCaseInsensitiveContains(trimmedQuery)
+            }
+        } else {
+            filtered = artistFilteredDiscoveries
+        }
 
         if mode == .top {
             return sortTunedDiscoveries(filtered.filter { model.stationFeedback[$0.stationID] != nil })
@@ -458,7 +495,7 @@ struct MacMusicView: View {
     }
 
     private var topDiscoveries: [MacDiscoveredTrack] {
-        sortTunedDiscoveries(visibleDiscoveries.filter { model.stationFeedback[$0.stationID] != nil })
+        cachedTopDiscoveries
     }
 
     private var artistNames: [String] {
@@ -466,16 +503,22 @@ struct MacMusicView: View {
     }
 
     private var artistSummaries: [TuneAVDiscoveryArtistSummary] {
-        TuneAVMusicLibraryLogic.visibleArtistSummaries(model.discoveredTracks, locale: L10n.locale)
+        cachedArtistSummaries
     }
 
     private var filteredArtistSummaries: [TuneAVDiscoveryArtistSummary] {
-        let summaries = TuneAVMusicLibraryLogic.filteredArtistSummaries(
-            model.discoveredTracks,
-            mode: mode.libraryMode,
-            query: query,
-            locale: L10n.locale
-        )
+        let summaries: [TuneAVDiscoveryArtistSummary]
+        if let trimmedQuery = TuneAVText.normalizedValue(query) {
+            summaries = TuneAVMusicLibraryLogic.artistSummariesForSavedDiscoveries(
+                savedDiscoveries.filter { discovery in
+                    discovery.artist?.localizedCaseInsensitiveContains(trimmedQuery) == true
+                        || discovery.title.localizedCaseInsensitiveContains(trimmedQuery)
+                },
+                locale: L10n.locale
+            )
+        } else {
+            summaries = artistSummaries
+        }
 
         switch currentSort {
         case .recent, .strongest:
@@ -658,6 +701,17 @@ struct MacMusicView: View {
     private func resetVisibleLimits() {
         visibleDiscoveryLimit = Self.pageSize
         visibleArtistLimit = Self.pageSize
+    }
+
+    private func refreshCachedLibraryViews() {
+        cachedVisibleDiscoveries = TuneAVMusicLibraryLogic.visibleDiscoveries(model.discoveredTracks)
+        cachedSavedDiscoveries = cachedVisibleDiscoveries.filter(\.isMarkedInteresting)
+        cachedArtistSummaries = TuneAVMusicLibraryLogic.artistSummariesForSavedDiscoveries(cachedSavedDiscoveries, locale: L10n.locale)
+        refreshCachedTopDiscoveries()
+    }
+
+    private func refreshCachedTopDiscoveries() {
+        cachedTopDiscoveries = sortTunedDiscoveries(cachedVisibleDiscoveries.filter { model.stationFeedback[$0.stationID] != nil })
     }
 
     private func sortTunedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {

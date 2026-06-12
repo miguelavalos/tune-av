@@ -161,6 +161,13 @@ enum TuneAVMusicLibraryLogic {
         artistSummaries(for: savedDiscoveries(discoveries), locale: locale)
     }
 
+    static func artistSummariesForSavedDiscoveries<Discovery: TuneAVMusicLibraryDiscovery>(
+        _ savedDiscoveries: [Discovery],
+        locale: Locale = .current
+    ) -> [TuneAVDiscoveryArtistSummary] {
+        artistSummaries(for: savedDiscoveries, locale: locale)
+    }
+
     static func normalizedInitialMode<Discovery: TuneAVMusicLibraryDiscovery>(
         _ mode: TuneAVMusicLibraryMode,
         discoveries: [Discovery],

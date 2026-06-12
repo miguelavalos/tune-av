@@ -92,9 +92,30 @@ struct TuneAVMacApp: App {
     }
 }
 
+@MainActor
 final class TuneAVMacAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        bringMainWindowForward()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        bringMainWindowForward()
+        return true
+    }
+
+    private func bringMainWindowForward() {
+        NSApp.unhide(nil)
+        DispatchQueue.main.async {
+            NSRunningApplication.current.activate(options: [.activateAllWindows])
+            NSApp.windows
+                .filter { $0.canBecomeKey || $0.canBecomeMain }
+                .forEach { window in
+                    if window.isMiniaturized {
+                        window.deminiaturize(nil)
+                    }
+                    window.makeKeyAndOrderFront(nil)
+                }
+        }
     }
 }
