@@ -169,6 +169,7 @@ struct RootView: View {
         libraryStore.setAppDataService(appDataService)
         startProRealtimeSyncIfNeeded()
         await libraryStore.refreshCloudLibraryIfNeeded()
+        await libraryStore.refreshCloudFeedbackIfNeeded(force: true)
         await libraryStore.refreshUserSummary(force: true)
     }
 

@@ -1162,6 +1162,7 @@ final class TuneAVMacModel: ObservableObject {
             }
 
             lastCloudSyncAt = .now
+            await refreshProFeedbackNow()
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
             if let accountUser {
                 persistLastKnownAccountUser(accountUser)
