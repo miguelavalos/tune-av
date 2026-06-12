@@ -111,8 +111,8 @@ final class AccessLimitsTests: XCTestCase {
         let limits = AccessLimits.forMode(.signedInPro)
         let capabilities = AccessCapabilities.forMode(.signedInPro)
 
-        XCTAssertEqual(limits.favoriteStations, 500)
-        XCTAssertEqual(limits.recentStations, 200)
+        XCTAssertEqual(limits.favoriteStations, 1_000)
+        XCTAssertEqual(limits.recentStations, 1_000)
         XCTAssertEqual(limits.discoveredTracks, 1_000)
         XCTAssertEqual(limits.savedTracks, 1_000)
         XCTAssertNil(limits.aviActionsPerDay)
@@ -168,6 +168,51 @@ final class AccessLimitsTests: XCTestCase {
             TuneAVLibrarySyncPlanner.decision(
                 localSnapshot: local,
                 localUpdatedAt: fixedDate("2026-04-30T10:00:00Z"),
+                remoteDocument: remote
+            ),
+            .pushLocal
+        )
+    }
+
+    func testLibrarySyncPlannerPullsRemoteAfterLocalDeviceReset() {
+        let local = librarySnapshot(updatedAt: "2026-04-30T12:00:00Z")
+        let remoteSnapshot = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote")],
+            updatedAt: "2026-04-30T09:00:00Z"
+        )
+        let remote = libraryDocument(
+            snapshot: remoteSnapshot,
+            updatedAt: fixedDate("2026-04-30T09:00:00Z")
+        )
+
+        XCTAssertEqual(
+            TuneAVLibrarySyncPlanner.decision(
+                localSnapshot: local,
+                localUpdatedAt: fixedDate("2026-04-30T12:00:00Z"),
+                remoteDocument: remote
+            ),
+            .pullRemote(remoteSnapshot)
+        )
+    }
+
+    func testLibrarySyncPlannerPushesExplicitLocalDeletionTombstone() {
+        let local = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote", deletedAt: "2026-04-30T12:00:00Z")],
+            updatedAt: "2026-04-30T12:00:00Z"
+        )
+        let remoteSnapshot = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote")],
+            updatedAt: "2026-04-30T09:00:00Z"
+        )
+        let remote = libraryDocument(
+            snapshot: remoteSnapshot,
+            updatedAt: fixedDate("2026-04-30T09:00:00Z")
+        )
+
+        XCTAssertEqual(
+            TuneAVLibrarySyncPlanner.decision(
+                localSnapshot: local,
+                localUpdatedAt: fixedDate("2026-04-30T12:00:00Z"),
                 remoteDocument: remote
             ),
             .pushLocal

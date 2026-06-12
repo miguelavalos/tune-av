@@ -98,6 +98,25 @@ public-safe config hygiene.
    `TUNEAV_IOS_MAX_EXECUTABLE_SIZE_BYTES` when maintainers intentionally change
    the release budget.
 
+8. Use the reproducible archive/upload workflow for iOS App Store releases:
+
+   ```sh
+   bun run ios:release:archive -- --build <next-build>
+   ```
+
+   The workflow runs release gates, creates the final signed archive, repairs
+   `Sentry.framework.dSYM`, and verifies the final `.xcarchive` before any
+   upload is allowed. To upload the verified archive, rerun the command printed
+   by the workflow with `--upload`.
+
+   For an existing Organizer archive, run:
+
+   ```sh
+   bun run ios:archive:check -- --archive "<path-to-TuneAV.xcarchive>"
+   ```
+
+   Do not submit an archive that fails the archive check.
+
 ## iOS Network And ATS Behavior
 
 Tune AV should not load arbitrary remote HTTP pages in iOS.

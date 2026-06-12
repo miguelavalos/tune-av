@@ -282,8 +282,8 @@ enum TuneAVAccessPolicy {
             )
         case "signedInPro":
             TuneAVAccessLimitValues(
-                favoriteStations: 500,
-                recentStations: 200,
+                favoriteStations: 1_000,
+                recentStations: 1_000,
                 discoveredTracks: 1_000,
                 savedTracks: 1_000,
                 aviActionsPerDay: nil,

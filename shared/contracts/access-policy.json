@@ -58,8 +58,8 @@
         "canManagePlan": true
       },
       "limits": {
-        "favoriteStations": 500,
-        "recentStations": 200,
+        "favoriteStations": 1000,
+        "recentStations": 1000,
         "discoveredTracks": 1000,
         "savedTracks": 1000,
         "aviActionsPerDay": null,

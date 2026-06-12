@@ -808,12 +808,14 @@ final class TuneAVMacModel: ObservableObject {
         syncProStationFeedback(feedback, stationID: station.id)
     }
 
-    func clearFavorites() {
-        favoriteStations.forEach(rememberFavoriteDeletion(for:))
+    func clearFavorites(propagatesToCloud: Bool = true) {
+        if propagatesToCloud {
+            favoriteStations.forEach(rememberFavoriteDeletion(for:))
+        }
         favoriteStations = []
         favoriteRecords = []
         storage.saveFavoriteRecords(favoriteRecords)
-        markLocalLibraryUpdated(syncsCloud: true)
+        markLocalLibraryUpdated(syncsCloud: propagatesToCloud)
     }
 
     func clearRecents() {
@@ -823,9 +825,11 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func clearLocalLibraryData() {
-        clearFavorites()
+        clearFavorites(propagatesToCloud: false)
         clearRecents()
-        clearDiscoveredTracks()
+        clearDiscoveredTracks(propagatesToCloud: false)
+        libraryTombstones = []
+        storage.saveTombstones(libraryTombstones)
         stationFeedback = [:]
         storage.saveStationFeedback(stationFeedback)
         trackFeedbackRecords = [:]
@@ -955,12 +959,14 @@ final class TuneAVMacModel: ObservableObject {
         syncProTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
     }
 
-    func clearDiscoveredTracks() {
-        discoveredTracks.filter(\.isMarkedInteresting).forEach(rememberSavedDiscoveryDeletion(for:))
+    func clearDiscoveredTracks(propagatesToCloud: Bool = true) {
+        if propagatesToCloud {
+            discoveredTracks.filter(\.isMarkedInteresting).forEach(rememberSavedDiscoveryDeletion(for:))
+        }
         let removedSavedDiscovery = discoveredTracks.contains(where: \.isMarkedInteresting)
         discoveredTracks = []
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated(syncsCloud: removedSavedDiscovery)
+        markLocalLibraryUpdated(syncsCloud: propagatesToCloud && removedSavedDiscovery)
     }
 
     func toggleDiscoverySaved(_ discovery: MacDiscoveredTrack) {

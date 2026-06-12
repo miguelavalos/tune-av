@@ -116,6 +116,61 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
+    func testMacSyncPlannerPullsRemoteAfterLocalDeviceReset() {
+        let local = librarySnapshot(updatedAt: "2026-05-23T12:00:00Z")
+        let remoteSnapshot = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote-favorite")],
+            updatedAt: "2026-05-23T10:00:00Z"
+        )
+        let remote = TuneAVLibraryDocument(
+            snapshot: remoteSnapshot,
+            updatedAt: fixedDate("2026-05-23T10:00:00Z"),
+            revision: 1,
+            etag: nil
+        )
+
+        XCTAssertEqual(
+            TuneAVLibrarySyncPlanner.decision(
+                localSnapshot: local,
+                localUpdatedAt: fixedDate("2026-05-23T12:00:00Z"),
+                remoteDocument: remote
+            ),
+            .pullRemote(remoteSnapshot)
+        )
+    }
+
+    func testMacSyncPlannerPushesExplicitLocalDeletionTombstone() {
+        let local = librarySnapshot(
+            favorites: [
+                favoriteRecord(
+                    id: "remote-favorite",
+                    createdAt: nil,
+                    deletedAt: "2026-05-23T12:00:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T12:00:00Z"
+        )
+        let remoteSnapshot = librarySnapshot(
+            favorites: [favoriteRecord(id: "remote-favorite")],
+            updatedAt: "2026-05-23T10:00:00Z"
+        )
+        let remote = TuneAVLibraryDocument(
+            snapshot: remoteSnapshot,
+            updatedAt: fixedDate("2026-05-23T10:00:00Z"),
+            revision: 1,
+            etag: nil
+        )
+
+        XCTAssertEqual(
+            TuneAVLibrarySyncPlanner.decision(
+                localSnapshot: local,
+                localUpdatedAt: fixedDate("2026-05-23T12:00:00Z"),
+                remoteDocument: remote
+            ),
+            .pushLocal
+        )
+    }
+
     func testMacSyncMergeKeepsFavoriteDeletionTombstoneNewest() {
         let local = librarySnapshot(
             favorites: [
@@ -270,11 +325,13 @@ final class MacCloudSyncTests: XCTestCase {
 
     private func favoriteRecord(
         id: String,
-        createdAt: String? = "2026-05-23T09:00:00Z"
+        createdAt: String? = "2026-05-23T09:00:00Z",
+        deletedAt: String? = nil
     ) -> FavoriteStationRecord {
         FavoriteStationRecord(
             station: stationRecord(id: id),
-            createdAt: createdAt
+            createdAt: createdAt,
+            deletedAt: deletedAt
         )
     }
 

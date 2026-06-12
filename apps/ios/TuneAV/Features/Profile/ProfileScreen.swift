@@ -613,7 +613,7 @@ struct ProfileScreen: View {
     }
 
     private var shouldClearSyncedLibrary: Bool {
-        accessController.capabilities.canUseCloudSync
+        false
     }
 
     private var clearLibraryActionTitle: String {

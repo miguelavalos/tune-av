@@ -2,10 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>$(TUNEAV_DISPLAY_NAME)</string>
+	<key>ACCOUNTAV_API_BASE_URL</key>
+	<string>$(ACCOUNTAV_API_BASE_URL)</string>
+	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
+	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
+	<key>ACCOUNTAV_MANAGEMENT_URL</key>
+	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
+	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
+	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(TUNEAV_DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -28,41 +36,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20</string>
-	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
-	<string>$(ACCOUNTAV_PUBLISHABLE_KEY)</string>
-	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
-	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
-	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
-	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
-	<key>TUNEAV_IOS_SENTRY_DSN</key>
-	<string>$(TUNEAV_IOS_SENTRY_DSN)</string>
-	<key>SUPPORT_EMAIL_TO</key>
-	<string>$(SUPPORT_EMAIL_TO)</string>
-	<key>SUPPORTAV_BASE_URL</key>
-	<string>$(SUPPORTAV_BASE_URL)</string>
-	<key>ACCOUNTAV_API_BASE_URL</key>
-	<string>$(ACCOUNTAV_API_BASE_URL)</string>
-	<key>TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS</key>
-	<string>$(TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)</string>
-	<key>TUNEAV_CONVEX_URL</key>
-	<string>$(TUNEAV_CONVEX_URL)</string>
-	<key>ACCOUNTAV_MANAGEMENT_URL</key>
-	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
-	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
-	<string>$(TUNEAV_DELETE_ACCOUNT_URL)</string>
-	<key>TUNEAV_TERMS_URL</key>
-	<string>$(TUNEAV_TERMS_URL)</string>
-	<key>TUNEAV_PRIVACY_URL</key>
-	<string>$(TUNEAV_PRIVACY_URL)</string>
-	<key>TUNEAV_OPEN_SOURCE_URL</key>
-	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
-	<key>TUNEAV_REVENUECAT_PUBLIC_API_KEY</key>
-	<string>$(TUNEAV_REVENUECAT_PUBLIC_API_KEY)</string>
-	<key>TUNEAV_REVENUECAT_OFFERING_ID</key>
-	<string>$(TUNEAV_REVENUECAT_OFFERING_ID)</string>
-	<key>TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID</key>
-	<string>$(TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)</string>
+	<string>24</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
@@ -70,6 +44,41 @@
 		<key>NSAllowsArbitraryLoadsForMedia</key>
 		<true/>
 	</dict>
+	<key>SUPPORTAV_BASE_URL</key>
+	<string>$(SUPPORTAV_BASE_URL)</string>
+	<key>SUPPORT_EMAIL_TO</key>
+	<string>$(SUPPORT_EMAIL_TO)</string>
+	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
+	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
+	<key>TUNEAV_CONVEX_URL</key>
+	<string>$(TUNEAV_CONVEX_URL)</string>
+	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
+	<string>$(TUNEAV_DELETE_ACCOUNT_URL)</string>
+	<key>TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS</key>
+	<string>$(TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)</string>
+	<key>TUNEAV_IOS_SENTRY_DSN</key>
+	<string>$(TUNEAV_IOS_SENTRY_DSN)</string>
+	<key>TUNEAV_OPEN_SOURCE_URL</key>
+	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
+	<key>TUNEAV_PRIVACY_URL</key>
+	<string>$(TUNEAV_PRIVACY_URL)</string>
+	<key>TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID</key>
+	<string>$(TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)</string>
+	<key>TUNEAV_REVENUECAT_OFFERING_ID</key>
+	<string>$(TUNEAV_REVENUECAT_OFFERING_ID)</string>
+	<key>TUNEAV_REVENUECAT_PUBLIC_API_KEY</key>
+	<string>$(TUNEAV_REVENUECAT_PUBLIC_API_KEY)</string>
+	<key>TUNEAV_TERMS_URL</key>
+	<string>$(TUNEAV_TERMS_URL)</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -77,18 +86,9 @@
 		<key>UIImageName</key>
 		<string>LaunchIcon</string>
 	</dict>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
 	</array>
 </dict>
 </plist>

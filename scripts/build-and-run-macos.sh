@@ -12,20 +12,42 @@ DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
 VERIFY=false
 STREAM_LOGS=false
 
-for arg in "$@"; do
-  case "$arg" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --configuration)
+      CONFIGURATION="${2:-}"
+      shift 2
+      ;;
+    --debug)
+      CONFIGURATION="Debug"
+      shift
+      ;;
+    --release)
+      CONFIGURATION="Release"
+      shift
+      ;;
     --verify)
       VERIFY=true
+      shift
       ;;
     --logs|--telemetry)
       STREAM_LOGS=true
+      shift
       ;;
     *)
-      echo "Unknown option: $arg" >&2
+      echo "Unknown option: $1" >&2
       exit 2
       ;;
   esac
 done
+
+case "$CONFIGURATION" in
+  Debug|Release) ;;
+  *)
+    echo "Configuration must be Debug or Release, got '$CONFIGURATION'" >&2
+    exit 2
+    ;;
+esac
 
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 pkill -x "TuneAVMac" >/dev/null 2>&1 || true
