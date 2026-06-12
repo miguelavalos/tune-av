@@ -64,6 +64,12 @@ if [ ! -d "$app_path" ]; then
   exit 1
 fi
 
+app_binary="$app_path/Contents/MacOS/Tune AV"
+if [ ! -f "$app_binary" ]; then
+  echo "Archive app binary missing: $app_binary" >&2
+  exit 1
+fi
+
 plist_print() {
   /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null || true
 }
@@ -80,6 +86,12 @@ fi
 
 if [ "$archive_bundle_id" != "$expected_bundle_id" ]; then
   echo "FAIL archive bundle identifier must be $expected_bundle_id, got ${archive_bundle_id:-<missing>}." >&2
+  exit 1
+fi
+
+app_archs="$(lipo -archs "$app_binary")"
+if [ "$app_archs" != "arm64" ]; then
+  echo "FAIL macOS archive must be Apple Silicon-only arm64, got: $app_archs" >&2
   exit 1
 fi
 
@@ -122,6 +134,7 @@ Tune AV macOS archive
   archive: $archive_path
   archive name: ${archive_name:-unknown}
   bundle id: $archive_bundle_id
+  architectures: $app_archs
   signing identity: ${archive_signing_identity:-unknown}
   authority: ${authority:-unknown}
   team identifier: ${team_identifier:-${archive_team_id:-unknown}}

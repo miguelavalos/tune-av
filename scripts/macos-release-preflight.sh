@@ -85,7 +85,9 @@ if [ "$with_archive" -eq 1 ]; then
         CODE_SIGNING_ALLOWED=NO \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGN_IDENTITY="" \
-        SKIP_INSTALL=NO
+        SKIP_INSTALL=NO \
+        ARCHS=arm64 \
+        ONLY_ACTIVE_ARCH=NO
   fi
 
   archive_app_path="$archive_path/Products/Applications/Tune AV.app"
@@ -103,7 +105,19 @@ if [ "$with_archive" -eq 1 ]; then
     exit 1
   fi
 
+  app_binary="$archive_app_path/Contents/MacOS/Tune AV"
+  if [ ! -f "$app_binary" ]; then
+    echo "FAIL archive app binary is missing: $app_binary" >&2
+    exit 1
+  fi
+  app_archs="$(lipo -archs "$app_binary")"
+  if [ "$app_archs" != "arm64" ]; then
+    echo "FAIL macOS archive must be Apple Silicon-only arm64, got: $app_archs" >&2
+    exit 1
+  fi
+
   echo "Archive bundle identifier check passed."
+  echo "Archive architecture check passed: $app_archs."
 
   if [ -n "$cleanup_dir" ]; then
     rm -rf "$cleanup_dir"
