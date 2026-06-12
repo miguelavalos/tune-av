@@ -108,7 +108,13 @@ For playback-adjacent UI and Avi asset work, follow
 - Station discovery can show public radio-directory data.
 - Playback uses direct third-party station stream hosts that Tune AV does not
   control.
-- Artwork and favicon fallbacks can come from public metadata sources.
+- Public metadata can provide factual station and now-playing context.
+- Do not treat public metadata logos, favicons, station artwork, platform
+  logos, or other brand imagery as automatically display-safe. Use
+  product-owned/generated placeholders or reviewed rights evidence.
+- Tune AV's station-logo restriction should not be generalized into a blanket
+  ban on TV/movie posters in other Apps AV products when provider terms support
+  title-reference poster use.
 
 Public docs should describe only the client behavior that users and contributors
 can see or test locally.

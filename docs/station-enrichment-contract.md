@@ -44,7 +44,12 @@ editorial.updatedAt
 ```
 
 The app can also use public station identity, category, visibility, quality,
-status, and artwork fields when they are available in the station snapshot.
+status, and policy-reviewed artwork fields when they are available in the
+station snapshot.
+
+Public metadata artwork and favicons are not automatically display-safe in Tune
+AV. Station logos, favicons, and station-owned imagery require reviewed rights
+evidence or a product-owned/generated fallback.
 
 ## Content Quality Rules
 
