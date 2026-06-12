@@ -152,10 +152,20 @@ an Intel macOS slice.
    The archive preflight validates release config hygiene, platform security,
    archive creation, and bundle identifier evidence.
 
-3. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
+3. To create and upload a signed Apple Silicon-only App Store Connect build, run:
+
+   ```bash
+   bun run macos:release:archive -- --skip-preflight
+   bun run macos:release:upload -- --archive "<printed .xcarchive path>" --upload --skip-preflight
+   ```
+
+   The workflow verifies the archive bundle identifier, signing class, team ID,
+   and `arm64` architecture before upload.
+
+4. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
    run the `TuneAVMac` scheme locally.
 
-4. Confirm no generated macOS local config or build products are tracked.
+5. Confirm no generated macOS local config or build products are tracked.
 
 ## Public Source Release
 

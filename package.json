@@ -37,7 +37,9 @@
     "macos:archive:check": "./scripts/check-macos-archive-signing.sh",
     "macos:check:prod": "./scripts/check-macos-runtime-config.sh --env prod --configuration Release",
     "macos:release-config:hygiene": "./scripts/check-macos-release-config-hygiene.sh --env prod --configuration Release",
+    "macos:release:archive": "./scripts/macos-release-archive-upload.sh",
     "macos:release:preflight": "./scripts/macos-release-preflight.sh",
+    "macos:release:upload": "./scripts/macos-release-archive-upload.sh",
     "macos:run": "./scripts/build-and-run-macos.sh",
     "macos:tests": "cd apps/macos && xcodebuild test -project TuneAVMac.xcodeproj -scheme TuneAVMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO"
   },

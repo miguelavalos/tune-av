@@ -85,7 +85,6 @@ if [ "$with_archive" -eq 1 ]; then
         CODE_SIGNING_ALLOWED=NO \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGN_IDENTITY="" \
-        SKIP_INSTALL=NO \
         ARCHS=arm64 \
         ONLY_ACTIVE_ARCH=NO
   fi
