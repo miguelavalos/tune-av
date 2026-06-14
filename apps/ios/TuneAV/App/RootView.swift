@@ -14,6 +14,7 @@ struct RootView: View {
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
+    @State private var proCloudPollingTask: Task<Void, Never>?
     @State private var lastAutomaticLibrarySyncRequestedAt: Date?
     @State private var realtimeSessionTask: Task<Void, Never>?
     @State private var activeRealtimeSessionOwnerUserID: String?
@@ -60,10 +61,12 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
             guard scenePhase == .active else {
                 cancelScheduledLibrarySync()
+                stopProCloudPolling()
                 return
             }
             await refreshActiveAccountStateIfNeeded()
             startProRealtimeSyncIfNeeded()
+            startProCloudPollingIfNeeded()
             scheduleSignedInLibrarySync(after: .milliseconds(350))
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
@@ -88,13 +91,16 @@ struct RootView: View {
                 if accessController.capabilities.canUseCloudSync {
                     lastAutomaticLibrarySyncRequestedAt = .now
                     scheduleLibrarySync(after: .milliseconds(150))
+                    startProCloudPollingIfNeeded()
                 } else {
+                    stopProCloudPolling()
                     Task {
                         await refreshTuneBackendService()
                     }
                 }
             } else {
                 cancelScheduledLibrarySync()
+                stopProCloudPolling()
                 stopProRealtimeSync()
                 libraryStore.setAppDataService(nil)
                 libraryStore.setBackendService(nil)
@@ -103,9 +109,11 @@ struct RootView: View {
         }
         .onChange(of: accessController.accountUser) { _, _ in
             startProRealtimeSyncIfNeeded()
+            startProCloudPollingIfNeeded()
         }
         .onChange(of: accessController.capabilities) { _, _ in
             startProRealtimeSyncIfNeeded()
+            startProCloudPollingIfNeeded()
         }
     }
 
@@ -214,6 +222,39 @@ struct RootView: View {
     private func cancelScheduledLibrarySync() {
         librarySyncTask?.cancel()
         librarySyncTask = nil
+    }
+
+    private func startProCloudPollingIfNeeded() {
+        guard scenePhase == .active,
+              accessController.capabilities.canUseCloudSync,
+              accessController.accountUser != nil else {
+            stopProCloudPolling()
+            return
+        }
+        guard proCloudPollingTask == nil else { return }
+
+        proCloudPollingTask = Task { @MainActor in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(15))
+                } catch {
+                    return
+                }
+                guard !Task.isCancelled,
+                      scenePhase == .active,
+                      accessController.capabilities.canUseCloudSync,
+                      accessController.accountUser != nil else {
+                    return
+                }
+                await libraryStore.refreshCloudLibraryIfNeeded(force: true)
+                await libraryStore.refreshCloudFeedbackIfNeeded(force: true)
+            }
+        }
+    }
+
+    private func stopProCloudPolling() {
+        proCloudPollingTask?.cancel()
+        proCloudPollingTask = nil
     }
 
     private func startProRealtimeSyncIfNeeded() {

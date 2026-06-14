@@ -1849,7 +1849,7 @@ final class TuneAVMacModel: ObservableObject {
         Task { [weak self] in
             do {
                 try await self?.sendFeedbackRequest(
-                    path: "/v1/tune/feedback/stations/\(stationID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? stationID)",
+                    path: "/v1/tune/feedback/stations/\(Self.encodedPathSegment(stationID))",
                     payload: TuneAVMacFeedbackRequest(deviceId: "tuneav-mac", feedback: feedback?.backendValue)
                 )
             } catch {
@@ -1869,7 +1869,7 @@ final class TuneAVMacModel: ObservableObject {
         Task { [weak self] in
             do {
                 try await self?.sendFeedbackRequest(
-                    path: "/v1/tune/feedback/tracks/\(key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key)",
+                    path: "/v1/tune/feedback/tracks/\(Self.encodedPathSegment(key))",
                     payload: TuneAVMacTrackFeedbackRequest(
                         deviceId: "tuneav-mac",
                         title: title,
@@ -1907,6 +1907,12 @@ final class TuneAVMacModel: ObservableObject {
                     .lowercased()
             }
             .joined(separator: "::")
+    }
+
+    private nonisolated static func encodedPathSegment(_ value: String) -> String {
+        var allowedCharacters = CharacterSet.urlPathAllowed
+        allowedCharacters.remove(charactersIn: "/?#")
+        return value.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? value
     }
 
     private func accountRequest<T: Decodable>(

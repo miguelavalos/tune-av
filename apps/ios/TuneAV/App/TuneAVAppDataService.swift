@@ -59,7 +59,7 @@ final class TuneAVAppDataService {
         let payload = TuneAVFeedbackRequest(deviceId: "tuneav-ios", feedback: feedback?.backendValue)
         let idempotencyKey = Self.idempotencyKey(parts: ["station-feedback", stationID, feedback?.backendValue ?? "clear"])
         _ = try await apiClient.requestData(
-            path: "/v1/tune/feedback/stations/\(stationID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? stationID)",
+            path: "/v1/tune/feedback/stations/\(Self.encodedPathSegment(stationID))",
             method: "PUT",
             body: try encoder.encode(payload),
             headers: ["Idempotency-Key": idempotencyKey]
@@ -77,7 +77,7 @@ final class TuneAVAppDataService {
             feedback: feedback?.backendValue
         )
         _ = try await apiClient.requestData(
-            path: "/v1/tune/feedback/tracks/\(key.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? key)",
+            path: "/v1/tune/feedback/tracks/\(Self.encodedPathSegment(key))",
             method: "PUT",
             body: try encoder.encode(payload),
             headers: ["Idempotency-Key": idempotencyKey]
@@ -157,6 +157,12 @@ final class TuneAVAppDataService {
                     .lowercased()
             }
             .joined(separator: "::")
+    }
+
+    private static func encodedPathSegment(_ value: String) -> String {
+        var allowedCharacters = CharacterSet.urlPathAllowed
+        allowedCharacters.remove(charactersIn: "/?#")
+        return value.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? value
     }
 
     private static func idempotencyKey(parts: [String]) -> String {

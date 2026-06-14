@@ -1199,14 +1199,17 @@ final class SharedAppleSupportTests: XCTestCase {
 
         try await service.setStationFeedback(.liked, stationID: "BBC Radio 1")
         try await service.setTrackFeedback(.notForMe, title: "  Teardrop  ", artist: "Massive\tAttack", stationID: "BBC Radio 1")
+        try await service.setTrackFeedback(.liked, title: "Back in Black", artist: "AC/DC", stationID: "BBC Radio 1")
 
         XCTAssertEqual(requestedPaths, [
             "/v1/tune/feedback/stations/BBC%20Radio%201",
-            "/v1/tune/feedback/tracks/teardrop%3A%3Amassive%20attack"
+            "/v1/tune/feedback/tracks/teardrop::massive%20attack",
+            "/v1/tune/feedback/tracks/back%20in%20black::ac%2Fdc"
         ])
         XCTAssertEqual(idempotencyKeys, [
             "station-feedback:bbc-radio-1:liked",
-            "track-feedback:teardrop::massive-attack:bbc-radio-1:not_for_me"
+            "track-feedback:teardrop::massive-attack:bbc-radio-1:not_for_me",
+            "track-feedback:back-in-black::ac-dc:bbc-radio-1:liked"
         ])
     }
 
