@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 archive_path=""
-expected_bundle_id="com.avalsys.tuneav.mac"
+expected_bundle_id="com.avalsys.tuneav"
 
 usage() {
   cat <<'USAGE'

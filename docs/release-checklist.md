@@ -149,7 +149,10 @@ Client checks:
 macOS shares the product behavior where practical and uses native macOS
 presentation differences. The current macOS release target is Apple
 Silicon-only because the current Convex Swift binary dependency does not provide
-an Intel macOS slice.
+an Intel macOS slice. App Store Connect macOS builds are uploaded under the
+existing Tune AV app record, so Release/prod archives must use the iOS app
+bundle identifier `com.avalsys.tuneav`; Debug/local macOS builds may keep a
+separate development bundle identifier.
 
 1. Run:
 
@@ -174,8 +177,9 @@ an Intel macOS slice.
    bun run macos:release:upload -- --archive "<printed .xcarchive path>" --upload --skip-preflight
    ```
 
-   The workflow verifies the archive bundle identifier, signing class, team ID,
-   and `arm64` architecture before upload.
+   The workflow verifies the archive bundle identifier (`com.avalsys.tuneav`
+   for App Store Connect), signing class, team ID, and `arm64` architecture
+   before upload.
 
 4. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
    run the `TuneAVMac` scheme locally.

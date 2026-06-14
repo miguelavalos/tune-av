@@ -99,8 +99,8 @@ if [ "$with_archive" -eq 1 ]; then
   if [ -z "$archive_bundle_id" ]; then
     archive_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$archive_app_path/Contents/Info.plist" 2>/dev/null || true)"
   fi
-  if [ "$archive_bundle_id" != "com.avalsys.tuneav.mac" ]; then
-    echo "FAIL archive bundle identifier must be com.avalsys.tuneav.mac, got: ${archive_bundle_id:-<missing>}" >&2
+  if [ "$archive_bundle_id" != "com.avalsys.tuneav" ]; then
+    echo "FAIL archive bundle identifier must be com.avalsys.tuneav, got: ${archive_bundle_id:-<missing>}" >&2
     exit 1
   fi
 

@@ -118,8 +118,8 @@ done
 [ "$enable_app_sandbox" = "YES" ] || fail "ENABLE_APP_SANDBOX must stay YES"
 
 if [ "$env_name" = "prod" ]; then
-  [ "$product_bundle_identifier" = "com.avalsys.tuneav.mac" ] || fail "prod bundle must be com.avalsys.tuneav.mac, got $product_bundle_identifier"
-  [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.mac" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.mac"
+  [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
+  [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if [ -n "$development_team" ] && [ "$development_team" != '$(inherited)' ]; then
     [[ "$development_team" =~ ^[A-Z0-9]{10}$ ]] || fail "DEVELOPMENT_TEAM must look like a 10-character Apple team ID"

@@ -62,7 +62,7 @@ bundle_identifier="com.avalsys.tuneav.mac.dev"
 
 if [ "$env_name" = "prod" ]; then
   profile="production"
-  bundle_identifier="com.avalsys.tuneav.mac"
+  bundle_identifier="com.avalsys.tuneav"
 fi
 
 eval "$("$suite_root/scripts/resolve-infisical-bootstrap-env.sh" "$profile")"

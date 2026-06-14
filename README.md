@@ -52,7 +52,9 @@ shared/
 - `apps/ios` is the current Tune AV iOS app.
 - `apps/macos` is the current Tune AV macOS app. The macOS release target is
   Apple Silicon-only while the current Convex Swift binary dependency does not
-  provide an Intel macOS slice.
+  provide an Intel macOS slice. App Store release builds use the same
+  `com.avalsys.tuneav` bundle identifier as iOS because macOS is added as a
+  platform on the existing App Store Connect app record.
 - `shared/apple` is the shared Swift implementation root for Apple-domain UI
   behavior.
 - `shared/contracts` is reserved for platform-neutral client contracts.
