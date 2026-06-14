@@ -14,7 +14,8 @@ approval records outside this repository.
 - macOS is currently Apple Silicon-only while the Convex Swift binary dependency
   does not include an Intel macOS slice.
 - macOS TestFlight/App Store auth uses the stable Account AV keychain service
-  `com.avalsys.tuneav.account`; repeated Keychain access prompts are not
+  `com.avalsys.tuneav.account` and keychain access group
+  `935PM55U6R.com.avalsys.tuneav`; repeated Keychain access prompts are not
   expected in a clean signed build.
 - Missing account tokens or missing generated runtime config are handled as
   local availability states and should not surface as reviewer-visible raw

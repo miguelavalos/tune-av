@@ -152,6 +152,10 @@ keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
 if [ -z "$keychain_service" ] || [ "$keychain_service" = "\$(inherited)" ]; then
   keychain_service="$bundle_identifier.account"
 fi
+keychain_access_group="$(read_optional_config ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)"
+if [ -z "$keychain_access_group" ] || [ "$keychain_access_group" = "\$(inherited)" ]; then
+  keychain_access_group="935PM55U6R.$bundle_identifier"
+fi
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
 tuneav_macos_sentry_dsn="$(read_optional_config TUNEAV_MACOS_SENTRY_DSN)"
@@ -202,6 +206,7 @@ TUNEAV_BUNDLE_IDENTIFIER = $bundle_identifier
 AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
 ACCOUNTAV_KEYCHAIN_SERVICE = $keychain_service
+ACCOUNTAV_KEYCHAIN_ACCESS_GROUP = $keychain_access_group
 SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")

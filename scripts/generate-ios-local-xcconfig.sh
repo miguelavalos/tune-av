@@ -161,6 +161,10 @@ if [ "$development_team" = "346677S99H" ]; then
   development_team="935PM55U6R"
 fi
 keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
+keychain_access_group="$(read_optional_config ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)"
+if [ -z "$keychain_access_group" ] || [ "$keychain_access_group" = "\$(inherited)" ]; then
+  keychain_access_group="935PM55U6R.$bundle_identifier"
+fi
 premium_product_ids="${TUNEAV_PREMIUM_PRODUCT_IDS:-tuneav_pro_monthly}"
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
@@ -211,6 +215,7 @@ TUNEAV_BUNDLE_IDENTIFIER = $bundle_identifier
 AVALSYS_APPLE_DEVELOPMENT_TEAM = $development_team
 ACCOUNTAV_PUBLISHABLE_KEY = $publishable_key
 ACCOUNTAV_KEYCHAIN_SERVICE = $keychain_service
+ACCOUNTAV_KEYCHAIN_ACCESS_GROUP = $keychain_access_group
 TUNEAV_PREMIUM_PRODUCT_IDS = $premium_product_ids
 SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")

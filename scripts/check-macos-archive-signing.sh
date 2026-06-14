@@ -79,6 +79,7 @@ archive_bundle_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperti
 archive_signing_identity="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:SigningIdentity")"
 archive_team_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:Team")"
 app_bundle_id="$(plist_print "$app_path/Contents/Info.plist" "CFBundleIdentifier")"
+accountav_keychain_access_group="$(plist_print "$app_path/Contents/Info.plist" "ACCOUNTAV_KEYCHAIN_ACCESS_GROUP")"
 
 if [ -z "$archive_bundle_id" ]; then
   archive_bundle_id="$app_bundle_id"
@@ -86,6 +87,12 @@ fi
 
 if [ "$archive_bundle_id" != "$expected_bundle_id" ]; then
   echo "FAIL archive bundle identifier must be $expected_bundle_id, got ${archive_bundle_id:-<missing>}." >&2
+  exit 1
+fi
+
+expected_keychain_access_group="935PM55U6R.$expected_bundle_id"
+if [ "$accountav_keychain_access_group" != "$expected_keychain_access_group" ]; then
+  echo "FAIL archive ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be $expected_keychain_access_group, got ${accountav_keychain_access_group:-<missing>}." >&2
   exit 1
 fi
 
@@ -97,6 +104,14 @@ fi
 
 codesign_output="$(codesign -dv --verbose=4 "$app_path" 2>&1)"
 spctl_output="$(spctl -a -vv "$app_path" 2>&1 || true)"
+entitlements_file="$(mktemp)"
+trap 'rm -f "$entitlements_file"' EXIT
+codesign -d --entitlements :- "$app_path" > "$entitlements_file" 2>/dev/null || true
+keychain_groups="$(/usr/libexec/PlistBuddy -c "Print :keychain-access-groups" "$entitlements_file" 2>/dev/null || true)"
+if ! printf '%s\n' "$keychain_groups" | rg -q "$expected_keychain_access_group"; then
+  echo "FAIL archive entitlements must include keychain access group $expected_keychain_access_group." >&2
+  exit 1
+fi
 
 authority="$(printf '%s\n' "$codesign_output" | awk -F= '/^Authority=/{print $2; exit}')"
 team_identifier="$(printf '%s\n' "$codesign_output" | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
@@ -134,6 +149,7 @@ Tune AV macOS archive
   archive: $archive_path
   archive name: ${archive_name:-unknown}
   bundle id: $archive_bundle_id
+  Account AV keychain access group: $accountav_keychain_access_group
   architectures: $app_archs
   signing identity: ${archive_signing_identity:-unknown}
   authority: ${authority:-unknown}

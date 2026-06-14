@@ -159,6 +159,7 @@ final class TuneAVMacModel: ObservableObject {
     private let accountService = ClerkAccountAVService(
         publishableKeyProvider: { TuneAVBundleConfig.stringValue(for: "ACCOUNTAV_PUBLISHABLE_KEY") },
         keychainServiceProvider: { TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_SERVICE") },
+        keychainAccessGroupProvider: { TuneAVBundleConfig.nonEmptyStringValue(for: "ACCOUNTAV_KEYCHAIN_ACCESS_GROUP") },
         fallbackDisplayName: L10n.string("app.name"),
         loggerSubsystem: "com.avalsys.tuneav"
     )

@@ -41,6 +41,7 @@ if (ats.NSExceptionDomains && Object.keys(ats.NSExceptionDomains).length > 0) {
 const allowedEntitlementKeys = new Set([
   "com.apple.security.app-sandbox",
   "com.apple.security.network.client",
+  "keychain-access-groups",
 ]);
 for (const key of Object.keys(entitlements)) {
   if (!allowedEntitlementKeys.has(key)) {
@@ -55,7 +56,20 @@ if (entitlements["com.apple.security.network.client"] !== true) {
   fail("Network client entitlement is required for radio streams and Account AV calls.");
 }
 
-if (!infoSource.includes("$(ACCOUNTAV_API_BASE_URL)") || !infoSource.includes("$(ACCOUNTAV_PUBLISHABLE_KEY)")) {
+const keychainGroups = entitlements["keychain-access-groups"] ?? [];
+if (
+  !Array.isArray(keychainGroups) ||
+  keychainGroups.length !== 1 ||
+  keychainGroups[0] !== "$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)"
+) {
+  fail("keychain-access-groups must be driven by ACCOUNTAV_KEYCHAIN_ACCESS_GROUP.");
+}
+
+if (
+  !infoSource.includes("$(ACCOUNTAV_API_BASE_URL)") ||
+  !infoSource.includes("$(ACCOUNTAV_PUBLISHABLE_KEY)") ||
+  !infoSource.includes("$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)")
+) {
   fail("Account AV runtime values must remain build-setting substitutions, not literals.");
 }
 

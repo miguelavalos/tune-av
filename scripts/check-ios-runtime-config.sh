@@ -96,6 +96,7 @@ api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
 tuneav_convex_url="$(setting TUNEAV_CONVEX_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
+keychain_access_group="$(setting ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)"
 support_base_url="$(setting SUPPORTAV_BASE_URL)"
 listening_analytics_uploads="$(setting TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)"
 delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
@@ -115,6 +116,7 @@ for item in \
   "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:$listening_analytics_uploads" \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
   "ACCOUNTAV_PUBLISHABLE_KEY:$publishable_key" \
+  "ACCOUNTAV_KEYCHAIN_ACCESS_GROUP:$keychain_access_group" \
   "TUNEAV_DELETE_ACCOUNT_URL:$delete_account_url" \
   "TUNEAV_TERMS_URL:$terms_url" \
   "TUNEAV_PRIVACY_URL:$privacy_url" \
@@ -134,6 +136,7 @@ done
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
+  [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav" ] || fail "prod ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav, got $keychain_access_group"
   [[ "$api_base_url" == https://* ]] || fail "prod API URL must use https"
   [[ "$management_url" == https://* ]] || fail "prod management URL must use https"
   if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
@@ -147,6 +150,7 @@ if [ "$env_name" = "prod" ]; then
 else
   [ "$product_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev bundle must be com.avalsys.tuneav.dev, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.dev"
+  [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav.dev" ] || fail "dev ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav.dev, got $keychain_access_group"
   [[ "$api_base_url" == https://* ]] || fail "dev API URL must use https"
   [[ "$management_url" == https://* ]] || fail "dev management URL must use https"
   [[ "$listening_analytics_uploads" == "0" || "$listening_analytics_uploads" == "1" ]] || fail "dev TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must be 0 or 1"
@@ -184,6 +188,7 @@ Tune AV iOS runtime config ($env_name)
   Account AV API: $api_base_url
   Tune AV Convex: $tuneav_convex_url
   Account AV management: $management_url
+  Account AV keychain access group: $keychain_access_group
   Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key
   RevenueCat key: $redacted_revenuecat_key
