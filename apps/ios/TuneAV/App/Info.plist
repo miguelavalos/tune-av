@@ -4,10 +4,10 @@
 <dict>
 	<key>ACCOUNTAV_API_BASE_URL</key>
 	<string>$(ACCOUNTAV_API_BASE_URL)</string>
-	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
-	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
 	<key>ACCOUNTAV_KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)</string>
+	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
+	<string>$(ACCOUNTAV_KEYCHAIN_SERVICE)</string>
 	<key>ACCOUNTAV_MANAGEMENT_URL</key>
 	<string>$(ACCOUNTAV_MANAGEMENT_URL)</string>
 	<key>ACCOUNTAV_PUBLISHABLE_KEY</key>
@@ -38,7 +38,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>32</string>
+	<string>33</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
