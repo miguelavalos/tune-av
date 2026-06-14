@@ -270,6 +270,22 @@ struct DiscoveredTrackRecord: Codable, Equatable {
     let deletedAt: String?
     let updatedAt: String?
 
+    private enum CodingKeys: String, CodingKey {
+        case discoveryID
+        case trackKey
+        case title
+        case artist
+        case stationID
+        case stationName
+        case artworkURL
+        case stationArtworkURL
+        case playedAt
+        case markedInterestedAt
+        case hiddenAt
+        case deletedAt
+        case updatedAt
+    }
+
     init(
         discoveryID: String,
         trackKey: String? = nil,
@@ -298,6 +314,30 @@ struct DiscoveredTrackRecord: Codable, Equatable {
         self.hiddenAt = hiddenAt
         self.deletedAt = deletedAt
         self.updatedAt = updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decode(String.self, forKey: .title)
+        artist = try container.decodeIfPresent(String.self, forKey: .artist)
+        stationID = try container.decodeIfPresent(String.self, forKey: .stationID) ?? "unknown-station"
+        stationName = try container.decodeIfPresent(String.self, forKey: .stationName) ?? stationID
+        artworkURL = try container.decodeIfPresent(String.self, forKey: .artworkURL)
+        stationArtworkURL = try container.decodeIfPresent(String.self, forKey: .stationArtworkURL)
+        markedInterestedAt = try container.decodeIfPresent(String.self, forKey: .markedInterestedAt)
+        hiddenAt = try container.decodeIfPresent(String.self, forKey: .hiddenAt)
+        deletedAt = try container.decodeIfPresent(String.self, forKey: .deletedAt)
+        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+        playedAt = try container.decodeIfPresent(String.self, forKey: .playedAt)
+            ?? markedInterestedAt
+            ?? updatedAt
+            ?? deletedAt
+            ?? TuneAVDateCoding.string(from: .distantPast)
+
+        let decodedTrackKey = try container.decodeIfPresent(String.self, forKey: .trackKey)
+        trackKey = decodedTrackKey ?? TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist)
+        discoveryID = try container.decodeIfPresent(String.self, forKey: .discoveryID)
+            ?? TuneAVDiscoveredTrackSupport.makeID(title: title, artist: artist, stationID: stationID)
     }
 }
 

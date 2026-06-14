@@ -134,6 +134,57 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
     }
 
+    func testAppDataClientPullsLegacySavedDiscoveriesWithoutDroppingSongs() async throws {
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, _, _, _ in
+                let entries: String
+                if path == "/v1/apps/tuneav/data/savedDiscoveries" {
+                    entries = """
+                    [
+                      {
+                        "title": "Sweet Song",
+                        "artist": "The Tests",
+                        "stationID": "station-1",
+                        "markedInterestedAt": "2026-06-14T17:40:00Z"
+                      }
+                    ]
+                    """
+                } else {
+                    entries = "[]"
+                }
+
+                return Data(
+                    """
+                    {
+                      "data": {
+                        "appId": "tuneav",
+                        "resource": "\(path.split(separator: "/").last ?? "unknown")",
+                        "deviceId": "legacy-device",
+                        "sentAt": "2026-06-14T17:41:00Z",
+                        "entries": \(entries)
+                      },
+                      "updatedAt": "2026-06-14T17:41:00Z",
+                      "revision": 4,
+                      "etag": "\\"revision-4\\""
+                    }
+                    """.utf8
+                )
+            }
+        )
+
+        let document = try await client.pullLibrary()
+        let discovery = try XCTUnwrap(document.snapshot?.savedDiscoveries.first)
+
+        XCTAssertEqual(discovery.title, "Sweet Song")
+        XCTAssertEqual(discovery.artist, "The Tests")
+        XCTAssertEqual(discovery.stationID, "station-1")
+        XCTAssertEqual(discovery.stationName, "station-1")
+        XCTAssertEqual(discovery.trackKey, "sweet song::the tests")
+        XCTAssertEqual(discovery.discoveryID, "the-tests-sweet-song-station-1")
+        XCTAssertEqual(discovery.playedAt, "2026-06-14T17:40:00Z")
+    }
+
     @MainActor
     func testAccountAPIClientDoesNotCaptureExpectedConfigurationErrors() {
         XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingToken))
