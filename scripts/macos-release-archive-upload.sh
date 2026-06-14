@@ -135,6 +135,9 @@ else
   echo "$archive_path"
 fi
 
+run_step "Repair Sentry.framework dSYM in final macOS archive"
+"$repo_root/scripts/repair-macos-archive-sentry-dsym.sh" --archive "$archive_path"
+
 run_step "Verify final macOS release archive"
 "$repo_root/scripts/check-macos-archive-signing.sh" --archive "$archive_path"
 
