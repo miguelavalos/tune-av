@@ -153,6 +153,8 @@ final class AVAccountAPIClient {
         method: String,
         startedAt: Date
     ) {
+        guard Self.shouldCaptureNetworkError(error) else { return }
+
         TuneAVDiagnostics.capture(
             error,
             feature: "tune.account_api",
@@ -163,6 +165,18 @@ final class AVAccountAPIClient {
                 "duration_ms": String(Self.durationMilliseconds(since: startedAt)),
             ]
         )
+    }
+
+    static func shouldCaptureNetworkError(_ error: Error) -> Bool {
+        if let accountError = error as? AVAccountAPIClientError {
+            switch accountError {
+            case .missingToken, .missingBaseURL:
+                return false
+            case .requestFailed:
+                return true
+            }
+        }
+        return true
     }
 
     private func recordNetworkEvent(_ event: NetworkEvent) {

@@ -134,6 +134,14 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
     }
 
+    @MainActor
+    func testAccountAPIClientDoesNotCaptureExpectedConfigurationErrors() {
+        XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingToken))
+        XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingBaseURL))
+        XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.requestFailed(statusCode: 500)))
+        XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(URLError(.timedOut)))
+    }
+
     func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {
         let bundleURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
