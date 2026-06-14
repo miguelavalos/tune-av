@@ -25,6 +25,13 @@ struct TuneAVAppDataResponsePayload<Entry: Codable>: Decodable {
     let etag: String?
 }
 
+private struct TuneAVLossyAppDataResponsePayload<Entry: Decodable>: Decodable {
+    let data: TuneAVLossyAppDataEnvelopePayload<Entry>
+    let updatedAt: String
+    let revision: Int?
+    let etag: String?
+}
+
 struct TuneAVAppDataEnvelopePayload<Entry: Codable>: Codable {
     let appId: String
     let resource: String
@@ -32,6 +39,52 @@ struct TuneAVAppDataEnvelopePayload<Entry: Codable>: Codable {
     let sentAt: String
     let entries: [Entry]
 }
+
+private struct TuneAVLossyAppDataEnvelopePayload<Entry: Decodable>: Decodable {
+    let appId: String
+    let resource: String
+    let deviceId: String
+    let sentAt: String
+    let entries: [Entry]
+
+    private enum CodingKeys: String, CodingKey {
+        case appId
+        case resource
+        case deviceId
+        case sentAt
+        case entries
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        appId = try container.decode(String.self, forKey: .appId)
+        resource = try container.decode(String.self, forKey: .resource)
+        deviceId = try container.decode(String.self, forKey: .deviceId)
+        sentAt = try container.decode(String.self, forKey: .sentAt)
+        entries = try container.decode(TuneAVLossyDecodableArray<Entry>.self, forKey: .entries).values
+    }
+}
+
+private struct TuneAVLossyDecodableArray<Element: Decodable>: Decodable {
+    let values: [Element]
+
+    init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        var values: [Element] = []
+
+        while !container.isAtEnd {
+            do {
+                values.append(try container.decode(Element.self))
+            } catch {
+                _ = try? container.decode(TuneAVDiscardedDecodableValue.self)
+            }
+        }
+
+        self.values = values
+    }
+}
+
+private struct TuneAVDiscardedDecodableValue: Decodable {}
 
 struct TuneAVAppDataResourceDocument<Entry: Codable> {
     let entries: [Entry]
@@ -72,7 +125,7 @@ actor TuneAVAppDataSyncClient {
 
     func pullLibrary() async throws -> TuneAVLibraryDocument {
         let favorites = try await pullResource(.favorites, entryType: FavoriteStationRecord.self)
-        let savedDiscoveries = try await pullResource(.savedDiscoveries, entryType: DiscoveredTrackRecord.self)
+        let savedDiscoveries = try await pullLossyResource(.savedDiscoveries, entryType: DiscoveredTrackRecord.self)
 
         let snapshot = TuneAVLibrarySnapshot(
             favorites: favorites.entries,
@@ -113,6 +166,22 @@ actor TuneAVAppDataSyncClient {
     ) async throws -> TuneAVAppDataResourceDocument<Entry> {
         let data = try await request(dataPath(for: resource), "GET", nil, [:])
         let payload = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
+        rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
+
+        return TuneAVAppDataResourceDocument(
+            entries: payload.data.entries,
+            updatedAt: TuneAVDateCoding.date(from: payload.updatedAt),
+            revision: payload.revision ?? 0,
+            etag: payload.etag
+        )
+    }
+
+    private func pullLossyResource<Entry: Codable>(
+        _ resource: TuneAVAppDataResource,
+        entryType: Entry.Type
+    ) async throws -> TuneAVAppDataResourceDocument<Entry> {
+        let data = try await request(dataPath(for: resource), "GET", nil, [:])
+        let payload = try decoder.decode(TuneAVLossyAppDataResponsePayload<Entry>.self, from: data)
         rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
 
         return TuneAVAppDataResourceDocument(

@@ -185,6 +185,65 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(discovery.playedAt, "2026-06-14T17:40:00Z")
     }
 
+    func testAppDataClientSkipsCorruptSavedDiscoveriesWithoutDroppingValidSongs() async throws {
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, _, _, _ in
+                let entries: String
+                if path == "/v1/apps/tuneav/data/savedDiscoveries" {
+                    entries = """
+                    [
+                      {
+                        "title": "First Song",
+                        "artist": "First Artist",
+                        "stationID": "station-1",
+                        "stationName": "Station 1",
+                        "playedAt": "2026-06-14T17:40:00Z"
+                      },
+                      {
+                        "artist": "Missing Title",
+                        "stationID": "station-2",
+                        "stationName": "Station 2",
+                        "playedAt": "2026-06-14T17:41:00Z"
+                      },
+                      {
+                        "title": "Second Song",
+                        "artist": "Second Artist",
+                        "stationID": "station-3",
+                        "stationName": "Station 3",
+                        "playedAt": "2026-06-14T17:42:00Z"
+                      }
+                    ]
+                    """
+                } else {
+                    entries = "[]"
+                }
+
+                return Data(
+                    """
+                    {
+                      "data": {
+                        "appId": "tuneav",
+                        "resource": "\(path.split(separator: "/").last ?? "unknown")",
+                        "deviceId": "legacy-device",
+                        "sentAt": "2026-06-14T17:43:00Z",
+                        "entries": \(entries)
+                      },
+                      "updatedAt": "2026-06-14T17:43:00Z",
+                      "revision": 5,
+                      "etag": "\\"revision-5\\""
+                    }
+                    """.utf8
+                )
+            }
+        )
+
+        let document = try await client.pullLibrary()
+        let titles = try XCTUnwrap(document.snapshot?.savedDiscoveries.map(\.title))
+
+        XCTAssertEqual(titles, ["First Song", "Second Song"])
+    }
+
     @MainActor
     func testAccountAPIClientDoesNotCaptureExpectedConfigurationErrors() {
         XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingToken))
