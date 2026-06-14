@@ -107,7 +107,7 @@ enum TuneAVLibrarySnapshotMerger {
     ) -> [DiscoveredTrackRecord] {
         newestDatedByKey(
             datedRecords(local + remote, date: discoveryUpdateDate),
-            key: { $0.discoveryID }
+            key: { discoveryIdentityKey($0) }
         )
         .sorted { $0.date > $1.date }
         .map(\.record)
@@ -170,6 +170,14 @@ enum TuneAVLibrarySnapshotMerger {
         }
 
         return "id:\(station.id)"
+    }
+
+    static func discoveryIdentityKey(_ discovery: DiscoveredTrackRecord) -> String {
+        if let trackKey = normalizedIdentityValue(discovery.trackKey) {
+            return "track:\(trackKey)"
+        }
+
+        return "track:\(TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist))"
     }
 
     private static func normalizedIdentityValue(_ value: String?) -> String? {
@@ -249,6 +257,7 @@ struct RecentStationRecord: Codable, Equatable {
 
 struct DiscoveredTrackRecord: Codable, Equatable {
     let discoveryID: String
+    let trackKey: String?
     let title: String
     let artist: String?
     let stationID: String
@@ -263,6 +272,7 @@ struct DiscoveredTrackRecord: Codable, Equatable {
 
     init(
         discoveryID: String,
+        trackKey: String? = nil,
         title: String,
         artist: String?,
         stationID: String,
@@ -276,6 +286,7 @@ struct DiscoveredTrackRecord: Codable, Equatable {
         updatedAt: String? = nil
     ) {
         self.discoveryID = discoveryID
+        self.trackKey = trackKey
         self.title = title
         self.artist = artist
         self.stationID = stationID

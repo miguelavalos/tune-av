@@ -518,6 +518,81 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.discoveries.first?.resolvedArtworkURL, artworkURL)
     }
 
+    func testRemoteTrackFeedbackUsesCanonicalTrackKey() async throws {
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            let response: String
+            switch request.url?.path {
+            case "/v1/tune/feedback":
+                response = """
+                {
+                  "generatedAt": "2026-06-14T16:30:00Z",
+                  "stationFeedback": [],
+                  "trackFeedback": [
+                    {
+                      "trackKey": "teardrop::massive attack",
+                      "title": "Teardrop",
+                      "artist": "Massive Attack",
+                      "stationID": "test-station",
+                      "feedback": "not_for_me",
+                      "updatedAt": "2026-06-14T16:29:00Z"
+                    }
+                  ]
+                }
+                """
+            case "/v1/tune/me/summary":
+                response = """
+                {
+                  "usage": {},
+                  "limits": {},
+                  "subscription": { "tier": "free", "status": "inactive", "isPro": false }
+                }
+                """
+            default:
+                XCTFail("Unexpected request path: \(request.url?.path ?? "nil")")
+                response = "{}"
+            }
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data(response.utf8)
+            )
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "test-station",
+            name: "Test Radio",
+            country: "Spain",
+            language: "Spanish",
+            tags: "trip hop",
+            streamURL: "https://example.com/stream.mp3"
+        )
+        XCTAssertTrue(store.toggleDiscoveredTrackSaved(
+            title: "Teardrop",
+            artist: "Massive Attack",
+            station: station,
+            artworkURL: nil,
+            savedLimit: 10,
+            discoveryLimit: 25
+        ))
+
+        store.setBackendService(TuneAVAppDataService(apiClient: client), userID: "user-1")
+        await store.refreshCloudFeedbackIfNeeded(force: true)
+
+        let discovery = try XCTUnwrap(store.discoveries.first)
+        XCTAssertEqual(store.feedback(for: discovery), .notForMe)
+    }
+
     func testCloudPushIncludesMarkedInterestedAtWhenSavingExistingHistoryDiscovery() async throws {
         let recorder = LibraryStoreAppDataRequestRecorder()
         LibraryStoreTestURLProtocol.requestHandler = { request in

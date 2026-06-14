@@ -391,6 +391,7 @@ extension DiscoveredTrack: TuneAVMusicLibraryDiscovery {
     var appDataRecord: DiscoveredTrackRecord {
         DiscoveredTrackRecord(
             discoveryID: discoveryID,
+            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale),
             title: title,
             artist: artist,
             stationID: stationID,

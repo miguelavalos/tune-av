@@ -492,6 +492,7 @@ final class LibraryStore: ObservableObject {
             artist: normalizedArtist,
             stationID: station.id
         )
+        let discoveryIdentityKey = Self.savedDiscoveryIdentityKey(title: normalizedTitle, artist: normalizedArtist)
         let now = Date.now
         let nextArtworkURL = artworkURL?.absoluteString
 
@@ -504,6 +505,7 @@ final class LibraryStore: ObservableObject {
 
             if markInteresting {
                 removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
             }
             existing.playedAt = now
             if markInteresting {
@@ -516,6 +518,7 @@ final class LibraryStore: ObservableObject {
         } else {
             if markInteresting {
                 removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
             }
             context.insert(
                 DiscoveredTrack(
@@ -1246,11 +1249,19 @@ final class LibraryStore: ObservableObject {
             let normalizedTitle = normalizedTrackValue(title)
         else { return nil }
 
-        return TuneAVDiscoveredTrackSupport.makeID(
-            title: normalizedTitle,
-            artist: normalizedTrackValue(artist),
-            stationID: "track"
-        )
+        return Self.trackFeedbackKey(title: normalizedTitle, artist: normalizedTrackValue(artist))
+    }
+
+    private static func trackFeedbackKey(title: String, artist: String?) -> String {
+        [title, artist ?? ""]
+            .map { value in
+                value
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .lowercased()
+            }
+            .joined(separator: "::")
     }
 
     private static func loadStationFeedbackRecords() -> TuneAVLocalFeedbackLoadResult {
@@ -1730,22 +1741,27 @@ final class LibraryStore: ObservableObject {
         }
 
         let localDiscoveriesByID = Dictionary(discoveries.map { ($0.discoveryID, $0) }, uniquingKeysWith: { first, _ in first })
+        let localDiscoveriesByIdentity = Dictionary(
+            discoveries.map { (savedDiscoveryIdentityKey(for: $0), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         for discovery in snapshot.savedDiscoveries {
+            let discoveryIdentityKey = TuneAVLibrarySnapshotMerger.discoveryIdentityKey(discovery)
             if let deletedAt = discovery.deletedAt {
                 rememberTombstone(
                     resource: "savedDiscoveries",
-                    identityKey: discovery.discoveryID,
+                    identityKey: discoveryIdentityKey,
                     payload: discovery,
                     deletedAt: Self.date(from: deletedAt)
                 )
-                if let existing = localDiscoveriesByID[discovery.discoveryID] {
+                if let existing = localDiscoveriesByID[discovery.discoveryID] ?? localDiscoveriesByIdentity[discoveryIdentityKey] {
                     existing.markedInterestedAt = nil
                     existing.updatedAt = Self.date(from: deletedAt)
                 }
                 continue
             }
 
-            if let existing = localDiscoveriesByID[discovery.discoveryID] {
+            if let existing = localDiscoveriesByID[discovery.discoveryID] ?? localDiscoveriesByIdentity[discoveryIdentityKey] {
                 existing.markedInterestedAt = discovery.markedInterestedAt.map(Self.date(from:)) ?? Self.date(from: discovery.updatedAt ?? discovery.playedAt)
                 existing.hiddenAt = nil
                 existing.artworkURL = discovery.artworkURL ?? existing.artworkURL
@@ -1781,9 +1797,10 @@ final class LibraryStore: ObservableObject {
         let deletedAt = Date.now
         rememberTombstone(
             resource: "savedDiscoveries",
-            identityKey: discovery.discoveryID,
+            identityKey: savedDiscoveryIdentityKey(for: discovery),
             payload: DiscoveredTrackRecord(
                 discoveryID: discovery.discoveryID,
+                trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
                 title: discovery.title,
                 artist: discovery.artist,
                 stationID: discovery.stationID,
@@ -1824,6 +1841,14 @@ final class LibraryStore: ObservableObject {
                 )
             )
         }
+    }
+
+    private func savedDiscoveryIdentityKey(for discovery: DiscoveredTrack) -> String {
+        TuneAVLibrarySnapshotMerger.discoveryIdentityKey(discovery.appDataRecord)
+    }
+
+    private static func savedDiscoveryIdentityKey(title: String, artist: String?) -> String {
+        "track:\(TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale))"
     }
 
     private func removeTombstone(resource: String, identityKey: String) {

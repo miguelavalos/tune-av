@@ -20,6 +20,18 @@ enum TuneAVDiscoveredTrackSupport {
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
+    static func trackKey(title: String, artist: String?, locale: Locale = .current) -> String {
+        [title, artist ?? ""]
+            .map { value in
+                value
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: locale)
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .lowercased()
+            }
+            .joined(separator: "::")
+    }
+
     static func artistDisplayText(_ artist: String?, liveFallback: String) -> String {
         normalizedValue(artist) ?? liveFallback
     }

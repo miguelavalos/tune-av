@@ -234,6 +234,43 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(merged.savedDiscoveries.first?.updatedAt, "2026-05-23T11:00:00Z")
     }
 
+    func testMacSyncMergeUsesCanonicalTrackKeyForSavedDiscoveries() {
+        let local = librarySnapshot(
+            savedDiscoveries: [
+                discoveryRecord(
+                    id: "massive-attack-teardrop-station-a",
+                    title: "Teardrop",
+                    artist: "Massive Attack",
+                    stationID: "station-a",
+                    playedAt: "2026-05-23T10:00:00Z",
+                    markedInterestedAt: "2026-05-23T10:01:00Z",
+                    updatedAt: "2026-05-23T10:01:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T10:01:00Z"
+        )
+        let remote = librarySnapshot(
+            savedDiscoveries: [
+                discoveryRecord(
+                    id: "massive-attack-teardrop-station-b",
+                    title: "Teardrop",
+                    artist: "Massive Attack",
+                    stationID: "station-b",
+                    playedAt: "2026-05-23T10:05:00Z",
+                    markedInterestedAt: "2026-05-23T10:06:00Z",
+                    updatedAt: "2026-05-23T10:06:00Z"
+                )
+            ],
+            updatedAt: "2026-05-23T10:06:00Z"
+        )
+
+        let merged = TuneAVLibrarySnapshotMerger.merged(local: local, remote: remote)
+
+        XCTAssertEqual(merged.savedDiscoveries.count, 1)
+        XCTAssertEqual(merged.savedDiscoveries.first?.discoveryID, "massive-attack-teardrop-station-b")
+        XCTAssertEqual(merged.savedDiscoveries.first?.trackKey, "teardrop::massive attack")
+    }
+
     func testMacLibraryStoragePersistsTombstones() {
         let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -358,17 +395,23 @@ final class MacCloudSyncTests: XCTestCase {
 
     private func discoveryRecord(
         id: String,
+        title: String? = nil,
+        artist: String? = nil,
+        stationID: String? = nil,
         playedAt: String,
         markedInterestedAt: String? = nil,
         hiddenAt: String? = nil,
         deletedAt: String? = nil,
         updatedAt: String? = nil
     ) -> DiscoveredTrackRecord {
-        DiscoveredTrackRecord(
+        let recordTitle = title ?? "Song \(id)"
+        let recordArtist = artist ?? "Artist \(id)"
+        return DiscoveredTrackRecord(
             discoveryID: id,
-            title: "Song \(id)",
-            artist: "Artist \(id)",
-            stationID: "station-\(id)",
+            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: recordTitle, artist: recordArtist),
+            title: recordTitle,
+            artist: recordArtist,
+            stationID: stationID ?? "station-\(id)",
             stationName: "Station \(id)",
             artworkURL: nil,
             stationArtworkURL: nil,

@@ -887,16 +887,19 @@ final class TuneAVMacModel: ObservableObject {
             artist: normalizedArtist,
             stationID: currentStation.id
         )
+        let discoveryIdentityKey = Self.savedDiscoveryIdentityKey(title: normalizedTitle, artist: normalizedArtist)
         let now = Date.now
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
             removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
             discoveredTracks[index].playedAt = now
             discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
             discoveredTracks[index].hiddenAt = nil
             discoveredTracks[index].updatedAt = now
         } else {
             removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
             discoveredTracks.insert(
                 MacDiscoveredTrack(
                     title: normalizedTitle,
@@ -1006,6 +1009,7 @@ final class TuneAVMacModel: ObservableObject {
             rememberSavedDiscoveryDeletion(for: discoveredTracks[index])
         } else {
             removeTombstone(resource: "savedDiscoveries", identityKey: discovery.discoveryID)
+            removeTombstone(resource: "savedDiscoveries", identityKey: savedDiscoveryIdentityKey(for: discovery))
         }
         discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
         discoveredTracks[index].hiddenAt = nil
@@ -1973,7 +1977,7 @@ final class TuneAVMacModel: ObservableObject {
         for discovery in snapshot.savedDiscoveries where discovery.deletedAt != nil {
             rememberTombstone(
                 resource: "savedDiscoveries",
-                identityKey: discovery.discoveryID,
+                identityKey: TuneAVLibrarySnapshotMerger.discoveryIdentityKey(discovery),
                 payload: discovery,
                 deletedAt: discovery.deletedAt.map(TuneAVDateCoding.date(from:)) ?? .now
             )
@@ -1985,24 +1989,27 @@ final class TuneAVMacModel: ObservableObject {
         favoriteStations = favoriteRecords
             .map { Station(record: $0.station) }
 
-        let savedDiscoveriesByID = Dictionary(
-            snapshot.savedDiscoveries.filter { $0.deletedAt == nil }.map { ($0.discoveryID, $0) },
+        let savedDiscoveriesByIdentity = Dictionary(
+            snapshot.savedDiscoveries.filter { $0.deletedAt == nil }.map { (TuneAVLibrarySnapshotMerger.discoveryIdentityKey($0), $0) },
             uniquingKeysWith: { first, _ in first }
         )
-        let deletedSavedDiscoveryIDs = Set(snapshot.savedDiscoveries.compactMap { $0.deletedAt == nil ? nil : $0.discoveryID })
+        let deletedSavedDiscoveryIdentityKeys = Set(
+            snapshot.savedDiscoveries.compactMap { $0.deletedAt == nil ? nil : TuneAVLibrarySnapshotMerger.discoveryIdentityKey($0) }
+        )
         var nextDiscoveries = discoveredTracks.map { discovery in
             var nextDiscovery = discovery
-            if let savedRecord = savedDiscoveriesByID[discovery.discoveryID] {
+            let discoveryIdentityKey = savedDiscoveryIdentityKey(for: discovery)
+            if let savedRecord = savedDiscoveriesByIdentity[discoveryIdentityKey] {
                 nextDiscovery = MacDiscoveredTrack(record: savedRecord) ?? discovery
-            } else if deletedSavedDiscoveryIDs.contains(discovery.discoveryID) {
+            } else if deletedSavedDiscoveryIdentityKeys.contains(discoveryIdentityKey) {
                 nextDiscovery.markedInterestedAt = nil
             }
             return nextDiscovery
         }
-        let existingDiscoveryIDs = Set(nextDiscoveries.map(\.discoveryID))
+        let existingDiscoveryIdentityKeys = Set(nextDiscoveries.map(savedDiscoveryIdentityKey(for:)))
         nextDiscoveries.append(
-            contentsOf: savedDiscoveriesByID.values
-                .filter { !existingDiscoveryIDs.contains($0.discoveryID) }
+            contentsOf: savedDiscoveriesByIdentity.values
+                .filter { !existingDiscoveryIdentityKeys.contains(TuneAVLibrarySnapshotMerger.discoveryIdentityKey($0)) }
                 .compactMap(MacDiscoveredTrack.init(record:))
         )
         discoveredTracks = sortedDiscoveries(nextDiscoveries)
@@ -2082,9 +2089,10 @@ final class TuneAVMacModel: ObservableObject {
         let deletedAt = Date.now
         rememberTombstone(
             resource: "savedDiscoveries",
-            identityKey: discovery.discoveryID,
+            identityKey: savedDiscoveryIdentityKey(for: discovery),
             payload: DiscoveredTrackRecord(
                 discoveryID: discovery.discoveryID,
+                trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
                 title: discovery.title,
                 artist: discovery.artist,
                 stationID: discovery.stationID,
@@ -2099,6 +2107,14 @@ final class TuneAVMacModel: ObservableObject {
             ),
             deletedAt: deletedAt
         )
+    }
+
+    private func savedDiscoveryIdentityKey(for discovery: MacDiscoveredTrack) -> String {
+        TuneAVLibrarySnapshotMerger.discoveryIdentityKey(discovery.record)
+    }
+
+    private static func savedDiscoveryIdentityKey(title: String, artist: String?) -> String {
+        "track:\(TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale))"
     }
 
     private func rememberTombstone<Payload: Encodable>(
@@ -2524,6 +2540,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
     var record: DiscoveredTrackRecord {
         DiscoveredTrackRecord(
             discoveryID: discoveryID,
+            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale),
             title: title,
             artist: artist,
             stationID: stationID,
