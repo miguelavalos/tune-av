@@ -20,6 +20,7 @@ enum TuneAVMacDiagnostics {
         data: [String: String] = [:]
     ) {
         guard !(error is CancellationError) else { return }
+        guard Self.shouldCapture(error) else { return }
 
         var contextData = data
         contextData["operation"] = operation
@@ -32,6 +33,26 @@ enum TuneAVMacDiagnostics {
                 data: contextData
             )
         )
+    }
+
+    static func shouldCapture(_ error: any Error) -> Bool {
+        if let appDataError = error as? TuneAVAppDataClientError {
+            switch appDataError {
+            case .missingToken, .missingBaseURL:
+                return false
+            case .requestFailed:
+                return true
+            }
+        }
+        if let accessError = error as? TuneAVAccessClientError {
+            switch accessError {
+            case .missingToken, .missingBaseURL:
+                return false
+            case .requestFailed, .avTunesysAccessMissing:
+                return true
+            }
+        }
+        return true
     }
 
     static func setUserContext(id: String?) {

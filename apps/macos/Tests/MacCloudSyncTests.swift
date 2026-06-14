@@ -76,6 +76,17 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(trigger.signOutStarted(), .cancel)
     }
 
+    func testMacDiagnosticsDoesNotCaptureExpectedConfigurationErrors() {
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingToken))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingBaseURL))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.missingToken))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.missingBaseURL))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.requestFailed(statusCode: 500)))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.requestFailed(statusCode: 500)))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.avTunesysAccessMissing))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(URLError(.timedOut)))
+    }
+
     func testMacSyncMergeKeepsLocalAndRemoteLibraryItems() {
         let local = librarySnapshot(
             favorites: [favoriteRecord(id: "local-favorite")],
