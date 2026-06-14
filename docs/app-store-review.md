@@ -7,10 +7,16 @@ approval records outside this repository.
 ## Release Scope
 
 - Tune AV Pro sync covers saved stations, saved songs, station feedback, and song
-  feedback for signed-in Pro accounts.
+  feedback restore for signed-in Pro accounts.
+- Signed-in Free and Pro accounts may upload station and song feedback to the
+  account backend for product data and recommendations. Only Pro accounts should
+  restore that feedback across devices as a user-facing sync feature.
 - Recents, discovery history, playback state, and device settings are local-only.
-- Saved song sync is based on active saved-song records. Discovery history can
-  show more songs locally and is not expected to match across devices.
+- Saved song sync is based on active saved-song records. Song feedback sync is
+  based on backend feedback rows with title/artist metadata, so the tuned songs
+  view can restore feedback without requiring the local discovery history item.
+  Discovery history can show more songs locally and is not expected to match
+  across devices.
 - iOS and macOS should be tested together with the same signed-in Pro account
   before submission.
 - macOS is currently Apple Silicon-only while the Convex Swift binary dependency
@@ -38,7 +44,9 @@ feedback safer during startup.
 Tune AV uses Account AV sign-in and Tune AV Pro for cloud sync. With a signed-in
 Pro account, saved radios, saved songs, station feedback, and song feedback sync
 between iOS and macOS. Recents, discovery history, playback state, and device
-settings remain local to each device by design.
+settings remain local to each device by design. Signed-in Free accounts may
+upload station and song feedback for internal product data, but that feedback is
+not restored as cross-device sync unless the account is Pro.
 
 Before review, test song feedback with tracks containing spaces or punctuation.
 Both clients must canonicalize stored and remote song feedback keys so older

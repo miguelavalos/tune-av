@@ -342,7 +342,7 @@ struct MusicScreen: View {
     private var musicDerivedState: MusicLibraryDerivedState {
         let visibleDiscoveries = AppShellMusicLibrary.visibleDiscoveries(discoveries)
         let savedDiscoveries = AppShellMusicLibrary.savedDiscoveries(discoveries)
-        let tunedDiscoveries = sortTunedDiscoveries(visibleDiscoveries.filter { trackFeedback($0) != nil })
+        let tunedDiscoveries = libraryStore.tunedDiscoveries
         let visibleArtistSummaries = AppShellMusicLibrary.visibleArtistSummaries(discoveries)
         let filteredDiscoveries = resolvedFilteredDiscoveries()
         let filteredArtistSummaries = resolvedFilteredArtistSummaries()
@@ -383,8 +383,9 @@ struct MusicScreen: View {
     }
 
     private func resolvedFilteredDiscoveries() -> [DiscoveredTrack] {
+        let sourceDiscoveries = musicMode == .top ? libraryStore.tunedDiscoveries : discoveries
         let filtered = AppShellMusicLibrary.filteredDiscoveries(
-            discoveries,
+            sourceDiscoveries,
             mode: currentMusicLibraryMode,
             query: query,
             selectedArtistName: selectedArtistName,
@@ -392,7 +393,7 @@ struct MusicScreen: View {
         )
 
         if musicMode == .top {
-            return sortTunedDiscoveries(filtered.filter { trackFeedback($0) != nil })
+            return sortTunedDiscoveries(filtered)
         }
 
         switch musicSort {

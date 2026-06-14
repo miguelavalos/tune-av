@@ -36,7 +36,8 @@ Optional account-connected behavior:
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
 - optional RevenueCat monthly Pro purchase/restore flow when configured
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
-- Pro cloud sync for saved stations, saved songs, station feedback, and song feedback when Account AV backend config is available
+- Pro cloud sync for saved stations, saved songs, station feedback, and song feedback restore when Account AV backend config is available
+- signed-in Free and Pro accounts can upload station and song feedback for product data and recommendations; only Pro restores it across devices
 - recents, discovery history, playback state, and settings remain local-only unless a future public contract says otherwise
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 - shared app shell, launch, settings/account, Avi feedback/actions, paywall, and

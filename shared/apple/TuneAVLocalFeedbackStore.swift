@@ -3,6 +3,23 @@ import Foundation
 struct TuneAVLocalFeedbackRecord: Codable, Equatable {
     let feedback: TuneAVStationFeedback
     let updatedAt: String
+    let title: String?
+    let artist: String?
+    let stationID: String?
+
+    init(
+        feedback: TuneAVStationFeedback,
+        updatedAt: String,
+        title: String? = nil,
+        artist: String? = nil,
+        stationID: String? = nil
+    ) {
+        self.feedback = feedback
+        self.updatedAt = updatedAt
+        self.title = TuneAVText.normalizedValue(title)
+        self.artist = TuneAVText.normalizedValue(artist)
+        self.stationID = TuneAVText.normalizedValue(stationID)
+    }
 }
 
 struct TuneAVLocalFeedbackLoadResult: Equatable {
@@ -107,7 +124,10 @@ enum TuneAVRealtimeFeedbackProjection {
                     TuneAVLocalFeedbackStore.canonicalTrackFeedbackKey($0.trackKey),
                     TuneAVLocalFeedbackRecord(
                         feedback: $0.feedback,
-                        updatedAt: $0.updatedAt ?? fallbackTimestamp
+                        updatedAt: $0.updatedAt ?? fallbackTimestamp,
+                        title: $0.title,
+                        artist: $0.artist,
+                        stationID: $0.stationID
                     )
                 )
             }

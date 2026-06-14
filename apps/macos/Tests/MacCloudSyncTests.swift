@@ -350,7 +350,10 @@ final class MacCloudSyncTests: XCTestCase {
             [
                 "song::artist": TuneAVLocalFeedbackRecord(
                     feedback: .liked,
-                    updatedAt: "2026-05-23T11:01:00Z"
+                    updatedAt: "2026-05-23T11:01:00Z",
+                    title: "Song",
+                    artist: "Artist",
+                    stationID: "station"
                 )
             ]
         )
@@ -375,7 +378,10 @@ final class MacCloudSyncTests: XCTestCase {
             [
                 "take back the power::the interrupters": TuneAVLocalFeedbackRecord(
                     feedback: .liked,
-                    updatedAt: "2026-06-14T19:01:00Z"
+                    updatedAt: "2026-06-14T19:01:00Z",
+                    title: "Take Back the Power",
+                    artist: "The Interrupters",
+                    stationID: "station"
                 )
             ]
         )

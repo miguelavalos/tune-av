@@ -136,7 +136,7 @@ struct MacMusicView: View {
         .onChange(of: model.discoveredTracks) { _, _ in
             refreshCachedLibraryViews()
         }
-        .onChange(of: model.trackFeedback) { _, _ in
+        .onChange(of: model.tunedTrackDiscoveries) { _, _ in
             refreshCachedTopDiscoveries()
         }
     }
@@ -450,7 +450,7 @@ struct MacMusicView: View {
         case .songs, .artists:
             baseDiscoveries = savedDiscoveries
         case .top, .history:
-            baseDiscoveries = visibleDiscoveries
+            baseDiscoveries = topDiscoveries
         }
 
         let artistFilteredDiscoveries: [MacDiscoveredTrack]
@@ -477,7 +477,7 @@ struct MacMusicView: View {
         }
 
         if mode == .top {
-            return sortTunedDiscoveries(filtered.filter { model.feedback(for: $0) != nil })
+            return sortTunedDiscoveries(filtered)
         }
 
         switch currentSort {
@@ -711,7 +711,7 @@ struct MacMusicView: View {
     }
 
     private func refreshCachedTopDiscoveries() {
-        cachedTopDiscoveries = sortTunedDiscoveries(cachedVisibleDiscoveries.filter { model.feedback(for: $0) != nil })
+        cachedTopDiscoveries = sortTunedDiscoveries(model.tunedTrackDiscoveries)
     }
 
     private func sortTunedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {

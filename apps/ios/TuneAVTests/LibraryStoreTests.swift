@@ -586,11 +586,73 @@ final class LibraryStoreTests: XCTestCase {
             discoveryLimit: 25
         ))
 
+        store.configureLocalFeedbackRetention(for: .signedInPro)
         store.setBackendService(TuneAVAppDataService(apiClient: client), userID: "user-1")
         await store.refreshCloudFeedbackIfNeeded(force: true)
 
         let discovery = try XCTUnwrap(store.discoveries.first)
         XCTAssertEqual(store.feedback(for: discovery), .notForMe)
+    }
+
+    func testRemoteTrackFeedbackCreatesTunedDiscoveryWithoutLocalHistory() async throws {
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            let response: String
+            switch request.url?.path {
+            case "/v1/tune/feedback":
+                response = """
+                {
+                  "generatedAt": "2026-06-14T16:30:00Z",
+                  "stationFeedback": [],
+                  "trackFeedback": [
+                    {
+                      "trackKey": "welcome to the dcc::nothing but thieves",
+                      "title": "Welcome to the DCC",
+                      "artist": "Nothing But Thieves",
+                      "stationID": "test-station",
+                      "feedback": "liked",
+                      "updatedAt": "2026-06-14T16:29:00Z"
+                    }
+                  ]
+                }
+                """
+            case "/v1/tune/me/summary":
+                response = """
+                {
+                  "usage": {},
+                  "limits": {},
+                  "subscription": { "tier": "pro", "status": "active", "isPro": true }
+                }
+                """
+            default:
+                XCTFail("Unexpected request path: \(request.url?.path ?? "nil")")
+                response = "{}"
+            }
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data(response.utf8)
+            )
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        store.configureLocalFeedbackRetention(for: .signedInPro)
+        store.setBackendService(TuneAVAppDataService(apiClient: client), userID: "user-1")
+
+        await store.refreshCloudFeedbackIfNeeded(force: true)
+
+        XCTAssertTrue(store.discoveries.isEmpty)
+        XCTAssertEqual(store.tunedDiscoveries.map(\.title), ["Welcome to the DCC"])
+        XCTAssertEqual(store.feedback(for: try XCTUnwrap(store.tunedDiscoveries.first)), .liked)
     }
 
     func testCloudLibraryRefreshAppliesRemoteSavedDiscoveries() async throws {

@@ -201,10 +201,16 @@ separate development bundle identifier.
    - saved stations and station feedback sync across devices;
    - saved songs sync only for actively saved song records, not local discovery
      history;
+   - song feedback sync restores from backend feedback rows with title/artist
+     metadata, even when the song is not present in local discovery history;
    - song feedback sync survives tracks with spaces or punctuation in their
      canonical `trackKey`;
    - old URL-encoded local song feedback keys are migrated on launch and do not
      produce duplicate or invisible feedback states.
+
+   Signed-in Free accounts can upload station and song feedback for product data
+   and recommendations, but only Pro accounts should restore feedback across
+   devices as a user-facing sync feature.
 
 8. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and

@@ -63,7 +63,8 @@ final class LibraryStore: ObservableObject {
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
     private let initialLocalFeedbackRetention = TuneAVLocalFeedbackRetention.maximumLocalRetention
-    private var shouldSyncFeedbackToCloud = false
+    private var shouldUploadFeedbackToBackend = false
+    private var shouldRestoreFeedbackFromCloud = false
 
     private enum RefreshScope {
         case favorites
@@ -310,6 +311,10 @@ final class LibraryStore: ObservableObject {
         discoveries.filter(\.isMarkedInteresting).count
     }
 
+    var tunedDiscoveries: [DiscoveredTrack] {
+        tunedDiscoveriesFromFeedback()
+    }
+
     private func discovery(for title: String?, artist: String?, station: Station?) -> DiscoveredTrack? {
         guard
             let station,
@@ -405,7 +410,8 @@ final class LibraryStore: ObservableObject {
 
     func configureLocalFeedbackRetention(for accessMode: AccessMode) {
         let retention = TuneAVLocalFeedbackRetention.forMode(accessMode)
-        shouldSyncFeedbackToCloud = accessMode == .signedInPro
+        shouldUploadFeedbackToBackend = accessMode != .guest
+        shouldRestoreFeedbackFromCloud = accessMode == .signedInPro
         guard retention != localFeedbackRetention else { return }
         localFeedbackRetention = retention
         pruneLocalFeedbackIfNeeded()
@@ -424,7 +430,7 @@ final class LibraryStore: ObservableObject {
         stationFeedbackRecords = nextRecords
         stationFeedback = nextRecords.mapValues(\.feedback)
         Self.saveStationFeedbackRecords(nextRecords)
-        guard shouldSyncFeedbackToCloud else { return }
+        guard shouldUploadFeedbackToBackend else { return }
         rememberPendingStationFeedbackUpload(feedback, stationID: station.id)
         syncStationFeedback(feedback, stationID: station.id)
     }
@@ -438,12 +444,18 @@ final class LibraryStore: ObservableObject {
         feedbackForDiscoveredTrack(title: discovery.title, artist: discovery.artist)
     }
 
-    func setFeedbackForDiscoveredTrack(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?) {
+    func setFeedbackForDiscoveredTrack(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?, stationID: String? = nil) {
         guard let key = discoveredTrackFeedbackKey(title: title, artist: artist) else { return }
 
         var nextRecords = trackFeedbackRecords
         if let feedback {
-            nextRecords[key] = TuneAVLocalFeedbackRecord(feedback: feedback, updatedAt: TuneAVDateCoding.string(from: .now))
+            nextRecords[key] = TuneAVLocalFeedbackRecord(
+                feedback: feedback,
+                updatedAt: TuneAVDateCoding.string(from: .now),
+                title: title,
+                artist: artist,
+                stationID: stationID
+            )
         } else {
             nextRecords.removeValue(forKey: key)
         }
@@ -453,11 +465,11 @@ final class LibraryStore: ObservableObject {
         trackFeedbackRecords = nextRecords
         trackFeedback = nextRecords.mapValues(\.feedback)
         Self.saveTrackFeedbackRecords(nextRecords)
-        guard shouldSyncFeedbackToCloud else { return }
+        guard shouldUploadFeedbackToBackend else { return }
         let normalizedTitle = normalizedTrackValue(title)
         let normalizedArtist = normalizedTrackValue(artist)
-        rememberPendingTrackFeedbackUpload(feedback, feedbackKey: key, title: normalizedTitle, artist: normalizedArtist, stationID: nil)
-        syncTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: nil)
+        rememberPendingTrackFeedbackUpload(feedback, feedbackKey: key, title: normalizedTitle, artist: normalizedArtist, stationID: stationID)
+        syncTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: stationID)
     }
 
     func recordDiscoveredTrack(title: String?, artist: String?, station: Station?, artworkURL: URL?, discoveryLimit: Int? = nil) {
@@ -1055,6 +1067,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func refreshCloudFeedbackIfNeeded(force: Bool = false) async {
+        guard shouldRestoreFeedbackFromCloud else { return }
         guard let backendService, backendService.isConfigured() else { return }
 
         if !force,
@@ -1252,6 +1265,55 @@ final class LibraryStore: ObservableObject {
         return Self.trackFeedbackKey(title: normalizedTitle, artist: normalizedTrackValue(artist))
     }
 
+    private func tunedDiscoveriesFromFeedback() -> [DiscoveredTrack] {
+        let localDiscoveriesByFeedbackKey = Dictionary(
+            discoveries.compactMap { discovery -> (String, DiscoveredTrack)? in
+                guard let key = discoveredTrackFeedbackKey(title: discovery.title, artist: discovery.artist) else { return nil }
+                return (key, discovery)
+            },
+            uniquingKeysWith: { first, second in
+                first.playedAt >= second.playedAt ? first : second
+            }
+        )
+
+        return trackFeedbackRecords
+            .compactMap { key, record -> DiscoveredTrack? in
+                if let localDiscovery = localDiscoveriesByFeedbackKey[key] {
+                    return localDiscovery
+                }
+                guard let title = record.title else { return nil }
+                let updatedAt = TuneAVDateCoding.date(from: record.updatedAt)
+                let stationID = record.stationID ?? "tuneav-feedback"
+                let discoveryID = DiscoveredTrack.makeID(
+                    title: title,
+                    artist: record.artist,
+                    stationID: stationID
+                )
+                return DiscoveredTrack(
+                    record: DiscoveredTrackRecord(
+                        discoveryID: discoveryID,
+                        trackKey: key,
+                        title: title,
+                        artist: record.artist,
+                        stationID: stationID,
+                        stationName: "Tune AV",
+                        artworkURL: nil,
+                        stationArtworkURL: nil,
+                        playedAt: TuneAVDateCoding.string(from: updatedAt),
+                        updatedAt: record.updatedAt
+                    )
+                )
+            }
+            .sorted { first, second in
+                let firstRank = Self.feedbackSortRank(trackFeedback[Self.trackFeedbackKey(title: first.title, artist: first.artist)])
+                let secondRank = Self.feedbackSortRank(trackFeedback[Self.trackFeedbackKey(title: second.title, artist: second.artist)])
+                if firstRank == secondRank {
+                    return first.playedAt > second.playedAt
+                }
+                return firstRank < secondRank
+            }
+    }
+
     private static func trackFeedbackKey(title: String, artist: String?) -> String {
         [title, artist ?? ""]
             .map { value in
@@ -1262,6 +1324,19 @@ final class LibraryStore: ObservableObject {
                     .lowercased()
             }
             .joined(separator: "::")
+    }
+
+    private static func feedbackSortRank(_ feedback: TuneAVStationFeedback?) -> Int {
+        switch feedback {
+        case .liked:
+            return 0
+        case .notForMe:
+            return 1
+        case .disliked:
+            return 2
+        case nil:
+            return 3
+        }
     }
 
     private static func loadStationFeedbackRecords() -> TuneAVLocalFeedbackLoadResult {
@@ -1411,7 +1486,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
-        guard shouldSyncFeedbackToCloud else { return }
+        guard shouldUploadFeedbackToBackend else { return }
         guard let backendService, backendService.isConfigured() else { return }
 
         let token = UUID()
@@ -1465,7 +1540,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func syncTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String?, artist: String?, stationID: String?) {
-        guard shouldSyncFeedbackToCloud else { return }
+        guard shouldUploadFeedbackToBackend else { return }
         guard
             let backendService,
             backendService.isConfigured(),

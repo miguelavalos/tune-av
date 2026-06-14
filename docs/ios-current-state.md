@@ -17,8 +17,8 @@ Current app shape:
 
 - local-first playback, recents, discovery history, playback state, and device
   settings;
-- saved stations, saved songs, station feedback, and song feedback with Pro
-  cloud sync when configured;
+- saved stations, saved songs, station feedback, and song feedback restore with
+  Pro cloud sync when configured;
 - optional sign-in and premium UI surfaces when local configuration enables
   them;
 - Guest, signed-in Free, and signed-in Pro presentation states;
@@ -57,8 +57,8 @@ The public fallback policy is:
 | Mode | State | Daily Avi actions | Cloud sync |
 | --- | --- | ---: | --- |
 | Guest | local-only | 5 | no |
-| Signed-in Free | account-connected | 15 | no |
-| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations, saved songs, station feedback, and song feedback, when configured |
+| Signed-in Free | account-connected | 15 | uploads station and song feedback for internal product data; no user-facing restore sync |
+| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations, saved songs, station feedback, and song feedback restore, when configured |
 
 Recents, discovery history, playback state, and settings are local-only in the
 current public client contract. Premium access is displayed by the client only
@@ -66,10 +66,13 @@ after configured entitlement state is available. The public repo does not
 document private entitlement operations.
 
 Saved songs and song feedback use canonical track keys across iOS, macOS, and
-the account backend. Clients must normalize remote records and migrate any
-URL-encoded local feedback keys on load so historical local state does not mask
-synced feedback. Discovery history remains local-only and can legitimately show
-different song totals per device.
+the account backend. Saved songs sync through active saved-song records. Song
+feedback sync restores from backend feedback rows that include title/artist
+metadata, so the tuned songs view can show remote feedback without requiring the
+local discovery history item to exist on that device. Clients must normalize
+remote records and migrate any URL-encoded local feedback keys on load so
+historical local state does not mask synced feedback. Discovery history remains
+local-only and can legitimately show different song totals per device.
 
 ## Runtime Configuration
 

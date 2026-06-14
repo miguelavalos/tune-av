@@ -2869,12 +2869,12 @@ struct AviScreen: View {
             },
             selectFeedback: { feedback in
                 let nextFeedback = libraryStore.feedback(for: discovery) == feedback ? nil : feedback
-                libraryStore.setFeedbackForDiscoveredTrack(nextFeedback, title: discovery.title, artist: discovery.artist)
+                libraryStore.setFeedbackForDiscoveredTrack(nextFeedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
                 AVHaptics.perform(stationFeedbackHapticEvent(for: nextFeedback))
             },
             clearFeedback: {
                 guard libraryStore.feedback(for: discovery) != nil else { return }
-                libraryStore.setFeedbackForDiscoveredTrack(nil, title: discovery.title, artist: discovery.artist)
+                libraryStore.setFeedbackForDiscoveredTrack(nil, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
                 AVHaptics.perform(.clear)
             }
         )
@@ -4904,7 +4904,8 @@ struct AviScreen: View {
         libraryStore.setFeedbackForDiscoveredTrack(
             feedback,
             title: currentTrackTitle,
-            artist: currentTrackArtist
+            artist: currentTrackArtist,
+            stationID: currentStation?.id
         )
         AVHaptics.perform(stationFeedbackHapticEvent(for: feedback))
     }
@@ -5322,7 +5323,8 @@ struct AviScreen: View {
             libraryStore.setFeedbackForDiscoveredTrack(
                 feedback,
                 title: currentTrackTitle,
-                artist: currentTrackArtist
+                artist: currentTrackArtist,
+                stationID: station.id
             )
         } else {
             guard stationFeedback[station.id] != feedback else { return }

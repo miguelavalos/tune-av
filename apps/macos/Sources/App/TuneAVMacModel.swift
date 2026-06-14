@@ -116,6 +116,7 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var recentStations: [Station] = []
     @Published private(set) var stationFeedback: [String: TuneAVStationFeedback] = [:]
     @Published private(set) var trackFeedback: [String: TuneAVStationFeedback] = [:]
+    @Published private(set) var tunedTrackDiscoveries: [MacDiscoveredTrack] = []
     @Published private(set) var discoveredTracks: [MacDiscoveredTrack] = []
     @Published private(set) var currentStation: Station?
     @Published private(set) var currentTrackTitle: String?
@@ -200,6 +201,7 @@ final class TuneAVMacModel: ObservableObject {
         trackFeedbackRecords = storage.loadTrackFeedbackRecords()
         trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
         discoveredTracks = storage.loadDiscoveries()
+        refreshTunedTrackDiscoveries()
         libraryTombstones = storage.loadTombstones()
         localLibraryUpdatedAt = storage.loadDate(forKey: TuneAVMacLibraryStorage.localLibraryUpdatedAtKey)
             ?? (favoriteStations.isEmpty && recentStations.isEmpty && discoveredTracks.isEmpty ? .distantPast : .now)
@@ -810,7 +812,7 @@ final class TuneAVMacModel: ObservableObject {
         guard stationFeedback[station.id] != feedback else { return }
         stationFeedback[station.id] = feedback
         storage.saveStationFeedback(stationFeedback)
-        syncProStationFeedback(feedback, stationID: station.id)
+        syncStationFeedbackToBackend(feedback, stationID: station.id)
     }
 
     func clearFavorites(propagatesToCloud: Bool = true) {
@@ -839,6 +841,7 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveStationFeedback(stationFeedback)
         trackFeedbackRecords = [:]
         trackFeedback = [:]
+        refreshTunedTrackDiscoveries()
         storage.saveTrackFeedbackRecords(trackFeedbackRecords)
     }
 
@@ -914,6 +917,7 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         discoveredTracks = sortedDiscoveries(discoveredTracks)
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
         return currentDiscoveryIsSaved
@@ -935,13 +939,17 @@ final class TuneAVMacModel: ObservableObject {
         if let feedback {
             trackFeedbackRecords[feedbackKey] = TuneAVLocalFeedbackRecord(
                 feedback: feedback,
-                updatedAt: TuneAVDateCoding.string(from: now)
+                updatedAt: TuneAVDateCoding.string(from: now),
+                title: normalizedTitle,
+                artist: normalizedArtist,
+                stationID: currentStation.id
             )
         } else {
             trackFeedbackRecords[feedbackKey] = nil
         }
         trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(trackFeedbackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
         trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        refreshTunedTrackDiscoveries()
         storage.saveTrackFeedbackRecords(trackFeedbackRecords)
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
@@ -962,9 +970,10 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         discoveredTracks = sortedDiscoveries(discoveredTracks)
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
-        syncProTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
+        syncTrackFeedbackToBackend(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
     }
 
     func setFeedback(_ feedback: TuneAVStationFeedback?, for discovery: MacDiscoveredTrack) {
@@ -973,24 +982,29 @@ final class TuneAVMacModel: ObservableObject {
         if let feedback {
             trackFeedbackRecords[feedbackKey] = TuneAVLocalFeedbackRecord(
                 feedback: feedback,
-                updatedAt: TuneAVDateCoding.string(from: now)
+                updatedAt: TuneAVDateCoding.string(from: now),
+                title: discovery.title,
+                artist: discovery.artist,
+                stationID: discovery.stationID
             )
         } else {
             trackFeedbackRecords[feedbackKey] = nil
         }
         trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(trackFeedbackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
         trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        refreshTunedTrackDiscoveries()
         storage.saveTrackFeedbackRecords(trackFeedbackRecords)
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) {
             discoveredTracks[index].hiddenAt = feedback == .notForMe ? now : nil
             discoveredTracks[index].updatedAt = now
             discoveredTracks = sortedDiscoveries(discoveredTracks)
+            refreshTunedTrackDiscoveries()
             storage.saveDiscoveries(discoveredTracks)
             markLocalLibraryUpdated(syncsCloud: false)
         }
 
-        syncProTrackFeedback(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
+        syncTrackFeedbackToBackend(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
     }
 
     func clearDiscoveredTracks(propagatesToCloud: Bool = true) {
@@ -999,6 +1013,7 @@ final class TuneAVMacModel: ObservableObject {
         }
         let removedSavedDiscovery = discoveredTracks.contains(where: \.isMarkedInteresting)
         discoveredTracks = []
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: propagatesToCloud && removedSavedDiscovery)
     }
@@ -1016,6 +1031,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks[index].hiddenAt = nil
         discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
     }
@@ -1025,6 +1041,7 @@ final class TuneAVMacModel: ObservableObject {
         let now = Date.now
         discoveredTracks[index].hiddenAt = now
         discoveredTracks[index].updatedAt = now
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
     }
@@ -1035,6 +1052,7 @@ final class TuneAVMacModel: ObservableObject {
         discoveredTracks[index].hiddenAt = nil
         discoveredTracks[index].updatedAt = now
         discoveredTracks = sortedDiscoveries(discoveredTracks)
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
     }
@@ -1660,6 +1678,7 @@ final class TuneAVMacModel: ObservableObject {
 
         trimDiscoveriesToAccessLimit()
         discoveredTracks = sortedDiscoveries(discoveredTracks)
+        refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
     }
@@ -1849,8 +1868,8 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func syncProStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
-        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+    private func syncStationFeedbackToBackend(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard accessMode != .guest, accountService.isAvailable else { return }
         Task { [weak self] in
             do {
                 try await self?.sendFeedbackRequest(
@@ -1868,8 +1887,8 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func syncProTrackFeedback(_ feedback: TuneAVStationFeedback?, title: String, artist: String?, stationID: String?) {
-        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+    private func syncTrackFeedbackToBackend(_ feedback: TuneAVStationFeedback?, title: String, artist: String?, stationID: String?) {
+        guard accessMode != .guest, accountService.isAvailable else { return }
         let key = Self.trackFeedbackKey(title: title, artist: artist)
         Task { [weak self] in
             do {
@@ -1912,6 +1931,64 @@ final class TuneAVMacModel: ObservableObject {
                     .lowercased()
             }
             .joined(separator: "::")
+    }
+
+    private func refreshTunedTrackDiscoveries() {
+        let localDiscoveriesByFeedbackKey = Dictionary(
+            discoveredTracks.map { (Self.trackFeedbackKey(title: $0.title, artist: $0.artist), $0) },
+            uniquingKeysWith: { first, second in
+                first.playedAt >= second.playedAt ? first : second
+            }
+        )
+
+        tunedTrackDiscoveries = trackFeedbackRecords
+            .compactMap { key, record -> MacDiscoveredTrack? in
+                if let localDiscovery = localDiscoveriesByFeedbackKey[key] {
+                    return localDiscovery
+                }
+                guard let title = record.title else { return nil }
+                let updatedAt = TuneAVDateCoding.date(from: record.updatedAt)
+                let stationID = record.stationID ?? "tuneav-feedback"
+                return MacDiscoveredTrack(
+                    record: DiscoveredTrackRecord(
+                        discoveryID: MacDiscoveredTrack.makeID(
+                            title: title,
+                            artist: record.artist,
+                            stationID: stationID
+                        ),
+                        trackKey: key,
+                        title: title,
+                        artist: record.artist,
+                        stationID: stationID,
+                        stationName: "Tune AV",
+                        artworkURL: nil,
+                        stationArtworkURL: nil,
+                        playedAt: TuneAVDateCoding.string(from: updatedAt),
+                        updatedAt: record.updatedAt
+                    )
+                )
+            }
+            .sorted { first, second in
+                let firstRank = Self.feedbackSortRank(trackFeedback[Self.trackFeedbackKey(title: first.title, artist: first.artist)])
+                let secondRank = Self.feedbackSortRank(trackFeedback[Self.trackFeedbackKey(title: second.title, artist: second.artist)])
+                if firstRank == secondRank {
+                    return first.playedAt > second.playedAt
+                }
+                return firstRank < secondRank
+            }
+    }
+
+    private nonisolated static func feedbackSortRank(_ feedback: TuneAVStationFeedback?) -> Int {
+        switch feedback {
+        case .liked:
+            return 0
+        case .notForMe:
+            return 1
+        case .disliked:
+            return 2
+        case nil:
+            return 3
+        }
     }
 
     private nonisolated static func encodedPathSegment(_ value: String) -> String {
@@ -2014,6 +2091,7 @@ final class TuneAVMacModel: ObservableObject {
                 .compactMap(MacDiscoveredTrack.init(record:))
         )
         discoveredTracks = sortedDiscoveries(nextDiscoveries)
+        refreshTunedTrackDiscoveries()
 
         storage.saveFavoriteRecords(favoriteRecords)
         storage.saveDiscoveries(discoveredTracks)
@@ -2069,6 +2147,7 @@ final class TuneAVMacModel: ObservableObject {
         if nextTrackRecords != trackFeedbackRecords {
             trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
             trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+            refreshTunedTrackDiscoveries()
             storage.saveTrackFeedbackRecords(trackFeedbackRecords)
         }
     }
