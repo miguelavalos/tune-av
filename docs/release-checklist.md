@@ -179,7 +179,7 @@ separate development bundle identifier.
 
    The workflow verifies the archive bundle identifier (`com.avalsys.tuneav`
    for App Store Connect), stable Account AV keychain service
-   (`com.avalsys.tuneav.account`), Account AV keychain access group
+   (`com.avalsys.tuneav.account.v2`), Account AV keychain access group
    (`935PM55U6R.com.avalsys.tuneav`) in both Info.plist and signed
    entitlements, signing class, team ID, and `arm64` architecture before upload.
 

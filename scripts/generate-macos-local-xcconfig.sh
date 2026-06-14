@@ -150,7 +150,7 @@ if [ "$development_team" = "346677S99H" ]; then
 fi
 keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
 if [ -z "$keychain_service" ] || [ "$keychain_service" = "\$(inherited)" ]; then
-  keychain_service="$bundle_identifier.account"
+  keychain_service="$bundle_identifier.account.v2"
 fi
 keychain_access_group="$(read_optional_config ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)"
 if [ -z "$keychain_access_group" ] || [ "$keychain_access_group" = "\$(inherited)" ]; then

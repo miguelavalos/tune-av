@@ -124,7 +124,7 @@ done
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
-  [ "$keychain_service" = "com.avalsys.tuneav.account" ] || fail "prod ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.account, got $keychain_service"
+  [ "$keychain_service" = "com.avalsys.tuneav.account.v2" ] || fail "prod ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.account.v2, got $keychain_service"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav" ] || fail "prod ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav, got $keychain_access_group"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if [ -n "$development_team" ] && [ "$development_team" != '$(inherited)' ]; then
@@ -135,7 +135,7 @@ if [ "$env_name" = "prod" ]; then
 else
   [ "$product_bundle_identifier" = "com.avalsys.tuneav.mac.dev" ] || fail "dev bundle must be com.avalsys.tuneav.mac.dev, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.mac.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.mac.dev"
-  [ "$keychain_service" = "com.avalsys.tuneav.mac.dev.account" ] || fail "dev ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.mac.dev.account, got $keychain_service"
+  [ "$keychain_service" = "com.avalsys.tuneav.mac.dev.account.v2" ] || fail "dev ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.mac.dev.account.v2, got $keychain_service"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav.mac.dev" ] || fail "dev ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav.mac.dev, got $keychain_access_group"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi

@@ -79,6 +79,7 @@ archive_bundle_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperti
 archive_signing_identity="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:SigningIdentity")"
 archive_team_id="$(plist_print "$archive_path/Info.plist" "ApplicationProperties:Team")"
 app_bundle_id="$(plist_print "$app_path/Contents/Info.plist" "CFBundleIdentifier")"
+accountav_keychain_service="$(plist_print "$app_path/Contents/Info.plist" "ACCOUNTAV_KEYCHAIN_SERVICE")"
 accountav_keychain_access_group="$(plist_print "$app_path/Contents/Info.plist" "ACCOUNTAV_KEYCHAIN_ACCESS_GROUP")"
 
 if [ -z "$archive_bundle_id" ]; then
@@ -91,6 +92,12 @@ if [ "$archive_bundle_id" != "$expected_bundle_id" ]; then
 fi
 
 expected_keychain_access_group="935PM55U6R.$expected_bundle_id"
+expected_keychain_service="com.avalsys.tuneav.account.v2"
+if [ "$accountav_keychain_service" != "$expected_keychain_service" ]; then
+  echo "FAIL archive ACCOUNTAV_KEYCHAIN_SERVICE must be $expected_keychain_service, got ${accountav_keychain_service:-<missing>}." >&2
+  exit 1
+fi
+
 if [ "$accountav_keychain_access_group" != "$expected_keychain_access_group" ]; then
   echo "FAIL archive ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be $expected_keychain_access_group, got ${accountav_keychain_access_group:-<missing>}." >&2
   exit 1
@@ -149,6 +156,7 @@ Tune AV macOS archive
   archive: $archive_path
   archive name: ${archive_name:-unknown}
   bundle id: $archive_bundle_id
+  Account AV keychain service: $accountav_keychain_service
   Account AV keychain access group: $accountav_keychain_access_group
   architectures: $app_archs
   signing identity: ${archive_signing_identity:-unknown}
