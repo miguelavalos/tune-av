@@ -524,6 +524,10 @@ final class TuneAVMacModel: ObservableObject {
         return discoveredTracks[currentDiscoveryIndex].hiddenAt == nil ? nil : .notForMe
     }
 
+    func feedback(for discovery: MacDiscoveredTrack) -> TuneAVStationFeedback? {
+        trackFeedback[Self.trackFeedbackKey(title: discovery.title, artist: discovery.artist)]
+    }
+
     var playbackQueueSourceTitle: String {
         playbackQueueSource.displayTitle
     }
@@ -957,6 +961,32 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
         syncProTrackFeedback(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
+    }
+
+    func setFeedback(_ feedback: TuneAVStationFeedback?, for discovery: MacDiscoveredTrack) {
+        let now = Date.now
+        let feedbackKey = Self.trackFeedbackKey(title: discovery.title, artist: discovery.artist)
+        if let feedback {
+            trackFeedbackRecords[feedbackKey] = TuneAVLocalFeedbackRecord(
+                feedback: feedback,
+                updatedAt: TuneAVDateCoding.string(from: now)
+            )
+        } else {
+            trackFeedbackRecords[feedbackKey] = nil
+        }
+        trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(trackFeedbackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
+        trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        storage.saveTrackFeedbackRecords(trackFeedbackRecords)
+
+        if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) {
+            discoveredTracks[index].hiddenAt = feedback == .notForMe ? now : nil
+            discoveredTracks[index].updatedAt = now
+            discoveredTracks = sortedDiscoveries(discoveredTracks)
+            storage.saveDiscoveries(discoveredTracks)
+            markLocalLibraryUpdated(syncsCloud: false)
+        }
+
+        syncProTrackFeedback(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
     }
 
     func clearDiscoveredTracks(propagatesToCloud: Bool = true) {

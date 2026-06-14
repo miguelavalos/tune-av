@@ -136,7 +136,7 @@ struct MacMusicView: View {
         .onChange(of: model.discoveredTracks) { _, _ in
             refreshCachedLibraryViews()
         }
-        .onChange(of: model.stationFeedback) { _, _ in
+        .onChange(of: model.trackFeedback) { _, _ in
             refreshCachedTopDiscoveries()
         }
     }
@@ -358,7 +358,7 @@ struct MacMusicView: View {
                     ForEach(discoveries) { discovery in
                         MacMusicDiscoveryTrackCard(
                             discovery: discovery,
-                            feedback: model.stationFeedback[discovery.stationID],
+                            feedback: model.feedback(for: discovery),
                             showsSaveButton: false,
                             openAviActionsID: $openAviActionsID,
                             openTrackInfo: { model.openMusicTrackDetail(discovery) },
@@ -477,7 +477,7 @@ struct MacMusicView: View {
         }
 
         if mode == .top {
-            return sortTunedDiscoveries(filtered.filter { model.stationFeedback[$0.stationID] != nil })
+            return sortTunedDiscoveries(filtered.filter { model.feedback(for: $0) != nil })
         }
 
         switch currentSort {
@@ -614,7 +614,7 @@ struct MacMusicView: View {
                         ForEach(discoveries) { discovery in
                             MacMusicDiscoveryTrackCard(
                                 discovery: discovery,
-                                feedback: model.stationFeedback[discovery.stationID],
+                                feedback: model.feedback(for: discovery),
                                 showsSaveButton: false,
                                 openAviActionsID: $openAviActionsID,
                                 openTrackInfo: { model.openMusicTrackDetail(discovery) },
@@ -711,13 +711,13 @@ struct MacMusicView: View {
     }
 
     private func refreshCachedTopDiscoveries() {
-        cachedTopDiscoveries = sortTunedDiscoveries(cachedVisibleDiscoveries.filter { model.stationFeedback[$0.stationID] != nil })
+        cachedTopDiscoveries = sortTunedDiscoveries(cachedVisibleDiscoveries.filter { model.feedback(for: $0) != nil })
     }
 
     private func sortTunedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {
         discoveries.sorted { first, second in
-            let firstRank = feedbackRank(model.stationFeedback[first.stationID])
-            let secondRank = feedbackRank(model.stationFeedback[second.stationID])
+            let firstRank = feedbackRank(model.feedback(for: first))
+            let secondRank = feedbackRank(model.feedback(for: second))
             if firstRank == secondRank {
                 return first.playedAt > second.playedAt
             }

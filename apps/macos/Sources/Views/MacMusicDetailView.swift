@@ -34,14 +34,14 @@ struct MacMusicDetailView: View {
             AviFocusedTrackStats(
                 artistName: discovery.artistDisplayText,
                 stationName: discovery.stationName,
-                feedbackLabel: feedbackLabel(for: discovery.stationID)
+                feedbackLabel: feedbackLabel(for: discovery)
             )
             macMusicAviServices(for: .track(discovery))
             AviFocusedTrackArticle(
                 artistName: discovery.artistDisplayText,
                 stationName: discovery.stationName,
                 lastSeenLabel: discovery.playedAt.formatted(date: .abbreviated, time: .shortened),
-                feedbackLabel: feedbackLabel(for: discovery.stationID)
+                feedbackLabel: feedbackLabel(for: discovery)
             )
 
             if let station = station(for: discovery.stationID) {
@@ -89,7 +89,7 @@ struct MacMusicDetailView: View {
                 musicArtwork(for: discovery, size: 62)
             },
             badge: {
-                if let feedback = model.stationFeedback[discovery.stationID] {
+                if let feedback = model.feedback(for: discovery) {
                     TuneAVFeedbackBadge(feedback: feedback, size: 24)
                         .offset(x: -5, y: -5)
                 }
@@ -117,19 +117,17 @@ struct MacMusicDetailView: View {
                 }
             }
 
-            if let station = station(for: discovery.stationID) {
-                StationFeedbackControl(
-                    feedbackIdentity: "track:\(discovery.discoveryID)",
-                    selectedFeedback: model.stationFeedback[discovery.stationID],
-                    selectFeedback: { feedback in
-                        let nextFeedback = model.stationFeedback[discovery.stationID] == feedback ? nil : feedback
-                        model.setFeedback(nextFeedback, for: station)
-                    },
-                    clearFeedback: {
-                        model.setFeedback(nil, for: station)
-                    }
-                )
-            }
+            StationFeedbackControl(
+                feedbackIdentity: "track:\(discovery.discoveryID)",
+                selectedFeedback: model.feedback(for: discovery),
+                selectFeedback: { feedback in
+                    let nextFeedback = model.feedback(for: discovery) == feedback ? nil : feedback
+                    model.setFeedback(nextFeedback, for: discovery)
+                },
+                clearFeedback: {
+                    model.setFeedback(nil, for: discovery)
+                }
+            )
         }
         .padding(12)
         .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -282,7 +280,7 @@ struct MacMusicDetailView: View {
                     ForEach(discoveries) { discovery in
                         MacMusicDiscoveryTrackCard(
                             discovery: discovery,
-                            feedback: model.stationFeedback[discovery.stationID],
+                            feedback: model.feedback(for: discovery),
                             showsSaveButton: false,
                             openAviActionsID: $openAviActionsID,
                             openTrackInfo: { model.openMusicTrackDetail(discovery) },
@@ -364,8 +362,8 @@ struct MacMusicDetailView: View {
         musicArtwork(for: discoveries.first ?? MacDiscoveredTrack(title: "", artist: nil, station: Station.samples[0]), size: size)
     }
 
-    private func feedbackLabel(for stationID: String) -> String {
-        model.stationFeedback[stationID]?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
+    private func feedbackLabel(for discovery: MacDiscoveredTrack) -> String {
+        model.feedback(for: discovery)?.localizedState ?? L10n.string("shell.avi.music.feedback.empty")
     }
 
     private func artistDiscoveries(_ artistName: String) -> [MacDiscoveredTrack] {
