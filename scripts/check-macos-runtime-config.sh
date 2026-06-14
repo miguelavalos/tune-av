@@ -87,6 +87,7 @@ api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 tuneav_convex_url="$(setting TUNEAV_CONVEX_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
+keychain_service="$(setting ACCOUNTAV_KEYCHAIN_SERVICE)"
 support_base_url="$(setting SUPPORTAV_BASE_URL)"
 delete_account_url="$(setting TUNEAV_DELETE_ACCOUNT_URL)"
 terms_url="$(setting TUNEAV_TERMS_URL)"
@@ -105,6 +106,7 @@ for item in \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
   "TUNEAV_CONVEX_URL:$tuneav_convex_url" \
   "ACCOUNTAV_PUBLISHABLE_KEY:$publishable_key" \
+  "ACCOUNTAV_KEYCHAIN_SERVICE:$keychain_service" \
   "TUNEAV_DELETE_ACCOUNT_URL:$delete_account_url" \
   "TUNEAV_TERMS_URL:$terms_url" \
   "TUNEAV_PRIVACY_URL:$privacy_url" \
@@ -120,6 +122,7 @@ done
 if [ "$env_name" = "prod" ]; then
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
+  [ "$keychain_service" = "com.avalsys.tuneav.account" ] || fail "prod ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.account, got $keychain_service"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
   if [ -n "$development_team" ] && [ "$development_team" != '$(inherited)' ]; then
     [[ "$development_team" =~ ^[A-Z0-9]{10}$ ]] || fail "DEVELOPMENT_TEAM must look like a 10-character Apple team ID"
@@ -129,6 +132,7 @@ if [ "$env_name" = "prod" ]; then
 else
   [ "$product_bundle_identifier" = "com.avalsys.tuneav.mac.dev" ] || fail "dev bundle must be com.avalsys.tuneav.mac.dev, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.mac.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.mac.dev"
+  [ "$keychain_service" = "com.avalsys.tuneav.mac.dev.account" ] || fail "dev ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.mac.dev.account, got $keychain_service"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi
 
@@ -164,6 +168,7 @@ Tune AV macOS runtime config ($env_name)
   Account AV API: $api_base_url
   Tune AV Convex: $tuneav_convex_url
   Account AV management: $management_url
+  Account AV keychain service: $keychain_service
   Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key
   support email: $support_email

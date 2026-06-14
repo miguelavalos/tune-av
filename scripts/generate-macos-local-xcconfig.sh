@@ -149,6 +149,9 @@ if [ "$development_team" = "346677S99H" ]; then
   development_team="935PM55U6R"
 fi
 keychain_service="$(read_optional_config ACCOUNTAV_KEYCHAIN_SERVICE)"
+if [ -z "$keychain_service" ] || [ "$keychain_service" = "\$(inherited)" ]; then
+  keychain_service="$bundle_identifier.account"
+fi
 support_email="${SUPPORT_EMAIL_TO:-support@avalsys.com}"
 support_base_url="$(read_support_base_url)"
 tuneav_macos_sentry_dsn="$(read_optional_config TUNEAV_MACOS_SENTRY_DSN)"

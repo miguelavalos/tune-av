@@ -126,6 +126,10 @@ on the phone:
   identifier you use.
 - Avoid unsigned compile-only builds for flows that depend on keychain or
   entitlement behavior.
+- macOS signed/TestFlight auth builds must keep a stable Account AV keychain
+  service (`com.avalsys.tuneav.account` for prod,
+  `com.avalsys.tuneav.mac.dev.account` for dev). Do not leave
+  `ACCOUNTAV_KEYCHAIN_SERVICE` empty or inherited.
 - If the build hangs in `Resolve Package Graph`, restart Xcode and retry from a
   clean terminal.
 
