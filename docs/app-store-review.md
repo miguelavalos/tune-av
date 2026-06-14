@@ -17,6 +17,10 @@ approval records outside this repository.
   `com.avalsys.tuneav.account.v2` and keychain access group
   `935PM55U6R.com.avalsys.tuneav`; repeated Keychain access prompts are not
   expected in a clean signed build.
+- The old macOS Account AV keychain service `com.avalsys.tuneav.account` must
+  not be reused. If a macOS TestFlight build prompts for login-keychain access
+  to that service, discard the build and ship a new build with the `.v2`
+  service.
 - Missing account tokens or missing generated runtime config are handled as
   local availability states and should not surface as reviewer-visible raw
   diagnostics.

@@ -182,6 +182,10 @@ separate development bundle identifier.
    (`com.avalsys.tuneav.account.v2`), Account AV keychain access group
    (`935PM55U6R.com.avalsys.tuneav`) in both Info.plist and signed
    entitlements, signing class, team ID, and `arm64` architecture before upload.
+   Treat any archive that uses the legacy service
+   `com.avalsys.tuneav.account` as invalid, even if App Store Connect accepts
+   the upload. That service can make Clerk's macOS legacy migration fallback
+   read old login-keychain items and show repeated Keychain password prompts.
 
 4. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
    run the `TuneAVMac` scheme locally.

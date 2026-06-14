@@ -136,9 +136,14 @@ on the phone:
 - Repeated macOS Keychain prompts in TestFlight/App Store builds mean the
   signed app should be treated as invalid until archive signing confirms the
   `keychain-access-groups` entitlement and the app Info.plist group match.
-- Do not reuse the legacy macOS Account AV keychain service
-  `com.avalsys.tuneav.account`; Clerk's macOS migration fallback can read old
-  login-keychain items under that service and trigger system Keychain prompts.
+- Critical Tune AV macOS auth rule: do not reuse the legacy Account AV keychain
+  service `com.avalsys.tuneav.account`. Clerk's macOS storage uses a
+  data-protection primary keychain plus a legacy fallback when an access group
+  is configured. If the service matches old login-keychain items, the fallback
+  can trigger repeated system Keychain prompts before the user can sign in.
+  Tune AV macOS prod must stay on `com.avalsys.tuneav.account.v2`; any future
+  service migration must use a new service name and update the archive checker
+  before uploading TestFlight.
 - If the build hangs in `Resolve Package Graph`, restart Xcode and retry from a
   clean terminal.
 
