@@ -74,6 +74,17 @@ Public docs may mention configuration flow and local file names, but must not
 document private hostnames, API keys, project IDs, service-console URLs, signing
 material, release status, or generated config contents.
 
+## Diagnostics Policy
+
+Expected account or runtime configuration availability states are handled as
+local client states, not production errors. In particular, `missingToken` and
+`missingBaseURL` from the Account API or macOS sync clients should not be sent
+to production diagnostics because they can occur during logout, restore, or
+configuration-unavailable windows.
+
+HTTP request failures, entitlement mismatches, sync failures, and unexpected
+runtime errors remain reportable diagnostics.
+
 ## Active Apple Client Docs
 
 - [install.md](install.md): local simulator, guarded iOS device install, and
@@ -130,10 +141,10 @@ Latest local client verification known to the maintainers, run on 2026-06-14:
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
   evidence, Sentry dSYM repair, and app-size gate passed;
-- iOS unit tests: 312 tests, 0 failures;
+- iOS unit tests: 313 tests, 0 failures;
 - macOS production runtime config, platform security, and unsigned Release
   archive preflight passed;
-- macOS unit tests: 18 tests, 0 failures.
+- macOS unit tests: 19 tests, 0 failures.
 
 Signed device installs should use:
 

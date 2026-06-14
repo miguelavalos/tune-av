@@ -36,6 +36,9 @@ This project follows semantic versioning once public source releases begin.
   songs, station feedback, and song feedback.
 - Fix iOS startup retention so Pro feedback is not pruned by guest limits before
   account access state resolves.
+- Suppress expected Account API missing-token and missing-base-URL diagnostics
+  on iOS and macOS while keeping request failures and unexpected errors
+  reportable.
 - Add macOS sign-in presentation, account deletion entry, access refresh, and
   library sync UI.
 - Align macOS Profile, player artwork details, preferred genre, and multilingual

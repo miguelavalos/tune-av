@@ -13,6 +13,9 @@ approval records outside this repository.
   before submission.
 - macOS is currently Apple Silicon-only while the Convex Swift binary dependency
   does not include an Intel macOS slice.
+- Missing account tokens or missing generated runtime config are handled as
+  local availability states and should not surface as reviewer-visible raw
+  diagnostics.
 
 ## Suggested What's New
 
@@ -37,6 +40,8 @@ notes or private release operations, never in this public repository.
 - Confirm the privacy policy and App Store privacy labels describe account-linked
   product interaction or preference data if saved radios, saved songs, or
   feedback are collected for sync, personalization, analytics, or support.
+- Confirm diagnostics and support copy do not describe expected logout,
+  restore, or local config availability windows as production errors.
 - Confirm support, privacy policy, terms, and account deletion links open from
   the app and from App Store Connect metadata.
 - Confirm subscription copy and pricing match the active Tune AV Pro product in

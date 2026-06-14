@@ -139,6 +139,10 @@ Client checks:
 - Localhost loopback is allowed only for local development.
 - Visible UI should not expose internal diagnostics, raw service errors, or
   private configuration values.
+- Expected account or configuration availability states such as `missingToken`
+  and `missingBaseURL` should stay local and should not be captured as
+  production diagnostics. HTTP failures and unexpected errors should remain
+  reportable.
 
 ## macOS Client Checks
 
@@ -178,7 +182,11 @@ an Intel macOS slice.
 
 5. Confirm no generated macOS local config or build products are tracked.
 
-6. Before attaching the uploaded build to App Store review, reconcile App Store
+6. Confirm macOS sync diagnostics follow the same production policy as iOS:
+   missing token or missing base URL states are local availability states, while
+   HTTP failures, access mismatches, and unexpected errors remain reportable.
+
+7. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and
    Apple Silicon-only platform expectations with
    [app-store-review.md](app-store-review.md).
