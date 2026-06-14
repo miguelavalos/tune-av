@@ -11,6 +11,36 @@ struct TuneAVLocalFeedbackLoadResult: Equatable {
 }
 
 enum TuneAVLocalFeedbackStore {
+    static func canonicalTrackFeedbackKey(_ key: String) -> String {
+        let decodedKey = key.removingPercentEncoding ?? key
+        return decodedKey
+            .split(separator: "::", omittingEmptySubsequences: false)
+            .map { component in
+                component
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .lowercased()
+            }
+            .joined(separator: "::")
+    }
+
+    static func canonicalizedTrackRecords(
+        _ records: [String: TuneAVLocalFeedbackRecord]
+    ) -> [String: TuneAVLocalFeedbackRecord] {
+        records.reduce(into: [String: TuneAVLocalFeedbackRecord]()) { result, entry in
+            let key = canonicalTrackFeedbackKey(entry.key)
+            guard let current = result[key] else {
+                result[key] = entry.value
+                return
+            }
+
+            if TuneAVDateCoding.date(from: entry.value.updatedAt) >= TuneAVDateCoding.date(from: current.updatedAt) {
+                result[key] = entry.value
+            }
+        }
+    }
+
     static func bounded(
         _ records: [String: TuneAVLocalFeedbackRecord],
         maxCount: Int
@@ -74,7 +104,7 @@ enum TuneAVRealtimeFeedbackProjection {
         return Dictionary(
             uniqueKeysWithValues: records.map {
                 (
-                    $0.trackKey,
+                    TuneAVLocalFeedbackStore.canonicalTrackFeedbackKey($0.trackKey),
                     TuneAVLocalFeedbackRecord(
                         feedback: $0.feedback,
                         updatedAt: $0.updatedAt ?? fallbackTimestamp

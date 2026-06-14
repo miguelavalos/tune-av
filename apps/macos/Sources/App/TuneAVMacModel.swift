@@ -2415,10 +2415,20 @@ struct TuneAVMacLibraryStorage {
     func loadTrackFeedbackRecords() -> [String: TuneAVLocalFeedbackRecord] {
         guard let data = defaults.data(forKey: Self.trackFeedbackKey) else { return [:] }
         if let records = try? decoder.decode([String: TuneAVLocalFeedbackRecord].self, from: data) {
-            return records
+            let canonicalRecords = TuneAVLocalFeedbackStore.canonicalizedTrackRecords(records)
+            if canonicalRecords != records {
+                saveTrackFeedbackRecords(canonicalRecords)
+            }
+            return canonicalRecords
         }
         let migrated = (try? decoder.decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
-        return TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now)
+        let records = TuneAVLocalFeedbackStore.canonicalizedTrackRecords(
+            TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now)
+        )
+        if !records.isEmpty {
+            saveTrackFeedbackRecords(records)
+        }
+        return records
     }
 
     func saveTrackFeedbackRecords(_ feedback: [String: TuneAVLocalFeedbackRecord]) {

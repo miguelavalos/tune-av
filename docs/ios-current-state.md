@@ -65,6 +65,12 @@ current public client contract. Premium access is displayed by the client only
 after configured entitlement state is available. The public repo does not
 document private entitlement operations.
 
+Saved songs and song feedback use canonical track keys across iOS, macOS, and
+the account backend. Clients must normalize remote records and migrate any
+URL-encoded local feedback keys on load so historical local state does not mask
+synced feedback. Discovery history remains local-only and can legitimately show
+different song totals per device.
+
 ## Runtime Configuration
 
 Tracked source ships with neutral public defaults. Private values can be

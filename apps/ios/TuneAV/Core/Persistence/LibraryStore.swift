@@ -1292,11 +1292,15 @@ final class LibraryStore: ObservableObject {
             return TuneAVLocalFeedbackLoadResult(records: [:], needsPersistence: false)
         }
         if let records = try? JSONDecoder().decode([String: TuneAVLocalFeedbackRecord].self, from: data) {
-            return TuneAVLocalFeedbackLoadResult(records: records, needsPersistence: false)
+            let canonicalRecords = TuneAVLocalFeedbackStore.canonicalizedTrackRecords(records)
+            return TuneAVLocalFeedbackLoadResult(records: canonicalRecords, needsPersistence: canonicalRecords != records)
         }
         let migrated = (try? JSONDecoder().decode([String: TuneAVStationFeedback].self, from: data)) ?? [:]
+        let records = TuneAVLocalFeedbackStore.canonicalizedTrackRecords(
+            TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now)
+        )
         return TuneAVLocalFeedbackLoadResult(
-            records: TuneAVLocalFeedbackStore.records(fromLegacy: migrated, updatedAt: .now),
+            records: records,
             needsPersistence: !migrated.isEmpty
         )
     }

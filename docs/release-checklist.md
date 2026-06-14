@@ -196,7 +196,17 @@ separate development bundle identifier.
    missing token or missing base URL states are local availability states, while
    HTTP failures, access mismatches, and unexpected errors remain reportable.
 
-7. Before attaching the uploaded build to App Store review, reconcile App Store
+7. Confirm Pro sync on iOS and macOS with the same account:
+
+   - saved stations and station feedback sync across devices;
+   - saved songs sync only for actively saved song records, not local discovery
+     history;
+   - song feedback sync survives tracks with spaces or punctuation in their
+     canonical `trackKey`;
+   - old URL-encoded local song feedback keys are migrated on launch and do not
+     produce duplicate or invisible feedback states.
+
+8. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and
    Apple Silicon-only platform expectations with
    [app-store-review.md](app-store-review.md).

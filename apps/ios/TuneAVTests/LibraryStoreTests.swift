@@ -593,6 +593,113 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.feedback(for: discovery), .notForMe)
     }
 
+    func testCloudLibraryRefreshAppliesRemoteSavedDiscoveries() async throws {
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            let resource = request.url?.path.split(separator: "/").last.map(String.init) ?? "unknown"
+            let entries: String
+            switch request.url?.path {
+            case "/v1/apps/tuneav/data/favorites":
+                entries = "[]"
+            case "/v1/apps/tuneav/data/savedDiscoveries":
+                entries = """
+                [
+                  {
+                    "discoveryID": "bad-manners-lorraine-radio-dance-o-matic",
+                    "trackKey": "lorraine::bad manners",
+                    "title": "Lorraine",
+                    "artist": "Bad Manners",
+                    "stationID": "radio-dance-o-matic",
+                    "stationName": "Radio Dance O Matic",
+                    "artworkURL": null,
+                    "stationArtworkURL": null,
+                    "playedAt": "2026-06-14T18:50:00Z",
+                    "markedInterestedAt": "2026-06-14T18:51:00Z",
+                    "hiddenAt": null,
+                    "deletedAt": null,
+                    "updatedAt": "2026-06-14T18:51:00Z"
+                  },
+                  {
+                    "discoveryID": "the-interrupters-take-back-the-power-radio-dance-o-matic",
+                    "trackKey": "take back the power::the interrupters",
+                    "title": "Take Back The Power",
+                    "artist": "The Interrupters",
+                    "stationID": "radio-dance-o-matic",
+                    "stationName": "Radio Dance O Matic",
+                    "artworkURL": null,
+                    "stationArtworkURL": null,
+                    "playedAt": "2026-06-14T18:52:00Z",
+                    "markedInterestedAt": "2026-06-14T18:53:00Z",
+                    "hiddenAt": null,
+                    "deletedAt": null,
+                    "updatedAt": "2026-06-14T18:53:00Z"
+                  },
+                  {
+                    "discoveryID": "teddy-swims-lose-control-cadena-100",
+                    "trackKey": "lose control::teddy swims",
+                    "title": "Lose Control",
+                    "artist": "Teddy Swims",
+                    "stationID": "cadena-100",
+                    "stationName": "Cadena 100",
+                    "artworkURL": null,
+                    "stationArtworkURL": null,
+                    "playedAt": "2026-06-14T18:54:00Z",
+                    "markedInterestedAt": "2026-06-14T18:55:00Z",
+                    "hiddenAt": null,
+                    "deletedAt": null,
+                    "updatedAt": "2026-06-14T18:55:00Z"
+                  }
+                ]
+                """
+            default:
+                XCTFail("Unexpected request path: \(request.url?.path ?? "nil")")
+                entries = "[]"
+            }
+            let response = """
+            {
+              "data": {
+                "appId": "tuneav",
+                "resource": "\(resource)",
+                "deviceId": "test-device",
+                "sentAt": "2026-06-14T18:56:00Z",
+                "entries": \(entries)
+              },
+              "updatedAt": "2026-06-14T18:56:00Z",
+              "revision": 42,
+              "etag": "\\"revision-42\\""
+            }
+            """
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json", "ETag": "\"revision-42\""]
+                )!,
+                Data(response.utf8)
+            )
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+
+        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+        await store.refreshCloudLibraryIfNeeded(force: true)
+
+        let savedDiscoveries = AppShellMusicLibrary.savedDiscoveries(store.discoveries)
+        XCTAssertEqual(store.savedDiscoveriesCount, 3)
+        XCTAssertEqual(Set(savedDiscoveries.map(\.title)), ["Lorraine", "Take Back The Power", "Lose Control"])
+        XCTAssertEqual(Set(savedDiscoveries.map { TuneAVDiscoveredTrackSupport.trackKey(title: $0.title, artist: $0.artist, locale: L10n.locale) }), [
+            "lorraine::bad manners",
+            "take back the power::the interrupters",
+            "lose control::teddy swims"
+        ])
+    }
+
     func testCloudPushIncludesMarkedInterestedAtWhenSavingExistingHistoryDiscovery() async throws {
         let recorder = LibraryStoreAppDataRequestRecorder()
         LibraryStoreTestURLProtocol.requestHandler = { request in

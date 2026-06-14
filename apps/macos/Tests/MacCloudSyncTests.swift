@@ -356,6 +356,56 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
+    func testRealtimeFeedbackProjectionCanonicalizesEncodedTrackFeedbackKeys() {
+        let trackFeedback = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(
+            from: [
+                TuneAVTrackFeedbackRecord(
+                    trackKey: "take%20back%20the%20power%3A%3Athe%20interrupters",
+                    title: "Take Back the Power",
+                    artist: "The Interrupters",
+                    stationID: "station",
+                    feedback: .liked,
+                    updatedAt: "2026-06-14T19:01:00Z"
+                )
+            ]
+        )
+
+        XCTAssertEqual(
+            trackFeedback,
+            [
+                "take back the power::the interrupters": TuneAVLocalFeedbackRecord(
+                    feedback: .liked,
+                    updatedAt: "2026-06-14T19:01:00Z"
+                )
+            ]
+        )
+    }
+
+    func testMacLibraryStorageMigratesEncodedTrackFeedbackKeys() {
+        let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let storage = TuneAVMacLibraryStorage(defaults: defaults)
+        let encodedFeedback = [
+            "welcome%20to%20the%20dcc%3A%3Anothing%20but%20thieves": TuneAVLocalFeedbackRecord(
+                feedback: .liked,
+                updatedAt: "2026-06-14T19:02:00Z"
+            )
+        ]
+        defaults.set(try! JSONEncoder().encode(encodedFeedback), forKey: TuneAVMacLibraryStorage.trackFeedbackKey)
+
+        let expected = [
+            "welcome to the dcc::nothing but thieves": TuneAVLocalFeedbackRecord(
+                feedback: .liked,
+                updatedAt: "2026-06-14T19:02:00Z"
+            )
+        ]
+
+        XCTAssertEqual(storage.loadTrackFeedbackRecords(), expected)
+        XCTAssertEqual(storage.loadTrackFeedbackRecords(), expected)
+    }
+
     private func fixedDate(_ iso8601: String) -> Date {
         ISO8601DateFormatter().date(from: iso8601)!
     }
