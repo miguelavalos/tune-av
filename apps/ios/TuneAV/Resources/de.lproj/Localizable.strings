@@ -74,7 +74,7 @@
 "limits.upgrade.appleMusic.title" = "Apple Music-Suchen sind begrenzt";
 "limits.upgrade.connectAccount" = "Account verbinden";
 "limits.upgrade.default.message" = "Pro schaltet mehr Platz für deine Radiobibliothek, Musikentdeckungen und Premium-Aktionen frei.";
-"limits.upgrade.discoveredTracks.message" = "Der lokale Modus behält die letzten %d entdeckten Titel. Pro behält einen tieferen Musikverlauf mit Sync.";
+"limits.upgrade.discoveredTracks.message" = "Der lokale Modus behält die letzten %d entdeckten Titel. Pro behält ein tieferes Musikgedächtnis und synchronisiert gespeicherte Songs und Feedback.";
 "limits.upgrade.discoveredTracks.title" = "Entdeckungsverlauf ist voll";
 "limits.upgrade.discoveryShare.message" = "Du hast die heutigen %d Entdeckungsfreigaben genutzt. Pro schaltet mehr Möglichkeiten frei, deinen Musikverlauf zu exportieren und zu behalten.";
 "limits.upgrade.discoveryShare.title" = "Entdeckungen teilen ist begrenzt";
@@ -202,7 +202,7 @@
 "profile.alert.clearData.message" = "Deine Radiosammlung, Zuletzt gehört und auf dem Gerät gespeicherte Einstellungen werden von diesem Gerät entfernt.";
 "profile.alert.clearData.title" = "Daten auf diesem Gerät löschen?";
 "profile.alert.clearSyncedLibrary.confirm" = "Synchronisierte Mediathek löschen";
-"profile.alert.clearSyncedLibrary.message" = "Deine Radiosammlung, zuletzt gehörten Sender, gespeicherten Songs und synchronisierten Tune AV Einstellungen werden auf allen Geräten entfernt. Konto und Pro-Abonnement bleiben bestehen.";
+"profile.alert.clearSyncedLibrary.message" = "Deine synchronisierten gespeicherten Radios, gespeicherten Songs und Feedback werden auf allen Geräten entfernt. Lokale zuletzt gehörte Sender, Wiedergabezustand und Geräteeinstellungen bleiben auf diesem Gerät. Konto und Pro-Abonnement bleiben bestehen.";
 "profile.alert.clearSyncedLibrary.title" = "Synchronisierte Mediathek löschen?";
 "profile.alert.close" = "Schließen";
 "profile.alert.signOutFailed.title" = "Abmeldung nicht möglich";
@@ -917,7 +917,7 @@
 "paywall.benefit.avi" = "Mehr tägliche Avi-Aktionen für Songtexte, Musiklinks, Teilen und Suche.";
 "paywall.benefit.discovery" = "Bessere personalisierte Radiosuche, wenn kontobasierte Signale aktiv sind.";
 "paywall.benefit.library" = "Speichere mehr Radios und erkannte Songs in deiner Mediathek.";
-"paywall.benefit.sync" = "Cloud Sync hält deine Mediathek auf angemeldeten Geräten aktuell.";
+"paywall.benefit.sync" = "Cloud Sync hält gespeicherte Radios, gespeicherte Songs und Avi-Feedback auf angemeldeten Geräten aktuell.";
 "paywall.close" = "Schließen";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -942,7 +942,7 @@
 "profile.pro.subtitle.free" = "Öffne das Pro-Angebot oder stelle ein bestehendes App Store Abo wieder her.";
 "profile.pro.subtitle.guest" = "Melde dich an, bevor du ein Abo startest.";
 "profile.pro.subtitle.pro" = "Dein Pro-Zugriff ist aktiv. Verwalte die Abrechnung in deinem App Store Konto.";
-"profile.pro.sync.detail" = "Synchronisiere deine Mediathek auf angemeldeten Geräten.";
+"profile.pro.sync.detail" = "Synchronisiere gespeicherte Radios, gespeicherte Songs und Avi-Feedback auf angemeldeten Geräten.";
 "profile.pro.sync.title" = "Cloud Sync";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Pro ansehen";

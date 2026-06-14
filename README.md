@@ -39,8 +39,9 @@ shared/
 ## What Is Included
 
 - local-first listening experience
-- local-first favorites, recents, automatic discoveries, and on-device settings
-- Pro cloud sync for explicitly saved stations and saved songs only
+- local-first playback, recents, automatic discoveries, and on-device settings
+- Pro cloud sync for saved stations, saved songs, station feedback, and song
+  feedback
 - optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
 - shared SwiftUI shell, branding, settings, Avi, and text-fit helpers
@@ -56,6 +57,8 @@ shared/
   behavior.
 - `shared/contracts` is reserved for platform-neutral client contracts.
 - User library storage is local by default.
+- Recents, discovery history, playback state, and device settings remain
+  local-only unless a future public contract says otherwise.
 - Network-backed and premium behaviors are optional, configuration-gated, and
   documented publicly only at the client-behavior level.
 

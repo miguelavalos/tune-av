@@ -285,6 +285,46 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInFree).trackFeedbackLimit, 100)
         XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInPro).stationFeedbackLimit, 300)
         XCTAssertEqual(TuneAVLocalFeedbackRetention.forMode(.signedInPro).trackFeedbackLimit, 300)
+        XCTAssertEqual(TuneAVLocalFeedbackRetention.maximumLocalRetention, TuneAVLocalFeedbackRetention.forMode(.signedInPro))
+    }
+
+    func testLibraryStoreInitialLoadKeepsProFeedbackBeforeAccessModeResolves() {
+        let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
+        let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
+        let userDefaults = UserDefaults.standard
+        let previousStationData = userDefaults.data(forKey: stationFeedbackStorageKey)
+        let previousTrackData = userDefaults.data(forKey: trackFeedbackStorageKey)
+        defer {
+            if let previousStationData {
+                userDefaults.set(previousStationData, forKey: stationFeedbackStorageKey)
+            } else {
+                userDefaults.removeObject(forKey: stationFeedbackStorageKey)
+            }
+            if let previousTrackData {
+                userDefaults.set(previousTrackData, forKey: trackFeedbackStorageKey)
+            } else {
+                userDefaults.removeObject(forKey: trackFeedbackStorageKey)
+            }
+        }
+
+        let records = Dictionary(
+            uniqueKeysWithValues: (0..<75).map { index in
+                (
+                    "station-\(index)",
+                    TuneAVLocalFeedbackRecord(
+                        feedback: .liked,
+                        updatedAt: TuneAVDateCoding.string(from: Date(timeIntervalSince1970: TimeInterval(index)))
+                    )
+                )
+            }
+        )
+        let data = try! JSONEncoder().encode(records)
+        userDefaults.set(data, forKey: stationFeedbackStorageKey)
+        userDefaults.removeObject(forKey: trackFeedbackStorageKey)
+
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+
+        XCTAssertEqual(store.stationFeedback.count, 75)
     }
 
     func testLocalFeedbackStoreKeepsMostRecentRecordsWithinLimit() {

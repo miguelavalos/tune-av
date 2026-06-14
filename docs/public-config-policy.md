@@ -36,6 +36,13 @@ settings, not hardcoded source constants.
 `apps/ios/Config/Local.xcconfig` and `apps/macos/Config/Local.xcconfig` are
 generated local output. They must stay untracked.
 
+Public-source hygiene and release-readiness are separate states:
+
+- public-source hygiene expects generated local config files to be absent from
+  the workspace before commit or push;
+- release-readiness expects generated local config files to exist locally and be
+  validated by the platform-specific release config hygiene scripts.
+
 ## Script Rules
 
 Scripts may:
@@ -78,3 +85,7 @@ bun run config:hygiene
 
 Expected result: no private endpoints, secrets, generated config, or operations
 material in tracked files.
+
+If generated local config is present for a release build, run the relevant
+platform release config hygiene command before archiving, then remove the local
+generated files before public-source hygiene and commit checks.

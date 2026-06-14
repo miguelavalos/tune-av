@@ -62,6 +62,7 @@ final class LibraryStore: ObservableObject {
     private var stationFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
+    private let initialLocalFeedbackRetention = TuneAVLocalFeedbackRetention.maximumLocalRetention
     private var shouldSyncFeedbackToCloud = false
 
     private enum RefreshScope {
@@ -100,11 +101,11 @@ final class LibraryStore: ObservableObject {
         let loadedTrackFeedback = Self.loadTrackFeedbackRecords()
         stationFeedbackRecords = TuneAVLocalFeedbackStore.bounded(
             loadedStationFeedback.records,
-            maxCount: localFeedbackRetention.stationFeedbackLimit
+            maxCount: initialLocalFeedbackRetention.stationFeedbackLimit
         )
         trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(
             loadedTrackFeedback.records,
-            maxCount: localFeedbackRetention.trackFeedbackLimit
+            maxCount: initialLocalFeedbackRetention.trackFeedbackLimit
         )
         stationFeedback = stationFeedbackRecords.mapValues(\.feedback)
         trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
@@ -1973,6 +1974,8 @@ struct TuneAVLocalFeedbackRetention: Equatable {
     let stationFeedbackLimit: Int
     let trackFeedbackLimit: Int
 
+    static let maximumLocalRetention = TuneAVLocalFeedbackRetention(stationFeedbackLimit: 300, trackFeedbackLimit: 300)
+
     static func forMode(_ accessMode: AccessMode) -> TuneAVLocalFeedbackRetention {
         switch accessMode {
         case .guest:
@@ -1980,7 +1983,7 @@ struct TuneAVLocalFeedbackRetention: Equatable {
         case .signedInFree:
             TuneAVLocalFeedbackRetention(stationFeedbackLimit: 100, trackFeedbackLimit: 100)
         case .signedInPro:
-            TuneAVLocalFeedbackRetention(stationFeedbackLimit: 300, trackFeedbackLimit: 300)
+            maximumLocalRetention
         }
     }
 }

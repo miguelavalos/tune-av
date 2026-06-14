@@ -74,7 +74,7 @@
 "limits.upgrade.appleMusic.title" = "Apple Music searches are limited";
 "limits.upgrade.connectAccount" = "Connect account";
 "limits.upgrade.default.message" = "Pro unlocks more room for your radio library, music discoveries, and premium actions.";
-"limits.upgrade.discoveredTracks.message" = "Local mode keeps the latest %d discovered tracks. Pro keeps a deeper music history with cloud sync.";
+"limits.upgrade.discoveredTracks.message" = "Local mode keeps the latest %d discovered tracks. Pro keeps a deeper music memory and syncs saved songs and feedback.";
 "limits.upgrade.discoveredTracks.title" = "Discovery history is full";
 "limits.upgrade.discoveryShare.message" = "You have used today's %d discovery shares. Pro unlocks more ways to export and keep your music history.";
 "limits.upgrade.discoveryShare.title" = "Discovery sharing is limited";
@@ -216,7 +216,7 @@
 "profile.alert.clearRecents.message" = "Recent stations and the last played station will be removed.";
 "profile.alert.clearRecents.title" = "Clear recent stations?";
 "profile.alert.clearSyncedLibrary.confirm" = "Clear synced library";
-"profile.alert.clearSyncedLibrary.message" = "Your radio collection, recents, saved songs, and synced Tune AV settings will be removed on all your devices. This does not affect your account.";
+"profile.alert.clearSyncedLibrary.message" = "Your synced saved radios, saved songs, and feedback will be removed on all your devices. Local recents, playback state, and device settings stay on this device. This does not affect your account.";
 "profile.alert.clearSyncedLibrary.title" = "Clear synced library?";
 "profile.alert.resetSettings.confirm" = "Reset";
 "profile.alert.resetSettings.message" = "Tune AV will restore preferences such as language, genre, screen, and data warnings to their defaults.";
@@ -1007,7 +1007,7 @@
 "paywall.benefit.discovery.title" = "Better discovery";
 "paywall.benefit.library" = "Keep a larger radio and detected-song memory.";
 "paywall.benefit.library.title" = "More memory";
-"paywall.benefit.sync" = "Cloud Sync keeps that memory current across signed-in devices.";
+"paywall.benefit.sync" = "Cloud Sync keeps saved radios, saved songs, and Avi feedback current across signed-in devices.";
 "paywall.benefit.sync.title" = "Cloud Sync";
 "paywall.close" = "Close";
 "paywall.eyebrow" = "Tune AV Pro";
@@ -1038,7 +1038,7 @@
 "profile.pro.subtitle.free" = "Give Avi more memory, more actions, and Cloud Sync.";
 "profile.pro.subtitle.guest" = "Sign in to compare Pro after you try Avi and save stations.";
 "profile.pro.subtitle.pro" = "Your Pro access is active. Manage billing in your App Store account.";
-"profile.pro.sync.detail" = "Carry saved radios and detected songs across signed-in devices.";
+"profile.pro.sync.detail" = "Carry saved radios, saved songs, and Avi feedback across signed-in devices.";
 "profile.pro.sync.title" = "Cloud Sync";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "View Pro";

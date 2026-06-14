@@ -21,7 +21,8 @@ public-safe config hygiene.
    bun run config:hygiene
    ```
 
-3. Confirm no generated config files are present in tracked git state:
+3. Confirm no generated config files are present in tracked git state or left
+   in the public-source workspace for commit:
    - `apps/ios/Config/Local.xcconfig`
    - `apps/macos/Config/Local.xcconfig`
    - `.env`
@@ -48,6 +49,11 @@ public-safe config hygiene.
    bun run ios:tests
    ```
 
+   `bun run config:hygiene` is for public-source cleanup and expects generated
+   local config files to be absent. If you are validating a release with
+   generated production config present, use the release-readiness checks in step
+   7 instead.
+
 3. Run the localization release audit:
    - compare every shipped `apps/ios/TuneAV/Resources/*.lproj/Localizable.strings` key set with `en.lproj`;
    - verify every `L10n.string(...)` reference in the submitted iOS target, macOS target, and shared Apple sources resolves;
@@ -60,12 +66,13 @@ public-safe config hygiene.
    xcodebuild build -project TuneAV.xcodeproj \
      -scheme TuneAV \
      -configuration Debug \
-     -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+     -destination 'platform=iOS Simulator,name=<installed-iPhone-simulator>' \
      CODE_SIGNING_ALLOWED=NO
    ```
 
-   The simulator destination is an example. Replace it with an installed
-   destination from `xcodebuild -showdestinations` when needed.
+   The simulator destination is an example. `bun run ios:tests` selects an
+   available iPhone simulator through `scripts/ios-ci-test.sh`; set
+   `TUNEAV_IOS_SIMULATOR_NAME` when a specific simulator is required.
 
 5. Run targeted UI tests when changes touch shell navigation, limits, playback
    queue, search, Profile, paywall presentation, account UI, deletion entry, or
@@ -117,6 +124,10 @@ public-safe config hygiene.
 
    Do not submit an archive that fails the archive check.
 
+9. Before attaching the uploaded build to App Store review, reconcile App Store
+   metadata, privacy answers, legal links, subscription text, and release notes
+   with [app-store-review.md](app-store-review.md).
+
 ## iOS Network And ATS Behavior
 
 Tune AV should not load arbitrary remote HTTP pages in iOS.
@@ -166,6 +177,11 @@ an Intel macOS slice.
    run the `TuneAVMac` scheme locally.
 
 5. Confirm no generated macOS local config or build products are tracked.
+
+6. Before attaching the uploaded build to App Store review, reconcile App Store
+   metadata, privacy answers, legal links, subscription text, release notes, and
+   Apple Silicon-only platform expectations with
+   [app-store-review.md](app-store-review.md).
 
 ## Public Source Release
 

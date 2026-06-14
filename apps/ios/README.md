@@ -5,10 +5,9 @@ SwiftUI iOS app for Tune AV.
 Use [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
 current public state document for the iOS app.
 
-Current release status, dated 2026-05-28: iOS `1.0` build `13` has been
-uploaded to App Store Connect and attached to App Review after the subscription
-metadata/paywall update. `Config/ExportOptionsUpload.plist` remains the
-checked-in export options file for signed App Store Connect upload.
+Current checked-in iOS bundle version: `1.0.1` build `26`.
+`Config/ExportOptionsUpload.plist` remains the checked-in export options file
+for signed App Store Connect upload workflows.
 
 ## Local Config
 
@@ -37,7 +36,8 @@ Optional account-connected behavior:
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
 - optional RevenueCat monthly Pro purchase/restore flow when configured
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
-- Pro cloud sync for saved stations/songs and backend-backed summary/analytics only when Account AV backend config is available
+- Pro cloud sync for saved stations, saved songs, station feedback, and song feedback when Account AV backend config is available
+- recents, discovery history, playback state, and settings remain local-only unless a future public contract says otherwise
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 - shared app shell, launch, settings/account, Avi feedback/actions, paywall, and
   text-fit foundations are consumed from `apps-av/apple` where they are

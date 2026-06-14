@@ -6,6 +6,10 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- No unreleased public client changes.
+
+## 1.0.1 - 2026-06-14
+
 - Complete the Tune AV shared-client foundation pass, consuming app-neutral
   Apple UI components from the shared Swift package.
 - Verify the iOS client on 2026-05-22 with unit tests, Home UI smoke, config
@@ -28,13 +32,19 @@ This project follows semantic versioning once public source releases begin.
   flows.
 - Share station feedback models across iOS and macOS so Apple targets compile
   against the same support layer.
-- Improve cross-device library sync merge behavior for favorites, recents,
-  discoveries, and settings.
+- Improve cross-device library sync merge behavior for saved stations, saved
+  songs, station feedback, and song feedback.
+- Fix iOS startup retention so Pro feedback is not pruned by guest limits before
+  account access state resolves.
 - Add macOS sign-in presentation, account deletion entry, access refresh, and
   library sync UI.
 - Align macOS Profile, player artwork details, preferred genre, and multilingual
   UI with the iOS app.
 - Move the macOS app source from `apps/macos/TuneAVMac` to `apps/macos`.
+- Keep signing team identifiers in generated local configuration rather than
+  tracked Xcode project files.
+- Add reproducible signed archive and upload workflows for iOS and macOS App
+  Store Connect release builds.
 
 ## Repository Bootstrap
 

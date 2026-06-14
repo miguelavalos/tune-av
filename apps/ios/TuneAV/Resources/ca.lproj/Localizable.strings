@@ -74,7 +74,7 @@
 "limits.upgrade.appleMusic.title" = "Les cerques a Apple Music són limitades";
 "limits.upgrade.connectAccount" = "Connectar compte";
 "limits.upgrade.default.message" = "Pro desbloqueja més espai per a la teva biblioteca de ràdios, descobriments musicals i accions premium.";
-"limits.upgrade.discoveredTracks.message" = "El mode local conserva les últimes %d cançons descobertes. Pro conserva un historial musical més ampli amb sincronització.";
+"limits.upgrade.discoveredTracks.message" = "El mode local conserva les últimes %d cançons descobertes. Pro conserva una memòria musical més àmplia i sincronitza cançons desades i feedback.";
 "limits.upgrade.discoveredTracks.title" = "L'historial de descobriments és ple";
 "limits.upgrade.discoveryShare.message" = "Has fet servir les %d comparticions de descobriments d'avui. Pro desbloqueja més maneres d'exportar i conservar el teu historial musical.";
 "limits.upgrade.discoveryShare.title" = "Compartir descobriments és limitat";
@@ -202,7 +202,7 @@
 "profile.alert.clearData.message" = "S'eliminaran d'aquest dispositiu la teva col·lecció de ràdios, els recents i els ajustos desats al dispositiu.";
 "profile.alert.clearData.title" = "Esborrar dades d'aquest dispositiu?";
 "profile.alert.clearSyncedLibrary.confirm" = "Esborrar biblioteca sincronitzada";
-"profile.alert.clearSyncedLibrary.message" = "S'eliminaran la teva col·lecció de ràdios, recents, cançons desades i ajustos sincronitzats d'Tune AV en tots els teus dispositius. Això no afecta el compte ni la subscripció Pro.";
+"profile.alert.clearSyncedLibrary.message" = "S'eliminaran les ràdios desades, les cançons desades i el feedback sincronitzats en tots els teus dispositius. Els recents, la reproducció i els ajustos del dispositiu es queden en aquest dispositiu. Això no afecta el compte ni la subscripció Pro.";
 "profile.alert.clearSyncedLibrary.title" = "Esborrar biblioteca sincronitzada?";
 "profile.alert.close" = "Tancar";
 "profile.alert.signOutFailed.title" = "No s'ha pogut tancar la sessió";
@@ -917,7 +917,7 @@
 "paywall.benefit.avi" = "Més accions diàries d'Avi per a lletres, enllaços de música, compartir i cerca.";
 "paywall.benefit.discovery" = "Millor descobriment de ràdios personalitzat quan els senyals del compte estan actius.";
 "paywall.benefit.library" = "Desa més ràdios i cançons detectades a la biblioteca.";
-"paywall.benefit.sync" = "Cloud Sync manté la biblioteca al dia als dispositius amb sessió.";
+"paywall.benefit.sync" = "Cloud Sync manté ràdios desades, cançons desades i feedback d'Avi al dia als dispositius amb sessió.";
 "paywall.close" = "Tancar";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -942,7 +942,7 @@
 "profile.pro.subtitle.free" = "Obre l'oferta Pro o restaura una subscripció existent de l'App Store.";
 "profile.pro.subtitle.guest" = "Inicia sessió abans de començar una subscripció.";
 "profile.pro.subtitle.pro" = "El teu accés Pro està actiu. Gestiona la facturació al teu compte de l'App Store.";
-"profile.pro.sync.detail" = "Sincronitza la biblioteca als dispositius amb sessió.";
+"profile.pro.sync.detail" = "Sincronitza ràdios desades, cançons desades i feedback d'Avi entre dispositius amb sessió.";
 "profile.pro.sync.title" = "Cloud Sync";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Veure Pro";

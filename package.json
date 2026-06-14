@@ -29,7 +29,7 @@
     "ios:ci": "./scripts/ios-ci-test.sh",
     "ios:size-report": "./scripts/report-ios-app-size.sh",
     "ios:ui-smoke": "./scripts/run-ios-ui-tests.sh",
-    "ios:tests": "cd apps/ios && xcodebuild test -project TuneAV.xcodeproj -scheme TuneAV -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -only-testing:TuneAVTests CODE_SIGNING_ALLOWED=NO",
+    "ios:tests": "TUNEAV_IOS_SKIP_LAUNCH_PERF_SMOKE=1 ./scripts/ios-ci-test.sh",
     "macos:ci": "./scripts/macos-ci-test.sh",
     "macos:config:dev": "./scripts/generate-macos-local-xcconfig.sh --env dev",
     "macos:config:prod": "./scripts/generate-macos-local-xcconfig.sh --env prod",

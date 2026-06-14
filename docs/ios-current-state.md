@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-06-12
+Date: 2026-06-14
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -15,7 +15,10 @@ and uses native macOS presentation differences.
 
 Current app shape:
 
-- local-first playback, favorites, recents, discoveries, settings, and feedback;
+- local-first playback, recents, discovery history, playback state, and device
+  settings;
+- saved stations, saved songs, station feedback, and song feedback with Pro
+  cloud sync when configured;
 - optional sign-in and premium UI surfaces when local configuration enables
   them;
 - Guest, signed-in Free, and signed-in Pro presentation states;
@@ -55,11 +58,12 @@ The public fallback policy is:
 | --- | --- | ---: | --- |
 | Guest | local-only | 5 | no |
 | Signed-in Free | account-connected | 15 | no |
-| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations and saved songs only, when configured |
+| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations, saved songs, station feedback, and song feedback, when configured |
 
-Premium access is displayed by the client only after configured entitlement
-state is available. The public repo does not document private entitlement
-operations.
+Recents, discovery history, playback state, and settings are local-only in the
+current public client contract. Premium access is displayed by the client only
+after configured entitlement state is available. The public repo does not
+document private entitlement operations.
 
 ## Runtime Configuration
 
@@ -93,19 +97,24 @@ bun run ios:tests
 bun run macos:tests
 ```
 
+`bun run config:hygiene` is a public-source hygiene check and expects generated
+local config files to be absent from the workspace. Release-readiness checks run
+with generated local config present and use the platform-specific release config
+hygiene scripts.
+
 For simulator build-only checks:
 
 ```bash
 xcodebuild -project apps/ios/TuneAV.xcodeproj \
   -scheme TuneAV \
   -configuration Debug \
-  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+  -destination 'platform=iOS Simulator,name=<installed-iPhone-simulator>' \
   build
 ```
 
-The destination above is an example. Use `xcodebuild -showdestinations` or
-Xcode's Devices window and replace the name/OS with an installed simulator when
-the local Xcode image set differs.
+The destination above is an example. `bun run ios:tests` uses the repository
+helper that selects an available iPhone simulator and can be overridden with
+`TUNEAV_IOS_SIMULATOR_NAME`.
 
 Release-readiness preflights with generated production config present:
 
@@ -116,15 +125,15 @@ bun run macos:release:preflight
 bun run macos:release:preflight -- --with-archive
 ```
 
-Latest local client verification known to the maintainers, run on 2026-06-12:
+Latest local client verification known to the maintainers, run on 2026-06-14:
 
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
   evidence, Sentry dSYM repair, and app-size gate passed;
-- iOS unit tests: 309 tests, 0 failures;
+- iOS unit tests: 312 tests, 0 failures;
 - macOS production runtime config, platform security, and unsigned Release
   archive preflight passed;
-- macOS unit tests: 16 tests, 0 failures.
+- macOS unit tests: 18 tests, 0 failures.
 
 Signed device installs should use:
 
