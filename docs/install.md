@@ -40,6 +40,16 @@ Use `-- --device <UDID>` when more than one physical iPhone is connected.
 `Local.xcconfig` is generated output. Do not edit it by hand, do not commit it,
 and regenerate it after switching local runtime profiles.
 
+Tune AV uses two backend base URLs in generated runtime config:
+
+- `ACCOUNTAV_API_BASE_URL` for shared account, sign-in, app linking, deletion,
+  subscription, and profile flows.
+- `TUNEAV_API_BASE_URL` for Tune product traffic under `/v1/tune/*`.
+
+If `TUNEAV_API_BASE_URL` is absent in a local development profile, the generator
+falls back to `ACCOUNTAV_API_BASE_URL` for compatibility. Production profiles
+must provide a production-shaped Tune API value explicitly.
+
 Before changing runtime configuration scripts, read
 [public-config-policy.md](public-config-policy.md).
 

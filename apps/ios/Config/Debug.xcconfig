@@ -9,6 +9,7 @@ ACCOUNTAV_KEYCHAIN_ACCESS_GROUP = 935PM55U6R.com.avalsys.tuneav.dev
 SUPPORT_EMAIL_TO = $(inherited)
 SUPPORTAV_BASE_URL = $(inherited)
 ACCOUNTAV_API_BASE_URL = $(inherited)
+TUNEAV_API_BASE_URL = $(inherited)
 TUNEAV_CONVEX_URL = $(inherited)
 ACCOUNTAV_MANAGEMENT_URL = $(inherited)
 TUNEAV_DELETE_ACCOUNT_URL = $(inherited)

@@ -1332,7 +1332,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func createRealtimeSession() async throws -> String {
-        try await makeAccountAPIClient().createTuneAVRealtimeSession()
+        try await makeTuneAPIClient().createTuneAVRealtimeSession()
     }
 
     func fetchAccountDeletionSummary() async throws -> AccountSummary {
@@ -1850,7 +1850,7 @@ final class TuneAVMacModel: ObservableObject {
         TuneAVAppDataSyncClient(deviceId: "tuneav-mac") { [weak self] path, method, body, headers in
             guard let self else { throw TuneAVAppDataClientError.missingToken }
             do {
-                return try await self.makeAccountAPIClient().requestData(
+                return try await self.makeTuneAPIClient().requestData(
                     path: path,
                     method: method,
                     body: body,
@@ -1914,7 +1914,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func sendFeedbackRequest<Payload: Encodable>(path: String, payload: Payload) async throws {
-        _ = try await makeAccountAPIClient().requestData(
+        _ = try await makeTuneAPIClient().requestData(
             path: path,
             method: "PUT",
             body: try JSONEncoder().encode(payload)
@@ -2021,6 +2021,14 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
+    private func makeTuneAPIClient(tokenOverride: String? = nil) -> TuneAVAccessClient {
+        makeAccountAPIClient(
+            baseURL: TuneAVBundleConfig.urlValue(for: "TUNEAV_API_BASE_URL")
+                ?? TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL"),
+            tokenOverride: tokenOverride
+        )
+    }
+
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
         return TuneAVLibrarySnapshot(
             favorites: favoriteRecords + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
@@ -2118,7 +2126,7 @@ final class TuneAVMacModel: ObservableObject {
         guard accessMode == .signedInPro, accountService.isAvailable else { return }
 
         do {
-            let snapshot: TuneAVFeedbackSnapshot = try await makeAccountAPIClient().request(path: "/v1/tune/feedback")
+            let snapshot: TuneAVFeedbackSnapshot = try await makeTuneAPIClient().request(path: "/v1/tune/feedback")
             applyProRealtimeFeedback(
                 stationFeedback: snapshot.stationFeedback,
                 trackFeedback: snapshot.trackFeedback

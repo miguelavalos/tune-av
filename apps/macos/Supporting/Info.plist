@@ -4,6 +4,8 @@
 <dict>
 	<key>ACCOUNTAV_API_BASE_URL</key>
 	<string>$(ACCOUNTAV_API_BASE_URL)</string>
+	<key>TUNEAV_API_BASE_URL</key>
+	<string>$(TUNEAV_API_BASE_URL)</string>
 	<key>ACCOUNTAV_KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)</string>
 	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>

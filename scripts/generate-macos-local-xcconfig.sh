@@ -123,6 +123,18 @@ if [ "$env_name" = "prod" ] && printf '%s' "$api_base_url" | rg -q '127\.0\.0\.1
   exit 1
 fi
 
+tune_api_base_url="${TUNEAV_API_BASE_URL:-${VITE_TUNEAV_API_BASE_URL:-}}"
+if [ -z "$tune_api_base_url" ]; then
+  tune_api_base_url="$(read_optional_config TUNEAV_API_BASE_URL)"
+fi
+if [ -z "$tune_api_base_url" ]; then
+  tune_api_base_url="$api_base_url"
+fi
+if [ "$env_name" = "prod" ] && printf '%s' "$tune_api_base_url" | rg -q '127\.0\.0\.1|localhost|preview|\.dev'; then
+  echo "Production TUNEAV_API_BASE_URL must be provided by private config or the environment." >&2
+  exit 1
+fi
+
 management_url="$(read_optional_config ACCOUNTAV_MANAGEMENT_URL)"
 if [ -z "$management_url" ]; then
   management_url="$(node -e '
@@ -174,6 +186,10 @@ case "$api_base_url" in
   https://*) ;;
   *) echo "ACCOUNTAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
 esac
+case "$tune_api_base_url" in
+  https://*) ;;
+  *) echo "TUNEAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
+esac
 case "$management_url" in
   https://*) ;;
   *) echo "ACCOUNTAV_MANAGEMENT_URL must use HTTPS." >&2; exit 1 ;;
@@ -210,6 +226,7 @@ ACCOUNTAV_KEYCHAIN_ACCESS_GROUP = $keychain_access_group
 SUPPORT_EMAIL_TO = $support_email
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$support_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$api_base_url")
+TUNEAV_API_BASE_URL = $(escape_xcconfig_url "$tune_api_base_url")
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$management_url")
 TUNEAV_CONVEX_URL = $(escape_xcconfig_url "$tuneav_convex_url")
 TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/delete-account")

@@ -93,6 +93,7 @@ require_present() {
 product_bundle_identifier="$(setting PRODUCT_BUNDLE_IDENTIFIER)"
 tuneav_bundle_identifier="$(setting TUNEAV_BUNDLE_IDENTIFIER)"
 api_base_url="$(setting ACCOUNTAV_API_BASE_URL)"
+tune_api_base_url="$(setting TUNEAV_API_BASE_URL)"
 tuneav_convex_url="$(setting TUNEAV_CONVEX_URL)"
 management_url="$(setting ACCOUNTAV_MANAGEMENT_URL)"
 publishable_key="$(setting ACCOUNTAV_PUBLISHABLE_KEY)"
@@ -112,6 +113,7 @@ for item in \
   "PRODUCT_BUNDLE_IDENTIFIER:$product_bundle_identifier" \
   "TUNEAV_BUNDLE_IDENTIFIER:$tuneav_bundle_identifier" \
   "ACCOUNTAV_API_BASE_URL:$api_base_url" \
+  "TUNEAV_API_BASE_URL:$tune_api_base_url" \
   "TUNEAV_CONVEX_URL:$tuneav_convex_url" \
   "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:$listening_analytics_uploads" \
   "ACCOUNTAV_MANAGEMENT_URL:$management_url" \
@@ -138,13 +140,14 @@ if [ "$env_name" = "prod" ]; then
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav" ] || fail "prod ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav, got $keychain_access_group"
   [[ "$api_base_url" == https://* ]] || fail "prod API URL must use https"
+  [[ "$tune_api_base_url" == https://* ]] || fail "prod Tune API URL must use https"
   [[ "$management_url" == https://* ]] || fail "prod management URL must use https"
   if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
     [[ "$support_base_url" == https://* ]] || fail "prod support URL must use https"
   fi
   [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after signed-in backend smoke and App Privacy update"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
-  if printf '%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tuneav_convex_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
+  if printf '%s\n%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tune_api_base_url" "$tuneav_convex_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
     fail "prod settings contain preview/local/dev values"
   fi
 else
@@ -152,12 +155,13 @@ else
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav.dev" ] || fail "dev TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav.dev"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav.dev" ] || fail "dev ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav.dev, got $keychain_access_group"
   [[ "$api_base_url" == https://* ]] || fail "dev API URL must use https"
+  [[ "$tune_api_base_url" == https://* ]] || fail "dev Tune API URL must use https"
   [[ "$management_url" == https://* ]] || fail "dev management URL must use https"
   [[ "$listening_analytics_uploads" == "0" || "$listening_analytics_uploads" == "1" ]] || fail "dev TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must be 0 or 1"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi
 
-for url in "$api_base_url" "$management_url" "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
+for url in "$api_base_url" "$tune_api_base_url" "$management_url" "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
   [[ "$url" == https://* ]] || fail "URL did not resolve as https://*: $url"
 done
 if [ -n "$support_base_url" ] && [ "$support_base_url" != '$(inherited)' ]; then
@@ -186,6 +190,7 @@ Tune AV iOS runtime config ($env_name)
   tune bundle: $tuneav_bundle_identifier
   development team: $redacted_development_team
   Account AV API: $api_base_url
+  Tune AV API: $tune_api_base_url
   Tune AV Convex: $tuneav_convex_url
   Account AV management: $management_url
   Account AV keychain access group: $keychain_access_group

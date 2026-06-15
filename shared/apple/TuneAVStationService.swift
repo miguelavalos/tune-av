@@ -91,7 +91,8 @@ struct TuneAVStationService {
     }
 
     static func defaultAVALSYSBaseURL(path: String) -> URL? {
-        guard let baseURL = TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
+        guard let baseURL = TuneAVBundleConfig.urlValue(for: "TUNEAV_API_BASE_URL")
+            ?? TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL") else {
             return nil
         }
         return baseURL.appending(path: path)

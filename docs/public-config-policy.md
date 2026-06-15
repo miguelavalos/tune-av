@@ -33,6 +33,14 @@ the private value.
 Native clients should read non-public runtime values from generated local
 settings, not hardcoded source constants.
 
+Runtime config separates platform and product backends:
+
+- `ACCOUNTAV_API_BASE_URL` is the shared account/platform backend.
+- `TUNEAV_API_BASE_URL` is the Tune product backend for `/v1/tune/*`.
+
+Production config generation and runtime checks must reject local, development,
+or preview-shaped values for either backend URL.
+
 `apps/ios/Config/Local.xcconfig` and `apps/macos/Config/Local.xcconfig` are
 generated local output. They must stay untracked.
 

@@ -20,6 +20,11 @@ enum AppConfig {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL", requireSupportedAVAccountBaseURL: true)
     }
 
+    static var tuneAVAPIBaseURL: URL? {
+        TuneAVBundleConfig.urlValue(for: "TUNEAV_API_BASE_URL", requireSupportedAVAccountBaseURL: true)
+            ?? avAccountAPIBaseURL
+    }
+
     static var tuneConvexURL: String {
         TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
     }

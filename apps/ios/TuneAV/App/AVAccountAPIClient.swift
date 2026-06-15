@@ -30,6 +30,7 @@ enum AVAccountAPIClientError: LocalizedError {
 final class AVAccountAPIClient {
     private let getToken: () async throws -> String?
     private let baseURLProvider: () -> URL?
+    private let tuneBaseURLProvider: () -> URL?
     private let urlSession: URLSession
     private let decoder: JSONDecoder
     private let retryPolicy: RetryPolicy
@@ -39,6 +40,7 @@ final class AVAccountAPIClient {
     init(
         getToken: @escaping () async throws -> String?,
         baseURLProvider: @escaping () -> URL? = { AppConfig.avAccountAPIBaseURL },
+        tuneBaseURLProvider: @escaping () -> URL? = { AppConfig.tuneAVAPIBaseURL },
         urlSession: URLSession = TuneAVURLSessions.account,
         decoder: JSONDecoder = JSONDecoder(),
         retryPolicy: RetryPolicy = .account,
@@ -46,6 +48,7 @@ final class AVAccountAPIClient {
     ) {
         self.getToken = getToken
         self.baseURLProvider = baseURLProvider
+        self.tuneBaseURLProvider = tuneBaseURLProvider
         self.urlSession = urlSession
         self.decoder = decoder
         self.retryPolicy = retryPolicy
@@ -77,7 +80,7 @@ final class AVAccountAPIClient {
     }
 
     func createTuneAVRealtimeSession() async throws -> String {
-        try await sharedClient().createTuneAVRealtimeSession()
+        try await tuneClient().createTuneAVRealtimeSession()
     }
 
     func request<T: Decodable>(
@@ -99,7 +102,7 @@ final class AVAccountAPIClient {
         let operation = Self.operationName(method: method, path: path)
         let startedAt = Date()
         do {
-            return try await sharedClient().requestData(
+            return try await client(for: path).requestData(
                 path: path,
                 method: method,
                 body: body,
@@ -124,8 +127,20 @@ final class AVAccountAPIClient {
     }
 
     private func sharedClient() -> TuneAVAccessClient {
+        makeClient(baseURL: baseURLProvider())
+    }
+
+    private func tuneClient() -> TuneAVAccessClient {
+        makeClient(baseURL: tuneBaseURLProvider())
+    }
+
+    private func client(for path: String) -> TuneAVAccessClient {
+        path.hasPrefix("/v1/tune") ? tuneClient() : sharedClient()
+    }
+
+    private func makeClient(baseURL: URL?) -> TuneAVAccessClient {
         TuneAVAccessClient(
-            baseURL: baseURLProvider(),
+            baseURL: baseURL,
             tokenProvider: getToken,
             urlSession: urlSession,
             decoder: decoder,

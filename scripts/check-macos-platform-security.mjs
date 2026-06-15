@@ -67,6 +67,7 @@ if (
 
 if (
   !infoSource.includes("$(ACCOUNTAV_API_BASE_URL)") ||
+  !infoSource.includes("$(TUNEAV_API_BASE_URL)") ||
   !infoSource.includes("$(ACCOUNTAV_PUBLISHABLE_KEY)") ||
   !infoSource.includes("$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)")
 ) {

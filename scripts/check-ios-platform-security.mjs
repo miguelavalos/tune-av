@@ -92,7 +92,11 @@ if (
   fail("keychain-access-groups must stay scoped to the app bundle identifier.");
 }
 
-if (!infoSource.includes("$(ACCOUNTAV_API_BASE_URL)") || !infoSource.includes("$(ACCOUNTAV_PUBLISHABLE_KEY)")) {
+if (
+  !infoSource.includes("$(ACCOUNTAV_API_BASE_URL)") ||
+  !infoSource.includes("$(TUNEAV_API_BASE_URL)") ||
+  !infoSource.includes("$(ACCOUNTAV_PUBLISHABLE_KEY)")
+) {
   fail("Account AV runtime values must remain build-setting substitutions, not literals.");
 }
 

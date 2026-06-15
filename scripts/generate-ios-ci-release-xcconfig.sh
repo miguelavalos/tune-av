@@ -35,6 +35,7 @@ done
 
 required_vars=(
   ACCOUNTAV_API_BASE_URL
+  TUNEAV_API_BASE_URL
   ACCOUNTAV_MANAGEMENT_URL
   ACCOUNTAV_PUBLISHABLE_KEY
   TUNEAV_CONVEX_URL
@@ -58,6 +59,10 @@ fi
 case "$ACCOUNTAV_API_BASE_URL" in
   https://*) ;;
   *) echo "FAIL ACCOUNTAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
+esac
+case "$TUNEAV_API_BASE_URL" in
+  https://*) ;;
+  *) echo "FAIL TUNEAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
 esac
 case "$ACCOUNTAV_MANAGEMENT_URL" in
   https://*) ;;
@@ -103,6 +108,7 @@ TUNEAV_PREMIUM_PRODUCT_IDS = $tuneav_premium_product_ids
 SUPPORT_EMAIL_TO = $support_email_to
 SUPPORTAV_BASE_URL = $(escape_xcconfig_url "$supportav_base_url")
 ACCOUNTAV_API_BASE_URL = $(escape_xcconfig_url "$ACCOUNTAV_API_BASE_URL")
+TUNEAV_API_BASE_URL = $(escape_xcconfig_url "$TUNEAV_API_BASE_URL")
 TUNEAV_CONVEX_URL = $(escape_xcconfig_url "$TUNEAV_CONVEX_URL")
 TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = 1
 ACCOUNTAV_MANAGEMENT_URL = $(escape_xcconfig_url "$ACCOUNTAV_MANAGEMENT_URL")
