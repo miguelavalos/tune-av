@@ -105,6 +105,12 @@ public-safe config hygiene.
    `TUNEAV_IOS_MAX_EXECUTABLE_SIZE_BYTES` when maintainers intentionally change
    the release budget.
 
+   The generated production config must include both backend bases:
+   `ACCOUNTAV_API_BASE_URL` for shared account/platform flows and
+   `TUNEAV_API_BASE_URL` for `/v1/tune/*` product flows. Do not upload a new
+   build if `TUNEAV_API_BASE_URL` is missing, inherited, local, development, or
+   preview-shaped.
+
 8. Use the reproducible archive/upload workflow for iOS App Store releases:
 
    ```sh
@@ -170,6 +176,12 @@ separate development bundle identifier.
    The archive preflight validates release config hygiene, platform security,
    archive creation, and bundle identifier evidence.
 
+   The generated production config must include both backend bases:
+   `ACCOUNTAV_API_BASE_URL` for shared account/platform flows and
+   `TUNEAV_API_BASE_URL` for `/v1/tune/*` product flows. Do not upload a new
+   build if `TUNEAV_API_BASE_URL` is missing, inherited, local, development, or
+   preview-shaped.
+
 3. To create and upload a signed Apple Silicon-only App Store Connect build, run:
 
    ```bash
@@ -216,6 +228,24 @@ separate development bundle identifier.
    metadata, privacy answers, legal links, subscription text, release notes, and
    Apple Silicon-only platform expectations with
    [app-store-review.md](app-store-review.md).
+
+## Pending Product API Transition Checks
+
+These checks apply to the next Tune AV client release after the product API
+split:
+
+- Confirm search, station detail, saved radio feedback, song feedback,
+  listening analytics, and realtime session creation use the Tune product
+  backend.
+- Confirm sign-in, profile, entitlement, subscription, account deletion, app
+  linking, terms, privacy, and support flows still use the shared Account
+  backend.
+- Confirm signed-in Free and Pro flows still behave correctly if the Tune
+  product backend is reachable but the shared Account backend is temporarily
+  unavailable, and vice versa.
+- Keep existing App Store compatibility in mind: older installed clients may
+  still use the shared Account backend for Tune product routes until a newer
+  build has been published and adopted.
 
 ## Public Source Release
 
