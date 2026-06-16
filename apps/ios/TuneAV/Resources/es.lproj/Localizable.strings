@@ -18,8 +18,8 @@
 "audio.error.streamTimeout" = "La transmisión en directo está tardando demasiado en responder";
 "audio.sleep.ended" = "El temporizador de sueño ha terminado";
 "audio.sleep.inMinutes" = "Dormir en %d min";
-"audio.autoSkip.noStableStation" = "No quedan radios estables";
-"audio.autoSkip.skipped" = "Saltada %@";
+"audio.autoSkip.noStableStation" = "No hay otra radio lista ahora";
+"audio.autoSkip.skipped" = "Probando otra radio tras varios fallos de %@";
 "audio.status.loading" = "Cargando transmisión";
 "audio.status.paused" = "En pausa";
 "audio.status.playing" = "Reproduciendo";
@@ -256,8 +256,8 @@
 "profile.preferences.language.title" = "Idioma de la app";
 "profile.preferences.cellularWarning.detail" = "Preguntar antes de iniciar un stream cuando la red actual pueda usar datos móviles.";
 "profile.preferences.cellularWarning.title" = "Avisar con datos móviles";
-"profile.preferences.autoSkipUnstableStreams.detail" = "Cuando un stream siga fallando y haya cola, pasar automáticamente a la siguiente radio.";
-"profile.preferences.autoSkipUnstableStreams.title" = "Saltar streams inestables";
+"profile.preferences.autoSkipUnstableStreams.detail" = "Tras varios fallos de reproducción, prueba la siguiente radio de la cola por ahora. No se elimina nada.";
+"profile.preferences.autoSkipUnstableStreams.title" = "Probar otra si falla";
 "profile.preferences.clearUnstableWarnings.action" = "Limpiar";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marcadas en esta sesión.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";

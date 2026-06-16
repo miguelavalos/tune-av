@@ -68,7 +68,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     var shouldSuggestFailureRecovery: Bool {
-        hasFailure && consecutiveFailureCount >= 2
+        hasFailure && consecutiveFailureCount >= TuneAVAudioPlaybackPolicy.unstableStreamFailureThreshold
     }
 
     private var player: AVPlayer?
@@ -494,7 +494,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
     }
 
     private func markCurrentStationTemporarilyUnstableIfNeeded() {
-        guard consecutiveFailureCount >= 2, let stationID = currentStation?.id else { return }
+        guard consecutiveFailureCount >= TuneAVAudioPlaybackPolicy.unstableStreamFailureThreshold,
+              let stationID = currentStation?.id else { return }
         temporarilyUnstableStationIDs.insert(stationID)
     }
 

@@ -18,8 +18,8 @@
 "audio.error.streamTimeout" = "La transmissió en directe està trigant massa a respondre";
 "audio.sleep.ended" = "El temporitzador de repòs ha acabat";
 "audio.sleep.inMinutes" = "Dormir en %d min";
-"audio.autoSkip.noStableStation" = "No queden radios estables";
-"audio.autoSkip.skipped" = "Saltada %@";
+"audio.autoSkip.noStableStation" = "No hi ha cap altra radio preparada ara";
+"audio.autoSkip.skipped" = "Provant una altra radio despres de diversos errors de %@";
 "audio.status.loading" = "Carregant transmissió";
 "audio.status.paused" = "En pausa";
 "audio.status.playing" = "Reproduint";
@@ -1016,8 +1016,8 @@
 "profile.localDataSheet.title" = "Emmagatzematge de Tune AV";
 "profile.preferences.cellularWarning.detail" = "Pregunta abans d'iniciar un stream quan la xarxa actual pugui fer servir dades mòbils.";
 "profile.preferences.cellularWarning.title" = "Avisar amb dades mòbils";
-"profile.preferences.autoSkipUnstableStreams.detail" = "Quan un stream continuï fallant i hi hagi cua, passa automaticament a la radio seguent.";
-"profile.preferences.autoSkipUnstableStreams.title" = "Saltar streams inestables";
+"profile.preferences.autoSkipUnstableStreams.detail" = "Despres de diversos errors de reproduccio, prova la radio seguent de la cua de moment. No s'elimina res.";
+"profile.preferences.autoSkipUnstableStreams.title" = "Provar-ne una altra si falla";
 "profile.preferences.clearUnstableWarnings.action" = "Neteja";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marcades en aquesta sessio.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";

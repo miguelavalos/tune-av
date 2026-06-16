@@ -3758,6 +3758,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.nowPlayingFallbackPollingInterval, .seconds(25))
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.cachedNowPlayingMaximumAge, 30 * 60)
         XCTAssertEqual(TuneAVAudioPlaybackPolicy.streamNowPlayingMaximumAge, 120)
+        XCTAssertEqual(TuneAVAudioPlaybackPolicy.unstableStreamFailureThreshold, 3)
 
         XCTAssertTrue(
             TuneAVAudioPlaybackPolicy.shouldRetryAfterNetworkRestored(

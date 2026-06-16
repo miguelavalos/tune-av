@@ -18,8 +18,8 @@
 "audio.error.streamTimeout" = "The live stream is taking too long to respond";
 "audio.sleep.ended" = "Sleep timer ended";
 "audio.sleep.inMinutes" = "Sleep in %d min";
-"audio.autoSkip.noStableStation" = "No stable radios left";
-"audio.autoSkip.skipped" = "Skipped %@";
+"audio.autoSkip.noStableStation" = "No other radio ready right now";
+"audio.autoSkip.skipped" = "Trying another radio after %@ kept failing";
 "audio.status.loading" = "Loading stream";
 "audio.status.paused" = "Paused";
 "audio.status.playing" = "Playing";
@@ -256,8 +256,8 @@
 "profile.preferences.language.title" = "App language";
 "profile.preferences.cellularWarning.detail" = "Ask before starting a stream when the current network may use mobile data.";
 "profile.preferences.cellularWarning.title" = "Warn on mobile data";
-"profile.preferences.autoSkipUnstableStreams.detail" = "When a stream keeps failing and a queue is available, move to the next radio automatically.";
-"profile.preferences.autoSkipUnstableStreams.title" = "Skip unstable streams";
+"profile.preferences.autoSkipUnstableStreams.detail" = "After repeated playback failures, try the next queued radio for now. Nothing is removed.";
+"profile.preferences.autoSkipUnstableStreams.title" = "Try another on failures";
 "profile.preferences.clearUnstableWarnings.action" = "Clear";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marked in this session.";
 "profile.preferences.clearUnstableWarnings.title" = "Unstable stream warnings";

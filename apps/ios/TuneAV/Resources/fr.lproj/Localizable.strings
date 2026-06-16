@@ -18,8 +18,8 @@
 "audio.error.streamTimeout" = "Le flux en direct met trop de temps à répondre";
 "audio.sleep.ended" = "Le minuteur de veille est terminé";
 "audio.sleep.inMinutes" = "Veille dans %d min";
-"audio.autoSkip.noStableStation" = "Plus de radios stables";
-"audio.autoSkip.skipped" = "%@ ignoree";
+"audio.autoSkip.noStableStation" = "Aucune autre radio prete pour le moment";
+"audio.autoSkip.skipped" = "Essai d'une autre radio apres plusieurs echecs de %@";
 "audio.status.loading" = "Chargement du flux";
 "audio.status.paused" = "En pause";
 "audio.status.playing" = "Lecture";
@@ -1016,8 +1016,8 @@
 "profile.localDataSheet.title" = "Stockage Tune AV";
 "profile.preferences.cellularWarning.detail" = "Demander avant de lancer un flux quand le réseau actuel peut utiliser les données mobiles.";
 "profile.preferences.cellularWarning.title" = "Avertir sur données mobiles";
-"profile.preferences.autoSkipUnstableStreams.detail" = "Quand un flux continue d'echouer et qu'une file est disponible, passer automatiquement a la radio suivante.";
-"profile.preferences.autoSkipUnstableStreams.title" = "Ignorer les flux instables";
+"profile.preferences.autoSkipUnstableStreams.detail" = "Apres plusieurs echecs de lecture, essayer la radio suivante de la file pour le moment. Rien n'est supprime.";
+"profile.preferences.autoSkipUnstableStreams.title" = "Essayer une autre radio";
 "profile.preferences.clearUnstableWarnings.action" = "Effacer";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marquees dans cette session.";
 "profile.preferences.clearUnstableWarnings.title" = "Avertissements de flux instables";

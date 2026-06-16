@@ -18,8 +18,8 @@
 "audio.error.streamTimeout" = "Der Live-Stream braucht zu lange zum Antworten";
 "audio.sleep.ended" = "Der Sleep-Timer ist beendet";
 "audio.sleep.inMinutes" = "Schlafen in %d Min";
-"audio.autoSkip.noStableStation" = "Keine stabilen Radios uebrig";
-"audio.autoSkip.skipped" = "%@ uebersprungen";
+"audio.autoSkip.noStableStation" = "Gerade kein anderes Radio bereit";
+"audio.autoSkip.skipped" = "Versuche ein anderes Radio, nachdem %@ mehrfach fehlschlug";
 "audio.status.loading" = "Stream wird geladen";
 "audio.status.paused" = "Pausiert";
 "audio.status.playing" = "Wiedergabe";
@@ -1016,8 +1016,8 @@
 "profile.localDataSheet.title" = "Tune AV Speicher";
 "profile.preferences.cellularWarning.detail" = "Vor dem Starten eines Streams fragen, wenn das aktuelle Netzwerk mobile Daten verwenden kann.";
 "profile.preferences.cellularWarning.title" = "Bei mobilen Daten warnen";
-"profile.preferences.autoSkipUnstableStreams.detail" = "Wenn ein Stream weiter fehlschlaegt und eine Warteschlange vorhanden ist, automatisch zum naechsten Radio wechseln.";
-"profile.preferences.autoSkipUnstableStreams.title" = "Instabile Streams ueberspringen";
+"profile.preferences.autoSkipUnstableStreams.detail" = "Nach wiederholten Wiedergabefehlern vorerst das naechste Radio in der Warteschlange versuchen. Nichts wird entfernt.";
+"profile.preferences.autoSkipUnstableStreams.title" = "Bei Fehlern anderes Radio";
 "profile.preferences.clearUnstableWarnings.action" = "Leeren";
 "profile.preferences.clearUnstableWarnings.detail" = "%d in dieser Sitzung markiert.";
 "profile.preferences.clearUnstableWarnings.title" = "Warnungen fuer instabile Streams";

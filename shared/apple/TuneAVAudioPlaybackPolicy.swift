@@ -38,6 +38,7 @@ enum TuneAVAudioPlaybackPolicy {
     static let nowPlayingFallbackPollingInterval: Duration = .seconds(25)
     static let cachedNowPlayingMaximumAge: TimeInterval = 30 * 60
     static let streamNowPlayingMaximumAge: TimeInterval = 120
+    static let unstableStreamFailureThreshold = 3
 
     static func isCachedNowPlayingFresh(_ state: TuneAVCachedNowPlayingState, now: Date = Date()) -> Bool {
         let age = now.timeIntervalSince(state.cachedAt)
