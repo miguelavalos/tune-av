@@ -18,6 +18,7 @@
     "ios:smoke:launch-performance": "./scripts/smoke-ios-launch-performance.sh",
     "ios:profile:launch-performance": "./scripts/profile-ios-launch-performance.sh",
     "ios:release-config:hygiene": "./scripts/check-ios-release-config-hygiene.sh --env prod --configuration Release",
+    "ios:release:simulator": "./scripts/check-ios-release-simulator-build.sh",
     "ios:release:preflight": "./scripts/ios-release-preflight.sh",
     "ios:release:archive": "./scripts/ios-release-archive-upload.sh",
     "ios:release:upload": "./scripts/ios-release-archive-upload.sh",
