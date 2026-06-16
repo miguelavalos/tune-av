@@ -185,18 +185,27 @@ if [ "$env_name" = "prod" ] && [[ "$publishable_key" != pk_live_* ]]; then
   exit 1
 fi
 
-case "$api_base_url" in
-  https://*) ;;
-  *) echo "ACCOUNTAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
-esac
-case "$tune_api_base_url" in
-  https://*) ;;
-  *) echo "TUNEAV_API_BASE_URL must use HTTPS." >&2; exit 1 ;;
-esac
-case "$management_url" in
-  https://*) ;;
-  *) echo "ACCOUNTAV_MANAGEMENT_URL must use HTTPS." >&2; exit 1 ;;
-esac
+allow_https_or_dev_local_url() {
+  local name="$1"
+  local value="$2"
+
+  case "$value" in
+    https://*) return 0 ;;
+  esac
+
+  if [ "$env_name" = "dev" ]; then
+    case "$value" in
+      http://127.0.0.1:*|http://localhost:*) return 0 ;;
+    esac
+  fi
+
+  echo "$name must use HTTPS unless it is a dev localhost URL." >&2
+  exit 1
+}
+
+allow_https_or_dev_local_url ACCOUNTAV_API_BASE_URL "$api_base_url"
+allow_https_or_dev_local_url TUNEAV_API_BASE_URL "$tune_api_base_url"
+allow_https_or_dev_local_url ACCOUNTAV_MANAGEMENT_URL "$management_url"
 case "$support_base_url" in
   https://*) ;;
   *) echo "SUPPORTAV_BASE_URL must use HTTPS." >&2; exit 1 ;;

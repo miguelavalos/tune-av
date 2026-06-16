@@ -145,7 +145,28 @@ else
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
 fi
 
-for url in "$api_base_url" "$tune_api_base_url" "$management_url" "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
+allow_https_or_dev_local_url() {
+  local name="$1"
+  local value="$2"
+
+  if [[ "$value" == https://* ]]; then
+    return 0
+  fi
+
+  if [ "$env_name" = "dev" ]; then
+    case "$value" in
+      http://127.0.0.1:*|http://localhost:*) return 0 ;;
+    esac
+  fi
+
+  fail "$name did not resolve as https://* or a dev localhost URL: $value"
+}
+
+allow_https_or_dev_local_url ACCOUNTAV_API_BASE_URL "$api_base_url"
+allow_https_or_dev_local_url TUNEAV_API_BASE_URL "$tune_api_base_url"
+allow_https_or_dev_local_url ACCOUNTAV_MANAGEMENT_URL "$management_url"
+
+for url in "$delete_account_url" "$terms_url" "$privacy_url" "$open_source_url"; do
   [[ "$url" == https://* ]] || fail "URL did not resolve as https://*: $url"
 done
 [[ "$tuneav_convex_url" == https://*.convex.cloud ]] || fail "TUNEAV_CONVEX_URL must be a Convex cloud URL"
