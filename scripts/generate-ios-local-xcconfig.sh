@@ -141,6 +141,9 @@ if [ -z "$tune_api_base_url" ]; then
   tune_api_base_url="$(read_optional_config TUNEAV_API_BASE_URL)"
 fi
 if [ -z "$tune_api_base_url" ]; then
+  tune_api_base_url="$("$varlock_bin" printenv --path "$suite_root/apps/admin-av" TUNEAV_API_BASE_URL 2>/dev/null || true)"
+fi
+if [ -z "$tune_api_base_url" ]; then
   tune_api_base_url="$api_base_url"
 fi
 if [ "$env_name" = "prod" ] && printf '%s' "$tune_api_base_url" | rg -q '127\.0\.0\.1|localhost|preview|\.dev'; then
