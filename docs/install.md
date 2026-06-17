@@ -72,14 +72,14 @@ xcodebuild -project apps/ios/TuneAV.xcodeproj \
   -scheme TuneAV \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
-  -derivedDataPath /tmp/TuneAV-sim \
+  -derivedDataPath .DerivedData-sim \
   build
 ```
 
 Install and launch the generated bundle:
 
 ```bash
-xcrun simctl install booted /tmp/TuneAV-sim/Build/Products/Debug-iphonesimulator/TuneAV.app
+xcrun simctl install booted .DerivedData-sim/Build/Products/Debug-iphonesimulator/TuneAV.app
 xcrun simctl launch booted com.avalsys.tuneav
 ```
 
@@ -100,6 +100,7 @@ xcodebuild -project apps/ios/TuneAV.xcodeproj \
   -allowProvisioningUpdates \
   DEVELOPMENT_TEAM=<YOUR_TEAM_ID> \
   CODE_SIGN_STYLE=Automatic \
+  -derivedDataPath .DerivedData-device \
   build
 ```
 
@@ -108,7 +109,7 @@ Install the generated app:
 ```bash
 xcrun devicectl device install app \
   --device <DEVICE_UDID> \
-  ~/Library/Developer/Xcode/DerivedData/TuneAV-*/Build/Products/Debug-iphoneos/TuneAV.app
+  .DerivedData-device/Build/Products/Debug-iphoneos/TuneAV.app
 ```
 
 Launch it:
@@ -129,6 +130,24 @@ on the phone:
 2. Open the developer app entry that matches the Apple account used for signing.
 3. Tap `Trust`.
 4. Open `Tune AV` again from the device home screen.
+
+### Local Build Cache Cleanup
+
+Xcode `DerivedData` can grow by several gigabytes per build/test profile. Keep
+manual build output repo-local and purpose-named with `-derivedDataPath`, then
+remove it after the validation run is no longer needed.
+
+Measure first:
+
+```bash
+find . -type d \( -name '.DerivedData*' -o -name '.derived-data*' -o -name 'DerivedData' \) -prune -print0 | xargs -0 du -sh
+```
+
+Clean only when no active build is using those directories:
+
+```bash
+find . -type d \( -name '.DerivedData*' -o -name '.derived-data*' -o -name 'DerivedData' \) -prune -print0 | xargs -0 rm -rf
+```
 
 ### Known Local-Dev Constraints
 
