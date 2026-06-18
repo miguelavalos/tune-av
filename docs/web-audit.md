@@ -25,3 +25,6 @@ Tune AV app web now exists at `apps/web`.
 - Local and preview app web QA passed for public `/`, protected `/listen`, and
   five-language rendering.
 - Preview app web deployed to `https://app.tune-av-preview.avalsys.com`.
+- Preview app web build now resolves Account AV configuration through the
+  private suite Varlock wrapper and splits Clerk/localization/serialization/UI
+  vendor chunks without large client chunk warnings.

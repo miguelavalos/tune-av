@@ -1,5 +1,9 @@
 import { useAppsAvLocale, type AppsAvLocale, type AppsAvProductLink } from "@avalsys/apps-av-web";
-import { caES, deDE, enUS, esES, frFR } from "@clerk/localizations";
+import { caES } from "@clerk/localizations/ca-ES";
+import { deDE } from "@clerk/localizations/de-DE";
+import { enUS } from "@clerk/localizations/en-US";
+import { esES } from "@clerk/localizations/es-ES";
+import { frFR } from "@clerk/localizations/fr-FR";
 
 const en = {
   account: {
