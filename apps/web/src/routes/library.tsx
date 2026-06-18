@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { tuneProductConfig } from "@/lib/tune-config";
+import { getLocalizedTuneProductConfig } from "@/lib/tune-config";
 import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
 import { useAppsAvLocale } from "@avalsys/apps-av-web";
 
@@ -19,11 +19,12 @@ function LibraryRoute() {
   const locale = useAppsAvLocale();
   const navLinks = useTuneNavLinks();
   const shellLabels = useTuneShellLabels();
+  const productConfig = getLocalizedTuneProductConfig(locale);
   const hintIcons = [<ListChecks className="size-4" />, <CalendarDays className="size-4" />, <Archive className="size-4" />];
 
   return (
     <ProtectedRoute>
-      <AppShell accountArea={<AccountUserButton />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={tuneProductConfig}>
+      <AppShell accountArea={<AccountUserButton />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
         <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
           <Card className="tune-paper gap-0 rounded-[1.5rem] border-[#d7c494] p-6 py-6 shadow-lg shadow-[#172f5c]/8 sm:p-8 sm:py-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

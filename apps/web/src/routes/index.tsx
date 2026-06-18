@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TuneLoginPage } from "@/components/tune-login-page";
-import { tuneBrandAssets, tuneProductConfig } from "@/lib/tune-config";
+import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/")({
@@ -18,6 +18,7 @@ function IndexRoute() {
   const text = useTuneText();
   const navLinks = useTuneNavLinks();
   const shellLabels = useTuneShellLabels();
+  const productConfig = getLocalizedTuneProductConfig(locale);
   const homeIcons = [<Radio className="size-4" />, <BookOpenCheck className="size-4" />, <CalendarDays className="size-4" />];
 
   return (
@@ -26,7 +27,7 @@ function IndexRoute() {
         <TuneLoginPage />
       </SignedOut>
       <SignedIn>
-        <AppShell accountArea={<AccountUserButton />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={tuneProductConfig}>
+        <AppShell accountArea={<AccountUserButton />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
           <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
             <Card className="tune-paper gap-0 overflow-hidden rounded-[1.5rem] border-[#d7c494] p-6 py-6 shadow-lg shadow-[#172f5c]/8 sm:p-8 sm:py-8">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

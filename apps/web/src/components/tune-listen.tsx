@@ -29,7 +29,7 @@ export function TuneListen() {
         </div>
         <div>
           <h2 className="text-2xl font-semibold">{text.listen.cta}</h2>
-          <p className="mt-3 text-sm leading-6 text-[#445b62]">{text.protected.body}</p>
+          <p className="mt-3 text-sm leading-6 text-[#445b62]">{text.listen.accountBody}</p>
         </div>
       </Card>
     </section>

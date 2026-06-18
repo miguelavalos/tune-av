@@ -1,4 +1,4 @@
-import type { AppsAvProductConfig } from "@avalsys/apps-av-web";
+import type { AppsAvLocale, AppsAvProductConfig } from "@avalsys/apps-av-web";
 
 export const tuneProductConfig: AppsAvProductConfig = {
   appId: "tuneav",
@@ -21,6 +21,18 @@ export const tuneProductConfig: AppsAvProductConfig = {
     terms: externalLink(import.meta.env.VITE_TUNEAV_TERMS_URL, "Terms")
   }
 };
+
+export function getLocalizedTuneProductConfig(locale: AppsAvLocale): AppsAvProductConfig {
+  return {
+    ...tuneProductConfig,
+    assistant: tuneProductConfig.assistant
+      ? {
+          ...tuneProductConfig.assistant,
+          href: localizedAppPath("/avi", locale)
+        }
+      : undefined
+  };
+}
 
 export const tuneBrandAssets = {
   aviFullBody: "/assets/avi-full-body.png",
@@ -79,4 +91,11 @@ function normalizeHref(value: string | undefined) {
 
 function trimTrailingSlash(value: string | undefined) {
   return value?.trim().replace(/\/+$/, "") ?? "";
+}
+
+function localizedAppPath(pathname: string, locale: AppsAvLocale) {
+  const path = pathname || "/";
+  const separator = path.includes("?") ? "&" : "?";
+
+  return locale === "en" ? path : `${path}${separator}lang=${locale}`;
 }

@@ -64,6 +64,7 @@ const en = {
     title: "Saved listening, ready for the next session."
   },
   listen: {
+    accountBody: "Listening, library, and Avi guidance stay connected to your AV account while Tune AV services come online.",
     body: "The web port starts with protected listening surfaces. Streaming and station sync stay behind the account boundary.",
     cta: "Protected by AV account",
     title: "Tune a station from your signed-in account.",
@@ -166,6 +167,7 @@ const es: typeof en = {
     title: "Escucha guardada para la próxima sesión."
   },
   listen: {
+    accountBody: "Escucha, biblioteca y guía de Avi permanecen conectadas a tu cuenta AV mientras los servicios de Tune AV se activan.",
     body: "El port web empieza con superficies protegidas de escucha. Streaming y sincronización quedan detrás de la cuenta.",
     cta: "Protegido por cuenta AV",
     title: "Sintoniza una emisora desde tu cuenta iniciada.",
@@ -247,9 +249,16 @@ const ca: typeof en = {
     emptyBody: "Obre Escoltar, tria una direccio i Tune AV desara les emissores utils a la biblioteca.",
     emptyTitle: "Comenca desant una emissora.",
     filters: ["Tot", "Emissores", "Favorits", "Recent", "Arxivat"],
+    hints: [
+      { text: "Conserva emissores per a concentracio, descans i descobriment.", title: "Emissores" },
+      { text: "Desa pistes o moments que vulguis trobar de nou.", title: "Favorits" },
+      { text: "Aparta sessions antigues sense perdre context.", title: "Arxiu" }
+    ],
+    kicker: "Biblioteca",
     title: "Escolta desada per a la propera sessio."
   },
   listen: {
+    accountBody: "Escolta, biblioteca i guia d'Avi romanen connectades al teu compte AV mentre els serveis de Tune AV s'activen.",
     body: "El port web comenca amb superficies protegides d'escolta. Streaming i sincronitzacio queden darrere del compte.",
     cta: "Protegit pel compte AV",
     title: "Sintonitza una emissora des del teu compte iniciat.",
@@ -283,8 +292,31 @@ const de: typeof en = {
   avi: { ...en.avi, body: "Avi haelt Hoerentscheidungen ruhig: Sender waehlen, Passendes speichern und ohne neue Warteschlange zur richtigen Stimmung zurueckkehren.", libraryCta: "Bibliothek oeffnen", radioCta: "Hoeren starten", title: "Eine ruhige Hilfe fuer den naechsten Sender." },
   footer: { deleteAccount: "Konto loeschen", language: "Sprache", privacy: "Datenschutz", support: "Hilfe", terms: "Bedingungen" },
   home: { ...en.home, aviTitle: "Avi haelt das Signal klar", body: "Stimme Sender ab, fuehre eine leichte Bibliothek und lass Avi die naechste Hoersitzung vorbereiten.", cta: "Hoeren starten", title: "Dein Hoerraum ist bereit." },
-  library: { ...en.library, add: "Sender hinzufuegen", body: "Gespeicherte Sender und Favoriten erscheinen hier, sobald du angemeldet hoerst.", emptyTitle: "Beginne mit einem gespeicherten Sender.", title: "Gespeichertes Hoeren fuer die naechste Sitzung." },
-  listen: { ...en.listen, body: "Der Web-Port startet mit geschuetzten Hoerflaechen. Streaming und Sendersync bleiben hinter dem Konto.", cta: "Durch AV-Konto geschuetzt", title: "Stimme einen Sender mit deinem angemeldeten Konto ab." },
+  library: {
+    add: "Sender hinzufuegen",
+    body: "Gespeicherte Sender und Favoriten erscheinen hier, sobald du angemeldet hoerst.",
+    emptyBody: "Oeffne Hoeren, waehle eine Richtung, und Tune AV haelt die passenden Sender und Favoriten in deiner Bibliothek.",
+    emptyTitle: "Beginne mit einem gespeicherten Sender.",
+    filters: ["Alle", "Sender", "Favoriten", "Zuletzt", "Archiviert"],
+    hints: [
+      { text: "Bewahre Sender fuer Fokus, Ruhe und Entdeckung auf.", title: "Sender" },
+      { text: "Speichere Titel oder Momente, die leicht wiederzufinden sein sollen.", title: "Favoriten" },
+      { text: "Verschiebe alte Sitzungen aus dem Blick, ohne Kontext zu verlieren.", title: "Archiv" }
+    ],
+    kicker: "Bibliothek",
+    title: "Gespeichertes Hoeren fuer die naechste Sitzung."
+  },
+  listen: {
+    accountBody: "Hoeren, Bibliothek und Avi-Hilfe bleiben mit deinem AV-Konto verbunden, waehrend Tune AV Dienste online gehen.",
+    body: "Der Web-Port startet mit geschuetzten Hoerflaechen. Streaming und Sendersync bleiben hinter dem Konto.",
+    cta: "Durch AV-Konto geschuetzt",
+    title: "Stimme einen Sender mit deinem angemeldeten Konto ab.",
+    panels: [
+      { body: "Waehle vor der Wiedergabe einen Fokus, damit Empfehlungen nuetzlich bleiben.", title: "Sitzungsstimmung" },
+      { body: "Sender werden fuer angemeldete Synchronisierung vorbereitet, nicht fuer anonymen Zustand.", title: "Senderliste" },
+      { body: "Avi kann den naechsten Sender aus gespeichertem Kontext fuehren, sobald die Dienste verbunden sind.", title: "Avi-Hilfe" }
+    ]
+  },
   login: { ...en.login, cta: "Anmelden", heroBody: "Melde dich an, damit Hoerverlauf, gespeicherte Sender und Avi-Hilfe verbunden bleiben.", heroTitle: "Ruhiges Radio, verbundenes Konto.", intro: "Tune AV haelt radioartiges Hoeren fokussiert, privat und in deinem AV-Konto verfuegbar." },
   nav: { ...en.nav, home: "Start", library: "Bibliothek", listen: "Hoeren", openNavigation: "Navigation oeffnen", primaryNavigation: "Hauptnavigation", mobileNavigation: "Mobile Navigation" },
   protected: { body: "Melde dich an, um Hoeren, Bibliothek und Avi zu oeffnen. Tune AV Web haelt Produktfunktionen hinter deinem AV-Konto.", cta: "Anmelden", title: "Dein Hoeren bleibt hinter deinem AV-Konto." },
@@ -297,8 +329,31 @@ const fr: typeof en = {
   avi: { ...en.avi, body: "Avi garde l'ecoute calme : choisir une station, enregistrer ce qui convient et revenir a la bonne ambiance sans reconstruire la file.", libraryCta: "Ouvrir la bibliotheque", radioCta: "Commencer l'ecoute", title: "Un guide calme pour la prochaine station." },
   footer: { deleteAccount: "Supprimer le compte", language: "Langue", privacy: "Confidentialite", support: "Assistance", terms: "Conditions" },
   home: { ...en.home, aviTitle: "Avi garde le signal clair", body: "Accordez des stations, gardez une bibliotheque legere et laissez Avi preparer la prochaine session.", cta: "Commencer l'ecoute", title: "Votre salle d'ecoute est prete." },
-  library: { ...en.library, add: "Ajouter une station", body: "Les stations et favoris enregistres apparaitront ici lorsque vous ecouterez connecte.", emptyTitle: "Commencez par enregistrer une station.", title: "Ecoute enregistree pour la prochaine session." },
-  listen: { ...en.listen, body: "Le port web commence par des surfaces d'ecoute protegees. Streaming et synchronisation restent derriere le compte.", cta: "Protege par le compte AV", title: "Accordez une station depuis votre compte connecte." },
+  library: {
+    add: "Ajouter une station",
+    body: "Les stations et favoris enregistres apparaitront ici lorsque vous ecouterez connecte.",
+    emptyBody: "Ouvrez Ecouter, choisissez une direction, et Tune AV gardera les stations et favoris utiles dans votre bibliotheque.",
+    emptyTitle: "Commencez par enregistrer une station.",
+    filters: ["Tout", "Stations", "Favoris", "Recent", "Archive"],
+    hints: [
+      { text: "Gardez les stations utiles pour la concentration, le repos et la decouverte.", title: "Stations" },
+      { text: "Enregistrez les titres ou moments que vous voudrez retrouver facilement.", title: "Favoris" },
+      { text: "Mettez les anciennes sessions de cote sans perdre le contexte.", title: "Archive" }
+    ],
+    kicker: "Bibliotheque",
+    title: "Ecoute enregistree pour la prochaine session."
+  },
+  listen: {
+    accountBody: "L'ecoute, la bibliotheque et l'aide d'Avi restent reliees a votre compte AV pendant l'activation des services Tune AV.",
+    body: "Le port web commence par des surfaces d'ecoute protegees. Streaming et synchronisation restent derriere le compte.",
+    cta: "Protege par le compte AV",
+    title: "Accordez une station depuis votre compte connecte.",
+    panels: [
+      { body: "Choisissez un focus avant la lecture pour garder des recommandations utiles.", title: "Ambiance de session" },
+      { body: "Les stations sont preparees pour une synchronisation connectee, pas pour un etat anonyme.", title: "File de stations" },
+      { body: "Avi pourra guider la prochaine station depuis le contexte enregistre lorsque les services seront connectes.", title: "Aide d'Avi" }
+    ]
+  },
   login: { ...en.login, cta: "Se connecter", heroBody: "Connectez-vous pour garder historique, stations enregistrees et aide d'Avi synchronises.", heroTitle: "Radio calme, compte connecte.", intro: "Tune AV garde l'ecoute type radio concentree, privee et disponible depuis votre compte AV." },
   nav: { ...en.nav, home: "Accueil", library: "Bibliotheque", listen: "Ecouter", openNavigation: "Ouvrir la navigation", primaryNavigation: "Navigation principale", mobileNavigation: "Navigation mobile" },
   protected: { body: "Connectez-vous pour ouvrir l'ecoute, la bibliotheque et Avi. Tune AV web garde les fonctions produit derriere votre compte AV.", cta: "Se connecter", title: "Votre ecoute reste derriere votre compte AV." },
