@@ -32,3 +32,7 @@ Tune AV app web now exists at `apps/web`.
   routes after completing protected-route copy for `ca`, `de`, and `fr`.
 - App-owned logo, navigation, CTA, and Avi assistant links preserve the active
   `lang` query value in the preview app.
+- Production app web was deployed to `https://app.tune-av.avalsys.com` after
+  production build and dry-run passed. Initial production smoke exposed missing
+  Worker Clerk secrets; after syncing runtime secrets, HTTP smoke and signed-in
+  browser QA passed for public, sign-in, and protected localized routes.
