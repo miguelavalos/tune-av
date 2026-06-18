@@ -28,3 +28,7 @@ Tune AV app web now exists at `apps/web`.
 - Preview app web build now resolves Account AV configuration through the
   private suite Varlock wrapper and splits Clerk/localization/serialization/UI
   vendor chunks without large client chunk warnings.
+- Signed-in preview QA passed for `/avi`, `/listen`, and `/library` in localized
+  routes after completing protected-route copy for `ca`, `de`, and `fr`.
+- App-owned logo, navigation, CTA, and Avi assistant links preserve the active
+  `lang` query value in the preview app.
