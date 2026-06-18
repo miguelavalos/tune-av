@@ -163,16 +163,25 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
     };
   }, [appAccess.data]);
 
-  const [store, setStore] = useState<TuneStoreState>(() => initialStore());
+  const [store, setStore] = useState<TuneStoreState>(() => defaultStore());
   const [search, setSearch] = useState<SearchState>({ stations: [], isLoading: false, isLoadingMore: false, error: null, pagination: null, source: "search" });
-  const [playback, setPlayback] = useState<PlaybackState>(() => initialPlaybackState(initialStore()));
+  const [playback, setPlayback] = useState<PlaybackState>(() => initialPlaybackState(defaultStore()));
   const [userSummary, setUserSummary] = useState<TuneUserSummary | null>(null);
   const [summaryStatus, setSummaryStatus] = useState<TuneContextValue["summaryStatus"]>("idle");
+  const [hasRestoredLocalStore, setHasRestoredLocalStore] = useState(false);
   const lastSearchRef = useRef<SearchInput>({});
 
   useEffect(() => {
+    const restoredStore = readStore();
+    setStore(restoredStore);
+    setPlayback(initialPlaybackState(restoredStore));
+    setHasRestoredLocalStore(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredLocalStore) return;
     persistStore(store);
-  }, [store]);
+  }, [hasRestoredLocalStore, store]);
 
   useEffect(() => {
     if (!access.capabilities.canUseCloudSync) return;
