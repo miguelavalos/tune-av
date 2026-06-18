@@ -64,3 +64,20 @@ Tune AV app web now exists at `apps/web`.
 - Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
   version `78ee5cc2-2854-4e9f-aad3-41ebb75bdb1f`; shared web QA passed across
   five locales and eight routes.
+
+## 2026-06-19 Player Hydration Hotfix
+
+- Fixed Tune app store hydration so the initial client render matches SSR and
+  restores local favorites/player state after mount instead of during
+  hydration.
+- Hotfix commit `955fcc4` was pushed to `main`.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
+  Worker version `1a755412-cd49-4a2a-bc03-2bfda033576e`; shared web QA passed
+  across five locales and eight routes.
+- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
+  version `dff8a094-b4c7-4fa8-b737-eeaff7619aba`; shared web QA passed across
+  five locales and eight routes.
+- In-app browser QA on production passed for signed-in `/listen?lang=es`,
+  station playback attempt, persisted player reload, full player, and mobile
+  viewport. No new React hydration errors were captured in fresh production
+  tabs after the hotfix.
