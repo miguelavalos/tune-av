@@ -58,3 +58,9 @@ Tune AV app web now exists at `apps/web`.
 - `apps/web` now has `qa:shared`, powered by the shared Apps AV smoke QA runner
   across `en`, `es`, `fr`, `de`, and `ca` for public routes, protected gates,
   language preservation, product identity, and no guest product copy.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
+  Worker version `f7581398-52fe-45a8-a9dc-977727d4183d`; shared web QA passed
+  across five locales and eight routes.
+- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
+  version `78ee5cc2-2854-4e9f-aad3-41ebb75bdb1f`; shared web QA passed across
+  five locales and eight routes.
