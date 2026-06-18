@@ -66,7 +66,7 @@ const en = {
   listen: {
     body: "The web port starts with protected listening surfaces. Streaming and station sync stay behind the account boundary.",
     cta: "Protected by AV account",
-    title: "Tune a station without opening a guest mode.",
+    title: "Tune a station from your signed-in account.",
     panels: [
       { body: "Pick a focus before playback so recommendations stay useful.", title: "Session mood" },
       { body: "Stations are prepared for signed-in sync rather than anonymous state.", title: "Station queue" },
@@ -98,7 +98,7 @@ const en = {
     primaryNavigation: "Primary navigation"
   },
   protected: {
-    body: "Sign in to open listening, library, and Avi routes. Tune AV web does not expose product functionality in guest mode.",
+    body: "Sign in to open listening, library, and Avi routes. Tune AV web keeps product functionality behind your AV account.",
     cta: "Sign in",
     title: "Your listening stays behind your AV account."
   },
@@ -168,7 +168,7 @@ const es: typeof en = {
   listen: {
     body: "El port web empieza con superficies protegidas de escucha. Streaming y sincronización quedan detrás de la cuenta.",
     cta: "Protegido por cuenta AV",
-    title: "Sintoniza una emisora sin abrir modo invitado.",
+    title: "Sintoniza una emisora desde tu cuenta iniciada.",
     panels: [
       { body: "Elige enfoque antes de reproducir para que las recomendaciones sigan siendo útiles.", title: "Ambiente" },
       { body: "Las emisoras se preparan para sincronización con sesión, no para estado anónimo.", title: "Cola de emisoras" },
@@ -200,7 +200,7 @@ const es: typeof en = {
     primaryNavigation: "Navegación principal"
   },
   protected: {
-    body: "Inicia sesión para abrir escucha, biblioteca y Avi. Tune AV web no expone funcionalidad de producto como invitado.",
+    body: "Inicia sesión para abrir escucha, biblioteca y Avi. Tune AV web mantiene la funcionalidad de producto detrás de tu cuenta AV.",
     cta: "Iniciar sesión",
     title: "Tu escucha queda detrás de tu cuenta AV."
   },
@@ -252,7 +252,7 @@ const ca: typeof en = {
   listen: {
     body: "El port web comenca amb superficies protegides d'escolta. Streaming i sincronitzacio queden darrere del compte.",
     cta: "Protegit pel compte AV",
-    title: "Sintonitza una emissora sense obrir mode convidat.",
+    title: "Sintonitza una emissora des del teu compte iniciat.",
     panels: [
       { body: "Tria enfocament abans de reproduir per mantenir recomanacions utils.", title: "Ambient" },
       { body: "Les emissores es preparen per sincronitzacio amb sessio, no per estat anonim.", title: "Cua d'emissores" },
@@ -273,7 +273,7 @@ const ca: typeof en = {
     listen: "Sintonitzacio"
   },
   nav: { ...es.nav, home: "Inici", listen: "Escoltar", openNavigation: "Obre la navegacio", primaryNavigation: "Navegacio principal", mobileNavigation: "Navegacio mobil" },
-  protected: { body: "Inicia sessio per obrir escolta, biblioteca i Avi. Tune AV web no exposa funcionalitat de producte com a convidat.", cta: "Inicia sessio", title: "La teva escolta queda darrere del compte AV." },
+  protected: { body: "Inicia sessio per obrir escolta, biblioteca i Avi. Tune AV web mante la funcionalitat de producte darrere del teu compte AV.", cta: "Inicia sessio", title: "La teva escolta queda darrere del compte AV." },
   signIn: { aviPanelBody: "Avi mante la propera emissora tranquil.la i intencional.", body: "Inicia sessio per connectar escolta, emissores desades i recomanacions d'Avi amb el teu compte AV.", continue: "Continua", signedIn: "Has iniciat sessio.", title: "Tune AV segueix la teva senyal." }
 };
 
@@ -284,10 +284,10 @@ const de: typeof en = {
   footer: { deleteAccount: "Konto loeschen", language: "Sprache", privacy: "Datenschutz", support: "Hilfe", terms: "Bedingungen" },
   home: { ...en.home, aviTitle: "Avi haelt das Signal klar", body: "Stimme Sender ab, fuehre eine leichte Bibliothek und lass Avi die naechste Hoersitzung vorbereiten.", cta: "Hoeren starten", title: "Dein Hoerraum ist bereit." },
   library: { ...en.library, add: "Sender hinzufuegen", body: "Gespeicherte Sender und Favoriten erscheinen hier, sobald du angemeldet hoerst.", emptyTitle: "Beginne mit einem gespeicherten Sender.", title: "Gespeichertes Hoeren fuer die naechste Sitzung." },
-  listen: { ...en.listen, body: "Der Web-Port startet mit geschuetzten Hoerflaechen. Streaming und Sendersync bleiben hinter dem Konto.", cta: "Durch AV-Konto geschuetzt", title: "Stimme einen Sender ab, ohne Gastmodus zu oeffnen." },
+  listen: { ...en.listen, body: "Der Web-Port startet mit geschuetzten Hoerflaechen. Streaming und Sendersync bleiben hinter dem Konto.", cta: "Durch AV-Konto geschuetzt", title: "Stimme einen Sender mit deinem angemeldeten Konto ab." },
   login: { ...en.login, cta: "Anmelden", heroBody: "Melde dich an, damit Hoerverlauf, gespeicherte Sender und Avi-Hilfe verbunden bleiben.", heroTitle: "Ruhiges Radio, verbundenes Konto.", intro: "Tune AV haelt radioartiges Hoeren fokussiert, privat und in deinem AV-Konto verfuegbar." },
   nav: { ...en.nav, home: "Start", library: "Bibliothek", listen: "Hoeren", openNavigation: "Navigation oeffnen", primaryNavigation: "Hauptnavigation", mobileNavigation: "Mobile Navigation" },
-  protected: { body: "Melde dich an, um Hoeren, Bibliothek und Avi zu oeffnen. Tune AV Web bietet keine Produktfunktionen im Gastmodus.", cta: "Anmelden", title: "Dein Hoeren bleibt hinter deinem AV-Konto." },
+  protected: { body: "Melde dich an, um Hoeren, Bibliothek und Avi zu oeffnen. Tune AV Web haelt Produktfunktionen hinter deinem AV-Konto.", cta: "Anmelden", title: "Dein Hoeren bleibt hinter deinem AV-Konto." },
   signIn: { ...en.signIn, body: "Melde dich an, um Tune AV Hoeren, gespeicherte Sender und Avi-Empfehlungen mit deinem AV-Konto zu verbinden.", continue: "Weiter", signedIn: "Du bist angemeldet.", title: "Tune AV folgt deinem Signal." }
 };
 
@@ -298,10 +298,10 @@ const fr: typeof en = {
   footer: { deleteAccount: "Supprimer le compte", language: "Langue", privacy: "Confidentialite", support: "Assistance", terms: "Conditions" },
   home: { ...en.home, aviTitle: "Avi garde le signal clair", body: "Accordez des stations, gardez une bibliotheque legere et laissez Avi preparer la prochaine session.", cta: "Commencer l'ecoute", title: "Votre salle d'ecoute est prete." },
   library: { ...en.library, add: "Ajouter une station", body: "Les stations et favoris enregistres apparaitront ici lorsque vous ecouterez connecte.", emptyTitle: "Commencez par enregistrer une station.", title: "Ecoute enregistree pour la prochaine session." },
-  listen: { ...en.listen, body: "Le port web commence par des surfaces d'ecoute protegees. Streaming et synchronisation restent derriere le compte.", cta: "Protege par le compte AV", title: "Accordez une station sans ouvrir de mode invite." },
+  listen: { ...en.listen, body: "Le port web commence par des surfaces d'ecoute protegees. Streaming et synchronisation restent derriere le compte.", cta: "Protege par le compte AV", title: "Accordez une station depuis votre compte connecte." },
   login: { ...en.login, cta: "Se connecter", heroBody: "Connectez-vous pour garder historique, stations enregistrees et aide d'Avi synchronises.", heroTitle: "Radio calme, compte connecte.", intro: "Tune AV garde l'ecoute type radio concentree, privee et disponible depuis votre compte AV." },
   nav: { ...en.nav, home: "Accueil", library: "Bibliotheque", listen: "Ecouter", openNavigation: "Ouvrir la navigation", primaryNavigation: "Navigation principale", mobileNavigation: "Navigation mobile" },
-  protected: { body: "Connectez-vous pour ouvrir l'ecoute, la bibliotheque et Avi. Tune AV web n'expose pas de fonctions produit en mode invite.", cta: "Se connecter", title: "Votre ecoute reste derriere votre compte AV." },
+  protected: { body: "Connectez-vous pour ouvrir l'ecoute, la bibliotheque et Avi. Tune AV web garde les fonctions produit derriere votre compte AV.", cta: "Se connecter", title: "Votre ecoute reste derriere votre compte AV." },
   signIn: { ...en.signIn, body: "Connectez-vous pour relier l'ecoute Tune AV, les stations enregistrees et les recommandations d'Avi a votre compte AV.", continue: "Continuer", signedIn: "Vous etes connecte.", title: "Tune AV suit votre signal." }
 };
 
