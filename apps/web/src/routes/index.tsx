@@ -1,14 +1,14 @@
 import { SignedIn, SignedOut } from "@avalsys/account-av-web";
-import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
+import { useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Library, Radio, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TuneAppShell } from "@/components/tune-app-shell";
 import { TuneLoginPage } from "@/components/tune-login-page";
-import { TuneAccountArea } from "@/components/tune-account-area";
-import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
-import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
+import { tuneBrandAssets } from "@/lib/tune-config";
+import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/")({
   component: IndexRoute
@@ -17,12 +17,9 @@ export const Route = createFileRoute("/")({
 function IndexRoute() {
   const locale = useAppsAvLocale();
   const text = useTuneText();
-  const navLinks = useTuneNavLinks();
-  const shellLabels = useTuneShellLabels();
-  const productConfig = getLocalizedTuneProductConfig(locale);
 
   return (
-    <AppShell accountArea={<TuneAccountArea />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
+    <TuneAppShell>
       <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <Card className="tune-paper gap-0 overflow-hidden rounded-lg border-[#d7c494] p-6 shadow-lg shadow-[#172f5c]/8 sm:p-8">
           <p className="flex items-center gap-2 text-sm font-semibold text-[#087f79]"><Radio className="size-4" /> Tune AV</p>
@@ -59,7 +56,7 @@ function IndexRoute() {
           <TuneLoginPage compact />
         </div>
       </SignedOut>
-    </AppShell>
+    </TuneAppShell>
   );
 }
 

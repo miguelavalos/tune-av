@@ -1,18 +1,17 @@
-import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
+import { useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, EyeOff, Music, Radio, Search, Star, Trash2, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
-import { TuneAccountArea } from "@/components/tune-account-area";
+import { TuneAppShell } from "@/components/tune-app-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getLocalizedTuneProductConfig } from "@/lib/tune-config";
 import { tuneFunctionalText } from "@/lib/tune-functional-text";
 import { useTune } from "@/lib/tune-store";
 import type { TuneDiscoveredTrack } from "@/lib/tune-types";
-import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
+import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/music")({
   component: MusicRoute
@@ -24,9 +23,6 @@ function MusicRoute() {
   const text = useTuneText();
   const locale = useAppsAvLocale();
   const labels = tuneFunctionalText[locale].music;
-  const navLinks = useTuneNavLinks();
-  const shellLabels = useTuneShellLabels();
-  const productConfig = getLocalizedTuneProductConfig(locale);
   const tune = useTune();
   const [mode, setMode] = useState<MusicMode>("songs");
   const [query, setQuery] = useState("");
@@ -36,7 +32,7 @@ function MusicRoute() {
 
   return (
     <ProtectedRoute>
-      <AppShell accountArea={<TuneAccountArea />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
+      <TuneAppShell>
         <div className="grid gap-6">
           <Card className="tune-paper rounded-lg border-[#d7c494] p-5 text-[#112a55] shadow-lg shadow-[#172f5c]/8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -78,7 +74,7 @@ function MusicRoute() {
             </div>
           )}
         </div>
-      </AppShell>
+      </TuneAppShell>
     </ProtectedRoute>
   );
 }

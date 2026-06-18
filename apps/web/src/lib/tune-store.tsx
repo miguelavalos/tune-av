@@ -122,6 +122,7 @@ type TuneContextValue = {
   restoreDiscovery: (discovery: TuneDiscoveredTrack) => void;
   removeDiscovery: (discovery: TuneDiscoveredTrack) => void;
   clearDiscoveries: () => void;
+  clearLocalData: () => void;
   setPreferredCountry: (countryCode: string) => void;
   setPreferredTag: (tag: string) => void;
   setDiscoveryMode: (mode: "music" | "allRadio") => void;
@@ -431,6 +432,14 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
     setStore((current) => ({ ...current, discoveries: current.discoveries.map((item) => ({ ...item, deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })) }));
   }, []);
 
+  const clearLocalData = useCallback(() => {
+    setStore(defaultStore());
+    setSearch({ stations: [], isLoading: false, isLoadingMore: false, error: null, pagination: null, source: "search" });
+    setPlayback({ currentStation: null, status: "idle", error: null, queue: [], queueSource: "unknown", startedAt: null, trackDetectedCount: 0 });
+    audioElement().pause();
+    audioElement().removeAttribute("src");
+  }, []);
+
   const updateDiscovery = useCallback((discovery: TuneDiscoveredTrack, patch: Partial<TuneDiscoveredTrack>) => {
     const key = discoveryIdentityKey(discovery);
     setStore((current) => ({ ...current, discoveries: current.discoveries.map((item) => discoveryIdentityKey(item) === key ? { ...item, ...patch } : item) }));
@@ -581,13 +590,14 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
     restoreDiscovery,
     removeDiscovery,
     clearDiscoveries,
+    clearLocalData,
     setPreferredCountry,
     setPreferredTag,
     setDiscoveryMode,
     refreshUserSummary,
     synchronizeLibrary,
     recommendations
-  }), [access, api, locale, store, favoriteStations, recentStations, visibleDiscoveries, savedDiscoveries, search, playback, userSummary, summaryStatus, canUseDailyFeature, recordDailyFeatureUse, searchStations, loadMoreStations, refreshPopular, playStation, pausePlayback, retryPlayback, nextStation, previousStation, toggleFavorite, setStationFeedback, setTrackFeedback, toggleDiscoverySaved, hideDiscovery, restoreDiscovery, removeDiscovery, clearDiscoveries, setPreferredCountry, setPreferredTag, setDiscoveryMode, refreshUserSummary, synchronizeLibrary, recommendations]);
+  }), [access, api, locale, store, favoriteStations, recentStations, visibleDiscoveries, savedDiscoveries, search, playback, userSummary, summaryStatus, canUseDailyFeature, recordDailyFeatureUse, searchStations, loadMoreStations, refreshPopular, playStation, pausePlayback, retryPlayback, nextStation, previousStation, toggleFavorite, setStationFeedback, setTrackFeedback, toggleDiscoverySaved, hideDiscovery, restoreDiscovery, removeDiscovery, clearDiscoveries, clearLocalData, setPreferredCountry, setPreferredTag, setDiscoveryMode, refreshUserSummary, synchronizeLibrary, recommendations]);
 
   return <TuneContext.Provider value={value}>{children}</TuneContext.Provider>;
 }

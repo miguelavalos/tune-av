@@ -1,6 +1,6 @@
 # Tune AV Web Audit
 
-Status: current as of 2026-06-18.
+Status: current as of 2026-06-19.
 
 Tune AV commercial web was checked as part of the AV web visual audit.
 Tune AV app web now exists at `apps/web`.
@@ -36,3 +36,25 @@ Tune AV app web now exists at `apps/web`.
   production build and dry-run passed. Initial production smoke exposed missing
   Worker Clerk secrets; after syncing runtime secrets, HTTP smoke and signed-in
   browser QA passed for public, sign-in, and protected localized routes.
+
+## 2026-06-19 Series/Shared Baseline Alignment
+
+- Tune AV app web consumes the shared Apps AV shell through a Tune wrapper and
+  passes the current route to keep active navigation semantics aligned with
+  Series AV.
+- Functional routes remain protected behind Account AV; `/` and `/sign-in`
+  remain public. The signed-out state now uses shared `ProtectedAppGate`.
+- `/account` was added as a protected Account AV surface using shared
+  `SettingsProfileScaffold`, `PlanFeatureSection`, `CloudSyncSection`, and
+  `AccountSafetySection`. Web billing is not implemented in Tune AV; plan
+  management opens Account AV.
+- `/settings` was rebuilt on the shared Settings scaffold with language,
+  System/Light/Dark appearance, Tune listening preferences, local device data,
+  and shared help/legal rows.
+- Tune Pro sync copy is constrained to the existing app-data contract: favorites
+  and saved discoveries can sync when Account AV reports Pro cloud sync; recents,
+  playback/session context, feedback queue, and local preferences stay
+  local-first unless the backend contract changes.
+- `apps/web` now has `qa:shared`, powered by the shared Apps AV smoke QA runner
+  across `en`, `es`, `fr`, `de`, and `ca` for public routes, protected gates,
+  language preservation, product identity, and no guest product copy.

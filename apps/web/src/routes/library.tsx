@@ -1,20 +1,19 @@
-import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
+import { useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Heart, Music, Radio, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
-import { TuneAccountArea } from "@/components/tune-account-area";
+import { TuneAppShell } from "@/components/tune-app-shell";
 import { StationDetailsPanel, TuneStationCard } from "@/components/tune-station-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getLocalizedTuneProductConfig } from "@/lib/tune-config";
 import { tuneFunctionalText } from "@/lib/tune-functional-text";
 import { hasMusicSignal } from "@/lib/tune-station";
 import { useTune } from "@/lib/tune-store";
 import type { TuneStation } from "@/lib/tune-types";
-import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
+import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/library")({
   component: LibraryRoute
@@ -26,10 +25,7 @@ function LibraryRoute() {
   const text = useTuneText();
   const locale = useAppsAvLocale();
   const labels = tuneFunctionalText[locale].library;
-  const navLinks = useTuneNavLinks();
-  const shellLabels = useTuneShellLabels();
   const tune = useTune();
-  const productConfig = getLocalizedTuneProductConfig(locale);
   const [mode, setMode] = useState<LibraryMode>("overview");
   const [query, setQuery] = useState("");
   const [selectedStation, setSelectedStation] = useState<TuneStation | null>(null);
@@ -41,7 +37,7 @@ function LibraryRoute() {
 
   return (
     <ProtectedRoute>
-      <AppShell accountArea={<TuneAccountArea />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
+      <TuneAppShell>
         <div className="grid gap-6">
           <Card className="tune-paper gap-0 rounded-lg border-[#d7c494] p-5 text-[#112a55] shadow-lg shadow-[#172f5c]/8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -101,7 +97,7 @@ function LibraryRoute() {
             </section>
           )}
         </div>
-      </AppShell>
+      </TuneAppShell>
     </ProtectedRoute>
   );
 }

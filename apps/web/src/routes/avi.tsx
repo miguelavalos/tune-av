@@ -1,18 +1,18 @@
-import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
+import { useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Compass, Heart, Library, Radio, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
-import { TuneAccountArea } from "@/components/tune-account-area";
+import { TuneAppShell } from "@/components/tune-app-shell";
 import { TuneStationCard } from "@/components/tune-station-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
+import { tuneBrandAssets } from "@/lib/tune-config";
 import { tuneFunctionalText } from "@/lib/tune-functional-text";
 import { scoreStationForAvi } from "@/lib/tune-station";
 import { useTune } from "@/lib/tune-store";
-import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
+import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/avi")({
   component: AviRoute
@@ -22,16 +22,13 @@ function AviRoute() {
   const text = useTuneText();
   const locale = useAppsAvLocale();
   const labels = tuneFunctionalText[locale].avi;
-  const navLinks = useTuneNavLinks();
-  const shellLabels = useTuneShellLabels();
-  const productConfig = getLocalizedTuneProductConfig(locale);
   const tune = useTune();
   const favoriteIds = useMemo(() => new Set(tune.favoriteStations.map((station) => station.id)), [tune.favoriteStations]);
   const recommendationReason = tune.recommendations.length ? labels.bodyReady : labels.bodyEmpty;
 
   return (
     <ProtectedRoute>
-      <AppShell accountArea={<TuneAccountArea />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
+      <TuneAppShell>
         <div className="grid gap-6">
           <Card className="tune-paper gap-0 overflow-hidden rounded-lg border-[#d7c494] p-0 text-[#112a55] shadow-lg shadow-[#172f5c]/8">
             <div className="grid lg:grid-cols-[1fr_21rem]">
@@ -89,7 +86,7 @@ function AviRoute() {
             ))}
           </section>
         </div>
-      </AppShell>
+      </TuneAppShell>
     </ProtectedRoute>
   );
 }
