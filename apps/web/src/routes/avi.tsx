@@ -1,12 +1,17 @@
-import { AccountUserButton } from "@avalsys/account-av-web";
 import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BookOpenCheck, CalendarDays, Compass, Radio, Sparkles } from "lucide-react";
+import { Compass, Heart, Library, Radio, Sparkles } from "lucide-react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
+import { TuneAccountArea } from "@/components/tune-account-area";
+import { TuneStationCard } from "@/components/tune-station-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
+import { tuneFunctionalText } from "@/lib/tune-functional-text";
+import { scoreStationForAvi } from "@/lib/tune-station";
+import { useTune } from "@/lib/tune-store";
 import { localizedTunePath, useTuneNavLinks, useTuneShellLabels, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/avi")({
@@ -16,66 +21,84 @@ export const Route = createFileRoute("/avi")({
 function AviRoute() {
   const text = useTuneText();
   const locale = useAppsAvLocale();
+  const labels = tuneFunctionalText[locale].avi;
   const navLinks = useTuneNavLinks();
   const shellLabels = useTuneShellLabels();
   const productConfig = getLocalizedTuneProductConfig(locale);
-  const cardIcons = [<BookOpenCheck className="size-4" />, <CalendarDays className="size-4" />, <Compass className="size-4" />];
+  const tune = useTune();
+  const favoriteIds = useMemo(() => new Set(tune.favoriteStations.map((station) => station.id)), [tune.favoriteStations]);
+  const recommendationReason = tune.recommendations.length ? labels.bodyReady : labels.bodyEmpty;
 
   return (
     <ProtectedRoute>
-      <AppShell accountArea={<AccountUserButton />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <Card className="tune-paper gap-0 overflow-hidden rounded-[1.5rem] border-[#d7c494] p-0 text-[#112a55] shadow-lg shadow-[#172f5c]/8">
-            <div className="grid min-h-[32rem] lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="flex flex-col justify-between gap-8 p-6 sm:p-8">
-                <div>
-                  <p className="flex items-center gap-2 text-sm font-semibold text-[#5a8f2f]">
-                    <Sparkles className="size-4" aria-hidden="true" />
-                    Avi
-                  </p>
-                  <h1 className="mt-3 text-4xl font-semibold leading-tight">{text.avi.title}</h1>
-                  <p className="mt-4 text-base leading-7 text-[#334766]">
-                    {text.avi.body}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <Button asChild className="rounded-full bg-[#112a55] text-white hover:bg-[#19396f]">
-                    <Link to={localizedTunePath("/listen", locale)}>
-                      <Radio className="size-4" aria-hidden="true" />
-                      {text.avi.radioCta}
-                    </Link>
+      <AppShell accountArea={<TuneAccountArea />} footerLabels={text.footer} labels={shellLabels} navLinks={navLinks} product={productConfig}>
+        <div className="grid gap-6">
+          <Card className="tune-paper gap-0 overflow-hidden rounded-lg border-[#d7c494] p-0 text-[#112a55] shadow-lg shadow-[#172f5c]/8">
+            <div className="grid lg:grid-cols-[1fr_21rem]">
+              <div className="p-6 sm:p-8">
+                <p className="flex items-center gap-2 text-sm font-semibold text-[#087f79]"><Sparkles className="size-4" /> Avi</p>
+                <h1 className="mt-3 text-3xl font-semibold leading-tight">{labels.title}</h1>
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-[#53617a]">{recommendationReason}</p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button asChild className="rounded-lg bg-[#112a55] text-white hover:bg-[#19396f]">
+                    <Link to={localizedTunePath("/listen", locale)}><Radio className="size-4" /> {labels.search}</Link>
                   </Button>
-                  <Button asChild variant="outline" className="rounded-full border-[#c8ad72] bg-[#fff8df]/76">
-                    <Link to={localizedTunePath("/library", locale)}>{text.avi.libraryCta}</Link>
+                  <Button asChild className="rounded-lg" variant="outline">
+                    <Link to={localizedTunePath("/library", locale)}><Library className="size-4" /> {labels.library}</Link>
                   </Button>
                 </div>
               </div>
-              <div className="relative min-h-80 overflow-hidden bg-[#10284f]">
-                <div className="absolute inset-0 bg-[linear-gradient(160deg,#17386c_0%,#10284f_56%,#07162e_100%)]" />
-                <img className="relative h-full w-full object-cover object-bottom" src={tuneBrandAssets.aviLoginPeek} alt="" />
+              <div className="relative min-h-64 overflow-hidden bg-[#10284f]">
+                <img className="h-full w-full object-cover object-bottom" src={tuneBrandAssets.aviLoginPeek} alt="" />
               </div>
             </div>
           </Card>
 
-          <div className="grid gap-4">
-            {text.avi.cards.map((card, index) => (
-              <AviCard key={card.title} icon={cardIcons[index]} title={card.title} text={card.text} />
-            ))}
+          <div className="grid gap-4 md:grid-cols-3">
+            <SignalCard icon={<Heart className="size-4" />} label={labels.labels.favorites} value={tune.favoriteStations.length} />
+            <SignalCard icon={<Compass className="size-4" />} label={labels.labels.recents} value={tune.recentStations.length} />
+            <SignalCard icon={<Sparkles className="size-4" />} label={labels.labels.savedTracks} value={tune.savedDiscoveries.length} />
           </div>
-        </section>
+
+          <section className="grid gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-[#112a55]">{labels.recommended}</h2>
+              <p className="text-sm text-[#53617a]">{labels.note}</p>
+            </div>
+            {tune.recommendations.length === 0 ? (
+              <Card className="rounded-lg border-dashed border-[#c8ad72] bg-[#fff8df]/72 p-8 text-center text-[#112a55]">
+                <h2 className="text-2xl font-semibold">{labels.emptyTitle}</h2>
+                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#53617a]">{labels.emptyBody}</p>
+              </Card>
+            ) : null}
+            {tune.recommendations.map((station) => (
+              <TuneStationCard
+                key={`avi-${station.id}`}
+                feedback={tune.stationFeedback[station.id]?.feedback}
+                isFavorite={favoriteIds.has(station.id)}
+                onFeedback={tune.setStationFeedback}
+                onPlay={(nextStation, source, queue) => {
+                  tune.recordDailyFeatureUse("aviActionsPerDay", nextStation.id);
+                  void tune.playStation(nextStation, source, queue);
+                }}
+                onToggleFavorite={tune.toggleFavorite}
+                queue={tune.recommendations}
+                source="avi"
+                station={station}
+              />
+            ))}
+          </section>
+        </div>
       </AppShell>
     </ProtectedRoute>
   );
 }
 
-function AviCard({ icon, text, title }: { icon: ReactNode; text: string; title: string }) {
+function SignalCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
-    <Card className="gap-2 rounded-[1.25rem] border-[#d7c494] bg-[#fff8df]/88 p-5 py-5 text-[#112a55] shadow-sm shadow-[#172f5c]/6">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <span className="text-[#5a8f2f]">{icon}</span>
-        {title}
-      </div>
-      <p className="text-sm leading-6 text-[#53617a]">{text}</p>
+    <Card className="rounded-lg border-[#d7c494] bg-[#fff8df]/80 p-4 text-[#112a55]">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[#087f79]">{icon}{label}</div>
+      <div className="mt-2 text-3xl font-semibold">{value}</div>
     </Card>
   );
 }

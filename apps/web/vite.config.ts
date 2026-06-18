@@ -50,5 +50,5 @@ export default defineConfig({
   server: {
     port: 5194
   },
-  plugins: [tanstackStart(), viteReact(), tailwindcss()]
+  plugins: [tanstackStart({ serverFns: { disableCsrfMiddlewareWarning: true } }), viteReact(), tailwindcss()]
 });

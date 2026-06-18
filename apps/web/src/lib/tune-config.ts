@@ -53,6 +53,10 @@ export function getAccountPublishableKey() {
   return import.meta.env.VITE_ACCOUNTAV_PUBLISHABLE_KEY as string | undefined;
 }
 
+export function getTuneApiBaseUrl() {
+  return requiredUrl(import.meta.env.VITE_TUNEAV_API_BASE_URL, "VITE_TUNEAV_API_BASE_URL");
+}
+
 function requiredUrl(value: string | undefined, key: string) {
   const normalized = trimTrailingSlash(value);
   if (!normalized) {

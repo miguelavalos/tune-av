@@ -7,13 +7,13 @@ import { Card } from "@/components/ui/card";
 import { tuneBrandAssets, tuneProductConfig } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
-export function TuneLoginPage() {
+export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
   const locale = useAppsAvLocale();
   const text = useTuneText();
 
   return (
-    <div className="tune-paper min-h-screen overflow-hidden px-5 pt-5 sm:px-8">
-      <main className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur md:grid-cols-[0.95fr_1.05fr]">
+    <div className={compact ? "overflow-hidden" : "tune-paper min-h-screen overflow-hidden px-5 pt-5 sm:px-8"}>
+      <main className={compact ? "mx-auto grid max-w-6xl overflow-hidden rounded-lg border border-[#d7c494] bg-[#fff6da]/88 shadow-lg shadow-[#172f5c]/10 md:grid-cols-[0.95fr_1.05fr]" : "mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur md:grid-cols-[0.95fr_1.05fr]"}>
         <section className="flex flex-col justify-between gap-10 p-7 sm:p-10 lg:p-12">
           <div>
             <img className="h-auto w-56 sm:w-64" src={tuneBrandAssets.logo} alt="Tune AV" />
@@ -73,7 +73,7 @@ export function TuneLoginPage() {
           </div>
         </section>
       </main>
-      <AvAppFooter className="mt-4 border-transparent bg-transparent px-0 pb-4 pt-2" labels={text.footer} product={tuneProductConfig} />
+      {compact ? null : <AvAppFooter className="mt-4 border-transparent bg-transparent px-0 pb-4 pt-2" labels={text.footer} product={tuneProductConfig} />}
     </div>
   );
 }

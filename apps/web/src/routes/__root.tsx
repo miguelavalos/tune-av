@@ -1,8 +1,12 @@
 import { AccountAvProvider } from "@avalsys/account-av-web";
 import { AppsAvWebProvider, getAppsAvLocaleFromSearch, useAppsAvLocale } from "@avalsys/apps-av-web";
-import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
+import { createIsomorphicFn } from "@tanstack/react-start";
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { getAccountApiBaseUrl, getAccountPublishableKey } from "@/lib/tune-config";
+import { getRequestSearch } from "@/lib/tune-request.server";
+import { TunePlayer } from "@/components/tune-player";
+import { TuneAppProvider } from "@/lib/tune-store";
 import { localizedTunePath, useTuneAccountLocalization, useTuneText } from "@/lib/tune-i18n";
 import "../styles.css";
 
@@ -26,7 +30,7 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
-  const search = useRouterState({ select: (state: { location: { searchStr: string } }) => state.location.searchStr });
+  const search = getInitialSearch();
   const initialLocale = getAppsAvLocaleFromSearch(search);
 
   return (
@@ -43,6 +47,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
     </html>
   );
 }
+
+const getInitialSearch = createIsomorphicFn()
+  .client(() => window.location.search)
+  .server(() => getRequestSearch());
 
 function AccountBoundary({ children }: Readonly<{ children: ReactNode }>) {
   const publishableKey = getAccountPublishableKey();
@@ -64,7 +72,10 @@ function AccountBoundary({ children }: Readonly<{ children: ReactNode }>) {
       signInUrl={localizedTunePath("/sign-in", locale)}
       signUpUrl={localizedTunePath("/sign-in", locale)}
     >
-      {children}
+      <TuneAppProvider>
+        {children}
+        <TunePlayer />
+      </TuneAppProvider>
     </AccountAvProvider>
   );
 }

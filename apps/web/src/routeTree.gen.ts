@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MusicRouteImport } from './routes/music'
 import { Route as ListenRouteImport } from './routes/listen'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as AviRouteImport } from './routes/avi'
@@ -18,6 +20,16 @@ import { Route as IndexRouteImport } from './routes/index'
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicRoute = MusicRouteImport.update({
+  id: '/music',
+  path: '/music',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListenRoute = ListenRouteImport.update({
@@ -46,6 +58,8 @@ export interface FileRoutesByFullPath {
   '/avi': typeof AviRoute
   '/library': typeof LibraryRoute
   '/listen': typeof ListenRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +67,8 @@ export interface FileRoutesByTo {
   '/avi': typeof AviRoute
   '/library': typeof LibraryRoute
   '/listen': typeof ListenRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesById {
@@ -61,14 +77,38 @@ export interface FileRoutesById {
   '/avi': typeof AviRoute
   '/library': typeof LibraryRoute
   '/listen': typeof ListenRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/avi' | '/library' | '/listen' | '/sign-in'
+  fullPaths:
+    | '/'
+    | '/avi'
+    | '/library'
+    | '/listen'
+    | '/music'
+    | '/settings'
+    | '/sign-in'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/avi' | '/library' | '/listen' | '/sign-in'
-  id: '__root__' | '/' | '/avi' | '/library' | '/listen' | '/sign-in'
+  to:
+    | '/'
+    | '/avi'
+    | '/library'
+    | '/listen'
+    | '/music'
+    | '/settings'
+    | '/sign-in'
+  id:
+    | '__root__'
+    | '/'
+    | '/avi'
+    | '/library'
+    | '/listen'
+    | '/music'
+    | '/settings'
+    | '/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +116,8 @@ export interface RootRouteChildren {
   AviRoute: typeof AviRoute
   LibraryRoute: typeof LibraryRoute
   ListenRoute: typeof ListenRoute
+  MusicRoute: typeof MusicRoute
+  SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
 }
 
@@ -86,6 +128,20 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music': {
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/listen': {
@@ -124,6 +180,8 @@ const rootRouteChildren: RootRouteChildren = {
   AviRoute: AviRoute,
   LibraryRoute: LibraryRoute,
   ListenRoute: ListenRoute,
+  MusicRoute: MusicRoute,
+  SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
 }
 export const routeTree = rootRouteImport
