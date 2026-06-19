@@ -2,7 +2,7 @@ import { AccountSignIn, SignedIn, SignedOut } from "@avalsys/account-av-web";
 import { AvAppFooter, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { tuneBrandAssets, tuneProductConfig } from "@/lib/tune-config";
+import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/sign-in")({
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/sign-in")({
 function SignInRoute() {
   const locale = useAppsAvLocale();
   const text = useTuneText();
+  const product = getLocalizedTuneProductConfig(locale);
 
   return (
     <div className="tune-paper flex min-h-screen flex-col bg-[#fff3cf]">
@@ -67,7 +68,7 @@ function SignInRoute() {
           </div>
         </section>
       </main>
-      <AvAppFooter labels={text.footer} product={tuneProductConfig} />
+      <AvAppFooter labels={text.footer} product={product} />
     </div>
   );
 }

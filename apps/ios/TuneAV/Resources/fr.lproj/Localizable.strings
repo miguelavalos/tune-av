@@ -41,7 +41,7 @@
 "auth.legalConsent" = "En continuant, vous acceptez les [Conditions](%1$@) et la [Politique de confidentialité](%2$@) d'Tune AV.";
 "auth.benefit.stations" = "Stations";
 "auth.benefit.songs" = "Chansons";
-"auth.benefit.sync" = "Sync";
+"auth.benefit.sync" = "Synchronisation";
 "auth.options.skip" = "Passer pour l'instant";
 "auth.options.subtitle" = "Utilisez votre compte AV pour continuer sur vos appareils.";
 "auth.options.title" = "Connecter votre compte";
@@ -57,7 +57,7 @@
 "genre.hipHop" = "Hip-Hop";
 "genre.indie" = "Indie";
 "genre.latin" = "Latin / Monde";
-"genre.oldies" = "Oldies";
+"genre.oldies" = "Classiques rétro";
 "genre.classical" = "Classique";
 "genre.country" = "Country / Folk";
 "genre.news" = "Infos";
@@ -697,7 +697,7 @@
 "feedback.liked" = "J'aime";
 "feedback.notForMe" = "Pas pour moi";
 "player.avi.action.detail" = "Détail";
-"player.avi.action.favorite" = "Favorite";
+"player.avi.action.favorite" = "Favori";
 "player.avi.action.web" = "Web";
 "player.avi.ask" = "Demander à Avi";
 "player.avi.feedback.detail" = "Avi ajuste tes préférences et garde les actions à portée de main.";
@@ -725,7 +725,7 @@
 "player.ratingTarget.song" = "Chanson";
 "shell.accessibility.closeArtwork" = "Fermer l'artwork";
 "shell.accessibility.listenToRadio" = "Écouter cette radio";
-"shell.accessibility.stop" = "Stop";
+"shell.accessibility.stop" = "Arrêter";
 "shell.accessibility.stopListening" = "Arrêter l'écoute";
 "shell.accessibility.showOverview" = "Afficher le résumé";
 "shell.accessibility.zoomArtwork" = "Agrandir l'artwork";
@@ -828,7 +828,7 @@
 "shell.avi.state.exploring" = "Exploration";
 "shell.avi.state.thinking" = "Réflexion";
 "shell.avi.status.info" = "info";
-"shell.avi.status.live" = "live";
+"shell.avi.status.live" = "direct";
 "shell.avi.status.playing" = "en lecture";
 "shell.common.playingNow" = "En lecture";
 "shell.common.radio" = "Radio";
@@ -917,7 +917,7 @@
 "paywall.benefit.avi" = "Plus d'actions Avi par jour pour les paroles, les liens musicaux, le partage et la recherche.";
 "paywall.benefit.discovery" = "Une meilleure découverte radio personnalisée quand les signaux du compte sont activés.";
 "paywall.benefit.library" = "Enregistre plus de radios et de chansons détectées dans ta bibliothèque.";
-"paywall.benefit.sync" = "Cloud Sync garde les radios enregistrées, les titres enregistrés et le feedback d'Avi à jour sur tes appareils connectés.";
+"paywall.benefit.sync" = "La synchronisation cloud garde les radios enregistrées, les titres enregistrés et le feedback d’Avi à jour sur tes appareils connectés.";
 "paywall.close" = "Fermer";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -943,13 +943,13 @@
 "profile.pro.subtitle.guest" = "Connecte-toi avant de démarrer un abonnement.";
 "profile.pro.subtitle.pro" = "Ton accès Pro est actif. Gère la facturation dans ton compte App Store.";
 "profile.pro.sync.detail" = "Synchronise les radios enregistrées, les titres enregistrés et le feedback d'Avi sur tes appareils connectés.";
-"profile.pro.sync.title" = "Cloud Sync";
+"profile.pro.sync.title" = "Synchronisation cloud";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Voir Pro";
 "paywall.benefit.avi.title" = "Plus d'Avi";
 "paywall.benefit.discovery.title" = "Meilleure découverte";
 "paywall.benefit.library.title" = "Bibliothèque plus grande";
-"paywall.benefit.sync.title" = "Cloud Sync";
+"paywall.benefit.sync.title" = "Synchronisation cloud";
 "paywall.scene.detail" = "Plus de radios, chansons et actions Avi sur tes appareils.";
 "paywall.scene.title" = "Tune AV Pro";
 "shell.accessibility.closeSignal" = "Fermer le signal";
@@ -991,8 +991,8 @@
 "shell.queue.short.saved" = "Enregistrées";
 "shell.queue.short.search" = "Recherche";
 "shell.queue.single" = "Radio actuelle";
-"shell.queue.stationCount.one" = "%d radio";
-"shell.queue.stationCount.other" = "%d radios";
+"shell.queue.stationCount.one" = "%d station";
+"shell.queue.stationCount.other" = "%d stations";
 "shell.queue.title" = "Lecture depuis";
 "settings.cellularPlayback.alert.message" = "Le réseau actuel peut utiliser les données mobiles. Tune AV ne lancera le flux que si vous continuez.";
 "settings.cellularPlayback.alert.play" = "Lire";

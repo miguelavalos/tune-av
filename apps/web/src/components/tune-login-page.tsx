@@ -4,12 +4,13 @@ import type { ReactNode } from "react";
 import { AvAppFooter, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { tuneBrandAssets, tuneProductConfig } from "@/lib/tune-config";
+import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
   const locale = useAppsAvLocale();
   const text = useTuneText();
+  const product = getLocalizedTuneProductConfig(locale);
 
   return (
     <div className={compact ? "overflow-hidden" : "tune-paper min-h-screen overflow-hidden px-5 pt-5 sm:px-8"}>
@@ -73,7 +74,7 @@ export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
           </div>
         </section>
       </main>
-      {compact ? null : <AvAppFooter className="mt-4 border-transparent bg-transparent px-0 pb-4 pt-2" labels={text.footer} product={tuneProductConfig} />}
+      {compact ? null : <AvAppFooter className="mt-4 border-transparent bg-transparent px-0 pb-4 pt-2" labels={text.footer} product={product} />}
     </div>
   );
 }

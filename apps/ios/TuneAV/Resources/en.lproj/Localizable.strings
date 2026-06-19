@@ -376,7 +376,7 @@
 "profile.subtitle.accountFallback" = "Account";
 "profile.subtitle.guest" = "Local mode";
 "profile.summary.account.detail.guest" = "You are listening in local mode on this device.";
-"profile.summary.account.detail.signedIn" = "Signed in";
+"profile.summary.account.detail.signedIn" = "Signed in as %@.";
 "profile.summary.account.title" = "Session";
 "profile.summary.plan.detail.free" = "Connected account";
 "profile.summary.plan.detail.guest" = "Local mode";

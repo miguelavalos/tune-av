@@ -41,7 +41,7 @@
 "auth.legalConsent" = "En continuar, acceptes els [Termes](%1$@) i la [Política de privacitat](%2$@) d'Tune AV.";
 "auth.benefit.stations" = "Emissores";
 "auth.benefit.songs" = "Cançons";
-"auth.benefit.sync" = "Sync";
+"auth.benefit.sync" = "Sincronització";
 "auth.options.skip" = "Ometre ara";
 "auth.options.subtitle" = "Fes servir el teu compte AV per continuar als teus dispositius.";
 "auth.options.title" = "Connecta el teu compte";
@@ -392,7 +392,7 @@
 "shell.count.artist.other" = "%d artistes";
 "shell.count.detectedSong.one" = "%d cançó detectada";
 "shell.count.detectedSong.other" = "%d cançons detectades";
-"shell.count.recent.short.one" = "%d recent";
+"shell.count.recent.short.one" = "%d recent local";
 "shell.count.recent.short.other" = "%d recents";
 "shell.count.recentSession.one" = "%d sessió recent";
 "shell.count.recentSession.other" = "%d sessions recents";
@@ -425,7 +425,7 @@
 "shell.home.featured.frontPage.subtitle" = "Un accés ràpid segons el que més escoltes.";
 "shell.home.featured.popular" = "Populars";
 "shell.home.recents.subtitle" = "Recupera el que vas escoltar fa poc.";
-"shell.home.recents.title" = "Recents";
+"shell.home.recents.title" = "Escoltes recents";
 "shell.home.section.popularCountry.subtitle" = "Les emissores en directe més escoltades ara mateix a %@.";
 "shell.home.section.popularCountry.title" = "Populars a %@";
 "shell.home.section.popularWorldwide.subtitle" = "Emissores en directe populars del directori global.";
@@ -517,7 +517,7 @@
 "shell.music.searchAccess.detail.filtering" = "Filtrant la memòria musical per %@.";
 "shell.music.searchAccess.title" = "Cerca cançons o artistes";
 "shell.music.sort.accessibilityLabel" = "Ordenar música per %@";
-"shell.music.sort.recent" = "Recent";
+"shell.music.sort.recent" = "Més recent";
 "shell.music.sort.strongest" = "Més descobriments";
 "shell.music.signal.history" = "Historial";
 "shell.music.signal.saved" = "Desades";
@@ -828,7 +828,7 @@
 "shell.avi.state.exploring" = "Explorant";
 "shell.avi.state.thinking" = "Pensant";
 "shell.avi.status.info" = "info";
-"shell.avi.status.live" = "live";
+"shell.avi.status.live" = "directe";
 "shell.avi.status.playing" = "sonant";
 "shell.common.playingNow" = "Sonant ara";
 "shell.common.radio" = "Ràdio";
@@ -885,7 +885,7 @@
 "shell.avi.music.artist.label" = "Artista";
 "shell.avi.music.artist.radios" = "Ràdios on ha sonat";
 "shell.avi.music.artist.savedSongs" = "Cançons desades";
-"shell.avi.music.feedback" = "Feedback";
+"shell.avi.music.feedback" = "Opinió";
 "shell.avi.music.feedback.empty" = "Sense feedback";
 "shell.avi.music.lastSeen" = "Última vegada";
 "shell.avi.music.latestSong" = "Última cançó";
@@ -917,7 +917,7 @@
 "paywall.benefit.avi" = "Més accions diàries d'Avi per a lletres, enllaços de música, compartir i cerca.";
 "paywall.benefit.discovery" = "Millor descobriment de ràdios personalitzat quan els senyals del compte estan actius.";
 "paywall.benefit.library" = "Desa més ràdios i cançons detectades a la biblioteca.";
-"paywall.benefit.sync" = "Cloud Sync manté ràdios desades, cançons desades i feedback d'Avi al dia als dispositius amb sessió.";
+"paywall.benefit.sync" = "La sincronització al núvol manté ràdios desades, cançons desades i feedback d'Avi al dia als dispositius amb sessió.";
 "paywall.close" = "Tancar";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -943,13 +943,13 @@
 "profile.pro.subtitle.guest" = "Inicia sessió abans de començar una subscripció.";
 "profile.pro.subtitle.pro" = "El teu accés Pro està actiu. Gestiona la facturació al teu compte de l'App Store.";
 "profile.pro.sync.detail" = "Sincronitza ràdios desades, cançons desades i feedback d'Avi entre dispositius amb sessió.";
-"profile.pro.sync.title" = "Cloud Sync";
+"profile.pro.sync.title" = "Sincronització al núvol";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Veure Pro";
 "paywall.benefit.avi.title" = "Més Avi";
 "paywall.benefit.discovery.title" = "Millor descobriment";
 "paywall.benefit.library.title" = "Biblioteca més gran";
-"paywall.benefit.sync.title" = "Cloud Sync";
+"paywall.benefit.sync.title" = "Sincronització al núvol";
 "paywall.scene.detail" = "Més ràdios, cançons i accions d'Avi a tots els dispositius.";
 "paywall.scene.title" = "Tune AV Pro";
 "shell.accessibility.closeSignal" = "Tancar senyal";
@@ -985,7 +985,7 @@
 "shell.queue.saved" = "Ràdios desades";
 "shell.queue.search" = "Resultats de cerca";
 "shell.queue.short.home" = "Inici";
-"shell.queue.short.popular" = "Popular";
+"shell.queue.short.popular" = "Populars";
 "shell.queue.short.radio" = "Ràdio";
 "shell.queue.short.recent" = "Recents";
 "shell.queue.short.saved" = "Desades";

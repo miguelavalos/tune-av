@@ -41,7 +41,7 @@
 "auth.legalConsent" = "Al continuar, aceptas los [Términos](%1$@) y la [Política de privacidad](%2$@) de Tune AV.";
 "auth.benefit.stations" = "Emisoras";
 "auth.benefit.songs" = "Canciones";
-"auth.benefit.sync" = "Sync";
+"auth.benefit.sync" = "Sincronización";
 "auth.options.skip" = "Omitir por ahora";
 "auth.options.subtitle" = "Usa tu cuenta AV para continuar en tus dispositivos.";
 "auth.options.title" = "Conecta tu cuenta";
@@ -376,7 +376,7 @@
 "profile.subtitle.accountFallback" = "Cuenta";
 "profile.subtitle.guest" = "Sin cuenta conectada";
 "profile.summary.account.detail.guest" = "Estás escuchando en modo local en este dispositivo.";
-"profile.summary.account.detail.signedIn" = "Sesión iniciada";
+"profile.summary.account.detail.signedIn" = "Sesión iniciada como %@.";
 "profile.summary.account.title" = "Sesión";
 "profile.summary.plan.detail.free" = "Cuenta conectada";
 "profile.summary.plan.detail.guest" = "Modo local";
@@ -787,7 +787,7 @@
 "shell.accessibility.closeArtwork" = "Cerrar artwork";
 "shell.accessibility.closeSignal" = "Cerrar señal";
 "shell.accessibility.listenToRadio" = "Escuchar esta radio";
-"shell.accessibility.stop" = "Stop";
+"shell.accessibility.stop" = "Detener";
 "shell.accessibility.stopListening" = "Dejar de escuchar";
 "shell.accessibility.showOverview" = "Mostrar resumen";
 "shell.accessibility.zoomArtwork" = "Ampliar artwork";
@@ -800,14 +800,14 @@
 "shell.queue.saved" = "Radios guardadas";
 "shell.queue.search" = "Resultados de búsqueda";
 "shell.queue.short.home" = "Inicio";
-"shell.queue.short.popular" = "Popular";
+"shell.queue.short.popular" = "Populares";
 "shell.queue.short.radio" = "Radio";
 "shell.queue.short.recent" = "Recientes";
 "shell.queue.short.saved" = "Guardadas";
 "shell.queue.short.search" = "Buscar";
 "shell.queue.single" = "Radio actual";
-"shell.queue.stationCount.one" = "%d radio";
-"shell.queue.stationCount.other" = "%d radios";
+"shell.queue.stationCount.one" = "%d emisora";
+"shell.queue.stationCount.other" = "%d emisoras";
 "shell.queue.title" = "Reproduciendo desde";
 "shell.avi.actions.ask" = "Pídeselo a Avi";
 "shell.avi.actions.askShort" = "Pide a Avi";
@@ -930,7 +930,7 @@
 "shell.avi.state.exploring" = "Explorando";
 "shell.avi.state.thinking" = "Pensando";
 "shell.avi.status.info" = "info";
-"shell.avi.status.live" = "live";
+"shell.avi.status.live" = "directo";
 "shell.avi.status.playing" = "sonando";
 "shell.common.playingNow" = "Sonando ahora";
 "shell.common.radio" = "Radio";
@@ -988,7 +988,7 @@
 "shell.avi.music.artist.label" = "Artista";
 "shell.avi.music.artist.radios" = "Radios donde ha sonado";
 "shell.avi.music.artist.savedSongs" = "Canciones guardadas";
-"shell.avi.music.feedback" = "Feedback";
+"shell.avi.music.feedback" = "Opinión";
 "shell.avi.music.feedback.empty" = "Sin feedback";
 "shell.avi.music.lastSeen" = "Última vez";
 "shell.avi.music.latestSong" = "Última canción";
@@ -1023,8 +1023,8 @@
 "paywall.benefit.discovery.title" = "Mejor descubrimiento";
 "paywall.benefit.library" = "Mantén una memoria más grande de radios y canciones detectadas.";
 "paywall.benefit.library.title" = "Más memoria";
-"paywall.benefit.sync" = "Cloud Sync mantiene radios guardadas, canciones guardadas y feedback de Avi al día en tus dispositivos con sesión.";
-"paywall.benefit.sync.title" = "Cloud Sync";
+"paywall.benefit.sync" = "La sincronización en la nube mantiene radios guardadas, canciones guardadas y feedback de Avi al día en tus dispositivos con sesión.";
+"paywall.benefit.sync.title" = "Sincronización en la nube";
 "paywall.close" = "Cerrar";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -1039,7 +1039,7 @@
 "paywall.status.purchasePending" = "Compra recibida. Tune AV desbloqueará Pro cuando se actualice el acceso de tu cuenta.";
 "paywall.status.restorePending" = "Restauración completada. Si tu App Store tiene una suscripción activa para esta cuenta, Tune AV desbloqueará Pro cuando Apps AV confirme el acceso.";
 "paywall.subscriptionTerms" = "Tune AV Pro es una suscripción mensual con renovación automática. Se te cobrará %@ por cada periodo de 1 mes hasta que canceles en los ajustes del App Store.";
-"paywall.subtitle" = "Mejora tu cuenta de Tune AV con sesión para más acciones de Avi, más música guardada y Cloud Sync.";
+"paywall.subtitle" = "Mejora tu cuenta de Tune AV con sesión para más acciones de Avi, más música guardada y sincronización en la nube.";
 "paywall.terms" = "Términos";
 "paywall.title" = "Dale a Avi más espacio para recordar";
 "profile.pro.avi.detail" = "Usa letras, enlaces de música, compartir y búsquedas de ayuda sin límites diarios.";
@@ -1051,11 +1051,11 @@
 "profile.pro.subscription.activeThrough" = "Pro está activo hasta el %@.";
 "profile.pro.subscription.billingIssue" = "Hay un problema de facturación. Gestiona la suscripción en tu cuenta del App Store.";
 "profile.pro.subscription.title" = "Suscripción";
-"profile.pro.subtitle.free" = "Dale a Avi más memoria, más acciones y Cloud Sync.";
+"profile.pro.subtitle.free" = "Dale a Avi más memoria, más acciones y sincronización en la nube.";
 "profile.pro.subtitle.guest" = "Inicia sesión para comparar Pro después de probar Avi y guardar radios.";
 "profile.pro.subtitle.pro" = "Tu acceso Pro está activo. Gestiona la facturación en tu cuenta del App Store.";
 "profile.pro.sync.detail" = "Lleva radios guardadas, canciones guardadas y feedback de Avi entre dispositivos con sesión.";
-"profile.pro.sync.title" = "Cloud Sync";
+"profile.pro.sync.title" = "Sincronización en la nube";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Ver Pro";
 "player.control.listen" = "Escuchar";

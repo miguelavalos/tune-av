@@ -41,7 +41,7 @@
 "auth.legalConsent" = "Wenn du fortfährst, stimmst du den [Nutzungsbedingungen](%1$@) und der [Datenschutzerklärung](%2$@) von Tune AV zu.";
 "auth.benefit.stations" = "Sender";
 "auth.benefit.songs" = "Songs";
-"auth.benefit.sync" = "Sync";
+"auth.benefit.sync" = "Synchronisierung";
 "auth.options.skip" = "Vorerst überspringen";
 "auth.options.subtitle" = "Nutze dein AV-Konto, um auf deinen Geräten fortzufahren.";
 "auth.options.title" = "Konto verbinden";
@@ -57,7 +57,7 @@
 "genre.hipHop" = "Hip-Hop";
 "genre.indie" = "Indie";
 "genre.latin" = "Latin / Welt";
-"genre.oldies" = "Oldies";
+"genre.oldies" = "Klassiker";
 "genre.classical" = "Klassik";
 "genre.country" = "Country / Folk";
 "genre.news" = "Nachrichten";
@@ -79,13 +79,13 @@
 "limits.upgrade.discoveryShare.message" = "Du hast die heutigen %d Entdeckungsfreigaben genutzt. Pro schaltet mehr Möglichkeiten frei, deinen Musikverlauf zu exportieren und zu behalten.";
 "limits.upgrade.discoveryShare.title" = "Entdeckungen teilen ist begrenzt";
 "limits.upgrade.eyebrow" = "Tune AV Pro";
-"limits.upgrade.favoriteStations.message" = "Du hast in diesem Modus %d Radios in deiner Sammlung gespeichert. Pro schaltet mehr Platz zum Organisieren deiner Radios und Sync frei.";
+"limits.upgrade.favoriteStations.message" = "Du hast in diesem Modus %d Radios in deiner Sammlung gespeichert. Pro schaltet mehr Platz zum Organisieren deiner Radios und Synchronisierung frei.";
 "limits.upgrade.favoriteStations.title" = "Sammlungslimit erreicht";
 "limits.upgrade.lyrics.message" = "Du hast die heutigen %d Liedtext-Suchen genutzt. Pro hält die Liedtextsuche ohne tägliche Limits des lokalen Modus verfügbar.";
 "limits.upgrade.lyrics.title" = "Liedtext-Suchen sind begrenzt";
 "limits.upgrade.notNow" = "Nicht jetzt";
 "limits.upgrade.profile" = "Pro im Profil ansehen";
-"limits.upgrade.savedTracks.message" = "Dieser Plan erlaubt %d gespeicherte Songs. Wenn du mehr speichern willst, prüfe deine Kontooptionen. Pro erhöht das Limit auf 1000 Songs und fügt Sync hinzu.";
+"limits.upgrade.savedTracks.message" = "Dieser Plan erlaubt %d gespeicherte Songs. Wenn du mehr speichern willst, prüfe deine Kontooptionen. Pro erhöht das Limit auf 1000 Songs und fügt Synchronisierung hinzu.";
 "limits.upgrade.savedTracks.title" = "Limit für gespeicherte Songs erreicht";
 "limits.upgrade.spotify.message" = "Du hast die heutigen %d Spotify-Suchen genutzt. Pro hält Musiksuchen ohne tägliche Limits des lokalen Modus verfügbar.";
 "limits.upgrade.spotify.title" = "Spotify-Suchen sind begrenzt";
@@ -435,7 +435,7 @@
 "shell.home.section.topGenre.subtitle" = "Verzeichnis-Ergebnisse für dieses Genre.";
 "shell.home.section.topGenre.title" = "Top %@";
 "shell.home.subtitle" = "Dein Live-Radio-Desk für heute: aktuelles Signal, Rückkehrpunkte, gespeicherte Radios und Entdeckung.";
-"shell.home.title" = "Daily Tuning Desk";
+"shell.home.title" = "Täglicher Tuning-Tisch";
 "shell.library.favorites.empty" = "Noch keine Radios in deiner Sammlung";
 "shell.library.favorites.empty.detail" = "Speichere Sender aus Start oder Suche und sie erscheinen hier.";
 "shell.library.favorites.noMatch" = "Keine Radios in deiner Sammlung passen zu dieser Suche";
@@ -566,7 +566,7 @@
 "shell.stationDetail.field.language" = "Sprache";
 "shell.stationDetail.field.lastCheck" = "Letzte Prüfung";
 "shell.stationDetail.field.state" = "Bundesland";
-"shell.stationDetail.field.website" = "Website";
+"shell.stationDetail.field.website" = "Webseite";
 "shell.stationDetail.editorial.confidence" = "Vertrauen: %@";
 "shell.stationDetail.editorial.format.community" = "Community";
 "shell.stationDetail.editorial.format.mixed" = "Gemischt";
@@ -672,7 +672,7 @@
 "profile.sync.headline.failed" = "Verbindung nötig";
 "profile.sync.headline.needsAttention" = "Benötigt Aufmerksamkeit";
 "profile.sync.headline.pending" = "Wartet auf Versand";
-"profile.sync.headline.ready" = "Bereit zum Sync";
+"profile.sync.headline.ready" = "Bereit zur Synchronisierung";
 "profile.sync.headline.synced" = "Alles aktuell";
 "profile.sync.headline.syncing" = "Synchronisiert";
 "profile.sync.headline.updating" = "Daten werden aktualisiert";
@@ -828,7 +828,7 @@
 "shell.avi.state.exploring" = "Erkundet";
 "shell.avi.state.thinking" = "Denkt nach";
 "shell.avi.status.info" = "Info";
-"shell.avi.status.live" = "live";
+"shell.avi.status.live" = "aktiv";
 "shell.avi.status.playing" = "läuft";
 "shell.common.playingNow" = "Läuft gerade";
 "shell.common.radio" = "Radio";
@@ -917,7 +917,7 @@
 "paywall.benefit.avi" = "Mehr tägliche Avi-Aktionen für Songtexte, Musiklinks, Teilen und Suche.";
 "paywall.benefit.discovery" = "Bessere personalisierte Radiosuche, wenn kontobasierte Signale aktiv sind.";
 "paywall.benefit.library" = "Speichere mehr Radios und erkannte Songs in deiner Mediathek.";
-"paywall.benefit.sync" = "Cloud Sync hält gespeicherte Radios, gespeicherte Songs und Avi-Feedback auf angemeldeten Geräten aktuell.";
+"paywall.benefit.sync" = "Cloud-Sync hält gespeicherte Radios, gespeicherte Songs und Avi-Feedback auf angemeldeten Geräten aktuell.";
 "paywall.close" = "Schließen";
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
@@ -943,13 +943,13 @@
 "profile.pro.subtitle.guest" = "Melde dich an, bevor du ein Abo startest.";
 "profile.pro.subtitle.pro" = "Dein Pro-Zugriff ist aktiv. Verwalte die Abrechnung in deinem App Store Konto.";
 "profile.pro.sync.detail" = "Synchronisiere gespeicherte Radios, gespeicherte Songs und Avi-Feedback auf angemeldeten Geräten.";
-"profile.pro.sync.title" = "Cloud Sync";
+"profile.pro.sync.title" = "Cloud-Sync";
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "Pro ansehen";
 "paywall.benefit.avi.title" = "Mehr Avi";
 "paywall.benefit.discovery.title" = "Bessere Entdeckung";
 "paywall.benefit.library.title" = "Größere Mediathek";
-"paywall.benefit.sync.title" = "Cloud Sync";
+"paywall.benefit.sync.title" = "Cloud-Sync";
 "paywall.scene.detail" = "Mehr Radios, Songs und Avi-Aktionen auf deinen Geräten.";
 "paywall.scene.title" = "Tune AV Pro";
 "shell.accessibility.closeSignal" = "Signal schließen";

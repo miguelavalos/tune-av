@@ -23,14 +23,24 @@ export const tuneProductConfig: AppsAvProductConfig = {
 };
 
 export function getLocalizedTuneProductConfig(locale: AppsAvLocale): AppsAvProductConfig {
+  const labels = productConfigLabels[locale] ?? productConfigLabels.en;
+
   return {
     ...tuneProductConfig,
     assistant: tuneProductConfig.assistant
       ? {
           ...tuneProductConfig.assistant,
-          href: localizedAppPath("/avi", locale)
+          href: localizedAppPath("/avi", locale),
+          label: labels.assistant
         }
-      : undefined
+      : undefined,
+    links: {
+      deleteAccount: localizeExternalLink(tuneProductConfig.links.deleteAccount, labels.deleteAccount),
+      privacy: localizeExternalLink(tuneProductConfig.links.privacy, labels.privacy),
+      suite: localizeExternalLink(tuneProductConfig.links.suite, labels.suite),
+      support: localizeExternalLink(tuneProductConfig.links.support, labels.support),
+      terms: localizeExternalLink(tuneProductConfig.links.terms, labels.terms)
+    }
   };
 }
 
@@ -85,6 +95,10 @@ function externalLink(href: string | undefined, label: string) {
   return normalized ? { href: normalized, label, external: true } : undefined;
 }
 
+function localizeExternalLink(link: AppsAvProductConfig["links"][keyof AppsAvProductConfig["links"]], label: string) {
+  return link ? { ...link, label } : undefined;
+}
+
 function normalizeHref(value: string | undefined) {
   if (!value) {
     return "";
@@ -103,3 +117,11 @@ function localizedAppPath(pathname: string, locale: AppsAvLocale) {
 
   return locale === "en" ? path : `${path}${separator}lang=${locale}`;
 }
+
+const productConfigLabels: Record<AppsAvLocale, { assistant: string; deleteAccount: string; privacy: string; suite: string; support: string; terms: string }> = {
+  ca: { assistant: "Obre la guia d'Avi", deleteAccount: "Eliminar compte", privacy: "Privacitat", suite: "Apps", support: "Suport", terms: "Termes" },
+  de: { assistant: "Avi-Hilfe oeffnen", deleteAccount: "Konto loeschen", privacy: "Datenschutz", suite: "Apps", support: "Hilfe", terms: "Bedingungen" },
+  en: { assistant: "Open Avi guidance", deleteAccount: "Delete account", privacy: "Privacy", suite: "Apps", support: "Support", terms: "Terms" },
+  es: { assistant: "Abrir guia de Avi", deleteAccount: "Eliminar cuenta", privacy: "Privacidad", suite: "Apps", support: "Soporte", terms: "Terminos" },
+  fr: { assistant: "Ouvrir l'aide d'Avi", deleteAccount: "Supprimer le compte", privacy: "Confidentialite", suite: "Apps", support: "Assistance", terms: "Conditions" }
+};
