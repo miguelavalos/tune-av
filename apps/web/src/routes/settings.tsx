@@ -100,15 +100,20 @@ function SettingsRoute() {
               ]}
             />
             <SettingsInfoRow icon={<Search className="size-5" />} title={labels.tune.externalSearchTitle} detail={labels.tune.externalSearchDetail} />
-            <SettingsOptionButtonGroup
-              selectedId={tune.settings.externalSearchEngine}
-              onSelect={(id) => tune.setExternalSearchEngine(id as AppsAvExternalSearchEngine)}
-              options={appsAvExternalSearchEngines.map((engine) => ({
-                id: engine,
-                icon: <Search className="size-4" />,
-                label: labels.tune.externalSearchOptions[engine]
-              }))}
-            />
+            <label className="grid gap-2">
+              <span className="sr-only">{labels.tune.externalSearchTitle}</span>
+              <select
+                className="h-12 w-full rounded-lg border border-[#d7dfd2] bg-[#f7faf5] px-4 text-sm font-semibold text-[#283a2d] outline-none transition focus:border-[#68b957] focus:ring-2 focus:ring-[#68b957]/25 dark:border-white/12 dark:bg-white/8 dark:text-white"
+                value={tune.settings.externalSearchEngine}
+                onChange={(event) => tune.setExternalSearchEngine(event.target.value as AppsAvExternalSearchEngine)}
+              >
+                {appsAvExternalSearchEngines.map((engine) => (
+                  <option key={engine} value={engine}>
+                    {labels.tune.externalSearchOptions[engine]}
+                  </option>
+                ))}
+              </select>
+            </label>
           </SettingsSectionCard>
 
           <SettingsSectionCard title={labels.local.title} subtitle={labels.local.subtitle}>
