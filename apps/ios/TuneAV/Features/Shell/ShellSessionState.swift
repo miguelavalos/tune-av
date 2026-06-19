@@ -1,3 +1,4 @@
+import AVExternalLinkFoundation
 import SwiftUI
 
 struct ActiveListeningSession {
@@ -108,6 +109,7 @@ enum ShellAviExternalSearchResolver {
         currentTrackArtist: String?,
         currentTrackTitle: String?,
         destination: TuneAVExternalSearchURL.Destination,
+        engine: AVExternalSearchEngine,
         suffix: String? = nil
     ) -> URL? {
         let query = TuneAVExternalSearchURL.query(
@@ -115,24 +117,25 @@ enum ShellAviExternalSearchResolver {
             suffix: suffix
         )
         guard !query.isEmpty else { return nil }
-        return TuneAVExternalSearchURL.url(for: destination, query: query)
+        return TuneAVExternalSearchURL.url(for: destination, query: query, engine: engine)
     }
 
-    static func artistSearchURL(artist: String?) -> URL? {
+    static func artistSearchURL(artist: String?, engine: AVExternalSearchEngine) -> URL? {
         guard let artist = TuneAVExternalSearchURL.normalizedValue(artist) else { return nil }
-        return TuneAVExternalSearchURL.url(for: .web, query: artist)
+        return TuneAVExternalSearchURL.url(for: .web, query: artist, engine: engine)
     }
 
-    static func stationSearchURL(station: Station) -> URL? {
-        TuneAVExternalSearchURL.stationSearch(stationName: station.name)
+    static func stationSearchURL(station: Station, engine: AVExternalSearchEngine) -> URL? {
+        TuneAVExternalSearchURL.stationSearch(stationName: station.name, engine: engine)
     }
 
     static func externalSearchURL(
         query: String,
-        destination: TuneAVExternalSearchURL.Destination = .web
+        destination: TuneAVExternalSearchURL.Destination = .web,
+        engine: AVExternalSearchEngine
     ) -> URL? {
         guard let query = TuneAVExternalSearchURL.normalizedValue(query) else { return nil }
-        return TuneAVExternalSearchURL.url(for: destination, query: query)
+        return TuneAVExternalSearchURL.url(for: destination, query: query, engine: engine)
     }
 }
 

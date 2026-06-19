@@ -1,5 +1,7 @@
+import AVExternalLinkFoundation
 import AVHaptics
 import SwiftUI
+import UIKit
 
 struct MusicScreen: View {
     private static let pageSize = 40
@@ -277,10 +279,17 @@ struct MusicScreen: View {
     }
 
     private var musicExternalSearchRouter: MusicExternalSearchRouter {
-        MusicExternalSearchRouter { search in
-            guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
-            browserDestination = BrowserDestination(url: search.url)
-        }
+        MusicExternalSearchRouter(
+            openSearch: { search in
+                guard useDailyFeatureIfAllowed(search.feature, usageKey: search.url.absoluteString) else { return }
+                if AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode) == .system {
+                    UIApplication.shared.open(search.url)
+                } else {
+                    browserDestination = BrowserDestination(url: search.url)
+                }
+            },
+            searchEngine: AVExternalSearchEngine.resolved(from: libraryStore.settings.externalSearchEngine)
+        )
     }
 
     private func discoveryHeader(_ snapshot: MusicLibraryDerivedState) -> some View {

@@ -1,4 +1,6 @@
+import AVExternalLinkFoundation
 import SwiftUI
+import UIKit
 
 struct SearchScreen: View {
     @Binding var query: String
@@ -196,7 +198,11 @@ struct SearchScreen: View {
 
     private func openStationWebsite(_ station: Station) {
         guard let url = station.resolvedHomepageURL else { return }
-        browserDestination = BrowserDestination(url: url)
+        if AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode) == .system {
+            UIApplication.shared.open(url)
+        } else {
+            browserDestination = BrowserDestination(url: url)
+        }
     }
 
     private var selectedCountryFlag: String? {

@@ -1,4 +1,4 @@
-import { useAppsAvLocale } from "@avalsys/apps-av-web";
+import { appsAvExternalSearchUrl, useAppsAvLocale } from "@avalsys/apps-av-web";
 import type { AppsAvLocale } from "@avalsys/apps-av-web";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, ExternalLink, Heart, Info, Library, Maximize2, Music, Pause, Play, Radio, RotateCcw, Search, SkipBack, SkipForward, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
@@ -148,7 +148,7 @@ function FullPlayer({ artwork, currentDiscovery, labels, locale, onClose, statio
               </ActionPanel>
 
               <ActionPanel title={labels.stationActions} subtitle={station.editorial?.primaryFormat ?? labels.liveRadio}>
-                <ActionLink icon={<Info className="size-4" />} label={labels.publicInfo} href={`https://www.google.com/search?q=${encodeURIComponent(`${station.name} radio`)}`} />
+                <ActionLink icon={<Info className="size-4" />} label={labels.publicInfo} href={appsAvExternalSearchUrl({ engine: tune.settings.externalSearchEngine, query: `${station.name} radio` }) ?? undefined} />
                 {station.homepageURL ? <ActionLink icon={<ExternalLink className="size-4" />} label={labels.website} href={station.homepageURL} /> : null}
                 {profile?.genres?.slice(0, 2).map((genre) => <Badge key={genre}>{genre}</Badge>)}
                 {station.codec ? <Badge>{station.codec}</Badge> : null}
@@ -159,7 +159,7 @@ function FullPlayer({ artwork, currentDiscovery, labels, locale, onClose, statio
 
             {currentDiscovery ? (
               <ActionPanel className="mt-3" title={labels.songActions} subtitle={[currentDiscovery.artist, currentDiscovery.title].filter(Boolean).join(" - ")}>
-                <ExternalMusicAction discovery={currentDiscovery} feature="lyricsSearchesPerDay" label={labels.lyrics} url={`https://www.google.com/search?q=${encodeURIComponent(`${currentDiscovery.title} ${currentDiscovery.artist ?? ""} lyrics`)}`} />
+                <ExternalMusicAction discovery={currentDiscovery} feature="lyricsSearchesPerDay" label={labels.lyrics} url={appsAvExternalSearchUrl({ engine: tune.settings.externalSearchEngine, query: `${currentDiscovery.title} ${currentDiscovery.artist ?? ""} lyrics` }) ?? "#"} />
                 <ExternalMusicAction discovery={currentDiscovery} feature="youtubeSearchesPerDay" label="YouTube" url={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${currentDiscovery.title} ${currentDiscovery.artist ?? ""}`)}`} />
                 <ExternalMusicAction discovery={currentDiscovery} feature="appleMusicSearchesPerDay" label="Apple Music" url={`https://music.apple.com/search?term=${encodeURIComponent(`${currentDiscovery.title} ${currentDiscovery.artist ?? ""}`)}`} />
                 <ExternalMusicAction discovery={currentDiscovery} feature="spotifySearchesPerDay" label="Spotify" url={`https://open.spotify.com/search/${encodeURIComponent(`${currentDiscovery.title} ${currentDiscovery.artist ?? ""}`)}`} />

@@ -1,5 +1,7 @@
+import AVExternalLinkFoundation
 import AVHaptics
 import SwiftUI
+import UIKit
 
 struct LibraryScreen: View {
     private static let pageSize = 40
@@ -499,7 +501,11 @@ struct LibraryScreen: View {
 
     private func openStationWebsite(_ station: Station) {
         guard let url = station.resolvedHomepageURL else { return }
-        browserDestination = BrowserDestination(url: url)
+        if AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode) == .system {
+            UIApplication.shared.open(url)
+        } else {
+            browserDestination = BrowserDestination(url: url)
+        }
     }
 
     private var libraryAviDetail: String {

@@ -4,14 +4,16 @@ import {
   SettingsOptionButtonGroup,
   SettingsProfileScaffold,
   SettingsSectionCard,
+  appsAvExternalSearchEngines,
   appsAvLocaleNames,
   useAppsAvLocale,
+  type AppsAvExternalSearchEngine,
   type AppsAvLocale
 } from "@avalsys/apps-av-web";
 import { HelpLegalSection } from "@avalsys/apps-av-web/src/components/account-settings-sections";
 import { normalizeAppsAvThemePreference, readAppsAvThemePreference, type AppsAvThemePreference } from "@avalsys/apps-av-web/src/lib/theme-preference";
 import { createFileRoute } from "@tanstack/react-router";
-import { Contrast, Globe, HardDrive, Languages, ListMusic, Moon, Music, Radio, Smartphone, Sun, Trash2 } from "lucide-react";
+import { Contrast, Globe, HardDrive, Languages, ListMusic, Moon, Music, Radio, Search, Smartphone, Sun, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { TuneAppShell } from "@/components/tune-app-shell";
@@ -96,6 +98,16 @@ function SettingsRoute() {
                 { id: "music", icon: <Music className="size-4" />, label: labels.tune.discoveryOptions.music },
                 { id: "allRadio", icon: <Radio className="size-4" />, label: labels.tune.discoveryOptions.allRadio }
               ]}
+            />
+            <SettingsInfoRow icon={<Search className="size-5" />} title={labels.tune.externalSearchTitle} detail={labels.tune.externalSearchDetail} />
+            <SettingsOptionButtonGroup
+              selectedId={tune.settings.externalSearchEngine}
+              onSelect={(id) => tune.setExternalSearchEngine(id as AppsAvExternalSearchEngine)}
+              options={appsAvExternalSearchEngines.map((engine) => ({
+                id: engine,
+                icon: <Search className="size-4" />,
+                label: labels.tune.externalSearchOptions[engine]
+              }))}
             />
           </SettingsSectionCard>
 

@@ -1,7 +1,9 @@
+import AVExternalLinkFoundation
 import Foundation
 
 struct MusicExternalSearchRouter {
     let openSearch: (TuneAVExternalSearchURL.FeatureSearch) -> Void
+    let searchEngine: AVExternalSearchEngine
 
     func openDiscoveryYouTube(_ discovery: DiscoveredTrack) {
         openDiscovery(discovery, suffix: nil, youtube: true)
@@ -35,7 +37,8 @@ struct MusicExternalSearchRouter {
         guard let search = TuneAVExternalSearchURL.discoverySearch(
             searchQuery: discovery.searchQuery,
             suffix: suffix,
-            youtube: youtube
+            youtube: youtube,
+            engine: searchEngine
         ) else { return }
         openSearch(search)
     }
@@ -48,7 +51,8 @@ struct MusicExternalSearchRouter {
         guard let search = TuneAVExternalSearchURL.discoverySearch(
             searchQuery: discovery.searchQuery,
             destination: destination,
-            feature: feature
+            feature: feature,
+            engine: searchEngine
         ) else { return }
         openSearch(search)
     }
@@ -61,7 +65,8 @@ struct MusicExternalSearchRouter {
         guard let search = TuneAVExternalSearchURL.artistSearch(
             artist: artistName,
             destination: destination,
-            feature: feature
+            feature: feature,
+            engine: searchEngine
         ) else { return }
         openSearch(search)
     }

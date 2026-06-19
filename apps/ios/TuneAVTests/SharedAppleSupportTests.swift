@@ -1,3 +1,4 @@
+import AVExternalLinkFoundation
 import XCTest
 @testable import TuneAV
 
@@ -2585,12 +2586,21 @@ final class SharedAppleSupportTests: XCTestCase {
 
     func testExternalSearchURLsUseExpectedHostsAndQueryItems() {
         let google = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false)
+        let duckDuckGo = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false, engine: .duckDuckGo)
+        let bing = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false, engine: .bing)
         let youtube = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: true)
         let appleMusic = TuneAVExternalSearchURL.appleMusic(query: "Nina Simone Feeling Good")
 
         XCTAssertEqual(google?.host, "www.google.com")
         XCTAssertEqual(google?.path, "/search")
         XCTAssertEqual(queryValue("q", in: google), "Boards of Canada Dayvan Cowboy")
+
+        XCTAssertEqual(duckDuckGo?.host, "duckduckgo.com")
+        XCTAssertEqual(queryValue("q", in: duckDuckGo), "Boards of Canada Dayvan Cowboy")
+
+        XCTAssertEqual(bing?.host, "www.bing.com")
+        XCTAssertEqual(bing?.path, "/search")
+        XCTAssertEqual(queryValue("q", in: bing), "Boards of Canada Dayvan Cowboy")
 
         XCTAssertEqual(youtube?.host, "www.youtube.com")
         XCTAssertEqual(youtube?.path, "/results")
@@ -2601,11 +2611,10 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(queryValue("term", in: appleMusic), "Nina Simone Feeling Good")
     }
 
-    func testExternalSearchStationSearchUsesGoogleRadioQuery() {
-        let url = TuneAVExternalSearchURL.stationSearch(stationName: "  Radio Nova  ")
+    func testExternalSearchStationSearchUsesSelectedEngineRadioQuery() {
+        let url = TuneAVExternalSearchURL.stationSearch(stationName: "  Radio Nova  ", engine: .duckDuckGo)
 
-        XCTAssertEqual(url?.host, "www.google.com")
-        XCTAssertEqual(url?.path, "/search")
+        XCTAssertEqual(url?.host, "duckduckgo.com")
         XCTAssertEqual(queryValue("q", in: url), "Radio Nova radio")
     }
 
@@ -2643,6 +2652,13 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(spotify?.url.host, "open.spotify.com")
     }
 
+    func testExternalSearchSharedDefaultsResolveUnknownValues() {
+        XCTAssertEqual(AVExternalSearchEngine.resolved(from: nil), .google)
+        XCTAssertEqual(AVExternalSearchEngine.resolved(from: "unknown"), .google)
+        XCTAssertEqual(AVExternalWebOpenMode.resolved(from: nil), .inApp)
+        XCTAssertEqual(AVExternalWebOpenMode.resolved(from: "unknown"), .inApp)
+    }
+
     func testMusicExternalSearchRouterRoutesDiscoveryDestinations() {
         let discovery = DiscoveredTrack(
             title: "Dayvan Cowboy",
@@ -2658,7 +2674,7 @@ final class SharedAppleSupportTests: XCTestCase {
             artworkURL: nil
         )
         var searches: [TuneAVExternalSearchURL.FeatureSearch] = []
-        let router = MusicExternalSearchRouter { searches.append($0) }
+        let router = MusicExternalSearchRouter(openSearch: { searches.append($0) }, searchEngine: .duckDuckGo)
 
         router.openDiscoveryYouTube(discovery)
         router.openDiscoveryLyrics(discovery)
@@ -2679,7 +2695,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
     func testMusicExternalSearchRouterRoutesArtistDestinations() {
         var searches: [TuneAVExternalSearchURL.FeatureSearch] = []
-        let router = MusicExternalSearchRouter { searches.append($0) }
+        let router = MusicExternalSearchRouter(openSearch: { searches.append($0) }, searchEngine: .google)
 
         router.openArtistYouTube("Nina Simone")
         router.openArtistAppleMusic("Nina Simone")
@@ -3438,15 +3454,18 @@ final class SharedAppleSupportTests: XCTestCase {
             currentTrackArtist: " Massive Attack ",
             currentTrackTitle: " Teardrop ",
             destination: .web,
+            engine: .duckDuckGo,
             suffix: " lyrics "
         )
         let youtube = ShellAviExternalSearchResolver.trackSearchURL(
             station: station,
             currentTrackArtist: nil,
             currentTrackTitle: " Teardrop ",
-            destination: .youtube
+            destination: .youtube,
+            engine: .google
         )
 
+        XCTAssertEqual(lyrics?.host, "duckduckgo.com")
         XCTAssertEqual(queryValue("q", in: lyrics), "Massive Attack Teardrop Radio Nova lyrics")
         XCTAssertEqual(queryValue("search_query", in: youtube), "Teardrop Radio Nova")
     }
@@ -3454,15 +3473,16 @@ final class SharedAppleSupportTests: XCTestCase {
     func testShellAviExternalSearchResolverBuildsArtistStationAndDirectQueries() {
         let station = Station(id: "nova", name: "  Radio Nova  ", country: "France", language: "French", tags: "jazz", streamURL: "https://example.com/nova")
 
-        let artist = ShellAviExternalSearchResolver.artistSearchURL(artist: " Nina Simone ")
-        let stationSearch = ShellAviExternalSearchResolver.stationSearchURL(station: station)
-        let spotify = ShellAviExternalSearchResolver.externalSearchURL(query: " Boards of Canada Dayvan Cowboy ", destination: .spotify)
+        let artist = ShellAviExternalSearchResolver.artistSearchURL(artist: " Nina Simone ", engine: .bing)
+        let stationSearch = ShellAviExternalSearchResolver.stationSearchURL(station: station, engine: .google)
+        let spotify = ShellAviExternalSearchResolver.externalSearchURL(query: " Boards of Canada Dayvan Cowboy ", destination: .spotify, engine: .google)
 
+        XCTAssertEqual(artist?.host, "www.bing.com")
         XCTAssertEqual(queryValue("q", in: artist), "Nina Simone")
         XCTAssertEqual(queryValue("q", in: stationSearch), "Radio Nova radio")
         XCTAssertEqual(spotify?.host, "open.spotify.com")
-        XCTAssertNil(ShellAviExternalSearchResolver.artistSearchURL(artist: "  "))
-        XCTAssertNil(ShellAviExternalSearchResolver.externalSearchURL(query: "  "))
+        XCTAssertNil(ShellAviExternalSearchResolver.artistSearchURL(artist: "  ", engine: .google))
+        XCTAssertNil(ShellAviExternalSearchResolver.externalSearchURL(query: "  ", engine: .google))
     }
 
     func testShellAviActionsPanelStatePaginatesSongAndStationActions() {

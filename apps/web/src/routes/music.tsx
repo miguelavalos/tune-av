@@ -1,4 +1,4 @@
-import { useAppsAvLocale } from "@avalsys/apps-av-web";
+import { appsAvExternalSearchUrl, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, EyeOff, Music, Radio, Search, Star, Trash2, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { tuneFunctionalText } from "@/lib/tune-functional-text";
-import { useTune } from "@/lib/tune-store";
+import { useTune, type DailyFeature } from "@/lib/tune-store";
 import type { TuneDiscoveredTrack } from "@/lib/tune-types";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
@@ -101,17 +101,21 @@ function DiscoveryRow({ discovery }: { discovery: TuneDiscoveredTrack }) {
 }
 
 function ExternalSearchButtons({ query, tune }: { query: string; tune: ReturnType<typeof useTune> }) {
-  const searches = [
-    { label: "Lyrics", feature: "lyricsSearchesPerDay" as const, url: `https://www.google.com/search?q=${encodeURIComponent(`${query} lyrics`)}` },
+  const searches: Array<{ label: string; feature: DailyFeature; url: string | null }> = [
+    { label: "Lyrics", feature: "lyricsSearchesPerDay" as const, url: appsAvExternalSearchUrl({ engine: tune.settings.externalSearchEngine, query: `${query} lyrics` }) },
     { label: "YouTube", feature: "youtubeSearchesPerDay" as const, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
     { label: "Apple", feature: "appleMusicSearchesPerDay" as const, url: `https://music.apple.com/search?term=${encodeURIComponent(query)}` },
     { label: "Spotify", feature: "spotifySearchesPerDay" as const, url: `https://open.spotify.com/search/${encodeURIComponent(query)}` }
   ];
-  return searches.map((search) => (
-    <a key={search.label} className="rounded-md border border-[#d7c494] bg-[#fff8df]/85 px-3 py-2 text-xs font-semibold text-[#112a55] hover:border-[#087f79]" href={search.url} rel="noreferrer" target="_blank" onClick={(event) => {
-      if (!tune.recordDailyFeatureUse(search.feature, search.url)) event.preventDefault();
-    }}>{search.label}</a>
-  ));
+  return searches.map((search) => {
+    const url = search.url;
+    if (!url) return null;
+    return (
+      <a key={search.label} className="rounded-md border border-[#d7c494] bg-[#fff8df]/85 px-3 py-2 text-xs font-semibold text-[#112a55] hover:border-[#087f79]" href={url} rel="noreferrer" target="_blank" onClick={(event) => {
+        if (!tune.recordDailyFeatureUse(search.feature, url)) event.preventDefault();
+      }}>{search.label}</a>
+    );
+  });
 }
 
 function IconButton({ active, children, label, onClick }: { active?: boolean; children: ReactNode; label: string; onClick: () => void }) {

@@ -1,5 +1,6 @@
 import AVAviFoundation
 import AVAppShellFoundation
+import AVExternalLinkFoundation
 import AVHaptics
 import OSLog
 import SwiftUI
@@ -2014,7 +2015,10 @@ struct AviScreen: View {
     private var browserRouter: ShellBrowserRouter {
         ShellBrowserRouter(
             openDestination: { browserDestination = $0 },
-            closeAviActions: closeAviActions
+            openSystemURL: { UIApplication.shared.open($0) },
+            closeAviActions: closeAviActions,
+            searchEngine: AVExternalSearchEngine.resolved(from: libraryStore.settings.externalSearchEngine),
+            webOpenMode: AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode)
         )
     }
 

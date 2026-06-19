@@ -1,4 +1,5 @@
 import OSLog
+import AVExternalLinkFoundation
 import SwiftData
 import SwiftUI
 
@@ -651,6 +652,20 @@ final class LibraryStore: ObservableObject {
         saveAndRefresh(.settings)
     }
 
+    func setExternalSearchEngine(_ engine: AVExternalSearchEngine) {
+        guard settings.externalSearchEngine != engine.rawValue else { return }
+        settings.externalSearchEngine = engine.rawValue
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
+    func setExternalWebOpenMode(_ mode: AVExternalWebOpenMode) {
+        guard settings.externalWebOpenMode != mode.rawValue else { return }
+        settings.externalWebOpenMode = mode.rawValue
+        settings.updatedAt = .now
+        saveAndRefresh(.settings)
+    }
+
     func rememberOpenedStation(_ station: Station, presentation: String) {
         guard settings.lastOpenedStationID != station.id || settings.lastOpenedStationPresentation != presentation else { return }
         settings.lastOpenedStationID = station.id
@@ -710,6 +725,8 @@ final class LibraryStore: ObservableObject {
         settings.warnBeforeCellularPlayback = false
         settings.openLastStationOnLaunch = false
         settings.autoSkipUnstableStreams = false
+        settings.externalSearchEngine = AVExternalSearchEngine.google.rawValue
+        settings.externalWebOpenMode = AVExternalWebOpenMode.inApp.rawValue
         settings.updatedAt = .now
         saveAndRefresh(.settings)
     }
@@ -752,6 +769,8 @@ final class LibraryStore: ObservableObject {
         settings.warnBeforeCellularPlayback = false
         settings.openLastStationOnLaunch = false
         settings.autoSkipUnstableStreams = false
+        settings.externalSearchEngine = AVExternalSearchEngine.google.rawValue
+        settings.externalWebOpenMode = AVExternalWebOpenMode.inApp.rawValue
         settings.updatedAt = .now
 
         saveAndRefresh(.all, syncsCloud: propagatesToCloud && (removedSavedDiscovery || !favorites.isEmpty))

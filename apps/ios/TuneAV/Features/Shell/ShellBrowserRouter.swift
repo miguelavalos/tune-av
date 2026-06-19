@@ -1,12 +1,19 @@
+import AVExternalLinkFoundation
 import Foundation
 
 struct ShellBrowserRouter {
     let openDestination: (BrowserDestination) -> Void
+    let openSystemURL: (URL) -> Void
     let closeAviActions: () -> Void
+    let searchEngine: AVExternalSearchEngine
+    let webOpenMode: AVExternalWebOpenMode
 
     func openURL(_ url: URL, closesAviActions: Bool = false) {
-        guard let destination = BrowserDestination(url: url) else { return }
-        openDestination(destination)
+        if webOpenMode == .system {
+            openSystemURL(url)
+        } else if let destination = BrowserDestination(url: url) {
+            openDestination(destination)
+        }
         if closesAviActions {
             closeAviActions()
         }
@@ -32,18 +39,19 @@ struct ShellBrowserRouter {
             currentTrackArtist: currentTrackArtist,
             currentTrackTitle: currentTrackTitle,
             destination: destination,
+            engine: searchEngine,
             suffix: suffix
         ) else { return }
         openURL(url, closesAviActions: true)
     }
 
     func openArtistSearch(currentTrackArtist: String?) {
-        guard let url = ShellAviExternalSearchResolver.artistSearchURL(artist: currentTrackArtist) else { return }
+        guard let url = ShellAviExternalSearchResolver.artistSearchURL(artist: currentTrackArtist, engine: searchEngine) else { return }
         openURL(url, closesAviActions: true)
     }
 
     func openStationSearch(for station: Station) {
-        guard let url = ShellAviExternalSearchResolver.stationSearchURL(station: station) else { return }
+        guard let url = ShellAviExternalSearchResolver.stationSearchURL(station: station, engine: searchEngine) else { return }
         openURL(url, closesAviActions: true)
     }
 
@@ -51,7 +59,7 @@ struct ShellBrowserRouter {
         query: String,
         destination: TuneAVExternalSearchURL.Destination = .web
     ) {
-        guard let url = ShellAviExternalSearchResolver.externalSearchURL(query: query, destination: destination) else { return }
+        guard let url = ShellAviExternalSearchResolver.externalSearchURL(query: query, destination: destination, engine: searchEngine) else { return }
         openURL(url, closesAviActions: true)
     }
 }

@@ -258,6 +258,15 @@
 "profile.preferences.cellularWarning.title" = "Avisar con datos móviles";
 "profile.preferences.autoSkipUnstableStreams.detail" = "Tras varios fallos de reproducción, prueba la siguiente radio de la cola por ahora. No se elimina nada.";
 "profile.preferences.autoSkipUnstableStreams.title" = "Probar otra si falla";
+"profile.preferences.externalSearchEngine.bing" = "Bing";
+"profile.preferences.externalSearchEngine.detail" = "Elige el motor que Tune AV usa para informacion publica y letras.";
+"profile.preferences.externalSearchEngine.duckDuckGo" = "DuckDuckGo";
+"profile.preferences.externalSearchEngine.google" = "Google";
+"profile.preferences.externalSearchEngine.title" = "Motor de busqueda";
+"profile.preferences.webOpenMode.detail" = "Elige si los enlaces web se abren dentro de Tune AV o en el navegador del sistema.";
+"profile.preferences.webOpenMode.inApp" = "En la app";
+"profile.preferences.webOpenMode.system" = "Sistema";
+"profile.preferences.webOpenMode.title" = "Enlaces web";
 "profile.preferences.clearUnstableWarnings.action" = "Limpiar";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marcadas en esta sesión.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";

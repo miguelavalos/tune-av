@@ -1,4 +1,5 @@
 import AVSettingsFoundation
+import AVExternalLinkFoundation
 import SwiftUI
 
 struct ProfileScreen: View {
@@ -435,6 +436,25 @@ struct ProfileScreen: View {
                 isOn: autoSkipUnstableStreamsSelection
             )
 
+            Divider()
+                .overlay(TuneAVTheme.borderSubtle)
+
+            AVSettingsInfoRow(
+                systemImage: "magnifyingglass.circle",
+                title: L10n.string("profile.preferences.externalSearchEngine.title"),
+                detail: L10n.string("profile.preferences.externalSearchEngine.detail")
+            )
+
+            externalSearchEngineSelector
+
+            AVSettingsInfoRow(
+                systemImage: "safari",
+                title: L10n.string("profile.preferences.webOpenMode.title"),
+                detail: L10n.string("profile.preferences.webOpenMode.detail")
+            )
+
+            webOpenModeSelector
+
             if !audioPlayer.temporarilyUnstableStationIDs.isEmpty {
                 AVSettingsInlineActionRow(
                     systemImage: "checkmark.circle",
@@ -811,6 +831,20 @@ struct ProfileScreen: View {
         )
     }
 
+    private var externalSearchEngineSelection: Binding<AVExternalSearchEngine> {
+        Binding(
+            get: { AVExternalSearchEngine.resolved(from: libraryStore.settings.externalSearchEngine) },
+            set: { libraryStore.setExternalSearchEngine($0) }
+        )
+    }
+
+    private var webOpenModeSelection: Binding<AVExternalWebOpenMode> {
+        Binding(
+            get: { AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode) },
+            set: { libraryStore.setExternalWebOpenMode($0) }
+        )
+    }
+
     private var languageSelector: some View {
         Menu {
             ForEach(AppLanguage.allCases) { language in
@@ -939,6 +973,32 @@ struct ProfileScreen: View {
         }
     }
 
+    private var externalSearchEngineSelector: some View {
+        HStack(spacing: 10) {
+            ForEach(AVExternalSearchEngine.allCases) { engine in
+                AVSettingsOptionButton(
+                    title: externalSearchEngineLabel(for: engine),
+                    systemImage: "magnifyingglass",
+                    isSelected: externalSearchEngineSelection.wrappedValue == engine,
+                    action: { externalSearchEngineSelection.wrappedValue = engine }
+                )
+            }
+        }
+    }
+
+    private var webOpenModeSelector: some View {
+        HStack(spacing: 10) {
+            ForEach(AVExternalWebOpenMode.allCases) { mode in
+                AVSettingsOptionButton(
+                    title: webOpenModeLabel(for: mode),
+                    systemImage: webOpenModeSymbol(for: mode),
+                    isSelected: webOpenModeSelection.wrappedValue == mode,
+                    action: { webOpenModeSelection.wrappedValue = mode }
+                )
+            }
+        }
+    }
+
     private func performClearLocalData(_ target: LocalDataClearTarget) {
         guard isClearingLocalData == false else { return }
         isClearingLocalData = true
@@ -1024,9 +1084,38 @@ struct ProfileScreen: View {
         }
     }
 
+    private func externalSearchEngineLabel(for engine: AVExternalSearchEngine) -> String {
+        switch engine {
+        case .google:
+            L10n.string("profile.preferences.externalSearchEngine.google")
+        case .duckDuckGo:
+            L10n.string("profile.preferences.externalSearchEngine.duckDuckGo")
+        case .bing:
+            L10n.string("profile.preferences.externalSearchEngine.bing")
+        }
+    }
+
+    private func webOpenModeLabel(for mode: AVExternalWebOpenMode) -> String {
+        switch mode {
+        case .inApp:
+            L10n.string("profile.preferences.webOpenMode.inApp")
+        case .system:
+            L10n.string("profile.preferences.webOpenMode.system")
+        }
+    }
+
+    private func webOpenModeSymbol(for mode: AVExternalWebOpenMode) -> String {
+        switch mode {
+        case .inApp:
+            "rectangle.inset.filled"
+        case .system:
+            "arrow.up.forward.app"
+        }
+    }
+
     private func open(_ url: URL?) {
         guard let url else { return }
-        if url.isTuneAVWebURL {
+        if url.isTuneAVWebURL && AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode) == .inApp {
             browserDestination = BrowserDestination(url: url)
         } else {
             openExternalURL(url)

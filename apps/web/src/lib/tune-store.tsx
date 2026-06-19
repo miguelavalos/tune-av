@@ -1,6 +1,6 @@
 import { useAccountAppAccess, useAccountToken } from "@avalsys/account-av-web";
-import type { AppsAvLocale } from "@avalsys/apps-av-web";
-import { useAppsAvLocale } from "@avalsys/apps-av-web";
+import type { AppsAvExternalSearchEngine, AppsAvLocale } from "@avalsys/apps-av-web";
+import { normalizeAppsAvExternalSearchEngine, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TuneApiClient, TuneApiError } from "@/lib/tune-api";
@@ -61,6 +61,7 @@ type TuneSettings = {
   preferredCountryCode: string;
   preferredTag: string;
   discoveryMode: "music" | "allRadio";
+  externalSearchEngine: AppsAvExternalSearchEngine;
   lastPlayedStationID: string | null;
   dailyUsage: Record<string, { day: string; count: number; keys: string[] }>;
 };
@@ -126,6 +127,7 @@ type TuneContextValue = {
   setPreferredCountry: (countryCode: string) => void;
   setPreferredTag: (tag: string) => void;
   setDiscoveryMode: (mode: "music" | "allRadio") => void;
+  setExternalSearchEngine: (engine: AppsAvExternalSearchEngine | string) => void;
   refreshUserSummary: () => Promise<void>;
   synchronizeLibrary: () => Promise<void>;
   recommendations: TuneStation[];
@@ -466,6 +468,10 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
     setStore((current) => ({ ...current, settings: { ...current.settings, discoveryMode } }));
   }, []);
 
+  const setExternalSearchEngine = useCallback((externalSearchEngine: AppsAvExternalSearchEngine | string) => {
+    setStore((current) => ({ ...current, settings: { ...current.settings, externalSearchEngine: normalizeAppsAvExternalSearchEngine(externalSearchEngine) } }));
+  }, []);
+
   const canUseDailyFeature = useCallback((feature: DailyFeature, usageKey: string = feature) => {
     const limit = access.limits[feature];
     if (limit === null) return true;
@@ -603,10 +609,11 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
     setPreferredCountry,
     setPreferredTag,
     setDiscoveryMode,
+    setExternalSearchEngine,
     refreshUserSummary,
     synchronizeLibrary,
     recommendations
-  }), [access, api, locale, store, favoriteStations, recentStations, visibleDiscoveries, savedDiscoveries, search, playback, userSummary, summaryStatus, canUseDailyFeature, recordDailyFeatureUse, searchStations, loadMoreStations, refreshPopular, playStation, pausePlayback, retryPlayback, nextStation, previousStation, toggleFavorite, setStationFeedback, setTrackFeedback, toggleDiscoverySaved, hideDiscovery, restoreDiscovery, removeDiscovery, clearDiscoveries, clearLocalData, setPreferredCountry, setPreferredTag, setDiscoveryMode, refreshUserSummary, synchronizeLibrary, recommendations]);
+  }), [access, api, locale, store, favoriteStations, recentStations, visibleDiscoveries, savedDiscoveries, search, playback, userSummary, summaryStatus, canUseDailyFeature, recordDailyFeatureUse, searchStations, loadMoreStations, refreshPopular, playStation, pausePlayback, retryPlayback, nextStation, previousStation, toggleFavorite, setStationFeedback, setTrackFeedback, toggleDiscoverySaved, hideDiscovery, restoreDiscovery, removeDiscovery, clearDiscoveries, clearLocalData, setPreferredCountry, setPreferredTag, setDiscoveryMode, setExternalSearchEngine, refreshUserSummary, synchronizeLibrary, recommendations]);
 
   return <TuneContext.Provider value={value}>{children}</TuneContext.Provider>;
 }
@@ -641,7 +648,17 @@ function initialStore(): TuneStoreState {
   const raw = window.localStorage.getItem(storageKey);
   if (!raw) return defaultStore();
   try {
-    return { ...defaultStore(), ...(JSON.parse(raw) as Partial<TuneStoreState>) };
+    const parsed = JSON.parse(raw) as Partial<TuneStoreState>;
+    const defaults = defaultStore();
+    return {
+      ...defaults,
+      ...parsed,
+      settings: {
+        ...defaults.settings,
+        ...parsed.settings,
+        externalSearchEngine: normalizeAppsAvExternalSearchEngine(parsed.settings?.externalSearchEngine)
+      }
+    };
   } catch {
     return defaultStore();
   }
@@ -667,6 +684,7 @@ function defaultStore(): TuneStoreState {
       preferredCountryCode: "",
       preferredTag: "",
       discoveryMode: "music",
+      externalSearchEngine: "google",
       lastPlayedStationID: null,
       dailyUsage: {}
     },

@@ -422,6 +422,8 @@ final class AppSettings {
     var warnBeforeCellularPlayback: Bool = false
     var openLastStationOnLaunch: Bool = false
     var autoSkipUnstableStreams: Bool = false
+    var externalSearchEngine: String = "google"
+    var externalWebOpenMode: String = "inApp"
     var updatedAt: Date
 
     init(
@@ -436,6 +438,8 @@ final class AppSettings {
         warnBeforeCellularPlayback: Bool = false,
         openLastStationOnLaunch: Bool = false,
         autoSkipUnstableStreams: Bool = false,
+        externalSearchEngine: String = "google",
+        externalWebOpenMode: String = "inApp",
         updatedAt: Date = .now
     ) {
         self.preferredCountry = preferredCountry
@@ -449,6 +453,8 @@ final class AppSettings {
         self.warnBeforeCellularPlayback = warnBeforeCellularPlayback
         self.openLastStationOnLaunch = openLastStationOnLaunch
         self.autoSkipUnstableStreams = autoSkipUnstableStreams
+        self.externalSearchEngine = externalSearchEngine
+        self.externalWebOpenMode = externalWebOpenMode
         self.updatedAt = updatedAt
     }
 }

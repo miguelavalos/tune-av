@@ -258,6 +258,15 @@
 "profile.preferences.cellularWarning.title" = "Warn on mobile data";
 "profile.preferences.autoSkipUnstableStreams.detail" = "After repeated playback failures, try the next queued radio for now. Nothing is removed.";
 "profile.preferences.autoSkipUnstableStreams.title" = "Try another on failures";
+"profile.preferences.externalSearchEngine.bing" = "Bing";
+"profile.preferences.externalSearchEngine.detail" = "Choose the search engine Tune AV uses for public info and lyrics.";
+"profile.preferences.externalSearchEngine.duckDuckGo" = "DuckDuckGo";
+"profile.preferences.externalSearchEngine.google" = "Google";
+"profile.preferences.externalSearchEngine.title" = "Search engine";
+"profile.preferences.webOpenMode.detail" = "Choose whether web links open inside Tune AV or in the system browser.";
+"profile.preferences.webOpenMode.inApp" = "In app";
+"profile.preferences.webOpenMode.system" = "System";
+"profile.preferences.webOpenMode.title" = "Web links";
 "profile.preferences.clearUnstableWarnings.action" = "Clear";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marked in this session.";
 "profile.preferences.clearUnstableWarnings.title" = "Unstable stream warnings";
