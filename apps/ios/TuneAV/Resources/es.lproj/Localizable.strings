@@ -270,10 +270,10 @@
 "profile.preferences.externalSearchEngine.title" = "Motor de busqueda";
 "profile.preferences.externalSearchEngine.yahoo" = "Yahoo";
 "profile.preferences.externalSearchEngine.yandex" = "Yandex";
-"profile.preferences.webOpenMode.detail" = "Desactivado abre los enlaces dentro de Tune AV. Activado los abre en el navegador del sistema.";
-"profile.preferences.webOpenMode.inApp" = "En la app";
-"profile.preferences.webOpenMode.system" = "Sistema";
-"profile.preferences.webOpenMode.title" = "Enlaces web";
+"profile.preferences.webOpenMode.detail" = "Elige donde se abren los enlaces de informacion, ayuda y busqueda.";
+"profile.preferences.webOpenMode.inApp" = "Dentro de Tune AV";
+"profile.preferences.webOpenMode.system" = "Navegador del sistema";
+"profile.preferences.webOpenMode.title" = "Abrir enlaces web";
 "profile.preferences.clearUnstableWarnings.action" = "Limpiar";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marcadas en esta sesión.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";

@@ -1030,10 +1030,10 @@
 "profile.preferences.externalSearchEngine.title" = "Moteur de recherche";
 "profile.preferences.externalSearchEngine.yahoo" = "Yahoo";
 "profile.preferences.externalSearchEngine.yandex" = "Yandex";
-"profile.preferences.webOpenMode.detail" = "Desactive, les liens s'ouvrent dans Tune AV. Active, ils s'ouvrent dans le navigateur systeme.";
-"profile.preferences.webOpenMode.inApp" = "Dans l'app";
-"profile.preferences.webOpenMode.system" = "Systeme";
-"profile.preferences.webOpenMode.title" = "Liens web";
+"profile.preferences.webOpenMode.detail" = "Choisissez ou s'ouvrent les liens d'information, d'aide et de recherche.";
+"profile.preferences.webOpenMode.inApp" = "Dans Tune AV";
+"profile.preferences.webOpenMode.system" = "Navigateur systeme";
+"profile.preferences.webOpenMode.title" = "Ouvrir les liens web";
 "profile.preferences.clearUnstableWarnings.action" = "Effacer";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marquees dans cette session.";
 "profile.preferences.clearUnstableWarnings.title" = "Avertissements de flux instables";

@@ -436,12 +436,13 @@ struct ProfileScreen: View {
                 isOn: autoSkipUnstableStreamsSelection
             )
 
-            AVSettingsToggleRow(
+            AVSettingsInfoRow(
                 systemImage: "safari",
                 title: L10n.string("profile.preferences.webOpenMode.title"),
-                detail: L10n.string("profile.preferences.webOpenMode.detail"),
-                isOn: webOpenModeSystemSelection
+                detail: L10n.string("profile.preferences.webOpenMode.detail")
             )
+
+            webOpenModeSelector
 
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
@@ -844,13 +845,6 @@ struct ProfileScreen: View {
         )
     }
 
-    private var webOpenModeSystemSelection: Binding<Bool> {
-        Binding(
-            get: { webOpenModeSelection.wrappedValue == .system },
-            set: { webOpenModeSelection.wrappedValue = $0 ? .system : .inApp }
-        )
-    }
-
     private var languageSelector: some View {
         Menu {
             ForEach(AppLanguage.allCases) { language in
@@ -1025,6 +1019,52 @@ struct ProfileScreen: View {
         }
     }
 
+    private var webOpenModeSelector: some View {
+        Menu {
+            ForEach(AVExternalWebOpenMode.allCases) { mode in
+                Button {
+                    webOpenModeSelection.wrappedValue = mode
+                } label: {
+                    if webOpenModeSelection.wrappedValue == mode {
+                        Label {
+                            Text(webOpenModeLabel(for: mode))
+                        } icon: {
+                            Image(systemName: "checkmark")
+                        }
+                    } else {
+                        Text(webOpenModeLabel(for: mode))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "safari")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+
+                Text(webOpenModeLabel(for: webOpenModeSelection.wrappedValue))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Spacer()
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(TuneAVTheme.mutedSurface)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
+            }
+        }
+    }
+
     private func performClearLocalData(_ target: LocalDataClearTarget) {
         guard isClearingLocalData == false else { return }
         isClearingLocalData = true
@@ -1132,6 +1172,15 @@ struct ProfileScreen: View {
             L10n.string("profile.preferences.externalSearchEngine.startpage")
         case .qwant:
             L10n.string("profile.preferences.externalSearchEngine.qwant")
+        }
+    }
+
+    private func webOpenModeLabel(for mode: AVExternalWebOpenMode) -> String {
+        switch mode {
+        case .inApp:
+            L10n.string("profile.preferences.webOpenMode.inApp")
+        case .system:
+            L10n.string("profile.preferences.webOpenMode.system")
         }
     }
 

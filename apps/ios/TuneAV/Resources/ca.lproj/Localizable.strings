@@ -1030,10 +1030,10 @@
 "profile.preferences.externalSearchEngine.title" = "Motor de cerca";
 "profile.preferences.externalSearchEngine.yahoo" = "Yahoo";
 "profile.preferences.externalSearchEngine.yandex" = "Yandex";
-"profile.preferences.webOpenMode.detail" = "Desactivat obre els enllacos dins de Tune AV. Activat els obre al navegador del sistema.";
-"profile.preferences.webOpenMode.inApp" = "A l'app";
-"profile.preferences.webOpenMode.system" = "Sistema";
-"profile.preferences.webOpenMode.title" = "Enllacos web";
+"profile.preferences.webOpenMode.detail" = "Tria on s'obren els enllacos d'informacio, ajuda i cerca.";
+"profile.preferences.webOpenMode.inApp" = "Dins de Tune AV";
+"profile.preferences.webOpenMode.system" = "Navegador del sistema";
+"profile.preferences.webOpenMode.title" = "Obrir enllacos web";
 "profile.preferences.clearUnstableWarnings.action" = "Neteja";
 "profile.preferences.clearUnstableWarnings.detail" = "%d marcades en aquesta sessio.";
 "profile.preferences.clearUnstableWarnings.title" = "Avisos de streams inestables";
