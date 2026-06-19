@@ -10,6 +10,9 @@ import { TuneAppProvider } from "@/lib/tune-store";
 import { localizedTunePath, useTuneAccountLocalization, useTuneText } from "@/lib/tune-i18n";
 import "../styles.css";
 
+const faviconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/favicon-32x32.png";
+const appleTouchIconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/apple-touch-icon.png";
+
 export const Route = createRootRoute({
   component: RootComponent,
   head: () => ({
@@ -17,6 +20,10 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Tune AV" }
+    ],
+    links: [
+      { rel: "icon", type: "image/png", sizes: "32x32", href: faviconUrl },
+      { rel: "apple-touch-icon", href: appleTouchIconUrl }
     ]
   })
 });
