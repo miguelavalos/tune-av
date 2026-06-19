@@ -436,6 +436,13 @@ struct ProfileScreen: View {
                 isOn: autoSkipUnstableStreamsSelection
             )
 
+            AVSettingsToggleRow(
+                systemImage: "safari",
+                title: L10n.string("profile.preferences.webOpenMode.title"),
+                detail: L10n.string("profile.preferences.webOpenMode.detail"),
+                isOn: webOpenModeSystemSelection
+            )
+
             Divider()
                 .overlay(TuneAVTheme.borderSubtle)
 
@@ -446,14 +453,6 @@ struct ProfileScreen: View {
             )
 
             externalSearchEngineSelector
-
-            AVSettingsInfoRow(
-                systemImage: "safari",
-                title: L10n.string("profile.preferences.webOpenMode.title"),
-                detail: L10n.string("profile.preferences.webOpenMode.detail")
-            )
-
-            webOpenModeSelector
 
             if !audioPlayer.temporarilyUnstableStationIDs.isEmpty {
                 AVSettingsInlineActionRow(
@@ -845,6 +844,13 @@ struct ProfileScreen: View {
         )
     }
 
+    private var webOpenModeSystemSelection: Binding<Bool> {
+        Binding(
+            get: { webOpenModeSelection.wrappedValue == .system },
+            set: { webOpenModeSelection.wrappedValue = $0 ? .system : .inApp }
+        )
+    }
+
     private var languageSelector: some View {
         Menu {
             ForEach(AppLanguage.allCases) { language in
@@ -974,27 +980,47 @@ struct ProfileScreen: View {
     }
 
     private var externalSearchEngineSelector: some View {
-        HStack(spacing: 10) {
+        Menu {
             ForEach(AVExternalSearchEngine.allCases) { engine in
-                AVSettingsOptionButton(
-                    title: externalSearchEngineLabel(for: engine),
-                    systemImage: "magnifyingglass",
-                    isSelected: externalSearchEngineSelection.wrappedValue == engine,
-                    action: { externalSearchEngineSelection.wrappedValue = engine }
-                )
+                Button {
+                    externalSearchEngineSelection.wrappedValue = engine
+                } label: {
+                    if externalSearchEngineSelection.wrappedValue == engine {
+                        Label {
+                            Text(externalSearchEngineLabel(for: engine))
+                        } icon: {
+                            Image(systemName: "checkmark")
+                        }
+                    } else {
+                        Text(externalSearchEngineLabel(for: engine))
+                    }
+                }
             }
-        }
-    }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
 
-    private var webOpenModeSelector: some View {
-        HStack(spacing: 10) {
-            ForEach(AVExternalWebOpenMode.allCases) { mode in
-                AVSettingsOptionButton(
-                    title: webOpenModeLabel(for: mode),
-                    systemImage: webOpenModeSymbol(for: mode),
-                    isSelected: webOpenModeSelection.wrappedValue == mode,
-                    action: { webOpenModeSelection.wrappedValue = mode }
-                )
+                Text(externalSearchEngineLabel(for: externalSearchEngineSelection.wrappedValue))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Spacer()
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(TuneAVTheme.mutedSurface)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
             }
         }
     }
@@ -1092,24 +1118,20 @@ struct ProfileScreen: View {
             L10n.string("profile.preferences.externalSearchEngine.duckDuckGo")
         case .bing:
             L10n.string("profile.preferences.externalSearchEngine.bing")
-        }
-    }
-
-    private func webOpenModeLabel(for mode: AVExternalWebOpenMode) -> String {
-        switch mode {
-        case .inApp:
-            L10n.string("profile.preferences.webOpenMode.inApp")
-        case .system:
-            L10n.string("profile.preferences.webOpenMode.system")
-        }
-    }
-
-    private func webOpenModeSymbol(for mode: AVExternalWebOpenMode) -> String {
-        switch mode {
-        case .inApp:
-            "rectangle.inset.filled"
-        case .system:
-            "arrow.up.forward.app"
+        case .yahoo:
+            L10n.string("profile.preferences.externalSearchEngine.yahoo")
+        case .yandex:
+            L10n.string("profile.preferences.externalSearchEngine.yandex")
+        case .baidu:
+            L10n.string("profile.preferences.externalSearchEngine.baidu")
+        case .brave:
+            L10n.string("profile.preferences.externalSearchEngine.brave")
+        case .ecosia:
+            L10n.string("profile.preferences.externalSearchEngine.ecosia")
+        case .startpage:
+            L10n.string("profile.preferences.externalSearchEngine.startpage")
+        case .qwant:
+            L10n.string("profile.preferences.externalSearchEngine.qwant")
         }
     }
 
