@@ -51,6 +51,9 @@ Tune AV app web now exists at `apps/web`.
 - `/settings` was rebuilt on the shared Settings scaffold with language,
   System/Light/Dark appearance, Tune listening preferences, local device data,
   and shared help/legal rows.
+- `/settings` includes a local external search-engine select backed by
+  `@avalsys/apps-av-web`; public-info and lyrics lookups use the configured
+  shared engine list with Google as the default.
 - Tune Pro sync copy is constrained to the existing app-data contract: favorites
   and saved discoveries can sync when Account AV reports Pro cloud sync; recents,
   playback/session context, feedback queue, and local preferences stay
@@ -81,3 +84,13 @@ Tune AV app web now exists at `apps/web`.
   station playback attempt, persisted player reload, full player, and mobile
   viewport. No new React hydration errors were captured in fresh production
   tabs after the hotfix.
+
+## 2026-06-19 External Link Preferences
+
+- Tune AV web now uses the shared Apps AV external-search helpers from
+  `@avalsys/apps-av-web`.
+- The settings screen exposes the shared engine list as a native select rather
+  than product-local buttons.
+- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
+  version `045ac1dd-2025-4191-81bb-18dde4855f28`; HTTP smoke passed for `/` and
+  `/settings`.

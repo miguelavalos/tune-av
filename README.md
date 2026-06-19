@@ -26,6 +26,7 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 apps/
   ios/      SwiftUI iOS app
   macos/    SwiftUI macOS app, Apple Silicon release target
+  web/      TanStack web app for signed-in Tune AV surfaces
 docs/
   ios-current-state.md
   ios-animation-and-assets.md
@@ -40,6 +41,7 @@ shared/
 
 - local-first listening experience
 - local-first playback, recents, automatic discoveries, and on-device settings
+- configurable external public-info and lyrics search engine on web/iOS
 - Pro cloud sync for saved stations, saved songs, station feedback, and song
   feedback
 - optional account and premium UI surfaces when local configuration enables them
@@ -55,6 +57,7 @@ shared/
   provide an Intel macOS slice. App Store release builds use the same
   `com.avalsys.tuneav` bundle identifier as iOS because macOS is added as a
   platform on the existing App Store Connect app record.
+- `apps/web` is the current Tune AV web app for signed-in app surfaces.
 - `shared/apple` is the shared Swift implementation root for Apple-domain UI
   behavior.
 - `shared/contracts` is reserved for platform-neutral client contracts.

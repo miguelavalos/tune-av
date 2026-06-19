@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-06-14
+Date: 2026-06-19
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -30,11 +30,15 @@ Current app shape:
   mini-player overlay while the full player is open;
 - last-played queue restoration so resuming from Home can preserve Favorites or
   Recents next/previous behavior when that was the active context;
+- local iOS Profile preferences for external web links: public web links open
+  inside Tune AV by default and can be switched to the system browser;
+- local iOS Profile preference for external public-info and lyrics search, using
+  the shared Apps AV engine list with Google as the default;
 - premium paywall and restore-entry UI when configured;
 - account deletion entry point and local data clearing from Profile;
 - app-neutral shared Apple UI foundations for brand tokens, shell structure,
   launch/splash support, settings/account surfaces, Avi controls, paywall/limit
-  surfaces, and text-fit hardening.
+  surfaces, external link/search defaults, and text-fit hardening.
 - macOS Apple Silicon release target while the current Convex Swift binary
   dependency does not provide an Intel macOS slice.
 
@@ -64,6 +68,10 @@ Recents, discovery history, playback state, and settings are local-only in the
 current public client contract. Premium access is displayed by the client only
 after configured entitlement state is available. The public repo does not
 document private entitlement operations.
+
+The current iOS external-link settings are local device preferences. Public-info
+and lyrics searches use the selected shared Apps AV search engine. Web links use
+the embedded Tune AV browser unless the user selects the system browser.
 
 Saved songs and song feedback use canonical track keys across iOS, macOS, and
 the account backend. Saved songs sync through active saved-song records. Song
