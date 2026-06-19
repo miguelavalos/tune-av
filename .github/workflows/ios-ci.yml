@@ -6,6 +6,7 @@ on:
       - ".github/workflows/**"
       - "apps/ios/**"
       - "apps/macos/**"
+      - "apps/web/**"
       - "package.json"
       - "shared/**"
       - "scripts/check-github-actions-pinning.sh"
@@ -15,6 +16,7 @@ on:
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
       - "scripts/check-public-config-hygiene.sh"
+      - "scripts/check-i18n-parity.mjs"
       - "scripts/check-ios-network-privacy.sh"
   push:
     branches:
@@ -23,6 +25,7 @@ on:
       - ".github/workflows/**"
       - "apps/ios/**"
       - "apps/macos/**"
+      - "apps/web/**"
       - "package.json"
       - "shared/**"
       - "scripts/check-github-actions-pinning.sh"
@@ -32,6 +35,7 @@ on:
       - "scripts/macos-ci-test.sh"
       - "scripts/report-ios-app-size.sh"
       - "scripts/check-public-config-hygiene.sh"
+      - "scripts/check-i18n-parity.mjs"
       - "scripts/check-ios-network-privacy.sh"
 
 concurrency:
@@ -102,6 +106,9 @@ jobs:
 
       - name: Public config hygiene
         run: bun run config:hygiene
+
+      - name: Localization parity audit
+        run: bun run i18n:audit
 
       - name: iOS network privacy gate
         run: bun run ios:privacy:network
