@@ -38,7 +38,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>35</string>
+	<string>36</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
@@ -50,10 +50,10 @@
 	<string>$(SUPPORTAV_BASE_URL)</string>
 	<key>SUPPORT_EMAIL_TO</key>
 	<string>$(SUPPORT_EMAIL_TO)</string>
-	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
-	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
 	<key>TUNEAV_API_BASE_URL</key>
 	<string>$(TUNEAV_API_BASE_URL)</string>
+	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
+	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
 	<key>TUNEAV_CONVEX_URL</key>
 	<string>$(TUNEAV_CONVEX_URL)</string>
 	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
