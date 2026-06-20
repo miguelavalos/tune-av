@@ -36,7 +36,7 @@ enum TuneAppExperience {
             headerLogoName: "HeaderWordmark",
             splashLogoName: "SplashLogo",
             splashHeroName: "AviSplashListeningBackground",
-            onboardingBrandName: "AuthWordmark",
+            onboardingBrandName: "AuthOnboardingWordmark",
             onboardingHeroName: "AviOnboardingHeroStatic",
             onboardingCTACompanionName: "AviV2OnboardingCTA",
             onboardingAuthPanelCompanionName: "AviV2LoginSheetPeek",
