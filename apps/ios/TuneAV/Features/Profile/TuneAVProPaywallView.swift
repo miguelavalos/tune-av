@@ -26,6 +26,8 @@ struct TuneAVProPaywallView: View {
 
             if accessController.isWaitingForSubscriptionReconciliation {
                 AVPaywallStatusRow(systemImage: "clock.arrow.circlepath", message: reconciliationStatus)
+            } else if accessController.isRefreshingAccountAccess {
+                AVPaywallStatusRow(systemImage: "arrow.triangle.2.circlepath", message: L10n.string("paywall.status.refreshingAccess"))
             } else if let error = accessController.subscriptionError?.errorDescription {
                 AVPaywallStatusRow(systemImage: "exclamationmark.triangle", message: error)
             }
@@ -35,6 +37,7 @@ struct TuneAVProPaywallView: View {
             AVPaywallLegalLinks(links: legalLinkItems)
         }
         .task {
+            await accessController.syncFromAccountProvider()
             await accessController.loadMonthlySubscriptionOffer()
         }
         .onChange(of: accessController.accessMode) { _, mode in
@@ -114,6 +117,9 @@ struct TuneAVProPaywallView: View {
         if accessController.isSubscriptionOperationInProgress {
             return L10n.string("paywall.purchase.loading")
         }
+        if accessController.isRefreshingAccountAccess {
+            return L10n.string("paywall.purchase.refreshingAccess")
+        }
         guard let offer = accessController.subscriptionOffer else {
             return L10n.string("paywall.purchase.loadingOffer")
         }
@@ -124,7 +130,9 @@ struct TuneAVProPaywallView: View {
         if !accessController.isSignedIn {
             return !accessController.accountIsAvailable
         }
-        return accessController.isSubscriptionOperationInProgress || accessController.subscriptionOffer == nil
+        return accessController.isRefreshingAccountAccess ||
+            accessController.isSubscriptionOperationInProgress ||
+            accessController.subscriptionOffer == nil
     }
 
     private var restoreTitle: String {

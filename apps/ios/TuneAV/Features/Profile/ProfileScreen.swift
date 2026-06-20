@@ -3,7 +3,7 @@ import AVExternalLinkFoundation
 import SwiftUI
 
 struct ProfileScreen: View {
-    enum Mode {
+    enum Mode: Equatable {
         case account
         case settings
     }
@@ -100,6 +100,11 @@ struct ProfileScreen: View {
             .presentationDragIndicator(.visible)
         }
         .task(id: accessController.accessMode) {
+            await refreshAccountSummaryIfNeeded()
+        }
+        .task(id: mode) {
+            guard mode == .account else { return }
+            await accessController.syncFromAccountProvider()
             await refreshAccountSummaryIfNeeded()
         }
     }

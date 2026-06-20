@@ -627,6 +627,34 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
+    func testExplicitAccountRefreshPromotesStaleSignedInFreeAccountToBackendPro() async {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+        let entitlementService = SequenceStubEntitlementService(accesses: [
+            .signedInFree,
+            .signedInPro
+        ])
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: entitlementService,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        XCTAssertEqual(controller.planTier, .free)
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertEqual(controller.accountUser, user)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertEqual(controller.planTier, .pro)
+        XCTAssertTrue(controller.capabilities.canAccessPremiumFeatures)
+        XCTAssertEqual(entitlementService.refreshCount, 2)
+    }
+
+    @MainActor
     func testActiveProviderSessionPublishesInternalAccountUserId() async {
         let providerUser = AccountUser(id: "user_clerk_subject", displayName: "Clerk User", emailAddress: "clerk@example.com")
         let internalUser = AccountUser(id: "appsav-internal-user-id", displayName: "Internal User", emailAddress: "internal@example.com")

@@ -52,6 +52,7 @@ final class AccessController: ObservableObject {
     @Published private(set) var subscriptionOffer: TuneAVSubscriptionOffer?
     @Published private(set) var subscriptionError: TuneAVSubscriptionPurchaseError?
     @Published private(set) var isAccountSessionTemporarilyUnavailable: Bool
+    @Published private(set) var isRefreshingAccountAccess: Bool
     @Published private(set) var isSubscriptionOperationInProgress: Bool
     @Published private(set) var isWaitingForSubscriptionReconciliation: Bool
     @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
@@ -124,6 +125,7 @@ final class AccessController: ObservableObject {
         self.subscriptionOffer = nil
         self.subscriptionError = nil
         self.isAccountSessionTemporarilyUnavailable = false
+        self.isRefreshingAccountAccess = false
         self.isSubscriptionOperationInProgress = false
         self.isWaitingForSubscriptionReconciliation = false
         self.subscriptionReconciliationSource = nil
@@ -170,6 +172,12 @@ final class AccessController: ObservableObject {
     func syncFromAccountProvider() async {
         accessRefreshGeneration += 1
         let generation = accessRefreshGeneration
+        isRefreshingAccountAccess = true
+        defer {
+            if generation == accessRefreshGeneration {
+                isRefreshingAccountAccess = false
+            }
+        }
 
         let diagnostics = TuneProductAccountDiagnostics()
         let sessionController = AVProductAccountSessionController(

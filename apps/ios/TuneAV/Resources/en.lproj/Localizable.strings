@@ -1032,11 +1032,13 @@
 "paywall.purchase.loading" = "Working…";
 "paywall.purchase.loadingOffer" = "Loading price…";
 "paywall.purchase.price" = "Continue for %@";
+"paywall.purchase.refreshingAccess" = "Checking access…";
 "paywall.restore" = "Restore purchases";
 "paywall.restore.loading" = "Restoring…";
 "paywall.scene.detail" = "More stations, songs, and Avi actions across your devices.";
 "paywall.scene.title" = "More memory for Avi";
 "paywall.status.purchasePending" = "Purchase received. Tune AV will unlock Pro after your account access refreshes.";
+"paywall.status.refreshingAccess" = "Checking your account access with Apps AV.";
 "paywall.status.restorePending" = "Restore completed. If your App Store account has an active subscription, Tune AV will unlock Pro after Apps AV confirms access.";
 "paywall.subscriptionTerms" = "Tune AV Pro is a monthly auto-renewable subscription. You will be charged %@ for each 1-month period until you cancel in App Store settings.";
 "paywall.subtitle" = "Upgrade your signed-in Tune AV account for more Avi actions, more saved music, and Cloud Sync.";
