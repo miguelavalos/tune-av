@@ -33,7 +33,7 @@ Current app shape:
 - local iOS Profile preferences for external web links: public web links open
   inside Tune AV by default and can be switched to the system browser;
 - local iOS Profile preference for external public-info and lyrics search, using
-  the shared Apps AV engine list with Google as the default;
+  the shared Apps AV engine list with DuckDuckGo as the default;
 - premium paywall and restore-entry UI when configured;
 - account deletion entry point and local data clearing from Profile;
 - app-neutral shared Apple UI foundations for brand tokens, shell structure,

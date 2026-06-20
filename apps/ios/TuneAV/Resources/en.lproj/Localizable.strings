@@ -156,7 +156,7 @@
 "player.discovery.lyricsShort" = "Lyrics";
 "player.artist.view" = "View artist";
 "player.artist.viewShort" = "Artist";
-"player.artist.search" = "Search artist on Google";
+"player.artist.search" = "Search artist";
 "player.artist.searchShort" = "Search";
 "player.artist.stationContext" = "On %@";
 "player.artist.web" = "Search artist on web";

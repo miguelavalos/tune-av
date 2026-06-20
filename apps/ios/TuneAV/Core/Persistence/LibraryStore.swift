@@ -725,7 +725,7 @@ final class LibraryStore: ObservableObject {
         settings.warnBeforeCellularPlayback = false
         settings.openLastStationOnLaunch = false
         settings.autoSkipUnstableStreams = false
-        settings.externalSearchEngine = AVExternalSearchEngine.google.rawValue
+        settings.externalSearchEngine = AVExternalSearchEngine.duckDuckGo.rawValue
         settings.externalWebOpenMode = AVExternalWebOpenMode.inApp.rawValue
         settings.updatedAt = .now
         saveAndRefresh(.settings)
@@ -769,7 +769,7 @@ final class LibraryStore: ObservableObject {
         settings.warnBeforeCellularPlayback = false
         settings.openLastStationOnLaunch = false
         settings.autoSkipUnstableStreams = false
-        settings.externalSearchEngine = AVExternalSearchEngine.google.rawValue
+        settings.externalSearchEngine = AVExternalSearchEngine.duckDuckGo.rawValue
         settings.externalWebOpenMode = AVExternalWebOpenMode.inApp.rawValue
         settings.updatedAt = .now
 

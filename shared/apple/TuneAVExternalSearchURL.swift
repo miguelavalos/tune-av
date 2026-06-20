@@ -17,7 +17,7 @@ enum TuneAVExternalSearchURL {
     static func url(
         for destination: Destination,
         query: String,
-        engine: AVExternalSearchEngine = .google
+        engine: AVExternalSearchEngine = .duckDuckGo
     ) -> URL? {
         switch destination {
         case .web:
@@ -33,7 +33,7 @@ enum TuneAVExternalSearchURL {
 
     static func stationSearch(
         stationName: String,
-        engine: AVExternalSearchEngine = .google
+        engine: AVExternalSearchEngine = .duckDuckGo
     ) -> URL? {
         web(query: query(parts: [stationName], suffix: "radio"), youtube: false, engine: engine)
     }
@@ -42,7 +42,7 @@ enum TuneAVExternalSearchURL {
         searchQuery: String,
         suffix: String?,
         youtube: Bool,
-        engine: AVExternalSearchEngine = .google
+        engine: AVExternalSearchEngine = .duckDuckGo
     ) -> FeatureSearch? {
         let feature: LimitedFeature = youtube ? .youtubeSearch : (suffix == nil ? .webSearch : .lyricsSearch)
         let query = query(parts: [searchQuery], suffix: suffix)
@@ -54,7 +54,7 @@ enum TuneAVExternalSearchURL {
         searchQuery: String,
         destination: Destination,
         feature: LimitedFeature,
-        engine: AVExternalSearchEngine = .google,
+        engine: AVExternalSearchEngine = .duckDuckGo,
         suffix: String? = nil
     ) -> FeatureSearch? {
         let query = query(parts: [searchQuery], suffix: suffix)
@@ -66,7 +66,7 @@ enum TuneAVExternalSearchURL {
         artist: String,
         destination: Destination,
         feature: LimitedFeature,
-        engine: AVExternalSearchEngine = .google
+        engine: AVExternalSearchEngine = .duckDuckGo
     ) -> FeatureSearch? {
         guard let url = url(for: destination, query: artist, engine: engine) else { return nil }
         return FeatureSearch(feature: feature, url: url)
@@ -75,7 +75,7 @@ enum TuneAVExternalSearchURL {
     static func web(
         query: String,
         youtube: Bool,
-        engine: AVExternalSearchEngine = .google
+        engine: AVExternalSearchEngine = .duckDuckGo
     ) -> URL? {
         if !youtube {
             return AVExternalSearchURL.webSearch(query: query, engine: engine)

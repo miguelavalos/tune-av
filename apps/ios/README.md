@@ -34,7 +34,7 @@ Optional account-connected behavior:
 - Profile settings include local external-link preferences: web links open
   inside Tune AV by default and can be changed to the system browser, and
   public-info/lyrics searches use a shared Apps AV search-engine list with
-  Google as the default
+  DuckDuckGo as the default
 - Radios and Music use overview screens with lightweight section previews, plus dedicated detail pages for long lists, search, and sorting
 - Radio surfaces contain only radios; Music surfaces contain songs and artists
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay

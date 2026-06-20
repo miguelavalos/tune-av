@@ -53,7 +53,7 @@ Tune AV app web now exists at `apps/web`.
   and shared help/legal rows.
 - `/settings` includes a local external search-engine select backed by
   `@avalsys/apps-av-web`; public-info and lyrics lookups use the configured
-  shared engine list with Google as the default.
+  shared engine list with DuckDuckGo as the default.
 - Tune Pro sync copy is constrained to the existing app-data contract: favorites
   and saved discoveries can sync when Account AV reports Pro cloud sync; recents,
   playback/session context, feedback queue, and local preferences stay

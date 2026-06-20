@@ -2585,11 +2585,15 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     func testExternalSearchURLsUseExpectedHostsAndQueryItems() {
-        let google = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false)
+        let defaultSearch = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false)
+        let google = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false, engine: .google)
         let duckDuckGo = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false, engine: .duckDuckGo)
         let bing = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: false, engine: .bing)
         let youtube = TuneAVExternalSearchURL.web(query: "Boards of Canada Dayvan Cowboy", youtube: true)
         let appleMusic = TuneAVExternalSearchURL.appleMusic(query: "Nina Simone Feeling Good")
+
+        XCTAssertEqual(defaultSearch?.host, "duckduckgo.com")
+        XCTAssertEqual(queryValue("q", in: defaultSearch), "Boards of Canada Dayvan Cowboy")
 
         XCTAssertEqual(google?.host, "www.google.com")
         XCTAssertEqual(google?.path, "/search")

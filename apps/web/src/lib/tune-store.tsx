@@ -684,7 +684,7 @@ function defaultStore(): TuneStoreState {
       preferredCountryCode: "",
       preferredTag: "",
       discoveryMode: "music",
-      externalSearchEngine: "google",
+      externalSearchEngine: "duckduckgo",
       lastPlayedStationID: null,
       dailyUsage: {}
     },

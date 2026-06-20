@@ -153,7 +153,7 @@
 "player.discovery.lyricsShort" = "Text";
 "player.artist.view" = "Künstler anzeigen";
 "player.artist.viewShort" = "Künstler";
-"player.artist.search" = "Künstler bei Google suchen";
+"player.artist.search" = "Künstler suchen";
 "player.artist.searchShort" = "Suchen";
 "player.artist.stationContext" = "Auf %@";
 "player.artist.web" = "Künstler im Web suchen";

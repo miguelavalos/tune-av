@@ -422,7 +422,7 @@ final class AppSettings {
     var warnBeforeCellularPlayback: Bool = false
     var openLastStationOnLaunch: Bool = false
     var autoSkipUnstableStreams: Bool = false
-    var externalSearchEngine: String = "google"
+    var externalSearchEngine: String = "duckduckgo"
     var externalWebOpenMode: String = "inApp"
     var updatedAt: Date
 
@@ -438,7 +438,7 @@ final class AppSettings {
         warnBeforeCellularPlayback: Bool = false,
         openLastStationOnLaunch: Bool = false,
         autoSkipUnstableStreams: Bool = false,
-        externalSearchEngine: String = "google",
+        externalSearchEngine: String = "duckduckgo",
         externalWebOpenMode: String = "inApp",
         updatedAt: Date = .now
     ) {
