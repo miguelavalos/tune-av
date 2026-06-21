@@ -186,12 +186,13 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
   }, [hasRestoredLocalStore, store]);
 
   useEffect(() => {
+    if (!hasRestoredLocalStore) return;
     if (!access.capabilities.canUseCloudSync) return;
     void synchronizeLibrary();
     void refreshUserSummary();
     void flushPendingFeedback();
     void flushPendingSessions();
-  }, [access.accessMode]);
+  }, [access.accessMode, access.capabilities.canUseCloudSync, hasRestoredLocalStore]);
 
   useEffect(() => {
     const audio = audioElement();
@@ -512,6 +513,7 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
   }, [api]);
 
   const synchronizeLibrary = useCallback(async () => {
+    if (!hasRestoredLocalStore) return;
     if (!access.capabilities.canUseCloudSync) return;
     setStore((current) => ({ ...current, syncStatus: "syncing" }));
     try {
@@ -521,25 +523,27 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
       ]);
       const remoteFavoriteEntries = remoteFavorites.data.entries as FavoriteStationRecord[];
       const remoteDiscoveryEntries = remoteDiscoveries.data.entries as TuneDiscoveredTrack[];
+      let mergedStore: TuneStoreState | null = null;
       setStore((current) => {
         const favorites = mergeFavorites(current.favorites, remoteFavoriteEntries);
         const discoveries = mergeDiscoveries(current.discoveries, remoteDiscoveryEntries);
-        return { ...current, favorites, discoveries, syncStatus: "synced", lastSyncedAt: new Date().toISOString() };
+        mergedStore = { ...current, favorites, discoveries, syncStatus: "synced", lastSyncedAt: new Date().toISOString() };
+        return mergedStore;
       });
-      const latest = readStore();
+      const latest = mergedStore ?? readStore();
       await Promise.all([
         api.pushAppData("favorites", latest.favorites),
         api.pushAppData("savedDiscoveries", latest.discoveries.filter((item) => item.markedInterestedAt || item.deletedAt))
       ]);
       queryClient.invalidateQueries({ queryKey: ["account-av", "access", "tuneav"] }).catch(() => undefined);
     } catch (error) {
-      if (error instanceof TuneApiError && error.status === 403) {
+      if (error instanceof TuneApiError && (error.status === 401 || error.status === 403)) {
         setStore((current) => ({ ...current, syncStatus: "idle" }));
         return;
       }
       setStore((current) => ({ ...current, syncStatus: "failed" }));
     }
-  }, [access.capabilities.canUseCloudSync, api, queryClient]);
+  }, [access.capabilities.canUseCloudSync, api, hasRestoredLocalStore, queryClient]);
 
   const flushPendingFeedback = useCallback(async () => {
     if (!access.capabilities.canUseCloudSync || store.pendingFeedback.length === 0) return;
