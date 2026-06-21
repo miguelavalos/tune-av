@@ -1,4 +1,3 @@
-import { AccountUserButton } from "@avalsys/account-av-web";
 import { AppShell, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -15,7 +14,6 @@ export function TuneAppShell({ children }: { children: ReactNode }) {
 
   return (
     <AppShell
-      accountArea={<AccountUserButton />}
       currentPath={pathname}
       footerLabels={text.footer}
       labels={shellLabels}
