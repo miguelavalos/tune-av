@@ -657,6 +657,7 @@ function initialStore(): TuneStoreState {
     return {
       ...defaults,
       ...parsed,
+      syncStatus: normalizeRestoredSyncStatus(parsed.syncStatus),
       settings: {
         ...defaults.settings,
         ...parsed.settings,
@@ -674,7 +675,10 @@ function readStore() {
 
 function persistStore(store: TuneStoreState) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey, JSON.stringify(store));
+  window.localStorage.setItem(storageKey, JSON.stringify({
+    ...store,
+    syncStatus: normalizePersistedSyncStatus(store.syncStatus)
+  }));
 }
 
 function defaultStore(): TuneStoreState {
@@ -714,6 +718,14 @@ function initialPlaybackState(store: TuneStoreState): PlaybackState {
     startedAt: null,
     trackDetectedCount: 0
   };
+}
+
+function normalizeRestoredSyncStatus(status: Partial<TuneStoreState>["syncStatus"]): TuneStoreState["syncStatus"] {
+  return status === "synced" ? "synced" : "idle";
+}
+
+function normalizePersistedSyncStatus(status: TuneStoreState["syncStatus"]): TuneStoreState["syncStatus"] {
+  return status === "synced" ? "synced" : "idle";
 }
 
 function audioElement() {
