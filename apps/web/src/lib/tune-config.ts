@@ -21,8 +21,7 @@ export const tuneProductConfig: AppsAvProductConfig = {
     privacy: externalLink(import.meta.env.VITE_TUNEAV_PRIVACY_URL, "Privacy"),
     suite: externalLink(import.meta.env.VITE_ACCOUNTAV_MANAGEMENT_URL, "Apps"),
     support: externalLink(supportUrl(), "Support"),
-    terms: externalLink(import.meta.env.VITE_TUNEAV_TERMS_URL, "Terms"),
-    website: externalLink("https://tune-av.avalsys.com", "Tune AV")
+    terms: externalLink(import.meta.env.VITE_TUNEAV_TERMS_URL, "Terms")
   }
 };
 
@@ -43,8 +42,7 @@ export function getLocalizedTuneProductConfig(locale: AppsAvLocale): AppsAvProdu
       privacy: localizeExternalLink(tuneProductConfig.links.privacy, labels.privacy, locale),
       suite: localizeExternalLink(tuneProductConfig.links.suite, labels.suite, locale),
       support: localizeExternalLink(tuneProductConfig.links.support, labels.support, locale),
-      terms: localizeExternalLink(tuneProductConfig.links.terms, labels.terms, locale),
-      website: localizeExternalLink(tuneProductConfig.links.website, labels.website, locale)
+      terms: localizeExternalLink(tuneProductConfig.links.terms, labels.terms, locale)
     }
   };
 }
