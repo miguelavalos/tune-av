@@ -34,11 +34,11 @@ export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="tune-paper min-h-screen overflow-hidden px-4 pt-4 sm:px-6">
-      <main className="tune-guest-shell mx-auto min-h-[calc(100vh-6rem)] w-full max-w-7xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur">
+      <main className="tune-guest-shell mx-auto min-h-[calc(100vh-2rem)] w-full max-w-7xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur">
         <img className="tune-guest-backdrop" src={tuneBrandAssets.guestHomeDial} alt="" />
         <div className="tune-guest-overlay" />
 
-        <section className="relative z-10 grid min-h-[calc(100vh-6rem)] min-w-0 gap-8 p-4 sm:p-8 lg:grid-cols-[0.84fr_1.16fr] lg:p-10 xl:p-12">
+        <section className="relative z-10 grid min-h-[calc(100vh-2rem)] min-w-0 gap-8 p-4 sm:p-8 lg:grid-cols-[0.84fr_1.16fr] lg:p-10 xl:p-12">
           <div className="tune-guest-copy flex min-w-0 flex-col justify-between gap-10 rounded-[1.35rem] border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 shadow-xl shadow-[#172f5c]/12 backdrop-blur-md sm:p-8 lg:p-10">
             <LoginCopy locale={locale} text={text} />
           </div>

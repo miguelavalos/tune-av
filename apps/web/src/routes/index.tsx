@@ -19,7 +19,22 @@ function IndexRoute() {
   const text = useTuneText();
 
   return (
-    <TuneAppShell>
+    <>
+      <SignedOut>
+        <TuneLoginPage />
+      </SignedOut>
+      <SignedIn>
+        <TuneAppShell>
+          <HomeContent locale={locale} text={text} />
+        </TuneAppShell>
+      </SignedIn>
+    </>
+  );
+}
+
+function HomeContent({ locale, text }: { locale: ReturnType<typeof useAppsAvLocale>; text: ReturnType<typeof useTuneText> }) {
+  return (
+    <>
       <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <Card className="tune-public-hero tune-paper gap-0 overflow-hidden rounded-lg border-[#d7c494] p-0 shadow-lg shadow-[#172f5c]/8">
           <img className="tune-public-hero-image" src={tuneBrandAssets.guestHomeDial} alt="" />
@@ -29,16 +44,9 @@ function IndexRoute() {
             <h1 className="mt-8 max-w-3xl text-4xl font-semibold leading-tight text-[#112a55]">{text.home.title}</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[#334766]">{text.home.body}</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <SignedIn>
-                <Button asChild className="rounded-lg bg-[#112a55] text-white hover:bg-[#19396f]">
-                  <Link to={localizedTunePath("/listen", locale)}>{text.home.cta} <ArrowRight className="size-4" /></Link>
-                </Button>
-              </SignedIn>
-              <SignedOut>
-                <Button asChild className="rounded-lg bg-[#112a55] text-white hover:bg-[#19396f]">
-                  <Link to={localizedTunePath("/sign-in", locale)}>{text.login.cta} <ArrowRight className="size-4" /></Link>
-                </Button>
-              </SignedOut>
+              <Button asChild className="rounded-lg bg-[#112a55] text-white hover:bg-[#19396f]">
+                <Link to={localizedTunePath("/listen", locale)}>{text.home.cta} <ArrowRight className="size-4" /></Link>
+              </Button>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <Feature icon={<Radio className="size-4" />} title={text.home.items[0]?.label ?? "Stations"} body={text.home.items[0]?.value ?? ""} />
@@ -68,12 +76,7 @@ function IndexRoute() {
           </div>
         </div>
       </section>
-      <SignedOut>
-        <div className="mt-6">
-          <TuneLoginPage compact />
-        </div>
-      </SignedOut>
-    </TuneAppShell>
+    </>
   );
 }
 
