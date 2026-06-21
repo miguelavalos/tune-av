@@ -63,6 +63,7 @@ const identicalAllowlist = new Set([
   "Signal",
   "Song",
   "Songs",
+  "Spotify",
   "Sports",
   "Start",
   "Station",

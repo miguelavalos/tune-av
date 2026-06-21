@@ -39,6 +39,13 @@ Tune AV Pro now keeps saved radios, saved songs, and Avi feedback in sync across
 iPhone and Mac. This update also improves sync reliability and keeps local
 feedback safer during startup.
 
+## Current Prepared iOS Candidate
+
+- Version/build: `1.0.1 (38)`.
+- App Store Connect state: build attached and export compliance complete.
+- Submission state: added to App Review on 2026-06-22; App Store Connect shows
+  `Pending Review`.
+
 ## Suggested Review Notes
 
 Tune AV uses Account AV sign-in and Tune AV Pro for cloud sync. With a signed-in
