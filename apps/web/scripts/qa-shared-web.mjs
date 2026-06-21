@@ -4,6 +4,7 @@ import { runSharedWebSmokeQa } from "../../../../apps-av/web/scripts/shared-web-
 
 const result = await runSharedWebSmokeQa({
   baseUrl: process.env.TUNEAV_WEB_QA_BASE_URL ?? "http://localhost:5194",
+  guestCopyPattern: /\b(guest-mode|invitado|invitada|convidat|convidada|gastmodus)\b/i,
   expectations: {
     ca: {
       protectedTitle: "La teva escolta queda darrere del compte AV",

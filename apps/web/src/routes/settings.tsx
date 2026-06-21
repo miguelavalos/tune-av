@@ -1,17 +1,19 @@
 import {
   SettingsActionRow,
+  HelpLegalSection,
   SettingsInfoRow,
   SettingsOptionButtonGroup,
   SettingsProfileScaffold,
   SettingsSectionCard,
   appsAvExternalSearchEngines,
   appsAvLocaleNames,
+  normalizeAppsAvThemePreference,
+  readAppsAvThemePreference,
   useAppsAvLocale,
   type AppsAvExternalSearchEngine,
-  type AppsAvLocale
+  type AppsAvLocale,
+  type AppsAvThemePreference
 } from "@avalsys/apps-av-web";
-import { HelpLegalSection } from "@avalsys/apps-av-web/src/components/account-settings-sections";
-import { normalizeAppsAvThemePreference, readAppsAvThemePreference, type AppsAvThemePreference } from "@avalsys/apps-av-web/src/lib/theme-preference";
 import { createFileRoute } from "@tanstack/react-router";
 import { Contrast, Globe, HardDrive, Languages, ListMusic, Moon, Music, Radio, Search, Smartphone, Sun, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
