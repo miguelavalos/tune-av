@@ -1,7 +1,7 @@
 import { AccountAvProvider } from "@avalsys/account-av-web";
 import { AppsAvWebProvider, getAppsAvLocaleFromSearch, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { createIsomorphicFn } from "@tanstack/react-start";
-import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRoute, redirect, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { getAccountApiBaseUrl, getAccountPublishableKey, isTuneWebAppComingSoon } from "@/lib/tune-config";
@@ -15,6 +15,11 @@ const faviconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/favicon-32x32
 const appleTouchIconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/apple-touch-icon.png?v=20260619c";
 
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    if (isTuneWebAppComingSoon() && location.pathname !== "/") {
+      throw redirect({ href: comingSoonHomeHref(location.searchStr) });
+    }
+  },
   component: RootComponent,
   head: () => ({
     meta: [
@@ -28,6 +33,11 @@ export const Route = createRootRoute({
     ]
   })
 });
+
+function comingSoonHomeHref(searchStr: string) {
+  const lang = new URLSearchParams(searchStr).get("lang");
+  return lang ? `/?lang=${encodeURIComponent(lang)}` : "/";
+}
 
 function RootComponent() {
   return (
