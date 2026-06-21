@@ -21,7 +21,8 @@ export const tuneProductConfig: AppsAvProductConfig = {
     privacy: externalLink(import.meta.env.VITE_TUNEAV_PRIVACY_URL, "Privacy"),
     suite: externalLink(import.meta.env.VITE_ACCOUNTAV_MANAGEMENT_URL, "Apps"),
     support: externalLink(supportUrl(), "Support"),
-    terms: externalLink(import.meta.env.VITE_TUNEAV_TERMS_URL, "Terms")
+    terms: externalLink(import.meta.env.VITE_TUNEAV_TERMS_URL, "Terms"),
+    website: externalLink("https://tune-av.avalsys.com", "Tune AV")
   }
 };
 
@@ -38,11 +39,12 @@ export function getLocalizedTuneProductConfig(locale: AppsAvLocale): AppsAvProdu
         }
       : undefined,
     links: {
-      deleteAccount: localizeExternalLink(tuneProductConfig.links.deleteAccount, labels.deleteAccount),
-      privacy: localizeExternalLink(tuneProductConfig.links.privacy, labels.privacy),
-      suite: localizeExternalLink(tuneProductConfig.links.suite, labels.suite),
-      support: localizeExternalLink(tuneProductConfig.links.support, labels.support),
-      terms: localizeExternalLink(tuneProductConfig.links.terms, labels.terms)
+      deleteAccount: localizeExternalLink(tuneProductConfig.links.deleteAccount, labels.deleteAccount, locale),
+      privacy: localizeExternalLink(tuneProductConfig.links.privacy, labels.privacy, locale),
+      suite: localizeExternalLink(tuneProductConfig.links.suite, labels.suite, locale),
+      support: localizeExternalLink(tuneProductConfig.links.support, labels.support, locale),
+      terms: localizeExternalLink(tuneProductConfig.links.terms, labels.terms, locale),
+      website: localizeExternalLink(tuneProductConfig.links.website, labels.website, locale)
     }
   };
 }
@@ -101,8 +103,8 @@ function externalLink(href: string | undefined, label: string) {
   return normalized ? { href: normalized, label, external: true } : undefined;
 }
 
-function localizeExternalLink(link: AppsAvProductConfig["links"][keyof AppsAvProductConfig["links"]], label: string) {
-  return link ? { ...link, label } : undefined;
+function localizeExternalLink(link: AppsAvProductConfig["links"][keyof AppsAvProductConfig["links"]], label: string, locale: AppsAvLocale = "en") {
+  return link ? { ...link, href: localizedExternalUrl(link.href, locale), label } : undefined;
 }
 
 function normalizeHref(value: string | undefined) {
@@ -124,10 +126,23 @@ function localizedAppPath(pathname: string, locale: AppsAvLocale) {
   return locale === "en" ? path : `${path}${separator}lang=${locale}`;
 }
 
-const productConfigLabels: Record<AppsAvLocale, { assistant: string; deleteAccount: string; privacy: string; suite: string; support: string; terms: string }> = {
-  ca: { assistant: "Obre la guia d'Avi", deleteAccount: "Eliminar compte", privacy: "Privacitat", suite: "Apps", support: "Suport", terms: "Termes" },
-  de: { assistant: "Avi-Hilfe oeffnen", deleteAccount: "Konto loeschen", privacy: "Datenschutz", suite: "Apps", support: "Hilfe", terms: "Bedingungen" },
-  en: { assistant: "Open Avi guidance", deleteAccount: "Delete account", privacy: "Privacy", suite: "Apps", support: "Support", terms: "Terms" },
-  es: { assistant: "Abrir guia de Avi", deleteAccount: "Eliminar cuenta", privacy: "Privacidad", suite: "Apps", support: "Soporte", terms: "Terminos" },
-  fr: { assistant: "Ouvrir l'aide d'Avi", deleteAccount: "Supprimer le compte", privacy: "Confidentialite", suite: "Apps", support: "Assistance", terms: "Conditions" }
+function localizedExternalUrl(href: string, locale: AppsAvLocale) {
+  if (locale === "en") return href;
+
+  try {
+    const url = new URL(href);
+    const path = url.pathname === "/" ? "" : url.pathname.replace(/^\/(en|es|fr|de|ca)(?=\/|$)/, "");
+    url.pathname = `/${locale}${path}`;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return href;
+  }
+}
+
+const productConfigLabels: Record<AppsAvLocale, { assistant: string; deleteAccount: string; privacy: string; suite: string; support: string; terms: string; website: string }> = {
+  ca: { assistant: "Obre la guia d'Avi", deleteAccount: "Eliminar compte", privacy: "Privacitat", suite: "Apps", support: "Suport", terms: "Termes", website: "Tune AV" },
+  de: { assistant: "Avi-Hilfe oeffnen", deleteAccount: "Konto loeschen", privacy: "Datenschutz", suite: "Apps", support: "Hilfe", terms: "Bedingungen", website: "Tune AV" },
+  en: { assistant: "Open Avi guidance", deleteAccount: "Delete account", privacy: "Privacy", suite: "Apps", support: "Support", terms: "Terms", website: "Tune AV" },
+  es: { assistant: "Abrir guia de Avi", deleteAccount: "Eliminar cuenta", privacy: "Privacidad", suite: "Apps", support: "Soporte", terms: "Terminos", website: "Tune AV" },
+  fr: { assistant: "Ouvrir l'aide d'Avi", deleteAccount: "Supprimer le compte", privacy: "Confidentialite", suite: "Apps", support: "Assistance", terms: "Conditions", website: "Tune AV" }
 };
