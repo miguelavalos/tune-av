@@ -114,6 +114,7 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
 .tune-guest-shell {
   position: relative;
   isolation: isolate;
+  min-height: min(45rem, calc(100vh - 7rem));
   max-width: min(80rem, calc(100vw - 2rem));
 }
 
@@ -140,20 +141,19 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
 
 .tune-guest-copy {
   box-sizing: border-box;
-  width: 100%;
-  max-width: min(100%, calc(100vw - 4rem));
-  min-height: 34rem;
+  display: flex;
+  min-height: inherit;
+  width: min(58%, 45rem);
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.5rem;
+  padding: clamp(1.75rem, 4vw, 3.25rem);
 }
 
 .tune-guest-gallery {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.25rem;
-  width: 100%;
-  max-width: min(100%, calc(100vw - 4rem));
-  padding: 1.25rem;
+  position: absolute;
+  inset: 1.5rem 1.5rem 1.5rem auto;
+  width: min(38%, 28rem);
 }
 
 .tune-guest-gallery::before {
@@ -168,7 +168,7 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
 
 .tune-guest-scene-card {
   position: absolute;
-  width: min(44vw, 30rem);
+  width: min(24vw, 18rem);
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border: 1px solid rgb(255 248 223 / 54%);
@@ -177,24 +177,27 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
 }
 
 .tune-guest-scene-card--left {
-  top: 1.75rem;
-  left: 1.5rem;
+  top: 1.25rem;
+  right: 1rem;
   transform: rotate(-2.5deg);
 }
 
 .tune-guest-scene-card--right {
-  right: 1.5rem;
-  bottom: 1.75rem;
+  right: 6rem;
+  bottom: 6.5rem;
   transform: rotate(2deg);
 }
 
 .tune-guest-note {
-  align-self: flex-end;
-  margin-right: clamp(0rem, 4vw, 4rem);
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }
 
 .tune-guest-caption {
-  margin-top: auto;
+  position: absolute;
+  left: 0;
+  top: 45%;
 }
 
 :root.dark .tune-paper {
@@ -240,7 +243,7 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
 .tune-public-hero {
   position: relative;
   isolation: isolate;
-  min-height: 26rem;
+  min-height: 31rem;
 }
 
 .tune-public-hero-image {
@@ -334,11 +337,14 @@ input {
   }
 
   .tune-guest-gallery {
-    min-height: 36rem;
+    display: none;
+    inset: auto 1rem 1rem auto;
+    min-height: 19rem;
+    width: min(55%, 25rem);
   }
 
   .tune-guest-scene-card {
-    width: min(64vw, 26rem);
+    width: min(35vw, 15rem);
   }
 
   .tune-public-hero h1,
@@ -352,6 +358,10 @@ input {
     max-width: calc(100vw - 2rem);
   }
 
+  .tune-guest-copy {
+    width: 100%;
+  }
+
   .tune-guest-backdrop {
     object-position: 62% 50%;
   }
@@ -363,7 +373,11 @@ input {
   }
 
   .tune-guest-gallery {
-    min-height: 34rem;
+    display: block;
+    position: relative;
+    inset: auto;
+    min-height: 32rem;
+    width: 100%;
     padding: 1rem;
   }
 
@@ -383,7 +397,15 @@ input {
   }
 
   .tune-guest-note {
-    margin-right: 0;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+
+  .tune-guest-caption {
+    left: 1rem;
+    right: 1rem;
+    top: 45%;
   }
 
   .tune-public-hero {

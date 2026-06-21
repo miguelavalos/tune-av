@@ -34,34 +34,32 @@ export function TuneLoginPage({ comingSoon = false, compact = false }: { comingS
 
   return (
     <div className="tune-paper min-h-screen overflow-hidden px-4 pt-4 sm:px-6">
-      <main className="tune-guest-shell mx-auto min-h-[calc(100vh-2rem)] w-full max-w-7xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur">
+      <main className="tune-guest-shell mx-auto min-h-[32rem] w-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur">
         <img className="tune-guest-backdrop" src={tuneBrandAssets.guestHomeDial} alt="" />
         <div className="tune-guest-overlay" />
 
-        <section className="relative z-10 grid min-h-[calc(100vh-2rem)] min-w-0 gap-8 p-4 sm:p-8 lg:grid-cols-[0.84fr_1.16fr] lg:p-10 xl:p-12">
-          <div className="tune-guest-copy flex min-w-0 flex-col justify-between gap-10 rounded-[1.35rem] border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 shadow-xl shadow-[#172f5c]/12 backdrop-blur-md sm:p-8 lg:p-10">
-            <LoginCopy comingSoon={comingSoon} locale={locale} text={text} />
-          </div>
-
-          <div className="tune-guest-gallery relative min-h-[32rem] min-w-0 overflow-hidden rounded-[1.35rem] border border-white/22 bg-[#092832]/35 shadow-2xl shadow-[#172f5c]/20">
-            {guestHomeScenes.map((scene) => (
-              <img key={scene.src} className={scene.className} src={scene.src} alt={scene.alt} />
-            ))}
-            <Card className="tune-guest-note relative z-10 mt-auto max-w-sm gap-2 rounded-2xl border-[#d4bf88] bg-[#fff8df]/90 p-5 py-5 text-[#112a55] shadow-xl shadow-[#112a55]/14 backdrop-blur-md">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <ListChecks className="size-4 text-[#087f79]" aria-hidden="true" />
-                {text.login.cardTitle}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[#47566f]">
-                {text.login.cardBody}
-              </p>
-            </Card>
-            <div className="tune-guest-caption relative z-10 max-w-sm rounded-2xl border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 text-[#112a55] shadow-xl shadow-[#112a55]/12 backdrop-blur-md">
-              <p className="font-serif text-3xl leading-tight">{text.login.mapTitle}</p>
-              <p className="mt-4 text-sm leading-6 text-[#3d4e68]">{text.login.mapBody}</p>
-            </div>
-          </div>
+        <section className="tune-guest-copy relative z-10">
+          <LoginCopy comingSoon={comingSoon} locale={locale} text={text} />
         </section>
+
+        <div className="tune-guest-gallery" aria-hidden="true">
+          {guestHomeScenes.map((scene) => (
+            <img key={scene.src} className={scene.className} src={scene.src} alt={scene.alt} />
+          ))}
+          <Card className="tune-guest-note max-w-sm gap-2 rounded-2xl border-[#d4bf88] bg-[#fff8df]/90 p-5 py-5 text-[#112a55] shadow-xl shadow-[#112a55]/14 backdrop-blur-md">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <ListChecks className="size-4 text-[#087f79]" aria-hidden="true" />
+              {text.login.cardTitle}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#47566f]">
+              {text.login.cardBody}
+            </p>
+          </Card>
+          <div className="tune-guest-caption max-w-sm rounded-2xl border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 text-[#112a55] shadow-xl shadow-[#112a55]/12 backdrop-blur-md">
+            <p className="font-serif text-3xl leading-tight">{text.login.mapTitle}</p>
+            <p className="mt-4 text-sm leading-6 text-[#3d4e68]">{text.login.mapBody}</p>
+          </div>
+        </div>
       </main>
       <AvAppFooter className="mt-4 border-transparent bg-transparent px-0 pb-4 pt-2" labels={text.footer} product={product} />
     </div>
