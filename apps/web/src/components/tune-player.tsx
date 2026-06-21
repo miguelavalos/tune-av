@@ -1,6 +1,6 @@
 import { appsAvExternalSearchUrl, useAppsAvLocale } from "@avalsys/apps-av-web";
 import type { AppsAvLocale } from "@avalsys/apps-av-web";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, ExternalLink, Heart, Info, Library, Maximize2, Music, Pause, Play, Radio, RotateCcw, Search, SkipBack, SkipForward, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -14,9 +14,12 @@ import { tuneBrandAssets } from "@/lib/tune-config";
 export function TunePlayer() {
   const tune = useTune();
   const station = tune.playback.currentStation;
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [isFullPlayerOpen, setIsFullPlayerOpen] = useState(false);
   const locale = useAppsAvLocale();
   const labels = playerText[locale];
+  const isPublicEntryRoute = pathname === "/" || pathname === "/sign-in";
+  const shouldShowPlayer = Boolean(station) && (!isPublicEntryRoute || tune.playback.status === "playing" || tune.playback.status === "loading");
 
   useEffect(() => {
     document.body.classList.toggle("tune-full-player-open", isFullPlayerOpen);
@@ -24,15 +27,15 @@ export function TunePlayer() {
   }, [isFullPlayerOpen]);
 
   useEffect(() => {
-    document.body.classList.toggle("tune-mini-player-active", Boolean(station));
+    document.body.classList.toggle("tune-mini-player-active", shouldShowPlayer);
     return () => document.body.classList.remove("tune-mini-player-active");
-  }, [station]);
+  }, [shouldShowPlayer]);
 
   useEffect(() => {
-    if (!station) setIsFullPlayerOpen(false);
-  }, [station]);
+    if (!shouldShowPlayer) setIsFullPlayerOpen(false);
+  }, [shouldShowPlayer]);
 
-  if (!station) return null;
+  if (!station || !shouldShowPlayer) return null;
 
   const artwork = stationArtworkUrl(station);
   const currentDiscovery = latestDiscoveryForStation(tune.visibleDiscoveries, station.id);
