@@ -11,18 +11,6 @@ export function TuneLoginPage({ comingSoon = false, compact = false }: { comingS
   const locale = useAppsAvLocale();
   const text = useTuneText();
   const product = getLocalizedTuneProductConfig(locale);
-  const guestHomeScenes = [
-    {
-      alt: "",
-      className: "tune-guest-scene-card tune-guest-scene-card--left",
-      src: tuneBrandAssets.guestHomeStation
-    },
-    {
-      alt: "",
-      className: "tune-guest-scene-card tune-guest-scene-card--right",
-      src: tuneBrandAssets.guestHomeAvi
-    }
-  ];
 
   if (compact) {
     return (
@@ -43,19 +31,8 @@ export function TuneLoginPage({ comingSoon = false, compact = false }: { comingS
         </section>
 
         <div className="tune-guest-gallery" aria-hidden="true">
-          {guestHomeScenes.map((scene) => (
-            <img key={scene.src} className={scene.className} src={scene.src} alt={scene.alt} />
-          ))}
-          <Card className="tune-guest-note max-w-sm gap-2 rounded-2xl border-[#d4bf88] bg-[#fff8df]/90 p-5 py-5 text-[#112a55] shadow-xl shadow-[#112a55]/14 backdrop-blur-md">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <ListChecks className="size-4 text-[#087f79]" aria-hidden="true" />
-              {text.login.cardTitle}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[#47566f]">
-              {text.login.cardBody}
-            </p>
-          </Card>
-          <div className="tune-guest-caption max-w-sm rounded-2xl border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 text-[#112a55] shadow-xl shadow-[#112a55]/12 backdrop-blur-md">
+          <img className="tune-guest-gallery-image" src={tuneBrandAssets.guestHomeStation} alt="" />
+          <div className="tune-guest-caption">
             <p className="font-serif text-3xl leading-tight">{text.login.mapTitle}</p>
             <p className="mt-4 text-sm leading-6 text-[#3d4e68]">{text.login.mapBody}</p>
           </div>

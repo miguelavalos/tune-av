@@ -154,50 +154,28 @@ body.tune-mini-player-active a.fixed[href*="/avi"] {
   position: absolute;
   inset: 1.5rem 1.5rem 1.5rem auto;
   width: min(38%, 28rem);
-}
-
-.tune-guest-gallery::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 64% 28%, rgb(248 242 223 / 30%), transparent 17rem),
-    linear-gradient(180deg, rgb(9 40 50 / 8%), rgb(9 40 50 / 44%));
-  pointer-events: none;
-}
-
-.tune-guest-scene-card {
-  position: absolute;
-  width: min(24vw, 18rem);
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
   border: 1px solid rgb(255 248 223 / 54%);
-  border-radius: 1.15rem;
+  border-radius: 1.35rem;
+  overflow: hidden;
+  background: #092832;
   box-shadow: 0 24px 60px rgb(9 40 50 / 30%);
 }
 
-.tune-guest-scene-card--left {
-  top: 1.25rem;
-  right: 1rem;
-  transform: rotate(-2.5deg);
-}
-
-.tune-guest-scene-card--right {
-  right: 6rem;
-  bottom: 6.5rem;
-  transform: rotate(2deg);
-}
-
-.tune-guest-note {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+.tune-guest-gallery-image {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
 
 .tune-guest-caption {
   position: absolute;
   left: 0;
-  top: 45%;
+  right: 0;
+  bottom: 0;
+  padding: 4rem 1.25rem 1.25rem;
+  color: #112a55;
+  background: linear-gradient(180deg, rgb(255 248 223 / 0%) 0%, rgb(255 248 223 / 92%) 34%, rgb(255 248 223 / 96%) 100%);
 }
 
 :root.dark .tune-paper {
@@ -343,10 +321,6 @@ input {
     width: min(55%, 25rem);
   }
 
-  .tune-guest-scene-card {
-    width: min(35vw, 15rem);
-  }
-
   .tune-public-hero h1,
   .tune-public-hero p {
     max-width: 22rem;
@@ -360,6 +334,16 @@ input {
 
   .tune-guest-copy {
     width: 100%;
+  }
+
+  .tune-guest-title {
+    max-width: 11ch;
+  }
+
+  .tune-guest-copy > div:first-child p,
+  .tune-guest-body {
+    width: auto !important;
+    max-width: 19rem !important;
   }
 
   .tune-guest-backdrop {
@@ -376,36 +360,13 @@ input {
     display: block;
     position: relative;
     inset: auto;
-    min-height: 32rem;
+    min-height: 18rem;
     width: 100%;
-    padding: 1rem;
-  }
-
-  .tune-guest-scene-card {
-    width: min(76vw, 22rem);
-    border-radius: 0.95rem;
-  }
-
-  .tune-guest-scene-card--left {
-    top: 1rem;
-    left: 1rem;
-  }
-
-  .tune-guest-scene-card--right {
-    right: 1rem;
-    bottom: 1rem;
-  }
-
-  .tune-guest-note {
-    right: 1rem;
-    bottom: 1rem;
-    max-width: calc(100% - 2rem);
+    margin-top: 1rem;
   }
 
   .tune-guest-caption {
-    left: 1rem;
-    right: 1rem;
-    top: 45%;
+    padding: 3.5rem 1rem 1rem;
   }
 
   .tune-public-hero {
