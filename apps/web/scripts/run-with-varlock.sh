@@ -55,6 +55,10 @@ export_from_varlock() {
     value="$(read_varlock_value "$source_key" "$repo_root" "$suite_root/services/api" "$suite_root/apps/account-av" "$suite_root/apps/support-av" "$suite_root/apps/admin-av")"
   fi
 
+  if [ -z "$value" ] && [ -x "$suite_root/scripts/resolve-infisical-optional-secret.sh" ]; then
+    value="$("$suite_root/scripts/resolve-infisical-optional-secret.sh" "$profile" "$source_key" 2>/dev/null || true)"
+  fi
+
   if [ -z "$value" ] && [ "$required" = "required" ]; then
     echo "$source_key is required. Provide it through Varlock/Infisical or as an environment variable." >&2
     exit 1
