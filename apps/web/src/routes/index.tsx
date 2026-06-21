@@ -25,8 +25,8 @@ function IndexRoute() {
           <img className="tune-public-hero-image" src={tuneBrandAssets.guestHomeDial} alt="" />
           <div className="tune-public-hero-overlay" />
           <div className="relative z-10 p-6 sm:p-8">
-            <p className="flex items-center gap-2 text-sm font-semibold text-[#087f79]"><Radio className="size-4" /> Tune AV</p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-[#112a55]">{text.home.title}</h1>
+            <img className="h-auto w-48 max-w-full sm:w-64" src={tuneBrandAssets.logo} alt="Tune AV" />
+            <h1 className="mt-8 max-w-3xl text-4xl font-semibold leading-tight text-[#112a55]">{text.home.title}</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[#334766]">{text.home.body}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <SignedIn>
@@ -57,8 +57,7 @@ function IndexRoute() {
       </section>
       <section className="mt-6 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-lg border border-[#d7c494] bg-[#fff8df]/80 p-6 shadow-lg shadow-[#172f5c]/8 sm:p-8">
-          <img className="h-auto w-44 sm:w-56" src={tuneBrandAssets.logo} alt="Tune AV" />
-          <p className="mt-5 max-w-xl text-sm leading-6 text-[#334766]">{text.login.intro}</p>
+          <p className="max-w-xl text-sm leading-6 text-[#334766]">{text.login.intro}</p>
           <h2 className="mt-8 max-w-lg text-4xl font-semibold leading-tight text-[#112a55] sm:text-5xl">{text.login.heroTitle}</h2>
         </div>
         <div className="tune-public-scene overflow-hidden rounded-lg border border-[#d7c494] bg-[#092832] p-5 shadow-lg shadow-[#172f5c]/14">

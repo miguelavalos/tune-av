@@ -1,5 +1,8 @@
 import type { AppsAvLocale, AppsAvProductConfig } from "@avalsys/apps-av-web";
 
+const tuneCommercialWordmarkUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/tune-av-wordmark.webp";
+const tuneCommercialHeroLogoUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/tune-av-hero-logo.webp";
+
 export const tuneProductConfig: AppsAvProductConfig = {
   appId: "tuneav",
   accentColor: "#29D3C8",
@@ -10,8 +13,8 @@ export const tuneProductConfig: AppsAvProductConfig = {
     name: "Avi"
   },
   iconSrc: "/assets/tune-av-icon.png",
-  logoSrc: "/assets/tune-av-logo.png",
-  logoDarkSrc: "/assets/tune-av-logo-dark.png",
+  logoSrc: tuneCommercialWordmarkUrl,
+  logoDarkSrc: tuneCommercialWordmarkUrl,
   name: "Tune AV",
   links: {
     deleteAccount: externalLink(accountManagementUrl("/account/delete"), "Delete account"),
@@ -52,10 +55,10 @@ export const tuneBrandAssets = {
   guestHomeDial: "/assets/tune-av-guest-home-1.webp",
   guestHomeStation: "/assets/tune-av-guest-home-2.webp",
   guestHomeAvi: "/assets/tune-av-guest-home-3.webp",
-  logo: "/assets/tune-av-logo.png",
+  logo: tuneCommercialHeroLogoUrl,
   logoDark: "/assets/tune-av-logo-dark.png",
   onboarding: "/assets/tune-av-onboarding.jpg",
-  wordmark: "/assets/tune-av-logo.png"
+  wordmark: tuneCommercialWordmarkUrl
 } as const;
 
 export function getAccountApiBaseUrl() {
