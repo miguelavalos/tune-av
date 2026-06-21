@@ -720,11 +720,11 @@ function initialPlaybackState(store: TuneStoreState): PlaybackState {
   };
 }
 
-function normalizeRestoredSyncStatus(status: Partial<TuneStoreState>["syncStatus"]): TuneStoreState["syncStatus"] {
+export function normalizeRestoredSyncStatus(status: Partial<TuneStoreState>["syncStatus"]): TuneStoreState["syncStatus"] {
   return status === "synced" ? "synced" : "idle";
 }
 
-function normalizePersistedSyncStatus(status: TuneStoreState["syncStatus"]): TuneStoreState["syncStatus"] {
+export function normalizePersistedSyncStatus(status: TuneStoreState["syncStatus"]): TuneStoreState["syncStatus"] {
   return status === "synced" ? "synced" : "idle";
 }
 
