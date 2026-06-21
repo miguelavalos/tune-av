@@ -88,6 +88,7 @@ const en = {
     listen: "Station tuning"
   },
   nav: {
+    account: "Account",
     avi: "Avi",
     aviLabel: "Open Avi guidance",
     home: "Home",
@@ -193,6 +194,7 @@ const es: typeof en = {
     listen: "Sintonización"
   },
   nav: {
+    account: "Cuenta",
     avi: "Avi",
     aviLabel: "Abrir guía de Avi",
     home: "Inicio",
@@ -285,7 +287,7 @@ const ca: typeof en = {
     notebook: "Biblioteca desada",
     listen: "Sintonitzacio"
   },
-  nav: { ...es.nav, home: "Inici", listen: "Escoltar", music: "Musica", openNavigation: "Obre la navegacio", primaryNavigation: "Navegacio principal", mobileNavigation: "Navegacio mobil", settings: "Ajustos" },
+  nav: { ...es.nav, account: "Compte", home: "Inici", listen: "Escoltar", music: "Musica", openNavigation: "Obre la navegacio", primaryNavigation: "Navegacio principal", mobileNavigation: "Navegacio mobil", settings: "Ajustos" },
   protected: { body: "Inicia sessio per obrir escolta, biblioteca i Avi. Tune AV web mante la funcionalitat de producte darrere del teu compte AV.", cta: "Inicia sessio", title: "La teva escolta queda darrere del compte AV." },
   signIn: { aviPanelBody: "Avi mante la propera emissora tranquil.la i intencional.", body: "Inicia sessio per connectar escolta, emissores desades i recomanacions d'Avi amb el teu compte AV.", continue: "Continua", signedIn: "Has iniciat sessio.", title: "Tune AV segueix la teva senyal." }
 };
@@ -333,7 +335,7 @@ const de: typeof en = {
     ]
   },
   login: { aviGuidance: "Avi-Hilfe", cardBody: "Halte Sender, Favoriten und Hoerkontext mit deinem AV-Konto verbunden.", cardTitle: "Weiter von deinem Signal", cta: "Anmelden", heroBody: "Melde dich an, damit Hoerverlauf, gespeicherte Sender und Avi-Hilfe verbunden bleiben.", heroTitle: "Ruhiges Radio, verbundenes Konto.", intro: "Tune AV haelt radioartiges Hoeren fokussiert, privat und in deinem AV-Konto verfuegbar.", mapBody: "Die Web-Erfahrung nutzt Tune AVs Radiostimmung: dunkle Flaechen, klare Signallinien und Avi nah an der Sitzung.", mapTitle: "Ein Hoerraum fuer fokussierte Sitzungen.", notebook: "Gespeicherte Bibliothek", listen: "Senderabstimmung" },
-  nav: { ...en.nav, aviLabel: "Avi-Hilfe oeffnen", home: "Start", homeLabel: "Tune AV Start", library: "Bibliothek", listen: "Hoeren", music: "Musik", openNavigation: "Navigation oeffnen", primaryNavigation: "Hauptnavigation", mobileNavigation: "Mobile Navigation", settings: "Einstellungen" },
+  nav: { ...en.nav, account: "Konto", aviLabel: "Avi-Hilfe oeffnen", home: "Start", homeLabel: "Tune AV Start", library: "Bibliothek", listen: "Hoeren", music: "Musik", openNavigation: "Navigation oeffnen", primaryNavigation: "Hauptnavigation", mobileNavigation: "Mobile Navigation", settings: "Einstellungen" },
   protected: { body: "Melde dich an, um Hoeren, Bibliothek und Avi zu oeffnen. Tune AV Web haelt Produktfunktionen hinter deinem AV-Konto.", cta: "Anmelden", title: "Dein Hoeren bleibt hinter deinem AV-Konto." },
   signIn: { aviPanelBody: "Avi haelt den naechsten Sender ruhig und bewusst.", body: "Melde dich an, um Tune AV Hoeren, gespeicherte Sender und Avi-Empfehlungen mit deinem AV-Konto zu verbinden.", continue: "Weiter", signedIn: "Du bist angemeldet.", title: "Tune AV folgt deinem Signal." }
 };
@@ -381,7 +383,7 @@ const fr: typeof en = {
     ]
   },
   login: { aviGuidance: "Aide d'Avi", cardBody: "Gardez stations, favoris et contexte d'ecoute lies a votre compte AV.", cardTitle: "Continuer depuis votre signal", cta: "Se connecter", heroBody: "Connectez-vous pour garder historique, stations enregistrees et aide d'Avi synchronises.", heroTitle: "Radio calme, compte connecte.", intro: "Tune AV garde l'ecoute type radio concentree, privee et disponible depuis votre compte AV.", mapBody: "L'experience web reprend l'ambiance radio de Tune AV : panneaux sombres, lignes de signal nettes et Avi proche de la session.", mapTitle: "Une salle d'ecoute pour les sessions focalisees.", notebook: "Bibliotheque enregistree", listen: "Accord de station" },
-  nav: { ...en.nav, aviLabel: "Ouvrir l'aide d'Avi", home: "Accueil", homeLabel: "Accueil Tune AV", library: "Bibliotheque", listen: "Ecouter", music: "Musique", openNavigation: "Ouvrir la navigation", primaryNavigation: "Navigation principale", mobileNavigation: "Navigation mobile", settings: "Reglages" },
+  nav: { ...en.nav, account: "Compte", aviLabel: "Ouvrir l'aide d'Avi", home: "Accueil", homeLabel: "Accueil Tune AV", library: "Bibliotheque", listen: "Ecouter", music: "Musique", openNavigation: "Ouvrir la navigation", primaryNavigation: "Navigation principale", mobileNavigation: "Navigation mobile", settings: "Reglages" },
   protected: { body: "Connectez-vous pour ouvrir l'ecoute, la bibliotheque et Avi. Tune AV web garde les fonctions produit derriere votre compte AV.", cta: "Se connecter", title: "Votre ecoute reste derriere votre compte AV." },
   signIn: { aviPanelBody: "Avi garde la prochaine station calme et intentionnelle.", body: "Connectez-vous pour relier l'ecoute Tune AV, les stations enregistrees et les recommandations d'Avi a votre compte AV.", continue: "Continuer", signedIn: "Vous etes connecte.", title: "Tune AV suit votre signal." }
 };
@@ -407,7 +409,7 @@ export function useTuneNavLinks(): AppsAvProductLink[] {
     { href: localizedTunePath("/listen", locale), label: text.nav.listen },
     { href: localizedTunePath("/library", locale), label: text.nav.library },
     { href: localizedTunePath("/music", locale), label: text.nav.music },
-    { href: localizedTunePath("/avi", locale), label: text.nav.avi },
+    { href: localizedTunePath("/account", locale), label: text.nav.account },
     { href: localizedTunePath("/settings", locale), label: text.nav.settings }
   ];
 }
