@@ -16,6 +16,7 @@ export type TuneTokenProvider = () => Promise<string | null>;
 export class TuneApiClient {
   constructor(
     private readonly baseUrl: string,
+    private readonly appDataBaseUrl: string,
     private readonly getToken: TuneTokenProvider
   ) {}
 
@@ -63,12 +64,13 @@ export class TuneApiClient {
   }
 
   pullAppData(resource: "favorites" | "savedDiscoveries") {
-    return this.fetchJson<AppDataResponse>(`/v1/apps/tuneav/data/${resource}`, { auth: true });
+    return this.fetchJson<AppDataResponse>(`/v1/apps/tuneav/data/${resource}`, { auth: true, baseUrl: this.appDataBaseUrl });
   }
 
   pushAppData(resource: "favorites" | "savedDiscoveries", entries: TuneLibrarySnapshot["favorites"] | TuneLibrarySnapshot["savedDiscoveries"], etag?: string | null) {
     return this.fetchJson<AppDataResponse>(`/v1/apps/tuneav/data/${resource}`, {
       auth: true,
+      baseUrl: this.appDataBaseUrl,
       method: "PUT",
       body: {
         appId: "tuneav",
@@ -87,7 +89,7 @@ export class TuneApiClient {
       throw new TuneApiError(401, "missing_token");
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await fetch(`${options.baseUrl ?? this.baseUrl}${path}`, {
       method: options.method ?? "GET",
       headers: {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -130,6 +132,7 @@ type AppDataResponse = {
 
 type RequestOptions = {
   auth?: boolean;
+  baseUrl?: string;
   method?: "GET" | "PUT" | "POST";
   body?: unknown;
   headers?: Record<string, string>;

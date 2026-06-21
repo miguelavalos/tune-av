@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TuneApiClient, TuneApiError } from "@/lib/tune-api";
 import { fallbackAccessForMode, signedInFreeAccess } from "@/lib/tune-access";
-import { getTuneApiBaseUrl } from "@/lib/tune-config";
+import { getAccountApiBaseUrl, getTuneApiBaseUrl } from "@/lib/tune-config";
 import { discoveryId, discoveryIdentityKey, scoreStationForAvi, stationIdentityKey, trackKey } from "@/lib/tune-station";
 import type {
   FavoriteStationRecord,
@@ -153,7 +153,7 @@ export function TuneAppProvider({ children }: { children: ReactNode }) {
   const getToken = useAccountToken();
   const appAccess = useAccountAppAccess("tuneav");
   const queryClient = useQueryClient();
-  const api = useMemo(() => new TuneApiClient(getTuneApiBaseUrl(), getToken), [getToken]);
+  const api = useMemo(() => new TuneApiClient(getTuneApiBaseUrl(), getAccountApiBaseUrl(), getToken), [getToken]);
   const access = useMemo<TuneAccessState>(() => {
     const value = appAccess.data;
     if (!value || value.accessMode === "guest") return signedInFreeAccess;
