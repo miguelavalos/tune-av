@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
-export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
+export function TuneLoginPage({ comingSoon = false, compact = false }: { comingSoon?: boolean; compact?: boolean }) {
   const locale = useAppsAvLocale();
   const text = useTuneText();
   const product = getLocalizedTuneProductConfig(locale);
@@ -27,7 +27,7 @@ export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <div className="overflow-hidden">
-        <LoginContent compact locale={locale} text={text} />
+        <LoginContent comingSoon={comingSoon} compact locale={locale} text={text} />
       </div>
     );
   }
@@ -40,7 +40,7 @@ export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
 
         <section className="relative z-10 grid min-h-[calc(100vh-2rem)] min-w-0 gap-8 p-4 sm:p-8 lg:grid-cols-[0.84fr_1.16fr] lg:p-10 xl:p-12">
           <div className="tune-guest-copy flex min-w-0 flex-col justify-between gap-10 rounded-[1.35rem] border border-[#d7c494]/82 bg-[#fff8df]/86 p-5 shadow-xl shadow-[#172f5c]/12 backdrop-blur-md sm:p-8 lg:p-10">
-            <LoginCopy locale={locale} text={text} />
+            <LoginCopy comingSoon={comingSoon} locale={locale} text={text} />
           </div>
 
           <div className="tune-guest-gallery relative min-h-[32rem] min-w-0 overflow-hidden rounded-[1.35rem] border border-white/22 bg-[#092832]/35 shadow-2xl shadow-[#172f5c]/20">
@@ -68,11 +68,11 @@ export function TuneLoginPage({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function LoginContent({ compact, locale, text }: { compact: boolean; locale: ReturnType<typeof useAppsAvLocale>; text: ReturnType<typeof useTuneText> }) {
+function LoginContent({ comingSoon, compact, locale, text }: { comingSoon: boolean; compact: boolean; locale: ReturnType<typeof useAppsAvLocale>; text: ReturnType<typeof useTuneText> }) {
   return (
     <main className={compact ? "mx-auto grid max-w-6xl overflow-hidden rounded-lg border border-[#d7c494] bg-[#fff6da]/88 shadow-lg shadow-[#172f5c]/10 md:grid-cols-[0.95fr_1.05fr]" : "mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl overflow-hidden rounded-[1.75rem] border border-[#d7c494] bg-[#fff6da]/88 shadow-2xl shadow-[#172f5c]/16 backdrop-blur md:grid-cols-[0.95fr_1.05fr]"}>
       <section className="flex flex-col justify-between gap-10 p-7 sm:p-10 lg:p-12">
-        <LoginCopy locale={locale} text={text} />
+        <LoginCopy comingSoon={comingSoon} locale={locale} text={text} />
       </section>
 
       <section className="relative min-h-[32rem] overflow-hidden bg-[#10284f] p-6 text-white lg:min-h-full">
@@ -105,7 +105,7 @@ function LoginContent({ compact, locale, text }: { compact: boolean; locale: Ret
   );
 }
 
-function LoginCopy({ locale, text }: { locale: ReturnType<typeof useAppsAvLocale>; text: ReturnType<typeof useTuneText> }) {
+function LoginCopy({ comingSoon, locale, text }: { comingSoon: boolean; locale: ReturnType<typeof useAppsAvLocale>; text: ReturnType<typeof useTuneText> }) {
   return (
     <>
       <div>
@@ -123,12 +123,18 @@ function LoginCopy({ locale, text }: { locale: ReturnType<typeof useAppsAvLocale
           {text.login.heroBody}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild className="h-12 rounded-full bg-[#112a55] px-5 text-white shadow-lg shadow-[#112a55]/18 hover:bg-[#19396f]">
-            <Link to={localizedTunePath("/sign-in", locale)}>
-              {text.login.cta}
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </Button>
+          {comingSoon ? (
+            <Button disabled className="h-12 rounded-full bg-[#112a55] px-5 text-white shadow-lg shadow-[#112a55]/18 disabled:opacity-100">
+              {comingSoonLabel(locale)}
+            </Button>
+          ) : (
+            <Button asChild className="h-12 rounded-full bg-[#112a55] px-5 text-white shadow-lg shadow-[#112a55]/18 hover:bg-[#19396f]">
+              <Link to={localizedTunePath("/sign-in", locale)}>
+                {text.login.cta}
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -139,6 +145,10 @@ function LoginCopy({ locale, text }: { locale: ReturnType<typeof useAppsAvLocale
       </div>
     </>
   );
+}
+
+function comingSoonLabel(locale: ReturnType<typeof useAppsAvLocale>) {
+  return ({ ca: "Properament", de: "Demnächst", en: "Coming soon", es: "Próximamente", fr: "Prochainement" } as const)[locale] ?? "Coming soon";
 }
 
 function LoginMetric({ icon, label }: { icon: ReactNode; label: string }) {

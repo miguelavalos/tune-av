@@ -1,9 +1,10 @@
 import { AccountAvProvider } from "@avalsys/account-av-web";
 import { AppsAvWebProvider, getAppsAvLocaleFromSearch, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { createIsomorphicFn } from "@tanstack/react-start";
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRoute, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { getAccountApiBaseUrl, getAccountPublishableKey } from "@/lib/tune-config";
+import { useEffect } from "react";
+import { getAccountApiBaseUrl, getAccountPublishableKey, isTuneWebAppComingSoon } from "@/lib/tune-config";
 import { getRequestSearch } from "@/lib/tune-request.server";
 import { TunePlayer } from "@/components/tune-player";
 import { TuneAppProvider } from "@/lib/tune-store";
@@ -47,6 +48,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       </head>
       <body>
         <AppsAvWebProvider initialLocale={initialLocale}>
+          <ComingSoonRouteGate />
           <AccountBoundary>{children}</AccountBoundary>
         </AppsAvWebProvider>
         <Scripts />
@@ -58,6 +60,19 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 const getInitialSearch = createIsomorphicFn()
   .client(() => window.location.search)
   .server(() => getRequestSearch());
+
+function ComingSoonRouteGate() {
+  const locale = useAppsAvLocale();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  useEffect(() => {
+    if (isTuneWebAppComingSoon() && pathname !== "/") {
+      window.location.replace(localizedTunePath("/", locale));
+    }
+  }, [locale, pathname]);
+
+  return null;
+}
 
 function AccountBoundary({ children }: Readonly<{ children: ReactNode }>) {
   const publishableKey = getAccountPublishableKey();

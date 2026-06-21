@@ -71,6 +71,10 @@ export function getAccountPublishableKey() {
   return import.meta.env.VITE_ACCOUNTAV_PUBLISHABLE_KEY as string | undefined;
 }
 
+export function isTuneWebAppComingSoon() {
+  return import.meta.env.VITE_TUNEAV_WEBAPP_COMING_SOON === "true";
+}
+
 export function getTuneApiBaseUrl() {
   return requiredUrl(import.meta.env.VITE_TUNEAV_API_BASE_URL, "VITE_TUNEAV_API_BASE_URL");
 }

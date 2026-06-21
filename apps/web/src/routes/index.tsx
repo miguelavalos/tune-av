@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TuneAppShell } from "@/components/tune-app-shell";
 import { TuneLoginPage } from "@/components/tune-login-page";
-import { tuneBrandAssets } from "@/lib/tune-config";
+import { isTuneWebAppComingSoon, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
 export const Route = createFileRoute("/")({
@@ -15,6 +15,10 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexRoute() {
+  if (isTuneWebAppComingSoon()) {
+    return <TuneLoginPage comingSoon />;
+  }
+
   const locale = useAppsAvLocale();
   const text = useTuneText();
 
