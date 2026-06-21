@@ -1,4 +1,3 @@
-import { AccountUserButton } from "@avalsys/account-av-web";
 import { useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,7 +34,6 @@ export function TuneAccountArea() {
       >
         {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
       </button>
-      <AccountUserButton />
     </div>
   );
 }
