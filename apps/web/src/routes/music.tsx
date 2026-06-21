@@ -62,7 +62,7 @@ function MusicRoute() {
                   <h2 className="font-semibold">{artist.name}</h2>
                   <p className="mt-1 text-sm text-[#53617a]">{artist.count} discoveries · {artist.stations.slice(0, 3).join(", ")}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <ExternalSearchButtons query={artist.name} tune={tune} />
+                    <ExternalSearchButtons labels={labels.actions} query={artist.name} tune={tune} />
                   </div>
                 </Card>
               ))}
@@ -70,7 +70,7 @@ function MusicRoute() {
           ) : (
             <div className="grid gap-3">
               {filtered.length === 0 ? <EmptyMusic labels={labels} /> : null}
-              {filtered.map((discovery) => <DiscoveryRow key={discovery.discoveryID} discovery={discovery} />)}
+              {filtered.map((discovery) => <DiscoveryRow key={discovery.discoveryID} discovery={discovery} labels={labels} />)}
             </div>
           )}
         </div>
@@ -79,7 +79,7 @@ function MusicRoute() {
   );
 }
 
-function DiscoveryRow({ discovery }: { discovery: TuneDiscoveredTrack }) {
+function DiscoveryRow({ discovery, labels }: { discovery: TuneDiscoveredTrack; labels: typeof tuneFunctionalText.en.music }) {
   const tune = useTune();
   const saved = Boolean(discovery.markedInterestedAt);
   return (
@@ -90,22 +90,24 @@ function DiscoveryRow({ discovery }: { discovery: TuneDiscoveredTrack }) {
           <p className="mt-1 text-sm text-[#53617a]">{[discovery.artist, discovery.stationName].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <IconButton active={saved} label={saved ? "Unsave" : "Save"} onClick={() => tune.toggleDiscoverySaved(discovery)}><Star className="size-4" /></IconButton>
-          {discovery.hiddenAt ? <IconButton label="Restore" onClick={() => tune.restoreDiscovery(discovery)}><Undo2 className="size-4" /></IconButton> : <IconButton label="Hide" onClick={() => tune.hideDiscovery(discovery)}><EyeOff className="size-4" /></IconButton>}
-          <IconButton label="Remove" onClick={() => tune.removeDiscovery(discovery)}><Trash2 className="size-4" /></IconButton>
-          <ExternalSearchButtons query={[discovery.title, discovery.artist].filter(Boolean).join(" ")} tune={tune} />
+          <IconButton active={saved} label={saved ? labels.actions.unsave : labels.actions.save} onClick={() => tune.toggleDiscoverySaved(discovery)}><Star className="size-4" /></IconButton>
+          {discovery.hiddenAt ? <IconButton label={labels.actions.restore} onClick={() => tune.restoreDiscovery(discovery)}><Undo2 className="size-4" /></IconButton> : <IconButton label={labels.actions.hide} onClick={() => tune.hideDiscovery(discovery)}><EyeOff className="size-4" /></IconButton>}
+          <IconButton label={labels.actions.remove} onClick={() => {
+            if (window.confirm(labels.confirmRemove)) tune.removeDiscovery(discovery);
+          }}><Trash2 className="size-4" /></IconButton>
+          <ExternalSearchButtons labels={labels.actions} query={[discovery.title, discovery.artist].filter(Boolean).join(" ")} tune={tune} />
         </div>
       </div>
     </Card>
   );
 }
 
-function ExternalSearchButtons({ query, tune }: { query: string; tune: ReturnType<typeof useTune> }) {
+function ExternalSearchButtons({ labels, query, tune }: { labels: typeof tuneFunctionalText.en.music.actions; query: string; tune: ReturnType<typeof useTune> }) {
   const searches: Array<{ label: string; feature: DailyFeature; url: string | null }> = [
-    { label: "Lyrics", feature: "lyricsSearchesPerDay" as const, url: appsAvExternalSearchUrl({ engine: tune.settings.externalSearchEngine, query: `${query} lyrics` }) },
-    { label: "YouTube", feature: "youtubeSearchesPerDay" as const, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
-    { label: "Apple", feature: "appleMusicSearchesPerDay" as const, url: `https://music.apple.com/search?term=${encodeURIComponent(query)}` },
-    { label: "Spotify", feature: "spotifySearchesPerDay" as const, url: `https://open.spotify.com/search/${encodeURIComponent(query)}` }
+    { label: labels.lyrics, feature: "lyricsSearchesPerDay" as const, url: appsAvExternalSearchUrl({ engine: tune.settings.externalSearchEngine, query: `${query} lyrics` }) },
+    { label: labels.youtube, feature: "youtubeSearchesPerDay" as const, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
+    { label: labels.apple, feature: "appleMusicSearchesPerDay" as const, url: `https://music.apple.com/search?term=${encodeURIComponent(query)}` },
+    { label: labels.spotify, feature: "spotifySearchesPerDay" as const, url: `https://open.spotify.com/search/${encodeURIComponent(query)}` }
   ];
   return searches.map((search) => {
     const url = search.url;
