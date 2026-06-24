@@ -43,8 +43,8 @@ feedback safer during startup.
 
 - Version/build: `1.0.1 (38)`.
 - App Store Connect state: build attached and export compliance complete.
-- Submission state: added to App Review on 2026-06-22; App Store Connect shows
-  `Pending Review`.
+- Submission state: added to App Review on 2026-06-22 and approved for the App
+  Store on 2026-06-24 per operator report.
 
 ## Suggested Review Notes
 
