@@ -1846,7 +1846,7 @@ final class TuneAVMacModel: ObservableObject {
         TuneAVAppDataSyncClient(deviceId: "tuneav-mac") { [weak self] path, method, body, headers in
             guard let self else { throw TuneAVAppDataClientError.missingToken }
             do {
-                return try await self.makeTuneAPIClient().requestData(
+                return try await self.makeAccountAPIClient().requestData(
                     path: path,
                     method: method,
                     body: body,

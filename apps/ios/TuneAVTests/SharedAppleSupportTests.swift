@@ -1165,6 +1165,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession()
         )
         let service = TuneAVAppDataService(apiClient: client)
@@ -1206,6 +1207,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession()
         )
         let service = TuneAVAppDataService(apiClient: client)
@@ -1253,6 +1255,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession()
         )
         let service = TuneAVAppDataService(apiClient: client)
@@ -1304,6 +1307,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession()
         )
         let service = TuneAVAppDataService(apiClient: client)
@@ -1346,6 +1350,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession(),
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
         )
@@ -1372,6 +1377,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession(),
             metricsSink: AVAccountAPIClient.MetricsSink { events.append($0) }
         )
@@ -1410,6 +1416,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession(),
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0),
             metricsSink: AVAccountAPIClient.MetricsSink { events.append($0) }
@@ -1443,6 +1450,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: testURLSession(),
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
         )
