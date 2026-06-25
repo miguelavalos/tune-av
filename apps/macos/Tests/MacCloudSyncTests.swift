@@ -42,12 +42,12 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
-    func testLocalChangesDebounceCloudSyncOnlyWhenSignedIn() {
+    func testLocalChangesDoNotAutomaticallyScheduleCloudSync() {
         let trigger = MacCloudSyncTrigger()
 
         XCTAssertEqual(
             trigger.localLibraryChanged(accountAvailable: true, hasUser: true, hasProAccess: true),
-            .schedule(MacCloudSyncTrigger.localChangeDelay)
+            .none
         )
         XCTAssertEqual(
             trigger.localLibraryChanged(accountAvailable: true, hasUser: false, hasProAccess: false),

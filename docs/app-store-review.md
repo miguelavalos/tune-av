@@ -33,18 +33,28 @@ approval records outside this repository.
   local availability states and should not surface as reviewer-visible raw
   diagnostics.
 
-## Suggested What's New
+## Suggested Public Release Copy
 
-Tune AV Pro now keeps saved radios, saved songs, and Avi feedback in sync across
-iPhone and Mac. This update also improves sync reliability and keeps local
-feedback safer during startup.
+## Current App Store Review Candidates
 
-## Current Prepared iOS Candidate
-
-- Version/build: `1.0.1 (38)`.
-- App Store Connect state: build attached and export compliance complete.
-- Submission state: added to App Review on 2026-06-22 and approved for the App
-  Store on 2026-06-24 per operator report.
+- iOS version/build: `1.0.2 (39)`.
+- macOS version/build: `1.0.2 (39)`.
+- macOS App Store first release `1.0.2 (39)` was submitted to App Review on
+  2026-06-25 after the build, metadata, subscription setup, manual release
+  setting, and screenshots were completed in App Store Connect.
+- iOS public release notes can stay generic for this maintenance release, for
+  example `Bug fixes.`.
+- macOS is a first platform release. Do not use maintenance-release language such
+  as `Bug fixes.` for macOS. Use first-release product copy such as
+  `Tune AV is now available on Mac.` where App Store Connect asks for
+  promotional text or release copy.
+- macOS release preview v1 screenshots are prepared locally in
+  `docs/app-store/screenshots/macos/`:
+  `01-home.png`, `02-search.png`, `03-music.png`, `04-library.png`, and
+  `05-profile.png`.
+- The prepared macOS screenshot assets are `1440 x 900` PNGs and should be
+  kept locally as the release preview v1 source assets. They are intentionally
+  local/ignored release assets, not public-source files.
 
 ## Suggested Review Notes
 

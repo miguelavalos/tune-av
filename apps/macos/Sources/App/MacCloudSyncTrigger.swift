@@ -23,9 +23,8 @@ struct MacCloudSyncTrigger {
         syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.startupDelay)
     }
 
-    func localLibraryChanged(accountAvailable: Bool, hasUser: Bool, hasProAccess: Bool) -> Action {
-        guard !isApplyingCloudSnapshot else { return .none }
-        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.localChangeDelay)
+    func localLibraryChanged(accountAvailable _: Bool, hasUser _: Bool, hasProAccess _: Bool) -> Action {
+        .none
     }
 
     func signOutStarted() -> Action {

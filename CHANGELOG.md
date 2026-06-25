@@ -8,6 +8,16 @@ This project follows semantic versioning once public source releases begin.
 
 - No unreleased public client changes.
 
+## 1.0.2 - 2026-06-25
+
+- Reduce Pro cloud sync activity on iOS and macOS so Tune AV no longer keeps a
+  continuous background polling loop while the app is open.
+- Limit automatic Pro library refresh to the first app open or sign-in/access
+  availability in the current app session; later refreshes can be triggered
+  manually.
+- Keep the existing local-first library merge behavior for saved stations,
+  saved songs, feedback, and tombstones.
+
 ## 1.0.1 - 2026-06-14
 
 - Complete the Tune AV shared-client foundation pass, consuming app-neutral

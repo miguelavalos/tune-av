@@ -75,6 +75,8 @@ targets:
       - package: AppsAV
         product: AVSettingsFoundation
       - package: AppsAV
+        product: AVExternalLinkFoundation
+      - package: AppsAV
         product: AVAviFoundation
       - package: AppsAV
         product: AVPaywallFoundation
@@ -85,6 +87,8 @@ targets:
     info:
       path: Supporting/Info.plist
       properties:
+        CFBundleShortVersionString: "1.0.2"
+        CFBundleVersion: "39"
         CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)

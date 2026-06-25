@@ -177,7 +177,6 @@ final class TuneAVMacModel: ObservableObject {
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var pendingCloudSyncTask: Task<Void, Never>?
-    private var cloudSyncPollingTask: Task<Void, Never>?
     private var proRealtimeSessionTask: Task<Void, Never>?
     private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
@@ -214,7 +213,6 @@ final class TuneAVMacModel: ObservableObject {
 
     deinit {
         pendingCloudSyncTask?.cancel()
-        cloudSyncPollingTask?.cancel()
         proRealtimeSessionTask?.cancel()
         sleepTimerTask?.cancel()
         trackArtworkTask?.cancel()
@@ -1796,10 +1794,8 @@ final class TuneAVMacModel: ObservableObject {
         }
         if resolvedAccess.accessMode == .signedInPro {
             upgradePrompt = nil
-            startCloudSyncPolling()
             startProRealtimeSyncIfNeeded()
         } else {
-            stopCloudSyncPolling()
             stopProRealtimeSync()
         }
     }
@@ -2374,27 +2370,6 @@ final class TuneAVMacModel: ObservableObject {
                 return
             }
         }
-    }
-
-    private func startCloudSyncPolling() {
-        guard cloudSyncPollingTask == nil else { return }
-        cloudSyncPollingTask = Task { [weak self] in
-            while !Task.isCancelled {
-                do {
-                    try await Task.sleep(for: .seconds(15))
-                    guard !Task.isCancelled else { return }
-                    guard let self, self.hasProCloudSyncAccess, self.cloudSyncStatus != .syncing else { continue }
-                    await self.synchronizeLibraryNow()
-                } catch {
-                    return
-                }
-            }
-        }
-    }
-
-    private func stopCloudSyncPolling() {
-        cloudSyncPollingTask?.cancel()
-        cloudSyncPollingTask = nil
     }
 
     private func sortedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {

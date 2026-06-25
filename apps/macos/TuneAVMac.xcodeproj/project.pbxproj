@@ -13,8 +13,9 @@
 		07A45F961828AC143CA5D655 /* TuneAVStationFeedbackControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88785BF8E497CD1DBFAC244 /* TuneAVStationFeedbackControls.swift */; };
 		082AFF6E2CE010AE3DED6F85 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 62AB83A40BCBFEA1C508DE57 /* Localizable.strings */; };
 		0DBB9A3EC4C46E318281FB1A /* TuneAVDiscoveryShareTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B601DB899EC3FAA180C8DA /* TuneAVDiscoveryShareTextFormatter.swift */; };
+		0DC4D5E6DDACC87124C0EFF3 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = C3ACDA28829A3904A1B6ED47 /* ConvexMobile */; };
 		11332DD32B0CFB21836C4994 /* TuneAVDailyUsageLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA1404F908BC7318A328CDC /* TuneAVDailyUsageLimiter.swift */; };
-		126BE6C76EA3FCD2BC1EED14 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = C3ACDA28829A3904A1B6ED47 /* ConvexMobile */; };
+		126BE6C76EA3FCD2BC1EED14 /* AVDiagnosticsFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E21EC6AEF4EE21AA5632C3AE /* AVDiagnosticsFoundation */; };
 		12790A3C24B1DA52D7E21D77 /* MacStationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7DEE3B2AD1FFD82323FA71A /* MacStationDetailView.swift */; };
 		162E859CCCBFDA75E703EBDF /* AVBrandFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B402DDE0D762599B6110FE42 /* AVBrandFoundation */; };
 		1ACC6052B1279928A6EA2971 /* TuneAVTrackMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */; };
@@ -47,7 +48,7 @@
 		7B0309A86C6D98398658CA6E /* TuneAVUITestAccountDeletionScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A7AC7B73C839883433878A /* TuneAVUITestAccountDeletionScenarios.swift */; };
 		7D04E09AD5DD321B60222524 /* TuneAVMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */; };
 		7D1AAB0B317C266DDC8688B4 /* MacCloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17334A568C86EE82A2ECDDFE /* MacCloudSyncTests.swift */; };
-		86361103BE48CA0FF0A0BAAB /* AVAviFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 837F67518FC0C2DF85357A9D /* AVAviFoundation */; };
+		86361103BE48CA0FF0A0BAAB /* AVExternalLinkFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 5A552B76A5A6A50E7560D123 /* AVExternalLinkFoundation */; };
 		88E8CC612CD4876CE13715BC /* TuneAVAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCFBB4C4C085969BC3C55B3B /* TuneAVAccountModels.swift */; };
 		89B2ADE63963CF8103793420 /* TuneAVLocalFeedbackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3590A93D4505151DCD668777 /* TuneAVLocalFeedbackStore.swift */; };
 		89E869B7F01A0BEE7657350D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E8310E584FFDAC25B7D1AB5D /* Localizable.strings */; };
@@ -64,11 +65,11 @@
 		A894C166BCA011B111A33124 /* TuneAVExternalSearchURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982EBF907088952B44522371 /* TuneAVExternalSearchURL.swift */; };
 		AB092889DDAB13A902A0E08A /* TuneAVSleepTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DE0A373AB37620B340E29C /* TuneAVSleepTimerController.swift */; };
 		AB339A7D0DC7B823F9ABBC07 /* MacStationViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D51CC72AFC94D9E7DA15CF /* MacStationViews.swift */; };
-		ABA2A844CA2D96D12E8DA03B /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */; };
+		ABA2A844CA2D96D12E8DA03B /* AVAviFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 837F67518FC0C2DF85357A9D /* AVAviFoundation */; };
 		AE14490493617327EAB29FBF /* TuneAVUpgradePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1301668C52968D72F70F5CEB /* TuneAVUpgradePrompt.swift */; };
 		BA86E91D05DFDD718B6AA3A8 /* TuneAVDateCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */; };
 		BE7765ACC4B1BEDE27DACCD8 /* TuneAVSavedStationIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C7D3F1E4C73F0AFA606C8E3 /* TuneAVSavedStationIcon.swift */; };
-		C06D14E62FEA5E809E1473B2 /* AVDiagnosticsFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E21EC6AEF4EE21AA5632C3AE /* AVDiagnosticsFoundation */; };
+		C06D14E62FEA5E809E1473B2 /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */; };
 		C11E80DE5CF0F91C08416A98 /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */; };
 		CA27342578046FF28B0ECB8D /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = C547C8DDD40412AA45F4F655 /* TuneAVL10n.swift */; };
 		CEBC3B1592332B76535B408B /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = E80A66F42DA2B6DE1F514487 /* TuneAVAppShellHomeFeed.swift */; };
@@ -197,10 +198,11 @@
 				5BD9B44CCE1779233936C6F0 /* AVAppShellFoundation in Frameworks */,
 				E001508D1B89AF2D87BE7995 /* AVLaunchFoundation in Frameworks */,
 				FBA7A4CA8B508CC473A7CA60 /* AVSettingsFoundation in Frameworks */,
-				86361103BE48CA0FF0A0BAAB /* AVAviFoundation in Frameworks */,
-				ABA2A844CA2D96D12E8DA03B /* AVPaywallFoundation in Frameworks */,
-				C06D14E62FEA5E809E1473B2 /* AVDiagnosticsFoundation in Frameworks */,
-				126BE6C76EA3FCD2BC1EED14 /* ConvexMobile in Frameworks */,
+				86361103BE48CA0FF0A0BAAB /* AVExternalLinkFoundation in Frameworks */,
+				ABA2A844CA2D96D12E8DA03B /* AVAviFoundation in Frameworks */,
+				C06D14E62FEA5E809E1473B2 /* AVPaywallFoundation in Frameworks */,
+				126BE6C76EA3FCD2BC1EED14 /* AVDiagnosticsFoundation in Frameworks */,
+				0DC4D5E6DDACC87124C0EFF3 /* ConvexMobile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -444,6 +446,7 @@
 				EFA0FAE8086A1B9324EF6BF1 /* AVAppShellFoundation */,
 				852F686E59DEE687DF7D7A21 /* AVLaunchFoundation */,
 				25230F2072F4113C35DB7BD5 /* AVSettingsFoundation */,
+				5A552B76A5A6A50E7560D123 /* AVExternalLinkFoundation */,
 				837F67518FC0C2DF85357A9D /* AVAviFoundation */,
 				03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */,
 				E21EC6AEF4EE21AA5632C3AE /* AVDiagnosticsFoundation */,
@@ -612,7 +615,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0E97EC2159E8FB931BC135DB /* Release.xcconfig */;
 			buildSettings = {
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -659,7 +661,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E83E8DB80EDC0E5836D532A1 /* Debug.xcconfig */;
 			buildSettings = {
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Supporting/TuneAVMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -891,6 +892,10 @@
 		3FBCA1692EF65BC3F2E0F236 /* AccountAV */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AccountAV;
+		};
+		5A552B76A5A6A50E7560D123 /* AVExternalLinkFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AVExternalLinkFoundation;
 		};
 		837F67518FC0C2DF85357A9D /* AVAviFoundation */ = {
 			isa = XCSwiftPackageProductDependency;

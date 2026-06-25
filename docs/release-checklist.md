@@ -229,6 +229,30 @@ separate development bundle identifier.
    Apple Silicon-only platform expectations with
    [app-store-review.md](app-store-review.md).
 
+9. Capture or upload App Store Connect macOS screenshots at an accepted size
+   (`1280 x 800`, `1440 x 900`, `2560 x 1600`, or `2880 x 1800`). Local scripted
+   screenshot capture on macOS may require Screen Recording permission for the
+   terminal or automation host.
+
+   For the first macOS release preview, keep the local App Store screenshot set
+   in `docs/app-store/screenshots/macos/`:
+   - `01-home.png`
+   - `02-search.png`
+   - `03-music.png`
+   - `04-library.png`
+   - `05-profile.png`
+
+   The current preview assets are `1440 x 900` PNGs, flattened to an opaque
+   light background, and mirror the accepted iOS first-release story adapted to
+   the Mac UI: live radio home, search, music/saved songs, library, and account
+   profile. The `docs/app-store/screenshots/` tree is intentionally gitignored
+   because screenshots are large release assets; preserve the local files until
+   they have been uploaded or intentionally regenerated.
+
+   For macOS App Store first release `1.0.2 (39)`, the five preview v1
+   screenshots were uploaded to App Store Connect in order and the version was
+   submitted to App Review on 2026-06-25.
+
 ## Pending Product API Transition Checks
 
 These checks apply to the next Tune AV client release after the product API

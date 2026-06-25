@@ -4,8 +4,6 @@
 <dict>
 	<key>ACCOUNTAV_API_BASE_URL</key>
 	<string>$(ACCOUNTAV_API_BASE_URL)</string>
-	<key>TUNEAV_API_BASE_URL</key>
-	<string>$(TUNEAV_API_BASE_URL)</string>
 	<key>ACCOUNTAV_KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(ACCOUNTAV_KEYCHAIN_ACCESS_GROUP)</string>
 	<key>ACCOUNTAV_KEYCHAIN_SERVICE</key>
@@ -29,7 +27,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.1</string>
+	<string>1.0.2</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -42,7 +40,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>38</string>
+	<string>39</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
@@ -54,6 +52,8 @@
 	<string>$(SUPPORTAV_BASE_URL)</string>
 	<key>SUPPORT_EMAIL_TO</key>
 	<string>$(SUPPORT_EMAIL_TO)</string>
+	<key>TUNEAV_API_BASE_URL</key>
+	<string>$(TUNEAV_API_BASE_URL)</string>
 	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
 	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
 	<key>TUNEAV_CONVEX_URL</key>
