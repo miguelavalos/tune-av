@@ -22,6 +22,10 @@ Reproducible Tune AV iOS release workflow:
 4. verifies bundle id, team id, build, app dSYM, and Sentry dSYM;
 5. uploads to App Store Connect only when --upload is passed.
 
+Before unattended --upload from a new/reconfigured Mac, complete the private
+apple-release-machine setup so the Distribution key can codesign without a
+password prompt.
+
 Without --upload, this is a dry run that leaves a verified .xcarchive ready for
 manual distribution.
 USAGE

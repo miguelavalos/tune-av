@@ -43,6 +43,10 @@ Mandatory rules:
   defines one;
 - use Infisical/Varlock-backed private tooling for config, deploy keys, and
   secret resolution;
+- before unattended TestFlight/App Store export/upload from a new or recently
+  reconfigured Mac, complete the private release-machine setup in
+  `private/avalsys-suite/docs/platform/apple-release-machine-setup.md`; the
+  Apple Distribution private key must pass non-interactive `codesign`;
 - keep private URLs, service identifiers, approval status, and operations
   evidence out of this public repo;
 - treat Account AV provider session identity as session metadata only; product

@@ -21,6 +21,10 @@ Reproducible Tune AV macOS release workflow:
 3. verifies bundle id, team id, signing class, and arm64 architecture;
 4. uploads to App Store Connect only when --upload is passed.
 
+Before unattended --upload from a new/reconfigured Mac, complete the private
+apple-release-machine setup so the Distribution key can codesign without a
+password prompt.
+
 Without --upload, this is a dry run that leaves a verified .xcarchive ready for
 manual distribution.
 USAGE

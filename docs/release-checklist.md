@@ -122,6 +122,10 @@ public-safe config hygiene.
    upload is allowed. To upload the verified archive, rerun the command printed
    by the workflow with `--upload`.
 
+   Before unattended upload from a new or recently reconfigured Mac, complete
+   the private `docs/platform/apple-release-machine-setup.md` gate so the Apple
+   Distribution private key can pass non-interactive `codesign`.
+
    For an existing Organizer archive, run:
 
    ```sh
