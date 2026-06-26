@@ -2,28 +2,39 @@ import SwiftUI
 
 enum MacRootSection: String, CaseIterable, Identifiable {
     case home
-    case search
     case library
     case music
+    case search
+    case avi
     case profile
     case settings
 
     var id: String { rawValue }
 
+    static var primarySidebarSections: [MacRootSection] {
+        [.home, .library, .music, .search, .avi]
+    }
+
+    static var footerSidebarSections: [MacRootSection] {
+        [.settings, .profile]
+    }
+
     var title: String {
         switch self {
         case .home:
             L10n.string("tab.home")
-        case .search:
-            L10n.string("tab.search")
         case .library:
             L10n.string("tab.library")
         case .music:
             L10n.string("tab.music")
+        case .search:
+            L10n.string("tab.search")
+        case .avi:
+            "Avi"
         case .profile:
-            L10n.string("tab.profile")
+            L10n.string("profile.accountScreen.title")
         case .settings:
-            L10n.string("shell.header.settings")
+            L10n.string("profile.settingsScreen.title")
         }
     }
 
@@ -31,16 +42,18 @@ enum MacRootSection: String, CaseIterable, Identifiable {
         switch self {
         case .home:
             "house.fill"
-        case .search:
-            "magnifyingglass"
         case .library:
             "dot.radiowaves.left.and.right"
         case .music:
             "music.note.list"
+        case .search:
+            "magnifyingglass"
+        case .avi:
+            "sparkles"
         case .profile:
-            "person.crop.circle"
+            "person.crop.circle.fill"
         case .settings:
-            "gearshape"
+            "gearshape.fill"
         }
     }
 }
@@ -50,11 +63,7 @@ struct MacRootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(MacRootSection.allCases, selection: $model.selectedSection) { section in
-                Label(section.title, systemImage: section.symbol)
-                    .tag(section)
-            }
-            .listStyle(.sidebar)
+            MacSidebarView(selection: $model.selectedSection)
             .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 280)
         } detail: {
             HStack(spacing: 0) {
@@ -135,6 +144,8 @@ struct MacRootView: View {
                 })
             case .search:
                 MacSearchView()
+            case .avi:
+                MacAviView()
             case .library:
                 MacLibraryView()
             case .music:
@@ -163,5 +174,173 @@ struct MacRootView: View {
 
     private var upgradePromptTitle: String {
         model.upgradePrompt?.title ?? L10n.string("limits.upgrade.eyebrow")
+    }
+}
+
+private struct MacSidebarView: View {
+    @Binding var selection: MacRootSection
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image("HeaderWordmark")
+                    .renderingMode(.original)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 138, height: 44, alignment: .leading)
+                    .accessibilityLabel(L10n.string("app.name"))
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.bottom, 12)
+
+            ForEach(MacRootSection.primarySidebarSections) { section in
+                MacSidebarButton(
+                    section: section,
+                    isSelected: selection == section
+                ) {
+                    selection = section
+                }
+            }
+
+            Spacer(minLength: 16)
+
+            ForEach(MacRootSection.footerSidebarSections) { section in
+                MacSidebarButton(
+                    section: section,
+                    isSelected: selection == section
+                ) {
+                    selection = section
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.regularMaterial)
+        .accessibilityIdentifier("tune.shell.mac.sidebar")
+    }
+}
+
+private struct MacSidebarButton: View {
+    let section: MacRootSection
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Label {
+                Text(section.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } icon: {
+                Image(systemName: section.symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 20)
+            }
+            .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(buttonBackground, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityLabel(section.title)
+        .accessibilityIdentifier("tune.sidebar.\(section.rawValue)")
+    }
+
+    private var buttonBackground: some ShapeStyle {
+        if isSelected {
+            return AnyShapeStyle(Color.primary.opacity(0.10))
+        }
+        if isHovered {
+            return AnyShapeStyle(Color.primary.opacity(0.06))
+        }
+        return AnyShapeStyle(Color.clear)
+    }
+}
+
+private struct MacAviView: View {
+    @EnvironmentObject private var model: TuneAVMacModel
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 258, maximum: 340), spacing: 12, alignment: .top)
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+
+                if model.allAviPickStations.isEmpty {
+                    ContentUnavailableView(
+                        L10n.string("mac.stations.empty"),
+                        systemImage: "sparkles",
+                        description: Text(L10n.string("shell.home.aviPicks.subtitle"))
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 360)
+                } else {
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+                        ForEach(model.allAviPickStations) { station in
+                            MacStationArtworkCard(station: station)
+                                .frame(height: 112)
+                                .environment(\.macStationPlaybackQueue, model.allAviPickStations)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 26)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+        .accessibilityIdentifier("mac.avi")
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image("AviV2HeadNeutral")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 58, height: 58)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Avi")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Text(L10n.string("shell.home.aviPicks.subtitle"))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+
+            if !model.allAviPickStations.isEmpty {
+                Button {
+                    model.openHomeStationList(
+                        id: "aviPicks",
+                        title: L10n.string("shell.home.aviPicks.title"),
+                        subtitle: L10n.string("shell.home.aviPicks.subtitle"),
+                        stations: model.allAviPickStations
+                    )
+                } label: {
+                    Label(L10n.string("common.seeAll"), systemImage: "arrow.right")
+                        .font(.system(size: 13, weight: .black))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(TuneAVTheme.highlight)
+            }
+        }
     }
 }

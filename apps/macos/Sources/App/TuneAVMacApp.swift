@@ -36,30 +36,37 @@ struct TuneAVMacApp: App {
                 }
                 .keyboardShortcut("1", modifiers: [.command])
 
-                Button(L10n.string("tab.search")) {
-                    model.selectedSection = .search
-                }
-                .keyboardShortcut("2", modifiers: [.command])
-
                 Button(L10n.string("tab.library")) {
                     model.selectedSection = .library
                 }
-                .keyboardShortcut("3", modifiers: [.command])
+                .keyboardShortcut("2", modifiers: [.command])
 
                 Button(L10n.string("tab.music")) {
                     model.selectedSection = .music
                 }
+                .keyboardShortcut("3", modifiers: [.command])
+
+                Button(L10n.string("tab.search")) {
+                    model.selectedSection = .search
+                }
                 .keyboardShortcut("4", modifiers: [.command])
 
-                Button(L10n.string("tab.profile")) {
-                    model.selectedSection = .profile
+                Button("Avi") {
+                    model.selectedSection = .avi
                 }
                 .keyboardShortcut("5", modifiers: [.command])
 
-                Button(L10n.string("shell.header.settings")) {
+                Divider()
+
+                Button(L10n.string("profile.settingsScreen.title")) {
                     model.selectedSection = .settings
                 }
                 .keyboardShortcut(",", modifiers: [.command])
+
+                Button(L10n.string("profile.accountScreen.title")) {
+                    model.selectedSection = .profile
+                }
+                .keyboardShortcut("6", modifiers: [.command])
             }
 
             CommandMenu(L10n.string("mac.menu.playback")) {
