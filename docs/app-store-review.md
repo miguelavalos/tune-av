@@ -38,10 +38,11 @@ approval records outside this repository.
 ## Current App Store Review Candidates
 
 - iOS version/build: `1.0.2 (39)`.
-- macOS version/build: `1.0.2 (39)`.
-- macOS App Store first release `1.0.2 (39)` was submitted to App Review on
-  2026-06-25 after the build, metadata, subscription setup, manual release
-  setting, and screenshots were completed in App Store Connect.
+- macOS version/build: `1.0.2 (42)`.
+- macOS App Store first release `1.0.2 (42)` was submitted to App Review on
+  2026-06-26 after the build, metadata, subscription setup, manual release
+  setting, screenshots, and macOS TestFlight Pro purchase/restore visibility
+  checks were completed in App Store Connect.
 - iOS public release notes can stay generic for this maintenance release, for
   example `Bug fixes.`.
 - macOS is a first platform release. Do not use maintenance-release language such

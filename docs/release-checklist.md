@@ -262,9 +262,10 @@ separate development bundle identifier.
    because screenshots are large release assets; preserve the local files until
    they have been uploaded or intentionally regenerated.
 
-   For macOS App Store first release `1.0.2 (39)`, the five preview v1
+   For macOS App Store first release `1.0.2 (42)`, the five preview v1
    screenshots were uploaded to App Store Connect in order and the version was
-   submitted to App Review on 2026-06-25.
+   submitted to App Review on 2026-06-26 after validating the macOS TestFlight
+   Pro purchase path with the production backend.
 
 ## Pending Product API Transition Checks
 
