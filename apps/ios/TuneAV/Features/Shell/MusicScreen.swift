@@ -57,41 +57,45 @@ struct MusicScreen: View {
         let snapshot = musicDerivedState
         let showsOverview = isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil
 
-        ZStack(alignment: .top) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if showsOverview {
-                        AviScreenHeader(
-                            emotion: TuneAVAviEmotionResolver.musicEmotion(
-                                visibleDiscoveryCount: snapshot.visibleDiscoveries.count,
-                                savedDiscoveryCount: snapshot.savedDiscoveries.count,
-                                artistCount: snapshot.visibleArtistSummaries.count
-                            ),
-                            title: L10n.string("shell.music.title"),
-                            summary: musicAviDetail(snapshot),
-                            showsAviImage: false,
-                            accessibilityIdentifier: "music.aviHeader"
-                        )
+        TuneAdaptiveLayoutReader { layout in
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if showsOverview {
+                            AviScreenHeader(
+                                emotion: TuneAVAviEmotionResolver.musicEmotion(
+                                    visibleDiscoveryCount: snapshot.visibleDiscoveries.count,
+                                    savedDiscoveryCount: snapshot.savedDiscoveries.count,
+                                    artistCount: snapshot.visibleArtistSummaries.count
+                                ),
+                                title: L10n.string("shell.music.title"),
+                                summary: musicAviDetail(snapshot),
+                                showsAviImage: false,
+                                accessibilityIdentifier: "music.aviHeader"
+                            )
 
-                        musicOverview(snapshot)
-                    } else {
-                        Color.clear
-                            .frame(height: musicDetailHeaderReservedHeight)
+                            musicOverview(snapshot)
+                        } else {
+                            Color.clear
+                                .frame(height: musicDetailHeaderReservedHeight)
 
-                        discoveryLibrarySection(snapshot)
+                            discoveryLibrarySection(snapshot)
+                        }
                     }
+                    .shellScreenContentPadding(layout: layout, bottom: bottomContentPadding)
                 }
-                .shellScreenContentPadding(bottom: bottomContentPadding)
-            }
-            .shellScreenScrollBehavior()
+                .shellScreenScrollBehavior()
 
-            if !showsOverview {
-                stickyMusicDetailHeader
-            }
+                if !showsOverview {
+                    stickyMusicDetailHeader(layout: layout)
+                }
 
-            VStack {
-                Spacer()
-                hiddenDiscoveryUndoBanner
+                VStack {
+                    Spacer()
+                    hiddenDiscoveryUndoBanner
+                        .frame(maxWidth: layout.shellContentMaxWidth ?? .infinity)
+                        .padding(.horizontal, layout.isTabletLike ? 28 : 0)
+                }
             }
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
@@ -153,11 +157,13 @@ struct MusicScreen: View {
         126
     }
 
-    private var stickyMusicDetailHeader: some View {
+    private func stickyMusicDetailHeader(layout: TuneLayoutContext) -> some View {
         MusicStickyDetailHeader(
             mode: musicMode,
             goBack: showOverview
         )
+        .frame(maxWidth: layout.shellContentMaxWidth ?? .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     private func musicOverview(_ snapshot: MusicLibraryDerivedState) -> some View {

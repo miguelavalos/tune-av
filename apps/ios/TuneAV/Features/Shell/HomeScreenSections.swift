@@ -3,36 +3,55 @@ import SwiftUI
 
 struct HomeHeaderContent: View {
     let state: HomeHeaderContentState
+    var layoutClass: TuneLayoutClass = .compact
     let openAvi: () -> Void
 
     var body: some View {
-        AVAppShellHomeHeader(
-            title: L10n.string("shell.home.title"),
-            subtitle: L10n.string("shell.home.subtitle")
-        ) {
-            ShellBrandHeader(statusTitle: state.statusTitle)
-        } content: {
-            HomeAviBrief(
+        if layoutClass.isTabletLike {
+            VStack(alignment: .leading, spacing: 18) {
+                AVAppShellScreenHeader(
+                    title: L10n.string("shell.home.title"),
+                    subtitle: L10n.string("shell.home.subtitle")
+                )
+
+                homeBriefContent
+            }
+            .padding(.bottom, 8)
+        } else {
+            AVAppShellHomeHeader(
+                title: L10n.string("shell.home.title"),
+                subtitle: L10n.string("shell.home.subtitle")
+            ) {
+                ShellBrandHeader(statusTitle: state.statusTitle)
+            } content: {
+                homeBriefContent
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var homeBriefContent: some View {
+        HomeAviBrief(
+            currentStation: state.currentStation,
+            recentCount: state.recentCount,
+            favoriteCount: state.favoriteCount,
+            emotion: TuneAVAviEmotionResolver.homeEmotion(
                 currentStation: state.currentStation,
                 recentCount: state.recentCount,
-                favoriteCount: state.favoriteCount,
-                emotion: TuneAVAviEmotionResolver.homeEmotion(
-                    currentStation: state.currentStation,
-                    recentCount: state.recentCount,
-                    favoriteCount: state.favoriteCount
-                ),
-                openAvi: openAvi
-            )
+                favoriteCount: state.favoriteCount
+            ),
+            openAvi: openAvi
+        )
 
-            if state.showsLiveNowPanel {
-                LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
-            }
+        if state.showsLiveNowPanel {
+            LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)
         }
     }
 }
 
 struct HomeHeroContent: View {
     let state: HomeHeroContentState
+    var layoutClass: TuneLayoutClass = .compact
     let playAction: (Station) -> Void
     let favoriteAction: (Station) -> Void
     let feedbackAction: (TuneAVStationFeedback, Station) -> Void
@@ -56,6 +75,7 @@ struct HomeHeroContent: View {
                 isPlaying: state.isPlaying,
                 isLoading: state.isStationLoading,
                 stationFeedback: state.stationFeedback,
+                layoutClass: layoutClass,
                 playAction: { playAction(station) },
                 favoriteAction: { favoriteAction(station) },
                 feedbackAction: { feedbackAction($0, station) },
@@ -72,6 +92,7 @@ struct HomeHeroContent: View {
 
 struct HomeRecommendationSections: View {
     let derivedState: HomeDerivedState
+    var layoutClass: TuneLayoutClass = .compact
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
     let stationFeedback: [String: TuneAVStationFeedback]
@@ -139,6 +160,7 @@ struct HomeRecommendationSections: View {
                 nowPlayingTracks: nowPlayingTracks,
                 stationInsight: stationInsight,
                 stationFeedback: stationFeedback,
+                layoutClass: layoutClass,
                 queueSource: queueSource,
                 queueStations: stations,
                 playStation: playStation,

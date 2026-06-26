@@ -7,12 +7,11 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
         let startedAt = Date()
 
         let app = launchApp()
-        let readyElement = app.buttons["tab.search"].firstMatch
         let timeout = budgetMilliseconds / 1_000
 
         XCTAssertTrue(
-            readyElement.waitForExistence(timeout: timeout),
-            "Tune AV did not reach the home tab bar within \(Int(budgetMilliseconds))ms."
+            shellButton("search", in: app, timeout: timeout).exists,
+            "Tune AV did not reach the home shell within \(Int(budgetMilliseconds))ms."
         )
 
         let elapsedMilliseconds = Date().timeIntervalSince(startedAt) * 1_000

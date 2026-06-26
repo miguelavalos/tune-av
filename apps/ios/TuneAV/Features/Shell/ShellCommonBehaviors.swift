@@ -13,7 +13,30 @@ extension View {
         )
     }
 
+    func shellScreenContentPadding(layout: TuneLayoutContext, bottom bottomPadding: CGFloat) -> some View {
+        avShellScreenContentPadding(
+            horizontal: layout.isTabletLike ? 28 : shellScreenHorizontalPadding,
+            top: shellScreenTopPadding,
+            bottom: layout.isTabletLike ? 56 : bottomPadding
+        )
+        .frame(maxWidth: layout.shellContentMaxWidth ?? .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
     func shellScreenScrollBehavior() -> some View {
         avShellScreenScrollBehavior()
+    }
+}
+
+extension TuneLayoutContext {
+    var shellContentMaxWidth: CGFloat? {
+        switch layoutClass {
+        case .compact:
+            nil
+        case .regular:
+            820
+        case .expansive:
+            1120
+        }
     }
 }

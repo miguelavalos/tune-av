@@ -1,6 +1,6 @@
 import Foundation
 
-enum AppShellTab: Equatable {
+enum AppShellTab: Equatable, Hashable {
     case home
     case search
     case avi

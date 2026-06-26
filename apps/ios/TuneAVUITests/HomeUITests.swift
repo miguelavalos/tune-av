@@ -14,7 +14,7 @@ final class HomeUITests: TuneAVUITestCase {
 
         tapWhenHittable(of: favoriteButton, scrollView: app.scrollViews.firstMatch)
 
-        XCTAssertTrue(app.buttons["tab.search"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["tab.music"].exists)
+        XCTAssertTrue(shellButton("search", in: app).exists)
+        XCTAssertTrue(shellButton("music", in: app).exists)
     }
 }

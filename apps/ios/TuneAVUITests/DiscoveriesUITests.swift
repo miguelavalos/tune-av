@@ -280,7 +280,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(app.staticTexts["Roads"].waitForExistence(timeout: 5))
 
         closePlayer(in: app)
-        app.buttons["tab.music"].tap()
+        tapShellButton("music", in: app)
         openDiscover(in: app)
 
         let discoveriesSection = app.otherElements["music.section.discoveries"]
@@ -300,7 +300,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             closeOptionsButton.tap()
         }
 
-        let musicTab = app.buttons["tab.music"].firstMatch
+        let musicTab = shellButton("music", in: app)
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.86))
 

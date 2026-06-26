@@ -91,7 +91,7 @@ final class ProfileUITests: TuneAVUITestCase {
         confirmation.typeText("DELETE")
         app.buttons["accountDeletion.deleteButton"].tap()
 
-        XCTAssertTrue(app.buttons["profile.account.connect"].waitForExistence(timeout: 5))
+        assertSignedOutAccountProfile(in: app)
     }
 
     func testDeleteAccountWarnsForLinkedApp() {
@@ -160,13 +160,27 @@ final class ProfileUITests: TuneAVUITestCase {
         openAccountProfile(in: app)
         tapAccountDeletionRow(in: app)
 
-        XCTAssertTrue(app.buttons["profile.account.connect"].waitForExistence(timeout: 5))
+        assertSignedOutAccountProfile(in: app)
     }
 
     private func openAccountProfile(in app: XCUIApplication) {
-        let accountButton = app.buttons["header.account"].firstMatch
-        XCTAssertTrue(accountButton.waitForExistence(timeout: 5))
+        let accountButton = firstExistingElement(
+            [
+                app.buttons["tune.sidebar.account"].firstMatch,
+                app.descendants(matching: .any)["tune.sidebar.account"].firstMatch,
+                app.buttons["header.account"].firstMatch
+            ],
+            timeout: 5
+        )
+        XCTAssertTrue(accountButton.exists)
         accountButton.tap()
+    }
+
+    private func assertSignedOutAccountProfile(in app: XCUIApplication) {
+        let deletionSheet = app.descendants(matching: .any)["accountDeletion.sheet"].firstMatch
+        _ = deletionSheet.waitForNonExistence(timeout: 5)
+        openAccountProfile(in: app)
+        XCTAssertTrue(app.buttons["profile.account.connect"].waitForExistence(timeout: 5))
     }
 
     private func openProPaywall(in app: XCUIApplication) {

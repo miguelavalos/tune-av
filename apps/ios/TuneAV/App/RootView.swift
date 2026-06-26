@@ -10,6 +10,7 @@ struct RootView: View {
     @EnvironmentObject private var accessController: AccessController
     @EnvironmentObject private var libraryStore: LibraryStore
     @State private var authPresentationState: AVProductAccountAuthPresentationState = .hidden
+    @State private var authenticationWasSkipped = false
     @State private var automaticGuestOnboardingIsPresented = false
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
@@ -34,11 +35,7 @@ struct RootView: View {
                     accountIsAvailable: accessController.accountIsAvailable,
                     onContinueWithApple: startAppleSignIn,
                     onContinueWithGoogle: startGoogleSignIn,
-                    onSkip: {
-                        automaticGuestOnboardingIsPresented = false
-                        authPresentationState = .hidden
-                        accessController.skipForNow()
-                    }
+                    onSkip: skipAuthentication
                 )
             } else {
                 AppShellView(
@@ -52,6 +49,7 @@ struct RootView: View {
                     } splash: {
                         TuneAVSplashView()
                     }
+                    .id(accessController.isSignedIn ? "signed-in-shell" : "skipped-auth-shell")
             }
         }
         .tint(TuneAVTheme.highlight)
@@ -110,6 +108,10 @@ struct RootView: View {
     }
 
     private var shouldShowOnboarding: Bool {
+        if TuneAVUITestEnvironment.current.shouldForceGuestOnboarding {
+            return authPresentationState != .hidden || automaticGuestOnboardingIsPresented
+        }
+        guard !authenticationWasSkipped else { return false }
         guard !launchContext.shouldDisableOnboarding else { return false }
         let rootGate = AVProductAccountAuthFlowRootGate(
             accountState: accessController.productAccountState,
@@ -119,11 +121,21 @@ struct RootView: View {
     }
 
     private func startSignInFlow(showAuthOptions: Bool = false) {
+        authenticationWasSkipped = false
+        automaticGuestOnboardingIsPresented = false
         authPresentationState = showAuthOptions ? .onboardingOptions : .onboardingCollapsed
+    }
+
+    private func skipAuthentication() {
+        authenticationWasSkipped = true
+        automaticGuestOnboardingIsPresented = false
+        authPresentationState = .hidden
+        accessController.skipForNow()
     }
 
     private func startAppleSignIn() async throws {
         try await accessController.accountService.signInWithApple()
+        authenticationWasSkipped = false
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
         await refreshLibrarySync()
@@ -132,6 +144,7 @@ struct RootView: View {
 
     private func startGoogleSignIn() async throws {
         try await accessController.accountService.signInWithGoogle()
+        authenticationWasSkipped = false
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
         await refreshLibrarySync()
@@ -300,11 +313,28 @@ struct RootView: View {
     }
 
     private func markAutomaticGuestOnboardingSeenIfNeeded() {
+        if TuneAVUITestEnvironment.current.shouldForceGuestOnboarding {
+            forceGuestOnboardingForUITestsIfNeeded()
+            return
+        }
         guard !launchContext.shouldDisableOnboarding else { return }
+        guard !accessController.isSignedIn else { return }
+        guard !authenticationWasSkipped else { return }
         guard accessController.shouldAutoShowGuestOnboarding else { return }
+        guard authPresentationState == .hidden else { return }
 
         automaticGuestOnboardingIsPresented = true
+        authPresentationState = .onboardingCollapsed
         accessController.markGuestOnboardingPromptShown()
+    }
+
+    private func forceGuestOnboardingForUITestsIfNeeded() {
+        guard !authenticationWasSkipped else { return }
+        guard authPresentationState == .hidden else { return }
+        automaticGuestOnboardingIsPresented = true
+        authPresentationState = TuneAVUITestEnvironment.current.shouldShowExpandedOnboardingAuthOptions
+            ? .onboardingOptions
+            : .onboardingCollapsed
     }
 
     private func updateIdleTimer(for phase: ScenePhase) {

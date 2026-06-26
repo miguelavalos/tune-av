@@ -56,37 +56,39 @@ struct LibraryScreen: View {
         let showsOverview = isShowingOverview && trimmedQuery.isEmpty
         let derivedState = radioDerivedState(includeDetail: !showsOverview)
 
-        ZStack(alignment: .top) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if showsOverview {
-                        AviScreenHeader(
-                            emotion: TuneAVAviEmotionResolver.libraryEmotion(
-                                favoriteCount: favorites.count,
-                                recentCount: recents.count,
-                                isFiltering: false
-                            ),
-                            title: L10n.string("shell.library.title"),
-                            summary: libraryAviDetail,
-                            showsAviImage: false,
-                            accessibilityIdentifier: "library.aviHeader"
-                        )
+        TuneAdaptiveLayoutReader { layout in
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if showsOverview {
+                            AviScreenHeader(
+                                emotion: TuneAVAviEmotionResolver.libraryEmotion(
+                                    favoriteCount: favorites.count,
+                                    recentCount: recents.count,
+                                    isFiltering: false
+                                ),
+                                title: L10n.string("shell.library.title"),
+                                summary: libraryAviDetail,
+                                showsAviImage: false,
+                                accessibilityIdentifier: "library.aviHeader"
+                            )
 
-                        radioOverview(derivedState)
-                    } else {
-                        Color.clear
-                            .frame(height: detailHeaderReservedHeight)
+                            radioOverview(derivedState)
+                        } else {
+                            Color.clear
+                                .frame(height: detailHeaderReservedHeight)
 
-                        radioDetailSection(derivedState)
+                            radioDetailSection(derivedState)
+                        }
                     }
+                    .shellScreenContentPadding(layout: layout, bottom: bottomContentPadding)
+                    .id(screenIdentity)
                 }
-                .shellScreenContentPadding(bottom: bottomContentPadding)
-                .id(screenIdentity)
-            }
-            .shellScreenScrollBehavior()
+                .shellScreenScrollBehavior()
 
-            if !showsOverview {
-                stickyDetailHeader
+                if !showsOverview {
+                    stickyDetailHeader(layout: layout)
+                }
             }
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
@@ -142,15 +144,17 @@ struct LibraryScreen: View {
         86
     }
 
-    private var stickyDetailHeader: some View {
+    private func stickyDetailHeader(layout: TuneLayoutContext) -> some View {
         RadioDetailHeader(
             title: selectedMode.title,
             subtitle: selectedMode.subtitle,
             goBack: showOverview
         )
-        .padding(.horizontal, 20)
+        .frame(maxWidth: layout.shellContentMaxWidth ?? .infinity, alignment: .topLeading)
+        .padding(.horizontal, layout.isTabletLike ? 28 : 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .top)
         .background {
             TuneAVTheme.shellBackground
                 .ignoresSafeArea(edges: .top)

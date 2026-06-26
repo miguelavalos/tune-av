@@ -131,6 +131,7 @@
 		A95AE547512AF2AA0023032F /* HomeAviPickStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6300B603CC02D9D7F5E5CB7 /* HomeAviPickStationSelector.swift */; };
 		A9C7CF8352325D492B036270 /* TuneAVLibraryStationLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */; };
 		AB0D6A3F27BFDA13002F20AC /* TuneAVProRealtimeSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C3E931B73D012FA3E69B554 /* TuneAVProRealtimeSync.swift */; };
+		AB79C7E2DE4BF9E89AD10494 /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74194B0B1D604F32BCC62F2F /* OnboardingUITests.swift */; };
 		ABC5EAD5EC0F9DFCB47782D0 /* HomeMoodGenreDesk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F76FCA77A9808922741194E /* HomeMoodGenreDesk.swift */; };
 		AF019C179E67E7961F2F9D3A /* HomeDiscoveryTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9AEB785AA5BD0680023E1EF /* HomeDiscoveryTagBuilder.swift */; };
 		AFB2A7F6915DC23B5BBF9141 /* AviQueueSwitchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D9CB3350C67D1FA810844C /* AviQueueSwitchCoordinator.swift */; };
@@ -182,6 +183,7 @@
 		EAE9D01817FC237C047D5B4D /* AVAviFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 0BE28C43132ACB7F967EA14B /* AVAviFoundation */; };
 		EB0F0C5B527ADA087DB7C60D /* HomeRecommendationInsightBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */; };
 		EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C7D1323E84B8A6B8EC14C5 /* EntitlementService.swift */; };
+		ED94E280B27C514C1B5E8B0E /* TuneAdaptiveLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1667E2EFC88D39F6B00F4E37 /* TuneAdaptiveLayout.swift */; };
 		EE2125B595BCC833804CA2AB /* AppShellView+Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */; };
 		F0775E73AEDA574C64A00F43 /* HomeMoodGenreTagBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */; };
 		F0B08039199D8F3DFA8F1758 /* MusicLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */; };
@@ -229,6 +231,7 @@
 		12A3B12BBA94111AA7B04163 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
 		157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendationInsightBuilder.swift; sourceTree = "<group>"; };
 		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1667E2EFC88D39F6B00F4E37 /* TuneAdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAdaptiveLayout.swift; sourceTree = "<group>"; };
 		1713B09701E9777A700FA782 /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
 		198A05B4515ED79560A09DEF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		19FB0ED9FA7E77E305808692 /* TuneAVOverviewSectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVOverviewSectionViews.swift; sourceTree = "<group>"; };
@@ -306,6 +309,7 @@
 		7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellMusicLibrary.swift; sourceTree = "<group>"; };
 		7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMusicLibraryLogic.swift; sourceTree = "<group>"; };
 		719C764B25F8D88A52B45FBC /* MusicScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicScreen.swift; sourceTree = "<group>"; };
+		74194B0B1D604F32BCC62F2F /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
 		750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRefreshUITests.swift; sourceTree = "<group>"; };
 		77DFA1FC59ADC137B4738A0E /* ShellDemoStationBootstrapPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellDemoStationBootstrapPlanner.swift; sourceTree = "<group>"; };
 		78E26A38B7BC6D3D3963CC70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -546,6 +550,7 @@
 				C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */,
 				2B9B7F56042C625D2BBC6C8D /* StationListActionRow.swift */,
 				3353F73F03318E692C99BA07 /* StationSection.swift */,
+				1667E2EFC88D39F6B00F4E37 /* TuneAdaptiveLayout.swift */,
 			);
 			path = Shell;
 			sourceTree = "<group>";
@@ -764,6 +769,7 @@
 				9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */,
 				839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */,
 				67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */,
+				74194B0B1D604F32BCC62F2F /* OnboardingUITests.swift */,
 				D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */,
 				5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */,
 				CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */,
@@ -1090,6 +1096,7 @@
 				60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */,
 				0E8962EDE4E9D460672144A8 /* TuneAVUpgradePrompt.swift in Sources */,
 				699AFAE222C5B2AB4DF681F7 /* TuneAVUpgradePromptContent.swift in Sources */,
+				ED94E280B27C514C1B5E8B0E /* TuneAdaptiveLayout.swift in Sources */,
 				17912B0620CDFDBC0CB529B1 /* TuneAppExperience.swift in Sources */,
 				F2190F523E542A07E42C34D6 /* TuneAviPopoverActionsPanel.swift in Sources */,
 				5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */,
@@ -1106,6 +1113,7 @@
 				673F0D5A1BD5E542E4A4293B /* HomeUITests.swift in Sources */,
 				B0BB1D68BF07EB0CC962AB3D /* LaunchPerformanceUITests.swift in Sources */,
 				184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */,
+				AB79C7E2DE4BF9E89AD10494 /* OnboardingUITests.swift in Sources */,
 				A85E21A4D8B01574008347D6 /* PlayerQueueUITests.swift in Sources */,
 				77FAFD8E96B4506517898653 /* ProfileUITests.swift in Sources */,
 				F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */,
@@ -1222,7 +1230,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_MODULE_NAME = TuneAVUITests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = TuneAV;
 			};
 			name = Release;
@@ -1247,7 +1255,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
 				SUPPORTS_MACCATALYST = NO;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1264,7 +1272,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_MODULE_NAME = TuneAVTests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuneAV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuneAV";
 			};
 			name = Release;
@@ -1289,7 +1297,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
 				SUPPORTS_MACCATALYST = NO;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1306,7 +1314,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_MODULE_NAME = TuneAVTests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuneAV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuneAV";
 			};
 			name = Debug;
@@ -1381,7 +1389,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNEAV_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_MODULE_NAME = TuneAVUITests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = TuneAV;
 			};
 			name = Debug;

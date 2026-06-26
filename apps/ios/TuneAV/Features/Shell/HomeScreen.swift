@@ -32,38 +32,67 @@ struct HomeScreen: View {
         let screenState = homeScreenState
         let heroActionRouter = homeHeroActionRouter
 
-        AVAppShellScrollableScreenScaffold(
-            alignment: .leading,
-            spacing: 24,
-            bottomPadding: bottomContentPadding
-        ) {
-            TuneAVTheme.shellBackground
-        } content: {
-            HomeHeaderContent(
-                state: screenState.headerContentState,
-                openAvi: openAvi
-            )
-            HomeHeroContent(
-                state: screenState.heroContentState,
-                playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
-                favoriteAction: toggleFavorite,
-                feedbackAction: heroActionRouter.setFeedback,
-                detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
-            )
-            HomeRecommendationSections(
-                derivedState: screenState.derivedState,
-                favoriteStationIDs: favoriteStationIDs,
-                nowPlayingTracks: nowPlayingTracks,
-                stationFeedback: stationFeedback,
-                openSearchTag: openSearchTag,
-                playStation: playStation,
-                toggleFavorite: toggleFavorite,
-                showStationDetails: showStationDetails
-            )
+        TuneAdaptiveLayoutReader { layout in
+            let contentLayoutClass = homeContentLayoutClass(for: layout)
+
+            AVAppShellScrollableScreenScaffold(
+                alignment: .leading,
+                spacing: homeSpacing(for: layout),
+                horizontalPadding: homeHorizontalPadding(for: layout),
+                bottomPadding: homeBottomPadding(for: layout),
+                maxContentWidth: homeMaxContentWidth(for: layout)
+            ) {
+                TuneAVTheme.shellBackground
+            } content: {
+                HomeHeaderContent(
+                    state: screenState.headerContentState,
+                    layoutClass: contentLayoutClass,
+                    openAvi: openAvi
+                )
+                HomeHeroContent(
+                    state: screenState.heroContentState,
+                    layoutClass: contentLayoutClass,
+                    playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
+                    favoriteAction: toggleFavorite,
+                    feedbackAction: heroActionRouter.setFeedback,
+                    detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
+                )
+                HomeRecommendationSections(
+                    derivedState: screenState.derivedState,
+                    layoutClass: contentLayoutClass,
+                    favoriteStationIDs: favoriteStationIDs,
+                    nowPlayingTracks: nowPlayingTracks,
+                    stationFeedback: stationFeedback,
+                    openSearchTag: openSearchTag,
+                    playStation: playStation,
+                    toggleFavorite: toggleFavorite,
+                    showStationDetails: showStationDetails
+                )
+            }
         }
         .refreshable {
             await refreshHome()
         }
+    }
+
+    private func homeContentLayoutClass(for layout: TuneLayoutContext) -> TuneLayoutClass {
+        layout.isPad && layout.layoutClass == .compact ? .regular : layout.layoutClass
+    }
+
+    private func homeSpacing(for layout: TuneLayoutContext) -> CGFloat {
+        layout.isTabletLike ? 28 : 24
+    }
+
+    private func homeHorizontalPadding(for layout: TuneLayoutContext) -> CGFloat {
+        layout.isTabletLike ? 28 : AVAppShellScreenMetric.horizontalPadding
+    }
+
+    private func homeBottomPadding(for layout: TuneLayoutContext) -> CGFloat {
+        layout.isTabletLike ? 56 : bottomContentPadding
+    }
+
+    private func homeMaxContentWidth(for layout: TuneLayoutContext) -> CGFloat? {
+        layout.shellContentMaxWidth
     }
 
     private var homeScreenState: HomeScreenState {

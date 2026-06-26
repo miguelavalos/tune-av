@@ -31,6 +31,7 @@ struct ProfileScreen: View {
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var themeController: AppThemeController
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.avCommonAppExperience) private var appExperience
     @Environment(\.openURL) private var openExternalURL
 
@@ -56,7 +57,8 @@ struct ProfileScreen: View {
             subtitle: screenSubtitle,
             bottomContentPadding: bottomContentPadding,
             backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
-            showsTopSafeAreaShield: true
+            showsTopSafeAreaShield: true,
+            showsChrome: !isTabletLayout
         ) {
             ShellBrandHeader(statusTitle: statusTitle, activeItem: headerActiveItem)
         } content: {
@@ -127,6 +129,18 @@ struct ProfileScreen: View {
             localDataCard
             helpAndLegalCard
         }
+    }
+
+    private var isTabletLayout: Bool {
+        currentDeviceIsPad && horizontalSizeClass == .regular
+    }
+
+    private var currentDeviceIsPad: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad
+        #else
+        false
+        #endif
     }
 
     private var profileSummaryCard: some View {
@@ -264,18 +278,20 @@ struct ProfileScreen: View {
     }
 
     private var cloudSyncRetryButton: some View {
-        AVSettingsButton(
-            title: libraryStore.cloudSyncStatus == .syncing
-                ? L10n.string("profile.sync.retry.syncing")
-                : L10n.string("profile.sync.retry"),
-            style: .secondary,
-            isLoading: libraryStore.cloudSyncStatus == .syncing,
-            action: {
-                Task {
-                    await synchronizeLibraryNow()
+        tabletAlignedSettingsButton {
+            AVSettingsButton(
+                title: libraryStore.cloudSyncStatus == .syncing
+                    ? L10n.string("profile.sync.retry.syncing")
+                    : L10n.string("profile.sync.retry"),
+                style: .secondary,
+                isLoading: libraryStore.cloudSyncStatus == .syncing,
+                action: {
+                    Task {
+                        await synchronizeLibraryNow()
+                    }
                 }
-            }
-        )
+            )
+        }
         .disabled(libraryStore.cloudSyncStatus == .syncing)
         .accessibilityIdentifier("profile.sync.retry")
     }
@@ -320,26 +336,32 @@ struct ProfileScreen: View {
     private var proPlanAction: some View {
         switch accessController.accessMode {
         case .guest:
-            ProfilePrimaryButton(
-                title: accessController.accountIsAvailable
-                    ? L10n.string("profile.pro.signIn")
-                    : L10n.string("profile.account.connectUnavailable"),
-                accessibilityID: "profile.pro.signIn",
-                action: { startSignInFlow(true) }
-            )
+            tabletAlignedSettingsButton {
+                ProfilePrimaryButton(
+                    title: accessController.accountIsAvailable
+                        ? L10n.string("profile.pro.signIn")
+                        : L10n.string("profile.account.connectUnavailable"),
+                    accessibilityID: "profile.pro.signIn",
+                    action: { startSignInFlow(true) }
+                )
+            }
             .disabled(!accessController.accountIsAvailable)
         case .signedInFree:
-            ProfilePrimaryButton(
-                title: L10n.string("profile.pro.viewOffer"),
-                accessibilityID: "profile.pro.viewOffer",
-                action: { isShowingProPaywall = true }
-            )
+            tabletAlignedSettingsButton {
+                ProfilePrimaryButton(
+                    title: L10n.string("profile.pro.viewOffer"),
+                    accessibilityID: "profile.pro.viewOffer",
+                    action: { isShowingProPaywall = true }
+                )
+            }
         case .signedInPro:
-            AVSettingsButton(
-                title: L10n.string("profile.pro.manage"),
-                style: .secondary,
-                action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
-            )
+            tabletAlignedSettingsButton {
+                AVSettingsButton(
+                    title: L10n.string("profile.pro.manage"),
+                    style: .secondary,
+                    action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
+                )
+            }
             .accessibilityIdentifier("profile.pro.manage")
         }
     }
@@ -347,28 +369,38 @@ struct ProfileScreen: View {
     @ViewBuilder
     private var accountActionButton: some View {
         if accessController.accessMode == .guest {
-            ProfilePrimaryButton(
-                title: accessController.accountIsAvailable
-                    ? L10n.string("profile.account.connect")
-                    : L10n.string("profile.account.connectUnavailable"),
-                accessibilityID: "profile.account.connect",
-                action: { startSignInFlow(true) }
-            )
+            tabletAlignedSettingsButton {
+                ProfilePrimaryButton(
+                    title: accessController.accountIsAvailable
+                        ? L10n.string("profile.account.connect")
+                        : L10n.string("profile.account.connectUnavailable"),
+                    accessibilityID: "profile.account.connect",
+                    action: { startSignInFlow(true) }
+                )
+            }
             .disabled(!accessController.accountIsAvailable)
         } else {
-            AVSettingsButton(
-                title: isSigningOut
-                    ? L10n.string("profile.actions.signingOut")
-                    : L10n.string("profile.actions.signOut"),
-                style: .secondary,
-                isLoading: isSigningOut,
-                action: {
-                    Task { await signOut() }
-                }
-            )
+            tabletAlignedSettingsButton {
+                AVSettingsButton(
+                    title: isSigningOut
+                        ? L10n.string("profile.actions.signingOut")
+                        : L10n.string("profile.actions.signOut"),
+                    style: .secondary,
+                    isLoading: isSigningOut,
+                    action: {
+                        Task { await signOut() }
+                    }
+                )
+            }
             .disabled(isSigningOut)
             .accessibilityIdentifier("profile.account.signOut")
         }
+    }
+
+    private func tabletAlignedSettingsButton<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: isTabletLayout ? 340 : .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var appPreferencesCard: some View {

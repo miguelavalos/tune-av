@@ -31,8 +31,8 @@ struct TuneAVLaunchContext {
         isUITesting = environment["TUNEAV_UI_TESTS"] == "1"
         shouldDisableSplash = isUITesting
             || environment["TUNEAV_DISABLE_SPLASH"] == "1"
-        shouldDisableOnboarding = isUITesting
-            || environment["TUNEAV_DISABLE_ONBOARDING"] == "1"
+        shouldDisableOnboarding = environment["TUNEAV_UI_TESTS_SHOW_ONBOARDING"] != "1"
+            && (isUITesting || environment["TUNEAV_DISABLE_ONBOARDING"] == "1")
         shouldSeedUITestLibrary = environment["TUNEAV_UI_TESTS_DISABLE_LIBRARY_SEED"] != "1"
         shouldUseLocalUITestDiscovery = environment["TUNEAV_UI_TESTS_LOCAL_DISCOVERY"] == "1"
         shouldUseLocalUITestSearch = environment["TUNEAV_UI_TESTS_LOCAL_SEARCH"] == "1"
@@ -80,6 +80,14 @@ struct TuneAVUITestEnvironment {
 
     var shouldForceGuest: Bool {
         isEnabled && environment["TUNEAV_UI_TESTS_FORCE_GUEST"] == "1"
+    }
+
+    var shouldForceGuestOnboarding: Bool {
+        isEnabled && environment["TUNEAV_UI_TESTS_SHOW_ONBOARDING"] == "1"
+    }
+
+    var shouldShowExpandedOnboardingAuthOptions: Bool {
+        isEnabled && environment["TUNEAV_UI_TESTS_SHOW_AUTH_OPTIONS"] == "1"
     }
 
     var accountMode: String? {

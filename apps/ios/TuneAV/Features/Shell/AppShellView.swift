@@ -41,6 +41,7 @@ struct AppShellView: View {
     @EnvironmentObject private var languageController: AppLanguageController
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.avCommonAppExperience) private var appExperience
 
     @StateObject private var chromeActions = AppShellChromeActions()
     @StateObject private var searchPresentation: SearchPresentationStore
@@ -117,6 +118,91 @@ struct AppShellView: View {
     }
 
     var body: some View {
+        adaptiveShell
+            .environmentObject(chromeActions)
+            .onChange(of: chromeActions.request) { _, request in
+                guard let request else { return }
+                openChromeRequest(request.item)
+            }
+            .appShellGlobalPresentations(
+                isShowingFooterArtworkZoom: $isShowingFooterArtworkZoom,
+                currentStation: audioPlayer.currentStation,
+                currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
+                currentTrackTitle: audioPlayer.currentTrackTitle,
+                currentTrackArtist: audioPlayer.currentTrackArtist,
+                upgradePrompt: Binding(
+                    get: { accessController.upgradePrompt },
+                    set: { accessController.upgradePrompt = $0 }
+                ),
+                isGuest: accessController.accessMode == .guest,
+                accountIsAvailable: accessController.accountIsAvailable,
+                accessController: accessController,
+                showProPaywall: $isShowingProPaywall,
+                pendingCellularPlayback: $pendingCellularPlayback,
+                isConfirmingStopPlayback: $isConfirmingStopPlayback,
+                startSignInFlow: {
+                    startSignInFlow(true)
+                },
+                playPendingCellularPlayback: { pending in
+                    playStationAfterCellularCheck(pending.station, queueSource: pending.queueSource, queue: pending.queue)
+                },
+                stopPlayback: {
+                    stopPlaybackAndCloseSignal()
+                }
+            )
+            .task {
+                await bootstrapIfNeeded()
+            }
+            .task(id: homeFeedRequestKey) {
+                await refreshHomePresentationAndFeed()
+            }
+            .task(id: searchRequestKey) {
+                await loadSearchResults()
+            }
+            .task(id: stationNowPlayingRequestKey) {
+                await loadStationNowPlayingPreviews()
+            }
+            .task(id: summaryRefreshRequestKey) {
+                await refreshUserSummaryForVisibleTab()
+            }
+            .onChange(of: selectedTab) { _, newValue in
+                guard newValue == .home else { return }
+                refreshHomePresentation()
+            }
+            .onChange(of: audioPlayer.currentStation?.id) { previousStationID, stationID in
+                if stationID == nil {
+                    lastConfirmedPlaybackStationID = nil
+                    return
+                }
+                guard let station = audioPlayer.currentStation else { return }
+                syncAviActiveSignalIfNeeded(previousStationID: previousStationID, currentStation: station)
+                if audioPlayer.status == .playing {
+                    recordConfirmedPlaybackIfNeeded(station)
+                }
+            }
+            .onChange(of: audioPlayer.status) { oldStatus, newStatus in
+                handlePlaybackStatusChange(from: oldStatus, to: newStatus)
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                handleScenePhaseChange(newPhase)
+            }
+            .task(id: currentTrackDiscoveryKey) {
+                recordCurrentTrackDiscovery()
+            }
+    }
+
+    @ViewBuilder
+    private var adaptiveShell: some View {
+        TuneAdaptiveLayoutReader { layout in
+            if layout.layoutClass.isTabletLike {
+                tabletShell
+            } else {
+                compactShell
+            }
+        }
+    }
+
+    private var compactShell: some View {
         AppShellScaffold(
             selectedTab: selectedTab,
             hasFooterPlayer: audioPlayer.currentStation != nil,
@@ -142,104 +228,232 @@ struct AppShellView: View {
                 }
             },
             footerPlayer: {
-                if let station = audioPlayer.currentStation {
-                    let displayStation = enrichedStation(station)
-                    if isAviFullPlayerActive && !isAviActionPanelOpen {
-                        AviExpandedFooterPlayerView(
-                            station: displayStation,
-                            playbackQueueSource: audioPlayer.playbackQueue.source,
-                            playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
-                            stations: enrichedStations(homeStations),
-                            recentStations: enrichedRecentStations,
-                            favoriteStations: enrichedFavoriteStations
-                        ) {
-                            openNowPlayingFullPlayer(displayStation)
-                        } showArtworkZoom: {
-                            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                                isShowingFooterArtworkZoom = true
-                            }
-                        } stopPlayback: {
-                            stopPlaybackAndCloseSignal()
-                        } playStationFromQueue: { station, source, queue in
-                            playStation(station, queueSource: source, queue: queue)
-                        }
-                    } else if !shouldHideFooterPlayer {
-                        MiniPlayerView(station: displayStation) {
-                            openNowPlayingFullPlayer(displayStation)
-                        }
+                compactFooterPlayer
+            }
+        )
+    }
+
+    private var tabletShell: some View {
+        NavigationStack {
+            HStack(spacing: 0) {
+                tabletSidebar
+
+                Divider()
+
+                tabletContentArea
+            }
+            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+            .accessibilityIdentifier("tune.shell.tablet")
+        }
+    }
+
+    private var tabletContentArea: some View {
+        ZStack {
+            currentScreen
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .overlay(alignment: .bottom) {
+            tabletContentFooter
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var tabletContentFooter: some View {
+        ZStack(alignment: .bottom) {
+            if audioPlayer.currentStation != nil {
+                LinearGradient(
+                    stops: [
+                        .init(color: TuneAVTheme.footerBackdrop.opacity(0), location: 0),
+                        .init(color: TuneAVTheme.footerBackdrop.opacity(0.94), location: 0.48),
+                        .init(color: TuneAVTheme.footerBackdrop, location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: shellFooterBackdropHeight)
+                .allowsHitTesting(false)
+            }
+
+            compactFooterPlayer
+                .padding(.horizontal, 22)
+                .padding(.bottom, 22)
+                .frame(maxWidth: tabletContentFooterPlayerMaxWidth)
+                .frame(maxWidth: .infinity)
+        }
+        .ignoresSafeArea(edges: .bottom)
+        .accessibilityIdentifier("tune.shell.tablet.footerPlayer")
+    }
+
+    private var tabletContentFooterPlayerMaxWidth: CGFloat {
+        isAviFullPlayerActive ? 940 : 760
+    }
+
+    private var tabletSidebar: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            tabletSidebarBrandHeader
+                .padding(.bottom, 12)
+
+            ForEach([AppShellTab.home, .library, .music, .search, .avi], id: \.self) { tab in
+                tabletSidebarButton(tab: tab, isSelected: selectedTab == tab)
+            }
+
+            Spacer(minLength: 16)
+
+            tabletChromeButton(
+                title: L10n.string("profile.settingsScreen.title"),
+                systemImage: "gearshape.fill",
+                isSelected: selectedTab == .profile && profileMode == .settings,
+                accessibilityIdentifier: "tune.sidebar.settings"
+            ) {
+                openChromeRequest(.settings)
+            }
+
+            tabletChromeButton(
+                title: L10n.string("profile.accountScreen.title"),
+                systemImage: "person.crop.circle.fill",
+                isSelected: selectedTab == .profile && profileMode == .account,
+                accessibilityIdentifier: "tune.sidebar.account"
+            ) {
+                openChromeRequest(.account)
+            }
+        }
+        .padding(.horizontal, AVAppShellTabletSidebarMetric.horizontalPadding)
+        .padding(.vertical, AVAppShellTabletSidebarMetric.verticalPadding)
+        .frame(width: 264, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+        .background(.regularMaterial)
+        .accessibilityIdentifier("tune.shell.tablet.sidebar")
+    }
+
+    private var tabletSidebarBrandHeader: some View {
+        AVAppShellTabletSidebarBrandHeader(
+            logoAssetName: appExperience.visualAssets?.headerLogoName ?? "HeaderWordmark",
+            accessibilityLabel: appExperience.identity.displayName,
+            logoWidth: 138,
+            logoHeight: 44,
+            logoLeadingCorrection: -16
+        )
+    }
+
+    private func tabletSidebarButton(tab: AppShellTab, isSelected: Bool) -> some View {
+        AVAppShellTabletSidebarButton(
+            title: tabletTitle(for: tab),
+            systemImage: tabletSystemImage(for: tab),
+            isSelected: isSelected
+        ) {
+            selectTabletTab(tab)
+        }
+        .accessibilityIdentifier("tune.sidebar.\(tabletAccessibilityID(for: tab))")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tabletTitle(for: tab))
+    }
+
+    private func tabletChromeButton(
+        title: String,
+        systemImage: String,
+        isSelected: Bool,
+        accessibilityIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        AVAppShellTabletSidebarButton(
+            title: title,
+            systemImage: systemImage,
+            isSelected: isSelected,
+            fontSize: 15,
+            action: action
+        )
+        .accessibilityIdentifier(accessibilityIdentifier)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+    }
+
+    @ViewBuilder
+    private var compactFooterPlayer: some View {
+        if let station = audioPlayer.currentStation {
+            let displayStation = enrichedStation(station)
+            if isAviFullPlayerActive && !isAviActionPanelOpen {
+                AviExpandedFooterPlayerView(
+                    station: displayStation,
+                    playbackQueueSource: audioPlayer.playbackQueue.source,
+                    playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
+                    stations: enrichedStations(homeStations),
+                    recentStations: enrichedRecentStations,
+                    favoriteStations: enrichedFavoriteStations
+                ) {
+                    openNowPlayingFullPlayer(displayStation)
+                } showArtworkZoom: {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                        isShowingFooterArtworkZoom = true
                     }
+                } stopPlayback: {
+                    stopPlaybackAndCloseSignal()
+                } playStationFromQueue: { station, source, queue in
+                    playStation(station, queueSource: source, queue: queue)
+                }
+            } else if !shouldHideFooterPlayer {
+                MiniPlayerView(station: displayStation) {
+                    openNowPlayingFullPlayer(displayStation)
                 }
             }
-        )
-        .environmentObject(chromeActions)
-        .onChange(of: chromeActions.request) { _, request in
-            guard let request else { return }
-            openChromeRequest(request.item)
         }
-        .appShellGlobalPresentations(
-            isShowingFooterArtworkZoom: $isShowingFooterArtworkZoom,
-            currentStation: audioPlayer.currentStation,
-            currentTrackArtworkURL: audioPlayer.currentTrackArtworkURL,
-            currentTrackTitle: audioPlayer.currentTrackTitle,
-            currentTrackArtist: audioPlayer.currentTrackArtist,
-            upgradePrompt: Binding(
-                get: { accessController.upgradePrompt },
-                set: { accessController.upgradePrompt = $0 }
-            ),
-            isGuest: accessController.accessMode == .guest,
-            accountIsAvailable: accessController.accountIsAvailable,
-            accessController: accessController,
-            showProPaywall: $isShowingProPaywall,
-            pendingCellularPlayback: $pendingCellularPlayback,
-            isConfirmingStopPlayback: $isConfirmingStopPlayback,
-            startSignInFlow: {
-                startSignInFlow(true)
-            },
-            playPendingCellularPlayback: { pending in
-                playStationAfterCellularCheck(pending.station, queueSource: pending.queueSource, queue: pending.queue)
-            },
-            stopPlayback: {
-                stopPlaybackAndCloseSignal()
-            }
-        )
-        .task {
-            await bootstrapIfNeeded()
+    }
+
+    private func selectTabletTab(_ tab: AppShellTab) {
+        if tab == .avi {
+            openContextualAvi()
+        } else {
+            selectedTab = tab
         }
-        .task(id: homeFeedRequestKey) {
-            await refreshHomePresentationAndFeed()
+    }
+
+    private func tabletTitle(for tab: AppShellTab) -> String {
+        switch tab {
+        case .home:
+            return L10n.string("tab.home")
+        case .library:
+            return L10n.string("tab.library")
+        case .music:
+            return L10n.string("tab.music")
+        case .search:
+            return L10n.string("tab.search")
+        case .avi:
+            return appExperience.identity.assistantName
+        case .profile:
+            return L10n.string("profile.settingsScreen.title")
         }
-        .task(id: searchRequestKey) {
-            await loadSearchResults()
+    }
+
+    private func tabletSystemImage(for tab: AppShellTab) -> String {
+        switch tab {
+        case .home:
+            return "house.fill"
+        case .library:
+            return "dot.radiowaves.left.and.right"
+        case .music:
+            return "music.note.list"
+        case .search:
+            return "magnifyingglass"
+        case .avi:
+            return "sparkles"
+        case .profile:
+            return "gearshape.fill"
         }
-        .task(id: stationNowPlayingRequestKey) {
-            await loadStationNowPlayingPreviews()
-        }
-        .task(id: summaryRefreshRequestKey) {
-            await refreshUserSummaryForVisibleTab()
-        }
-        .onChange(of: selectedTab) { _, newValue in
-            guard newValue == .home else { return }
-            refreshHomePresentation()
-        }
-        .onChange(of: audioPlayer.currentStation?.id) { previousStationID, stationID in
-            if stationID == nil {
-                lastConfirmedPlaybackStationID = nil
-                return
-            }
-            guard let station = audioPlayer.currentStation else { return }
-            syncAviActiveSignalIfNeeded(previousStationID: previousStationID, currentStation: station)
-            if audioPlayer.status == .playing {
-                recordConfirmedPlaybackIfNeeded(station)
-            }
-        }
-        .onChange(of: audioPlayer.status) { oldStatus, newStatus in
-            handlePlaybackStatusChange(from: oldStatus, to: newStatus)
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            handleScenePhaseChange(newPhase)
-        }
-        .task(id: currentTrackDiscoveryKey) {
-            recordCurrentTrackDiscovery()
+    }
+
+    private func tabletAccessibilityID(for tab: AppShellTab) -> String {
+        switch tab {
+        case .home:
+            return "home"
+        case .library:
+            return "library"
+        case .music:
+            return "music"
+        case .search:
+            return "search"
+        case .avi:
+            return "avi"
+        case .profile:
+            return "profile"
         }
     }
 
@@ -2023,38 +2237,14 @@ struct AviScreen: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            if isNowPlayingFullPlayer {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if focusedDetailIsEmpty || activeMusicDetail != nil {
-                            aviContextHeader
-                        }
-
-                        if focusedDetailIsEmpty {
-                            aviLandingContent
-                        } else if let activeMusicDetail {
-                            focusedMusicExperience(activeMusicDetail)
-                        } else {
-                            focusedSignalExperience
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, aviScrollBottomPadding)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .shellScreenScrollBehavior()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            } else {
-                ScrollViewReader { proxy in
+        TuneAdaptiveLayoutReader { layout in
+            ZStack(alignment: .bottom) {
+                if isNowPlayingFullPlayer {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Color.clear
-                                .frame(height: 0)
-                                .id("avi.detail.top")
-
-                            aviContextHeader
+                        VStack(alignment: .leading, spacing: aviContentSpacing(for: layout)) {
+                            if focusedDetailIsEmpty || activeMusicDetail != nil {
+                                aviContextHeader
+                            }
 
                             if focusedDetailIsEmpty {
                                 aviLandingContent
@@ -2064,73 +2254,100 @@ struct AviScreen: View {
                                 focusedSignalExperience
                             }
                         }
-                        .shellScreenContentPadding(bottom: aviScrollBottomPadding)
+                        .shellScreenContentPadding(layout: layout, bottom: aviScrollBottomPadding)
                     }
                     .shellScreenScrollBehavior()
-                    .onChange(of: activeDetailScrollID) { _, _ in
-                        scrollToDetailTop(proxy)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: aviContentSpacing(for: layout)) {
+                                Color.clear
+                                    .frame(height: 0)
+                                    .id("avi.detail.top")
+
+                                aviContextHeader
+
+                                if focusedDetailIsEmpty {
+                                    aviLandingContent
+                                } else if let activeMusicDetail {
+                                    focusedMusicExperience(activeMusicDetail)
+                                } else {
+                                    focusedSignalExperience
+                                }
+                            }
+                            .shellScreenContentPadding(layout: layout, bottom: aviScrollBottomPadding)
+                        }
+                        .shellScreenScrollBehavior()
+                        .onChange(of: activeDetailScrollID) { _, _ in
+                            scrollToDetailTop(proxy)
+                        }
                     }
                 }
             }
-        }
-        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .sheet(item: $browserDestination) { destination in
-            InAppBrowserView(destination: destination)
-        }
-        .sheet(isPresented: $isShowingQueueSwitcher) {
-            AviQueueSwitcherSheet(
-                currentSource: playbackQueueSource,
-                options: queueSwitchOptions,
-                selectOption: selectQueueOption(_:),
-                onDismiss: { isShowingQueueSwitcher = false }
-            )
-        }
-        .sheet(isPresented: $isShowingPlanComparison) {
-            AviPlanComparisonSheet(
-                accessMode: accessController.accessMode,
-                onPrimaryAction: primaryAviPreviewAction,
-                onDismiss: { isShowingPlanComparison = false }
-            )
-        }
-        .overlay {
-            if isShowingArtworkZoom, let focusedStation {
-                artworkZoomOverlay(for: focusedStation)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    .zIndex(30)
+            .background(TuneAVTheme.shellBackground.ignoresSafeArea())
+            .sheet(item: $browserDestination) { destination in
+                InAppBrowserView(destination: destination)
             }
-        }
-        .onChange(of: currentSongIdentity) { _, nextIdentity in
-            aviDiscoveryDecision = nil
-            resetTransientAviUI()
-            showAviReactionForCurrentSongChange(identity: nextIdentity)
-        }
-        .onChange(of: isShowingAviActions) { _, isShowing in
-            isActionPanelOpen = isShowing && isNowPlayingFullPlayer
-        }
-        .onChange(of: isNowPlayingFullPlayer) { _, isFullPlayer in
-            isActionPanelOpen = isFullPlayer && isShowingAviActions
-            if isFullPlayer {
+            .sheet(isPresented: $isShowingQueueSwitcher) {
+                AviQueueSwitcherSheet(
+                    currentSource: playbackQueueSource,
+                    options: queueSwitchOptions,
+                    selectOption: selectQueueOption(_:),
+                    onDismiss: { isShowingQueueSwitcher = false }
+                )
+            }
+            .sheet(isPresented: $isShowingPlanComparison) {
+                AviPlanComparisonSheet(
+                    accessMode: accessController.accessMode,
+                    onPrimaryAction: primaryAviPreviewAction,
+                    onDismiss: { isShowingPlanComparison = false }
+                )
+            }
+            .overlay {
+                if isShowingArtworkZoom, let focusedStation {
+                    artworkZoomOverlay(for: focusedStation)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .zIndex(30)
+                }
+            }
+            .onChange(of: currentSongIdentity) { _, nextIdentity in
+                aviDiscoveryDecision = nil
+                resetTransientAviUI()
+                showAviReactionForCurrentSongChange(identity: nextIdentity)
+            }
+            .onChange(of: isShowingAviActions) { _, isShowing in
+                isActionPanelOpen = isShowing && isNowPlayingFullPlayer
+            }
+            .onChange(of: isNowPlayingFullPlayer) { _, isFullPlayer in
+                isActionPanelOpen = isFullPlayer && isShowingAviActions
+                if isFullPlayer {
+                    resetNestedMusicNavigation()
+                }
+            }
+            .onChange(of: focusedMusicDetail?.id) { _, _ in
                 resetNestedMusicNavigation()
             }
+            .onChange(of: focusedStation?.id) { _, _ in
+                resetNestedMusicNavigation()
+                visibleFocusedRadioHistoryLimit = Self.artistDetailPageSize
+                selectedStationDetailSection = focusedStationDetailSection
+            }
+            .onChange(of: focusedStationDetailSection) { _, section in
+                selectedStationDetailSection = section
+            }
+            .onAppear {
+                selectedStationDetailSection = focusedStationDetailSection
+            }
+            .onDisappear {
+                isActionPanelOpen = false
+            }
+            .accessibilityIdentifier("avi.screen")
         }
-        .onChange(of: focusedMusicDetail?.id) { _, _ in
-            resetNestedMusicNavigation()
-        }
-        .onChange(of: focusedStation?.id) { _, _ in
-            resetNestedMusicNavigation()
-            visibleFocusedRadioHistoryLimit = Self.artistDetailPageSize
-            selectedStationDetailSection = focusedStationDetailSection
-        }
-        .onChange(of: focusedStationDetailSection) { _, section in
-            selectedStationDetailSection = section
-        }
-        .onAppear {
-            selectedStationDetailSection = focusedStationDetailSection
-        }
-        .onDisappear {
-            isActionPanelOpen = false
-        }
-        .accessibilityIdentifier("avi.screen")
+    }
+
+    private func aviContentSpacing(for layout: TuneLayoutContext) -> CGFloat {
+        layout.isTabletLike ? 20 : 16
     }
 
     private var aviPreviewContent: some View {

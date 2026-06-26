@@ -17,6 +17,7 @@ struct StationCompactCarousel: View {
     let nowPlayingTracks: [String: NowPlayingTrack]
     let stationInsight: (Station) -> String?
     var stationFeedback: [String: TuneAVStationFeedback] = [:]
+    var layoutClass: TuneLayoutClass = .compact
     let queueSource: AudioPlayerService.PlaybackQueue.Source
     let queueStations: [Station]
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -25,7 +26,7 @@ struct StationCompactCarousel: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 12) {
+            LazyHStack(spacing: cardSpacing) {
                 ForEach(stations) { station in
                     StationCompactCard(
                         station: station,
@@ -37,12 +38,27 @@ struct StationCompactCarousel: View {
                         playAction: { playStation(station, queueSource, queueStations) },
                         detailsAction: { showStationDetails(station, queueSource, queueStations) }
                     )
-                    .frame(width: StationCompactMetrics.cardWidth)
+                    .frame(width: cardWidth)
                 }
             }
             .padding(.vertical, 2)
         }
         .scrollClipDisabled()
+    }
+
+    private var cardWidth: CGFloat {
+        switch layoutClass {
+        case .compact:
+            StationCompactMetrics.cardWidth
+        case .regular:
+            286
+        case .expansive:
+            304
+        }
+    }
+
+    private var cardSpacing: CGFloat {
+        layoutClass.isTabletLike ? 14 : 12
     }
 }
 

@@ -10,40 +10,61 @@ struct HomeTuningDeskHero: View {
     let isPlaying: Bool
     let isLoading: Bool
     let stationFeedback: TuneAVStationFeedback?
+    var layoutClass: TuneLayoutClass = .compact
     let playAction: () -> Void
     let favoriteAction: () -> Void
     let feedbackAction: (TuneAVStationFeedback) -> Void
     let detailsAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: heroSpacing) {
             heroHeader
-
-            VStack(alignment: .leading, spacing: 14) {
-                stationText
-                    .layoutPriority(1)
-
-                deskControls
-
-                AviCompactFeedbackControl(
-                    feedbackIdentity: "station:\(station.id)",
-                    selectedFeedback: stationFeedback,
-                    selectFeedback: feedbackAction,
-                    clearFeedback: {
-                        if let stationFeedback {
-                            feedbackAction(stationFeedback)
-                        }
-                    }
-                )
-                .accessibilityIdentifier("home.hero.feedback")
-            }
+            heroBody
         }
-        .padding(20)
+        .padding(heroPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(heroBackground)
         .contentShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
         .onTapGesture(perform: detailsAction)
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var heroBody: some View {
+        if layoutClass == .expansive {
+            HStack(alignment: .top, spacing: 24) {
+                stationText
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    deskControls
+                    feedbackControl
+                }
+                .frame(width: 268, alignment: .topLeading)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 14) {
+                stationText
+                    .layoutPriority(1)
+
+                deskControls
+                feedbackControl
+            }
+        }
+    }
+
+    private var feedbackControl: some View {
+        AviCompactFeedbackControl(
+            feedbackIdentity: "station:\(station.id)",
+            selectedFeedback: stationFeedback,
+            selectFeedback: feedbackAction,
+            clearFeedback: {
+                if let stationFeedback {
+                    feedbackAction(stationFeedback)
+                }
+            }
+        )
+        .accessibilityIdentifier("home.hero.feedback")
     }
 
     private var heroHeader: some View {
@@ -71,7 +92,7 @@ struct HomeTuningDeskHero: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(presentation.title)
-                    .font(.system(size: 29, weight: .black))
+                    .font(.system(size: heroTitleSize, weight: .black))
                     .foregroundStyle(heroTitleColor)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
@@ -104,6 +125,25 @@ struct HomeTuningDeskHero: View {
                     }
                 }
             }
+        }
+    }
+
+    private var heroSpacing: CGFloat {
+        layoutClass.isTabletLike ? 22 : 20
+    }
+
+    private var heroPadding: CGFloat {
+        layoutClass.isTabletLike ? 24 : 20
+    }
+
+    private var heroTitleSize: CGFloat {
+        switch layoutClass {
+        case .compact:
+            29
+        case .regular:
+            32
+        case .expansive:
+            34
         }
     }
 
