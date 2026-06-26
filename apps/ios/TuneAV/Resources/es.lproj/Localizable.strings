@@ -186,6 +186,7 @@
 "profile.account.connectUnavailable" = "El acceso a la cuenta no está disponible ahora";
 "profile.account.email.title" = "Correo electrónico";
 "profile.account.identity.guest" = "Modo local en este dispositivo";
+"profile.account.signingIn" = "Conectando...";
 "profile.account.title" = "Cuenta";
 "profile.accountScreen.subtitle" = "Gestiona inicio de sesión, acceso, sincronización y seguridad de cuenta.";
 "profile.accountScreen.title" = "Mi cuenta";

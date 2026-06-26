@@ -182,6 +182,7 @@
 "profile.account.connect" = "Connectar compte";
 "profile.account.connectUnavailable" = "L'inici de sessió del compte no està disponible ara";
 "profile.account.email.title" = "Correu electrònic";
+"profile.account.signingIn" = "Connectant...";
 "profile.account.title" = "Gestionar compte";
 "profile.accountScreen.subtitle" = "Gestiona inici de sessió, accés, sincronització i seguretat del compte.";
 "profile.accountScreen.title" = "El meu compte";

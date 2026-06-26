@@ -179,6 +179,35 @@ if [ -z "$tuneav_convex_url" ]; then
   echo "Missing TUNEAV_CONVEX_URL for profile $profile." >&2
   exit 1
 fi
+revenuecat_public_api_key="${TUNEAV_REVENUECAT_PUBLIC_API_KEY:-}"
+if [ -z "$revenuecat_public_api_key" ]; then
+  revenuecat_public_api_key="$(read_optional_config TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
+fi
+revenuecat_offering_id="${TUNEAV_REVENUECAT_OFFERING_ID:-}"
+if [ -z "$revenuecat_offering_id" ]; then
+  revenuecat_offering_id="$(read_optional_config TUNEAV_REVENUECAT_OFFERING_ID)"
+fi
+revenuecat_monthly_package_id="${TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:-}"
+if [ -z "$revenuecat_monthly_package_id" ]; then
+  revenuecat_monthly_package_id="$(read_optional_config TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
+fi
+if [ "$env_name" = "prod" ]; then
+  if [ -z "$revenuecat_public_api_key" ]; then
+    echo "Missing TUNEAV_REVENUECAT_PUBLIC_API_KEY for profile $profile." >&2
+    exit 1
+  fi
+  case "$revenuecat_public_api_key" in
+    appl_*) ;;
+    sk_*) echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must be a public appl_ key, not a secret sk_ key." >&2; exit 1 ;;
+    *) echo "TUNEAV_REVENUECAT_PUBLIC_API_KEY must start with appl_." >&2; exit 1 ;;
+  esac
+fi
+if [ -z "$revenuecat_offering_id" ]; then
+  revenuecat_offering_id="default"
+fi
+if [ -z "$revenuecat_monthly_package_id" ]; then
+  revenuecat_monthly_package_id='$rc_monthly'
+fi
 
 if [ "$env_name" = "prod" ] && [[ "$publishable_key" != pk_live_* ]]; then
   echo "Production ACCOUNTAV_PUBLISHABLE_KEY must start with pk_live_." >&2
@@ -245,6 +274,9 @@ TUNEAV_DELETE_ACCOUNT_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/d
 TUNEAV_TERMS_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/terms")
 TUNEAV_PRIVACY_URL = $(escape_xcconfig_url "https://tune-av.avalsys.com/privacy")
 TUNEAV_OPEN_SOURCE_URL = $(escape_xcconfig_url "https://github.com/miguelavalos/tune-av")
+TUNEAV_REVENUECAT_PUBLIC_API_KEY = $revenuecat_public_api_key
+TUNEAV_REVENUECAT_OFFERING_ID = $revenuecat_offering_id
+TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $revenuecat_monthly_package_id
 TUNEAV_MACOS_SENTRY_DSN = $(escape_xcconfig_url "$tuneav_macos_sentry_dsn")
 EOF
 )"

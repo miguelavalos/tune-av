@@ -59,6 +59,7 @@ struct MacProfileView: View {
     @EnvironmentObject private var model: TuneAVMacModel
     @Environment(\.openURL) private var openURL
     @State private var isShowingAccountDeletion = false
+    @State private var isShowingProPaywall = false
 
     var body: some View {
         ScrollView {
@@ -78,6 +79,12 @@ struct MacProfileView: View {
         .sheet(isPresented: $isShowingAccountDeletion) {
             MacAccountDeletionSheet()
                 .environmentObject(model)
+        }
+        .sheet(isPresented: $isShowingProPaywall) {
+            MacProPaywallView(startSignInFlow: {
+                Task { await model.signInWithApple() }
+            })
+            .environmentObject(model)
         }
     }
 
@@ -205,22 +212,28 @@ struct MacProfileView: View {
         if model.accountUser == nil {
             HStack(spacing: 10) {
                 AVSettingsButton(
-                    title: L10n.string("auth.provider.apple"),
+                    title: accountActionTitle(L10n.string("auth.provider.apple")),
                     style: .primary,
+                    isLoading: model.isAccountOperationInProgress,
                     action: { Task { await model.signInWithApple() } }
                 )
+                .disabled(model.isAccountOperationInProgress)
                 AVSettingsButton(
-                    title: L10n.string("auth.provider.google"),
+                    title: accountActionTitle(L10n.string("auth.provider.google")),
                     style: .secondary,
+                    isLoading: model.isAccountOperationInProgress,
                     action: { Task { await model.signInWithGoogle() } }
                 )
+                .disabled(model.isAccountOperationInProgress)
             }
         } else {
             AVSettingsButton(
-                title: L10n.string("profile.actions.signOut"),
+                title: accountActionTitle(L10n.string("profile.actions.signOut")),
                 style: .secondary,
+                isLoading: model.isAccountOperationInProgress,
                 action: { Task { await model.signOut() } }
             )
+            .disabled(model.isAccountOperationInProgress)
         }
     }
 
@@ -228,21 +241,35 @@ struct MacProfileView: View {
     private var proPlanAction: some View {
         if model.accountUser == nil {
             AVSettingsButton(
-                title: L10n.string("profile.pro.signIn"),
+                title: accountActionTitle(L10n.string("profile.pro.signIn")),
                 style: .primary,
+                isLoading: model.isAccountOperationInProgress,
                 action: { Task { await model.signInWithApple() } }
             )
-        } else if let accountURL = accountManagementURL {
+            .disabled(model.isAccountOperationInProgress)
+        } else if model.accessMode == .signedInFree {
+            AVSettingsButton(
+                title: L10n.string("profile.pro.viewOffer"),
+                style: .primary,
+                action: { isShowingProPaywall = true }
+            )
+            .accessibilityIdentifier("profile.pro.viewOffer")
+        } else if let subscriptionManagementURL {
             AVSettingsButton(
                 title: L10n.string("profile.pro.manage"),
                 style: .secondary,
-                action: { openURL(accountURL) }
+                action: { openURL(subscriptionManagementURL) }
             )
+            .accessibilityIdentifier("profile.pro.manage")
         }
     }
 
     private var accountSubtitle: String {
         model.accountUser?.emailAddress ?? L10n.string("profile.accountSurface.guest")
+    }
+
+    private func accountActionTitle(_ fallback: String) -> String {
+        model.isAccountOperationInProgress ? L10n.string("profile.account.signingIn") : fallback
     }
 
     private var accountTitle: String {
@@ -359,6 +386,10 @@ struct MacProfileView: View {
 
     private var accountManagementURL: URL? {
         TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_MANAGEMENT_URL")
+    }
+
+    private var subscriptionManagementURL: URL? {
+        URL(string: "https://apps.apple.com/account/subscriptions")
     }
 
     private var deleteAccountURL: URL? {

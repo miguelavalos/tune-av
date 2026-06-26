@@ -96,6 +96,9 @@ terms_url="$(setting TUNEAV_TERMS_URL)"
 privacy_url="$(setting TUNEAV_PRIVACY_URL)"
 open_source_url="$(setting TUNEAV_OPEN_SOURCE_URL)"
 support_email="$(setting SUPPORT_EMAIL_TO)"
+revenuecat_public_api_key="$(setting TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
+revenuecat_offering_id="$(setting TUNEAV_REVENUECAT_OFFERING_ID)"
+revenuecat_monthly_package_id="$(setting TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
 development_team="$(setting DEVELOPMENT_TEAM)"
 code_sign_style="$(setting CODE_SIGN_STYLE)"
 enable_hardened_runtime="$(setting ENABLE_HARDENED_RUNTIME)"
@@ -115,6 +118,9 @@ for item in \
   "TUNEAV_TERMS_URL:$terms_url" \
   "TUNEAV_PRIVACY_URL:$privacy_url" \
   "TUNEAV_OPEN_SOURCE_URL:$open_source_url" \
+  "TUNEAV_REVENUECAT_PUBLIC_API_KEY:$revenuecat_public_api_key" \
+  "TUNEAV_REVENUECAT_OFFERING_ID:$revenuecat_offering_id" \
+  "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:$revenuecat_monthly_package_id" \
   "SUPPORT_EMAIL_TO:$support_email"; do
   require_present "${item%%:*}" "${item#*:}"
 done
@@ -129,6 +135,8 @@ if [ "$env_name" = "prod" ]; then
   [ "$keychain_service" = "com.avalsys.tuneav.account.v2" ] || fail "prod ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.account.v2, got $keychain_service"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav" ] || fail "prod ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav, got $keychain_access_group"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
+  [[ "$revenuecat_public_api_key" == appl_* ]] || fail "prod RevenueCat key must be a public appl_ key"
+  [[ "$revenuecat_public_api_key" != sk_* ]] || fail "prod RevenueCat key must not be a secret sk_ key"
   if printf '%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tune_api_base_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
     fail "prod settings contain preview/local/dev values"
   fi
@@ -143,6 +151,7 @@ else
   [ "$keychain_service" = "com.avalsys.tuneav.mac.dev.account.v2" ] || fail "dev ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.mac.dev.account.v2, got $keychain_service"
   [ "$keychain_access_group" = "935PM55U6R.com.avalsys.tuneav.mac.dev" ] || fail "dev ACCOUNTAV_KEYCHAIN_ACCESS_GROUP must be 935PM55U6R.com.avalsys.tuneav.mac.dev, got $keychain_access_group"
   [[ "$publishable_key" == pk_test_* || "$publishable_key" == pk_live_* ]] || fail "dev publishable key has unexpected prefix"
+  [[ "$revenuecat_public_api_key" == appl_* || "$revenuecat_public_api_key" == '$(inherited)' || -z "$revenuecat_public_api_key" ]] || fail "dev RevenueCat key has unexpected prefix"
 fi
 
 allow_https_or_dev_local_url() {
@@ -185,6 +194,12 @@ if [ -n "$development_team" ] && [ "$development_team" != '$(inherited)' ]; then
 elif [ -n "$development_team" ]; then
   redacted_team="$development_team"
 fi
+redacted_revenuecat_key=""
+if [ -n "$revenuecat_public_api_key" ] && [ "$revenuecat_public_api_key" != '$(inherited)' ]; then
+  redacted_revenuecat_key="${revenuecat_public_api_key:0:8}...${#revenuecat_public_api_key}"
+else
+  redacted_revenuecat_key="${revenuecat_public_api_key:-missing}"
+fi
 
 cat <<EOF
 Tune AV macOS runtime config ($env_name)
@@ -203,6 +218,9 @@ Tune AV macOS runtime config ($env_name)
   Account AV keychain access group: $keychain_access_group
   Support AV: ${support_base_url:-email fallback}
   publishable key: $redacted_key
+  RevenueCat key: $redacted_revenuecat_key
+  RevenueCat offering: $revenuecat_offering_id
+  RevenueCat monthly package: $revenuecat_monthly_package_id
   support email: $support_email
   delete account: $delete_account_url
   terms: $terms_url

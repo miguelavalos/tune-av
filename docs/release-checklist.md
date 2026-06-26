@@ -137,6 +137,10 @@ public-safe config hygiene.
 9. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, and release notes
    with [app-store-review.md](app-store-review.md).
+10. After every TestFlight upload, open App Store Connect and confirm the build
+    has completed Apple's processing/encoding step before expecting it to appear
+    in TestFlight. An upload that is only delivered or still processing is not
+    yet addable to TestFlight groups or App Review.
 
 ## iOS Network And ATS Behavior
 
@@ -202,6 +206,11 @@ separate development bundle identifier.
    `com.avalsys.tuneav.account` as invalid, even if App Store Connect accepts
    the upload. That service can make Clerk's macOS legacy migration fallback
    read old login-keychain items and show repeated Keychain password prompts.
+
+   After every macOS TestFlight upload, open App Store Connect and confirm the
+   build has completed Apple's processing/encoding step before expecting it to
+   appear in TestFlight. An upload that is only delivered or still processing is
+   not yet addable to TestFlight groups or App Review.
 
 4. If shared UI changes affect macOS, open `apps/macos/TuneAVMac.xcodeproj` and
    run the `TuneAVMac` scheme locally.

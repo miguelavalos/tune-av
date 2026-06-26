@@ -104,6 +104,11 @@ extension TuneAVPlaybackQueueSource {
 
 @MainActor
 final class TuneAVMacModel: ObservableObject {
+    enum SubscriptionReconciliationSource: Equatable {
+        case purchase
+        case restore
+    }
+
     private static let maxLocalTrackFeedbackRecords = 300
 
     @Published var selectedSection: MacRootSection = .home
@@ -144,6 +149,12 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var planTier: PlanTier = .free
     @Published private(set) var capabilities: AccessCapabilities = .forMode(.guest)
     @Published private(set) var limits: AccessLimits = .forMode(.guest)
+    @Published private(set) var subscriptionOffer: MacTuneAVSubscriptionOffer?
+    @Published private(set) var subscriptionError: MacTuneAVSubscriptionPurchaseError?
+    @Published private(set) var isSubscriptionOperationInProgress = false
+    @Published private(set) var isWaitingForSubscriptionReconciliation = false
+    @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
+    @Published private(set) var isAccountOperationInProgress = false
     @Published var upgradePrompt: UpgradePrompt?
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
     @Published private(set) var lastCloudSyncAt: Date?
@@ -154,6 +165,9 @@ final class TuneAVMacModel: ObservableObject {
     private let player = AVPlayer()
     private let trackArtworkService = TuneAVTrackArtworkService()
     private let storage = TuneAVMacLibraryStorage()
+    private let subscriptionPurchasing: MacTuneAVSubscriptionPurchasing
+    private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
+    private let sleepNanoseconds: (UInt64) async -> Void
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private let systemNowPlayingController = MacNowPlayingSystemController()
@@ -192,7 +206,24 @@ final class TuneAVMacModel: ObservableObject {
     private let accountUserDefaults = UserDefaults.standard
     private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
-    init() {
+    init(
+        subscriptionPurchasing: MacTuneAVSubscriptionPurchasing? = nil,
+        subscriptionReconciliationRetryDelaysNanoseconds: [UInt64] = [
+            1_000_000_000,
+            2_000_000_000,
+            3_000_000_000,
+            5_000_000_000
+        ],
+        sleepNanoseconds: @escaping (UInt64) async -> Void = { nanoseconds in
+            try? await Task.sleep(nanoseconds: nanoseconds)
+        }
+    ) {
+        self.subscriptionPurchasing = subscriptionPurchasing
+            ?? (TuneAVUITestEnvironment.current.shouldUseSubscriptionPurchasingStub
+                ? MacUITestTuneAVSubscriptionPurchasing()
+                : MacRevenueCatTuneAVSubscriptionPurchasing())
+        self.subscriptionReconciliationRetryDelaysNanoseconds = subscriptionReconciliationRetryDelaysNanoseconds
+        self.sleepNanoseconds = sleepNanoseconds
         favoriteRecords = storage.loadFavoriteRecords()
         favoriteStations = favoriteRecords.map { Station(record: $0.station) }
         recentStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.recentsKey)
@@ -1118,9 +1149,47 @@ final class TuneAVMacModel: ObservableObject {
         }
         cloudSyncStatus = .idle
         accountUser = nil
+        subscriptionOffer = nil
+        subscriptionError = nil
+        isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
         isAccountSessionTemporarilyUnavailable = false
         clearLastKnownAccountUser()
         resolveLocalAccessState()
+    }
+
+    func loadMonthlySubscriptionOffer() async {
+        guard accountUser != nil else {
+            subscriptionError = .missingAccountUser
+            return
+        }
+
+        do {
+            subscriptionOffer = try await subscriptionPurchasing.loadMonthlyOffer(for: accountUser)
+            subscriptionError = nil
+        } catch let error as MacTuneAVSubscriptionPurchaseError {
+            subscriptionError = error
+        } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.subscription",
+                operation: "load_offer",
+                step: "unknown"
+            )
+            subscriptionError = .underlying(error.localizedDescription)
+        }
+    }
+
+    func purchaseMonthlyPro() async {
+        await runSubscriptionOperation(source: .purchase) {
+            try await subscriptionPurchasing.purchaseMonthlyPro(for: accountUser)
+        }
+    }
+
+    func restorePurchases() async {
+        await runSubscriptionOperation(source: .restore) {
+            try await subscriptionPurchasing.restorePurchases(for: accountUser)
+        }
     }
 
     func canPerformPremiumAviAction(feature: LimitedFeature, usageKey: String? = nil) -> Bool {
@@ -1708,6 +1777,10 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func performAccountAction(_ action: () async throws -> Void) async {
+        guard !isAccountOperationInProgress else { return }
+        isAccountOperationInProgress = true
+        defer { isAccountOperationInProgress = false }
+
         do {
             cloudSyncErrorMessage = nil
             try await action()
@@ -1723,6 +1796,73 @@ final class TuneAVMacModel: ObservableObject {
             )
             cloudSyncErrorMessage = error.localizedDescription
         }
+    }
+
+    private func runSubscriptionOperation(
+        source: SubscriptionReconciliationSource,
+        _ operation: () async throws -> MacTuneAVPurchaseOutcome
+    ) async {
+        guard accountUser != nil else {
+            subscriptionError = .missingAccountUser
+            return
+        }
+
+        isSubscriptionOperationInProgress = true
+        subscriptionError = nil
+        defer {
+            isSubscriptionOperationInProgress = false
+        }
+
+        do {
+            TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: source.diagnosticsOperation)
+            let outcome = try await operation()
+            guard outcome.shouldRefreshAccess else { return }
+            isWaitingForSubscriptionReconciliation = true
+            subscriptionReconciliationSource = source
+            await refreshAccessState()
+            await retrySubscriptionReconciliationIfNeeded()
+        } catch let error as MacTuneAVSubscriptionPurchaseError {
+            if error != .purchaseCancelled {
+                subscriptionError = error
+            }
+        } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.subscription",
+                operation: source.diagnosticsOperation,
+                step: "unknown"
+            )
+            subscriptionError = .underlying(error.localizedDescription)
+        }
+    }
+
+    private func retrySubscriptionReconciliationIfNeeded() async {
+        guard accessMode != .signedInPro else {
+            clearSubscriptionReconciliationState()
+            return
+        }
+
+        let reconciliationAccountUser = accountUser
+        for delay in subscriptionReconciliationRetryDelaysNanoseconds {
+            guard isWaitingForSubscriptionReconciliation else { return }
+            guard accountUser == reconciliationAccountUser else { return }
+
+            await sleepNanoseconds(delay)
+            guard isWaitingForSubscriptionReconciliation else { return }
+            guard accountUser == reconciliationAccountUser else { return }
+
+            await refreshAccessState()
+            if accessMode == .signedInPro {
+                clearSubscriptionReconciliationState()
+                return
+            }
+        }
+    }
+
+    private func clearSubscriptionReconciliationState() {
+        isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
+        upgradePrompt = nil
     }
 
     private func refreshAccessState(tokenOverride: String? = nil) async {
@@ -1793,7 +1933,7 @@ final class TuneAVMacModel: ObservableObject {
             persistLastKnownAccountUser(accountUser)
         }
         if resolvedAccess.accessMode == .signedInPro {
-            upgradePrompt = nil
+            clearSubscriptionReconciliationState()
             startProRealtimeSyncIfNeeded()
         } else {
             stopProRealtimeSync()
@@ -2739,5 +2879,16 @@ private extension Station {
         return components.string?
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             .lowercased()
+    }
+}
+
+private extension TuneAVMacModel.SubscriptionReconciliationSource {
+    var diagnosticsOperation: String {
+        switch self {
+        case .purchase:
+            return "purchase"
+        case .restore:
+            return "restore"
+        }
     }
 }

@@ -17,5 +17,8 @@ TUNEAV_DELETE_ACCOUNT_URL = $(inherited)
 TUNEAV_TERMS_URL = $(inherited)
 TUNEAV_PRIVACY_URL = $(inherited)
 TUNEAV_OPEN_SOURCE_URL = $(inherited)
+TUNEAV_REVENUECAT_PUBLIC_API_KEY = $(inherited)
+TUNEAV_REVENUECAT_OFFERING_ID = $(inherited)
+TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $(inherited)
 
 #include? "Local.xcconfig"

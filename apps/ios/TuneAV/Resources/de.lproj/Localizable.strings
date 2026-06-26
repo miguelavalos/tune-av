@@ -182,6 +182,7 @@
 "profile.account.connect" = "Konto verbinden";
 "profile.account.connectUnavailable" = "Kontozugang ist gerade nicht verfügbar";
 "profile.account.email.title" = "E-Mail";
+"profile.account.signingIn" = "Verbinden...";
 "profile.account.title" = "Konto verwalten";
 "profile.accountScreen.subtitle" = "Verwalte Anmeldung, Zugriff, Synchronisierung und Kontosicherheit.";
 "profile.accountScreen.title" = "Mein Konto";

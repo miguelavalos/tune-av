@@ -186,6 +186,7 @@
 "profile.account.connectUnavailable" = "Account sign-in is not available right now";
 "profile.account.email.title" = "Email";
 "profile.account.identity.guest" = "Local mode on this device";
+"profile.account.signingIn" = "Connecting...";
 "profile.account.title" = "Account";
 "profile.accountScreen.subtitle" = "Manage sign-in, access, sync, and account safety.";
 "profile.accountScreen.title" = "My account";

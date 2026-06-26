@@ -40,7 +40,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>40</string>
+	<string>42</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSAppTransportSecurity</key>
@@ -66,6 +66,12 @@
 	<string>$(TUNEAV_OPEN_SOURCE_URL)</string>
 	<key>TUNEAV_PRIVACY_URL</key>
 	<string>$(TUNEAV_PRIVACY_URL)</string>
+	<key>TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID</key>
+	<string>$(TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)</string>
+	<key>TUNEAV_REVENUECAT_OFFERING_ID</key>
+	<string>$(TUNEAV_REVENUECAT_OFFERING_ID)</string>
+	<key>TUNEAV_REVENUECAT_PUBLIC_API_KEY</key>
+	<string>$(TUNEAV_REVENUECAT_PUBLIC_API_KEY)</string>
 	<key>TUNEAV_TERMS_URL</key>
 	<string>$(TUNEAV_TERMS_URL)</string>
 </dict>

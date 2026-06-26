@@ -17,6 +17,18 @@ enum TuneAVMacConfig {
         TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
     }
 
+    static var revenueCatPublicAPIKey: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_PUBLIC_API_KEY")
+    }
+
+    static var revenueCatOfferingID: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_OFFERING_ID")
+    }
+
+    static var revenueCatMonthlyPackageID: String? {
+        TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID")
+    }
+
     private static var diagnosticsEnvironment: AVDiagnosticsEnvironment {
         switch TuneAVBundleConfig.stringValue(for: "TUNEAV_CONFIG_ENVIRONMENT").lowercased() {
         case "prod", "production":
