@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-06-19
+Date: 2026-06-28
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -25,6 +25,7 @@ Current app shape:
 - Home, Search, Avi, Library, Music, and Profile shell tabs;
 - music-first station discovery with an explicit all-radio mode;
 - contextual Avi surfaces in Home, player, music, limits, and Profile flows;
+- iPhone and iPad-compatible client presentation;
 - portrait-only iPhone full player with fixed-size Avi feedback, larger artwork,
   stable title truncation, artwork/text zoom for full metadata, and no
   mini-player overlay while the full player is open;

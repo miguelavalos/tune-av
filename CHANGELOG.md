@@ -8,6 +8,11 @@ This project follows semantic versioning once public source releases begin.
 
 - No unreleased public client changes.
 
+## 1.0.3 - 2026-06-28
+
+- Add iPad-compatible iOS client support.
+- Include minor iOS client bug fixes.
+
 ## 1.0.2 - 2026-06-25
 
 - Reduce Pro cloud sync activity on iOS and macOS so Tune AV no longer keeps a
