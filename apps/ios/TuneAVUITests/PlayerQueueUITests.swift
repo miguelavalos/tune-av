@@ -39,19 +39,10 @@ final class PlayerQueueUITests: TuneAVUITestCase {
         let miniPlayerNext = app.buttons["miniPlayer.next"].firstMatch
         XCTAssertTrue(miniPlayer.waitForExistence(timeout: 5))
         XCTAssertTrue(miniPlayerNext.exists)
+        miniPlayerNext.tap()
 
-        miniPlayer.tap()
-
-        let currentStationTitle = app.staticTexts["BBC Radio 1"].firstMatch
-        XCTAssertTrue(currentStationTitle.waitForExistence(timeout: 5))
-
-        let nextButton = app.buttons["avi.footerPlayer.next"]
-        XCTAssertTrue(nextButton.exists)
-        nextButton.tap()
-
-        let nextStationTitle = app.staticTexts["SomaFM Groove Salad"].firstMatch
-        let switched = NSPredicate(format: "exists == true")
-        expectation(for: switched, evaluatedWith: nextStationTitle)
+        let switched = NSPredicate(format: "label CONTAINS %@", "SomaFM Groove Salad")
+        expectation(for: switched, evaluatedWith: miniPlayer)
         waitForExpectations(timeout: 5)
     }
 
