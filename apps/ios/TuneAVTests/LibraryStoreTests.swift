@@ -974,8 +974,24 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
 }
 
 private final class LibraryStoreTestURLProtocol: URLProtocol {
+    private static let requestHandlerLock = NSLock()
+
     nonisolated(unsafe)
-    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+    private static var storedRequestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    nonisolated(unsafe)
+    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))? {
+        get {
+            requestHandlerLock.lock()
+            defer { requestHandlerLock.unlock() }
+            return storedRequestHandler
+        }
+        set {
+            requestHandlerLock.lock()
+            storedRequestHandler = newValue
+            requestHandlerLock.unlock()
+        }
+    }
 
     override class func canInit(with request: URLRequest) -> Bool {
         true
