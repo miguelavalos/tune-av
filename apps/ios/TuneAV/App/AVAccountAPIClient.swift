@@ -191,7 +191,7 @@ final class AVAccountAPIClient {
                 return true
             }
         }
-        return true
+        return TuneAVDiagnostics.shouldCapture(error)
     }
 
     private func recordNetworkEvent(_ event: NetworkEvent) {

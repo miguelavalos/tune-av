@@ -249,6 +249,9 @@ final class SharedAppleSupportTests: XCTestCase {
     func testAccountAPIClientDoesNotCaptureExpectedConfigurationErrors() {
         XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingToken))
         XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.missingBaseURL))
+        XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(URLError(.cancelled)))
+        XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(URLError(.networkConnectionLost)))
+        XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)))
         XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.requestFailed(statusCode: 500)))
         XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(URLError(.timedOut)))
     }

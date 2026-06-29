@@ -19,7 +19,7 @@ enum TuneAVDiagnostics {
         step: String,
         data: [String: String] = [:]
     ) {
-        guard !(error is CancellationError) else { return }
+        guard shouldCapture(error) else { return }
 
         var contextData = data
         contextData["operation"] = operation
@@ -44,6 +44,32 @@ enum TuneAVDiagnostics {
 
     static func clearUserContext() {
         AVDiagnostics.clearUserContext()
+    }
+
+    static func shouldCapture(_ error: any Error) -> Bool {
+        if error is CancellationError {
+            return false
+        }
+
+        if let urlError = error as? URLError {
+            return shouldCaptureURLCode(urlError.code)
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            return shouldCaptureURLCode(URLError.Code(rawValue: nsError.code))
+        }
+
+        if let accountError = error as? AVAccountAPIClientError {
+            switch accountError {
+            case .missingToken, .missingBaseURL:
+                return false
+            case .requestFailed:
+                return true
+            }
+        }
+
+        return true
     }
 
     private static func errorCode(for error: any Error) -> String {
@@ -88,6 +114,17 @@ enum TuneAVDiagnostics {
             return "bad_server_response"
         default:
             return "url_error_\(code.rawValue)"
+        }
+    }
+
+    private static func shouldCaptureURLCode(_ code: URLError.Code) -> Bool {
+        switch code {
+        case .cancelled,
+             .networkConnectionLost,
+             .notConnectedToInternet:
+            return false
+        default:
+            return true
         }
     }
 }

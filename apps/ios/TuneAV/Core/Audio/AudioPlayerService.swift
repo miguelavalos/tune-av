@@ -629,18 +629,20 @@ final class AudioPlayerService: NSObject, ObservableObject {
         Self.logger.error(
             "Playback failure context=\(context, privacy: .private) station_id=\(stationID, privacy: .private) stream_url=\(streamURL, privacy: .private) item_error=\(itemError, privacy: .private) error_events=\(errorEvents, privacy: .private)"
         )
-        TuneAVDiagnostics.capture(
-            item?.error ?? NSError(domain: "TuneAVAudio", code: 2),
-            feature: "tune.audio",
-            operation: "playback",
-            step: context,
-            data: [
-                "queue_source": String(describing: playbackQueue.source),
-                "failure_count": String(consecutiveFailureCount),
-                "event_status_code": primaryEvent.statusCode,
-                "event_domain": primaryEvent.domain,
-            ]
-        )
+        if shouldCapturePlaybackFailure() {
+            TuneAVDiagnostics.capture(
+                item?.error ?? NSError(domain: "TuneAVAudio", code: 2),
+                feature: "tune.audio",
+                operation: "playback",
+                step: context,
+                data: [
+                    "queue_source": String(describing: playbackQueue.source),
+                    "failure_count": String(consecutiveFailureCount + 1),
+                    "event_status_code": primaryEvent.statusCode,
+                    "event_domain": primaryEvent.domain,
+                ]
+            )
+        }
     }
 
     private func playerItemErrorLogSummary(_ item: AVPlayerItem?) -> String {
@@ -682,6 +684,10 @@ final class AudioPlayerService: NSObject, ObservableObject {
         setLastErrorMessage(message)
         player?.pause()
         updateNowPlayingInfo()
+    }
+
+    private func shouldCapturePlaybackFailure() -> Bool {
+        consecutiveFailureCount + 1 >= TuneAVAudioPlaybackPolicy.unstableStreamFailureThreshold
     }
 
     private func observeNetworkChanges() {
