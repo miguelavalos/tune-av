@@ -48,6 +48,9 @@ jobs:
         with:
           bun-version: 1.3.13
 
+      - name: Install CI tools
+        run: brew install xcodegen
+
       - name: Cache iOS UI smoke Swift packages
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
