@@ -47,6 +47,7 @@ xcodebuild test \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   -resultBundlePath "$RESULT_BUNDLE_PATH" \
   -only-testing:TuneAVTests \
+  -parallel-testing-enabled NO \
   CODE_SIGNING_ALLOWED=NO
 
 TUNEAV_IOS_APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/TuneAV.app" \
