@@ -1,6 +1,7 @@
 name: iOS Release Config Hygiene
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - ".github/workflows/ios-release-config-hygiene.yml"
