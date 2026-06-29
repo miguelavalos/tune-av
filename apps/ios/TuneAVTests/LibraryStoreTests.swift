@@ -566,6 +566,7 @@ final class LibraryStoreTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: libraryStoreTestURLSession()
         )
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
@@ -642,6 +643,7 @@ final class LibraryStoreTests: XCTestCase {
         let client = AVAccountAPIClient(
             getToken: { "test-token" },
             baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
             urlSession: libraryStoreTestURLSession()
         )
         let store = LibraryStore(container: PersistenceController(inMemory: true).container)
