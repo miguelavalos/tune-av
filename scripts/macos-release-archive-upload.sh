@@ -119,7 +119,7 @@ mkdir -p "$(dirname "$archive_path")"
 
 if [ "$skip_preflight" -eq 0 ] && [ "$use_existing_archive" -eq 0 ]; then
   run_step "Run macOS release preflight without archive"
-  (cd "$repo_root" && bun run macos:release:preflight)
+  (cd "$repo_root" && vp run macos:release:preflight)
 fi
 
 if [ "$use_existing_archive" -eq 0 ]; then
@@ -159,6 +159,6 @@ Verified archive is ready.
   archive: $archive_path
 
 To upload this exact archive, rerun:
-  bun run macos:release:upload -- --archive "$archive_path" --upload --skip-preflight
+  vp run macos:release:upload -- --archive "$archive_path" --upload --skip-preflight
 REPORT
 fi

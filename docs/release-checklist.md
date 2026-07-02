@@ -14,11 +14,11 @@ public-safe config hygiene.
 
 ## Repository Hygiene
 
-1. Run `bun install`.
+1. Run `pnpm install`.
 2. Run the public hygiene check:
 
    ```bash
-   bun run config:hygiene
+   vp run config:hygiene
    ```
 
 3. Confirm no generated config files are present in tracked git state or left
@@ -45,11 +45,11 @@ public-safe config hygiene.
 2. Run the public local checks:
 
    ```bash
-   bun run config:hygiene
-   bun run ios:tests
+   vp run config:hygiene
+   vp run ios:tests
    ```
 
-   `bun run config:hygiene` is for public-source cleanup and expects generated
+   `vp run config:hygiene` is for public-source cleanup and expects generated
    local config files to be absent. If you are validating a release with
    generated production config present, use the release-readiness checks in step
    7 instead.
@@ -70,7 +70,7 @@ public-safe config hygiene.
      CODE_SIGNING_ALLOWED=NO
    ```
 
-   The simulator destination is an example. `bun run ios:tests` selects an
+   The simulator destination is an example. `vp run ios:tests` selects an
    available iPhone simulator through `scripts/ios-ci-test.sh`; set
    `TUNEAV_IOS_SIMULATOR_NAME` when a specific simulator is required.
 
@@ -94,8 +94,8 @@ public-safe config hygiene.
 7. For release-readiness checks with generated production config present, run:
 
    ```bash
-   bun run ios:release:preflight
-   bun run ios:release:preflight -- --with-archive
+   vp run ios:release:preflight
+   vp run ios:release:preflight -- --with-archive
    ```
 
    The archive preflight validates release config hygiene, sensitive config
@@ -114,7 +114,7 @@ public-safe config hygiene.
 8. Use the reproducible archive/upload workflow for iOS App Store releases:
 
    ```sh
-   bun run ios:release:archive -- --build <next-build>
+   vp run ios:release:archive -- --build <next-build>
    ```
 
    The workflow runs release gates, creates the final signed archive, repairs
@@ -129,7 +129,7 @@ public-safe config hygiene.
    For an existing Organizer archive, run:
 
    ```sh
-   bun run ios:archive:check -- --archive "<path-to-TuneAV.xcarchive>"
+   vp run ios:archive:check -- --archive "<path-to-TuneAV.xcarchive>"
    ```
 
    Do not submit an archive that fails the archive check.
@@ -171,14 +171,14 @@ separate development bundle identifier.
 1. Run:
 
    ```bash
-   bun run macos:tests
+   vp run macos:tests
    ```
 
 2. For release-readiness checks with generated production config present, run:
 
    ```bash
-   bun run macos:release:preflight
-   bun run macos:release:preflight -- --with-archive
+   vp run macos:release:preflight
+   vp run macos:release:preflight -- --with-archive
    ```
 
    The archive preflight validates release config hygiene, platform security,
@@ -193,8 +193,8 @@ separate development bundle identifier.
 3. To create and upload a signed Apple Silicon-only App Store Connect build, run:
 
    ```bash
-   bun run macos:release:archive -- --skip-preflight
-   bun run macos:release:upload -- --archive "<printed .xcarchive path>" --upload --skip-preflight
+   vp run macos:release:archive -- --skip-preflight
+   vp run macos:release:upload -- --archive "<printed .xcarchive path>" --upload --skip-preflight
    ```
 
    The workflow verifies the archive bundle identifier (`com.avalsys.tuneav`

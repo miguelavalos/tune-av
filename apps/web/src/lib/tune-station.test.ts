@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vite-plus/test";
 import { discoveryId, hasMusicSignal, scoreStationForAvi, stationIdentityKey, trackKey } from "@/lib/tune-station";
 import type { TuneStation } from "@/lib/tune-types";
 

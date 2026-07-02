@@ -22,7 +22,7 @@ fi
 eval "$("$suite_root/scripts/resolve-infisical-bootstrap-env.sh" "$profile")"
 
 if [ ! -x "$varlock_bin" ]; then
-  echo "varlock CLI is required at $varlock_bin. Run bun install in $suite_root." >&2
+  echo "varlock CLI is required at $varlock_bin. Run pnpm install in $suite_root." >&2
   exit 1
 fi
 

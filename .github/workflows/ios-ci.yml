@@ -77,10 +77,11 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/account-av" "$GITHUB_WORKSPACE/../account-av"
           ln -s "$GITHUB_WORKSPACE/apps-av" "$GITHUB_WORKSPACE/../apps-av"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          bun-version: 1.3.13
+          node-version: "22"
+          cache: true
 
       - name: Install CI tools
         run: brew install ripgrep xcodegen
@@ -94,33 +95,33 @@ jobs:
             ${{ runner.os }}-ios-ci-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: vp install --frozen-lockfile
 
       - name: GitHub Actions pinning hygiene
-        run: bun run ci:actions-pinning
+        run: vp run ci:actions-pinning
 
       - name: GitHub Actions timeout hygiene
-        run: bun run ci:workflow-timeouts
+        run: vp run ci:workflow-timeouts
 
       - name: GitHub Actions permissions hygiene
-        run: bun run ci:workflow-permissions
+        run: vp run ci:workflow-permissions
 
       - name: Public config hygiene
-        run: bun run config:hygiene
+        run: vp run config:hygiene
 
       - name: Localization parity audit
-        run: bun run i18n:audit
+        run: vp run i18n:audit
 
       - name: iOS network privacy gate
-        run: bun run ios:privacy:network
+        run: vp run ios:privacy:network
 
       - name: Test iOS
-        run: TUNEAV_IOS_MAX_LAUNCH_READY_MS=25000 bun run ios:ci
+        run: TUNEAV_IOS_MAX_LAUNCH_READY_MS=25000 vp run ios:ci
 
       - name: Report iOS app size
         run: |
           set -euo pipefail
-          bun run ios:size-report
+          vp run ios:size-report
           cat .derived-data/ios-ci/Reports/app-size.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload iOS test result bundle
@@ -158,10 +159,11 @@ jobs:
           ln -s "$GITHUB_WORKSPACE/account-av" "$GITHUB_WORKSPACE/../account-av"
           ln -s "$GITHUB_WORKSPACE/apps-av" "$GITHUB_WORKSPACE/../apps-av"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
-          bun-version: 1.3.13
+          node-version: "22"
+          cache: true
 
       - name: Cache macOS Swift packages
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
@@ -172,10 +174,10 @@ jobs:
             ${{ runner.os }}-macos-ci-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: vp install --frozen-lockfile
 
       - name: Test macOS
-        run: bun run macos:ci
+        run: vp run macos:ci
 
       - name: Upload macOS test result bundle
         if: failure()

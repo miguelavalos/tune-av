@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vite-plus/test";
 import { canAddItem, limitForFeature, signedInFreeAccess, signedInProAccess } from "@/lib/tune-access";
 
 describe("Tune access policy", () => {

@@ -88,7 +88,7 @@ Before commit or push:
 
 ```bash
 git diff --check
-bun run config:hygiene
+vp run config:hygiene
 ```
 
 Expected result: no private endpoints, secrets, generated config, or operations

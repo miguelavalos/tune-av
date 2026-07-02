@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 describe("music discovery actions", () => {
   const routeSource = readFileSync(new URL("./music.tsx", import.meta.url), "utf8");

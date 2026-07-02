@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -157,7 +157,10 @@ function compareAppleStrings() {
 }
 
 function compareWebStrings() {
+  const appWebDir = join(rootDir, "apps/web");
+  const auditFilePath = join(appWebDir, ".i18n-parity-audit.test.ts");
   const auditSource = String.raw`
+    import { describe, it } from "vite-plus/test";
     import { tuneText } from "./src/lib/tune-i18n.ts";
     import { tuneFunctionalText } from "./src/lib/tune-functional-text.ts";
     import { tuneProfileLabels } from "./src/lib/tune-profile-labels.ts";
@@ -218,15 +221,19 @@ function compareWebStrings() {
       }
     }
 
-    if (failures.length > 0) {
-      console.error(failures.join("\\n"));
-      process.exit(1);
-    }
+    describe("Tune AV web i18n parity", () => {
+      it("matches English keys, shapes, and translated text expectations", () => {
+        if (failures.length > 0) {
+          throw new Error(failures.join("\\n"));
+        }
+      });
+    });
   `;
 
   try {
-    execFileSync("bun", ["--eval", auditSource], {
-      cwd: join(rootDir, "apps/web"),
+    writeFileSync(auditFilePath, auditSource);
+    execFileSync("vp", ["test", ".i18n-parity-audit.test.ts"], {
+      cwd: appWebDir,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"]
     });
@@ -235,6 +242,12 @@ function compareWebStrings() {
     const stderr = typeof error.stderr === "string" ? error.stderr.trim() : "";
     const stdout = typeof error.stdout === "string" ? error.stdout.trim() : "";
     return [stderr, stdout].filter(Boolean);
+  } finally {
+    try {
+      unlinkSync(auditFilePath);
+    } catch {
+      // The file may not have been written if process startup failed early.
+    }
   }
 }
 

@@ -80,7 +80,7 @@ Use the launch profile before and after changes that affect startup,
 dependency loading, app assets, the shell, or the first Home render:
 
 ```bash
-bun run ios:profile:launch-performance
+vp run ios:profile:launch-performance
 ```
 
 The profile runs the launch performance smoke several times and writes a local

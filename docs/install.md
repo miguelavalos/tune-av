@@ -10,7 +10,7 @@ macOS client target.
 1. Install dependencies:
 
    ```bash
-   bun install
+   pnpm install
    ```
 
 2. Open `apps/ios/TuneAV.xcodeproj` in Xcode.
@@ -26,7 +26,7 @@ outside git.
 Use the guarded installer for connected iPhone testing:
 
 ```bash
-bun run ios:install:dev
+vp run ios:install:dev
 ```
 
 The installer regenerates local config, validates effective Xcode settings,
@@ -57,7 +57,7 @@ Before changing runtime configuration scripts, read
 
 1. Xcode 26.4.1 or later installed.
 2. Command line tools selected from that Xcode.
-3. `bun` 1.3.13 or later.
+3. `vp` 1.3.13 or later.
 4. An Apple account in Xcode if testing on a physical device.
 
 Do not copy production values, example secret files, bootstrap examples, or
@@ -88,7 +88,7 @@ You can also run the `TuneAV` scheme directly from Xcode.
 ### Manual Install On A Connected iOS Device
 
 Manual installation is only for debugging the installer itself. Prefer
-`bun run ios:install:dev` for normal device work.
+`vp run ios:install:dev` for normal device work.
 
 Build for the device:
 
@@ -186,7 +186,7 @@ dependency does not provide an Intel macOS slice.
 ### Requirements
 
 - Xcode with macOS 14 SDK support or newer.
-- `bun install` from the repository root.
+- `pnpm install` from the repository root.
 - Optional `apps/macos/Config/Local.xcconfig` generated outside git if you need
   local runtime values.
 
@@ -214,8 +214,8 @@ To build and launch the app locally:
 For release-readiness checks with generated production config present:
 
 ```bash
-bun run macos:release:preflight
-bun run macos:release:preflight -- --with-archive
+vp run macos:release:preflight
+vp run macos:release:preflight -- --with-archive
 ```
 
 ### Local QA

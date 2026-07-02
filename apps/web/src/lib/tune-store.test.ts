@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vite-plus/test";
 import { normalizePersistedSyncStatus, normalizeRestoredSyncStatus } from "@/lib/tune-store";
 
 describe("Tune store sync status persistence", () => {

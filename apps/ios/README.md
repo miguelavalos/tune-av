@@ -11,7 +11,7 @@ for signed App Store Connect upload workflows.
 
 ## Local Config
 
-1. From the repo root, run `bun install`.
+1. From the repo root, run `pnpm install`.
 2. Create `Config/Local.xcconfig` outside git only if your build needs signing or account-platform values.
 3. Open `TuneAV.xcodeproj` in Xcode.
 

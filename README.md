@@ -75,7 +75,7 @@ of truth for current Apple client behavior and verification state.
 ### iOS
 
 1. Install repo tooling:
-   `bun install`
+   `pnpm install`
 2. If your local build needs private runtime values, create
    `apps/ios/Config/Local.xcconfig` outside git.
 3. Open `apps/ios/TuneAV.xcodeproj` in Xcode and run the `TuneAV` scheme.
@@ -86,7 +86,7 @@ The tracked debug configuration uses neutral defaults and optional
 ### macOS
 
 1. Install repo tooling:
-   `bun install`
+   `pnpm install`
 2. If your local build needs private runtime values, create
    `apps/macos/Config/Local.xcconfig` outside git.
 3. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode and run the `TuneAVMac`
@@ -104,7 +104,7 @@ config.
 - Do not add `.env.example`, bootstrap examples, or example secret files.
 - Keep non-public operations and planning material in private repositories.
 
-Run `bun run config:hygiene` before pushing config-related changes.
+Run `vp run config:hygiene` before pushing config-related changes.
 
 See [docs/install.md](docs/install.md) for setup details.
 

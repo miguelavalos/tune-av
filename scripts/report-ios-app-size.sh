@@ -14,7 +14,7 @@ rm -f "$REPORT_PATH"
 mkdir -p "$(dirname "$REPORT_PATH")"
 
 if [[ ! -d "$APP_PATH" ]]; then
-  echo "FAIL $APP_PATH is missing. Run bun run ios:ci before generating the size report." >&2
+  echo "FAIL $APP_PATH is missing. Run vp run ios:ci before generating the size report." >&2
   exit 1
 fi
 

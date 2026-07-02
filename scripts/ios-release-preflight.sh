@@ -23,7 +23,7 @@ Runs the local Tune AV iOS release preflight:
   and app-size gates.
 
 Generate apps/ios/Config/Local.xcconfig for production before running:
-  bun run ios:config:prod
+  vp run ios:config:prod
 USAGE
 }
 

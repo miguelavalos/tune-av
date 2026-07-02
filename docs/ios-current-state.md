@@ -121,12 +121,12 @@ runtime errors remain reportable diagnostics.
 Public local checks:
 
 ```bash
-bun run config:hygiene
-bun run ios:tests
-bun run macos:tests
+vp run config:hygiene
+vp run ios:tests
+vp run macos:tests
 ```
 
-`bun run config:hygiene` is a public-source hygiene check and expects generated
+`vp run config:hygiene` is a public-source hygiene check and expects generated
 local config files to be absent from the workspace. Release-readiness checks run
 with generated local config present and use the platform-specific release config
 hygiene scripts.
@@ -141,17 +141,17 @@ xcodebuild -project apps/ios/TuneAV.xcodeproj \
   build
 ```
 
-The destination above is an example. `bun run ios:tests` uses the repository
+The destination above is an example. `vp run ios:tests` uses the repository
 helper that selects an available iPhone simulator and can be overridden with
 `TUNEAV_IOS_SIMULATOR_NAME`.
 
 Release-readiness preflights with generated production config present:
 
 ```bash
-bun run ios:release:preflight
-bun run ios:release:preflight -- --with-archive
-bun run macos:release:preflight
-bun run macos:release:preflight -- --with-archive
+vp run ios:release:preflight
+vp run ios:release:preflight -- --with-archive
+vp run macos:release:preflight
+vp run macos:release:preflight -- --with-archive
 ```
 
 Latest local client verification known to the maintainers, run on 2026-06-14:
@@ -167,8 +167,8 @@ Latest local client verification known to the maintainers, run on 2026-06-14:
 Signed device installs should use:
 
 ```bash
-bun run ios:install:dev
-bun run ios:install:prod
+vp run ios:install:dev
+vp run ios:install:prod
 ```
 
 Those commands regenerate local config, validate the resolved environment,
