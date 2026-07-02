@@ -62,6 +62,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         let menuButton = app.buttons["discoveryTrack.menu.\(discoveryID)"].firstMatch
         XCTAssertTrue(menuButton.waitForExistence(timeout: 5))
         menuButton.tap()
+        showNextAviActionsPage(in: app)
 
         let hideButton = app.descendants(matching: .any)["discoveryTrack.hide.\(discoveryID)"].firstMatch
         XCTAssertTrue(hideButton.waitForExistence(timeout: 5))
@@ -94,6 +95,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         let discovery = app.otherElements.matching(identifier: "discoveryTrack.m83-midnight-city-groove-salad").firstMatch
         XCTAssertTrue(discovery.exists)
         discovery.buttons["discoveryTrack.menu.m83-midnight-city-groove-salad"].tap()
+        showNextAviActionsPage(in: app)
         app.descendants(matching: .any)["discoveryTrack.remove.m83-midnight-city-groove-salad"].tap()
 
         XCTAssertFalse(app.staticTexts["Midnight City"].exists)
@@ -157,13 +159,10 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["avi.actions.lyrics"].exists)
-        XCTAssertTrue(app.buttons["avi.actions.saveSong"].exists)
-        XCTAssertFalse(app.buttons["avi.actions.radioInfo"].exists)
-
-        let saveButton = app.buttons["avi.actions.saveSong"].firstMatch
-        XCTAssertTrue(saveButton.isHittable)
-        saveButton.tap()
+        XCTAssertTrue(app.buttons["avi.actions.lyrics"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.youtube"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.artist"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.publicInfo"].exists)
     }
 
     func testFullPlayerAviReactsAndSettlesWhenLikingSong() {
@@ -215,13 +214,14 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["avi.actions.saveSong"].exists)
-        XCTAssertTrue(app.buttons["avi.actions.lyrics"].exists)
-        XCTAssertFalse(app.buttons["avi.actions.saveRadio"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.lyrics"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.youtube"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.artist"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.publicInfo"].exists)
 
         app.descendants(matching: .any)["avi.actions.close"].firstMatch.tap()
 
-        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
+        XCTAssertFalse(app.buttons["avi.actions.lyrics"].exists)
     }
 
     func testArtworkShowsRadioOptionsWhenTrackArtistIsMissing() {
@@ -236,10 +236,9 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["avi.actions.radioInfo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["avi.actions.saveRadio"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.publicInfo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.radioDetails"].exists)
         XCTAssertTrue(app.buttons["avi.actions.history"].exists)
-        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
         XCTAssertFalse(app.buttons["avi.actions.artist"].exists)
         XCTAssertFalse(app.buttons["avi.actions.lyrics"].exists)
     }
@@ -257,10 +256,9 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         openAviActions(in: app)
 
-        XCTAssertTrue(app.buttons["avi.actions.radioInfo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["avi.actions.saveRadio"].exists)
+        XCTAssertTrue(app.buttons["avi.actions.publicInfo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["avi.actions.radioDetails"].exists)
         XCTAssertTrue(app.buttons["avi.actions.history"].exists)
-        XCTAssertFalse(app.buttons["avi.actions.saveSong"].exists)
         XCTAssertFalse(app.buttons["avi.actions.lyrics"].exists)
         XCTAssertFalse(app.buttons["avi.actions.youtube"].exists)
         XCTAssertFalse(app.buttons["avi.actions.artist"].exists)
@@ -317,20 +315,34 @@ final class DiscoveriesUITests: TuneAVUITestCase {
     }
 
     private func openAviActions(in app: XCUIApplication, timeout: TimeInterval = 5) {
+        ensureFullPlayerOpen(in: app, timeout: timeout)
+
         let toggle = app.descendants(matching: .any)["avi.actions.toggle"].firstMatch
-        if !toggle.waitForExistence(timeout: 2) {
-            openFullPlayerFromMiniPlayer(in: app)
-        }
         XCTAssertTrue(toggle.waitForExistence(timeout: timeout))
         toggle.tap()
 
-        XCTAssertTrue(app.descendants(matching: .any)["avi.actions.history"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.descendants(matching: .any)["avi.actions.close"].waitForExistence(timeout: timeout))
+    }
+
+    private func ensureFullPlayerOpen(in app: XCUIApplication, timeout: TimeInterval = 5) {
+        let fullPlayer = app.descendants(matching: .any)["avi.fullPlayer.feedbackBlock"].firstMatch
+        if !fullPlayer.waitForExistence(timeout: 2) {
+            openFullPlayerFromMiniPlayer(in: app)
+        }
+        XCTAssertTrue(fullPlayer.waitForExistence(timeout: timeout))
     }
 
     private func openFullPlayerFromMiniPlayer(in app: XCUIApplication, timeout: TimeInterval = 5) {
         let miniPlayer = app.descendants(matching: .any)["miniPlayer.container"].firstMatch
         XCTAssertTrue(miniPlayer.waitForExistence(timeout: timeout))
         miniPlayer.tap()
+    }
+
+    private func showNextAviActionsPage(in app: XCUIApplication, timeout: TimeInterval = 5) {
+        let nextButton = app.buttons["chevron.right"].firstMatch
+        XCTAssertTrue(nextButton.waitForExistence(timeout: timeout))
+        XCTAssertTrue(nextButton.isEnabled)
+        nextButton.tap()
     }
 
     private func showDiscoveryHistory(in app: XCUIApplication) {

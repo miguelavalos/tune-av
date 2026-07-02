@@ -185,6 +185,22 @@ struct DiscoveryTrackCard: View {
                 AVAviPanelOptionButton(title: L10n.string("player.discovery.lyrics"), systemImage: "text.quote", action: runAndClose(openLyrics))
                 AVAviPanelOptionButton(title: L10n.string("player.discovery.appleMusic"), systemImage: "music.note", action: runAndClose(openAppleMusic))
                 AVAviPanelOptionButton(title: L10n.string("player.discovery.spotify"), systemImage: "music.quarternote.3", action: runAndClose(openSpotify))
+                if let hideAction {
+                    AVAviPanelOptionButton(
+                        title: L10n.string("player.discovery.hide"),
+                        systemImage: "eye.slash",
+                        accessibilityIdentifier: "discoveryTrack.hide.\(discovery.discoveryID)",
+                        action: runAndClose(hideAction)
+                    )
+                }
+                if let removeAction {
+                    AVAviPanelOptionButton(
+                        title: L10n.string("player.discovery.remove"),
+                        systemImage: "trash",
+                        accessibilityIdentifier: "discoveryTrack.remove.\(discovery.discoveryID)",
+                        action: runAndClose(removeAction)
+                    )
+                }
             }
         }
     }
