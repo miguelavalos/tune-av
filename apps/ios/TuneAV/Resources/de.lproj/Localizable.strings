@@ -916,6 +916,7 @@
 "subscription.error.redemptionUnavailable" = "Code-Einlösung ist im Moment nicht verfügbar.";
 "subscription.error.signInRequired" = "Melde dich an, bevor du ein Abo startest.";
 "subscription.error.unknown" = "Das Abo konnte nicht abgeschlossen werden.";
+"promo.error.redeemFailed" = "Der Code konnte nicht eingelöst werden.";
 "paywall.benefit.avi" = "Mehr tägliche Avi-Aktionen für Songtexte, Musiklinks, Teilen und Suche.";
 "paywall.benefit.discovery" = "Bessere personalisierte Radiosuche, wenn kontobasierte Signale aktiv sind.";
 "paywall.benefit.library" = "Speichere mehr Radios und erkannte Songs in deiner Mediathek.";
@@ -925,6 +926,12 @@
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Datenschutz";
 "paywall.redeemCode" = "Code einlösen";
+"paywall.promo.claim" = "Code einlösen";
+"paywall.promo.claimed" = "Code eingelöst. Pro-Zugriff wird aktualisiert.";
+"paywall.promo.detail" = "Gib einen Tune AV Promo-Code ein, falls du einen erhalten hast.";
+"paywall.promo.optional" = "Codes sind optional und nicht erforderlich, um Pro zu abonnieren.";
+"paywall.promo.placeholder" = "Code";
+"paywall.promo.title" = "Code einlösen?";
 "paywall.purchase.loading" = "Wird verarbeitet…";
 "paywall.purchase.loadingOffer" = "Preis wird geladen…";
 "paywall.purchase.price" = "Fortfahren für %@";

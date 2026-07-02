@@ -64,6 +64,62 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertTrue(access.capabilities.canUseCloudSync)
     }
 
+    @MainActor
+    func testPromoCodeClientRedeemsAgainstBackendPromotionEndpoint() async throws {
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.example.test/v1/apps/tuneav/promotions/redeem")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-123")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "x-appsav-app-id"), "tuneav")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+
+            let body = try XCTUnwrap(Self.requestBodyData(from: request))
+            let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+            XCTAssertEqual(payload["code"] as? String, "TUNE-PRO")
+
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let data = Data(
+                """
+                {
+                  "appId": "tuneav",
+                  "userId": "appsav-user",
+                  "code": "TUNE-PRO",
+                  "campaignId": "campaign-1",
+                  "redemptionId": "redemption-1",
+                  "entitlement": {
+                    "appId": "tuneav",
+                    "userId": "appsav-user",
+                    "planTier": "pro",
+                    "accessMode": "signedInPro",
+                    "status": "active",
+                    "source": "promo"
+                  }
+                }
+                """.utf8
+            )
+            return (response, data)
+        }
+
+        let client = TuneAVPromoCodeClient(
+            baseURL: URL(string: "https://api.example.test"),
+            urlSession: testURLSession(),
+            tokenProvider: { "token-123" }
+        )
+
+        let response = try await client.redeemPromotionCode("TUNE-PRO")
+
+        XCTAssertEqual(response.appId, "tuneav")
+        XCTAssertEqual(response.redemptionId, "redemption-1")
+        XCTAssertEqual(response.entitlement?.planTier, "pro")
+    }
+
     func testAppDataClientSurfacesConflictWithoutRetryingStaleResourcePush() async throws {
         let recorder = AppDataRequestRecorder(conflictPath: "/v1/apps/tuneav/data/favorites")
         let client = TuneAVAppDataSyncClient(

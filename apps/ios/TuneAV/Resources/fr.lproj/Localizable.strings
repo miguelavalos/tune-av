@@ -916,6 +916,7 @@
 "subscription.error.redemptionUnavailable" = "L'utilisation des codes n'est pas disponible pour le moment.";
 "subscription.error.signInRequired" = "Connecte-toi avant de démarrer un abonnement.";
 "subscription.error.unknown" = "L'abonnement n'a pas pu être finalisé.";
+"promo.error.redeemFailed" = "Le code n'a pas pu être utilisé.";
 "paywall.benefit.avi" = "Plus d'actions Avi par jour pour les paroles, les liens musicaux, le partage et la recherche.";
 "paywall.benefit.discovery" = "Une meilleure découverte radio personnalisée quand les signaux du compte sont activés.";
 "paywall.benefit.library" = "Enregistre plus de radios et de chansons détectées dans ta bibliothèque.";
@@ -925,6 +926,12 @@
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Confidentialité";
 "paywall.redeemCode" = "Utiliser un code";
+"paywall.promo.claim" = "Utiliser le code";
+"paywall.promo.claimed" = "Code utilisé. Actualisation de l'accès Pro.";
+"paywall.promo.detail" = "Entre un code promo Tune AV si tu en as reçu un.";
+"paywall.promo.optional" = "Les codes sont optionnels et ne sont pas requis pour s'abonner à Pro.";
+"paywall.promo.placeholder" = "Code";
+"paywall.promo.title" = "Utiliser un code ?";
 "paywall.purchase.loading" = "Traitement…";
 "paywall.purchase.loadingOffer" = "Chargement du prix…";
 "paywall.purchase.price" = "Continuer pour %@";

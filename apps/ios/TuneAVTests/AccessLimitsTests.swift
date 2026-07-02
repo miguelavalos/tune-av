@@ -1006,6 +1006,38 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, [user.id])
     }
 
+    @MainActor
+    func testPromotionCodeClaimUsesBackendRedeemerAndRefreshesAccess() async throws {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let entitlementService = MutableStubEntitlementService(access: .signedInFree)
+        let promotionCodeRedeemer = StubPromotionCodeRedeemer()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: entitlementService,
+            subscriptionPurchasing: StubSubscriptionPurchasing(),
+            promotionCodeRedeemer: promotionCodeRedeemer,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
+        )
+
+        await controller.syncFromAccountProvider()
+        try await controller.claimPromotionCode(" tune-pro-2026 ")
+
+        XCTAssertEqual(promotionCodeRedeemer.codes, ["tune-pro-2026"])
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertEqual(controller.subscriptionReconciliationSource, .redeemCode)
+
+        entitlementService.access = .signedInPro
+        await controller.syncFromAccountProvider()
+
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+    }
+
     private func isolatedUserDefaults() -> UserDefaults {
         let suiteName = "AccessLimitsTests.\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
@@ -1327,7 +1359,6 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     private(set) var loadedOfferUserIDs: [String] = []
     private(set) var purchaseUserIDs: [String] = []
     private(set) var restoreUserIDs: [String] = []
-    private(set) var redeemUserIDs: [String] = []
 
     func prepare(for user: AccountUser?) async throws {
         _ = try userID(user)
@@ -1356,17 +1387,39 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
     }
 
-    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        let id = try userID(user)
-        redeemUserIDs.append(id)
-        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
-    }
-
     private func userID(_ user: AccountUser?) throws -> String {
         guard let id = user?.id else {
             throw TuneAVSubscriptionPurchaseError.missingAccountUser
         }
         return id
+    }
+}
+
+@MainActor
+private final class StubPromotionCodeRedeemer: TuneAVPromotionCodeRedeeming {
+    private(set) var codes: [String] = []
+    var error: Error?
+
+    func redeemPromotionCode(_ code: String) async throws -> TuneAVPromoCodeRedemptionResponse {
+        if let error {
+            throw error
+        }
+        codes.append(code)
+        return TuneAVPromoCodeRedemptionResponse(
+            appId: "tuneav",
+            userId: "signed-in-free",
+            code: code,
+            campaignId: "campaign-1",
+            redemptionId: "redemption-1",
+            entitlement: TuneAVPromoCodeEntitlement(
+                appId: "tuneav",
+                userId: "signed-in-free",
+                planTier: "pro",
+                accessMode: "signedInPro",
+                status: "active",
+                source: "promo"
+            )
+        )
     }
 }
 

@@ -64,6 +64,7 @@ final class AccessController: ObservableObject {
     private let entitlementService: EntitlementService
     private let accountProfileResolver: AccountProfileResolving
     private let subscriptionPurchasing: TuneAVSubscriptionPurchasing
+    private let promotionCodeRedeemer: TuneAVPromotionCodeRedeeming
     private let userDefaults: UserDefaults
     private let guestOnboardingPolicy: GuestOnboardingPolicy
     private let now: () -> Date
@@ -80,6 +81,7 @@ final class AccessController: ObservableObject {
         accountProfileResolver: AccountProfileResolving? = nil,
         entitlementService: EntitlementService? = nil,
         subscriptionPurchasing: TuneAVSubscriptionPurchasing = RevenueCatTuneAVSubscriptionPurchasing(),
+        promotionCodeRedeemer: TuneAVPromotionCodeRedeeming? = nil,
         userDefaults: UserDefaults = .standard,
         guestOnboardingPolicy: GuestOnboardingPolicy = GuestOnboardingPolicy(),
         now: @escaping () -> Date = Date.init,
@@ -106,6 +108,11 @@ final class AccessController: ObservableObject {
                 apiClient: AVAccountAPIClient(getToken: { try await accountService.getToken() })
             )
         self.subscriptionPurchasing = subscriptionPurchasing
+        self.promotionCodeRedeemer = promotionCodeRedeemer
+            ?? TuneAVPromoCodeClient(
+                baseURL: AppConfig.avAccountAPIBaseURL,
+                tokenProvider: { try await accountService.getToken() }
+            )
         self.userDefaults = userDefaults
         self.guestOnboardingPolicy = guestOnboardingPolicy
         self.now = now
@@ -282,14 +289,45 @@ final class AccessController: ObservableObject {
         }
     }
 
-    func redeemOfferCode() async {
-        await runSubscriptionOperation(source: .redeemCode) {
-            try await subscriptionPurchasing.redeemOfferCode(for: subscriptionAccountUser)
-        }
-    }
-
     func skipForNow() {
         markGuestOnboardingPromptShown()
+    }
+
+    func claimPromotionCode(_ code: String) async throws {
+        let normalizedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedCode.isEmpty else { return }
+        guard accountUser != nil else {
+            subscriptionError = .missingAccountUser
+            throw TuneAVSubscriptionPurchaseError.missingAccountUser
+        }
+
+        isSubscriptionOperationInProgress = true
+        subscriptionError = nil
+        defer {
+            isSubscriptionOperationInProgress = false
+        }
+
+        do {
+            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "redeem_code")
+            _ = try await promotionCodeRedeemer.redeemPromotionCode(normalizedCode)
+            isWaitingForSubscriptionReconciliation = true
+            subscriptionReconciliationSource = .redeemCode
+            await syncFromAccountProvider()
+            await retrySubscriptionReconciliationIfNeeded()
+        } catch let error as TuneAVSubscriptionPurchaseError {
+            subscriptionError = error
+            throw error
+        } catch {
+            TuneAVDiagnostics.capture(
+                error,
+                feature: "tune.subscription",
+                operation: "redeem_code",
+                step: "backend"
+            )
+            let mappedError = TuneAVSubscriptionPurchaseError.underlying(error.localizedDescription)
+            subscriptionError = mappedError
+            throw mappedError
+        }
     }
 
     func signOut() async throws {

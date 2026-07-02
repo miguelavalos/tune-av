@@ -1019,6 +1019,7 @@
 "subscription.error.redemptionUnavailable" = "Code redemption is not available right now.";
 "subscription.error.signInRequired" = "Sign in before starting a subscription.";
 "subscription.error.unknown" = "Subscription could not be completed.";
+"promo.error.redeemFailed" = "Code could not be redeemed.";
 "paywall.benefit.avi" = "Use Avi without daily limits for lyrics, music links, shares, and helper searches.";
 "paywall.benefit.avi.title" = "More Avi actions";
 "paywall.benefit.discovery" = "Give Avi more listening signals for better radio discovery.";
@@ -1032,6 +1033,12 @@
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Privacy";
 "paywall.redeemCode" = "Redeem code";
+"paywall.promo.claim" = "Claim code";
+"paywall.promo.claimed" = "Code redeemed. Refreshing Pro access.";
+"paywall.promo.detail" = "Enter a Tune AV promo code if one was provided to you.";
+"paywall.promo.optional" = "Codes are optional and are not required to subscribe to Pro.";
+"paywall.promo.placeholder" = "Code";
+"paywall.promo.title" = "Redeem a code?";
 "paywall.purchase.loading" = "Working…";
 "paywall.purchase.loadingOffer" = "Loading price…";
 "paywall.purchase.price" = "Continue for %@";

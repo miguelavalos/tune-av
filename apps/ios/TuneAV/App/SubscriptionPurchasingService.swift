@@ -3,8 +3,6 @@ import OSLog
 
 #if canImport(RevenueCat)
 import RevenueCat
-import StoreKit
-import UIKit
 #endif
 
 struct TuneAVSubscriptionOffer: Equatable {
@@ -57,7 +55,6 @@ protocol TuneAVSubscriptionPurchasing {
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer
     func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome
-    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome
 }
 
 @MainActor
@@ -84,10 +81,6 @@ final class NoopTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
         throw TuneAVSubscriptionPurchaseError.missingConfiguration
     }
 
-    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        try await prepare(for: user)
-        throw TuneAVSubscriptionPurchaseError.missingConfiguration
-    }
 }
 
 @MainActor
@@ -118,10 +111,6 @@ final class UITestTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
     }
 
-    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        try await prepare(for: user)
-        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
-    }
 }
 
 #if canImport(RevenueCat)
@@ -227,24 +216,6 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         }
     }
 
-    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        let userID = try requireUserID(user)
-        do {
-            try await prepare(for: user)
-            let scene = try activeWindowScene()
-            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "redeem_code")
-            purchaseLogger.info("Starting StoreKit offer code redemption userID=\(userID, privacy: .private)")
-            try await AppStore.presentOfferCodeRedeemSheet(in: scene)
-            _ = try await syncPurchases()
-            purchaseLogger.info("Finished StoreKit offer code redemption userID=\(userID, privacy: .private)")
-            TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "redeem_code_completed")
-            return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
-        } catch {
-            TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "redeem_code", step: "storekit")
-            throw error
-        }
-    }
-
     private func requireUserID(_ user: AccountUser?) throws -> String {
         guard let userID = user?.id, !userID.isEmpty else {
             throw TuneAVSubscriptionPurchaseError.missingAccountUser
@@ -320,18 +291,6 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         }
     }
 
-    private func syncPurchases() async throws -> CustomerInfo {
-        try await withCheckedThrowingContinuation { continuation in
-            Purchases.shared.syncPurchases { customerInfo, error in
-                if let customerInfo {
-                    continuation.resume(returning: customerInfo)
-                } else {
-                    continuation.resume(throwing: Self.purchaseError(from: error))
-                }
-            }
-        }
-    }
-
     private func logInRevenueCat(_ userID: String) async throws -> CustomerInfo {
         try await withCheckedThrowingContinuation { continuation in
             Purchases.shared.logIn(userID) { customerInfo, _, error in
@@ -349,20 +308,6 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
             return .underlying(L10n.string("subscription.error.unknown"))
         }
         return .underlying(error.localizedDescription)
-    }
-
-    private func activeWindowScene() throws -> UIWindowScene {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        if let activeScene = scenes.first(where: { $0.activationState == .foregroundActive }) {
-            return activeScene
-        }
-        if let inactiveScene = scenes.first(where: { $0.activationState == .foregroundInactive }) {
-            return inactiveScene
-        }
-        if let scene = scenes.first {
-            return scene
-        }
-        throw TuneAVSubscriptionPurchaseError.redemptionUnavailable
     }
 }
 #else

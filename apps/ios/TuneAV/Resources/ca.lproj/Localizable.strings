@@ -916,6 +916,7 @@
 "subscription.error.redemptionUnavailable" = "El bescanvi de codis no està disponible ara mateix.";
 "subscription.error.signInRequired" = "Inicia sessió abans de començar una subscripció.";
 "subscription.error.unknown" = "No s'ha pogut completar la subscripció.";
+"promo.error.redeemFailed" = "No s'ha pogut bescanviar el codi.";
 "paywall.benefit.avi" = "Més accions diàries d'Avi per a lletres, enllaços de música, compartir i cerca.";
 "paywall.benefit.discovery" = "Millor descobriment de ràdios personalitzat quan els senyals del compte estan actius.";
 "paywall.benefit.library" = "Desa més ràdios i cançons detectades a la biblioteca.";
@@ -925,6 +926,12 @@
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Privacitat";
 "paywall.redeemCode" = "Bescanviar codi";
+"paywall.promo.claim" = "Bescanvia el codi";
+"paywall.promo.claimed" = "Codi bescanviat. Actualitzant l'accés Pro.";
+"paywall.promo.detail" = "Introdueix un codi promocional de Tune AV si te n'han donat un.";
+"paywall.promo.optional" = "Els codis són opcionals i no calen per subscriure't a Pro.";
+"paywall.promo.placeholder" = "Codi";
+"paywall.promo.title" = "Vols bescanviar un codi?";
 "paywall.purchase.loading" = "Processant…";
 "paywall.purchase.loadingOffer" = "Carregant preu…";
 "paywall.purchase.price" = "Continuar per %@";

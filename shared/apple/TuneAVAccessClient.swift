@@ -67,6 +67,134 @@ typealias MacAppAccess = AppAccess
 typealias MacAccessRefreshError = TuneAVAccessClientError
 
 @MainActor
+protocol TuneAVPromotionCodeRedeeming {
+    func redeemPromotionCode(_ code: String) async throws -> TuneAVPromoCodeRedemptionResponse
+}
+
+@MainActor
+struct TuneAVPromoCodeClient: TuneAVPromotionCodeRedeeming {
+    var appId: String
+    var baseURL: URL?
+    var urlSession: URLSession
+    var tokenProvider: () async throws -> String?
+    var encoder: JSONEncoder
+    var decoder: JSONDecoder
+
+    init(
+        appId: String = "tuneav",
+        baseURL: URL?,
+        urlSession: URLSession = TuneAVURLSessions.account,
+        tokenProvider: @escaping () async throws -> String? = { nil },
+        encoder: JSONEncoder = JSONEncoder(),
+        decoder: JSONDecoder = JSONDecoder()
+    ) {
+        self.appId = appId
+        self.baseURL = baseURL
+        self.urlSession = urlSession
+        self.tokenProvider = tokenProvider
+        self.encoder = encoder
+        self.decoder = decoder
+    }
+
+    func redeemPromotionCode(_ code: String) async throws -> TuneAVPromoCodeRedemptionResponse {
+        guard let baseURL else {
+            throw TuneAVPromoCodeClientError.missingBaseURL
+        }
+        let normalizedAppId = appId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedAppId.isEmpty else {
+            throw TuneAVPromoCodeClientError.missingAppID
+        }
+        guard let token = try await tokenProvider(), !token.isEmpty else {
+            throw TuneAVPromoCodeClientError.missingToken
+        }
+
+        let encodedAppId = normalizedAppId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? normalizedAppId
+        let path = "/v1/apps/\(encodedAppId)/promotions/redeem"
+        let url = URL(string: path, relativeTo: baseURL)?.absoluteURL
+            ?? baseURL.appending(path: "v1/apps/\(encodedAppId)/promotions/redeem")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(normalizedAppId, forHTTPHeaderField: "x-appsav-app-id")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(TuneAVPromoCodeRedeemRequest(code: code))
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TuneAVPromoCodeClientError.requestFailed(statusCode: -1)
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw TuneAVPromoCodeClientError.decode(from: data, statusCode: httpResponse.statusCode)
+        }
+
+        return try decoder.decode(TuneAVPromoCodeRedemptionResponse.self, from: data)
+    }
+}
+
+enum TuneAVPromoCodeClientError: LocalizedError, Equatable {
+    case missingAppID
+    case missingBaseURL
+    case missingToken
+    case requestFailed(statusCode: Int)
+    case server(code: String, message: String, statusCode: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAppID, .missingBaseURL:
+            L10n.string("subscription.error.redemptionUnavailable")
+        case .missingToken:
+            L10n.string("accountAPI.error.missingToken")
+        case .requestFailed:
+            L10n.string("promo.error.redeemFailed")
+        case .server(_, let message, _):
+            message
+        }
+    }
+
+    static func decode(from data: Data, statusCode: Int) -> TuneAVPromoCodeClientError {
+        if let decoded = try? JSONDecoder().decode(TuneAVPromoCodeErrorResponse.self, from: data) {
+            return .server(
+                code: decoded.error.code,
+                message: decoded.error.message,
+                statusCode: statusCode
+            )
+        }
+        return .requestFailed(statusCode: statusCode)
+    }
+}
+
+private struct TuneAVPromoCodeRedeemRequest: Encodable {
+    let code: String
+}
+
+struct TuneAVPromoCodeRedemptionResponse: Decodable, Equatable {
+    let appId: String?
+    let userId: String?
+    let code: String?
+    let campaignId: String?
+    let redemptionId: String?
+    let entitlement: TuneAVPromoCodeEntitlement?
+}
+
+struct TuneAVPromoCodeEntitlement: Decodable, Equatable {
+    let appId: String?
+    let userId: String?
+    let planTier: String?
+    let accessMode: String?
+    let status: String?
+    let source: String?
+}
+
+private struct TuneAVPromoCodeErrorResponse: Decodable {
+    struct APIError: Decodable {
+        let code: String
+        let message: String
+    }
+
+    let error: APIError
+}
+
+@MainActor
 final class TuneAVAccessClient {
     private let baseURL: URL?
     private let tokenProvider: () async throws -> String?

@@ -1019,6 +1019,7 @@
 "subscription.error.redemptionUnavailable" = "El canje de códigos no está disponible ahora mismo.";
 "subscription.error.signInRequired" = "Inicia sesión antes de empezar una suscripción.";
 "subscription.error.unknown" = "No se pudo completar la suscripción.";
+"promo.error.redeemFailed" = "No se pudo canjear el código.";
 "paywall.benefit.avi" = "Usa Avi sin límites diarios para letras, enlaces de música, compartir y búsquedas de ayuda.";
 "paywall.benefit.avi.title" = "Más acciones de Avi";
 "paywall.benefit.discovery" = "Dale a Avi más señales de escucha para descubrir mejores radios.";
@@ -1032,6 +1033,12 @@
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Privacidad";
 "paywall.redeemCode" = "Canjear código";
+"paywall.promo.claim" = "Canjear código";
+"paywall.promo.claimed" = "Código canjeado. Actualizando acceso Pro.";
+"paywall.promo.detail" = "Introduce un código promocional de Tune AV si te han dado uno.";
+"paywall.promo.optional" = "Los códigos son opcionales y no son necesarios para suscribirte a Pro.";
+"paywall.promo.placeholder" = "Código";
+"paywall.promo.title" = "¿Canjear un código?";
 "paywall.purchase.loading" = "Procesando…";
 "paywall.purchase.loadingOffer" = "Cargando precio…";
 "paywall.purchase.price" = "Continuar por %@";
