@@ -40,6 +40,7 @@ final class AccessController: ObservableObject {
     enum SubscriptionReconciliationSource: Equatable {
         case purchase
         case restore
+        case redeemCode
     }
 
     @Published private(set) var accessMode: AccessMode
@@ -278,6 +279,12 @@ final class AccessController: ObservableObject {
     func restorePurchases() async {
         await runSubscriptionOperation(source: .restore) {
             try await subscriptionPurchasing.restorePurchases(for: subscriptionAccountUser)
+        }
+    }
+
+    func redeemOfferCode() async {
+        await runSubscriptionOperation(source: .redeemCode) {
+            try await subscriptionPurchasing.redeemOfferCode(for: subscriptionAccountUser)
         }
     }
 
@@ -592,6 +599,8 @@ private extension AccessController.SubscriptionReconciliationSource {
             return "purchase"
         case .restore:
             return "restore"
+        case .redeemCode:
+            return "redeem_code"
         }
     }
 }

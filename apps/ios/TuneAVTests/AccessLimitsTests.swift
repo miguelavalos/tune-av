@@ -1327,6 +1327,7 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     private(set) var loadedOfferUserIDs: [String] = []
     private(set) var purchaseUserIDs: [String] = []
     private(set) var restoreUserIDs: [String] = []
+    private(set) var redeemUserIDs: [String] = []
 
     func prepare(for user: AccountUser?) async throws {
         _ = try userID(user)
@@ -1352,6 +1353,12 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let id = try userID(user)
         restoreUserIDs.append(id)
+        return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
+    }
+
+    func redeemOfferCode(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
+        let id = try userID(user)
+        redeemUserIDs.append(id)
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
     }
 

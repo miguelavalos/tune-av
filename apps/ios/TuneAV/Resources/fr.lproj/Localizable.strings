@@ -913,6 +913,7 @@
 "subscription.error.offerUnavailable" = "L'offre Pro n'est pas disponible pour le moment.";
 "subscription.error.productUnavailable" = "L'abonnement mensuel Pro n'est pas disponible pour le moment.";
 "subscription.error.sdkUnavailable" = "Les abonnements ne sont pas disponibles dans cette build.";
+"subscription.error.redemptionUnavailable" = "L'utilisation des codes n'est pas disponible pour le moment.";
 "subscription.error.signInRequired" = "Connecte-toi avant de démarrer un abonnement.";
 "subscription.error.unknown" = "L'abonnement n'a pas pu être finalisé.";
 "paywall.benefit.avi" = "Plus d'actions Avi par jour pour les paroles, les liens musicaux, le partage et la recherche.";
@@ -923,6 +924,7 @@
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Confidentialité";
+"paywall.redeemCode" = "Utiliser un code";
 "paywall.purchase.loading" = "Traitement…";
 "paywall.purchase.loadingOffer" = "Chargement du prix…";
 "paywall.purchase.price" = "Continuer pour %@";
@@ -931,6 +933,7 @@
 "paywall.restore.loading" = "Restauration…";
 "paywall.status.purchasePending" = "Achat reçu. Tune AV débloquera Pro après l'actualisation de ton accès.";
 "paywall.status.refreshingAccess" = "Vérification de l'accès de ton compte avec Apps AV.";
+"paywall.status.redeemingCode" = "Vérification du code et actualisation de l'accès Pro.";
 "paywall.status.restorePending" = "Restauration terminée. Si ton compte App Store a un abonnement actif, Tune AV débloquera Pro après confirmation de l'accès par Apps AV.";
 "paywall.subscriptionTerms" = "Tune AV Pro est un abonnement mensuel auto-renouvelable. Tu seras facturé %@ pour chaque période d'un mois jusqu'à annulation dans les réglages de l'App Store.";
 "paywall.subtitle" = "Améliore ton compte Tune AV connecté. L'app débloque Pro seulement quand Apps AV confirme l'accès.";

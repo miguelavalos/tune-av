@@ -1016,6 +1016,7 @@
 "subscription.error.offerUnavailable" = "The Pro offer is not available right now.";
 "subscription.error.productUnavailable" = "The monthly Pro subscription is not available right now.";
 "subscription.error.sdkUnavailable" = "Subscriptions are not available on this build.";
+"subscription.error.redemptionUnavailable" = "Code redemption is not available right now.";
 "subscription.error.signInRequired" = "Sign in before starting a subscription.";
 "subscription.error.unknown" = "Subscription could not be completed.";
 "paywall.benefit.avi" = "Use Avi without daily limits for lyrics, music links, shares, and helper searches.";
@@ -1030,6 +1031,7 @@
 "paywall.eyebrow" = "Tune AV Pro";
 "paywall.navigationTitle" = "Pro";
 "paywall.privacy" = "Privacy";
+"paywall.redeemCode" = "Redeem code";
 "paywall.purchase.loading" = "Working…";
 "paywall.purchase.loadingOffer" = "Loading price…";
 "paywall.purchase.price" = "Continue for %@";
@@ -1040,6 +1042,7 @@
 "paywall.scene.title" = "More memory for Avi";
 "paywall.status.purchasePending" = "Purchase received. Tune AV will unlock Pro after your account access refreshes.";
 "paywall.status.refreshingAccess" = "Checking your account access with Apps AV.";
+"paywall.status.redeemingCode" = "Checking your code and refreshing Pro access.";
 "paywall.status.restorePending" = "Restore completed. If your App Store account has an active subscription, Tune AV will unlock Pro after Apps AV confirms access.";
 "paywall.subscriptionTerms" = "Tune AV Pro is a monthly auto-renewable subscription. You will be charged %@ for each 1-month period until you cancel in App Store settings.";
 "paywall.subtitle" = "Upgrade your signed-in Tune AV account for more Avi actions, more saved music, and Cloud Sync.";
