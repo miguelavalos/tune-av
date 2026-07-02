@@ -9,6 +9,11 @@ struct MacProPaywallView: View {
 
     let startSignInFlow: () -> Void
 
+    @State private var isShowingRedeemCodeSheet = false
+    @State private var redeemCode = ""
+    @State private var redeemStatusMessage: String?
+    @State private var isRedeemingCode = false
+
     init(startSignInFlow: @escaping () -> Void = {}) {
         self.startSignInFlow = startSignInFlow
     }
@@ -31,11 +36,14 @@ struct MacProPaywallView: View {
             }
 
             AVPaywallBenefitList(items: benefitItems)
-            AVPaywallLegalLinks(links: legalLinkItems)
+            AVPaywallFooterActions(actions: footerActionItems)
         }
         .frame(minWidth: 480, idealWidth: 560, minHeight: 620)
         .task {
             await model.loadMonthlySubscriptionOffer()
+        }
+        .sheet(isPresented: $isShowingRedeemCodeSheet) {
+            redeemCodeSheet
         }
         .onChange(of: model.accessMode) { _, mode in
             if mode == .signedInPro {
@@ -107,6 +115,169 @@ struct MacProPaywallView: View {
         }
     }
 
+    private var redeemCodeSheet: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(L10n.string("paywall.promo.title"))
+                    .font(.title3.weight(.black))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+
+                Spacer()
+
+                Button(L10n.string("common.done")) {
+                    isShowingRedeemCodeSheet = false
+                }
+                .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier("paywall.redeemCode.done")
+            }
+
+            redeemCodeContent
+        }
+        .padding(22)
+        .frame(width: 430)
+        .background(TuneAVTheme.shellBackground)
+        .accessibilityIdentifier("paywall.redeemCode.sheet")
+    }
+
+    private var redeemCodeContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(L10n.string("paywall.promo.detail"))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(TuneAVTheme.highlight)
+
+                TextField(L10n.string("paywall.promo.placeholder"), text: $redeemCode)
+                    .textFieldStyle(.plain)
+                    .onChange(of: redeemCode) { _, newValue in
+                        let sanitized = sanitizedRedeemCodeInput(newValue)
+                        if sanitized != newValue {
+                            redeemCode = sanitized
+                        }
+                    }
+                    .onSubmit(claimRedeemCode)
+                    .font(.system(size: 15, weight: .semibold))
+                    .padding(.horizontal, 12)
+                    .frame(height: 42)
+                    .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .accessibilityIdentifier("paywall.redeemCode.field")
+
+                Button(action: claimRedeemCode) {
+                    ZStack {
+                        if isRedeemingCode {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(TuneAVTheme.textInverse)
+                        } else {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 17, weight: .black))
+                                .foregroundStyle(TuneAVTheme.textInverse)
+                        }
+                    }
+                    .frame(width: 42, height: 42)
+                    .background(
+                        redeemButtonIsDisabled ? TuneAVTheme.neutral300 : TuneAVTheme.highlight,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(redeemButtonIsDisabled)
+                .accessibilityLabel(L10n.string("paywall.promo.claim"))
+                .accessibilityIdentifier("paywall.redeemCode.claim")
+            }
+
+            Text(L10n.string("paywall.promo.optional"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(TuneAVTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let redeemStatusMessage {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+
+                    Text(redeemStatusMessage)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("paywall.redeemCode.status")
+            }
+        }
+        .padding(16)
+        .background(TuneAVTheme.mutedSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var normalizedRedeemCode: String {
+        redeemCode.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func sanitizedRedeemCodeInput(_ code: String) -> String {
+        var sanitized = ""
+        for character in code {
+            switch character {
+            case " ", "\n", "\t":
+                continue
+            case "\u{2010}", "\u{2011}", "\u{2012}", "\u{2013}", "\u{2014}", "\u{2015}", "\u{2212}", "\u{2018}", "\u{2019}":
+                sanitized.append("-")
+            case _ where isASCIIAlphanumeric(character) || character == "-" || character == "_":
+                sanitized.append(character)
+            default:
+                continue
+            }
+        }
+        return sanitized.uppercased()
+    }
+
+    private func isASCIIAlphanumeric(_ character: Character) -> Bool {
+        guard character.unicodeScalars.count == 1,
+              let value = character.unicodeScalars.first?.value else {
+            return false
+        }
+        return (48...57).contains(value) || (65...90).contains(value) || (97...122).contains(value)
+    }
+
+    private var redeemButtonIsDisabled: Bool {
+        normalizedRedeemCode.isEmpty ||
+            isRedeemingCode ||
+            model.isSubscriptionOperationInProgress
+    }
+
+    private func showRedeemCodeSheet() {
+        guard !model.isSubscriptionOperationInProgress else { return }
+        if model.accountUser != nil {
+            redeemStatusMessage = nil
+            isShowingRedeemCodeSheet = true
+        } else {
+            dismiss()
+            startSignInFlow()
+        }
+    }
+
+    private func claimRedeemCode() {
+        let code = normalizedRedeemCode
+        guard !code.isEmpty, !isRedeemingCode else { return }
+        isRedeemingCode = true
+        redeemStatusMessage = nil
+
+        Task {
+            do {
+                try await model.claimPromotionCode(code)
+                redeemStatusMessage = L10n.string("paywall.promo.claimed")
+                redeemCode = ""
+                isShowingRedeemCodeSheet = false
+            } catch {
+                redeemStatusMessage = error.localizedDescription
+            }
+            isRedeemingCode = false
+        }
+    }
+
     private var primaryButtonTitle: String {
         guard model.accountUser != nil else {
             return L10n.string("profile.pro.signIn")
@@ -135,6 +306,8 @@ struct MacProPaywallView: View {
 
     private var reconciliationStatus: String {
         switch model.subscriptionReconciliationSource {
+        case .redeemCode:
+            return L10n.string("paywall.status.redeemingCode")
         case .restore:
             return L10n.string("paywall.status.restorePending")
         case .purchase, .none:
@@ -180,6 +353,28 @@ struct MacProPaywallView: View {
                 openURL(privacyURL)
             }
         ]
+    }
+
+    private var footerActionItems: [AVPaywallFooterAction] {
+        var actions = [
+            AVPaywallFooterAction(
+                title: L10n.string("paywall.redeemCode"),
+                accessibilityIdentifier: "paywall.redeemCode",
+                action: showRedeemCodeSheet
+            )
+        ]
+
+        for link in legalLinkItems {
+            actions.append(
+                AVPaywallFooterAction(
+                    title: link.title,
+                    accessibilityIdentifier: link.accessibilityIdentifier,
+                    action: link.action
+                )
+            )
+        }
+
+        return actions
     }
 
     private var privacyURL: URL {

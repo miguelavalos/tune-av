@@ -107,6 +107,7 @@ final class TuneAVMacModel: ObservableObject {
     enum SubscriptionReconciliationSource: Equatable {
         case purchase
         case restore
+        case redeemCode
     }
 
     private enum CloudLibraryItemOperation: Equatable {
@@ -172,6 +173,7 @@ final class TuneAVMacModel: ObservableObject {
     private let trackArtworkService = TuneAVTrackArtworkService()
     private let storage = TuneAVMacLibraryStorage()
     private let subscriptionPurchasing: MacTuneAVSubscriptionPurchasing
+    private let promotionCodeRedeemer: TuneAVPromotionCodeRedeeming?
     private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
     private let sleepNanoseconds: (UInt64) async -> Void
     private let tombstoneEncoder = JSONEncoder()
@@ -215,6 +217,7 @@ final class TuneAVMacModel: ObservableObject {
 
     init(
         subscriptionPurchasing: MacTuneAVSubscriptionPurchasing? = nil,
+        promotionCodeRedeemer: TuneAVPromotionCodeRedeeming? = nil,
         subscriptionReconciliationRetryDelaysNanoseconds: [UInt64] = [
             1_000_000_000,
             2_000_000_000,
@@ -229,6 +232,7 @@ final class TuneAVMacModel: ObservableObject {
             ?? (TuneAVUITestEnvironment.current.shouldUseSubscriptionPurchasingStub
                 ? MacUITestTuneAVSubscriptionPurchasing()
                 : MacRevenueCatTuneAVSubscriptionPurchasing())
+        self.promotionCodeRedeemer = promotionCodeRedeemer
         self.subscriptionReconciliationRetryDelaysNanoseconds = subscriptionReconciliationRetryDelaysNanoseconds
         self.sleepNanoseconds = sleepNanoseconds
         favoriteRecords = storage.loadFavoriteRecords()
@@ -1218,6 +1222,43 @@ final class TuneAVMacModel: ObservableObject {
     func restorePurchases() async {
         await runSubscriptionOperation(source: .restore) {
             try await subscriptionPurchasing.restorePurchases(for: accountUser)
+        }
+    }
+
+    func claimPromotionCode(_ code: String) async throws {
+        let normalizedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedCode.isEmpty else { return }
+        guard accountUser != nil else {
+            subscriptionError = .missingAccountUser
+            throw MacTuneAVSubscriptionPurchaseError.missingAccountUser
+        }
+
+        isSubscriptionOperationInProgress = true
+        subscriptionError = nil
+        defer {
+            isSubscriptionOperationInProgress = false
+        }
+
+        do {
+            TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "redeem_code")
+            _ = try await makePromotionCodeRedeemer().redeemPromotionCode(normalizedCode)
+            isWaitingForSubscriptionReconciliation = true
+            subscriptionReconciliationSource = .redeemCode
+            await refreshAccessState()
+            await retrySubscriptionReconciliationIfNeeded()
+        } catch let error as MacTuneAVSubscriptionPurchaseError {
+            subscriptionError = error
+            throw error
+        } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.subscription",
+                operation: "redeem_code",
+                step: "backend"
+            )
+            let mappedError = MacTuneAVSubscriptionPurchaseError.underlying(error.localizedDescription)
+            subscriptionError = mappedError
+            throw mappedError
         }
     }
 
@@ -2257,6 +2298,20 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
+    private func makePromotionCodeRedeemer() -> TuneAVPromotionCodeRedeeming {
+        if let promotionCodeRedeemer {
+            return promotionCodeRedeemer
+        }
+
+        return TuneAVPromoCodeClient(
+            baseURL: TuneAVBundleConfig.urlValue(for: "ACCOUNTAV_API_BASE_URL"),
+            urlSession: TuneAVURLSessions.account,
+            tokenProvider: { [self] in
+                try await accountService.getToken()
+            }
+        )
+    }
+
     private func librarySnapshot() -> TuneAVLibrarySnapshot {
         return TuneAVLibrarySnapshot(
             favorites: favoriteRecords + tombstoneRecords(resource: "favorites", type: FavoriteStationRecord.self),
@@ -2987,6 +3042,8 @@ private extension TuneAVMacModel.SubscriptionReconciliationSource {
             return "purchase"
         case .restore:
             return "restore"
+        case .redeemCode:
+            return "redeem_code"
         }
     }
 }

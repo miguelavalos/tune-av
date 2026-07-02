@@ -60,4 +60,63 @@ final class MacSubscriptionPurchasingTests: XCTestCase {
         XCTAssertEqual(model.subscriptionOffer?.identifier, "$rc_monthly")
         XCTAssertEqual(model.subscriptionOffer?.productIdentifier, "tuneav_pro_monthly")
     }
+
+    func testModelClaimPromotionCodeUsesBackendRedeemerAndStartsReconciliation() async throws {
+        let userDefaults = UserDefaults.standard
+        let originalUser = userDefaults.data(forKey: lastKnownAccountUserKey)
+        defer {
+            if let originalUser {
+                userDefaults.set(originalUser, forKey: lastKnownAccountUserKey)
+            } else {
+                userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+            }
+        }
+
+        let userSnapshot = """
+        {"id":"user_123","displayName":"Tune Listener","emailAddress":"listener@example.com"}
+        """
+        userDefaults.set(Data(userSnapshot.utf8), forKey: lastKnownAccountUserKey)
+
+        let promotionCodeRedeemer = StubPromotionCodeRedeemer()
+        let model = TuneAVMacModel(
+            subscriptionPurchasing: MacUITestTuneAVSubscriptionPurchasing(),
+            promotionCodeRedeemer: promotionCodeRedeemer,
+            subscriptionReconciliationRetryDelaysNanoseconds: [],
+            sleepNanoseconds: { _ in }
+        )
+
+        XCTAssertEqual(model.accessMode, .signedInFree)
+
+        try await model.claimPromotionCode(" tune-pro-2026 ")
+
+        XCTAssertEqual(promotionCodeRedeemer.codes, ["tune-pro-2026"])
+        XCTAssertEqual(model.accessMode, .signedInFree)
+        XCTAssertTrue(model.isWaitingForSubscriptionReconciliation)
+        XCTAssertEqual(model.subscriptionReconciliationSource, .redeemCode)
+        XCTAssertNil(model.subscriptionError)
+    }
+}
+
+@MainActor
+private final class StubPromotionCodeRedeemer: TuneAVPromotionCodeRedeeming {
+    private(set) var codes: [String] = []
+
+    func redeemPromotionCode(_ code: String) async throws -> TuneAVPromoCodeRedemptionResponse {
+        codes.append(code)
+        return TuneAVPromoCodeRedemptionResponse(
+            appId: "tuneav",
+            userId: "user_123",
+            code: code,
+            campaignId: "campaign-1",
+            redemptionId: "redemption-1",
+            entitlement: TuneAVPromoCodeEntitlement(
+                appId: "tuneav",
+                userId: "user_123",
+                planTier: "pro",
+                accessMode: "signedInPro",
+                status: "active",
+                source: "promo"
+            )
+        )
+    }
 }
