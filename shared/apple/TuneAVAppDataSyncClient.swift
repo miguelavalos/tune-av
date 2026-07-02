@@ -103,6 +103,7 @@ actor TuneAVAppDataSyncClient {
 
     private nonisolated let appId: String
     private nonisolated let deviceId: String
+    private nonisolated let platform: String
     private let request: Request
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
@@ -112,12 +113,14 @@ actor TuneAVAppDataSyncClient {
     init(
         appId: String = "tuneav",
         deviceId: String,
+        platform: String = "unknown",
         request: @escaping Request,
         decoder: JSONDecoder = JSONDecoder(),
         encoder: JSONEncoder = JSONEncoder()
     ) {
         self.appId = appId
         self.deviceId = deviceId
+        self.platform = platform
         self.request = request
         self.decoder = decoder
         self.encoder = encoder
@@ -160,11 +163,27 @@ actor TuneAVAppDataSyncClient {
         try await pushLibrary(snapshot)
     }
 
+    func upsertFavorite(_ record: FavoriteStationRecord) async throws {
+        try await putLibraryOperation(.favorites, action: "upsert", entry: record)
+    }
+
+    func deleteFavorite(_ record: FavoriteStationRecord) async throws {
+        try await putLibraryOperation(.favorites, action: "delete", entry: record)
+    }
+
+    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
+        try await putLibraryOperation(.savedDiscoveries, action: "upsert", entry: record)
+    }
+
+    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
+        try await putLibraryOperation(.savedDiscoveries, action: "delete", entry: record)
+    }
+
     private func pullResource<Entry: Codable>(
         _ resource: TuneAVAppDataResource,
         entryType: Entry.Type
     ) async throws -> TuneAVAppDataResourceDocument<Entry> {
-        let data = try await request(dataPath(for: resource), "GET", nil, [:])
+        let data = try await request(dataPath(for: resource), "GET", nil, defaultHeaders())
         let payload = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
         rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
 
@@ -180,7 +199,7 @@ actor TuneAVAppDataSyncClient {
         _ resource: TuneAVAppDataResource,
         entryType: Entry.Type
     ) async throws -> TuneAVAppDataResourceDocument<Entry> {
-        let data = try await request(dataPath(for: resource), "GET", nil, [:])
+        let data = try await request(dataPath(for: resource), "GET", nil, defaultHeaders())
         let payload = try decoder.decode(TuneAVLossyAppDataResponsePayload<Entry>.self, from: data)
         rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
 
@@ -204,7 +223,7 @@ actor TuneAVAppDataSyncClient {
             entries: entries
         )
 
-        var headers: [String: String] = [:]
+        var headers = defaultHeaders()
         if let lastKnownEtag = lastKnownEtags[resource.rawValue] {
             headers["If-Match"] = lastKnownEtag
         } else if let lastKnownRevision = lastKnownRevisions[resource.rawValue] {
@@ -225,6 +244,25 @@ actor TuneAVAppDataSyncClient {
         }
     }
 
+    private func putLibraryOperation<Entry: Codable>(
+        _ resource: TuneAVAppDataResource,
+        action: String,
+        entry: Entry
+    ) async throws {
+        do {
+            let data = try await request(
+                libraryOperationPath(for: resource, action: action),
+                "PUT",
+                try encoder.encode(entry),
+                defaultHeaders()
+            )
+            let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
+            rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
+            throw TuneAVAppDataError.conflict
+        }
+    }
+
     private func rememberSyncVersion(for resource: TuneAVAppDataResource, revision: Int?, etag: String?) {
         lastKnownRevisions[resource.rawValue] = revision
         lastKnownEtags[resource.rawValue] = etag
@@ -237,5 +275,16 @@ actor TuneAVAppDataSyncClient {
 
     private func dataPath(for resource: TuneAVAppDataResource) -> String {
         "/v1/apps/\(appId)/data/\(resource.rawValue)"
+    }
+
+    private func libraryOperationPath(for resource: TuneAVAppDataResource, action: String) -> String {
+        "/v1/apps/\(appId)/library/\(resource.rawValue)/\(action)"
+    }
+
+    private func defaultHeaders() -> [String: String] {
+        [
+            "x-appsav-device-id": deviceId,
+            "x-appsav-platform": platform
+        ]
     }
 }

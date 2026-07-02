@@ -250,7 +250,7 @@ struct MacMusicView: View {
 
                 if isConfirmingClear {
                     Button(role: .destructive) {
-                        model.clearDiscoveredTracks()
+                        model.clearDiscoveredTracks(propagatesToCloud: false)
                         isConfirmingClear = false
                     } label: {
                         Label(L10n.string("shell.library.discoveries.clear.confirmAction"), systemImage: "trash")

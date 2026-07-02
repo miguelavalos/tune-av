@@ -303,6 +303,58 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(storage.loadStations(forKey: TuneAVMacLibraryStorage.favoritesKey).map(\.id), ["favorite"])
     }
 
+    @MainActor
+    func testMacClearFavoritesDefaultsToLocalOnly() {
+        withIsolatedStandardLibraryStorage { storage in
+            storage.saveFavoriteRecords([favoriteRecord(id: "favorite")])
+            storage.saveTombstones([])
+
+            let model = TuneAVMacModel(
+                subscriptionPurchasing: MacUITestTuneAVSubscriptionPurchasing(),
+                subscriptionReconciliationRetryDelaysNanoseconds: [],
+                sleepNanoseconds: { _ in }
+            )
+
+            XCTAssertEqual(model.favoriteStations.map(\.id), ["favorite"])
+
+            model.clearFavorites()
+
+            XCTAssertTrue(model.favoriteStations.isEmpty)
+            XCTAssertTrue(storage.loadFavoriteRecords().isEmpty)
+            XCTAssertTrue(storage.loadTombstones().isEmpty)
+        }
+    }
+
+    @MainActor
+    func testMacClearDiscoveredTracksDefaultsToLocalOnly() {
+        withIsolatedStandardLibraryStorage { storage in
+            let discovery = MacDiscoveredTrack(
+                title: "Song",
+                artist: "Artist",
+                station: Station.samples[0],
+                playedAt: fixedDate("2026-05-23T10:00:00Z"),
+                markedInterestedAt: fixedDate("2026-05-23T10:01:00Z"),
+                updatedAt: fixedDate("2026-05-23T10:01:00Z")
+            )
+            storage.saveDiscoveries([discovery])
+            storage.saveTombstones([])
+
+            let model = TuneAVMacModel(
+                subscriptionPurchasing: MacUITestTuneAVSubscriptionPurchasing(),
+                subscriptionReconciliationRetryDelaysNanoseconds: [],
+                sleepNanoseconds: { _ in }
+            )
+
+            XCTAssertEqual(model.savedDiscoveredTracks.map(\.discoveryID), [discovery.discoveryID])
+
+            model.clearDiscoveredTracks()
+
+            XCTAssertTrue(model.discoveredTracks.isEmpty)
+            XCTAssertTrue(storage.loadDiscoveries().isEmpty)
+            XCTAssertTrue(storage.loadTombstones().isEmpty)
+        }
+    }
+
     func testMacLibraryStoragePersistsTrackFeedbackRecords() {
         let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -414,6 +466,38 @@ final class MacCloudSyncTests: XCTestCase {
 
     private func fixedDate(_ iso8601: String) -> Date {
         ISO8601DateFormatter().date(from: iso8601)!
+    }
+
+    private func withIsolatedStandardLibraryStorage(_ body: (TuneAVMacLibraryStorage) -> Void) {
+        let defaults = UserDefaults.standard
+        let keys = [
+            TuneAVMacLibraryStorage.favoritesKey,
+            TuneAVMacLibraryStorage.favoriteRecordsKey,
+            TuneAVMacLibraryStorage.recentsKey,
+            TuneAVMacLibraryStorage.discoveriesKey,
+            TuneAVMacLibraryStorage.stationFeedbackKey,
+            TuneAVMacLibraryStorage.trackFeedbackKey,
+            TuneAVMacLibraryStorage.tombstonesKey,
+            TuneAVMacLibraryStorage.localLibraryUpdatedAtKey,
+            TuneAVMacLibraryStorage.localLibraryMutationAtKey,
+            "tuneav.mac.account.lastKnownUser"
+        ]
+        let originalValues = Dictionary(
+            uniqueKeysWithValues: keys.compactMap { key -> (String, Any)? in
+                guard let value = defaults.object(forKey: key) else { return nil }
+                return (key, value)
+            }
+        )
+
+        keys.forEach { defaults.removeObject(forKey: $0) }
+        defer {
+            keys.forEach { defaults.removeObject(forKey: $0) }
+            for (key, value) in originalValues {
+                defaults.set(value, forKey: key)
+            }
+        }
+
+        body(TuneAVMacLibraryStorage(defaults: defaults))
     }
 
     private func librarySnapshot(

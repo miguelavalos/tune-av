@@ -135,6 +135,50 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
     }
 
+    func testAppDataClientSendsPlatformHeadersAndItemOperationPaths() async throws {
+        let recorder = AppDataRequestRecorder(conflictPath: "/none")
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            platform: "ios",
+            request: { path, method, body, headers in
+                try await recorder.request(path: path, method: method, body: body, headers: headers)
+            }
+        )
+
+        try await client.upsertFavorite(
+            FavoriteStationRecord(
+                station: Self.stationRecord(id: "radio-bob-rock"),
+                createdAt: "2026-06-30T10:00:00Z"
+            )
+        )
+        try await client.deleteSavedDiscovery(
+            DiscoveredTrackRecord(
+                discoveryID: "song-1",
+                trackKey: "song::artist",
+                title: "Song",
+                artist: "Artist",
+                stationID: "station-1",
+                stationName: "Station 1",
+                artworkURL: nil,
+                stationArtworkURL: nil,
+                playedAt: "2026-06-30T09:58:00Z",
+                markedInterestedAt: "2026-06-30T10:00:00Z",
+                deletedAt: "2026-06-30T10:05:00Z",
+                updatedAt: "2026-06-30T10:05:00Z"
+            )
+        )
+
+        let calls = await recorder.calls
+        XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/library/favorites/upsert"))
+        XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/library/savedDiscoveries/delete"))
+
+        let headersByCall = await recorder.headersByCall
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/favorites/upsert"]?["x-appsav-device-id"], "test-device")
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/favorites/upsert"]?["x-appsav-platform"], "ios")
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-device-id"], "test-device")
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-platform"], "ios")
+    }
+
     func testAppDataClientPullsLegacySavedDiscoveriesWithoutDroppingSongs() async throws {
         let client = TuneAVAppDataSyncClient(
             deviceId: "test-device",
@@ -5513,13 +5557,16 @@ private actor AppDataRequestRecorder {
     private let conflictPath: String
     private var hasReturnedConflict = false
     private(set) var calls: [String] = []
+    private(set) var headersByCall: [String: [String: String]] = [:]
 
     init(conflictPath: String) {
         self.conflictPath = conflictPath
     }
 
     func request(path: String, method: String, body: Data?, headers: [String: String]) async throws -> Data {
-        calls.append("\(method) \(path)")
+        let call = "\(method) \(path)"
+        calls.append(call)
+        headersByCall[call] = headers
         if method == "PUT", path == conflictPath, !hasReturnedConflict {
             hasReturnedConflict = true
             throw TuneAVAppDataClientError.requestFailed(statusCode: 409)

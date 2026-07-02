@@ -10,6 +10,7 @@ final class TuneAVAppDataService {
         self.apiClient = apiClient
         self.syncClient = TuneAVAppDataSyncClient(
             deviceId: "tuneav-ios",
+            platform: "ios",
             request: { path, method, body, headers in
                 do {
                     return try await apiClient.requestData(
@@ -45,6 +46,22 @@ final class TuneAVAppDataService {
 
     func overwriteLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
         try await syncClient.overwriteLibrary(snapshot)
+    }
+
+    func upsertFavorite(_ record: FavoriteStationRecord) async throws {
+        try await syncClient.upsertFavorite(record)
+    }
+
+    func deleteFavorite(_ record: FavoriteStationRecord) async throws {
+        try await syncClient.deleteFavorite(record)
+    }
+
+    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
+        try await syncClient.upsertSavedDiscovery(record)
+    }
+
+    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
+        try await syncClient.deleteSavedDiscovery(record)
     }
 
     func fetchUserSummary(limit: Int = 12) async throws -> TuneAVUserSummary {
