@@ -1267,11 +1267,11 @@ struct MacSettingsView: View {
     private func performClearAction() {
         switch pendingClearAction {
         case .favorites:
-            model.clearFavorites()
+            model.clearFavorites(propagatesToCloud: false)
         case .recents:
             model.clearRecents()
         case .discoveries:
-            model.clearDiscoveredTracks()
+            model.clearDiscoveredTracks(propagatesToCloud: false)
         case .all:
             model.clearLocalLibraryData()
         case nil:

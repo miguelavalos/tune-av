@@ -813,6 +813,76 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertNotNil(pushedDiscovery["markedInterestedAt"])
         XCTAssertEqual(pushedDiscovery["title"] as? String, "Lose control")
         XCTAssertEqual(pushedDiscovery["artist"] as? String, "Teddy Swims")
+
+        let operationPayload = try XCTUnwrap(recorder.lastPutPayload(for: "/v1/apps/tuneav/library/savedDiscoveries/upsert"))
+        XCTAssertEqual(operationPayload["title"] as? String, "Lose control")
+        XCTAssertEqual(operationPayload["artist"] as? String, "Teddy Swims")
+        XCTAssertNotNil(operationPayload["markedInterestedAt"])
+    }
+
+    func testToggleFavoriteSendsPerItemCloudOperation() async throws {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "st_radio_bob_rock",
+            name: "RADIO BOB! Rock",
+            country: "Germany",
+            language: "German",
+            tags: "rock",
+            streamURL: "https://example.com/radio-bob-rock.mp3"
+        )
+
+        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+        store.toggleFavorite(for: station)
+
+        try await Task.sleep(for: .milliseconds(400))
+
+        let operationPayload = try XCTUnwrap(recorder.lastPutPayload(for: "/v1/apps/tuneav/library/favorites/upsert"))
+        let stationPayload = try XCTUnwrap(operationPayload["station"] as? [String: Any])
+        XCTAssertEqual(stationPayload["id"] as? String, "st_radio_bob_rock")
+        XCTAssertEqual(stationPayload["name"] as? String, "RADIO BOB! Rock")
+        XCTAssertNotNil(operationPayload["createdAt"])
+    }
+
+    func testClearFavoritesDefaultsToLocalOnlyWithoutCloudPush() async throws {
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let station = Station(
+            id: "st_local_only",
+            name: "Local Only Radio",
+            country: "Spain",
+            language: "Spanish",
+            tags: "rock",
+            streamURL: "https://example.com/local-only.mp3"
+        )
+        store.toggleFavorite(for: station)
+
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+
+        store.clearFavorites()
+        try await Task.sleep(for: .milliseconds(2_400))
+
+        XCTAssertEqual(recorder.putPaths(), [])
     }
 
     func testMusicLibraryHidesLegacyStationMetadataDiscoveries() {
@@ -928,6 +998,7 @@ private func libraryStoreTestURLSession() -> URLSession {
 private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var putEntriesByPath: [String: [[String: Any]]] = [:]
+    private var putPayloadsByPath: [String: [String: Any]] = [:]
 
     func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
         let path = request.url?.path ?? ""
@@ -937,6 +1008,7 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
             let payload = try JSONSerialization.jsonObject(with: body) as? [String: Any]
             let entries = payload?["entries"] as? [[String: Any]] ?? []
             lock.lock()
+            putPayloadsByPath[path] = payload
             putEntriesByPath[path] = entries
             lock.unlock()
         }
@@ -972,6 +1044,18 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return putEntriesByPath[path]
+    }
+
+    func lastPutPayload(for path: String) -> [String: Any]? {
+        lock.lock()
+        defer { lock.unlock() }
+        return putPayloadsByPath[path]
+    }
+
+    func putPaths() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return putPayloadsByPath.keys.sorted()
     }
 }
 

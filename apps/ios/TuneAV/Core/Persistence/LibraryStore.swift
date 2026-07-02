@@ -67,6 +67,11 @@ final class LibraryStore: ObservableObject {
     private var shouldUploadFeedbackToBackend = false
     private var shouldRestoreFeedbackFromCloud = false
 
+    private enum CloudLibraryItemOperation: Equatable {
+        case upsert
+        case delete
+    }
+
     private enum RefreshScope {
         case favorites
         case recents
@@ -252,15 +257,23 @@ final class LibraryStore: ObservableObject {
 
     func toggleFavorite(for station: Station) {
         let identityKey = Self.stationIdentityKey(for: station)
+        let operation: (CloudLibraryItemOperation, FavoriteStationRecord)
         if let existing = favorites.first(where: { $0.stationID == station.id || Self.stationIdentityKey(for: Station(favorite: $0)) == identityKey }) {
-            rememberFavoriteDeletion(for: Station(favorite: existing))
+            operation = (.delete, rememberFavoriteDeletion(for: Station(favorite: existing)))
             context.delete(existing)
         } else {
+            let createdAt = Date.now
+            let record = FavoriteStationRecord(
+                station: station.appDataRecord,
+                createdAt: TuneAVAppDataService.isoString(from: createdAt)
+            )
             removeTombstone(resource: "favorites", identityKey: identityKey)
-            context.insert(FavoriteStation(station: station))
+            context.insert(FavoriteStation(station: station, createdAt: createdAt))
+            operation = (.upsert, record)
         }
 
         saveAndRefresh(.favorites, syncsCloud: true)
+        syncFavoriteLibraryOperation(operation.0, record: operation.1)
     }
 
     func rememberStationSnapshots(_ stations: [Station]) {
@@ -353,7 +366,11 @@ final class LibraryStore: ObservableObject {
 
     func toggleDiscoverySaved(_ discovery: DiscoveredTrack, savedLimit: Int? = nil) -> Bool {
         let now = Date.now
+        var operation = CloudLibraryItemOperation.upsert
+        var operationRecord: DiscoveredTrackRecord?
         if discovery.isMarkedInteresting {
+            operation = .delete
+            operationRecord = rememberSavedDiscoveryDeletion(for: discovery)
             discovery.markedInterestedAt = nil
         } else {
             if let savedLimit, savedDiscoveriesCount >= savedLimit {
@@ -365,7 +382,13 @@ final class LibraryStore: ObservableObject {
         }
 
         discovery.updatedAt = now
+        if operation == .upsert {
+            operationRecord = discovery.appDataRecord
+        }
         saveAndRefresh(.discoveries, syncsCloud: true)
+        if let operationRecord {
+            syncSavedDiscoveryLibraryOperation(operation, record: operationRecord)
+        }
         return true
     }
 
@@ -508,6 +531,7 @@ final class LibraryStore: ObservableObject {
         let discoveryIdentityKey = Self.savedDiscoveryIdentityKey(title: normalizedTitle, artist: normalizedArtist)
         let now = Date.now
         let nextArtworkURL = artworkURL?.absoluteString
+        var operationRecord: DiscoveredTrackRecord?
 
         if let existing = discoveries.first(where: { $0.discoveryID == discoveryID }) {
             if !markInteresting,
@@ -528,32 +552,42 @@ final class LibraryStore: ObservableObject {
             existing.artworkURL = nextArtworkURL ?? existing.artworkURL
             existing.stationArtworkURL = nil
             existing.updatedAt = now
+            if markInteresting {
+                operationRecord = existing.appDataRecord
+            }
         } else {
             if markInteresting {
                 removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
                 removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
             }
-            context.insert(
-                DiscoveredTrack(
-                    title: normalizedTitle,
-                    artist: normalizedArtist,
-                    station: station,
-                    artworkURL: artworkURL,
-                    markedInterestedAt: markInteresting ? now : nil
-                )
+            let discovery = DiscoveredTrack(
+                title: normalizedTitle,
+                artist: normalizedArtist,
+                station: station,
+                artworkURL: artworkURL,
+                markedInterestedAt: markInteresting ? now : nil
             )
+            context.insert(discovery)
+            if markInteresting {
+                operationRecord = discovery.appDataRecord
+            }
         }
 
         trimDiscoveries(limit: discoveryLimit ?? 100)
         saveAndRefresh(.discoveries, syncsCloud: markInteresting)
+        if let operationRecord {
+            syncSavedDiscoveryLibraryOperation(.upsert, record: operationRecord)
+        }
     }
 
     func removeDiscovery(_ discovery: DiscoveredTrack) {
-        if discovery.isMarkedInteresting {
-            rememberSavedDiscoveryDeletion(for: discovery)
-        }
+        let wasMarkedInteresting = discovery.isMarkedInteresting
+        let operationRecord = wasMarkedInteresting ? rememberSavedDiscoveryDeletion(for: discovery) : nil
         context.delete(discovery)
-        saveAndRefresh(.discoveries, syncsCloud: discovery.isMarkedInteresting)
+        saveAndRefresh(.discoveries, syncsCloud: wasMarkedInteresting)
+        if let operationRecord {
+            syncSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
+        }
     }
 
     func clearDiscoveries() {
@@ -688,7 +722,7 @@ final class LibraryStore: ObservableObject {
             }
             context.delete(favorite)
         }
-        saveAndRefresh(.favorites)
+        saveAndRefresh(.favorites, syncsCloud: propagatesToCloud)
     }
 
     func clearRecents(propagatesToCloud: Bool = false) {
@@ -1504,6 +1538,54 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    private func syncFavoriteLibraryOperation(
+        _ operation: CloudLibraryItemOperation,
+        record: FavoriteStationRecord
+    ) {
+        guard !isApplyingRemoteSnapshot, let appDataService, appDataService.isConfigured() else {
+            return
+        }
+
+        Task { [weak self, appDataService] in
+            do {
+                switch operation {
+                case .upsert:
+                    try await appDataService.upsertFavorite(record)
+                case .delete:
+                    try await appDataService.deleteFavorite(record)
+                }
+                guard self?.appDataService === appDataService else { return }
+                self?.updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+            } catch {
+                self?.analyticsLogger.debug("Favorite cloud item operation failed: \(String(describing: error), privacy: .public)")
+            }
+        }
+    }
+
+    private func syncSavedDiscoveryLibraryOperation(
+        _ operation: CloudLibraryItemOperation,
+        record: DiscoveredTrackRecord
+    ) {
+        guard !isApplyingRemoteSnapshot, let appDataService, appDataService.isConfigured() else {
+            return
+        }
+
+        Task { [weak self, appDataService] in
+            do {
+                switch operation {
+                case .upsert:
+                    try await appDataService.upsertSavedDiscovery(record)
+                case .delete:
+                    try await appDataService.deleteSavedDiscovery(record)
+                }
+                guard self?.appDataService === appDataService else { return }
+                self?.updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+            } catch {
+                self?.analyticsLogger.debug("Saved discovery cloud item operation failed: \(String(describing: error), privacy: .public)")
+            }
+        }
+    }
+
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
         guard shouldUploadFeedbackToBackend else { return }
         guard let backendService, backendService.isConfigured() else { return }
@@ -1878,41 +1960,47 @@ final class LibraryStore: ObservableObject {
         TuneAVDateCoding.date(from: value)
     }
 
-    private func rememberFavoriteDeletion(for station: Station) {
+    @discardableResult
+    private func rememberFavoriteDeletion(for station: Station) -> FavoriteStationRecord {
         let deletedAt = Date.now
+        let record = FavoriteStationRecord(
+            station: station.appDataRecord,
+            deletedAt: TuneAVAppDataService.isoString(from: deletedAt)
+        )
         rememberTombstone(
             resource: "favorites",
             identityKey: Self.stationIdentityKey(for: station),
-            payload: FavoriteStationRecord(
-                station: station.appDataRecord,
-                deletedAt: TuneAVAppDataService.isoString(from: deletedAt)
-            ),
+            payload: record,
             deletedAt: deletedAt
         )
+        return record
     }
 
-    private func rememberSavedDiscoveryDeletion(for discovery: DiscoveredTrack) {
+    @discardableResult
+    private func rememberSavedDiscoveryDeletion(for discovery: DiscoveredTrack) -> DiscoveredTrackRecord {
         let deletedAt = Date.now
+        let record = DiscoveredTrackRecord(
+            discoveryID: discovery.discoveryID,
+            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
+            title: discovery.title,
+            artist: discovery.artist,
+            stationID: discovery.stationID,
+            stationName: discovery.stationName,
+            artworkURL: discovery.artworkURL,
+            stationArtworkURL: discovery.stationArtworkURL,
+            playedAt: TuneAVAppDataService.isoString(from: discovery.playedAt),
+            markedInterestedAt: discovery.markedInterestedAt.map(TuneAVAppDataService.isoString(from:)),
+            hiddenAt: discovery.hiddenAt.map(TuneAVAppDataService.isoString(from:)),
+            deletedAt: TuneAVAppDataService.isoString(from: deletedAt),
+            updatedAt: TuneAVAppDataService.isoString(from: deletedAt)
+        )
         rememberTombstone(
             resource: "savedDiscoveries",
             identityKey: savedDiscoveryIdentityKey(for: discovery),
-            payload: DiscoveredTrackRecord(
-                discoveryID: discovery.discoveryID,
-                trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
-                title: discovery.title,
-                artist: discovery.artist,
-                stationID: discovery.stationID,
-                stationName: discovery.stationName,
-                artworkURL: discovery.artworkURL,
-                stationArtworkURL: discovery.stationArtworkURL,
-                playedAt: TuneAVAppDataService.isoString(from: discovery.playedAt),
-                markedInterestedAt: discovery.markedInterestedAt.map(TuneAVAppDataService.isoString(from:)),
-                hiddenAt: discovery.hiddenAt.map(TuneAVAppDataService.isoString(from:)),
-                deletedAt: TuneAVAppDataService.isoString(from: deletedAt),
-                updatedAt: TuneAVAppDataService.isoString(from: deletedAt)
-            ),
+            payload: record,
             deletedAt: deletedAt
         )
+        return record
     }
 
     private func rememberTombstone<Payload: Encodable>(

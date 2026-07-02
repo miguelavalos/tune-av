@@ -109,6 +109,11 @@ final class TuneAVMacModel: ObservableObject {
         case restore
     }
 
+    private enum CloudLibraryItemOperation: Equatable {
+        case upsert
+        case delete
+    }
+
     private static let maxLocalTrackFeedbackRecords = 300
 
     @Published var selectedSection: MacRootSection = .home
@@ -812,24 +817,25 @@ final class TuneAVMacModel: ObservableObject {
 
     func toggleFavorite(_ station: Station) {
         let identityKey = stationIdentityKey(for: station)
+        let operation: (CloudLibraryItemOperation, FavoriteStationRecord)
         if let existing = favoriteStations.first(where: { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }) {
-            rememberFavoriteDeletion(for: existing)
+            operation = (.delete, rememberFavoriteDeletion(for: existing))
             favoriteStations.removeAll { $0.id == station.id || stationIdentityKey(for: $0) == identityKey }
             favoriteRecords.removeAll { TuneAVLibrarySnapshotMerger.stationIdentityKey($0.station) == identityKey }
         } else {
+            let record = FavoriteStationRecord(
+                station: station.appDataRecord,
+                createdAt: TuneAVDateCoding.string(from: .now)
+            )
             removeTombstone(resource: "favorites", identityKey: identityKey)
             favoriteStations.insert(station, at: 0)
             favoriteRecords.removeAll { TuneAVLibrarySnapshotMerger.stationIdentityKey($0.station) == identityKey }
-            favoriteRecords.insert(
-                FavoriteStationRecord(
-                    station: station.appDataRecord,
-                    createdAt: TuneAVDateCoding.string(from: .now)
-                ),
-                at: 0
-            )
+            favoriteRecords.insert(record, at: 0)
+            operation = (.upsert, record)
         }
         storage.saveFavoriteRecords(favoriteRecords)
         markLocalLibraryUpdated(syncsCloud: true)
+        syncFavoriteLibraryOperation(operation.0, record: operation.1)
     }
 
     func isFavorite(_ station: Station) -> Bool {
@@ -844,9 +850,9 @@ final class TuneAVMacModel: ObservableObject {
         syncStationFeedbackToBackend(feedback, stationID: station.id)
     }
 
-    func clearFavorites(propagatesToCloud: Bool = true) {
+    func clearFavorites(propagatesToCloud: Bool = false) {
         if propagatesToCloud {
-            favoriteStations.forEach(rememberFavoriteDeletion(for:))
+            favoriteStations.forEach { _ = rememberFavoriteDeletion(for: $0) }
         }
         favoriteStations = []
         favoriteRecords = []
@@ -922,33 +928,44 @@ final class TuneAVMacModel: ObservableObject {
         )
         let discoveryIdentityKey = Self.savedDiscoveryIdentityKey(title: normalizedTitle, artist: normalizedArtist)
         let now = Date.now
+        var operation: (CloudLibraryItemOperation, DiscoveredTrackRecord)?
 
         if let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discoveryID }) {
-            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
-            removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
+            let wasSaved = discoveredTracks[index].isMarkedInteresting
+            if wasSaved {
+                operation = (.delete, rememberSavedDiscoveryDeletion(for: discoveredTracks[index]))
+            } else {
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
+                removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
+            }
             discoveredTracks[index].playedAt = now
-            discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
+            discoveredTracks[index].markedInterestedAt = wasSaved ? nil : now
             discoveredTracks[index].hiddenAt = nil
             discoveredTracks[index].updatedAt = now
+            if !wasSaved {
+                operation = (.upsert, discoveredTracks[index].record)
+            }
         } else {
             removeTombstone(resource: "savedDiscoveries", identityKey: discoveryID)
             removeTombstone(resource: "savedDiscoveries", identityKey: discoveryIdentityKey)
-            discoveredTracks.insert(
-                MacDiscoveredTrack(
-                    title: normalizedTitle,
-                    artist: normalizedArtist,
-                    station: currentStation,
-                    playedAt: now,
-                    markedInterestedAt: now
-                ),
-                at: 0
+            let discovery = MacDiscoveredTrack(
+                title: normalizedTitle,
+                artist: normalizedArtist,
+                station: currentStation,
+                playedAt: now,
+                markedInterestedAt: now
             )
+            discoveredTracks.insert(discovery, at: 0)
+            operation = (.upsert, discovery.record)
         }
 
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
+        if let operation {
+            syncSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
+        }
         return currentDiscoveryIsSaved
     }
 
@@ -1036,9 +1053,9 @@ final class TuneAVMacModel: ObservableObject {
         syncTrackFeedbackToBackend(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
     }
 
-    func clearDiscoveredTracks(propagatesToCloud: Bool = true) {
+    func clearDiscoveredTracks(propagatesToCloud: Bool = false) {
         if propagatesToCloud {
-            discoveredTracks.filter(\.isMarkedInteresting).forEach(rememberSavedDiscoveryDeletion(for:))
+            discoveredTracks.filter(\.isMarkedInteresting).forEach { _ = rememberSavedDiscoveryDeletion(for: $0) }
         }
         let removedSavedDiscovery = discoveredTracks.contains(where: \.isMarkedInteresting)
         discoveredTracks = []
@@ -1050,19 +1067,27 @@ final class TuneAVMacModel: ObservableObject {
     func toggleDiscoverySaved(_ discovery: MacDiscoveredTrack) {
         guard let index = discoveredTracks.firstIndex(where: { $0.discoveryID == discovery.discoveryID }) else { return }
         let now = Date.now
-        if discoveredTracks[index].isMarkedInteresting {
-            rememberSavedDiscoveryDeletion(for: discoveredTracks[index])
+        let wasSaved = discoveredTracks[index].isMarkedInteresting
+        var operation: (CloudLibraryItemOperation, DiscoveredTrackRecord)?
+        if wasSaved {
+            operation = (.delete, rememberSavedDiscoveryDeletion(for: discoveredTracks[index]))
         } else {
             removeTombstone(resource: "savedDiscoveries", identityKey: discovery.discoveryID)
             removeTombstone(resource: "savedDiscoveries", identityKey: savedDiscoveryIdentityKey(for: discovery))
         }
-        discoveredTracks[index].markedInterestedAt = discoveredTracks[index].markedInterestedAt == nil ? now : nil
+        discoveredTracks[index].markedInterestedAt = wasSaved ? nil : now
         discoveredTracks[index].hiddenAt = nil
         discoveredTracks[index].updatedAt = now
+        if !wasSaved {
+            operation = (.upsert, discoveredTracks[index].record)
+        }
         discoveredTracks = sortedDiscoveries(discoveredTracks)
         refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
+        if let operation {
+            syncSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
+        }
     }
 
     func hideDiscovery(_ discovery: MacDiscoveredTrack) {
@@ -1087,12 +1112,14 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func removeDiscovery(_ discovery: MacDiscoveredTrack) {
-        if discovery.isMarkedInteresting {
-            rememberSavedDiscoveryDeletion(for: discovery)
-        }
+        let wasSaved = discovery.isMarkedInteresting
+        let operationRecord = wasSaved ? rememberSavedDiscoveryDeletion(for: discovery) : nil
         discoveredTracks.removeAll { $0.discoveryID == discovery.discoveryID }
         storage.saveDiscoveries(discoveredTracks)
-        markLocalLibraryUpdated(syncsCloud: discovery.isMarkedInteresting)
+        markLocalLibraryUpdated(syncsCloud: wasSaved)
+        if let operationRecord {
+            syncSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
+        }
     }
 
     func startAutomaticLibrarySync() async {
@@ -1983,7 +2010,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func makeAppDataSyncClient() -> TuneAVAppDataSyncClient {
-        TuneAVAppDataSyncClient(deviceId: "tuneav-mac") { [weak self] path, method, body, headers in
+        TuneAVAppDataSyncClient(deviceId: "tuneav-mac", platform: "macos") { [weak self] path, method, body, headers in
             guard let self else { throw TuneAVAppDataClientError.missingToken }
             do {
                 return try await self.makeAccountAPIClient().requestData(
@@ -2000,6 +2027,60 @@ final class TuneAVMacModel: ObservableObject {
                 throw TuneAVAppDataClientError.requestFailed(statusCode: statusCode)
             } catch {
                 throw error
+            }
+        }
+    }
+
+    private func syncFavoriteLibraryOperation(
+        _ operation: CloudLibraryItemOperation,
+        record: FavoriteStationRecord
+    ) {
+        guard hasProCloudSyncAccess, accountService.isAvailable else { return }
+        Task { [weak self] in
+            do {
+                guard let self else { return }
+                let client = self.makeAppDataSyncClient()
+                switch operation {
+                case .upsert:
+                    try await client.upsertFavorite(record)
+                case .delete:
+                    try await client.deleteFavorite(record)
+                }
+                self.lastCloudSyncAt = .now
+            } catch {
+                TuneAVMacDiagnostics.capture(
+                    error,
+                    feature: "tune.mac.sync",
+                    operation: "favorite_item",
+                    step: "upload"
+                )
+            }
+        }
+    }
+
+    private func syncSavedDiscoveryLibraryOperation(
+        _ operation: CloudLibraryItemOperation,
+        record: DiscoveredTrackRecord
+    ) {
+        guard hasProCloudSyncAccess, accountService.isAvailable else { return }
+        Task { [weak self] in
+            do {
+                guard let self else { return }
+                let client = self.makeAppDataSyncClient()
+                switch operation {
+                case .upsert:
+                    try await client.upsertSavedDiscovery(record)
+                case .delete:
+                    try await client.deleteSavedDiscovery(record)
+                }
+                self.lastCloudSyncAt = .now
+            } catch {
+                TuneAVMacDiagnostics.capture(
+                    error,
+                    feature: "tune.mac.sync",
+                    operation: "saved_discovery_item",
+                    step: "upload"
+                )
             }
         }
     }
@@ -2296,41 +2377,47 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func rememberFavoriteDeletion(for station: Station) {
+    @discardableResult
+    private func rememberFavoriteDeletion(for station: Station) -> FavoriteStationRecord {
         let deletedAt = Date.now
+        let record = FavoriteStationRecord(
+            station: station.appDataRecord,
+            deletedAt: TuneAVDateCoding.string(from: deletedAt)
+        )
         rememberTombstone(
             resource: "favorites",
             identityKey: stationIdentityKey(for: station),
-            payload: FavoriteStationRecord(
-                station: station.appDataRecord,
-                deletedAt: TuneAVDateCoding.string(from: deletedAt)
-            ),
+            payload: record,
             deletedAt: deletedAt
         )
+        return record
     }
 
-    private func rememberSavedDiscoveryDeletion(for discovery: MacDiscoveredTrack) {
+    @discardableResult
+    private func rememberSavedDiscoveryDeletion(for discovery: MacDiscoveredTrack) -> DiscoveredTrackRecord {
         let deletedAt = Date.now
+        let record = DiscoveredTrackRecord(
+            discoveryID: discovery.discoveryID,
+            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
+            title: discovery.title,
+            artist: discovery.artist,
+            stationID: discovery.stationID,
+            stationName: discovery.stationName,
+            artworkURL: discovery.artworkURL,
+            stationArtworkURL: discovery.stationArtworkURL,
+            playedAt: TuneAVDateCoding.string(from: discovery.playedAt),
+            markedInterestedAt: discovery.markedInterestedAt.map(TuneAVDateCoding.string(from:)),
+            hiddenAt: discovery.hiddenAt.map(TuneAVDateCoding.string(from:)),
+            deletedAt: TuneAVDateCoding.string(from: deletedAt),
+            updatedAt: TuneAVDateCoding.string(from: deletedAt)
+        )
         rememberTombstone(
             resource: "savedDiscoveries",
             identityKey: savedDiscoveryIdentityKey(for: discovery),
-            payload: DiscoveredTrackRecord(
-                discoveryID: discovery.discoveryID,
-                trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
-                title: discovery.title,
-                artist: discovery.artist,
-                stationID: discovery.stationID,
-                stationName: discovery.stationName,
-                artworkURL: discovery.artworkURL,
-                stationArtworkURL: discovery.stationArtworkURL,
-                playedAt: TuneAVDateCoding.string(from: discovery.playedAt),
-                markedInterestedAt: discovery.markedInterestedAt.map(TuneAVDateCoding.string(from:)),
-                hiddenAt: discovery.hiddenAt.map(TuneAVDateCoding.string(from:)),
-                deletedAt: TuneAVDateCoding.string(from: deletedAt),
-                updatedAt: TuneAVDateCoding.string(from: deletedAt)
-            ),
+            payload: record,
             deletedAt: deletedAt
         )
+        return record
     }
 
     private func savedDiscoveryIdentityKey(for discovery: MacDiscoveredTrack) -> String {
