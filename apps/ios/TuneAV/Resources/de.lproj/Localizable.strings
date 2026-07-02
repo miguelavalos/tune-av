@@ -941,7 +941,9 @@
 "profile.pro.library.detail" = "Behalte eine größere Radio- und Song-Mediathek.";
 "profile.pro.library.title" = "Größere Mediathek";
 "profile.pro.manage" = "Abo verwalten";
+"profile.pro.checkingAccess" = "Zugriff wird geprüft…";
 "profile.pro.signIn" = "Erst anmelden";
+"profile.pro.subtitle.checkingAccess" = "Wir prüfen den Pro-Zugriff deines Kontos.";
 "profile.pro.subtitle.free" = "Öffne das Pro-Angebot oder stelle ein bestehendes App Store Abo wieder her.";
 "profile.pro.subtitle.guest" = "Melde dich an, bevor du ein Abo startest.";
 "profile.pro.subtitle.pro" = "Dein Pro-Zugriff ist aktiv. Verwalte die Abrechnung in deinem App Store Konto.";

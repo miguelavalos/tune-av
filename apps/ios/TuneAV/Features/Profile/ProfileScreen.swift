@@ -48,6 +48,7 @@ struct ProfileScreen: View {
     @State private var browserDestination: BrowserDestination?
     @State private var isShowingAccountDeletion = false
     @State private var isShowingProPaywall = false
+    @State private var isCheckingAccountAccessOnEntry = true
     @State private var accountSummary: AccountSummary?
     private let genreTags = TuneAVMusicGenreCatalog.visibleTags
 
@@ -105,9 +106,15 @@ struct ProfileScreen: View {
             await refreshAccountSummaryIfNeeded()
         }
         .task(id: mode) {
-            guard mode == .account else { return }
+            guard mode == .account else {
+                isCheckingAccountAccessOnEntry = true
+                return
+            }
+            isCheckingAccountAccessOnEntry = true
             await accessController.syncFromAccountProvider()
             await refreshAccountSummaryIfNeeded()
+            guard !Task.isCancelled else { return }
+            isCheckingAccountAccessOnEntry = false
         }
     }
 
@@ -334,35 +341,48 @@ struct ProfileScreen: View {
 
     @ViewBuilder
     private var proPlanAction: some View {
-        switch accessController.accessMode {
-        case .guest:
-            tabletAlignedSettingsButton {
-                ProfilePrimaryButton(
-                    title: accessController.accountIsAvailable
-                        ? L10n.string("profile.pro.signIn")
-                        : L10n.string("profile.account.connectUnavailable"),
-                    accessibilityID: "profile.pro.signIn",
-                    action: { startSignInFlow(true) }
-                )
-            }
-            .disabled(!accessController.accountIsAvailable)
-        case .signedInFree:
-            tabletAlignedSettingsButton {
-                ProfilePrimaryButton(
-                    title: L10n.string("profile.pro.viewOffer"),
-                    accessibilityID: "profile.pro.viewOffer",
-                    action: { isShowingProPaywall = true }
-                )
-            }
-        case .signedInPro:
+        if isCheckingProPlanAccess {
             tabletAlignedSettingsButton {
                 AVSettingsButton(
-                    title: L10n.string("profile.pro.manage"),
+                    title: L10n.string("profile.pro.checkingAccess"),
                     style: .secondary,
-                    action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
+                    isLoading: true,
+                    action: {}
                 )
             }
-            .accessibilityIdentifier("profile.pro.manage")
+            .disabled(true)
+            .accessibilityIdentifier("profile.pro.checkingAccess")
+        } else {
+            switch accessController.accessMode {
+            case .guest:
+                tabletAlignedSettingsButton {
+                    ProfilePrimaryButton(
+                        title: accessController.accountIsAvailable
+                            ? L10n.string("profile.pro.signIn")
+                            : L10n.string("profile.account.connectUnavailable"),
+                        accessibilityID: "profile.pro.signIn",
+                        action: { startSignInFlow(true) }
+                    )
+                }
+                .disabled(!accessController.accountIsAvailable)
+            case .signedInFree:
+                tabletAlignedSettingsButton {
+                    ProfilePrimaryButton(
+                        title: L10n.string("profile.pro.viewOffer"),
+                        accessibilityID: "profile.pro.viewOffer",
+                        action: { isShowingProPaywall = true }
+                    )
+                }
+            case .signedInPro:
+                tabletAlignedSettingsButton {
+                    AVSettingsButton(
+                        title: L10n.string("profile.pro.manage"),
+                        style: .secondary,
+                        action: { open(URL(string: "https://apps.apple.com/account/subscriptions")) }
+                    )
+                }
+                .accessibilityIdentifier("profile.pro.manage")
+            }
         }
     }
 
@@ -754,25 +774,37 @@ struct ProfileScreen: View {
     }
 
     private var planSummaryDetail: String {
+        if isCheckingProPlanAccess {
+            return L10n.string("profile.pro.checkingAccess")
+        }
+
         switch accessController.accessMode {
         case .guest:
-            L10n.string("profile.summary.plan.detail.guest")
+            return L10n.string("profile.summary.plan.detail.guest")
         case .signedInFree:
-            L10n.string("profile.summary.plan.detail.free")
+            return L10n.string("profile.summary.plan.detail.free")
         case .signedInPro:
-            L10n.string("profile.summary.plan.detail.pro")
+            return L10n.string("profile.summary.plan.detail.pro")
         }
     }
 
     private var proPlanSubtitle: String {
+        if isCheckingProPlanAccess {
+            return L10n.string("profile.pro.subtitle.checkingAccess")
+        }
+
         switch accessController.accessMode {
         case .guest:
-            L10n.string("profile.pro.subtitle.guest")
+            return L10n.string("profile.pro.subtitle.guest")
         case .signedInFree:
-            L10n.string("profile.pro.subtitle.free")
+            return L10n.string("profile.pro.subtitle.free")
         case .signedInPro:
-            L10n.string("profile.pro.subtitle.pro")
+            return L10n.string("profile.pro.subtitle.pro")
         }
+    }
+
+    private var isCheckingProPlanAccess: Bool {
+        mode == .account && (isCheckingAccountAccessOnEntry || accessController.isRefreshingAccountAccess)
     }
 
     private var subscriptionStatusDetail: String? {

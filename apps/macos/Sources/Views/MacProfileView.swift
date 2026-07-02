@@ -60,6 +60,7 @@ struct MacProfileView: View {
     @Environment(\.openURL) private var openURL
     @State private var isShowingAccountDeletion = false
     @State private var isShowingProPaywall = false
+    @State private var isCheckingAccountAccessOnEntry = true
 
     var body: some View {
         ScrollView {
@@ -85,6 +86,9 @@ struct MacProfileView: View {
                 Task { await model.signInWithApple() }
             })
             .environmentObject(model)
+        }
+        .task {
+            await refreshAccountAccessForProfile()
         }
     }
 
@@ -239,7 +243,16 @@ struct MacProfileView: View {
 
     @ViewBuilder
     private var proPlanAction: some View {
-        if model.accountUser == nil {
+        if isCheckingProPlanAccess {
+            AVSettingsButton(
+                title: L10n.string("profile.pro.checkingAccess"),
+                style: .secondary,
+                isLoading: true,
+                action: {}
+            )
+            .disabled(true)
+            .accessibilityIdentifier("profile.pro.checkingAccess")
+        } else if model.accountUser == nil {
             AVSettingsButton(
                 title: accountActionTitle(L10n.string("profile.pro.signIn")),
                 style: .primary,
@@ -285,6 +298,10 @@ struct MacProfileView: View {
     }
 
     private var accountPlanDetail: String {
+        if isCheckingProPlanAccess {
+            return L10n.string("profile.pro.checkingAccess")
+        }
+
         switch model.accessMode {
         case .guest:
             return L10n.string("profile.summary.plan.detail.guest")
@@ -296,6 +313,10 @@ struct MacProfileView: View {
     }
 
     private var proPlanSubtitle: String {
+        if isCheckingProPlanAccess {
+            return L10n.string("profile.pro.subtitle.checkingAccess")
+        }
+
         switch model.accessMode {
         case .guest:
             return L10n.string("profile.pro.subtitle.guest")
@@ -304,6 +325,10 @@ struct MacProfileView: View {
         case .signedInPro:
             return L10n.string("profile.pro.subtitle.pro")
         }
+    }
+
+    private var isCheckingProPlanAccess: Bool {
+        isCheckingAccountAccessOnEntry || model.isRefreshingAccountAccess
     }
 
     private var syncSubtitle: String {
@@ -399,6 +424,12 @@ struct MacProfileView: View {
         )
     }
 
+    private func refreshAccountAccessForProfile() async {
+        isCheckingAccountAccessOnEntry = true
+        await model.refreshAccount()
+        guard !Task.isCancelled else { return }
+        isCheckingAccountAccessOnEntry = false
+    }
 }
 
 private struct MacAccountDeletionSheet: View {

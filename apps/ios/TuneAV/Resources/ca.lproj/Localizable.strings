@@ -941,7 +941,9 @@
 "profile.pro.library.detail" = "Mantén una biblioteca més gran de ràdios i cançons.";
 "profile.pro.library.title" = "Biblioteca més gran";
 "profile.pro.manage" = "Gestionar subscripció";
+"profile.pro.checkingAccess" = "Comprovant l'accés…";
 "profile.pro.signIn" = "Iniciar sessió primer";
+"profile.pro.subtitle.checkingAccess" = "Estem comprovant l'accés Pro del teu compte.";
 "profile.pro.subtitle.free" = "Obre l'oferta Pro o restaura una subscripció existent de l'App Store.";
 "profile.pro.subtitle.guest" = "Inicia sessió abans de començar una subscripció.";
 "profile.pro.subtitle.pro" = "El teu accés Pro està actiu. Gestiona la facturació al teu compte de l'App Store.";

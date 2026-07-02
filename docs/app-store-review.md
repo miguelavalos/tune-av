@@ -35,12 +35,15 @@ approval records outside this repository.
 
 ## Suggested Public Release Copy
 
-## Current App Store Review Candidates
+## Current App Store Status
 
-- iOS version/build: `1.0.2 (39)`.
-- macOS version/build: `1.0.2 (42)`.
-- macOS App Store first release `1.0.2 (42)` was submitted to App Review on
-  2026-06-26 after the build, metadata, subscription setup, manual release
+- iPhone/iPad approved baseline: `1.0.4 (42)` per 2026-07-02 operator report.
+- macOS approved baseline: `1.0.4 (45)` per 2026-07-02 operator report.
+- Current checked-in post-approval source candidate: iOS `1.0.5 (43)` and
+  macOS `1.0.5 (46)`. This candidate keeps the Account/Tune AV Pro state in a
+  loading state until the latest account access refresh completes.
+- macOS App Store first release review used the same Tune AV app record and was
+  submitted after the build, metadata, subscription setup, manual release
   setting, screenshots, and macOS TestFlight Pro purchase/restore visibility
   checks were completed in App Store Connect.
 - iOS public release notes can stay generic for this maintenance release, for

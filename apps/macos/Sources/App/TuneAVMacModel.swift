@@ -160,6 +160,7 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var isWaitingForSubscriptionReconciliation = false
     @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
     @Published private(set) var isAccountOperationInProgress = false
+    @Published private(set) var isRefreshingAccountAccess = false
     @Published var upgradePrompt: UpgradePrompt?
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
     @Published private(set) var lastCloudSyncAt: Date?
@@ -199,6 +200,7 @@ final class TuneAVMacModel: ObservableObject {
     private var proRealtimeSessionTask: Task<Void, Never>?
     private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
+    private var accountAccessRefreshGeneration = 0
     private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
     private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
     private var sleepTimerTask: Task<Void, Never>?
@@ -1893,6 +1895,15 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func refreshAccessState(tokenOverride: String? = nil) async {
+        accountAccessRefreshGeneration += 1
+        let refreshGeneration = accountAccessRefreshGeneration
+        isRefreshingAccountAccess = true
+        defer {
+            if refreshGeneration == accountAccessRefreshGeneration {
+                isRefreshingAccountAccess = false
+            }
+        }
+
         guard accountUser != nil else {
             applyResolvedAccess(.guest)
             return

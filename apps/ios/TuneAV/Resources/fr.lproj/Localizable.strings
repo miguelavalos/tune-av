@@ -941,7 +941,9 @@
 "profile.pro.library.detail" = "Garde une bibliothèque plus grande de radios et de chansons.";
 "profile.pro.library.title" = "Bibliothèque plus grande";
 "profile.pro.manage" = "Gérer l'abonnement";
+"profile.pro.checkingAccess" = "Vérification de l'accès…";
 "profile.pro.signIn" = "Se connecter d'abord";
+"profile.pro.subtitle.checkingAccess" = "Nous vérifions l'accès Pro de ton compte.";
 "profile.pro.subtitle.free" = "Ouvre l'offre Pro ou restaure un abonnement App Store existant.";
 "profile.pro.subtitle.guest" = "Connecte-toi avant de démarrer un abonnement.";
 "profile.pro.subtitle.pro" = "Ton accès Pro est actif. Gère la facturation dans ton compte App Store.";
