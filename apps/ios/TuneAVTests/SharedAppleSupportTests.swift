@@ -354,6 +354,16 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(AVAccountAPIClient.shouldCaptureNetworkError(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)))
         XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(AVAccountAPIClientError.requestFailed(statusCode: 500)))
         XCTAssertTrue(AVAccountAPIClient.shouldCaptureNetworkError(URLError(.timedOut)))
+        XCTAssertFalse(TuneAVDiagnostics.shouldCapture(TuneAVPromoCodeClientError.server(
+            code: "promo_code_unavailable",
+            message: "This promo code is not available.",
+            statusCode: 404
+        )))
+        XCTAssertTrue(TuneAVDiagnostics.shouldCapture(TuneAVPromoCodeClientError.server(
+            code: "promo_backend_unavailable",
+            message: "Promo service unavailable.",
+            statusCode: 503
+        )))
     }
 
     func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {

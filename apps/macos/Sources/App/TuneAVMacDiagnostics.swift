@@ -52,6 +52,10 @@ enum TuneAVMacDiagnostics {
                 return true
             }
         }
+        if let promoCodeError = error as? TuneAVPromoCodeClientError,
+           case .server("promo_code_unavailable", _, 404) = promoCodeError {
+            return false
+        }
         return true
     }
 

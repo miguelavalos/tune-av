@@ -85,6 +85,16 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.requestFailed(statusCode: 500)))
         XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVAccessClientError.avTunesysAccessMissing))
         XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(URLError(.timedOut)))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVPromoCodeClientError.server(
+            code: "promo_code_unavailable",
+            message: "This promo code is not available.",
+            statusCode: 404
+        )))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(TuneAVPromoCodeClientError.server(
+            code: "promo_backend_unavailable",
+            message: "Promo service unavailable.",
+            statusCode: 503
+        )))
     }
 
     func testMacSyncMergeKeepsLocalAndRemoteLibraryItems() {
