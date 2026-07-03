@@ -170,6 +170,10 @@ Latest post-approval source checkpoint, 2026-07-03:
   `1.0.5 (47)` per operator report; approval evidence remains private.
 - The checked-in next iPhone/iPad candidate is `1.0.6 (45)` with expected
   unavailable promo-code responses filtered out of Sentry capture.
+- The checked-in next macOS candidate is `1.0.6 (48)` with the Music history
+  list-source fix and macOS radio-library regression coverage. The App Store
+  Connect `1.0.5` pre-release train is closed after approval, so new macOS
+  TestFlight uploads must use the next marketing version.
 - The approved maintenance build includes the Account/Tune AV Pro access
   loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed
