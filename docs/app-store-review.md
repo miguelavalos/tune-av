@@ -42,13 +42,15 @@ approval records outside this repository.
 - iPhone/iPad `1.0.6 (45)` was uploaded to App Store Connect and submitted to
   App Review on 2026-07-03 per operator report; approval is pending. It carries
   the Sentry diagnostic filter for expected unavailable promo-code responses.
-- macOS `1.0.6 (49)` was uploaded to App Store Connect on 2026-07-03 and the
-  package is processing. It carries the Music history list-source fix, macOS
-  radio-library regression coverage, and contextual macOS Avi navigation. App
-  Store Connect rejects new `1.0.5` builds after the approved `1.0.5 (47)`
-  train, so macOS must use the next marketing version for TestFlight
-  submissions. The previous macOS `1.0.6 (48)` package was uploaded to App Store
-  Connect on 2026-07-03 before the contextual Avi navigation update.
+- macOS `1.0.6 (49)` was uploaded to App Store Connect and submitted to App
+  Review on 2026-07-03; approval is pending. Review submission id:
+  `5e5d7cdb-7827-4472-ae9f-f737dd92fb24`. It carries the Music history
+  list-source fix, macOS radio-library regression coverage, and contextual
+  macOS Avi navigation. App Store Connect rejects new `1.0.5` builds after the
+  approved `1.0.5 (47)` train, so macOS must use the next marketing version for
+  TestFlight submissions. The previous macOS `1.0.6 (48)` package was uploaded
+  to App Store Connect on 2026-07-03 before the contextual Avi navigation
+  update.
 - Previous cross-platform baseline: iOS/iPadOS `1.0.4 (42)` and macOS
   `1.0.4 (45)` were approved on 2026-07-02 per operator report.
 - The current approved maintenance build keeps the Account/Tune AV Pro state in

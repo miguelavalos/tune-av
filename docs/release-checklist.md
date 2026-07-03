@@ -283,10 +283,12 @@ separate development bundle identifier.
    report. iOS/iPadOS `1.0.6 (45)` was submitted to App Review on 2026-07-03
    per operator report and is pending approval. New macOS TestFlight uploads
    must use a higher marketing version. macOS `1.0.6 (49)` was uploaded to App
-   Store Connect on 2026-07-03 and the package is processing, with the Music
-   history list-source fix, radio-library regression coverage, and contextual
-   macOS Avi navigation. The previous macOS `1.0.6 (48)` package was uploaded to
-   App Store Connect on 2026-07-03 before the contextual Avi navigation update.
+   Store Connect and submitted to App Review on 2026-07-03; approval is
+   pending. Review submission id:
+   `5e5d7cdb-7827-4472-ae9f-f737dd92fb24`. It carries the Music history
+   list-source fix, radio-library regression coverage, and contextual macOS Avi
+   navigation. The previous macOS `1.0.6 (48)` package was uploaded to App Store
+   Connect on 2026-07-03 before the contextual Avi navigation update.
 
 ## Pending Product API Transition Checks
 
