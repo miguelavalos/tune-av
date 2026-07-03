@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-07-02
+Date: 2026-07-03
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -164,12 +164,12 @@ Latest local client verification known to the maintainers, run on 2026-06-14:
   archive preflight passed;
 - macOS unit tests: 19 tests, 0 failures.
 
-Latest post-approval source checkpoint, 2026-07-02:
+Latest post-approval source checkpoint, 2026-07-03:
 
-- App Store approved baselines are iPhone/iPad `1.0.4 (42)` and macOS
-  `1.0.4 (45)` per operator report; approval evidence remains private.
-- Checked-in source is advanced to iOS `1.0.5 (43)` and macOS `1.0.5 (46)` for
-  the Account/Tune AV Pro access loading-state fix.
+- App Store approved baselines are iPhone/iPad `1.0.5 (44)` and macOS
+  `1.0.5 (47)` per operator report; approval evidence remains private.
+- The approved maintenance build includes the Account/Tune AV Pro access
+  loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed
   before committing this source checkpoint.
 

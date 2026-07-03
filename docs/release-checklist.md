@@ -265,7 +265,9 @@ separate development bundle identifier.
    For the macOS App Store first release baseline `1.0.4 (45)`, the five
    preview v1 screenshots were uploaded to App Store Connect in order and the
    version was approved per 2026-07-02 operator report after validating the
-   macOS TestFlight Pro purchase path with the production backend.
+   macOS TestFlight Pro purchase path with the production backend. The latest
+   approved macOS maintenance baseline is `1.0.5 (47)` per 2026-07-03 operator
+   report.
 
 ## Pending Product API Transition Checks
 

@@ -37,11 +37,12 @@ approval records outside this repository.
 
 ## Current App Store Status
 
-- iPhone/iPad approved baseline: `1.0.4 (42)` per 2026-07-02 operator report.
-- macOS approved baseline: `1.0.4 (45)` per 2026-07-02 operator report.
-- Current checked-in post-approval source candidate: iOS `1.0.5 (43)` and
-  macOS `1.0.5 (46)`. This candidate keeps the Account/Tune AV Pro state in a
-  loading state until the latest account access refresh completes.
+- iPhone/iPad approved baseline: `1.0.5 (44)` per 2026-07-03 operator report.
+- macOS approved baseline: `1.0.5 (47)` per 2026-07-03 operator report.
+- Previous cross-platform baseline: iOS/iPadOS `1.0.4 (42)` and macOS
+  `1.0.4 (45)` were approved on 2026-07-02 per operator report.
+- The current approved maintenance build keeps the Account/Tune AV Pro state in
+  a loading state until the latest account access refresh completes.
 - macOS App Store first release review used the same Tune AV app record and was
   submitted after the build, metadata, subscription setup, manual release
   setting, screenshots, and macOS TestFlight Pro purchase/restore visibility
