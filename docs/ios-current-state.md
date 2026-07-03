@@ -168,6 +168,8 @@ Latest post-approval source checkpoint, 2026-07-03:
 
 - App Store approved baselines are iPhone/iPad `1.0.5 (44)` and macOS
   `1.0.5 (47)` per operator report; approval evidence remains private.
+- The checked-in next iPhone/iPad candidate is `1.0.6 (45)` with expected
+  unavailable promo-code responses filtered out of Sentry capture.
 - The approved maintenance build includes the Account/Tune AV Pro access
   loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed

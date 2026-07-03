@@ -39,6 +39,8 @@ approval records outside this repository.
 
 - iPhone/iPad approved baseline: `1.0.5 (44)` per 2026-07-03 operator report.
 - macOS approved baseline: `1.0.5 (47)` per 2026-07-03 operator report.
+- Next iPhone/iPad candidate: `1.0.6 (45)`, carrying the Sentry diagnostic
+  filter for expected unavailable promo-code responses.
 - Previous cross-platform baseline: iOS/iPadOS `1.0.4 (42)` and macOS
   `1.0.4 (45)` were approved on 2026-07-02 per operator report.
 - The current approved maintenance build keeps the Account/Tune AV Pro state in
