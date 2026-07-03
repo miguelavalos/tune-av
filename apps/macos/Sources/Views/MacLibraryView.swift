@@ -417,16 +417,13 @@ struct MacLibraryView: View {
     }
 
     private var baseStations: [Station] {
-        switch mode {
-        case .saved:
-            return model.favoriteStations
-        case .recent:
-            return model.recentStations
-        case .tuned:
-            return tunedStations
-        case .music:
-            return musicStations
-        }
+        Self.baseStations(
+            for: mode,
+            favoriteStations: model.favoriteStations,
+            recentStations: model.recentStations,
+            tunedStations: tunedStations,
+            musicStations: musicStations
+        )
     }
 
     private var visibleStations: [Station] {
@@ -495,16 +492,19 @@ struct MacLibraryView: View {
     }
 
     private var tunedStations: [Station] {
-        uniquedStations(model.favoriteStations + model.recentStations).filter { station in
-            model.stationFeedback[station.id] != nil
-        }
+        Self.tunedStations(
+            favoriteStations: model.favoriteStations,
+            recentStations: model.recentStations,
+            stationFeedback: model.stationFeedback
+        )
     }
 
     private var musicStations: [Station] {
-        uniquedStations(model.discoveredTracks.compactMap { discovery in
-            model.recentStations.first { $0.id == discovery.stationID }
-                ?? model.favoriteStations.first { $0.id == discovery.stationID }
-        })
+        Self.musicStations(
+            discoveredTracks: model.discoveredTracks,
+            favoriteStations: model.favoriteStations,
+            recentStations: model.recentStations
+        )
     }
 
     private func sortedStations(_ stations: [Station]) -> [Station] {
@@ -526,7 +526,47 @@ struct MacLibraryView: View {
         }
     }
 
-    private func uniquedStations(_ stations: [Station]) -> [Station] {
+    static func baseStations(
+        for mode: Mode,
+        favoriteStations: [Station],
+        recentStations: [Station],
+        tunedStations: [Station],
+        musicStations: [Station]
+    ) -> [Station] {
+        switch mode {
+        case .saved:
+            return favoriteStations
+        case .recent:
+            return recentStations
+        case .tuned:
+            return tunedStations
+        case .music:
+            return musicStations
+        }
+    }
+
+    static func tunedStations(
+        favoriteStations: [Station],
+        recentStations: [Station],
+        stationFeedback: [String: TuneAVStationFeedback]
+    ) -> [Station] {
+        uniquedStations(favoriteStations + recentStations).filter { station in
+            stationFeedback[station.id] != nil
+        }
+    }
+
+    static func musicStations(
+        discoveredTracks: [MacDiscoveredTrack],
+        favoriteStations: [Station],
+        recentStations: [Station]
+    ) -> [Station] {
+        uniquedStations(discoveredTracks.compactMap { discovery in
+            recentStations.first { $0.id == discovery.stationID }
+                ?? favoriteStations.first { $0.id == discovery.stationID }
+        })
+    }
+
+    private static func uniquedStations(_ stations: [Station]) -> [Station] {
         var seenIDs = Set<String>()
         return stations.filter { station in
             seenIDs.insert(station.id).inserted

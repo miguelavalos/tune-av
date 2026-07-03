@@ -237,12 +237,20 @@ separate development bundle identifier.
    and recommendations, but only Pro accounts should restore feedback across
    devices as a user-facing sync feature.
 
-8. Before attaching the uploaded build to App Store review, reconcile App Store
+8. When macOS changes touch Music, Library/Radios, filtering, sync projection,
+   or local history state, verify the list source for every mode before archive:
+   Music History must use local discovery history even when tuned songs are
+   empty; Music Top/Afinadas must use tuned discoveries; Songs/Artists must use
+   saved discoveries; Radios Saved, Recents, Afinadas, and Music must each use
+   their own station source. Keep focused unit coverage in
+   `TuneAVMacSmokeTests` alongside the full `vp run macos:tests` gate.
+
+9. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and
    Apple Silicon-only platform expectations with
    [app-store-review.md](app-store-review.md).
 
-9. Capture or upload App Store Connect macOS screenshots at an accepted size
+10. Capture or upload App Store Connect macOS screenshots at an accepted size
    (`1280 x 800`, `1440 x 900`, `2560 x 1600`, or `2880 x 1800`). Local scripted
    screenshot capture on macOS may require Screen Recording permission for the
    terminal or automation host.

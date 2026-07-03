@@ -445,13 +445,12 @@ struct MacMusicView: View {
     }
 
     private var filteredDiscoveries: [MacDiscoveredTrack] {
-        let baseDiscoveries: [MacDiscoveredTrack]
-        switch mode {
-        case .songs, .artists:
-            baseDiscoveries = savedDiscoveries
-        case .top, .history:
-            baseDiscoveries = topDiscoveries
-        }
+        let baseDiscoveries = Self.baseDiscoveries(
+            for: mode,
+            savedDiscoveries: savedDiscoveries,
+            visibleDiscoveries: visibleDiscoveries,
+            topDiscoveries: topDiscoveries
+        )
 
         let artistFilteredDiscoveries: [MacDiscoveredTrack]
         if let selectedArtistName {
@@ -712,6 +711,22 @@ struct MacMusicView: View {
 
     private func refreshCachedTopDiscoveries() {
         cachedTopDiscoveries = sortTunedDiscoveries(model.tunedTrackDiscoveries)
+    }
+
+    static func baseDiscoveries(
+        for mode: Mode,
+        savedDiscoveries: [MacDiscoveredTrack],
+        visibleDiscoveries: [MacDiscoveredTrack],
+        topDiscoveries: [MacDiscoveredTrack]
+    ) -> [MacDiscoveredTrack] {
+        switch mode {
+        case .songs, .artists:
+            return savedDiscoveries
+        case .top:
+            return topDiscoveries
+        case .history:
+            return visibleDiscoveries
+        }
     }
 
     private func sortTunedDiscoveries(_ discoveries: [MacDiscoveredTrack]) -> [MacDiscoveredTrack] {

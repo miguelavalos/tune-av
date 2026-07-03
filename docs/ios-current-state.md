@@ -172,6 +172,11 @@ Latest post-approval source checkpoint, 2026-07-03:
   loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed
   before committing this source checkpoint.
+- The current macOS source fixes the Music list-source regression: History uses
+  the full local discovery history, Top/Afinadas uses tuned discoveries, and
+  Songs/Artists use saved discoveries. The Radios screen was checked against
+  the same risk and now has regression coverage for Saved, Recents, Afinadas,
+  and Music station lists.
 
 Signed device installs should use:
 
