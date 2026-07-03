@@ -282,11 +282,11 @@ separate development bundle identifier.
    approved macOS maintenance baseline is `1.0.5 (47)` per 2026-07-03 operator
    report. iOS/iPadOS `1.0.6 (45)` was submitted to App Review on 2026-07-03
    per operator report and is pending approval. New macOS TestFlight uploads
-   must use a higher marketing version;
-   the checked-in next macOS candidate is `1.0.6 (49)` with the Music history
-   list-source fix, radio-library regression coverage, and contextual macOS Avi
-   navigation. The previous macOS `1.0.6 (48)` package was uploaded to App
-   Store Connect on 2026-07-03 before the contextual Avi navigation update.
+   must use a higher marketing version. macOS `1.0.6 (49)` was uploaded to App
+   Store Connect on 2026-07-03 and the package is processing, with the Music
+   history list-source fix, radio-library regression coverage, and contextual
+   macOS Avi navigation. The previous macOS `1.0.6 (48)` package was uploaded to
+   App Store Connect on 2026-07-03 before the contextual Avi navigation update.
 
 ## Pending Product API Transition Checks
 
