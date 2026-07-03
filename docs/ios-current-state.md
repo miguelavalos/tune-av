@@ -171,8 +171,9 @@ Latest post-approval source checkpoint, 2026-07-03:
 
 - App Store approved baselines are iPhone/iPad `1.0.5 (44)` and macOS
   `1.0.5 (47)` per operator report; approval evidence remains private.
-- The checked-in next iPhone/iPad candidate is `1.0.6 (45)` with expected
-  unavailable promo-code responses filtered out of Sentry capture.
+- iPhone/iPad `1.0.6 (45)` was uploaded to App Store Connect and submitted to
+  App Review on 2026-07-03 per operator report; approval is pending. It filters
+  expected unavailable promo-code responses out of Sentry capture.
 - The checked-in next macOS candidate is `1.0.6 (49)` with the Music history
   list-source fix, macOS radio-library regression coverage, and contextual Avi
   navigation. The App Store Connect `1.0.5` pre-release train is closed after

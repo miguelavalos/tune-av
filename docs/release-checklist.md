@@ -280,7 +280,9 @@ separate development bundle identifier.
    version was approved per 2026-07-02 operator report after validating the
    macOS TestFlight Pro purchase path with the production backend. The latest
    approved macOS maintenance baseline is `1.0.5 (47)` per 2026-07-03 operator
-   report. New macOS TestFlight uploads must use a higher marketing version;
+   report. iOS/iPadOS `1.0.6 (45)` was submitted to App Review on 2026-07-03
+   per operator report and is pending approval. New macOS TestFlight uploads
+   must use a higher marketing version;
    the checked-in next macOS candidate is `1.0.6 (49)` with the Music history
    list-source fix, radio-library regression coverage, and contextual macOS Avi
    navigation. The previous macOS `1.0.6 (48)` package was uploaded to App
