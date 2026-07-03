@@ -1135,6 +1135,7 @@
 "common.clear" = "Borrar";
 "common.ok" = "Aceptar";
 "mac.menu.navigation" = "Navegación";
+"mac.menu.avi" = "Avi";
 "mac.menu.playback" = "Reproducción";
 "mac.stations.empty" = "Aún no hay emisoras.";
 "mac.sync.error.accountUnavailable" = "Account AV no está configurado.";

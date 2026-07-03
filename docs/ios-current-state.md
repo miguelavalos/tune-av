@@ -22,7 +22,10 @@ Current app shape:
 - optional sign-in and premium UI surfaces when local configuration enables
   them;
 - Guest, signed-in Free, and signed-in Pro presentation states;
-- Home, Search, Avi, Library, Music, and Profile shell tabs;
+- iOS Home, Search, Avi, Library, Music, and Profile shell tabs;
+- macOS Home, Radios, Music, Search, Account, and Settings shell navigation,
+  with Avi exposed through contextual player surfaces and the native Avi menu
+  instead of a standalone sidebar destination;
 - music-first station discovery with an explicit all-radio mode;
 - contextual Avi surfaces in Home, player, music, limits, and Profile flows;
 - iPhone and iPad-compatible client presentation;
@@ -185,6 +188,10 @@ Latest post-approval source checkpoint, 2026-07-03:
   Songs/Artists use saved discoveries. The Radios screen was checked against
   the same risk and now has regression coverage for Saved, Recents, Afinadas,
   and Music station lists.
+- The current macOS source keeps Avi as a contextual assistant surface: Home
+  still exposes Avi Picks, the player exposes `More with Avi` as a popover, and
+  the native macOS Avi menu provides current song/radio actions without adding
+  a standalone Avi sidebar page.
 
 Signed device installs should use:
 

@@ -245,6 +245,11 @@ separate development bundle identifier.
    their own station source. Keep focused unit coverage in
    `TuneAVMacSmokeTests` alongside the full `vp run macos:tests` gate.
 
+   When macOS changes touch Avi navigation or player actions, keep Avi
+   contextual: the sidebar should not expose a standalone Avi destination, the
+   player `More with Avi` control should stay a popover anchored to the player,
+   and the native Avi menu should act on the current song or radio context.
+
 9. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and
    Apple Silicon-only platform expectations with

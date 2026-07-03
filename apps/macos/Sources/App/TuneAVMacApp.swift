@@ -1,4 +1,5 @@
 import AccountAV
+import AppKit
 import AVDiagnosticsFoundation
 import AVBrandFoundation
 import SwiftUI
@@ -51,11 +52,6 @@ struct TuneAVMacApp: App {
                 }
                 .keyboardShortcut("4", modifiers: [.command])
 
-                Button("Avi") {
-                    model.selectedSection = .avi
-                }
-                .keyboardShortcut("5", modifiers: [.command])
-
                 Divider()
 
                 Button(L10n.string("profile.settingsScreen.title")) {
@@ -66,7 +62,69 @@ struct TuneAVMacApp: App {
                 Button(L10n.string("profile.accountScreen.title")) {
                     model.selectedSection = .profile
                 }
-                .keyboardShortcut("6", modifiers: [.command])
+                .keyboardShortcut("5", modifiers: [.command])
+            }
+
+            CommandMenu(L10n.string("mac.menu.avi")) {
+                Button(model.currentDiscoveryIsSaved ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")) {
+                    _ = model.toggleCurrentDiscoverySaved()
+                }
+                .keyboardShortcut("s", modifiers: [.command])
+                .disabled(!model.hasCurrentDiscovery)
+
+                Button(L10n.string("player.discovery.noSave")) {
+                    model.setCurrentDiscoveryFeedback(.notForMe)
+                }
+                .disabled(!model.hasCurrentDiscovery)
+
+                Divider()
+
+                Button(L10n.string("shell.avi.actions.searchLyrics")) {
+                    openCurrentTrack(destination: .web, suffix: "lyrics")
+                }
+                .disabled(!model.hasCurrentDiscovery)
+
+                Button(L10n.string("shell.avi.actions.searchYouTube")) {
+                    openCurrentTrack(destination: .youtube)
+                }
+                .disabled(!model.hasCurrentDiscovery)
+
+                Button(L10n.string("shell.avi.actions.searchAppleMusic")) {
+                    openCurrentTrack(destination: .appleMusic)
+                }
+                .disabled(!model.hasCurrentDiscovery)
+
+                Button(L10n.string("shell.avi.actions.searchArtist")) {
+                    openURL(model.currentArtistSearchURL())
+                }
+                .disabled(!model.hasCurrentDiscovery)
+
+                Divider()
+
+                Button(currentStationIsSaved ? L10n.string("player.station.unsave") : L10n.string("player.station.save")) {
+                    toggleCurrentStationSaved()
+                }
+                .disabled(model.currentStation == nil)
+
+                Button(L10n.string("shell.avi.recommendation.details")) {
+                    openCurrentStationDetail(showsHistory: false)
+                }
+                .disabled(model.currentStation == nil)
+
+                Button(L10n.string("shell.avi.actions.history")) {
+                    openCurrentStationDetail(showsHistory: true)
+                }
+                .disabled(model.currentStation == nil)
+
+                Button(L10n.string("shell.avi.actions.openWebsite")) {
+                    openCurrentStationWebsiteOrSearch()
+                }
+                .disabled(model.currentStation == nil)
+
+                Button(L10n.string("shell.avi.actions.findRelatedRadios")) {
+                    openCurrentStationSearch(suffix: "similar radio stations")
+                }
+                .disabled(model.currentStation == nil)
             }
 
             CommandMenu(L10n.string("mac.menu.playback")) {
@@ -86,16 +144,47 @@ struct TuneAVMacApp: App {
                 }
                 .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
                 .disabled(!model.canCyclePlaybackQueue)
-
-                Divider()
-
-                Button(model.currentDiscoveryIsSaved ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")) {
-                    _ = model.toggleCurrentDiscoverySaved()
-                }
-                .keyboardShortcut("s", modifiers: [.command])
-                .disabled(!model.hasCurrentDiscovery)
             }
         }
+    }
+
+    private var currentStationIsSaved: Bool {
+        guard let station = model.currentStation else { return false }
+        return model.isFavorite(station)
+    }
+
+    private func openURL(_ url: URL?) {
+        guard let url else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openCurrentTrack(destination: TuneAVExternalSearchURL.Destination, suffix: String? = nil) {
+        openURL(model.currentTrackSearchURL(destination: destination, suffix: suffix))
+    }
+
+    private func toggleCurrentStationSaved() {
+        guard let station = model.currentStation else { return }
+        model.toggleFavorite(station)
+    }
+
+    private func openCurrentStationDetail(showsHistory: Bool) {
+        guard let station = model.currentStation else { return }
+        model.openStationDetail(station, queue: model.playbackQueue, showsHistory: showsHistory)
+    }
+
+    private func openCurrentStationWebsiteOrSearch() {
+        guard let station = model.currentStation else { return }
+        if let url = station.resolvedHomepageURL {
+            openURL(url)
+            return
+        }
+        openCurrentStationSearch()
+    }
+
+    private func openCurrentStationSearch(suffix: String? = nil) {
+        guard let station = model.currentStation else { return }
+        let query = TuneAVExternalSearchURL.query(parts: [station.name, station.country], suffix: suffix)
+        openURL(TuneAVExternalSearchURL.url(for: .web, query: query))
     }
 }
 

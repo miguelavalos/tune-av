@@ -5,14 +5,13 @@ enum MacRootSection: String, CaseIterable, Identifiable {
     case library
     case music
     case search
-    case avi
     case profile
     case settings
 
     var id: String { rawValue }
 
     static var primarySidebarSections: [MacRootSection] {
-        [.home, .library, .music, .search, .avi]
+        [.home, .library, .music, .search]
     }
 
     static var footerSidebarSections: [MacRootSection] {
@@ -29,8 +28,6 @@ enum MacRootSection: String, CaseIterable, Identifiable {
             L10n.string("tab.music")
         case .search:
             L10n.string("tab.search")
-        case .avi:
-            "Avi"
         case .profile:
             L10n.string("profile.accountScreen.title")
         case .settings:
@@ -48,8 +45,6 @@ enum MacRootSection: String, CaseIterable, Identifiable {
             "music.note.list"
         case .search:
             "magnifyingglass"
-        case .avi:
-            "sparkles"
         case .profile:
             "person.crop.circle.fill"
         case .settings:
@@ -144,8 +139,6 @@ struct MacRootView: View {
                 })
             case .search:
                 MacSearchView()
-            case .avi:
-                MacAviView()
             case .library:
                 MacLibraryView()
             case .music:
@@ -265,82 +258,5 @@ private struct MacSidebarButton: View {
             return AnyShapeStyle(Color.primary.opacity(0.06))
         }
         return AnyShapeStyle(Color.clear)
-    }
-}
-
-private struct MacAviView: View {
-    @EnvironmentObject private var model: TuneAVMacModel
-
-    private let columns = [
-        GridItem(.adaptive(minimum: 258, maximum: 340), spacing: 12, alignment: .top)
-    ]
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-
-                if model.allAviPickStations.isEmpty {
-                    ContentUnavailableView(
-                        L10n.string("mac.stations.empty"),
-                        systemImage: "sparkles",
-                        description: Text(L10n.string("shell.home.aviPicks.subtitle"))
-                    )
-                    .frame(maxWidth: .infinity, minHeight: 360)
-                } else {
-                    LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
-                        ForEach(model.allAviPickStations) { station in
-                            MacStationArtworkCard(station: station)
-                                .frame(height: 112)
-                                .environment(\.macStationPlaybackQueue, model.allAviPickStations)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 30)
-            .padding(.vertical, 26)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .accessibilityIdentifier("mac.avi")
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image("AviV2HeadNeutral")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 58, height: 58)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Avi")
-                    .font(.system(size: 30, weight: .black))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(L10n.string("shell.home.aviPicks.subtitle"))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 12)
-
-            if !model.allAviPickStations.isEmpty {
-                Button {
-                    model.openHomeStationList(
-                        id: "aviPicks",
-                        title: L10n.string("shell.home.aviPicks.title"),
-                        subtitle: L10n.string("shell.home.aviPicks.subtitle"),
-                        stations: model.allAviPickStations
-                    )
-                } label: {
-                    Label(L10n.string("common.seeAll"), systemImage: "arrow.right")
-                        .font(.system(size: 13, weight: .black))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(TuneAVTheme.highlight)
-            }
-        }
     }
 }

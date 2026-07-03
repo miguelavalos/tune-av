@@ -54,6 +54,10 @@ final class TuneAVMacSmokeTests: XCTestCase {
         )
     }
 
+    func testMacPrimarySidebarKeepsAviOutOfStandaloneNavigation() {
+        XCTAssertEqual(MacRootSection.primarySidebarSections, [.home, .library, .music, .search])
+    }
+
     func testMacRadioLibraryTunedStationsDeduplicateFavoritesAndRecentsWithFeedback() {
         let savedAndRecent = station(id: "same", name: "Same FM")
         let recentOnly = station(id: "recent-only", name: "Recent Only FM")

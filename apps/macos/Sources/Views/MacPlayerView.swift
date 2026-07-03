@@ -36,9 +36,7 @@ struct MacFullPlayerView: View {
 
                         MacStationFeedbackCard(
                             station: station,
-                            openMoreWithAvi: {
-                                isShowingMoreWithAvi = true
-                            },
+                            isMoreWithAviPresented: $isShowingMoreWithAvi,
                             showReaction: showAviReaction
                         )
 
@@ -62,10 +60,6 @@ struct MacFullPlayerView: View {
         }
         .frame(minWidth: showsCloseButton ? 520 : 360, minHeight: 620)
         .background(TuneAVTheme.shellBackground)
-        .sheet(isPresented: $isShowingMoreWithAvi) {
-            MacMoreWithAviSheet()
-                .environmentObject(model)
-        }
     }
 
     private func aviEmotion(for station: Station) -> TuneAVAviEmotion {
@@ -939,10 +933,11 @@ private struct MacPlaybackStatusView: View {
 }
 
 private struct MacPlayerActionsCard: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var model: TuneAVMacModel
     @State private var page = 0
+
+    let close: () -> Void
 
     var body: some View {
         AVAviActionPanel(
@@ -955,7 +950,7 @@ private struct MacPlayerActionsCard: View {
             closeAccessibilityLabel: L10n.string("shell.avi.actions.closeOptions"),
             previousPage: previousPage,
             nextPage: nextPage,
-            close: { dismiss() }
+            close: close
         ) {
             if showsSongActions {
                 AVAviCommandButton(
@@ -964,7 +959,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.lyrics"
                 ) {
                     openCurrentTrack(destination: .web, suffix: "lyrics")
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -973,7 +968,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.youtube"
                 ) {
                     openCurrentTrack(destination: .youtube)
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -982,7 +977,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.appleMusic"
                 ) {
                     openCurrentTrack(destination: .appleMusic)
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -992,7 +987,7 @@ private struct MacPlayerActionsCard: View {
                 ) {
                     guard let url = model.currentArtistSearchURL() else { return }
                     openURL(url)
-                    dismiss()
+                    close()
                 }
             } else {
                 AVAviCommandButton(
@@ -1001,7 +996,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.publicInfo"
                 ) {
                     openStationSearch()
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -1010,9 +1005,9 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.radioDetails"
                 ) {
                     if let station = model.currentStation {
-                        model.openStationDetail(station, queue: model.playbackQueue, showsHistory: true)
+                        model.openStationDetail(station, queue: model.playbackQueue, showsHistory: false)
                     }
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -1021,9 +1016,9 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.history"
                 ) {
                     if let station = model.currentStation {
-                        model.openStationDetail(station, queue: model.playbackQueue)
+                        model.openStationDetail(station, queue: model.playbackQueue, showsHistory: true)
                     }
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -1032,7 +1027,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.web"
                 ) {
                     openStationWebsiteOrSearch()
-                    dismiss()
+                    close()
                 }
 
                 AVAviCommandButton(
@@ -1041,7 +1036,7 @@ private struct MacPlayerActionsCard: View {
                     accessibilityIdentifier: "avi.actions.relatedRadios"
                 ) {
                     openStationSearch(suffix: "similar radio stations")
-                    dismiss()
+                    close()
                 }
             }
         } footer: {
@@ -1101,8 +1096,8 @@ private struct MacPlayerActionsCard: View {
     }
 }
 
-private struct MacMoreWithAviSheet: View {
-    @Environment(\.dismiss) private var dismiss
+private struct MacMoreWithAviPopover: View {
+    let close: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1119,9 +1114,7 @@ private struct MacMoreWithAviSheet: View {
 
                 Spacer()
 
-                Button {
-                    dismiss()
-                } label: {
+                Button(action: close) {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .black))
                         .frame(width: 30, height: 30)
@@ -1131,10 +1124,10 @@ private struct MacMoreWithAviSheet: View {
                 .help(L10n.string("shell.avi.plans.close"))
             }
 
-            MacPlayerActionsCard()
+            MacPlayerActionsCard(close: close)
         }
         .padding(20)
-        .frame(width: 420)
+        .frame(width: 380)
         .background(TuneAVTheme.shellBackground)
     }
 }
@@ -1330,7 +1323,7 @@ private struct MacStationFeedbackCard: View {
     @EnvironmentObject private var model: TuneAVMacModel
 
     let station: Station
-    let openMoreWithAvi: () -> Void
+    @Binding var isMoreWithAviPresented: Bool
     let showReaction: (TuneAVAviEmotion) -> Void
 
     var body: some View {
@@ -1371,7 +1364,9 @@ private struct MacStationFeedbackCard: View {
 
             Spacer(minLength: 8)
 
-            Button(action: openMoreWithAvi) {
+            Button {
+                isMoreWithAviPresented = true
+            } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 12, weight: .black))
@@ -1391,6 +1386,12 @@ private struct MacStationFeedbackCard: View {
                 }
             }
             .buttonStyle(.plain)
+            .popover(isPresented: $isMoreWithAviPresented, arrowEdge: .trailing) {
+                MacMoreWithAviPopover {
+                    isMoreWithAviPresented = false
+                }
+                .environmentObject(model)
+            }
             .accessibilityIdentifier("avi.actions.toggle")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
