@@ -173,7 +173,9 @@ Latest post-approval source checkpoint, 2026-07-03:
 - The checked-in next macOS candidate is `1.0.6 (48)` with the Music history
   list-source fix and macOS radio-library regression coverage. The App Store
   Connect `1.0.5` pre-release train is closed after approval, so new macOS
-  TestFlight uploads must use the next marketing version.
+  TestFlight uploads must use the next marketing version. The macOS `1.0.6 (48)`
+  package was uploaded to App Store Connect on 2026-07-03 and xcodebuild
+  reported that the uploaded package is processing.
 - The approved maintenance build includes the Account/Tune AV Pro access
   loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed
