@@ -1,5 +1,10 @@
 packages:
   - apps/*
+allowBuilds:
+  '@clerk/shared': true
+  esbuild: true
+  sharp: true
+  workerd: true
 minimumReleaseAgeExclude:
   - '@voidzero-dev/vite-plus-core@0.2.2'
   - '@voidzero-dev/vite-plus-darwin-arm64@0.2.2'
