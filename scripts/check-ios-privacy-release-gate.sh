@@ -128,6 +128,11 @@ check_url_reachable() {
 
 cd "$repo_root"
 
+if ! node "$repo_root/scripts/check-apple-privacy-manifest.mjs" \
+  "$repo_root/apps/ios/TuneAV/App/PrivacyInfo.xcprivacy"; then
+  fail "the iOS source privacy manifest is incomplete or invalid"
+fi
+
 "$repo_root/scripts/check-ios-runtime-config.sh" --env "$env_name" --configuration "$configuration"
 
 xcodebuild \
@@ -258,6 +263,13 @@ fi
 if [ -n "$archive_path" ] && [ -s "$privacy_manifest_file" ]; then
   if ! rg -qi "RevenueCat|Purchases" "$privacy_manifest_file"; then
     warn "archive manifest paths do not mention RevenueCat/Purchases; inspect archive package contents manually"
+  fi
+fi
+
+if [ -n "$archive_path" ] && [ -d "$archive_path" ]; then
+  ios_app_manifest="$archive_path/Products/Applications/TuneAV.app/PrivacyInfo.xcprivacy"
+  if ! node "$repo_root/scripts/check-apple-privacy-manifest.mjs" "$ios_app_manifest"; then
+    fail "the archived iOS app privacy manifest is missing, incomplete, or invalid"
   fi
 fi
 

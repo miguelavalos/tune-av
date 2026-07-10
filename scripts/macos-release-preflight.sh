@@ -15,6 +15,7 @@ Usage:
 Runs the local Tune AV macOS release preflight:
 - macOS release config hygiene;
 - macOS platform security gate;
+- macOS privacy manifest source and archive gates;
 - optional unsigned Release archive build;
 - archive bundle identifier validation.
 
@@ -62,6 +63,7 @@ run_step() {
 
 run_step "macOS release config hygiene" scripts/check-macos-release-config-hygiene.sh --env prod --configuration Release
 run_step "macOS platform security gate" node scripts/check-macos-platform-security.mjs
+run_step "macOS privacy manifest source gate" node scripts/check-macos-privacy-manifest.mjs
 
 if [ "$with_archive" -eq 1 ]; then
   cleanup_dir=""
@@ -114,6 +116,9 @@ if [ "$with_archive" -eq 1 ]; then
     echo "FAIL macOS archive must be Apple Silicon-only arm64, got: $app_archs" >&2
     exit 1
   fi
+
+  run_step "macOS privacy manifest archive gate" \
+    node scripts/check-macos-privacy-manifest.mjs --app "$archive_app_path"
 
   echo "Archive bundle identifier check passed."
   echo "Archive architecture check passed: $app_archs."

@@ -3,6 +3,177 @@ import XCTest
 
 @MainActor
 final class LibraryStoreTests: XCTestCase {
+    func testPendingLibraryOutboxKeepsLatestOperationPerUserResourceAndIdentity() {
+        let firstSave = pendingFavoriteOperation(
+            action: .upsert,
+            userID: "user-1",
+            stationID: "station-1",
+            updatedAt: "2026-07-10T10:00:00Z"
+        )
+        let deletion = pendingFavoriteOperation(
+            action: .delete,
+            userID: "user-1",
+            stationID: "station-1",
+            updatedAt: "2026-07-10T10:01:00Z"
+        )
+        let latestSave = pendingFavoriteOperation(
+            action: .upsert,
+            userID: "user-1",
+            stationID: "station-1",
+            updatedAt: "2026-07-10T10:02:00Z"
+        )
+        let otherUser = pendingFavoriteOperation(
+            action: .delete,
+            userID: "user-2",
+            stationID: "station-1",
+            updatedAt: "2026-07-10T10:03:00Z"
+        )
+        let otherResource = pendingDiscoveryOperation(
+            action: .upsert,
+            userID: "user-1",
+            discoveryID: "station-1",
+            updatedAt: "2026-07-10T10:04:00Z"
+        )
+
+        var operations = TuneAVPendingLibraryOutbox.upserting(firstSave, into: [:])
+        operations = TuneAVPendingLibraryOutbox.upserting(deletion, into: operations)
+        operations = TuneAVPendingLibraryOutbox.upserting(latestSave, into: operations)
+        operations = TuneAVPendingLibraryOutbox.upserting(otherUser, into: operations)
+        operations = TuneAVPendingLibraryOutbox.upserting(otherResource, into: operations)
+
+        XCTAssertEqual(operations.count, 3)
+        XCTAssertEqual(operations[latestSave.storageKey], latestSave)
+        XCTAssertEqual(operations[otherUser.storageKey], otherUser)
+        XCTAssertEqual(operations[otherResource.storageKey], otherResource)
+    }
+
+    func testPendingLibraryOperationPersistenceRestoresAndClearsOperations() throws {
+        let storageKey = "test.pendingLibraryOperations.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: storageKey))
+        defer { userDefaults.removePersistentDomain(forName: storageKey) }
+        let operation = pendingFavoriteOperation(
+            action: .delete,
+            userID: "user-1",
+            stationID: "station-1"
+        )
+
+        LibraryStorePendingLibraryOperationPersistence.save(
+            [operation.storageKey: operation],
+            storageKey: storageKey,
+            userDefaults: userDefaults
+        )
+
+        XCTAssertEqual(
+            LibraryStorePendingLibraryOperationPersistence.load(
+                storageKey: storageKey,
+                userDefaults: userDefaults
+            ),
+            [operation.storageKey: operation]
+        )
+
+        LibraryStorePendingLibraryOperationPersistence.save(
+            [:],
+            storageKey: storageKey,
+            userDefaults: userDefaults
+        )
+        XCTAssertNil(userDefaults.data(forKey: storageKey))
+    }
+
+    func testPendingLibraryOperationSurvivesFailureAndRelaunchWithoutCrossingAccounts() async throws {
+        let suiteName = "test.pendingLibraryOperations.relaunch.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer {
+            LibraryStoreTestURLProtocol.requestHandler = nil
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+        let currentUserOperation = pendingFavoriteOperation(
+            action: .upsert,
+            userID: "user-1",
+            stationID: "station-user-1"
+        )
+        let otherUserOperation = pendingFavoriteOperation(
+            action: .upsert,
+            userID: "user-2",
+            stationID: "station-user-2"
+        )
+        LibraryStorePendingLibraryOperationPersistence.save(
+            [
+                currentUserOperation.storageKey: currentUserOperation,
+                otherUserOperation.storageKey: otherUserOperation,
+            ],
+            storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
+            userDefaults: userDefaults
+        )
+
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 503,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data()
+            )
+        }
+        let failingClient = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession(),
+            retryPolicy: .disabled
+        )
+        let firstStore = LibraryStore(
+            container: PersistenceController(inMemory: true).container,
+            userDefaults: userDefaults
+        )
+        let failingService = TuneAVAppDataService(apiClient: failingClient)
+        firstStore.setBackendService(failingService, userID: "user-1")
+        firstStore.setAppDataService(failingService)
+
+        try await Task.sleep(for: .milliseconds(1_300))
+
+        XCTAssertEqual(
+            LibraryStorePendingLibraryOperationPersistence.load(
+                storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
+                userDefaults: userDefaults
+            ).count,
+            2
+        )
+        firstStore.setAppDataService(nil)
+        firstStore.setBackendService(nil)
+
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        let succeedingClient = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession(),
+            retryPolicy: .disabled
+        )
+        let relaunchedStore = LibraryStore(
+            container: PersistenceController(inMemory: true).container,
+            userDefaults: userDefaults
+        )
+        let succeedingService = TuneAVAppDataService(apiClient: succeedingClient)
+        relaunchedStore.setBackendService(succeedingService, userID: "user-1")
+        relaunchedStore.setAppDataService(succeedingService)
+
+        try await Task.sleep(for: .milliseconds(1_300))
+
+        let remainingOperations = LibraryStorePendingLibraryOperationPersistence.load(
+            storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
+            userDefaults: userDefaults
+        )
+        XCTAssertEqual(remainingOperations, [otherUserOperation.storageKey: otherUserOperation])
+        let payload = try XCTUnwrap(
+            recorder.lastPutPayload(for: "/v1/apps/tuneav/library/favorites/upsert")
+        )
+        let stationPayload = try XCTUnwrap(payload["station"] as? [String: Any])
+        XCTAssertEqual(stationPayload["id"] as? String, "station-user-1")
+    }
+
     func testListeningSessionBufferKeepsMostRecentSessionsWithinLimit() {
         let sessions = (0..<5).map { index in
             listeningSessionDraft(stationID: "station-\(index)")
@@ -764,7 +935,7 @@ final class LibraryStoreTests: XCTestCase {
         ])
     }
 
-    func testCloudPushIncludesMarkedInterestedAtWhenSavingExistingHistoryDiscovery() async throws {
+    func testSavedDiscoveryItemOperationIncludesMarkedInterestedAtWithoutSnapshotPush() async throws {
         let recorder = LibraryStoreAppDataRequestRecorder()
         LibraryStoreTestURLProtocol.requestHandler = { request in
             try recorder.response(for: request)
@@ -786,7 +957,9 @@ final class LibraryStoreTests: XCTestCase {
             streamURL: "https://example.com/cadena100.mp3"
         )
 
-        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+        let service = TuneAVAppDataService(apiClient: client)
+        store.setBackendService(service, userID: "user-1")
+        store.setAppDataService(service)
         store.recordDiscoveredTrack(
             title: "Lose control",
             artist: "Teddy Swims",
@@ -806,21 +979,18 @@ final class LibraryStoreTests: XCTestCase {
 
         try await Task.sleep(for: .milliseconds(2_800))
 
-        let pushedDiscoveries = try XCTUnwrap(recorder.lastPutEntries(for: "/v1/apps/tuneav/data/savedDiscoveries"))
-        let pushedDiscovery = try XCTUnwrap(pushedDiscoveries.first { entry in
-            entry["discoveryID"] as? String == "teddy-swims-lose-control-st-rb-960c37c6-0601-11e8-ae97-52543be04c81"
-        })
-        XCTAssertNotNil(pushedDiscovery["markedInterestedAt"])
-        XCTAssertEqual(pushedDiscovery["title"] as? String, "Lose control")
-        XCTAssertEqual(pushedDiscovery["artist"] as? String, "Teddy Swims")
-
         let operationPayload = try XCTUnwrap(recorder.lastPutPayload(for: "/v1/apps/tuneav/library/savedDiscoveries/upsert"))
         XCTAssertEqual(operationPayload["title"] as? String, "Lose control")
         XCTAssertEqual(operationPayload["artist"] as? String, "Teddy Swims")
         XCTAssertNotNil(operationPayload["markedInterestedAt"])
+        XCTAssertEqual(
+            recorder.putRequestCount(for: "/v1/apps/tuneav/library/savedDiscoveries/upsert"),
+            1
+        )
+        XCTAssertTrue(recorder.putPaths().filter { $0.contains("/v1/apps/tuneav/data/") }.isEmpty)
     }
 
-    func testToggleFavoriteSendsPerItemCloudOperation() async throws {
+    func testToggleFavoriteSendsOnlyPerItemCloudOperation() async throws {
         let recorder = LibraryStoreAppDataRequestRecorder()
         LibraryStoreTestURLProtocol.requestHandler = { request in
             try recorder.response(for: request)
@@ -842,16 +1012,23 @@ final class LibraryStoreTests: XCTestCase {
             streamURL: "https://example.com/radio-bob-rock.mp3"
         )
 
-        store.setAppDataService(TuneAVAppDataService(apiClient: client))
+        let service = TuneAVAppDataService(apiClient: client)
+        store.setBackendService(service, userID: "user-1")
+        store.setAppDataService(service)
         store.toggleFavorite(for: station)
 
-        try await Task.sleep(for: .milliseconds(400))
+        try await Task.sleep(for: .milliseconds(2_400))
 
         let operationPayload = try XCTUnwrap(recorder.lastPutPayload(for: "/v1/apps/tuneav/library/favorites/upsert"))
         let stationPayload = try XCTUnwrap(operationPayload["station"] as? [String: Any])
         XCTAssertEqual(stationPayload["id"] as? String, "st_radio_bob_rock")
         XCTAssertEqual(stationPayload["name"] as? String, "RADIO BOB! Rock")
         XCTAssertNotNil(operationPayload["createdAt"])
+        XCTAssertEqual(recorder.putPaths(), ["/v1/apps/tuneav/library/favorites/upsert"])
+        XCTAssertEqual(
+            recorder.putRequestCount(for: "/v1/apps/tuneav/library/favorites/upsert"),
+            1
+        )
     }
 
     func testClearFavoritesDefaultsToLocalOnlyWithoutCloudPush() async throws {
@@ -913,6 +1090,66 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(visible.map(\.title), ["Welcome To The Jungle"])
         XCTAssertEqual(AppShellMusicLibrary.savedDiscoveries([stationMetadata, realSong]).map(\.title), ["Welcome To The Jungle"])
+    }
+
+    private func pendingFavoriteOperation(
+        action: TuneAVPendingLibraryOperation.Action,
+        userID: String,
+        stationID: String,
+        updatedAt: String = "2026-07-10T10:00:00Z"
+    ) -> TuneAVPendingLibraryOperation {
+        let record = FavoriteStationRecord(
+            station: Station(
+                id: stationID,
+                name: "Station \(stationID)",
+                country: "Spain",
+                language: "Spanish",
+                tags: "pop",
+                streamURL: "https://example.com/\(stationID).mp3"
+            ).appDataRecord,
+            createdAt: updatedAt,
+            deletedAt: action == .delete ? updatedAt : nil
+        )
+        return TuneAVPendingLibraryOperation(
+            resource: .favorites,
+            action: action,
+            userID: userID,
+            identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(record.station),
+            favoriteRecord: record,
+            discoveryRecord: nil,
+            updatedAt: updatedAt
+        )
+    }
+
+    private func pendingDiscoveryOperation(
+        action: TuneAVPendingLibraryOperation.Action,
+        userID: String,
+        discoveryID: String,
+        updatedAt: String = "2026-07-10T10:00:00Z"
+    ) -> TuneAVPendingLibraryOperation {
+        let record = DiscoveredTrackRecord(
+            discoveryID: discoveryID,
+            trackKey: "song::artist",
+            title: "Song",
+            artist: "Artist",
+            stationID: "station-1",
+            stationName: "Station 1",
+            artworkURL: nil,
+            stationArtworkURL: nil,
+            playedAt: updatedAt,
+            markedInterestedAt: action == .upsert ? updatedAt : nil,
+            deletedAt: action == .delete ? updatedAt : nil,
+            updatedAt: updatedAt
+        )
+        return TuneAVPendingLibraryOperation(
+            resource: .savedDiscoveries,
+            action: action,
+            userID: userID,
+            identityKey: TuneAVLibrarySnapshotMerger.discoveryIdentityKey(record),
+            favoriteRecord: nil,
+            discoveryRecord: record,
+            updatedAt: updatedAt
+        )
     }
 
     private func enrichedStation(metadataUpdatedAt: String? = nil, artworkVersion: String = "v1") -> Station {
@@ -999,6 +1236,7 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var putEntriesByPath: [String: [[String: Any]]] = [:]
     private var putPayloadsByPath: [String: [String: Any]] = [:]
+    private var putRequestCountsByPath: [String: Int] = [:]
 
     func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
         let path = request.url?.path ?? ""
@@ -1010,6 +1248,7 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
             lock.lock()
             putPayloadsByPath[path] = payload
             putEntriesByPath[path] = entries
+            putRequestCountsByPath[path, default: 0] += 1
             lock.unlock()
         }
 
@@ -1056,6 +1295,12 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return putPayloadsByPath.keys.sorted()
+    }
+
+    func putRequestCount(for path: String) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return putRequestCountsByPath[path, default: 0]
     }
 }
 

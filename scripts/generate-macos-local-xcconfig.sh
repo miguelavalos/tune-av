@@ -209,6 +209,12 @@ if [ -z "$revenuecat_monthly_package_id" ]; then
   revenuecat_monthly_package_id='$rc_monthly'
 fi
 
+listening_analytics_uploads="${TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:-1}"
+if [ "$listening_analytics_uploads" != "0" ] && [ "$listening_analytics_uploads" != "1" ]; then
+  echo "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must be 0 or 1." >&2
+  exit 1
+fi
+
 if [ "$env_name" = "prod" ] && [[ "$publishable_key" != pk_live_* ]]; then
   echo "Production ACCOUNTAV_PUBLISHABLE_KEY must start with pk_live_." >&2
   exit 1
@@ -278,6 +284,7 @@ TUNEAV_REVENUECAT_PUBLIC_API_KEY = $revenuecat_public_api_key
 TUNEAV_REVENUECAT_OFFERING_ID = $revenuecat_offering_id
 TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID = $revenuecat_monthly_package_id
 TUNEAV_MACOS_SENTRY_DSN = $(escape_xcconfig_url "$tuneav_macos_sentry_dsn")
+TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS = $listening_analytics_uploads
 EOF
 )"
 

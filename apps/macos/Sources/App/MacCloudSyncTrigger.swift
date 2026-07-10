@@ -40,3 +40,30 @@ struct MacCloudSyncTrigger {
         return .schedule(delay)
     }
 }
+
+struct MacCloudSyncExecutionGate {
+    private(set) var isRunning = false
+    private(set) var hasPendingFollowUp = false
+
+    mutating func begin() -> Bool {
+        guard !isRunning else {
+            hasPendingFollowUp = true
+            return false
+        }
+
+        isRunning = true
+        hasPendingFollowUp = false
+        return true
+    }
+
+    mutating func consumePendingFollowUp() -> Bool {
+        guard hasPendingFollowUp else { return false }
+        hasPendingFollowUp = false
+        return true
+    }
+
+    mutating func finish() {
+        isRunning = false
+        hasPendingFollowUp = false
+    }
+}

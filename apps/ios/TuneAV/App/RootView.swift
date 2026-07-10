@@ -15,6 +15,7 @@ struct RootView: View {
     @State private var tuneBackendService: TuneAVAppDataService?
     @State private var tuneBackendServiceUserID: String?
     @State private var librarySyncTask: Task<Void, Never>?
+    @State private var lastAutomaticAccountRefreshRequestedAt: Date?
     @State private var lastAutomaticLibrarySyncRequestedAt: Date?
     @State private var realtimeSessionTask: Task<Void, Never>?
     @State private var activeRealtimeSessionOwnerUserID: String?
@@ -84,9 +85,9 @@ struct RootView: View {
                 automaticGuestOnboardingIsPresented = false
                 guard scenePhase == .active else { return }
                 if accessController.capabilities.canUseCloudSync {
-                    lastAutomaticLibrarySyncRequestedAt = .now
-                    scheduleLibrarySync(after: .milliseconds(150))
+                    scheduleSignedInLibrarySync(after: .milliseconds(150))
                 } else {
+                    lastAutomaticLibrarySyncRequestedAt = nil
                     Task {
                         await refreshTuneBackendService()
                     }
@@ -138,7 +139,7 @@ struct RootView: View {
         authenticationWasSkipped = false
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
-        await refreshLibrarySync()
+        lastAutomaticAccountRefreshRequestedAt = .now
         authPresentationState = .hidden
     }
 
@@ -147,7 +148,7 @@ struct RootView: View {
         authenticationWasSkipped = false
         automaticGuestOnboardingIsPresented = false
         await accessController.syncFromAccountProvider()
-        await refreshLibrarySync()
+        lastAutomaticAccountRefreshRequestedAt = .now
         authPresentationState = .hidden
     }
 
@@ -215,6 +216,7 @@ struct RootView: View {
         let syncPolicy = RootStartupSyncPolicy(
             accountIsAvailable: accessController.accountIsAvailable,
             isSignedIn: accessController.isSignedIn,
+            lastAccountRefreshRequestedAt: lastAutomaticAccountRefreshRequestedAt,
             lastLibrarySyncRequestedAt: lastAutomaticLibrarySyncRequestedAt,
             now: .now
         )
@@ -344,9 +346,11 @@ struct RootView: View {
     private func refreshActiveAccountStateIfNeeded() async {
         let syncPolicy = RootStartupSyncPolicy(
             accountIsAvailable: accessController.accountIsAvailable,
-            isSignedIn: accessController.isSignedIn
+            isSignedIn: accessController.isSignedIn,
+            lastAccountRefreshRequestedAt: lastAutomaticAccountRefreshRequestedAt
         )
         guard syncPolicy.shouldRefreshAccountState else { return }
+        lastAutomaticAccountRefreshRequestedAt = syncPolicy.now
         await measureStartupOperation("access_sync") {
             await accessController.syncFromAccountProvider()
         }
@@ -367,23 +371,26 @@ struct RootView: View {
 struct RootStartupSyncPolicy: Equatable {
     let accountIsAvailable: Bool
     let isSignedIn: Bool
+    let lastAccountRefreshRequestedAt: Date?
     let lastLibrarySyncRequestedAt: Date?
     let now: Date
 
     init(
         accountIsAvailable: Bool,
         isSignedIn: Bool,
+        lastAccountRefreshRequestedAt: Date? = nil,
         lastLibrarySyncRequestedAt: Date? = nil,
         now: Date = .now
     ) {
         self.accountIsAvailable = accountIsAvailable
         self.isSignedIn = isSignedIn
+        self.lastAccountRefreshRequestedAt = lastAccountRefreshRequestedAt
         self.lastLibrarySyncRequestedAt = lastLibrarySyncRequestedAt
         self.now = now
     }
 
     var shouldRefreshAccountState: Bool {
-        accountIsAvailable || isSignedIn
+        (accountIsAvailable || isSignedIn) && lastAccountRefreshRequestedAt == nil
     }
 
     var shouldScheduleLibrarySync: Bool {

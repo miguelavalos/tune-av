@@ -56,6 +56,8 @@ targets:
       - path: Sources
       - path: ../../shared/apple
       - path: Assets.xcassets
+      - path: Supporting/PrivacyInfo.xcprivacy
+        buildPhase: resources
       - path: ../ios/TuneAV/Resources/en.lproj/Localizable.strings
         buildPhase: resources
       - path: ../ios/TuneAV/Resources/es.lproj/Localizable.strings
@@ -93,7 +95,7 @@ targets:
       path: Supporting/Info.plist
       properties:
         CFBundleShortVersionString: "1.0.6"
-        CFBundleVersion: "48"
+        CFBundleVersion: "49"
         CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
@@ -116,6 +118,7 @@ targets:
         TUNEAV_REVENUECAT_PUBLIC_API_KEY: $(TUNEAV_REVENUECAT_PUBLIC_API_KEY)
         TUNEAV_REVENUECAT_OFFERING_ID: $(TUNEAV_REVENUECAT_OFFERING_ID)
         TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID: $(TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)
+        TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS: $(TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)
         SUPPORT_EMAIL_TO: $(SUPPORT_EMAIL_TO)
         LSApplicationCategoryType: public.app-category.music
         NSAppTransportSecurity:

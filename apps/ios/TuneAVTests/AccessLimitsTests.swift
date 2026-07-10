@@ -49,6 +49,19 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertFalse(policy.shouldScheduleLibrarySync)
     }
 
+    func testRootStartupSyncPolicyDoesNotRepeatAccountRefreshAfterForegrounding() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let policy = RootStartupSyncPolicy(
+            accountIsAvailable: true,
+            isSignedIn: true,
+            lastAccountRefreshRequestedAt: now.addingTimeInterval(-86_400),
+            now: now
+        )
+
+        XCTAssertFalse(policy.shouldRefreshAccountState)
+        XCTAssertTrue(policy.shouldScheduleLibrarySync)
+    }
+
     func testAccessPolicyMatchesSharedContract() throws {
         let contract = try loadAccessPolicyContract()
         let expectedModes: [(mode: AccessMode, planTier: String)] = [
@@ -652,6 +665,80 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(controller.planTier, .pro)
         XCTAssertTrue(controller.capabilities.canAccessPremiumFeatures)
         XCTAssertEqual(entitlementService.refreshCount, 2)
+    }
+
+    @MainActor
+    func testSameUserAccountRefreshPreservesProCapabilitiesUntilBackendResolutionCompletes() async {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+        let entitlementService = SuspendingEntitlementService(access: .signedInPro)
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: entitlementService,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+
+        entitlementService.suspendNextRefresh()
+        let refreshTask = Task { @MainActor in
+            await controller.syncFromAccountProvider()
+        }
+        await entitlementService.waitUntilRefreshIsSuspended()
+
+        XCTAssertTrue(controller.isRefreshingAccountAccess)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertTrue(controller.capabilities.canUseCloudSync)
+
+        entitlementService.resumeRefresh()
+        await refreshTask.value
+
+        XCTAssertFalse(controller.isRefreshingAccountAccess)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertTrue(controller.capabilities.canUseCloudSync)
+    }
+
+    @MainActor
+    func testAccountSwitchDropsPreviousProCapabilitiesUntilBackendResolutionCompletes() async {
+        let firstUser = AccountUser(id: "first-user", displayName: "First User", emailAddress: "first@example.com")
+        let secondUser = AccountUser(id: "second-user", displayName: "Second User", emailAddress: "second@example.com")
+        let accountService = MutableStubAccountService(user: firstUser)
+        let accountProfileResolver = MutableStubAccountProfileResolver(user: firstUser)
+        let entitlementService = SuspendingEntitlementService(
+            access: .signedInFree,
+            refreshedAccess: .signedInPro
+        )
+        let controller = AccessController(
+            accountService: accountService,
+            accountProfileResolver: accountProfileResolver,
+            entitlementService: entitlementService,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        XCTAssertEqual(controller.accountUser?.id, firstUser.id)
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+
+        accountService.setUser(secondUser)
+        accountProfileResolver.user = secondUser
+        entitlementService.suspendNextRefresh()
+        let refreshTask = Task { @MainActor in
+            await controller.syncFromAccountProvider()
+        }
+        await entitlementService.waitUntilRefreshIsSuspended()
+
+        XCTAssertEqual(controller.accountUser?.id, secondUser.id)
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        XCTAssertFalse(controller.capabilities.canUseCloudSync)
+
+        entitlementService.resumeRefresh()
+        await refreshTask.value
+
+        XCTAssertEqual(controller.accessMode, .signedInPro)
+        XCTAssertTrue(controller.capabilities.canUseCloudSync)
     }
 
     @MainActor
@@ -1267,6 +1354,19 @@ private struct StubAccountProfileResolver: AccountProfileResolving {
 }
 
 @MainActor
+private final class MutableStubAccountProfileResolver: AccountProfileResolving {
+    var user: AccountUser
+
+    init(user: AccountUser) {
+        self.user = user
+    }
+
+    func resolveCurrentAccountUser() async throws -> AccountUser {
+        user
+    }
+}
+
+@MainActor
 private struct StubEntitlementService: EntitlementService {
     let access: ResolvedAccess
 
@@ -1317,6 +1417,52 @@ private final class SequenceStubEntitlementService: EntitlementService {
 }
 
 @MainActor
+private final class SuspendingEntitlementService: EntitlementService {
+    private let access: ResolvedAccess
+    private let refreshedAccess: ResolvedAccess
+    private var shouldSuspendNextRefresh = false
+    private var refreshIsSuspended = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(access: ResolvedAccess, refreshedAccess: ResolvedAccess? = nil) {
+        self.access = access
+        self.refreshedAccess = refreshedAccess ?? access
+    }
+
+    func resolveAccess(for user: AccountUser?) -> ResolvedAccess {
+        user == nil ? .guest : access
+    }
+
+    func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
+        guard user != nil else { return .guest }
+        if shouldSuspendNextRefresh {
+            shouldSuspendNextRefresh = false
+            refreshIsSuspended = true
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+            }
+            refreshIsSuspended = false
+        }
+        return refreshedAccess
+    }
+
+    func suspendNextRefresh() {
+        shouldSuspendNextRefresh = true
+    }
+
+    func waitUntilRefreshIsSuspended() async {
+        while !refreshIsSuspended {
+            await Task.yield()
+        }
+    }
+
+    func resumeRefresh() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+@MainActor
 private final class MutableStubAccountService: AVAccountService {
     private var user: AccountUser?
     private let token: String?
@@ -1351,6 +1497,10 @@ private final class MutableStubAccountService: AVAccountService {
     func signOut() async throws {
         didSignOut = true
         user = nil
+    }
+
+    func setUser(_ user: AccountUser?) {
+        self.user = user
     }
 }
 

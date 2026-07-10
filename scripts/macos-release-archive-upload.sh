@@ -145,6 +145,10 @@ run_step "Repair Sentry.framework dSYM in final macOS archive"
 run_step "Verify final macOS release archive"
 "$repo_root/scripts/check-macos-archive-signing.sh" --archive "$archive_path"
 
+run_step "Verify final macOS privacy manifest"
+node "$repo_root/scripts/check-macos-privacy-manifest.mjs" \
+  --app "$archive_path/Products/Applications/Tune AV.app"
+
 if [ "$upload" -eq 1 ]; then
   run_step "Upload verified macOS archive to App Store Connect"
   xcodebuild -exportArchive \

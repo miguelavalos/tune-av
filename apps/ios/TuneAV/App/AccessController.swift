@@ -180,6 +180,7 @@ final class AccessController: ObservableObject {
     func syncFromAccountProvider() async {
         accessRefreshGeneration += 1
         let generation = accessRefreshGeneration
+        let previousAccountUserID = accountUser?.id
         isRefreshingAccountAccess = true
         defer {
             if generation == accessRefreshGeneration {
@@ -253,7 +254,9 @@ final class AccessController: ObservableObject {
             return
         }
 
-        resolveAccessState()
+        if accountUser?.id != previousAccountUserID {
+            resolveAccessState()
+        }
         let userForRefresh = accountUser
         let refreshedAccess = await entitlementService.refreshAccess(for: accountUser)
         guard generation == accessRefreshGeneration, accountUser == userForRefresh else { return }

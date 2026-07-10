@@ -51,7 +51,13 @@ Mandatory rules:
   evidence out of this public repo;
 - treat Account AV provider session identity as session metadata only; product
   ownership and backend-owned state must resolve through the internal Apps AV
-  account user contract.
+  account user contract;
+- keep Pro cloud sync calm: one automatic library sync at startup or after a
+  successful sign-in, explicit manual retry when requested, and no periodic or
+  repeated foreground sync;
+- preserve confirmed Pro capabilities while refreshing the same internal user,
+  but drop capabilities from the previous account before resolving a different
+  internal user.
 
 If the private repo is unavailable, stop and say that the authoritative runbook
 cannot be checked. Do not substitute a guessed local workflow.

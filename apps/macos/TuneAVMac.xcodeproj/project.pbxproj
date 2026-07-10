@@ -87,6 +87,7 @@
 		EF261B5CD47108127D07FEBF /* MacMusicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0E798D8F5D618F96F889892 /* MacMusicDetailView.swift */; };
 		EF844812578920F30B199CB0 /* MacProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB438CFA382907963DF4581A /* MacProfileView.swift */; };
 		F22878DB0E11D61B66DA371B /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 3677B9F9CF1163A7125BD32E /* RevenueCat */; };
+		F359B1BF0FAF5DBEBC532029 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 71BE3ED81CF6D4259BE5EFCB /* PrivacyInfo.xcprivacy */; };
 		F6F9DF373E5663A8F0139766 /* TuneAVCollectionRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F80E10DFA603B97291D332 /* TuneAVCollectionRules.swift */; };
 		F7D4B4F97C6747AA4C872DDD /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */; };
 		F89906131A45BA0D363FEE23 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 14DF88D4658B0B656313C686 /* Localizable.strings */; };
@@ -145,6 +146,7 @@
 		6BCB8CE6B56B9B0EB0CAA956 /* MacProPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacProPaywallView.swift; sourceTree = "<group>"; };
 		6BECFD55C06EFFE74CA3E47B /* TuneAVMacSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMacSmokeTests.swift; sourceTree = "<group>"; };
 		6EBD5A13ED5B6CA4B0D0C3AA /* TuneAVAppShellSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellSearch.swift; sourceTree = "<group>"; };
+		71BE3ED81CF6D4259BE5EFCB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		723D9E1AF58671365E8BAFDD /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
 		73B5FFF1029C0AAF57A57692 /* TuneAVCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCountry.swift; sourceTree = "<group>"; };
 		78C434A9C4A7C9D1C159BE9A /* TuneAVStationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationInfoViews.swift; sourceTree = "<group>"; };
@@ -284,6 +286,7 @@
 				253FB86E870320272B4A5339 /* fr.lproj */,
 				D62DC2BE8EF76B5FE6C81CAF /* Packages */,
 				22D56CF7BDDBFCFD83B6EFB9 /* Sources */,
+				FF5F7E8E9E1231FD03B3ECAA /* Supporting */,
 				F799F66CAAB9180D830B782A /* Tests */,
 				136D76E4AA0D7D097C00BC2A /* Products */,
 			);
@@ -417,6 +420,14 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		FF5F7E8E9E1231FD03B3ECAA /* Supporting */ = {
+			isa = PBXGroup;
+			children = (
+				71BE3ED81CF6D4259BE5EFCB /* PrivacyInfo.xcprivacy */,
+			);
+			path = Supporting;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -524,6 +535,7 @@
 				F89906131A45BA0D363FEE23 /* Localizable.strings in Resources */,
 				F9C0CB7F33A3B4E7B77784B3 /* Localizable.strings in Resources */,
 				082AFF6E2CE010AE3DED6F85 /* Localizable.strings in Resources */,
+				F359B1BF0FAF5DBEBC532029 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -96,6 +96,10 @@ notes or private release operations, never in this public repository.
 - Confirm the privacy policy and App Store privacy labels describe account-linked
   product interaction or preference data if saved radios, saved songs, or
   feedback are collected for sync, personalization, analytics, or support.
+- Confirm the macOS archive contains `Contents/Resources/PrivacyInfo.xcprivacy`
+  and that App Store Connect declares account-linked Product Interaction data
+  used for App Functionality and Analytics before enabling macOS listening
+  analytics in production.
 - Confirm diagnostics and support copy do not describe expected logout,
   restore, or local config availability windows as production errors.
 - Confirm support, privacy policy, terms, and account deletion links open from

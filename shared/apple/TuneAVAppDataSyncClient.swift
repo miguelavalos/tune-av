@@ -109,6 +109,7 @@ actor TuneAVAppDataSyncClient {
     private let encoder: JSONEncoder
     private var lastKnownRevisions: [String: Int] = [:]
     private var lastKnownEtags: [String: String] = [:]
+    private var lastPulledLibrarySnapshot: TuneAVLibrarySnapshot?
 
     init(
         appId: String = "tuneav",
@@ -134,6 +135,7 @@ actor TuneAVAppDataSyncClient {
             favorites: favorites.entries,
             savedDiscoveries: savedDiscoveries.entries
         )
+        lastPulledLibrarySnapshot = snapshot
         let updatedAt = [
             favorites.updatedAt,
             savedDiscoveries.updatedAt
@@ -150,15 +152,42 @@ actor TuneAVAppDataSyncClient {
         )
     }
 
-    func pushLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
-        try await pushResource(.favorites, entries: snapshot.favorites)
-        try await pushResource(.savedDiscoveries, entries: snapshot.savedDiscoveries)
+    func pushLibrary(_ inputSnapshot: TuneAVLibrarySnapshot) async throws {
+        let snapshot = TuneAVLibrarySnapshotMerger.canonicalized(inputSnapshot)
+        guard let baseline = lastPulledLibrarySnapshot else {
+            let favorites = try await pushResource(.favorites, entries: snapshot.favorites)
+            let savedDiscoveries = try await pushResource(.savedDiscoveries, entries: snapshot.savedDiscoveries)
+            lastPulledLibrarySnapshot = TuneAVLibrarySnapshotMerger.canonicalized(
+                TuneAVLibrarySnapshot(
+                    favorites: favorites,
+                    savedDiscoveries: savedDiscoveries
+                )
+            )
+            return
+        }
+
+        let canonicalBaseline = TuneAVLibrarySnapshotMerger.canonicalized(baseline)
+        var favorites = canonicalBaseline.favorites
+        var savedDiscoveries = canonicalBaseline.savedDiscoveries
+        if snapshot.favorites != canonicalBaseline.favorites {
+            favorites = try await pushResource(.favorites, entries: snapshot.favorites)
+        }
+        if snapshot.savedDiscoveries != canonicalBaseline.savedDiscoveries {
+            savedDiscoveries = try await pushResource(.savedDiscoveries, entries: snapshot.savedDiscoveries)
+        }
+        lastPulledLibrarySnapshot = TuneAVLibrarySnapshotMerger.canonicalized(
+            TuneAVLibrarySnapshot(
+                favorites: favorites,
+                savedDiscoveries: savedDiscoveries
+            )
+        )
     }
 
     func overwriteLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
         for resource in TuneAVAppDataResource.syncResources {
             forgetSyncVersion(for: resource)
         }
+        lastPulledLibrarySnapshot = nil
 
         try await pushLibrary(snapshot)
     }
@@ -214,7 +243,7 @@ actor TuneAVAppDataSyncClient {
     private func pushResource<Entry: Codable>(
         _ resource: TuneAVAppDataResource,
         entries: [Entry]
-    ) async throws {
+    ) async throws -> [Entry] {
         let envelope = TuneAVAppDataEnvelopePayload(
             appId: appId,
             resource: resource.rawValue,
@@ -239,6 +268,7 @@ actor TuneAVAppDataSyncClient {
             )
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
+            return response.data.entries
         } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
         }
@@ -258,6 +288,7 @@ actor TuneAVAppDataSyncClient {
             )
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
+            lastPulledLibrarySnapshot = nil
         } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
         }

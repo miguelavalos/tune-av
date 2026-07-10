@@ -301,6 +301,7 @@ final class RecentStation {
 @Model
 final class DiscoveredTrack {
     @Attribute(.unique) var discoveryID: String
+    var trackKey: String?
     var title: String
     var artist: String?
     var stationID: String
@@ -325,6 +326,7 @@ final class DiscoveredTrack {
         let normalizedArtist = TuneAVDiscoveredTrackSupport.normalizedValue(artist)
         let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(title) ?? title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.discoveryID = Self.makeID(title: normalizedTitle, artist: normalizedArtist, stationID: station.id)
+        self.trackKey = TuneAVDiscoveredTrackSupport.trackKey(title: normalizedTitle, artist: normalizedArtist, locale: L10n.locale)
         self.title = normalizedTitle
         self.artist = normalizedArtist
         self.stationID = station.id
@@ -340,6 +342,7 @@ final class DiscoveredTrack {
     init(record: DiscoveredTrackRecord) {
         let normalizedArtist = TuneAVDiscoveredTrackSupport.normalizedValue(record.artist)
         self.discoveryID = record.discoveryID
+        self.trackKey = record.trackKey
         self.title = TuneAVDiscoveredTrackSupport.normalizedValue(record.title) ?? record.title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.artist = normalizedArtist
         self.stationID = record.stationID
@@ -391,7 +394,7 @@ extension DiscoveredTrack: TuneAVMusicLibraryDiscovery {
     var appDataRecord: DiscoveredTrackRecord {
         DiscoveredTrackRecord(
             discoveryID: discoveryID,
-            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale),
+            trackKey: trackKey,
             title: title,
             artist: artist,
             stationID: stationID,

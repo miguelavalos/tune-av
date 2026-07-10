@@ -32,6 +32,27 @@ enum TuneAVDiscoveredTrackSupport {
             .joined(separator: "::")
     }
 
+    /// Matches the title/artist fallback used by the app-data backend when a
+    /// legacy discovery has no explicit trackKey. Keep this separate from the
+    /// client-generated key above: Foundation's case-insensitive folding can
+    /// expand characters such as eszett while JavaScript NFD normalization does
+    /// not, causing the client and backend to deduplicate different records.
+    static func appDataFallbackTrackKey(title: String, artist: String?) -> String {
+        [title, artist ?? ""]
+            .map { value in
+                let decomposed = value
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .decomposedStringWithCanonicalMapping
+                let withoutCombiningMarks = String(
+                    decomposed.unicodeScalars.filter { !CharacterSet.nonBaseCharacters.contains($0) }
+                )
+                return withoutCombiningMarks
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .lowercased()
+            }
+            .joined(separator: "::")
+    }
+
     static func artistDisplayText(_ artist: String?, liveFallback: String) -> String {
         normalizedValue(artist) ?? liveFallback
     }

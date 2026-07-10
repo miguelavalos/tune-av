@@ -89,6 +89,13 @@ enum TuneAVLibrarySnapshotMerger {
         )
     }
 
+    static func canonicalized(_ snapshot: TuneAVLibrarySnapshot) -> TuneAVLibrarySnapshot {
+        merged(
+            local: snapshot,
+            remote: TuneAVLibrarySnapshot(favorites: [], savedDiscoveries: [])
+        )
+    }
+
     private static func mergedFavorites(
         _ local: [FavoriteStationRecord],
         _ remote: [FavoriteStationRecord]
@@ -97,7 +104,12 @@ enum TuneAVLibrarySnapshotMerger {
             datedRecords(local + remote, date: favoriteUpdateDate),
             key: { stationIdentityKey($0.station) }
         )
-        .sorted { $0.date < $1.date }
+        .sorted {
+            if $0.date == $1.date {
+                return stationIdentityKey($0.record.station) < stationIdentityKey($1.record.station)
+            }
+            return $0.date > $1.date
+        }
         .map(\.record)
     }
 
@@ -109,7 +121,12 @@ enum TuneAVLibrarySnapshotMerger {
             datedRecords(local + remote, date: discoveryUpdateDate),
             key: { discoveryIdentityKey($0) }
         )
-        .sorted { $0.date > $1.date }
+        .sorted {
+            if $0.date == $1.date {
+                return discoveryIdentityKey($0.record) < discoveryIdentityKey($1.record)
+            }
+            return $0.date > $1.date
+        }
         .map(\.record)
     }
 
@@ -177,7 +194,7 @@ enum TuneAVLibrarySnapshotMerger {
             return "track:\(trackKey)"
         }
 
-        return "track:\(TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist))"
+        return "track:\(TuneAVDiscoveredTrackSupport.appDataFallbackTrackKey(title: discovery.title, artist: discovery.artist))"
     }
 
     private static func normalizedIdentityValue(_ value: String?) -> String? {
@@ -334,8 +351,7 @@ struct DiscoveredTrackRecord: Codable, Equatable {
             ?? deletedAt
             ?? TuneAVDateCoding.string(from: .distantPast)
 
-        let decodedTrackKey = try container.decodeIfPresent(String.self, forKey: .trackKey)
-        trackKey = decodedTrackKey ?? TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist)
+        trackKey = try container.decodeIfPresent(String.self, forKey: .trackKey)
         discoveryID = try container.decodeIfPresent(String.self, forKey: .discoveryID)
             ?? TuneAVDiscoveredTrackSupport.makeID(title: title, artist: artist, stationID: stationID)
     }
@@ -372,6 +388,39 @@ struct StationRecord: Codable, Equatable {
     let metadataUpdatedAt: String?
     let artwork: StationArtwork?
     let editorial: StationEditorial?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case country
+        case countryCode
+        case state
+        case language
+        case languageCodes
+        case tags
+        case streamURL
+        case faviconURL
+        case bitrate
+        case codec
+        case homepageURL
+        case votes
+        case clickCount
+        case clickTrend
+        case isHLS
+        case hasExtendedInfo
+        case hasSSLError
+        case lastCheckOKAt
+        case geoLatitude
+        case geoLongitude
+        case canonicalStationId
+        case category
+        case visibility
+        case qualityScore
+        case enrichmentStatus
+        case metadataUpdatedAt
+        case artwork
+        case editorial
+    }
 
     init(
         id: String,
@@ -435,6 +484,44 @@ struct StationRecord: Codable, Equatable {
         self.metadataUpdatedAt = metadataUpdatedAt
         self.artwork = artwork
         self.editorial = editorial
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+
+        // Cloud deletion tombstones intentionally keep only station identity.
+        // Preserve them during sync while remaining strict about id and name.
+        country = try container.decodeIfPresent(String.self, forKey: .country) ?? ""
+        language = try container.decodeIfPresent(String.self, forKey: .language) ?? ""
+        tags = try container.decodeIfPresent(String.self, forKey: .tags) ?? ""
+        streamURL = try container.decodeIfPresent(String.self, forKey: .streamURL) ?? ""
+
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+        state = try container.decodeIfPresent(String.self, forKey: .state)
+        languageCodes = try container.decodeIfPresent(String.self, forKey: .languageCodes)
+        faviconURL = try container.decodeIfPresent(String.self, forKey: .faviconURL)
+        bitrate = try container.decodeIfPresent(Int.self, forKey: .bitrate)
+        codec = try container.decodeIfPresent(String.self, forKey: .codec)
+        homepageURL = try container.decodeIfPresent(String.self, forKey: .homepageURL)
+        votes = try container.decodeIfPresent(Int.self, forKey: .votes)
+        clickCount = try container.decodeIfPresent(Int.self, forKey: .clickCount)
+        clickTrend = try container.decodeIfPresent(Int.self, forKey: .clickTrend)
+        isHLS = try container.decodeIfPresent(Bool.self, forKey: .isHLS)
+        hasExtendedInfo = try container.decodeIfPresent(Bool.self, forKey: .hasExtendedInfo)
+        hasSSLError = try container.decodeIfPresent(Bool.self, forKey: .hasSSLError)
+        lastCheckOKAt = try container.decodeIfPresent(String.self, forKey: .lastCheckOKAt)
+        geoLatitude = try container.decodeIfPresent(Double.self, forKey: .geoLatitude)
+        geoLongitude = try container.decodeIfPresent(Double.self, forKey: .geoLongitude)
+        canonicalStationId = try container.decodeIfPresent(String.self, forKey: .canonicalStationId)
+        category = try container.decodeIfPresent(String.self, forKey: .category)
+        visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
+        qualityScore = try container.decodeIfPresent(Int.self, forKey: .qualityScore)
+        enrichmentStatus = try container.decodeIfPresent(String.self, forKey: .enrichmentStatus)
+        metadataUpdatedAt = try container.decodeIfPresent(String.self, forKey: .metadataUpdatedAt)
+        artwork = try container.decodeIfPresent(StationArtwork.self, forKey: .artwork)
+        editorial = try container.decodeIfPresent(StationEditorial.self, forKey: .editorial)
     }
 }
 

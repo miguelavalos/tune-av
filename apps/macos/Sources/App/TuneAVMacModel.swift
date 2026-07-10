@@ -100,6 +100,19 @@ extension TuneAVPlaybackQueueSource {
             return L10n.string("shell.queue.short.radio")
         }
     }
+
+    var analyticsSource: String {
+        switch self {
+        case .searchResults:
+            return "search"
+        case .libraryFavorites, .libraryRecents:
+            return "library"
+        case .homeRecents, .homeFavorites, .homeDiscovery:
+            return "home"
+        case .singleStation:
+            return "player"
+        }
+    }
 }
 
 @MainActor
@@ -116,6 +129,19 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private static let maxLocalTrackFeedbackRecords = 300
+    private static let librarySyncRetryBaseDelay: TimeInterval = 5
+    private static let librarySyncRetryMaxDelay: TimeInterval = 120
+    private static let librarySyncRetryJitterFraction = 0.2
+    private static let feedbackSyncRetryBaseDelay: TimeInterval = 5
+    private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
+    private static let feedbackSyncRetryJitterFraction = 0.2
+    private static let listeningSessionMinimumDuration: TimeInterval = 10
+    private static let listeningSessionBatchSize = 5
+    private static let maxPendingListeningSessions = 50
+    private static let pendingListeningSessionMaxAge: TimeInterval = 60 * 60 * 24 * 7
+    private static let listeningSessionRetryBaseDelay: TimeInterval = 30
+    private static let listeningSessionRetryMaxDelay: TimeInterval = 300
+    private static let listeningSessionRetryJitterFraction = 0.2
 
     @Published var selectedSection: MacRootSection = .home
     @Published var stationDetailRoute: MacStationDetailRoute?
@@ -171,11 +197,13 @@ final class TuneAVMacModel: ObservableObject {
     private let stationService = TuneAVStationService()
     private let player = AVPlayer()
     private let trackArtworkService = TuneAVTrackArtworkService()
-    private let storage = TuneAVMacLibraryStorage()
+    private let storage: TuneAVMacLibraryStorage
     private let subscriptionPurchasing: MacTuneAVSubscriptionPurchasing
     private let promotionCodeRedeemer: TuneAVPromotionCodeRedeeming?
     private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
     private let sleepNanoseconds: (UInt64) async -> Void
+    private let listeningAnalyticsUploadEnabled: Bool
+    private let nowProvider: () -> Date
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private let systemNowPlayingController = MacNowPlayingSystemController()
@@ -195,16 +223,33 @@ final class TuneAVMacModel: ObservableObject {
     private var playbackNotificationObservers: [NSObjectProtocol] = []
     private var playbackFailuresInCurrentQueue = Set<String>()
     private var favoriteRecords: [FavoriteStationRecord] = []
+    private var pendingLibraryOperations: [String: TuneAVMacPendingLibraryOperation] = [:]
+    private var librarySyncTasks: [String: Task<Void, Never>] = [:]
+    private var librarySyncTokens: [String: UUID] = [:]
+    private var librarySyncRetryCounts: [String: Int] = [:]
+    private var activePendingLibraryOperationUserID: String?
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
+    private var pendingFeedbackUploads: [String: TuneAVMacPendingFeedbackUpload] = [:]
+    private var feedbackSyncTasks: [String: Task<Void, Never>] = [:]
+    private var feedbackSyncTokens: [String: UUID] = [:]
+    private var feedbackSyncRetryCounts: [String: Int] = [:]
+    private var activePendingFeedbackUploadUserID: String?
+    private var activeListeningSession: TuneAVMacActiveListeningSession?
+    private var pendingListeningSessions: [TuneAVMacListeningSessionDraft] = []
+    private var listeningSessionUploadTask: Task<Void, Never>?
+    private var listeningSessionFlushTask: Task<Void, Never>?
+    private var listeningSessionFlushToken: UUID?
+    private var listeningSessionUploadRetryCount = 0
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
+    private var cloudSyncExecutionGate = MacCloudSyncExecutionGate()
     private var pendingCloudSyncTask: Task<Void, Never>?
     private var proRealtimeSessionTask: Task<Void, Never>?
     private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
     private var accountAccessRefreshGeneration = 0
     private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
-    private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
+    private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
@@ -224,6 +269,9 @@ final class TuneAVMacModel: ObservableObject {
             3_000_000_000,
             5_000_000_000
         ],
+        storage: TuneAVMacLibraryStorage = TuneAVMacLibraryStorage(),
+        listeningAnalyticsUploadEnabled: Bool = TuneAVMacConfig.isListeningAnalyticsUploadEnabled,
+        nowProvider: @escaping () -> Date = { .now },
         sleepNanoseconds: @escaping (UInt64) async -> Void = { nanoseconds in
             try? await Task.sleep(nanoseconds: nanoseconds)
         }
@@ -234,13 +282,25 @@ final class TuneAVMacModel: ObservableObject {
                 : MacRevenueCatTuneAVSubscriptionPurchasing())
         self.promotionCodeRedeemer = promotionCodeRedeemer
         self.subscriptionReconciliationRetryDelaysNanoseconds = subscriptionReconciliationRetryDelaysNanoseconds
+        self.storage = storage
+        self.listeningAnalyticsUploadEnabled = listeningAnalyticsUploadEnabled
+        self.nowProvider = nowProvider
         self.sleepNanoseconds = sleepNanoseconds
         favoriteRecords = storage.loadFavoriteRecords()
         favoriteStations = favoriteRecords.map { Station(record: $0.station) }
+        pendingLibraryOperations = storage.loadPendingLibraryOperations()
         recentStations = storage.loadStations(forKey: TuneAVMacLibraryStorage.recentsKey)
         stationFeedback = storage.loadStationFeedback()
         trackFeedbackRecords = storage.loadTrackFeedbackRecords()
         trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
+        pendingFeedbackUploads = storage.loadPendingFeedbackUploads()
+        pendingListeningSessions = TuneAVMacListeningSessionOutbox.bounded(
+            storage.loadPendingListeningSessions(),
+            maxCount: Self.maxPendingListeningSessions,
+            maxAge: Self.pendingListeningSessionMaxAge,
+            now: nowProvider()
+        )
+        storage.savePendingListeningSessions(pendingListeningSessions)
         discoveredTracks = storage.loadDiscoveries()
         refreshTunedTrackDiscoveries()
         libraryTombstones = storage.loadTombstones()
@@ -256,6 +316,10 @@ final class TuneAVMacModel: ObservableObject {
     deinit {
         pendingCloudSyncTask?.cancel()
         proRealtimeSessionTask?.cancel()
+        librarySyncTasks.values.forEach { $0.cancel() }
+        feedbackSyncTasks.values.forEach { $0.cancel() }
+        listeningSessionUploadTask?.cancel()
+        listeningSessionFlushTask?.cancel()
         sleepTimerTask?.cancel()
         trackArtworkTask?.cancel()
     }
@@ -650,6 +714,10 @@ final class TuneAVMacModel: ObservableObject {
             return
         }
 
+        if let activeListeningSession, activeListeningSession.station.id != station.id {
+            flushActiveListeningSession(endedReason: "station_changed")
+        }
+
         if let queue {
             playbackQueue = sanitizedQueue(queue, currentStation: station)
             playbackQueueSource = source ?? playbackQueueSource
@@ -756,6 +824,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func stopPlayback() {
+        flushActiveListeningSession(endedReason: "stopped")
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentStation = nil
@@ -821,6 +890,25 @@ final class TuneAVMacModel: ObservableObject {
         setPlaybackStatus(player.timeControlStatus == .playing ? .playing : .loading)
     }
 
+    func prepareForTermination() {
+        flushActiveListeningSession(endedReason: "app_closed", schedulesUpload: false)
+        stopListeningSessionUploads()
+    }
+
+    func prepareForSystemSleep() {
+        flushActiveListeningSession(endedReason: "suspended", schedulesUpload: false)
+        stopListeningSessionUploads()
+    }
+
+    func resumeAfterSystemWake() {
+        resumeListeningSessionIfEligible()
+        schedulePendingListeningSessionUploadsForCurrentUser()
+    }
+
+    func flushPendingListeningSessions() {
+        flushListeningSessionUploads()
+    }
+
     func toggleFavorite(_ station: Station) {
         let identityKey = stationIdentityKey(for: station)
         let operation: (CloudLibraryItemOperation, FavoriteStationRecord)
@@ -841,7 +929,7 @@ final class TuneAVMacModel: ObservableObject {
         }
         storage.saveFavoriteRecords(favoriteRecords)
         markLocalLibraryUpdated(syncsCloud: true)
-        syncFavoriteLibraryOperation(operation.0, record: operation.1)
+        enqueueFavoriteLibraryOperation(operation.0, record: operation.1)
     }
 
     func isFavorite(_ station: Station) -> Bool {
@@ -853,7 +941,7 @@ final class TuneAVMacModel: ObservableObject {
         guard stationFeedback[station.id] != feedback else { return }
         stationFeedback[station.id] = feedback
         storage.saveStationFeedback(stationFeedback)
-        syncStationFeedbackToBackend(feedback, stationID: station.id)
+        enqueueStationFeedbackUpload(feedback, stationID: station.id)
     }
 
     func clearFavorites(propagatesToCloud: Bool = false) {
@@ -970,7 +1058,7 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
         if let operation {
-            syncSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
+            enqueueSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
         }
         return currentDiscoveryIsSaved
     }
@@ -1025,7 +1113,7 @@ final class TuneAVMacModel: ObservableObject {
         refreshTunedTrackDiscoveries()
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: false)
-        syncTrackFeedbackToBackend(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
+        enqueueTrackFeedbackUpload(feedback, title: normalizedTitle, artist: normalizedArtist, stationID: currentStation.id)
     }
 
     func setFeedback(_ feedback: TuneAVStationFeedback?, for discovery: MacDiscoveredTrack) {
@@ -1056,7 +1144,7 @@ final class TuneAVMacModel: ObservableObject {
             markLocalLibraryUpdated(syncsCloud: false)
         }
 
-        syncTrackFeedbackToBackend(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
+        enqueueTrackFeedbackUpload(feedback, title: discovery.title, artist: discovery.artist, stationID: discovery.stationID)
     }
 
     func clearDiscoveredTracks(propagatesToCloud: Bool = false) {
@@ -1092,7 +1180,7 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: true)
         if let operation {
-            syncSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
+            enqueueSavedDiscoveryLibraryOperation(operation.0, record: operation.1)
         }
     }
 
@@ -1124,7 +1212,7 @@ final class TuneAVMacModel: ObservableObject {
         storage.saveDiscoveries(discoveredTracks)
         markLocalLibraryUpdated(syncsCloud: wasSaved)
         if let operationRecord {
-            syncSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
+            enqueueSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
         }
     }
 
@@ -1175,8 +1263,12 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func signOut() async {
+        flushActiveListeningSession(endedReason: "signed_out")
         handleCloudSyncTriggerAction(cloudSyncTrigger.signOutStarted())
         stopProRealtimeSync()
+        stopPendingLibraryOperations()
+        stopPendingFeedbackUploads()
+        stopListeningSessionUploads()
         await performAccountAction {
             try await accountService.signOut()
         }
@@ -1306,6 +1398,16 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func synchronizeLibraryNow() async {
+        guard cloudSyncExecutionGate.begin() else { return }
+        defer { cloudSyncExecutionGate.finish() }
+
+        await performLibrarySyncNow()
+        if cloudSyncExecutionGate.consumePendingFollowUp() {
+            await performLibrarySyncNow()
+        }
+    }
+
+    private func performLibrarySyncNow() async {
         guard accountService.isAvailable else {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
@@ -1322,7 +1424,7 @@ final class TuneAVMacModel: ObservableObject {
 
             switch TuneAVLibrarySyncPlanner.decision(
                 localSnapshot: localSnapshot,
-                localUpdatedAt: localLibraryUpdatedAt,
+                localUpdatedAt: latestLocalLibraryMutationAt,
                 remoteDocument: remoteDocument
             ) {
             case .pullRemote(let remoteSnapshot):
@@ -1463,7 +1565,7 @@ final class TuneAVMacModel: ObservableObject {
         proRealtimeProjectionCancellable?.cancel()
         proRealtimeProjectionCancellable = nil
         activeProRealtimeSessionOwnerUserID = nil
-        lastAppliedProRealtimeProjectionUpdatedAt = nil
+        proRealtimeProjectionCursor.reset()
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
     }
@@ -1667,8 +1769,24 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func setPlaybackStatus(_ status: MacPlaybackStatus) {
+        let previousStatus = playbackStatus
         playbackStatus = status
         isPlaying = status == .playing
+
+        switch status {
+        case .playing:
+            resumeListeningSessionIfEligible()
+        case .paused:
+            if previousStatus != .paused {
+                flushActiveListeningSession(endedReason: "paused")
+            }
+        case .failed:
+            if previousStatus.failureMessage == nil {
+                flushActiveListeningSession(endedReason: "stream_error")
+            }
+        case .idle, .loading:
+            break
+        }
         updateSystemNowPlaying()
     }
 
@@ -1746,6 +1864,7 @@ final class TuneAVMacModel: ObservableObject {
 
         currentTrackTitle = TuneAVDisplayMetadata.normalized(resolvedTitle)
         currentTrackArtist = TuneAVDisplayMetadata.normalized(resolvedArtist)
+        rememberCurrentTrackForListeningSession()
         recordCurrentTrackDiscovery()
         resolveCurrentTrackArtwork()
         updateSystemNowPlaying()
@@ -2004,6 +2123,11 @@ final class TuneAVMacModel: ObservableObject {
             return
         }
 
+        if accessMode == .signedInPro, resolvedAccess.accessMode != .signedInPro {
+            flushActiveListeningSession(endedReason: "access_changed", schedulesUpload: false)
+            stopListeningSessionUploads()
+        }
+
         planTier = resolvedAccess.planTier
         accessMode = resolvedAccess.accessMode
         capabilities = resolvedAccess.capabilities
@@ -2014,8 +2138,18 @@ final class TuneAVMacModel: ObservableObject {
         if resolvedAccess.accessMode == .signedInPro {
             clearSubscriptionReconciliationState()
             startProRealtimeSyncIfNeeded()
+            schedulePendingLibraryOperationsForCurrentUser()
+            resumeListeningSessionIfEligible()
+            schedulePendingListeningSessionUploadsForCurrentUser()
         } else {
             stopProRealtimeSync()
+            stopPendingLibraryOperations()
+            stopListeningSessionUploads()
+        }
+        if resolvedAccess.accessMode != .guest {
+            schedulePendingFeedbackUploadsForCurrentUser()
+        } else {
+            stopPendingFeedbackUploads()
         }
     }
 
@@ -2083,103 +2217,519 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func syncFavoriteLibraryOperation(
+    private func enqueueFavoriteLibraryOperation(
         _ operation: CloudLibraryItemOperation,
         record: FavoriteStationRecord
     ) {
-        guard hasProCloudSyncAccess, accountService.isAvailable else { return }
-        Task { [weak self] in
-            do {
-                guard let self else { return }
-                let client = self.makeAppDataSyncClient()
-                switch operation {
-                case .upsert:
-                    try await client.upsertFavorite(record)
-                case .delete:
-                    try await client.deleteFavorite(record)
-                }
-                self.lastCloudSyncAt = .now
-            } catch {
-                TuneAVMacDiagnostics.capture(
-                    error,
-                    feature: "tune.mac.sync",
-                    operation: "favorite_item",
-                    step: "upload"
-                )
-            }
-        }
+        guard hasProCloudSyncAccess, let userID = accountUser?.id else { return }
+        let pendingOperation = TuneAVMacPendingLibraryOperation(
+            resource: .favorites,
+            action: operation == .upsert ? .upsert : .delete,
+            userID: userID,
+            identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(record.station),
+            favoriteRecord: record,
+            discoveryRecord: nil,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        rememberPendingLibraryOperation(pendingOperation)
+        schedulePendingLibraryOperationsForCurrentUser()
     }
 
-    private func syncSavedDiscoveryLibraryOperation(
+    private func enqueueSavedDiscoveryLibraryOperation(
         _ operation: CloudLibraryItemOperation,
         record: DiscoveredTrackRecord
     ) {
-        guard hasProCloudSyncAccess, accountService.isAvailable else { return }
-        Task { [weak self] in
+        guard hasProCloudSyncAccess, let userID = accountUser?.id else { return }
+        let pendingOperation = TuneAVMacPendingLibraryOperation(
+            resource: .savedDiscoveries,
+            action: operation == .upsert ? .upsert : .delete,
+            userID: userID,
+            identityKey: TuneAVLibrarySnapshotMerger.discoveryIdentityKey(record),
+            favoriteRecord: nil,
+            discoveryRecord: record,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        rememberPendingLibraryOperation(pendingOperation)
+        schedulePendingLibraryOperationsForCurrentUser()
+    }
+
+    private func rememberPendingLibraryOperation(_ operation: TuneAVMacPendingLibraryOperation) {
+        let key = operation.storageKey
+        librarySyncTasks[key]?.cancel()
+        librarySyncTasks[key] = nil
+        librarySyncTokens[key] = nil
+        librarySyncRetryCounts[key] = nil
+        pendingLibraryOperations = TuneAVMacPendingLibraryOutbox.upserting(operation, into: pendingLibraryOperations)
+        storage.savePendingLibraryOperations(pendingLibraryOperations)
+    }
+
+    private func schedulePendingLibraryOperationsForCurrentUser() {
+        guard hasProCloudSyncAccess,
+              accountService.isAvailable,
+              let userID = accountUser?.id
+        else { return }
+
+        if activePendingLibraryOperationUserID != userID {
+            librarySyncTasks.values.forEach { $0.cancel() }
+            librarySyncTasks.removeAll()
+            librarySyncTokens.removeAll()
+            librarySyncRetryCounts.removeAll()
+            activePendingLibraryOperationUserID = userID
+        }
+
+        for operation in pendingLibraryOperations.values where operation.userID == userID {
+            guard librarySyncTasks[operation.storageKey] == nil else { continue }
+            startPendingLibraryOperation(operation, retryCount: 0)
+        }
+    }
+
+    private func startPendingLibraryOperation(
+        _ operation: TuneAVMacPendingLibraryOperation,
+        retryCount: Int
+    ) {
+        let key = operation.storageKey
+        let token = UUID()
+        let delay = retryCount == 0
+            ? 1
+            : TuneAVMacSyncRetryPolicy.delay(
+                retryCount: retryCount - 1,
+                baseDelay: Self.librarySyncRetryBaseDelay,
+                maxDelay: Self.librarySyncRetryMaxDelay,
+                jitterFraction: Self.librarySyncRetryJitterFraction
+            )
+
+        librarySyncTokens[key] = token
+        librarySyncRetryCounts[key] = retryCount
+        librarySyncTasks[key] = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
+                guard let self,
+                      !Task.isCancelled,
+                      self.accountUser?.id == operation.userID,
+                      self.pendingLibraryOperations[key]?.id == operation.id,
+                      self.librarySyncTokens[key] == token
+                else { return }
+                try await self.sendPendingLibraryOperation(operation)
+            } catch is CancellationError {
+                return
+            } catch {
+                guard let self,
+                      self.accountUser?.id == operation.userID,
+                      self.pendingLibraryOperations[key]?.id == operation.id,
+                      self.librarySyncTokens[key] == token
+                else { return }
+                if retryCount == 0 {
+                    TuneAVMacDiagnostics.capture(
+                        error,
+                        feature: "tune.mac.sync",
+                        operation: operation.resource == .favorites ? "favorite_item" : "saved_discovery_item",
+                        step: "upload_retry_scheduled"
+                    )
+                }
+                self.startPendingLibraryOperation(operation, retryCount: retryCount + 1)
+                return
+            }
+
+            guard let self,
+                  self.pendingLibraryOperations[key]?.id == operation.id,
+                  self.librarySyncTokens[key] == token
+            else { return }
+            self.pendingLibraryOperations[key] = nil
+            self.librarySyncTasks[key] = nil
+            self.librarySyncTokens[key] = nil
+            self.librarySyncRetryCounts[key] = nil
+            self.storage.savePendingLibraryOperations(self.pendingLibraryOperations)
+            self.lastCloudSyncAt = .now
+        }
+    }
+
+    private func sendPendingLibraryOperation(_ operation: TuneAVMacPendingLibraryOperation) async throws {
+        let client = makeAppDataSyncClient()
+        switch (operation.resource, operation.action) {
+        case (.favorites, .upsert):
+            guard let record = operation.favoriteRecord else {
+                throw TuneAVMacPendingLibraryOperationError.invalidPayload
+            }
+            try await client.upsertFavorite(record)
+        case (.favorites, .delete):
+            guard let record = operation.favoriteRecord else {
+                throw TuneAVMacPendingLibraryOperationError.invalidPayload
+            }
+            try await client.deleteFavorite(record)
+        case (.savedDiscoveries, .upsert):
+            guard let record = operation.discoveryRecord else {
+                throw TuneAVMacPendingLibraryOperationError.invalidPayload
+            }
+            try await client.upsertSavedDiscovery(record)
+        case (.savedDiscoveries, .delete):
+            guard let record = operation.discoveryRecord else {
+                throw TuneAVMacPendingLibraryOperationError.invalidPayload
+            }
+            try await client.deleteSavedDiscovery(record)
+        }
+    }
+
+    private func stopPendingLibraryOperations() {
+        librarySyncTasks.values.forEach { $0.cancel() }
+        librarySyncTasks.removeAll()
+        librarySyncTokens.removeAll()
+        librarySyncRetryCounts.removeAll()
+        activePendingLibraryOperationUserID = nil
+    }
+
+    private func resumeListeningSessionIfEligible() {
+        guard listeningAnalyticsUploadEnabled,
+              accessMode == .signedInPro,
+              let userID = accountUser?.id,
+              let currentStation,
+              isPlaying
+        else { return }
+
+        if let activeListeningSession, activeListeningSession.userID != userID {
+            flushActiveListeningSession(endedReason: "account_changed", schedulesUpload: false)
+        }
+
+        TuneAVMacListeningSessionCoordinator.resumeIfNeeded(
+            session: &activeListeningSession,
+            station: currentStation,
+            source: playbackQueueSource.analyticsSource,
+            userID: userID,
+            now: nowProvider()
+        )
+    }
+
+    private func rememberCurrentTrackForListeningSession() {
+        guard let title = TuneAVDisplayMetadata.plausibleTitle(currentTrackTitle, stationName: currentStation?.name) else {
+            return
+        }
+        let artist = TuneAVDisplayMetadata.plausibleArtist(currentTrackArtist, stationName: currentStation?.name)
+        TuneAVMacListeningSessionCoordinator.rememberTrack(
+            session: &activeListeningSession,
+            title: title,
+            artist: artist
+        )
+    }
+
+    private func flushActiveListeningSession(endedReason: String, schedulesUpload: Bool = true) {
+        guard listeningAnalyticsUploadEnabled,
+              let session = TuneAVMacListeningSessionCoordinator.flush(session: &activeListeningSession),
+              let draft = TuneAVMacListeningSessionDraft(
+                session: session,
+                endedAt: nowProvider(),
+                endedReason: endedReason,
+                minimumDuration: Self.listeningSessionMinimumDuration
+              )
+        else { return }
+
+        pendingListeningSessions = TuneAVMacListeningSessionOutbox.appending(
+            draft,
+            to: pendingListeningSessions,
+            maxCount: Self.maxPendingListeningSessions,
+            maxAge: Self.pendingListeningSessionMaxAge,
+            now: nowProvider()
+        )
+        storage.savePendingListeningSessions(pendingListeningSessions)
+
+        guard schedulesUpload else { return }
+        if uploadablePendingListeningSessions().count >= Self.listeningSessionBatchSize {
+            flushListeningSessionUploads()
+        } else {
+            schedulePendingListeningSessionUploadsForCurrentUser()
+        }
+    }
+
+    private func uploadablePendingListeningSessions() -> [TuneAVMacListeningSessionDraft] {
+        guard let userID = accountUser?.id else { return [] }
+        return TuneAVMacListeningSessionOutbox.sessions(
+            in: pendingListeningSessions,
+            forUserID: userID,
+            limit: Self.listeningSessionBatchSize
+        )
+    }
+
+    private func schedulePendingListeningSessionUploadsForCurrentUser() {
+        prunePendingListeningSessions()
+        let client = makeTuneAPIClient()
+        guard TuneAVMacListeningAnalyticsEligibility.canUpload(
+            isEnabled: listeningAnalyticsUploadEnabled,
+            accessMode: accessMode,
+            userID: accountUser?.id,
+            accountServiceAvailable: accountService.isAvailable,
+            apiConfigured: client.isConfigured
+        ), !uploadablePendingListeningSessions().isEmpty,
+           listeningSessionUploadTask == nil,
+           listeningSessionFlushTask == nil
+        else { return }
+
+        let delay = TuneAVMacSyncRetryPolicy.delay(
+            retryCount: listeningSessionUploadRetryCount,
+            baseDelay: Self.listeningSessionRetryBaseDelay,
+            maxDelay: Self.listeningSessionRetryMaxDelay,
+            jitterFraction: Self.listeningSessionRetryJitterFraction
+        )
+        listeningSessionUploadTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.listeningSessionUploadTask = nil
+            self.flushListeningSessionUploads()
+        }
+    }
+
+    private func flushListeningSessionUploads() {
+        listeningSessionUploadTask?.cancel()
+        listeningSessionUploadTask = nil
+        guard listeningSessionFlushTask == nil else { return }
+
+        prunePendingListeningSessions()
+
+        let client = makeTuneAPIClient()
+        guard TuneAVMacListeningAnalyticsEligibility.canUpload(
+            isEnabled: listeningAnalyticsUploadEnabled,
+            accessMode: accessMode,
+            userID: accountUser?.id,
+            accountServiceAvailable: accountService.isAvailable,
+            apiConfigured: client.isConfigured
+        ) else { return }
+
+        let sessions = uploadablePendingListeningSessions()
+        guard !sessions.isEmpty else { return }
+        let userID = accountUser?.id
+        let sessionIDs = Set(sessions.map(\.id))
+        let flushToken = UUID()
+        listeningSessionFlushToken = flushToken
+
+        listeningSessionFlushTask = Task { @MainActor [weak self] in
             do {
                 guard let self else { return }
-                let client = self.makeAppDataSyncClient()
-                switch operation {
-                case .upsert:
-                    try await client.upsertSavedDiscovery(record)
-                case .delete:
-                    try await client.deleteSavedDiscovery(record)
+                let token = try await self.accountService.getToken()
+                guard let token, !token.isEmpty,
+                      self.accountUser?.id == userID,
+                      self.listeningSessionFlushToken == flushToken
+                else {
+                    throw TuneAVAccessClientError.missingToken
                 }
-                self.lastCloudSyncAt = .now
+                try await self.sendListeningSessions(sessions, tokenOverride: token)
+                guard self.accountUser?.id == userID,
+                      self.listeningSessionFlushToken == flushToken else { return }
+                self.pendingListeningSessions.removeAll { sessionIDs.contains($0.id) }
+                self.storage.savePendingListeningSessions(self.pendingListeningSessions)
+                self.listeningSessionUploadRetryCount = 0
+                self.listeningSessionFlushTask = nil
+                self.listeningSessionFlushToken = nil
+                if !self.uploadablePendingListeningSessions().isEmpty {
+                    self.flushListeningSessionUploads()
+                }
+            } catch is CancellationError {
+                return
             } catch {
-                TuneAVMacDiagnostics.capture(
-                    error,
-                    feature: "tune.mac.sync",
-                    operation: "saved_discovery_item",
-                    step: "upload"
-                )
-            }
-        }
-    }
-
-    private func syncStationFeedbackToBackend(_ feedback: TuneAVStationFeedback?, stationID: String) {
-        guard accessMode != .guest, accountService.isAvailable else { return }
-        Task { [weak self] in
-            do {
-                try await self?.sendFeedbackRequest(
-                    path: "/v1/tune/feedback/stations/\(Self.encodedPathSegment(stationID))",
-                    payload: TuneAVMacFeedbackRequest(deviceId: "tuneav-mac", feedback: feedback?.backendValue)
-                )
-            } catch {
-                TuneAVMacDiagnostics.capture(
-                    error,
-                    feature: "tune.mac.sync",
-                    operation: "station_feedback",
-                    step: "upload"
-                )
-            }
-        }
-    }
-
-    private func syncTrackFeedbackToBackend(_ feedback: TuneAVStationFeedback?, title: String, artist: String?, stationID: String?) {
-        guard accessMode != .guest, accountService.isAvailable else { return }
-        let key = Self.trackFeedbackKey(title: title, artist: artist)
-        Task { [weak self] in
-            do {
-                try await self?.sendFeedbackRequest(
-                    path: "/v1/tune/feedback/tracks/\(Self.encodedPathSegment(key))",
-                    payload: TuneAVMacTrackFeedbackRequest(
-                        deviceId: "tuneav-mac",
-                        title: title,
-                        artist: artist,
-                        stationId: stationID,
-                        feedback: feedback?.backendValue
+                guard let self,
+                      !Task.isCancelled,
+                      self.listeningSessionFlushToken == flushToken else { return }
+                self.listeningSessionFlushTask = nil
+                self.listeningSessionFlushToken = nil
+                self.listeningSessionUploadRetryCount += 1
+                if self.listeningSessionUploadRetryCount == 1 {
+                    TuneAVMacDiagnostics.capture(
+                        error,
+                        feature: "tune.mac.analytics",
+                        operation: "listening_sessions",
+                        step: "upload_retry_scheduled"
                     )
-                )
-            } catch {
-                TuneAVMacDiagnostics.capture(
-                    error,
-                    feature: "tune.mac.sync",
-                    operation: "track_feedback",
-                    step: "upload"
-                )
+                }
+                self.schedulePendingListeningSessionUploadsForCurrentUser()
             }
         }
+    }
+
+    private func sendListeningSessions(
+        _ sessions: [TuneAVMacListeningSessionDraft],
+        tokenOverride: String
+    ) async throws {
+        let payload = TuneAVMacListeningSessionsRequest(deviceId: "tuneav-mac", sessions: sessions.map(\.apiInput))
+        _ = try await makeTuneAPIClient(tokenOverride: tokenOverride).requestData(
+            path: "/v1/tune/analytics/listening-sessions",
+            method: "POST",
+            body: try JSONEncoder().encode(payload),
+            headers: ["Idempotency-Key": "tuneav-mac-listening-\(sessions.map(\.id).joined(separator: ":"))"]
+        )
+    }
+
+    private func stopListeningSessionUploads() {
+        listeningSessionUploadTask?.cancel()
+        listeningSessionUploadTask = nil
+        listeningSessionFlushTask?.cancel()
+        listeningSessionFlushTask = nil
+        listeningSessionFlushToken = nil
+        listeningSessionUploadRetryCount = 0
+    }
+
+    private func prunePendingListeningSessions() {
+        let bounded = TuneAVMacListeningSessionOutbox.bounded(
+            pendingListeningSessions,
+            maxCount: Self.maxPendingListeningSessions,
+            maxAge: Self.pendingListeningSessionMaxAge,
+            now: nowProvider()
+        )
+        guard bounded != pendingListeningSessions else { return }
+        pendingListeningSessions = bounded
+        storage.savePendingListeningSessions(pendingListeningSessions)
+    }
+
+    private func enqueueStationFeedbackUpload(_ feedback: TuneAVStationFeedback?, stationID: String) {
+        guard accessMode != .guest, let userID = accountUser?.id else { return }
+        let upload = TuneAVMacPendingFeedbackUpload(
+            kind: .station,
+            userID: userID,
+            identityKey: stationID,
+            feedback: feedback,
+            stationID: stationID,
+            title: nil,
+            artist: nil,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        rememberPendingFeedbackUpload(upload)
+        schedulePendingFeedbackUploadsForCurrentUser()
+    }
+
+    private func enqueueTrackFeedbackUpload(
+        _ feedback: TuneAVStationFeedback?,
+        title: String,
+        artist: String?,
+        stationID: String?
+    ) {
+        guard accessMode != .guest, let userID = accountUser?.id else { return }
+        let upload = TuneAVMacPendingFeedbackUpload(
+            kind: .track,
+            userID: userID,
+            identityKey: Self.trackFeedbackKey(title: title, artist: artist),
+            feedback: feedback,
+            stationID: stationID,
+            title: title,
+            artist: artist,
+            updatedAt: TuneAVDateCoding.string(from: .now)
+        )
+        rememberPendingFeedbackUpload(upload)
+        schedulePendingFeedbackUploadsForCurrentUser()
+    }
+
+    private func rememberPendingFeedbackUpload(_ upload: TuneAVMacPendingFeedbackUpload) {
+        let key = upload.storageKey
+        feedbackSyncTasks[key]?.cancel()
+        feedbackSyncTasks[key] = nil
+        feedbackSyncTokens[key] = nil
+        feedbackSyncRetryCounts[key] = nil
+        pendingFeedbackUploads = TuneAVMacPendingFeedbackOutbox.upserting(upload, into: pendingFeedbackUploads)
+        storage.savePendingFeedbackUploads(pendingFeedbackUploads)
+    }
+
+    private func schedulePendingFeedbackUploadsForCurrentUser() {
+        guard accessMode != .guest,
+              accountService.isAvailable,
+              let userID = accountUser?.id
+        else { return }
+
+        if activePendingFeedbackUploadUserID != userID {
+            feedbackSyncTasks.values.forEach { $0.cancel() }
+            feedbackSyncTasks.removeAll()
+            feedbackSyncTokens.removeAll()
+            feedbackSyncRetryCounts.removeAll()
+            activePendingFeedbackUploadUserID = userID
+        }
+
+        for upload in pendingFeedbackUploads.values where upload.userID == userID {
+            guard feedbackSyncTasks[upload.storageKey] == nil else { continue }
+            startPendingFeedbackUpload(upload, retryCount: 0)
+        }
+    }
+
+    private func startPendingFeedbackUpload(_ upload: TuneAVMacPendingFeedbackUpload, retryCount: Int) {
+        let key = upload.storageKey
+        let token = UUID()
+        let delay = retryCount == 0
+            ? 1
+            : TuneAVMacSyncRetryPolicy.delay(
+                retryCount: retryCount - 1,
+                baseDelay: Self.feedbackSyncRetryBaseDelay,
+                maxDelay: Self.feedbackSyncRetryMaxDelay,
+                jitterFraction: Self.feedbackSyncRetryJitterFraction
+            )
+
+        feedbackSyncTokens[key] = token
+        feedbackSyncRetryCounts[key] = retryCount
+        feedbackSyncTasks[key] = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
+                guard let self,
+                      !Task.isCancelled,
+                      self.accountUser?.id == upload.userID,
+                      self.pendingFeedbackUploads[key]?.id == upload.id,
+                      self.feedbackSyncTokens[key] == token
+                else { return }
+                try await self.sendPendingFeedbackUpload(upload)
+            } catch is CancellationError {
+                return
+            } catch {
+                guard let self,
+                      self.accountUser?.id == upload.userID,
+                      self.pendingFeedbackUploads[key]?.id == upload.id,
+                      self.feedbackSyncTokens[key] == token
+                else { return }
+                if retryCount == 0 {
+                    TuneAVMacDiagnostics.capture(
+                        error,
+                        feature: "tune.mac.sync",
+                        operation: upload.kind == .station ? "station_feedback" : "track_feedback",
+                        step: "upload_retry_scheduled"
+                    )
+                }
+                self.startPendingFeedbackUpload(upload, retryCount: retryCount + 1)
+                return
+            }
+
+            guard let self,
+                  self.pendingFeedbackUploads[key]?.id == upload.id,
+                  self.feedbackSyncTokens[key] == token
+            else { return }
+            self.pendingFeedbackUploads[key] = nil
+            self.feedbackSyncTasks[key] = nil
+            self.feedbackSyncTokens[key] = nil
+            self.feedbackSyncRetryCounts[key] = nil
+            self.storage.savePendingFeedbackUploads(self.pendingFeedbackUploads)
+        }
+    }
+
+    private func sendPendingFeedbackUpload(_ upload: TuneAVMacPendingFeedbackUpload) async throws {
+        switch upload.kind {
+        case .station:
+            try await sendFeedbackRequest(
+                path: "/v1/tune/feedback/stations/\(Self.encodedPathSegment(upload.identityKey))",
+                payload: TuneAVMacFeedbackRequest(deviceId: "tuneav-mac", feedback: upload.feedback?.backendValue)
+            )
+        case .track:
+            guard let title = upload.title else { return }
+            try await sendFeedbackRequest(
+                path: "/v1/tune/feedback/tracks/\(Self.encodedPathSegment(upload.identityKey))",
+                payload: TuneAVMacTrackFeedbackRequest(
+                    deviceId: "tuneav-mac",
+                    title: title,
+                    artist: upload.artist,
+                    stationId: upload.stationID,
+                    feedback: upload.feedback?.backendValue
+                )
+            )
+        }
+    }
+
+    private func stopPendingFeedbackUploads() {
+        feedbackSyncTasks.values.forEach { $0.cancel() }
+        feedbackSyncTasks.removeAll()
+        feedbackSyncTokens.removeAll()
+        feedbackSyncRetryCounts.removeAll()
+        activePendingFeedbackUploadUserID = nil
     }
 
     private func sendFeedbackRequest<Payload: Encodable>(path: String, payload: Payload) async throws {
@@ -2391,18 +2941,13 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        if let lastAppliedProRealtimeProjectionUpdatedAt,
-           projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
-            return
-        }
-
-        lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
-        if projection.resource?.hasPrefix("feedback.") == true {
+        let refreshPlan = proRealtimeProjectionCursor.consume(projection)
+        if refreshPlan.refreshFeedback {
             await refreshProFeedbackNow()
-            return
         }
-
-        await synchronizeLibraryNow()
+        if refreshPlan.refreshLibrary {
+            await synchronizeLibraryNow()
+        }
     }
 
     private func refreshProFeedbackNow() async {
@@ -2428,13 +2973,20 @@ final class TuneAVMacModel: ObservableObject {
         stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
         trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
     ) {
-        let nextStationFeedback = TuneAVRealtimeFeedbackProjection.stationFeedback(from: remoteStationFeedback)
+        let pendingUploads = pendingFeedbackUploads.values.filter { $0.userID == accountUser?.id }
+        let nextStationFeedback = TuneAVMacPendingFeedbackProjection.stationFeedback(
+            remote: TuneAVRealtimeFeedbackProjection.stationFeedback(from: remoteStationFeedback),
+            pending: pendingUploads
+        )
         if nextStationFeedback != stationFeedback {
             stationFeedback = nextStationFeedback
             storage.saveStationFeedback(stationFeedback)
         }
 
-        let nextTrackRecords = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback)
+        let nextTrackRecords = TuneAVMacPendingFeedbackProjection.trackFeedbackRecords(
+            remote: TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback),
+            pending: pendingUploads
+        )
         if nextTrackRecords != trackFeedbackRecords {
             trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
             trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
@@ -2464,7 +3016,7 @@ final class TuneAVMacModel: ObservableObject {
         let deletedAt = Date.now
         let record = DiscoveredTrackRecord(
             discoveryID: discovery.discoveryID,
-            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
+            trackKey: discovery.trackKey,
             title: discovery.title,
             artist: discovery.artist,
             stationID: discovery.stationID,
@@ -2693,6 +3245,239 @@ private struct MacLastKnownAccountUser: Codable {
     }
 }
 
+struct TuneAVMacActiveListeningSession {
+    let station: Station
+    let startedAt: Date
+    let source: String
+    let userID: String
+    var trackKeys: Set<String>
+}
+
+enum TuneAVMacListeningSessionCoordinator {
+    static func begin(
+        session: inout TuneAVMacActiveListeningSession?,
+        station: Station,
+        source: String,
+        userID: String,
+        now: Date = .now
+    ) -> TuneAVMacActiveListeningSession? {
+        if session?.station.id == station.id, session?.userID == userID {
+            return nil
+        }
+
+        let endedSession = session
+        session = TuneAVMacActiveListeningSession(
+            station: station,
+            startedAt: now,
+            source: source,
+            userID: userID,
+            trackKeys: []
+        )
+        return endedSession
+    }
+
+    static func resumeIfNeeded(
+        session: inout TuneAVMacActiveListeningSession?,
+        station: Station,
+        source: String,
+        userID: String,
+        now: Date = .now
+    ) {
+        guard session == nil else { return }
+        session = TuneAVMacActiveListeningSession(
+            station: station,
+            startedAt: now,
+            source: source,
+            userID: userID,
+            trackKeys: []
+        )
+    }
+
+    static func rememberTrack(
+        session: inout TuneAVMacActiveListeningSession?,
+        title: String,
+        artist: String?
+    ) {
+        guard var currentSession = session else { return }
+        let key = [artist ?? "", title]
+            .map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+                    .lowercased()
+            }
+            .joined(separator: "|")
+        currentSession.trackKeys.insert(key)
+        session = currentSession
+    }
+
+    static func flush(
+        session: inout TuneAVMacActiveListeningSession?
+    ) -> TuneAVMacActiveListeningSession? {
+        defer { session = nil }
+        return session
+    }
+}
+
+struct TuneAVMacListeningSessionDraft: Codable, Equatable {
+    let id: String
+    let stationID: String
+    let stationName: String
+    let startedAt: Date
+    let endedAt: Date
+    let durationSeconds: Int
+    let source: String
+    let endedReason: String
+    let trackDetectedCount: Int
+    let userID: String
+
+    init?(
+        id: String = UUID().uuidString,
+        session: TuneAVMacActiveListeningSession,
+        endedAt: Date,
+        endedReason: String,
+        minimumDuration: TimeInterval = 10
+    ) {
+        let durationSeconds = max(0, Int(endedAt.timeIntervalSince(session.startedAt).rounded()))
+        guard TimeInterval(durationSeconds) >= minimumDuration else { return nil }
+        self.id = id
+        self.stationID = session.station.id
+        self.stationName = session.station.name
+        self.startedAt = session.startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.source = session.source
+        self.endedReason = endedReason
+        self.trackDetectedCount = session.trackKeys.count
+        self.userID = session.userID
+    }
+
+    init(
+        id: String = UUID().uuidString,
+        stationID: String,
+        stationName: String,
+        startedAt: Date,
+        endedAt: Date,
+        durationSeconds: Int,
+        source: String,
+        endedReason: String,
+        trackDetectedCount: Int,
+        userID: String
+    ) {
+        self.id = id
+        self.stationID = stationID
+        self.stationName = stationName
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.source = source
+        self.endedReason = endedReason
+        self.trackDetectedCount = trackDetectedCount
+        self.userID = userID
+    }
+
+    var apiInput: TuneAVMacListeningSessionInput {
+        TuneAVMacListeningSessionInput(
+            id: id,
+            stationId: stationID,
+            stationName: stationName,
+            startedAt: TuneAVDateCoding.string(from: startedAt),
+            endedAt: TuneAVDateCoding.string(from: endedAt),
+            durationSeconds: durationSeconds,
+            source: source,
+            endedReason: endedReason,
+            trackDetectedCount: trackDetectedCount
+        )
+    }
+}
+
+enum TuneAVMacListeningSessionOutbox {
+    static func appending(
+        _ session: TuneAVMacListeningSessionDraft,
+        to sessions: [TuneAVMacListeningSessionDraft],
+        maxCount: Int,
+        maxAge: TimeInterval,
+        now: Date
+    ) -> [TuneAVMacListeningSessionDraft] {
+        bounded(sessions + [session], maxCount: maxCount, maxAge: maxAge, now: now)
+    }
+
+    static func bounded(
+        _ sessions: [TuneAVMacListeningSessionDraft],
+        maxCount: Int,
+        maxAge: TimeInterval,
+        now: Date
+    ) -> [TuneAVMacListeningSessionDraft] {
+        guard maxCount > 0 else { return [] }
+        let cutoff = now.addingTimeInterval(-max(0, maxAge))
+        var newestByID: [String: TuneAVMacListeningSessionDraft] = [:]
+        for session in sessions where session.endedAt >= cutoff {
+            if let existing = newestByID[session.id], existing.endedAt >= session.endedAt {
+                continue
+            }
+            newestByID[session.id] = session
+        }
+        let boundedByUser = Dictionary(grouping: newestByID.values, by: \.userID)
+            .values
+            .flatMap { userSessions in
+                userSessions.sorted(by: areListeningSessionsOrdered).suffix(maxCount)
+            }
+        return boundedByUser.sorted(by: areListeningSessionsOrdered)
+    }
+
+    static func sessions(
+        in sessions: [TuneAVMacListeningSessionDraft],
+        forUserID userID: String,
+        limit: Int
+    ) -> [TuneAVMacListeningSessionDraft] {
+        guard limit > 0 else { return [] }
+        return Array(
+            sessions
+                .filter { $0.userID == userID }
+                .sorted(by: areListeningSessionsOrdered)
+                .prefix(limit)
+        )
+    }
+
+    private static func areListeningSessionsOrdered(
+        _ lhs: TuneAVMacListeningSessionDraft,
+        _ rhs: TuneAVMacListeningSessionDraft
+    ) -> Bool {
+        if lhs.endedAt == rhs.endedAt {
+            return lhs.id < rhs.id
+        }
+        return lhs.endedAt < rhs.endedAt
+    }
+}
+
+enum TuneAVMacListeningAnalyticsEligibility {
+    static func canUpload(
+        isEnabled: Bool,
+        accessMode: AccessMode,
+        userID: String?,
+        accountServiceAvailable: Bool,
+        apiConfigured: Bool
+    ) -> Bool {
+        isEnabled && accessMode == .signedInPro && userID != nil && accountServiceAvailable && apiConfigured
+    }
+}
+
+struct TuneAVMacListeningSessionsRequest: Encodable {
+    let deviceId: String
+    let sessions: [TuneAVMacListeningSessionInput]
+}
+
+struct TuneAVMacListeningSessionInput: Encodable {
+    let id: String
+    let stationId: String
+    let stationName: String
+    let startedAt: String
+    let endedAt: String
+    let durationSeconds: Int
+    let source: String
+    let endedReason: String
+    let trackDetectedCount: Int
+}
+
 struct TuneAVMacLibraryStorage {
     static let favoritesKey = "tuneav.mac.library.favorites"
     static let favoriteRecordsKey = "tuneav.mac.library.favoriteRecords.v1"
@@ -2700,6 +3485,9 @@ struct TuneAVMacLibraryStorage {
     static let discoveriesKey = "tuneav.mac.library.discoveries"
     static let stationFeedbackKey = "tuneav.mac.library.stationFeedback"
     static let trackFeedbackKey = "tuneav.mac.library.trackFeedback.v1"
+    static let pendingLibraryOperationsKey = "tuneav.mac.library.pendingOperations.v1"
+    static let pendingFeedbackUploadsKey = "tuneav.mac.feedback.pendingUploads.v1"
+    static let pendingListeningSessionsKey = "tuneav.mac.analytics.pendingListeningSessions.v1"
     static let tombstonesKey = "tuneav.mac.library.tombstones"
     static let localLibraryUpdatedAtKey = "tuneav.mac.library.updatedAt"
     static let localLibraryMutationAtKey = "tuneav.mac.library.localMutationAt.v1"
@@ -2795,6 +3583,48 @@ struct TuneAVMacLibraryStorage {
         defaults.set(data, forKey: Self.trackFeedbackKey)
     }
 
+    func loadPendingLibraryOperations() -> [String: TuneAVMacPendingLibraryOperation] {
+        guard let data = defaults.data(forKey: Self.pendingLibraryOperationsKey) else { return [:] }
+        return (try? decoder.decode([String: TuneAVMacPendingLibraryOperation].self, from: data)) ?? [:]
+    }
+
+    func savePendingLibraryOperations(_ operations: [String: TuneAVMacPendingLibraryOperation]) {
+        guard !operations.isEmpty else {
+            defaults.removeObject(forKey: Self.pendingLibraryOperationsKey)
+            return
+        }
+        guard let data = try? encoder.encode(operations) else { return }
+        defaults.set(data, forKey: Self.pendingLibraryOperationsKey)
+    }
+
+    func loadPendingFeedbackUploads() -> [String: TuneAVMacPendingFeedbackUpload] {
+        guard let data = defaults.data(forKey: Self.pendingFeedbackUploadsKey) else { return [:] }
+        return (try? decoder.decode([String: TuneAVMacPendingFeedbackUpload].self, from: data)) ?? [:]
+    }
+
+    func savePendingFeedbackUploads(_ uploads: [String: TuneAVMacPendingFeedbackUpload]) {
+        guard !uploads.isEmpty else {
+            defaults.removeObject(forKey: Self.pendingFeedbackUploadsKey)
+            return
+        }
+        guard let data = try? encoder.encode(uploads) else { return }
+        defaults.set(data, forKey: Self.pendingFeedbackUploadsKey)
+    }
+
+    func loadPendingListeningSessions() -> [TuneAVMacListeningSessionDraft] {
+        guard let data = defaults.data(forKey: Self.pendingListeningSessionsKey) else { return [] }
+        return (try? decoder.decode([TuneAVMacListeningSessionDraft].self, from: data)) ?? []
+    }
+
+    func savePendingListeningSessions(_ sessions: [TuneAVMacListeningSessionDraft]) {
+        guard !sessions.isEmpty else {
+            defaults.removeObject(forKey: Self.pendingListeningSessionsKey)
+            return
+        }
+        guard let data = try? encoder.encode(sessions) else { return }
+        defaults.set(data, forKey: Self.pendingListeningSessionsKey)
+    }
+
     func loadTombstones() -> [TuneAVLibraryTombstone] {
         guard let data = defaults.data(forKey: Self.tombstonesKey) else { return [] }
         return (try? decoder.decode([TuneAVLibraryTombstone].self, from: data)) ?? []
@@ -2811,6 +3641,178 @@ struct TuneAVMacLibraryStorage {
 
     func saveDate(_ date: Date, forKey key: String) {
         defaults.set(date, forKey: key)
+    }
+}
+
+struct TuneAVMacPendingLibraryOperation: Codable, Equatable {
+    enum Resource: String, Codable {
+        case favorites
+        case savedDiscoveries
+    }
+
+    enum Action: String, Codable {
+        case upsert
+        case delete
+    }
+
+    let id: UUID
+    let resource: Resource
+    let action: Action
+    let userID: String
+    let identityKey: String
+    let favoriteRecord: FavoriteStationRecord?
+    let discoveryRecord: DiscoveredTrackRecord?
+    let updatedAt: String
+
+    init(
+        id: UUID = UUID(),
+        resource: Resource,
+        action: Action,
+        userID: String,
+        identityKey: String,
+        favoriteRecord: FavoriteStationRecord?,
+        discoveryRecord: DiscoveredTrackRecord?,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.resource = resource
+        self.action = action
+        self.userID = userID
+        self.identityKey = identityKey
+        self.favoriteRecord = favoriteRecord
+        self.discoveryRecord = discoveryRecord
+        self.updatedAt = updatedAt
+    }
+
+    var storageKey: String {
+        "\(userID):\(resource.rawValue):\(identityKey)"
+    }
+}
+
+enum TuneAVMacPendingLibraryOutbox {
+    static func upserting(
+        _ operation: TuneAVMacPendingLibraryOperation,
+        into operations: [String: TuneAVMacPendingLibraryOperation]
+    ) -> [String: TuneAVMacPendingLibraryOperation] {
+        var nextOperations = operations
+        nextOperations[operation.storageKey] = operation
+        return nextOperations
+    }
+}
+
+enum TuneAVMacPendingLibraryOperationError: Error {
+    case invalidPayload
+}
+
+struct TuneAVMacPendingFeedbackUpload: Codable, Equatable {
+    enum Kind: String, Codable {
+        case station
+        case track
+    }
+
+    let id: UUID
+    let kind: Kind
+    let userID: String
+    let identityKey: String
+    let feedback: TuneAVStationFeedback?
+    let stationID: String?
+    let title: String?
+    let artist: String?
+    let updatedAt: String
+
+    init(
+        id: UUID = UUID(),
+        kind: Kind,
+        userID: String,
+        identityKey: String,
+        feedback: TuneAVStationFeedback?,
+        stationID: String?,
+        title: String?,
+        artist: String?,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.kind = kind
+        self.userID = userID
+        self.identityKey = identityKey
+        self.feedback = feedback
+        self.stationID = stationID
+        self.title = title
+        self.artist = artist
+        self.updatedAt = updatedAt
+    }
+
+    var storageKey: String {
+        "\(userID):\(kind.rawValue):\(identityKey)"
+    }
+}
+
+enum TuneAVMacPendingFeedbackOutbox {
+    static func upserting(
+        _ upload: TuneAVMacPendingFeedbackUpload,
+        into uploads: [String: TuneAVMacPendingFeedbackUpload]
+    ) -> [String: TuneAVMacPendingFeedbackUpload] {
+        var nextUploads = uploads
+        nextUploads[upload.storageKey] = upload
+        return nextUploads
+    }
+}
+
+enum TuneAVMacSyncRetryPolicy {
+    static func delay(
+        retryCount: Int,
+        baseDelay: TimeInterval,
+        maxDelay: TimeInterval,
+        jitterFraction: Double,
+        randomFraction: () -> Double = { Double.random(in: 0...1) }
+    ) -> TimeInterval {
+        guard baseDelay > 0, maxDelay > 0 else { return 0 }
+
+        let boundedRetryCount = max(0, min(retryCount, 10))
+        let exponentialDelay = baseDelay * pow(2, Double(boundedRetryCount))
+        let cappedDelay = min(exponentialDelay, maxDelay)
+        let boundedJitter = max(0, min(jitterFraction, 1))
+        let jitterMultiplier = 1 + ((max(0, min(randomFraction(), 1)) * 2) - 1) * boundedJitter
+
+        return min(cappedDelay * jitterMultiplier, maxDelay)
+    }
+}
+
+enum TuneAVMacPendingFeedbackProjection {
+    static func stationFeedback(
+        remote: [String: TuneAVStationFeedback],
+        pending: [TuneAVMacPendingFeedbackUpload]
+    ) -> [String: TuneAVStationFeedback] {
+        var projected = remote
+        for upload in pending where upload.kind == .station {
+            if let feedback = upload.feedback {
+                projected[upload.identityKey] = feedback
+            } else {
+                projected[upload.identityKey] = nil
+            }
+        }
+        return projected
+    }
+
+    static func trackFeedbackRecords(
+        remote: [String: TuneAVLocalFeedbackRecord],
+        pending: [TuneAVMacPendingFeedbackUpload]
+    ) -> [String: TuneAVLocalFeedbackRecord] {
+        var projected = remote
+        for upload in pending where upload.kind == .track {
+            guard let feedback = upload.feedback else {
+                projected[upload.identityKey] = nil
+                continue
+            }
+            projected[upload.identityKey] = TuneAVLocalFeedbackRecord(
+                feedback: feedback,
+                updatedAt: upload.updatedAt,
+                title: upload.title,
+                artist: upload.artist,
+                stationID: upload.stationID
+            )
+        }
+        return projected
     }
 }
 
@@ -2842,6 +3844,7 @@ private extension TuneAVStationFeedback {
 
 struct MacDiscoveredTrack: Identifiable, Equatable {
     let discoveryID: String
+    var trackKey: String?
     var title: String
     var artist: String?
     var stationID: String
@@ -2868,6 +3871,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
         let normalizedArtist = TuneAVDiscoveredTrackSupport.normalizedValue(artist)
         let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(title) ?? title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.discoveryID = Self.makeID(title: normalizedTitle, artist: normalizedArtist, stationID: station.id)
+        self.trackKey = TuneAVDiscoveredTrackSupport.trackKey(title: normalizedTitle, artist: normalizedArtist, locale: L10n.locale)
         self.title = normalizedTitle
         self.artist = normalizedArtist
         self.stationID = station.id
@@ -2885,6 +3889,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
         let normalizedTitle = TuneAVDiscoveredTrackSupport.normalizedValue(record.title) ?? record.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedTitle.isEmpty else { return nil }
         self.discoveryID = record.discoveryID
+        self.trackKey = record.trackKey
         self.title = normalizedTitle
         self.artist = TuneAVDiscoveredTrackSupport.normalizedValue(record.artist)
         self.stationID = record.stationID
@@ -2906,7 +3911,7 @@ struct MacDiscoveredTrack: Identifiable, Equatable {
     var record: DiscoveredTrackRecord {
         DiscoveredTrackRecord(
             discoveryID: discoveryID,
-            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: title, artist: artist, locale: L10n.locale),
+            trackKey: trackKey,
             title: title,
             artist: artist,
             stationID: stationID,

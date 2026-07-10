@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-07-03
+Date: 2026-07-10
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -86,6 +86,27 @@ remote records and migrate any URL-encoded local feedback keys on load so
 historical local state does not mask synced feedback. Discovery history remains
 local-only and can legitimately show different song totals per device.
 
+## Calm Pro Sync Contract
+
+The Apple clients use a calm-sync model to keep Cloudflare and Convex traffic
+bounded:
+
+- perform one automatic full library sync at cold startup or after successful
+  sign-in when Pro cloud sync is available;
+- keep foreground transitions passive instead of treating every activation as
+  another full-sync trigger;
+- keep manual `Sync now` as the explicit recovery path;
+- create one realtime session and one Convex subscription for the active Pro
+  account, and reuse them while the account identity is unchanged;
+- preserve the confirmed Pro capability while refreshing entitlement state for
+  the same internal account user, avoiding a temporary Free state that would
+  tear down and recreate realtime sync;
+- when the internal account user changes, immediately remove the previous
+  account's capabilities until the new user's backend access is resolved.
+
+Realtime invalidations may request a focused refresh, but must not create a
+polling loop or an additional foreground-driven full sync.
+
 ## Runtime Configuration
 
 Tracked source ships with neutral public defaults. Private values can be
@@ -157,15 +178,22 @@ vp run macos:release:preflight
 vp run macos:release:preflight -- --with-archive
 ```
 
-Latest local client verification known to the maintainers, run on 2026-06-14:
+Latest local client verification known to the maintainers, run on 2026-07-10:
 
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
   evidence, Sentry dSYM repair, and app-size gate passed;
-- iOS unit tests: 313 tests, 0 failures;
+- iOS unit tests: 341 tests, 0 failures;
 - macOS production runtime config, platform security, and unsigned Release
   archive preflight passed;
-- macOS unit tests: 19 tests, 0 failures.
+- macOS unit tests: 51 tests, 0 failures;
+- signed iOS runtime validation restored the same Pro account with one access
+  resolution, one realtime-session creation, one Convex subscription, and one
+  measured full library sync; the app then remained sync-silent for more than
+  90 seconds;
+- regression coverage confirms that refreshing the same account preserves Pro
+  capabilities while backend resolution is pending, while switching accounts
+  removes the previous account's Pro capabilities immediately.
 
 Latest post-approval source checkpoint, 2026-07-03:
 

@@ -99,6 +99,7 @@ support_email="$(setting SUPPORT_EMAIL_TO)"
 revenuecat_public_api_key="$(setting TUNEAV_REVENUECAT_PUBLIC_API_KEY)"
 revenuecat_offering_id="$(setting TUNEAV_REVENUECAT_OFFERING_ID)"
 revenuecat_monthly_package_id="$(setting TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID)"
+listening_analytics_uploads="$(setting TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)"
 development_team="$(setting DEVELOPMENT_TEAM)"
 code_sign_style="$(setting CODE_SIGN_STYLE)"
 enable_hardened_runtime="$(setting ENABLE_HARDENED_RUNTIME)"
@@ -121,15 +122,19 @@ for item in \
   "TUNEAV_REVENUECAT_PUBLIC_API_KEY:$revenuecat_public_api_key" \
   "TUNEAV_REVENUECAT_OFFERING_ID:$revenuecat_offering_id" \
   "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID:$revenuecat_monthly_package_id" \
+  "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS:$listening_analytics_uploads" \
   "SUPPORT_EMAIL_TO:$support_email"; do
   require_present "${item%%:*}" "${item#*:}"
 done
+
+[[ "$listening_analytics_uploads" == "0" || "$listening_analytics_uploads" == "1" ]] || fail "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS must resolve to 0 or 1"
 
 [ "$code_sign_style" = "Automatic" ] || fail "CODE_SIGN_STYLE must stay Automatic, got $code_sign_style"
 [ "$enable_hardened_runtime" = "YES" ] || fail "ENABLE_HARDENED_RUNTIME must stay YES"
 [ "$enable_app_sandbox" = "YES" ] || fail "ENABLE_APP_SANDBOX must stay YES"
 
 if [ "$env_name" = "prod" ]; then
+  [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after App Privacy confirmation"
   [ "$product_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod bundle must be com.avalsys.tuneav, got $product_bundle_identifier"
   [ "$tuneav_bundle_identifier" = "com.avalsys.tuneav" ] || fail "prod TUNEAV_BUNDLE_IDENTIFIER must be com.avalsys.tuneav"
   [ "$keychain_service" = "com.avalsys.tuneav.account.v2" ] || fail "prod ACCOUNTAV_KEYCHAIN_SERVICE must be com.avalsys.tuneav.account.v2, got $keychain_service"
@@ -221,6 +226,7 @@ Tune AV macOS runtime config ($env_name)
   RevenueCat key: $redacted_revenuecat_key
   RevenueCat offering: $revenuecat_offering_id
   RevenueCat monthly package: $revenuecat_monthly_package_id
+  listening analytics uploads: $listening_analytics_uploads
   support email: $support_email
   delete account: $delete_account_url
   terms: $terms_url

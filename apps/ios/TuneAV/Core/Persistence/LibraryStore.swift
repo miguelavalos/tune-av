@@ -18,6 +18,7 @@ final class LibraryStore: ObservableObject {
 
     private static let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
+    static let pendingLibraryOperationsStorageKey = "tuneav.pendingLibraryOperations.v1"
     private static let pendingFeedbackUploadsStorageKey = "tuneav.pendingFeedbackUploads.v1"
     private static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
@@ -32,10 +33,14 @@ final class LibraryStore: ObservableObject {
     private static let feedbackSyncRetryBaseDelay: TimeInterval = 5
     private static let feedbackSyncRetryMaxDelay: TimeInterval = 120
     private static let feedbackSyncRetryJitterFraction = 0.2
+    private static let librarySyncRetryBaseDelay: TimeInterval = 5
+    private static let librarySyncRetryMaxDelay: TimeInterval = 120
+    private static let librarySyncRetryJitterFraction = 0.2
     private static let maxCloudDiscoveryRecords = 1_000
     private static let cloudPushDebounce: Duration = .seconds(2)
 
     private let context: ModelContext
+    private let userDefaults: UserDefaults
     private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
     private var appDataService: TuneAVAppDataService?
     private var backendService: TuneAVAppDataService?
@@ -43,7 +48,7 @@ final class LibraryStore: ObservableObject {
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
-    private var lastAppliedProRealtimeProjectionUpdatedAt: Double?
+    private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
     private var pushTask: Task<Void, Never>?
     private var cloudLibraryRefreshTask: Task<Void, Never>?
     private var cloudLibraryRefreshedAt: Date?
@@ -55,11 +60,16 @@ final class LibraryStore: ObservableObject {
     private var listeningSessionFlushTask: Task<Void, Never>?
     private var stationFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
     private var trackFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
+    private var librarySyncTasks: [String: Task<Void, Never>] = [:]
+    private var librarySyncTokens: [String: UUID] = [:]
+    private var librarySyncRetryCounts: [String: Int] = [:]
+    private var activePendingLibraryOperationUserID: String?
     private var stationFeedbackSyncTokens: [String: UUID] = [:]
     private var trackFeedbackSyncTokens: [String: UUID] = [:]
     private var stationFeedbackSyncRetryCounts: [String: Int] = [:]
     private var trackFeedbackSyncRetryCounts: [String: Int] = [:]
     private var pendingFeedbackUploads: [String: TuneAVPendingFeedbackUpload] = [:]
+    private var pendingLibraryOperations: [String: TuneAVPendingLibraryOperation] = [:]
     private var stationFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
@@ -92,8 +102,9 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    init(container: ModelContainer) {
+    init(container: ModelContainer, userDefaults: UserDefaults = .standard) {
         self.context = ModelContext(container)
+        self.userDefaults = userDefaults
 
         if let existingSettings = try? context.fetch(FetchDescriptor<AppSettings>()).first {
             self.settings = existingSettings
@@ -124,6 +135,10 @@ final class LibraryStore: ObservableObject {
         }
         pendingListeningSessions = Self.loadPendingListeningSessions(maxCount: Self.maxPendingListeningSessions)
         updatePendingListeningSessionDiagnostic()
+        pendingLibraryOperations = LibraryStorePendingLibraryOperationPersistence.load(
+            storageKey: Self.pendingLibraryOperationsStorageKey,
+            userDefaults: userDefaults
+        )
         pendingFeedbackUploads = Self.loadPendingFeedbackUploads()
         syncDiagnostics.pendingFeedbackUploadCount = pendingFeedbackUploads.count
         if !pendingListeningSessions.isEmpty {
@@ -272,8 +287,8 @@ final class LibraryStore: ObservableObject {
             operation = (.upsert, record)
         }
 
-        saveAndRefresh(.favorites, syncsCloud: true)
-        syncFavoriteLibraryOperation(operation.0, record: operation.1)
+        saveAndRefresh(.favorites, syncsCloud: false)
+        enqueueFavoriteLibraryOperation(operation.0, record: operation.1)
     }
 
     func rememberStationSnapshots(_ stations: [Station]) {
@@ -385,9 +400,9 @@ final class LibraryStore: ObservableObject {
         if operation == .upsert {
             operationRecord = discovery.appDataRecord
         }
-        saveAndRefresh(.discoveries, syncsCloud: true)
+        saveAndRefresh(.discoveries, syncsCloud: false)
         if let operationRecord {
-            syncSavedDiscoveryLibraryOperation(operation, record: operationRecord)
+            enqueueSavedDiscoveryLibraryOperation(operation, record: operationRecord)
         }
         return true
     }
@@ -574,9 +589,9 @@ final class LibraryStore: ObservableObject {
         }
 
         trimDiscoveries(limit: discoveryLimit ?? 100)
-        saveAndRefresh(.discoveries, syncsCloud: markInteresting)
+        saveAndRefresh(.discoveries, syncsCloud: false)
         if let operationRecord {
-            syncSavedDiscoveryLibraryOperation(.upsert, record: operationRecord)
+            enqueueSavedDiscoveryLibraryOperation(.upsert, record: operationRecord)
         }
     }
 
@@ -584,9 +599,9 @@ final class LibraryStore: ObservableObject {
         let wasMarkedInteresting = discovery.isMarkedInteresting
         let operationRecord = wasMarkedInteresting ? rememberSavedDiscoveryDeletion(for: discovery) : nil
         context.delete(discovery)
-        saveAndRefresh(.discoveries, syncsCloud: wasMarkedInteresting)
+        saveAndRefresh(.discoveries, syncsCloud: false)
         if let operationRecord {
-            syncSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
+            enqueueSavedDiscoveryLibraryOperation(.delete, record: operationRecord)
         }
     }
 
@@ -814,6 +829,7 @@ final class LibraryStore: ObservableObject {
         let previousService = appDataService
         appDataService = service
         if previousService !== service {
+            stopPendingLibraryOperations()
             pushTask?.cancel()
             pushTask = nil
             cloudLibraryRefreshTask?.cancel()
@@ -822,13 +838,20 @@ final class LibraryStore: ObservableObject {
         }
         if service == nil {
             setCloudSyncStatus(.idle)
+        } else {
+            schedulePendingLibraryOperationsForCurrentUser()
         }
     }
 
     func setBackendService(_ service: TuneAVAppDataService?, userID: String? = nil) {
         let previousService = backendService
+        let previousUserID = backendServiceUserID
         backendService = service
         backendServiceUserID = service == nil ? nil : userID
+        if previousUserID != backendServiceUserID {
+            proRealtimeProjectionCursor.reset()
+            stopPendingLibraryOperations()
+        }
         updatePendingListeningSessionDiagnostic()
         if previousService !== service {
             listeningSessionUploadTask?.cancel()
@@ -863,6 +886,9 @@ final class LibraryStore: ObservableObject {
         }
         if service != nil {
             schedulePendingFeedbackUploadsForCurrentUser()
+            if appDataService === service {
+                schedulePendingLibraryOperationsForCurrentUser()
+            }
         }
     }
 
@@ -1105,18 +1131,13 @@ final class LibraryStore: ObservableObject {
     }
 
     func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        if let lastAppliedProRealtimeProjectionUpdatedAt,
-           projection.updatedAt <= lastAppliedProRealtimeProjectionUpdatedAt {
-            return
-        }
-
-        lastAppliedProRealtimeProjectionUpdatedAt = projection.updatedAt
-        if projection.resource?.hasPrefix("feedback.") == true {
+        let refreshPlan = proRealtimeProjectionCursor.consume(projection)
+        if refreshPlan.refreshFeedback {
             await refreshCloudFeedbackIfNeeded(force: true)
-            return
         }
-
-        await refreshCloudLibraryIfNeeded(force: true)
+        if refreshPlan.refreshLibrary {
+            await refreshCloudLibraryIfNeeded(force: true)
+        }
     }
 
     func refreshCloudFeedbackIfNeeded(force: Bool = false) async {
@@ -1538,52 +1559,195 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    private func syncFavoriteLibraryOperation(
+    private func enqueueFavoriteLibraryOperation(
         _ operation: CloudLibraryItemOperation,
         record: FavoriteStationRecord
     ) {
-        guard !isApplyingRemoteSnapshot, let appDataService, appDataService.isConfigured() else {
-            return
-        }
+        guard !isApplyingRemoteSnapshot,
+              appDataService?.isConfigured() == true,
+              let userID = backendServiceUserID
+        else { return }
 
-        Task { [weak self, appDataService] in
-            do {
-                switch operation {
-                case .upsert:
-                    try await appDataService.upsertFavorite(record)
-                case .delete:
-                    try await appDataService.deleteFavorite(record)
-                }
-                guard self?.appDataService === appDataService else { return }
-                self?.updateSyncDiagnostics { $0.lastCloudPushAt = .now }
-            } catch {
-                self?.analyticsLogger.debug("Favorite cloud item operation failed: \(String(describing: error), privacy: .public)")
-            }
-        }
+        rememberPendingLibraryOperation(
+            TuneAVPendingLibraryOperation(
+                resource: .favorites,
+                action: operation == .upsert ? .upsert : .delete,
+                userID: userID,
+                identityKey: TuneAVLibrarySnapshotMerger.stationIdentityKey(record.station),
+                favoriteRecord: record,
+                discoveryRecord: nil,
+                updatedAt: TuneAVDateCoding.string(from: .now)
+            )
+        )
+        schedulePendingLibraryOperationsForCurrentUser()
     }
 
-    private func syncSavedDiscoveryLibraryOperation(
+    private func enqueueSavedDiscoveryLibraryOperation(
         _ operation: CloudLibraryItemOperation,
         record: DiscoveredTrackRecord
     ) {
-        guard !isApplyingRemoteSnapshot, let appDataService, appDataService.isConfigured() else {
-            return
+        guard !isApplyingRemoteSnapshot,
+              appDataService?.isConfigured() == true,
+              let userID = backendServiceUserID
+        else { return }
+
+        rememberPendingLibraryOperation(
+            TuneAVPendingLibraryOperation(
+                resource: .savedDiscoveries,
+                action: operation == .upsert ? .upsert : .delete,
+                userID: userID,
+                identityKey: TuneAVLibrarySnapshotMerger.discoveryIdentityKey(record),
+                favoriteRecord: nil,
+                discoveryRecord: record,
+                updatedAt: TuneAVDateCoding.string(from: .now)
+            )
+        )
+        schedulePendingLibraryOperationsForCurrentUser()
+    }
+
+    private func rememberPendingLibraryOperation(_ operation: TuneAVPendingLibraryOperation) {
+        let key = operation.storageKey
+        librarySyncTasks[key]?.cancel()
+        librarySyncTasks[key] = nil
+        librarySyncTokens[key] = nil
+        librarySyncRetryCounts[key] = nil
+        pendingLibraryOperations = TuneAVPendingLibraryOutbox.upserting(
+            operation,
+            into: pendingLibraryOperations
+        )
+        persistPendingLibraryOperations()
+    }
+
+    private func schedulePendingLibraryOperationsForCurrentUser() {
+        guard let appDataService,
+              appDataService.isConfigured(),
+              let userID = backendServiceUserID
+        else { return }
+
+        if activePendingLibraryOperationUserID != userID {
+            stopPendingLibraryOperations()
+            activePendingLibraryOperationUserID = userID
         }
 
-        Task { [weak self, appDataService] in
-            do {
-                switch operation {
-                case .upsert:
-                    try await appDataService.upsertSavedDiscovery(record)
-                case .delete:
-                    try await appDataService.deleteSavedDiscovery(record)
-                }
-                guard self?.appDataService === appDataService else { return }
-                self?.updateSyncDiagnostics { $0.lastCloudPushAt = .now }
-            } catch {
-                self?.analyticsLogger.debug("Saved discovery cloud item operation failed: \(String(describing: error), privacy: .public)")
-            }
+        for operation in pendingLibraryOperations.values where operation.userID == userID {
+            guard librarySyncTasks[operation.storageKey] == nil else { continue }
+            startPendingLibraryOperation(
+                operation,
+                retryCount: 0,
+                appDataService: appDataService
+            )
         }
+    }
+
+    private func startPendingLibraryOperation(
+        _ operation: TuneAVPendingLibraryOperation,
+        retryCount: Int,
+        appDataService: TuneAVAppDataService
+    ) {
+        let key = operation.storageKey
+        let token = UUID()
+        let delay = retryCount == 0
+            ? 1
+            : LibraryStoreListeningSessionRetryPolicy.delay(
+                retryCount: retryCount - 1,
+                baseDelay: Self.librarySyncRetryBaseDelay,
+                maxDelay: Self.librarySyncRetryMaxDelay,
+                jitterFraction: Self.librarySyncRetryJitterFraction
+            )
+
+        librarySyncTokens[key] = token
+        librarySyncRetryCounts[key] = retryCount
+        librarySyncTasks[key] = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
+                guard let self,
+                      !Task.isCancelled,
+                      self.backendServiceUserID == operation.userID,
+                      self.appDataService === appDataService,
+                      self.pendingLibraryOperations[key]?.id == operation.id,
+                      self.librarySyncTokens[key] == token
+                else { return }
+                try await self.sendPendingLibraryOperation(
+                    operation,
+                    using: appDataService
+                )
+            } catch is CancellationError {
+                return
+            } catch {
+                guard let self,
+                      self.backendServiceUserID == operation.userID,
+                      self.appDataService === appDataService,
+                      self.pendingLibraryOperations[key]?.id == operation.id,
+                      self.librarySyncTokens[key] == token
+                else { return }
+                if retryCount == 0 {
+                    self.analyticsLogger.debug(
+                        "Library cloud item operation failed; retry scheduled resource=\(operation.resource.rawValue, privacy: .public)"
+                    )
+                }
+                self.startPendingLibraryOperation(
+                    operation,
+                    retryCount: retryCount + 1,
+                    appDataService: appDataService
+                )
+                return
+            }
+
+            guard let self,
+                  self.pendingLibraryOperations[key]?.id == operation.id,
+                  self.librarySyncTokens[key] == token
+            else { return }
+            self.pendingLibraryOperations[key] = nil
+            self.librarySyncTasks[key] = nil
+            self.librarySyncTokens[key] = nil
+            self.librarySyncRetryCounts[key] = nil
+            self.persistPendingLibraryOperations()
+            self.updateSyncDiagnostics { $0.lastCloudPushAt = .now }
+        }
+    }
+
+    private func sendPendingLibraryOperation(
+        _ operation: TuneAVPendingLibraryOperation,
+        using appDataService: TuneAVAppDataService
+    ) async throws {
+        switch (operation.resource, operation.action) {
+        case (.favorites, .upsert):
+            guard let record = operation.favoriteRecord else {
+                throw TuneAVPendingLibraryOperationError.invalidPayload
+            }
+            try await appDataService.upsertFavorite(record)
+        case (.favorites, .delete):
+            guard let record = operation.favoriteRecord else {
+                throw TuneAVPendingLibraryOperationError.invalidPayload
+            }
+            try await appDataService.deleteFavorite(record)
+        case (.savedDiscoveries, .upsert):
+            guard let record = operation.discoveryRecord else {
+                throw TuneAVPendingLibraryOperationError.invalidPayload
+            }
+            try await appDataService.upsertSavedDiscovery(record)
+        case (.savedDiscoveries, .delete):
+            guard let record = operation.discoveryRecord else {
+                throw TuneAVPendingLibraryOperationError.invalidPayload
+            }
+            try await appDataService.deleteSavedDiscovery(record)
+        }
+    }
+
+    private func persistPendingLibraryOperations() {
+        LibraryStorePendingLibraryOperationPersistence.save(
+            pendingLibraryOperations,
+            storageKey: Self.pendingLibraryOperationsStorageKey,
+            userDefaults: userDefaults
+        )
+    }
+
+    private func stopPendingLibraryOperations() {
+        librarySyncTasks.values.forEach { $0.cancel() }
+        librarySyncTasks.removeAll()
+        librarySyncTokens.removeAll()
+        librarySyncRetryCounts.removeAll()
+        activePendingLibraryOperationUserID = nil
     }
 
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
@@ -1981,7 +2145,7 @@ final class LibraryStore: ObservableObject {
         let deletedAt = Date.now
         let record = DiscoveredTrackRecord(
             discoveryID: discovery.discoveryID,
-            trackKey: TuneAVDiscoveredTrackSupport.trackKey(title: discovery.title, artist: discovery.artist, locale: L10n.locale),
+            trackKey: discovery.trackKey,
             title: discovery.title,
             artist: discovery.artist,
             stationID: discovery.stationID,
@@ -2140,6 +2304,91 @@ enum LibraryStoreListeningSessionBuffer {
         guard sessions.count > maxCount else { return sessions }
         return Array(sessions.suffix(maxCount))
     }
+}
+
+struct TuneAVPendingLibraryOperation: Codable, Equatable {
+    enum Resource: String, Codable {
+        case favorites
+        case savedDiscoveries
+    }
+
+    enum Action: String, Codable {
+        case upsert
+        case delete
+    }
+
+    let id: UUID
+    let resource: Resource
+    let action: Action
+    let userID: String
+    let identityKey: String
+    let favoriteRecord: FavoriteStationRecord?
+    let discoveryRecord: DiscoveredTrackRecord?
+    let updatedAt: String
+
+    init(
+        id: UUID = UUID(),
+        resource: Resource,
+        action: Action,
+        userID: String,
+        identityKey: String,
+        favoriteRecord: FavoriteStationRecord?,
+        discoveryRecord: DiscoveredTrackRecord?,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.resource = resource
+        self.action = action
+        self.userID = userID
+        self.identityKey = identityKey
+        self.favoriteRecord = favoriteRecord
+        self.discoveryRecord = discoveryRecord
+        self.updatedAt = updatedAt
+    }
+
+    var storageKey: String {
+        "\(userID):\(resource.rawValue):\(identityKey)"
+    }
+}
+
+enum TuneAVPendingLibraryOutbox {
+    static func upserting(
+        _ operation: TuneAVPendingLibraryOperation,
+        into operations: [String: TuneAVPendingLibraryOperation]
+    ) -> [String: TuneAVPendingLibraryOperation] {
+        var nextOperations = operations
+        nextOperations[operation.storageKey] = operation
+        return nextOperations
+    }
+}
+
+enum LibraryStorePendingLibraryOperationPersistence {
+    static func load(
+        storageKey: String,
+        userDefaults: UserDefaults = .standard,
+        decoder: JSONDecoder = JSONDecoder()
+    ) -> [String: TuneAVPendingLibraryOperation] {
+        guard let data = userDefaults.data(forKey: storageKey) else { return [:] }
+        return (try? decoder.decode([String: TuneAVPendingLibraryOperation].self, from: data)) ?? [:]
+    }
+
+    static func save(
+        _ operations: [String: TuneAVPendingLibraryOperation],
+        storageKey: String,
+        userDefaults: UserDefaults = .standard,
+        encoder: JSONEncoder = JSONEncoder()
+    ) {
+        guard !operations.isEmpty else {
+            userDefaults.removeObject(forKey: storageKey)
+            return
+        }
+        guard let data = try? encoder.encode(operations) else { return }
+        userDefaults.set(data, forKey: storageKey)
+    }
+}
+
+enum TuneAVPendingLibraryOperationError: Error {
+    case invalidPayload
 }
 
 struct TuneAVPendingFeedbackUpload: Codable, Equatable {

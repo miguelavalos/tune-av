@@ -232,6 +232,15 @@ separate development bundle identifier.
      canonical `trackKey`;
    - old URL-encoded local song feedback keys are migrated on launch and do not
      produce duplicate or invisible feedback states.
+   - a cold startup or completed sign-in creates no more than one automatic
+     full library sync, one realtime session, and one Convex subscription;
+   - foreground transitions do not start another automatic full library sync;
+   - refreshing entitlement state for the same internal account does not
+     temporarily downgrade Pro or recreate realtime sync;
+   - changing to a different internal account removes the previous account's
+     Pro capabilities before the new entitlement response is applied;
+   - after bootstrap completes, observe at least 90 seconds without repeated
+     automatic sync or realtime-session creation.
 
    Signed-in Free accounts can upload station and song feedback for product data
    and recommendations, but only Pro accounts should restore feedback across
@@ -307,6 +316,22 @@ split:
 - Keep existing App Store compatibility in mind: older installed clients may
   still use the shared Account backend for Tune product routes until a newer
   build has been published and adopted.
+
+## macOS Listening Analytics Privacy Gate
+
+- `apps/macos/Supporting/PrivacyInfo.xcprivacy` must remain in the app target and
+  in the final archive at `Contents/Resources/PrivacyInfo.xcprivacy`.
+- Run `node scripts/check-macos-privacy-manifest.mjs` during development and
+  `node scripts/check-macos-privacy-manifest.mjs --app <archive app path>` against
+  the exact app bundle that will be uploaded.
+- The public privacy policy and App Store Connect answers must disclose
+  account-linked Product Interaction data used for App Functionality and
+  Analytics. This confirmation was completed before enabling production
+  uploads.
+- Production macOS configuration must resolve
+  `TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS=1`. Build the final archive, run the
+  complete macOS release preflight, and smoke-test a Pro listening session
+  before upload.
 
 ## Public Source Release
 

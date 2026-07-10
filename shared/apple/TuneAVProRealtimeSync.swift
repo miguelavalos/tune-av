@@ -6,6 +6,8 @@ import OSLog
 struct TuneAVProLibraryProjection: Decodable, Equatable {
     let ownerUserId: String
     let projectionVersion: Int
+    let libraryGeneration: Int?
+    let feedbackGeneration: Int?
     let resource: String?
     let sourceUpdatedAt: Double?
     let updatedAt: Double
@@ -13,6 +15,8 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case ownerUserId
         case projectionVersion
+        case libraryGeneration
+        case feedbackGeneration
         case resource
         case sourceUpdatedAt
         case updatedAt
@@ -21,12 +25,16 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
     init(
         ownerUserId: String,
         projectionVersion: Int,
+        libraryGeneration: Int? = nil,
+        feedbackGeneration: Int? = nil,
         resource: String? = nil,
         sourceUpdatedAt: Double?,
         updatedAt: Double
     ) {
         self.ownerUserId = ownerUserId
         self.projectionVersion = projectionVersion
+        self.libraryGeneration = libraryGeneration
+        self.feedbackGeneration = feedbackGeneration
         self.resource = resource
         self.sourceUpdatedAt = sourceUpdatedAt
         self.updatedAt = updatedAt
@@ -36,9 +44,69 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         ownerUserId = try container.decode(String.self, forKey: .ownerUserId)
         projectionVersion = try container.decode(Int.self, forKey: .projectionVersion)
+        libraryGeneration = try container.decodeIfPresent(Int.self, forKey: .libraryGeneration)
+        feedbackGeneration = try container.decodeIfPresent(Int.self, forKey: .feedbackGeneration)
         resource = try container.decodeIfPresent(String.self, forKey: .resource)
         sourceUpdatedAt = try container.decodeIfPresent(Double.self, forKey: .sourceUpdatedAt)
         updatedAt = try container.decode(Double.self, forKey: .updatedAt)
+    }
+}
+
+struct TuneAVProRealtimeRefreshPlan: Equatable {
+    let refreshLibrary: Bool
+    let refreshFeedback: Bool
+
+    static let none = TuneAVProRealtimeRefreshPlan(
+        refreshLibrary: false,
+        refreshFeedback: false
+    )
+}
+
+struct TuneAVProRealtimeProjectionCursor {
+    private var ownerUserId: String?
+    private var libraryGeneration: Int?
+    private var feedbackGeneration: Int?
+    private var legacyUpdatedAt: Double?
+
+    mutating func consume(_ projection: TuneAVProLibraryProjection) -> TuneAVProRealtimeRefreshPlan {
+        if ownerUserId != projection.ownerUserId {
+            reset()
+            ownerUserId = projection.ownerUserId
+        }
+
+        if projection.libraryGeneration != nil || projection.feedbackGeneration != nil {
+            let nextLibraryGeneration = projection.libraryGeneration ?? 0
+            let nextFeedbackGeneration = projection.feedbackGeneration ?? 0
+            let refreshLibrary = nextLibraryGeneration > (libraryGeneration ?? 0)
+            let refreshFeedback = nextFeedbackGeneration > (feedbackGeneration ?? 0)
+
+            libraryGeneration = max(libraryGeneration ?? 0, nextLibraryGeneration)
+            feedbackGeneration = max(feedbackGeneration ?? 0, nextFeedbackGeneration)
+            legacyUpdatedAt = max(legacyUpdatedAt ?? 0, projection.updatedAt)
+
+            return TuneAVProRealtimeRefreshPlan(
+                refreshLibrary: refreshLibrary,
+                refreshFeedback: refreshFeedback
+            )
+        }
+
+        if let legacyUpdatedAt, projection.updatedAt <= legacyUpdatedAt {
+            return .none
+        }
+
+        legacyUpdatedAt = projection.updatedAt
+        let isFeedback = projection.resource?.hasPrefix("feedback.") == true
+        return TuneAVProRealtimeRefreshPlan(
+            refreshLibrary: !isFeedback,
+            refreshFeedback: isFeedback
+        )
+    }
+
+    mutating func reset() {
+        ownerUserId = nil
+        libraryGeneration = nil
+        feedbackGeneration = nil
+        legacyUpdatedAt = nil
     }
 }
 

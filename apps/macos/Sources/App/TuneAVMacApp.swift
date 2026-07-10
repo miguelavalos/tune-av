@@ -28,6 +28,15 @@ struct TuneAVMacApp: App {
                 .task {
                     await model.startAutomaticLibrarySync()
                 }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    model.prepareForTermination()
+                }
+                .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in
+                    model.prepareForSystemSleep()
+                }
+                .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)) { _ in
+                    model.resumeAfterSystemWake()
+                }
         }
         .defaultSize(width: 1360, height: 800)
         .commands {

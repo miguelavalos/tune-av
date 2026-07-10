@@ -29,6 +29,10 @@ enum TuneAVMacConfig {
         TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_MONTHLY_PACKAGE_ID")
     }
 
+    static var isListeningAnalyticsUploadEnabled: Bool {
+        TuneAVBundleConfig.boolValue(for: "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS")
+    }
+
     private static var diagnosticsEnvironment: AVDiagnosticsEnvironment {
         switch TuneAVBundleConfig.stringValue(for: "TUNEAV_CONFIG_ENVIRONMENT").lowercased() {
         case "prod", "production":

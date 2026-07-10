@@ -3,6 +3,116 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testFavoriteStationRecordDecodesMinimalCloudDeletionTombstone() throws {
+        let data = Data(
+            """
+            {
+              "station": {
+                "id": "legacy-station",
+                "name": "Legacy Station"
+              },
+              "createdAt": "2026-06-30T09:00:00Z",
+              "deletedAt": "2026-07-10T10:00:00Z"
+            }
+            """.utf8
+        )
+
+        let record = try JSONDecoder().decode(FavoriteStationRecord.self, from: data)
+
+        XCTAssertEqual(record.station.id, "legacy-station")
+        XCTAssertEqual(record.station.name, "Legacy Station")
+        XCTAssertEqual(record.station.country, "")
+        XCTAssertEqual(record.station.language, "")
+        XCTAssertEqual(record.station.tags, "")
+        XCTAssertEqual(record.station.streamURL, "")
+        XCTAssertEqual(record.deletedAt, "2026-07-10T10:00:00Z")
+    }
+
+    func testFavoriteStationRecordStillRequiresStationIdentity() {
+        let data = Data(
+            """
+            {
+              "station": {
+                "id": "legacy-station"
+              },
+              "deletedAt": "2026-07-10T10:00:00Z"
+            }
+            """.utf8
+        )
+
+        XCTAssertThrowsError(try JSONDecoder().decode(FavoriteStationRecord.self, from: data))
+    }
+
+    func testRealtimeProjectionCursorRefreshesBothCoalescedChannels() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let plan = cursor.consume(projection(library: 2, feedback: 3))
+
+        XCTAssertEqual(
+            plan,
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
+        )
+    }
+
+    func testRealtimeProjectionCursorTracksChannelsIndependentlyOutOfOrder() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        _ = cursor.consume(projection(library: 5, feedback: 1, updatedAt: 50))
+
+        XCTAssertEqual(
+            cursor.consume(projection(library: 5, feedback: 2, updatedAt: 40)),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: false, refreshFeedback: true)
+        )
+        XCTAssertEqual(
+            cursor.consume(projection(library: 6, feedback: 2, updatedAt: 30)),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+    }
+
+    func testRealtimeProjectionCursorIgnoresDuplicateGenerations() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let projection = projection(library: 4, feedback: 7)
+        _ = cursor.consume(projection)
+
+        XCTAssertEqual(cursor.consume(projection), .none)
+    }
+
+    func testRealtimeProjectionCursorResetsForNewOwner() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        _ = cursor.consume(projection(owner: "user-1", library: 9, feedback: 9))
+
+        XCTAssertEqual(
+            cursor.consume(projection(owner: "user-2", library: 1, feedback: 1)),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
+        )
+    }
+
+    func testRealtimeProjectionCursorSupportsLegacyResourceInvalidations() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let feedback = TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 3,
+            resource: "feedback.track",
+            sourceUpdatedAt: nil,
+            updatedAt: 10
+        )
+        let library = TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 3,
+            resource: "favorites",
+            sourceUpdatedAt: nil,
+            updatedAt: 11
+        )
+
+        XCTAssertEqual(
+            cursor.consume(feedback),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: false, refreshFeedback: true)
+        )
+        XCTAssertEqual(
+            cursor.consume(library),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+        XCTAssertEqual(cursor.consume(feedback), .none)
+    }
+
     @MainActor
     func testAccessClientSendsSharedAccountHeadersAndBuildsURL() async throws {
         defer { TuneAVTestURLProtocol.requestHandler = nil }
@@ -62,6 +172,23 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(access.accessMode, .signedInPro)
         XCTAssertEqual(access.planTier, .pro)
         XCTAssertTrue(access.capabilities.canUseCloudSync)
+    }
+
+    private func projection(
+        owner: String = "user-1",
+        library: Int,
+        feedback: Int,
+        updatedAt: Double = 100
+    ) -> TuneAVProLibraryProjection {
+        TuneAVProLibraryProjection(
+            ownerUserId: owner,
+            projectionVersion: 4,
+            libraryGeneration: library,
+            feedbackGeneration: feedback,
+            resource: nil,
+            sourceUpdatedAt: nil,
+            updatedAt: updatedAt
+        )
     }
 
     @MainActor
@@ -150,7 +277,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/discoveries"))
     }
 
-    func testAppDataClientOnlySyncsFavoritesAndSavedDiscoveries() async throws {
+    func testAppDataClientOnlyWritesLibraryResourcesThatChangedSincePull() async throws {
         let recorder = AppDataRequestRecorder(conflictPath: "/none")
         let client = TuneAVAppDataSyncClient(
             deviceId: "test-device",
@@ -159,10 +286,10 @@ final class SharedAppleSupportTests: XCTestCase {
             }
         )
 
-        _ = try await client.pullLibrary()
+        let remoteDocument = try await client.pullLibrary()
         try await client.pushLibrary(
             TuneAVLibrarySnapshot(
-                favorites: [],
+                favorites: try XCTUnwrap(remoteDocument.snapshot).favorites,
                 savedDiscoveries: [
                     DiscoveredTrackRecord(
                         discoveryID: "song-1",
@@ -183,12 +310,54 @@ final class SharedAppleSupportTests: XCTestCase {
         let calls = await recorder.calls
         XCTAssertTrue(calls.contains("GET /v1/apps/tuneav/data/favorites"))
         XCTAssertTrue(calls.contains("GET /v1/apps/tuneav/data/savedDiscoveries"))
-        XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/data/favorites"))
+        XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/favorites"))
         XCTAssertTrue(calls.contains("PUT /v1/apps/tuneav/data/savedDiscoveries"))
         XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/recents"))
         XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/discoveries"))
         XCTAssertFalse(calls.contains("GET /v1/apps/tuneav/data/settings"))
         XCTAssertFalse(calls.contains("PUT /v1/apps/tuneav/data/settings"))
+    }
+
+    func testAppDataClientSkipsAllWritesWhenPulledSnapshotIsUnchanged() async throws {
+        let recorder = AppDataRequestRecorder(conflictPath: "/none")
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, method, body, headers in
+                try await recorder.request(path: path, method: method, body: body, headers: headers)
+            }
+        )
+
+        let remoteDocument = try await client.pullLibrary()
+        try await client.pushLibrary(try XCTUnwrap(remoteDocument.snapshot))
+
+        let calls = await recorder.calls
+        XCTAssertFalse(calls.contains { $0.hasPrefix("PUT ") })
+    }
+
+    func testAppDataClientSkipsWritesWhenOnlyCanonicalDiscoveryOrderDiffers() async throws {
+        let recorder = AppDataRequestRecorder(
+            conflictPath: "/none",
+            savedDiscoveriesGETEntries: #"[{"discoveryID":"legacy","title":"Straße","artist":"Artist","stationID":"station-legacy","stationName":"Legacy Station","playedAt":"2026-06-14T17:41:00Z","updatedAt":"2026-06-14T17:42:00Z"},{"discoveryID":"explicit","trackKey":"strasse::artist","title":"Strasse","artist":"Artist","stationID":"station-explicit","stationName":"Explicit Station","playedAt":"2026-06-14T17:41:00Z","updatedAt":"2026-06-14T17:42:00Z"}]"#
+        )
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-device",
+            request: { path, method, body, headers in
+                try await recorder.request(path: path, method: method, body: body, headers: headers)
+            }
+        )
+
+        let remoteDocument = try await client.pullLibrary()
+        let remote = try XCTUnwrap(remoteDocument.snapshot)
+        try await client.pushLibrary(
+            TuneAVLibrarySnapshot(
+                favorites: Array(remote.favorites.reversed()),
+                savedDiscoveries: Array(remote.savedDiscoveries.reversed())
+            )
+        )
+
+        let calls = await recorder.calls
+        XCTAssertEqual(remote.savedDiscoveries.count, 2)
+        XCTAssertFalse(calls.contains { $0.hasPrefix("PUT ") })
     }
 
     func testAppDataClientSendsPlatformHeadersAndItemOperationPaths() async throws {
@@ -281,9 +450,47 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(discovery.artist, "The Tests")
         XCTAssertEqual(discovery.stationID, "station-1")
         XCTAssertEqual(discovery.stationName, "station-1")
-        XCTAssertEqual(discovery.trackKey, "sweet song::the tests")
+        XCTAssertNil(discovery.trackKey)
         XCTAssertEqual(discovery.discoveryID, "the-tests-sweet-song-station-1")
         XCTAssertEqual(discovery.playedAt, "2026-06-14T17:40:00Z")
+    }
+
+    func testLegacyAppDataFallbackMatchesBackendWithoutCollapsingEszett() {
+        let explicit = DiscoveredTrackRecord(
+            discoveryID: "explicit",
+            trackKey: "strasse::artist",
+            title: "Strasse",
+            artist: "Artist",
+            stationID: "station-1",
+            stationName: "Station 1",
+            artworkURL: nil,
+            stationArtworkURL: nil,
+            playedAt: "2026-06-14T17:40:00Z",
+            updatedAt: "2026-06-14T17:42:00Z"
+        )
+        let legacy = DiscoveredTrackRecord(
+            discoveryID: "legacy",
+            trackKey: nil,
+            title: "Straße",
+            artist: "Artist",
+            stationID: "station-2",
+            stationName: "Station 2",
+            artworkURL: nil,
+            stationArtworkURL: nil,
+            playedAt: "2026-06-14T17:41:00Z",
+            updatedAt: "2026-06-14T17:42:00Z"
+        )
+
+        let canonical = TuneAVLibrarySnapshotMerger.canonicalized(
+            TuneAVLibrarySnapshot(favorites: [], savedDiscoveries: [explicit, legacy])
+        )
+
+        XCTAssertEqual(
+            TuneAVDiscoveredTrackSupport.appDataFallbackTrackKey(title: legacy.title, artist: legacy.artist),
+            "straße::artist"
+        )
+        XCTAssertEqual(canonical.savedDiscoveries.count, 2)
+        XCTAssertEqual(canonical.savedDiscoveries.map(\.discoveryID), ["explicit", "legacy"])
     }
 
     func testAppDataClientSkipsCorruptSavedDiscoveriesWithoutDroppingValidSongs() async throws {
@@ -5621,12 +5828,14 @@ private actor AsyncCounter {
 
 private actor AppDataRequestRecorder {
     private let conflictPath: String
+    private let savedDiscoveriesGETEntries: String
     private var hasReturnedConflict = false
     private(set) var calls: [String] = []
     private(set) var headersByCall: [String: [String: String]] = [:]
 
-    init(conflictPath: String) {
+    init(conflictPath: String, savedDiscoveriesGETEntries: String = "[]") {
         self.conflictPath = conflictPath
+        self.savedDiscoveriesGETEntries = savedDiscoveriesGETEntries
     }
 
     func request(path: String, method: String, body: Data?, headers: [String: String]) async throws -> Data {
@@ -5649,7 +5858,7 @@ private actor AppDataRequestRecorder {
                 ? #"[{"station":{"id":"remote","name":"remote","country":"US","countryCode":"US","state":null,"language":"English","languageCodes":"en","tags":"test","streamURL":"https://example.com/remote.mp3","faviconURL":null,"bitrate":null,"codec":null,"homepageURL":null,"votes":null,"clickCount":null,"clickTrend":null,"isHLS":false,"hasExtendedInfo":null,"hasSSLError":null,"lastCheckOKAt":null,"geoLatitude":null,"geoLongitude":null},"createdAt":"2026-06-06T09:00:00Z","deletedAt":null}]"#
                 : #"[]"#
         case "/v1/apps/tuneav/data/savedDiscoveries":
-            entries = #"[]"#
+            entries = method == "GET" ? savedDiscoveriesGETEntries : #"[]"#
         default:
             entries = #"[]"#
         }

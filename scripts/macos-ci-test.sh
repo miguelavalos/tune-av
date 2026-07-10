@@ -10,6 +10,8 @@ mkdir -p "$(dirname "$RESULT_BUNDLE_PATH")"
 
 cd "$ROOT_DIR/apps/macos"
 
+node "$ROOT_DIR/scripts/check-macos-privacy-manifest.mjs"
+
 xcodebuild test \
   -project TuneAVMac.xcodeproj \
   -scheme TuneAVMac \
