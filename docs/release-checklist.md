@@ -309,13 +309,13 @@ separate development bundle identifier.
    navigation. The previous macOS `1.0.6 (48)` package was uploaded to App Store
    Connect on 2026-07-03 before the contextual Avi navigation update.
 
-   TestFlight delivery checkpoint, 2026-07-10: iPhone/iPad `1.0.7 (46)` and
-   macOS `1.0.7 (55)` were accepted for processing by App Store Connect from
-   public commit `1f65bc0`. Both exact archives passed their release preflights,
-   privacy evidence checks, and Sentry dSYM verification. Confirm processing
-   completion and tester-group availability in App Store Connect before treating
-   either build as TestFlight-ready; neither build has been submitted to App
-   Review by this checkpoint.
+   Latest TestFlight delivery checkpoint, 2026-07-10: iPhone/iPad `1.0.7 (47)`
+   and macOS `1.0.7 (56)` were accepted for processing by App Store Connect
+   from public commit `11fb5d9`. Both exact archives passed their release
+   preflights, privacy evidence checks, and Sentry dSYM verification. Confirm
+   processing completion and tester-group availability in App Store Connect
+   before treating either build as TestFlight-ready; neither build has been
+   submitted to App Review by this checkpoint.
 
 ## Pending Product API Transition Checks
 
