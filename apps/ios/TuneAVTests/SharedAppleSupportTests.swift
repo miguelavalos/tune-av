@@ -511,7 +511,8 @@ final class SharedAppleSupportTests: XCTestCase {
             FavoriteStationRecord(
                 station: Self.stationRecord(id: "radio-bob-rock"),
                 createdAt: "2026-06-30T10:00:00Z"
-            )
+            ),
+            idempotencyKey: "11111111-1111-4111-8111-111111111111"
         )
         try await client.deleteSavedDiscovery(
             DiscoveredTrackRecord(
@@ -527,7 +528,8 @@ final class SharedAppleSupportTests: XCTestCase {
                 markedInterestedAt: "2026-06-30T10:00:00Z",
                 deletedAt: "2026-06-30T10:05:00Z",
                 updatedAt: "2026-06-30T10:05:00Z"
-            )
+            ),
+            idempotencyKey: "22222222-2222-4222-8222-222222222222"
         )
 
         let calls = await recorder.calls
@@ -537,8 +539,19 @@ final class SharedAppleSupportTests: XCTestCase {
         let headersByCall = await recorder.headersByCall
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/favorites/upsert"]?["x-appsav-device-id"], "test-device")
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/favorites/upsert"]?["x-appsav-platform"], "ios")
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/favorites/upsert"]?["Idempotency-Key"], "11111111-1111-4111-8111-111111111111")
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-device-id"], "test-device")
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-platform"], "ios")
+        XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["Idempotency-Key"], "22222222-2222-4222-8222-222222222222")
+    }
+
+    func testSyncRetryPolicyOnlyRetriesTransientFailuresAndStopsAfterFiveAttempts() {
+        XCTAssertEqual(TuneAVSyncRetryPolicy.disposition(statusCode: 429, retryAfterSeconds: 60), .retry(after: 60))
+        XCTAssertEqual(TuneAVSyncRetryPolicy.disposition(statusCode: 503), .retry(after: nil))
+        XCTAssertEqual(TuneAVSyncRetryPolicy.disposition(statusCode: 409), .stop)
+        XCTAssertEqual(TuneAVSyncRetryPolicy.disposition(statusCode: 401), .stop)
+        XCTAssertTrue(TuneAVSyncRetryPolicy.canRetry(afterAttempt: 3))
+        XCTAssertFalse(TuneAVSyncRetryPolicy.canRetry(afterAttempt: 4))
     }
 
     func testAppDataClientPullsLegacySavedDiscoveriesWithoutDroppingSongs() async throws {
@@ -1786,7 +1799,7 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     @MainActor
-    func testAccountAPIClientRetriesTransientNetworkFailuresOnce() async throws {
+    func testAccountAPIClientRetriesTransientNetworkFailuresForSafeReads() async throws {
         var attempts = 0
         TuneAVTestURLProtocol.requestHandler = { request in
             attempts += 1
@@ -1812,7 +1825,7 @@ final class SharedAppleSupportTests: XCTestCase {
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
         )
 
-        _ = try await client.requestData(path: "/v1/tune/feedback/stations/station-1", method: "PUT")
+        _ = try await client.requestData(path: "/v1/tune/feedback", method: "GET")
 
         XCTAssertEqual(attempts, 2)
     }
@@ -1879,7 +1892,7 @@ final class SharedAppleSupportTests: XCTestCase {
             metricsSink: AVAccountAPIClient.MetricsSink { events.append($0) }
         )
 
-        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "GET")
 
         XCTAssertEqual(attempts, 2)
         XCTAssertEqual(events.map(\.kind), [.started, .retrying, .completed])
@@ -1889,7 +1902,7 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     @MainActor
-    func testAccountAPIClientRetriesServerErrorsButNotRateLimits() async throws {
+    func testAccountAPIClientRetriesSafeReadsButNotMutationsOrRateLimits() async throws {
         var serverAttempts = 0
         TuneAVTestURLProtocol.requestHandler = { request in
             serverAttempts += 1
@@ -1912,8 +1925,27 @@ final class SharedAppleSupportTests: XCTestCase {
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
         )
 
-        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+        _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "GET")
         XCTAssertEqual(serverAttempts, 2)
+
+        var mutationAttempts = 0
+        TuneAVTestURLProtocol.requestHandler = { request in
+            mutationAttempts += 1
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 503,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data("{}".utf8))
+        }
+        do {
+            _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
+            XCTFail("Expected a failed mutation.")
+        } catch AVAccountAPIClientError.requestFailed(let statusCode, _) {
+            XCTAssertEqual(statusCode, 503)
+        }
+        XCTAssertEqual(mutationAttempts, 1)
 
         var rateLimitAttempts = 0
         TuneAVTestURLProtocol.requestHandler = { request in
@@ -1930,8 +1962,9 @@ final class SharedAppleSupportTests: XCTestCase {
         do {
             _ = try await client.requestData(path: "/v1/tune/analytics/listening-sessions", method: "POST")
             XCTFail("Expected rate-limited requests to fail without retrying.")
-        } catch AVAccountAPIClientError.requestFailed(let statusCode) {
+        } catch AVAccountAPIClientError.requestFailed(let statusCode, let retryAfterSeconds) {
             XCTAssertEqual(statusCode, 429)
+            XCTAssertEqual(retryAfterSeconds, 60)
         }
         XCTAssertEqual(rateLimitAttempts, 1)
     }

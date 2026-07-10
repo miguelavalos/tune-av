@@ -235,6 +235,10 @@ separate development bundle identifier.
    - a cold startup or completed sign-in creates no more than one automatic
      full library sync, one realtime session, and one Convex subscription;
    - foreground transitions do not start another automatic full library sync;
+   - repeated delivery of one persisted library operation uses the same
+     `Idempotency-Key` and creates only one backend revision/invalidation;
+   - automatic mutation retries are serialized, stop after five total attempts,
+     honor `Retry-After`, and do not retry permanent `4xx` failures;
    - refreshing entitlement state for the same internal account does not
      temporarily downgrade Pro or recreate realtime sync;
    - changing to a different internal account removes the previous account's

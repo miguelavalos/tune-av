@@ -42,6 +42,7 @@ final class LibraryStore: ObservableObject {
     private let context: ModelContext
     private let userDefaults: UserDefaults
     private let analyticsLogger = Logger(subsystem: "com.avalsys.tuneav", category: "listening-analytics")
+    private let syncMutationGate = TuneAVSyncMutationGate()
     private var appDataService: TuneAVAppDataService?
     private var backendService: TuneAVAppDataService?
     private var backendServiceUserID: String?
@@ -60,6 +61,8 @@ final class LibraryStore: ObservableObject {
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
     private var listeningSessionUploadRetryCount = 0
+    private var listeningSessionUploadsDeferred = false
+    private var listeningSessionRetryAfterDelay: TimeInterval?
     private var listeningSessionUploadTask: Task<Void, Never>?
     private var listeningSessionFlushTask: Task<Void, Never>?
     private var stationFeedbackSyncTasks: [String: Task<Void, Never>] = [:]
@@ -67,11 +70,13 @@ final class LibraryStore: ObservableObject {
     private var librarySyncTasks: [String: Task<Void, Never>] = [:]
     private var librarySyncTokens: [String: UUID] = [:]
     private var librarySyncRetryCounts: [String: Int] = [:]
+    private var deferredLibrarySyncKeys = Set<String>()
     private var activePendingLibraryOperationUserID: String?
     private var stationFeedbackSyncTokens: [String: UUID] = [:]
     private var trackFeedbackSyncTokens: [String: UUID] = [:]
     private var stationFeedbackSyncRetryCounts: [String: Int] = [:]
     private var trackFeedbackSyncRetryCounts: [String: Int] = [:]
+    private var deferredFeedbackSyncKeys = Set<String>()
     private var pendingFeedbackUploads: [String: TuneAVPendingFeedbackUpload] = [:]
     private var pendingLibraryOperations: [String: TuneAVPendingLibraryOperation] = [:]
     private var stationFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
@@ -869,6 +874,9 @@ final class LibraryStore: ObservableObject {
         if previousService !== service {
             listeningSessionUploadTask?.cancel()
             listeningSessionUploadTask = nil
+            listeningSessionUploadsDeferred = false
+            listeningSessionRetryAfterDelay = nil
+            deferredFeedbackSyncKeys.removeAll()
         }
         if service == nil {
             userSummary = nil
@@ -879,6 +887,7 @@ final class LibraryStore: ObservableObject {
             listeningSessionFlushTask?.cancel()
             listeningSessionFlushTask = nil
             listeningSessionUploadRetryCount = 0
+            listeningSessionRetryAfterDelay = nil
             stationFeedbackSyncTasks.values.forEach { $0.cancel() }
             stationFeedbackSyncTasks.removeAll()
             stationFeedbackSyncTokens.removeAll()
@@ -974,6 +983,7 @@ final class LibraryStore: ObservableObject {
                 userID: backendServiceUserID
             )
         )
+        listeningSessionUploadsDeferred = false
 
         pendingListeningSessions = LibraryStoreListeningSessionBuffer.bounded(
             pendingListeningSessions,
@@ -993,18 +1003,21 @@ final class LibraryStore: ObservableObject {
     }
 
     func flushPendingListeningSessions() {
+        listeningSessionUploadsDeferred = false
         flushListeningSessionUploads()
     }
 
     private func scheduleListeningSessionUpload() {
-        guard listeningSessionUploadTask == nil else { return }
+        guard listeningSessionUploadTask == nil, !listeningSessionUploadsDeferred else { return }
 
-        let delay = LibraryStoreListeningSessionRetryPolicy.delay(
+        let computedDelay = LibraryStoreListeningSessionRetryPolicy.delay(
             retryCount: listeningSessionUploadRetryCount,
             baseDelay: Self.listeningSessionRetryBaseDelay,
             maxDelay: Self.listeningSessionRetryMaxDelay,
             jitterFraction: Self.listeningSessionRetryJitterFraction
         )
+        let delay = max(computedDelay, listeningSessionRetryAfterDelay ?? 0)
+        listeningSessionRetryAfterDelay = nil
         analyticsLogger.debug(
             "Scheduled listening session upload pending=\(self.pendingListeningSessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public) delaySeconds=\(delay, privacy: .public)"
         )
@@ -1038,24 +1051,50 @@ final class LibraryStore: ObservableObject {
 
         listeningSessionFlushTask = Task { @MainActor in
             do {
-                let result = try await backendService.recordListeningSessions(sessions)
+                let result = try await syncMutationGate.withPermit {
+                    try await backendService.recordListeningSessions(sessions)
+                }
                 guard self.backendService === backendService else {
                     requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
                     return
                 }
-                finishListeningSessionUpload(didUpload: true, sessions: sessions, result: result, incrementRetry: false)
+                finishListeningSessionUpload(
+                    didUpload: true,
+                    sessions: sessions,
+                    result: result,
+                    incrementRetry: false,
+                    deferUpload: false
+                )
             } catch is CancellationError {
                 guard self.backendService === backendService else {
                     requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
                     return
                 }
-                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil, incrementRetry: false)
+                finishListeningSessionUpload(
+                    didUpload: false,
+                    sessions: sessions,
+                    result: nil,
+                    incrementRetry: false,
+                    deferUpload: false
+                )
             } catch {
                 guard self.backendService === backendService else {
                     requeueInterruptedListeningSessionUpload(sessions, reason: "backend_changed")
                     return
                 }
-                finishListeningSessionUpload(didUpload: false, sessions: sessions, result: nil, incrementRetry: true)
+                let disposition = Self.syncRetryDisposition(for: error)
+                let shouldRetry = disposition != .stop
+                    && TuneAVSyncRetryPolicy.canRetry(afterAttempt: listeningSessionUploadRetryCount)
+                if case .retry(let retryAfterSeconds) = disposition {
+                    listeningSessionRetryAfterDelay = retryAfterSeconds
+                }
+                finishListeningSessionUpload(
+                    didUpload: false,
+                    sessions: sessions,
+                    result: nil,
+                    incrementRetry: shouldRetry,
+                    deferUpload: !shouldRetry
+                )
             }
         }
     }
@@ -1064,7 +1103,8 @@ final class LibraryStore: ObservableObject {
         didUpload: Bool,
         sessions: [TuneAVListeningSessionDraft],
         result: TuneAVListeningSessionsUploadResult?,
-        incrementRetry: Bool
+        incrementRetry: Bool,
+        deferUpload: Bool
     ) {
         listeningSessionFlushTask = nil
 
@@ -1082,11 +1122,17 @@ final class LibraryStore: ObservableObject {
             analyticsLogger.debug(
                 "Listening session upload failed requeued=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public) retryCount=\(self.listeningSessionUploadRetryCount, privacy: .public)"
             )
+            if deferUpload {
+                listeningSessionUploadsDeferred = true
+                return
+            }
             scheduleListeningSessionUpload()
             return
         }
 
         listeningSessionUploadRetryCount = 0
+        listeningSessionUploadsDeferred = false
+        listeningSessionRetryAfterDelay = nil
         updatePendingListeningSessionDiagnostic()
         persistPendingListeningSessions()
         analyticsLogger.debug(
@@ -1241,7 +1287,9 @@ final class LibraryStore: ObservableObject {
                 )
                 applyRemoteSnapshot(mergedSnapshot)
                 if mergedSnapshot != remoteSnapshot {
-                    try await appDataService.pushLibrary(mergedSnapshot)
+                    try await syncMutationGate.withPermit {
+                        try await appDataService.pushLibrary(mergedSnapshot)
+                    }
                     guard self.appDataService === appDataService else { return }
                     updateSyncDiagnostics { $0.lastCloudPushAt = .now }
                     clearSyncedTombstones()
@@ -1259,7 +1307,9 @@ final class LibraryStore: ObservableObject {
                     snapshotToPush = localSnapshot
                 }
 
-                try await appDataService.pushLibrary(snapshotToPush)
+                try await syncMutationGate.withPermit {
+                    try await appDataService.pushLibrary(snapshotToPush)
+                }
                 guard self.appDataService === appDataService else { return }
                 updateSyncDiagnostics { $0.lastCloudPushAt = .now }
                 clearSyncedTombstones()
@@ -1575,7 +1625,9 @@ final class LibraryStore: ObservableObject {
                 }
 
                 try Task.checkCancellation()
-                try await appDataService.pushLibrary(snapshotToPush)
+                try await syncMutationGate.withPermit {
+                    try await appDataService.pushLibrary(snapshotToPush)
+                }
                 try Task.checkCancellation()
                 guard self.appDataService === appDataService else { return }
                 updateSyncDiagnostics { $0.lastCloudPushAt = .now }
@@ -1644,6 +1696,7 @@ final class LibraryStore: ObservableObject {
 
     private func rememberPendingLibraryOperation(_ operation: TuneAVPendingLibraryOperation) {
         let key = operation.storageKey
+        deferredLibrarySyncKeys.remove(key)
         librarySyncTasks[key]?.cancel()
         librarySyncTasks[key] = nil
         librarySyncTokens[key] = nil
@@ -1667,6 +1720,7 @@ final class LibraryStore: ObservableObject {
         }
 
         for operation in pendingLibraryOperations.values where operation.userID == userID {
+            guard !deferredLibrarySyncKeys.contains(operation.storageKey) else { continue }
             guard librarySyncTasks[operation.storageKey] == nil else { continue }
             startPendingLibraryOperation(
                 operation,
@@ -1679,11 +1733,12 @@ final class LibraryStore: ObservableObject {
     private func startPendingLibraryOperation(
         _ operation: TuneAVPendingLibraryOperation,
         retryCount: Int,
-        appDataService: TuneAVAppDataService
+        appDataService: TuneAVAppDataService,
+        minimumDelay: TimeInterval? = nil
     ) {
         let key = operation.storageKey
         let token = UUID()
-        let delay = retryCount == 0
+        let computedDelay = retryCount == 0
             ? 1
             : LibraryStoreListeningSessionRetryPolicy.delay(
                 retryCount: retryCount - 1,
@@ -1691,6 +1746,7 @@ final class LibraryStore: ObservableObject {
                 maxDelay: Self.librarySyncRetryMaxDelay,
                 jitterFraction: Self.librarySyncRetryJitterFraction
             )
+        let delay = max(computedDelay, minimumDelay ?? 0)
 
         librarySyncTokens[key] = token
         librarySyncRetryCounts[key] = retryCount
@@ -1704,10 +1760,12 @@ final class LibraryStore: ObservableObject {
                       self.pendingLibraryOperations[key]?.id == operation.id,
                       self.librarySyncTokens[key] == token
                 else { return }
-                try await self.sendPendingLibraryOperation(
-                    operation,
-                    using: appDataService
-                )
+                try await self.syncMutationGate.withPermit {
+                    try await self.sendPendingLibraryOperation(
+                        operation,
+                        using: appDataService
+                    )
+                }
             } catch is CancellationError {
                 return
             } catch {
@@ -1717,16 +1775,23 @@ final class LibraryStore: ObservableObject {
                       self.pendingLibraryOperations[key]?.id == operation.id,
                       self.librarySyncTokens[key] == token
                 else { return }
+                let disposition = Self.syncRetryDisposition(for: error)
                 if retryCount == 0 {
                     self.analyticsLogger.debug(
                         "Library cloud item operation failed; retry scheduled resource=\(operation.resource.rawValue, privacy: .public)"
                     )
                 }
-                self.startPendingLibraryOperation(
-                    operation,
-                    retryCount: retryCount + 1,
-                    appDataService: appDataService
-                )
+                if case .retry(let retryAfterSeconds) = disposition,
+                   TuneAVSyncRetryPolicy.canRetry(afterAttempt: retryCount) {
+                    self.startPendingLibraryOperation(
+                        operation,
+                        retryCount: retryCount + 1,
+                        appDataService: appDataService,
+                        minimumDelay: retryAfterSeconds
+                    )
+                } else {
+                    self.deferPendingLibraryOperation(key: key, token: token)
+                }
                 return
             }
 
@@ -1752,22 +1817,22 @@ final class LibraryStore: ObservableObject {
             guard let record = operation.favoriteRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.upsertFavorite(record)
+            try await appDataService.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.favorites, .delete):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.deleteFavorite(record)
+            try await appDataService.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .upsert):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.upsertSavedDiscovery(record)
+            try await appDataService.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .delete):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.deleteSavedDiscovery(record)
+            try await appDataService.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         }
     }
 
@@ -1779,12 +1844,37 @@ final class LibraryStore: ObservableObject {
         )
     }
 
+    private func deferPendingLibraryOperation(key: String, token: UUID) {
+        guard librarySyncTokens[key] == token else { return }
+        librarySyncTasks[key] = nil
+        librarySyncTokens[key] = nil
+        librarySyncRetryCounts[key] = nil
+        deferredLibrarySyncKeys.insert(key)
+        analyticsLogger.info("Library cloud item operation deferred key=\(key, privacy: .private(mask: .hash))")
+    }
+
     private func stopPendingLibraryOperations() {
         librarySyncTasks.values.forEach { $0.cancel() }
         librarySyncTasks.removeAll()
         librarySyncTokens.removeAll()
         librarySyncRetryCounts.removeAll()
+        deferredLibrarySyncKeys.removeAll()
         activePendingLibraryOperationUserID = nil
+    }
+
+    private static func syncRetryDisposition(for error: Error) -> TuneAVSyncRetryDisposition {
+        if let error = error as? AVAccountAPIClientError {
+            switch error {
+            case .missingToken, .missingBaseURL:
+                return .stop
+            case .requestFailed(let statusCode, let retryAfterSeconds):
+                return TuneAVSyncRetryPolicy.disposition(
+                    statusCode: statusCode,
+                    retryAfterSeconds: retryAfterSeconds
+                )
+            }
+        }
+        return TuneAVSyncRetryPolicy.disposition(for: error)
     }
 
     private func syncStationFeedback(_ feedback: TuneAVStationFeedback?, stationID: String) {
@@ -1792,6 +1882,7 @@ final class LibraryStore: ObservableObject {
         guard let backendService, backendService.isConfigured() else { return }
 
         let token = UUID()
+        deferredFeedbackSyncKeys.remove(TuneAVPendingFeedbackUpload.stationKey(stationID))
         stationFeedbackSyncTasks[stationID]?.cancel()
         stationFeedbackSyncTokens[stationID] = token
         stationFeedbackSyncRetryCounts[stationID] = 0
@@ -1803,9 +1894,10 @@ final class LibraryStore: ObservableObject {
         stationID: String,
         token: UUID,
         retryCount: Int,
-        backendService: TuneAVAppDataService
+        backendService: TuneAVAppDataService,
+        minimumDelay: TimeInterval? = nil
     ) {
-        let delay = retryCount == 0
+        let computedDelay = retryCount == 0
             ? 1
             : LibraryStoreListeningSessionRetryPolicy.delay(
                 retryCount: retryCount - 1,
@@ -1813,6 +1905,7 @@ final class LibraryStore: ObservableObject {
                 maxDelay: Self.feedbackSyncRetryMaxDelay,
                 jitterFraction: Self.feedbackSyncRetryJitterFraction
             )
+        let delay = max(computedDelay, minimumDelay ?? 0)
 
         stationFeedbackSyncRetryCounts[stationID] = retryCount
         stationFeedbackSyncTasks[stationID] = Task { @MainActor in
@@ -1822,18 +1915,26 @@ final class LibraryStore: ObservableObject {
                       self.backendService === backendService,
                       self.stationFeedbackSyncTokens[stationID] == token
                 else { return }
-                try await backendService.setStationFeedback(feedback, stationID: stationID)
+                try await syncMutationGate.withPermit {
+                    try await backendService.setStationFeedback(feedback, stationID: stationID)
+                }
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                retryStationFeedbackSyncIfCurrent(
-                    feedback,
-                    stationID: stationID,
-                    token: token,
-                    retryCount: retryCount + 1,
-                    backendService: backendService
-                )
+                if case .retry(let retryAfterSeconds) = Self.syncRetryDisposition(for: error),
+                   TuneAVSyncRetryPolicy.canRetry(afterAttempt: retryCount) {
+                    retryStationFeedbackSyncIfCurrent(
+                        feedback,
+                        stationID: stationID,
+                        token: token,
+                        retryCount: retryCount + 1,
+                        backendService: backendService,
+                        minimumDelay: retryAfterSeconds
+                    )
+                } else {
+                    deferStationFeedbackSyncIfCurrent(stationID: stationID, token: token)
+                }
                 return
             }
             guard self.backendService === backendService else { return }
@@ -1852,6 +1953,7 @@ final class LibraryStore: ObservableObject {
 
         let normalizedArtist = normalizedTrackValue(artist)
         let token = UUID()
+        deferredFeedbackSyncKeys.remove(TuneAVPendingFeedbackUpload.trackKey(feedbackKey))
         trackFeedbackSyncTasks[feedbackKey]?.cancel()
         trackFeedbackSyncTokens[feedbackKey] = token
         trackFeedbackSyncRetryCounts[feedbackKey] = 0
@@ -1875,9 +1977,10 @@ final class LibraryStore: ObservableObject {
         stationID: String?,
         token: UUID,
         retryCount: Int,
-        backendService: TuneAVAppDataService
+        backendService: TuneAVAppDataService,
+        minimumDelay: TimeInterval? = nil
     ) {
-        let delay = retryCount == 0
+        let computedDelay = retryCount == 0
             ? 1
             : LibraryStoreListeningSessionRetryPolicy.delay(
                 retryCount: retryCount - 1,
@@ -1885,6 +1988,7 @@ final class LibraryStore: ObservableObject {
                 maxDelay: Self.feedbackSyncRetryMaxDelay,
                 jitterFraction: Self.feedbackSyncRetryJitterFraction
             )
+        let delay = max(computedDelay, minimumDelay ?? 0)
 
         trackFeedbackSyncRetryCounts[feedbackKey] = retryCount
         trackFeedbackSyncTasks[feedbackKey] = Task { @MainActor in
@@ -1894,21 +1998,29 @@ final class LibraryStore: ObservableObject {
                       self.backendService === backendService,
                       self.trackFeedbackSyncTokens[feedbackKey] == token
                 else { return }
-                try await backendService.setTrackFeedback(feedback, title: title, artist: artist, stationID: stationID)
+                try await syncMutationGate.withPermit {
+                    try await backendService.setTrackFeedback(feedback, title: title, artist: artist, stationID: stationID)
+                }
             } catch is CancellationError {
                 return
             } catch {
                 guard self.backendService === backendService else { return }
-                retryTrackFeedbackSyncIfCurrent(
-                    feedback,
-                    feedbackKey: feedbackKey,
-                    title: title,
-                    artist: artist,
-                    stationID: stationID,
-                    token: token,
-                    retryCount: retryCount + 1,
-                    backendService: backendService
-                )
+                if case .retry(let retryAfterSeconds) = Self.syncRetryDisposition(for: error),
+                   TuneAVSyncRetryPolicy.canRetry(afterAttempt: retryCount) {
+                    retryTrackFeedbackSyncIfCurrent(
+                        feedback,
+                        feedbackKey: feedbackKey,
+                        title: title,
+                        artist: artist,
+                        stationID: stationID,
+                        token: token,
+                        retryCount: retryCount + 1,
+                        backendService: backendService,
+                        minimumDelay: retryAfterSeconds
+                    )
+                } else {
+                    deferTrackFeedbackSyncIfCurrent(feedbackKey: feedbackKey, token: token)
+                }
                 return
             }
             guard self.backendService === backendService else { return }
@@ -1921,10 +2033,18 @@ final class LibraryStore: ObservableObject {
         stationID: String,
         token: UUID,
         retryCount: Int,
-        backendService: TuneAVAppDataService
+        backendService: TuneAVAppDataService,
+        minimumDelay: TimeInterval?
     ) {
         guard stationFeedbackSyncTokens[stationID] == token else { return }
-        startStationFeedbackSync(feedback, stationID: stationID, token: token, retryCount: retryCount, backendService: backendService)
+        startStationFeedbackSync(
+            feedback,
+            stationID: stationID,
+            token: token,
+            retryCount: retryCount,
+            backendService: backendService,
+            minimumDelay: minimumDelay
+        )
     }
 
     private func retryTrackFeedbackSyncIfCurrent(
@@ -1935,7 +2055,8 @@ final class LibraryStore: ObservableObject {
         stationID: String?,
         token: UUID,
         retryCount: Int,
-        backendService: TuneAVAppDataService
+        backendService: TuneAVAppDataService,
+        minimumDelay: TimeInterval?
     ) {
         guard trackFeedbackSyncTokens[feedbackKey] == token else { return }
         startTrackFeedbackSync(
@@ -1946,8 +2067,25 @@ final class LibraryStore: ObservableObject {
             stationID: stationID,
             token: token,
             retryCount: retryCount,
-            backendService: backendService
+            backendService: backendService,
+            minimumDelay: minimumDelay
         )
+    }
+
+    private func deferStationFeedbackSyncIfCurrent(stationID: String, token: UUID) {
+        guard stationFeedbackSyncTokens[stationID] == token else { return }
+        stationFeedbackSyncTasks[stationID] = nil
+        stationFeedbackSyncTokens[stationID] = nil
+        stationFeedbackSyncRetryCounts[stationID] = nil
+        deferredFeedbackSyncKeys.insert(TuneAVPendingFeedbackUpload.stationKey(stationID))
+    }
+
+    private func deferTrackFeedbackSyncIfCurrent(feedbackKey: String, token: UUID) {
+        guard trackFeedbackSyncTokens[feedbackKey] == token else { return }
+        trackFeedbackSyncTasks[feedbackKey] = nil
+        trackFeedbackSyncTokens[feedbackKey] = nil
+        trackFeedbackSyncRetryCounts[feedbackKey] = nil
+        deferredFeedbackSyncKeys.insert(TuneAVPendingFeedbackUpload.trackKey(feedbackKey))
     }
 
     private func clearStationFeedbackSyncIfCurrent(stationID: String, token: UUID) {
@@ -2016,6 +2154,7 @@ final class LibraryStore: ObservableObject {
     private func schedulePendingFeedbackUploadsForCurrentUser() {
         guard let userID = backendServiceUserID else { return }
         for upload in pendingFeedbackUploads.values where upload.userID == userID {
+            guard !deferredFeedbackSyncKeys.contains(upload.key) else { continue }
             switch upload.kind {
             case .station:
                 guard let stationID = upload.stationID else { continue }

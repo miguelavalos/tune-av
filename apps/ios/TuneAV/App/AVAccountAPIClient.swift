@@ -12,7 +12,7 @@ protocol AccountDeletionAPI {
 enum AVAccountAPIClientError: LocalizedError {
     case missingToken
     case missingBaseURL
-    case requestFailed(statusCode: Int)
+    case requestFailed(statusCode: Int, retryAfterSeconds: TimeInterval? = nil)
 
     var errorDescription: String? {
         switch self {
@@ -20,7 +20,7 @@ enum AVAccountAPIClientError: LocalizedError {
             L10n.string("accountAPI.error.missingToken")
         case .missingBaseURL:
             L10n.string("accountAPI.error.missingBaseURL")
-        case .requestFailed(let statusCode):
+        case .requestFailed(let statusCode, _):
             L10n.string("accountAPI.error.requestFailed", statusCode)
         }
     }
@@ -116,8 +116,11 @@ final class AVAccountAPIClient {
             let error = AVAccountAPIClientError.missingBaseURL
             captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
             throw error
-        } catch TuneAVAccessClientError.requestFailed(let statusCode) {
-            let error = AVAccountAPIClientError.requestFailed(statusCode: statusCode)
+        } catch TuneAVAccessClientError.requestFailed(let statusCode, let retryAfterSeconds) {
+            let error = AVAccountAPIClientError.requestFailed(
+                statusCode: statusCode,
+                retryAfterSeconds: retryAfterSeconds
+            )
             captureNetworkError(error, operation: operation, method: method, startedAt: startedAt)
             throw error
         } catch {

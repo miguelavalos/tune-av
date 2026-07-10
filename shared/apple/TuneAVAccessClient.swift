@@ -58,7 +58,7 @@ extension AppAccess: Equatable {}
 enum TuneAVAccessClientError: Error, Equatable {
     case missingToken
     case missingBaseURL
-    case requestFailed(statusCode: Int)
+    case requestFailed(statusCode: Int, retryAfterSeconds: TimeInterval? = nil)
     case avTunesysAccessMissing
 }
 
@@ -338,7 +338,10 @@ final class TuneAVAccessClient {
                 attempt: attempts,
                 errorCode: nil
             ))
-            throw TuneAVAccessClientError.requestFailed(statusCode: httpResponse.statusCode)
+            throw TuneAVAccessClientError.requestFailed(
+                statusCode: httpResponse.statusCode,
+                retryAfterSeconds: Self.retryAfterSeconds(from: httpResponse)
+            )
         }
 
         recordNetworkEvent(NetworkEvent(
@@ -361,6 +364,7 @@ final class TuneAVAccessClient {
                 let (data, response) = try await urlSession.data(for: request)
                 if let httpResponse = response as? HTTPURLResponse,
                    retryPolicy.shouldRetry(statusCode: httpResponse.statusCode, attempt: attempt),
+                   Self.isSafeToRetry(method: method),
                    !Task.isCancelled {
                     recordNetworkEvent(NetworkEvent(
                         kind: .retrying,
@@ -371,13 +375,18 @@ final class TuneAVAccessClient {
                         attempt: attempt + 1,
                         errorCode: nil
                     ))
-                    try await retryPolicy.sleep(beforeAttempt: attempt + 1)
+                    try await retryPolicy.sleep(
+                        beforeAttempt: attempt + 1,
+                        retryAfterSeconds: Self.retryAfterSeconds(from: httpResponse)
+                    )
                     attempt += 1
                     continue
                 }
                 return (data, response, attempt)
             } catch {
-                guard retryPolicy.shouldRetry(error: error, attempt: attempt), !Task.isCancelled else {
+                guard retryPolicy.shouldRetry(error: error, attempt: attempt),
+                      Self.isSafeToRetry(method: method),
+                      !Task.isCancelled else {
                     throw error
                 }
                 recordNetworkEvent(NetworkEvent(
@@ -420,6 +429,19 @@ final class TuneAVAccessClient {
 
         components.percentEncodedQuery = String(pathAndQuery[1])
         return components.url ?? url
+    }
+
+    private static func isSafeToRetry(method: String) -> Bool {
+        method.uppercased() == "GET" || method.uppercased() == "HEAD"
+    }
+
+    private static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
+        guard let value = response.value(forHTTPHeaderField: "Retry-After")?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let seconds = TimeInterval(value),
+              seconds >= 0 else {
+            return nil
+        }
+        return seconds
     }
 
     private static func operationName(method: String, path: String) -> String {
@@ -509,7 +531,8 @@ final class TuneAVAccessClient {
         static let disabled = RetryPolicy(maxAttempts: 1, backoffNanoseconds: 0)
 
         func shouldRetry(statusCode: Int, attempt: Int) -> Bool {
-            attempt < maxAttempts && (500..<600).contains(statusCode)
+            attempt < maxAttempts
+                && (statusCode == 408 || statusCode == 425 || statusCode == 429 || (500..<600).contains(statusCode))
         }
 
         func shouldRetry(error: Error, attempt: Int) -> Bool {
@@ -533,8 +556,13 @@ final class TuneAVAccessClient {
             }
         }
 
-        func sleep(beforeAttempt: Int) async throws {
-            guard beforeAttempt > 1, backoffNanoseconds > 0 else { return }
+        func sleep(beforeAttempt: Int, retryAfterSeconds: TimeInterval? = nil) async throws {
+            guard beforeAttempt > 1 else { return }
+            if let retryAfterSeconds {
+                try await Task.sleep(for: .milliseconds(Int(retryAfterSeconds * 1_000)))
+                return
+            }
+            guard backoffNanoseconds > 0 else { return }
             try await Task.sleep(nanoseconds: backoffNanoseconds)
         }
     }

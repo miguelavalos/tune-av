@@ -3,10 +3,108 @@ import Foundation
 enum TuneAVAppDataClientError: Error, Equatable {
     case missingToken
     case missingBaseURL
-    case requestFailed(statusCode: Int)
+    case requestFailed(statusCode: Int, retryAfterSeconds: TimeInterval? = nil)
 }
 
 typealias MacAppDataClientError = TuneAVAppDataClientError
+
+enum TuneAVSyncRetryDisposition: Equatable {
+    case retry(after: TimeInterval?)
+    case stop
+}
+
+enum TuneAVSyncRetryPolicy {
+    static let maximumAutomaticAttempts = 5
+
+    static func disposition(for error: Error) -> TuneAVSyncRetryDisposition {
+        if error is CancellationError {
+            return .stop
+        }
+        if error is TuneAVAppDataError {
+            return .stop
+        }
+        if let error = error as? TuneAVAppDataClientError {
+            switch error {
+            case .missingToken, .missingBaseURL:
+                return .stop
+            case .requestFailed(let statusCode, let retryAfterSeconds):
+                return disposition(statusCode: statusCode, retryAfterSeconds: retryAfterSeconds)
+            }
+        }
+        if let error = error as? TuneAVAccessClientError {
+            switch error {
+            case .missingToken, .missingBaseURL, .avTunesysAccessMissing:
+                return .stop
+            case .requestFailed(let statusCode, let retryAfterSeconds):
+                return disposition(statusCode: statusCode, retryAfterSeconds: retryAfterSeconds)
+            }
+        }
+        if let error = error as? URLError {
+            switch error.code {
+            case .timedOut,
+                 .cannotFindHost,
+                 .cannotConnectToHost,
+                 .networkConnectionLost,
+                 .dnsLookupFailed,
+                 .notConnectedToInternet,
+                 .internationalRoamingOff,
+                 .callIsActive,
+                 .dataNotAllowed:
+                return .retry(after: nil)
+            default:
+                return .stop
+            }
+        }
+        return .stop
+    }
+
+    static func disposition(
+        statusCode: Int,
+        retryAfterSeconds: TimeInterval? = nil
+    ) -> TuneAVSyncRetryDisposition {
+        if statusCode == 408 || statusCode == 425 || statusCode == 429 || (500..<600).contains(statusCode) {
+            return .retry(after: retryAfterSeconds)
+        }
+        return .stop
+    }
+
+    static func canRetry(afterAttempt attempt: Int) -> Bool {
+        attempt + 1 < maximumAutomaticAttempts
+    }
+}
+
+/// Serializes backend mutations from one app process so bursts of local changes
+/// cannot turn into parallel Worker requests.
+@MainActor
+final class TuneAVSyncMutationGate {
+    private var isHeld = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func withPermit<Value>(_ operation: () async throws -> Value) async throws -> Value {
+        await acquire()
+        defer { release() }
+        try Task.checkCancellation()
+        return try await operation()
+    }
+
+    private func acquire() async {
+        guard isHeld else {
+            isHeld = true
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    private func release() {
+        guard !waiters.isEmpty else {
+            isHeld = false
+            return
+        }
+        waiters.removeFirst().resume()
+    }
+}
 
 enum TuneAVAppDataResource: String, CaseIterable {
     case favorites
@@ -196,20 +294,20 @@ actor TuneAVAppDataSyncClient {
         try await pushLibrary(snapshot)
     }
 
-    func upsertFavorite(_ record: FavoriteStationRecord) async throws {
-        try await putLibraryOperation(.favorites, action: "upsert", entry: record)
+    func upsertFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+        try await putLibraryOperation(.favorites, action: "upsert", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteFavorite(_ record: FavoriteStationRecord) async throws {
-        try await putLibraryOperation(.favorites, action: "delete", entry: record)
+    func deleteFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+        try await putLibraryOperation(.favorites, action: "delete", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
-        try await putLibraryOperation(.savedDiscoveries, action: "upsert", entry: record)
+    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+        try await putLibraryOperation(.savedDiscoveries, action: "upsert", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
-        try await putLibraryOperation(.savedDiscoveries, action: "delete", entry: record)
+    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+        try await putLibraryOperation(.savedDiscoveries, action: "delete", entry: record, idempotencyKey: idempotencyKey)
     }
 
     private func pullResource<Entry: Codable>(
@@ -273,7 +371,7 @@ actor TuneAVAppDataSyncClient {
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
             return response.data.entries
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
         }
     }
@@ -281,19 +379,24 @@ actor TuneAVAppDataSyncClient {
     private func putLibraryOperation<Entry: Codable>(
         _ resource: TuneAVAppDataResource,
         action: String,
-        entry: Entry
+        entry: Entry,
+        idempotencyKey: String?
     ) async throws {
+        var headers = defaultHeaders()
+        if let idempotencyKey {
+            headers["Idempotency-Key"] = idempotencyKey
+        }
         do {
             let data = try await request(
                 libraryOperationPath(for: resource, action: action),
                 "PUT",
                 try encoder.encode(entry),
-                defaultHeaders()
+                headers
             )
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
             lastPulledLibrarySnapshot = nil
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 409 {
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
         }
     }

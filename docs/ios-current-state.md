@@ -96,6 +96,14 @@ bounded:
 - keep foreground transitions passive instead of treating every activation as
   another full-sync trigger;
 - keep manual `Sync now` as the explicit recovery path;
+- serialize backend mutations within each app process so a burst of local
+  changes cannot create parallel Cloudflare writes;
+- attach the persisted operation UUID as `Idempotency-Key` to item-level
+  library writes, and reuse it on every retry;
+- retry only transient network failures and HTTP `408`, `425`, `429`, or `5xx`,
+  respect numeric `Retry-After`, and stop after five total attempts; permanent
+  failures remain persisted for a later manual/session recovery instead of
+  looping;
 - create one realtime session and one Convex subscription for the active Pro
   account, and reuse them while the account identity is unchanged;
 - renew that realtime session before its server-provided expiry, with bounded

@@ -19,8 +19,11 @@ final class TuneAVAppDataService {
                         body: body,
                         headers: headers
                     )
-                } catch AVAccountAPIClientError.requestFailed(let statusCode) {
-                    throw TuneAVAppDataClientError.requestFailed(statusCode: statusCode)
+                } catch AVAccountAPIClientError.requestFailed(let statusCode, let retryAfterSeconds) {
+                    throw TuneAVAppDataClientError.requestFailed(
+                        statusCode: statusCode,
+                        retryAfterSeconds: retryAfterSeconds
+                    )
                 } catch AVAccountAPIClientError.missingToken {
                     throw TuneAVAppDataClientError.missingToken
                 } catch AVAccountAPIClientError.missingBaseURL {
@@ -48,20 +51,20 @@ final class TuneAVAppDataService {
         try await syncClient.overwriteLibrary(snapshot)
     }
 
-    func upsertFavorite(_ record: FavoriteStationRecord) async throws {
-        try await syncClient.upsertFavorite(record)
+    func upsertFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+        try await syncClient.upsertFavorite(record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteFavorite(_ record: FavoriteStationRecord) async throws {
-        try await syncClient.deleteFavorite(record)
+    func deleteFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+        try await syncClient.deleteFavorite(record, idempotencyKey: idempotencyKey)
     }
 
-    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
-        try await syncClient.upsertSavedDiscovery(record)
+    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+        try await syncClient.upsertSavedDiscovery(record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord) async throws {
-        try await syncClient.deleteSavedDiscovery(record)
+    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+        try await syncClient.deleteSavedDiscovery(record, idempotencyKey: idempotencyKey)
     }
 
     func fetchUserSummary(limit: Int = 12) async throws -> TuneAVUserSummary {

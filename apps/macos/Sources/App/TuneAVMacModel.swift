@@ -203,6 +203,7 @@ final class TuneAVMacModel: ObservableObject {
     private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
     private let sleepNanoseconds: (UInt64) async -> Void
     private let listeningAnalyticsUploadEnabled: Bool
+    private let syncMutationGate = TuneAVSyncMutationGate()
     private let nowProvider: () -> Date
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
@@ -227,12 +228,14 @@ final class TuneAVMacModel: ObservableObject {
     private var librarySyncTasks: [String: Task<Void, Never>] = [:]
     private var librarySyncTokens: [String: UUID] = [:]
     private var librarySyncRetryCounts: [String: Int] = [:]
+    private var deferredLibrarySyncKeys = Set<String>()
     private var activePendingLibraryOperationUserID: String?
     private var trackFeedbackRecords: [String: TuneAVLocalFeedbackRecord] = [:]
     private var pendingFeedbackUploads: [String: TuneAVMacPendingFeedbackUpload] = [:]
     private var feedbackSyncTasks: [String: Task<Void, Never>] = [:]
     private var feedbackSyncTokens: [String: UUID] = [:]
     private var feedbackSyncRetryCounts: [String: Int] = [:]
+    private var deferredFeedbackSyncKeys = Set<String>()
     private var activePendingFeedbackUploadUserID: String?
     private var activeListeningSession: TuneAVMacActiveListeningSession?
     private var pendingListeningSessions: [TuneAVMacListeningSessionDraft] = []
@@ -240,6 +243,8 @@ final class TuneAVMacModel: ObservableObject {
     private var listeningSessionFlushTask: Task<Void, Never>?
     private var listeningSessionFlushToken: UUID?
     private var listeningSessionUploadRetryCount = 0
+    private var listeningSessionUploadsDeferred = false
+    private var listeningSessionRetryAfterDelay: TimeInterval?
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var cloudSyncExecutionGate = MacCloudSyncExecutionGate()
@@ -1446,7 +1451,9 @@ final class TuneAVMacModel: ObservableObject {
                 )
                 applyLibrarySnapshot(snapshotToApply)
                 if snapshotToApply != remoteSnapshot {
-                    try await client.pushLibrary(snapshotToApply)
+                    try await syncMutationGate.withPermit {
+                        try await client.pushLibrary(snapshotToApply)
+                    }
                 }
             case .pushLocal:
                 if let remoteSnapshot = remoteDocument.snapshot {
@@ -1456,7 +1463,9 @@ final class TuneAVMacModel: ObservableObject {
                 } else {
                     snapshotToApply = cloudBoundedSnapshot(localSnapshot)
                 }
-                try await client.pushLibrary(snapshotToApply)
+                try await syncMutationGate.withPermit {
+                    try await client.pushLibrary(snapshotToApply)
+                }
                 if snapshotToApply != localSnapshot {
                     applyLibrarySnapshot(snapshotToApply)
                 }
@@ -1490,7 +1499,7 @@ final class TuneAVMacModel: ObservableObject {
             )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.missingBaseURL")
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode) where statusCode == 401 || statusCode == 403 {
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 401 || statusCode == 403 {
             TuneAVMacDiagnostics.capture(
                 TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
                 feature: "tune.mac.sync",
@@ -1500,7 +1509,7 @@ final class TuneAVMacModel: ObservableObject {
             )
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode) {
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) {
             TuneAVMacDiagnostics.capture(
                 TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
                 feature: "tune.mac.sync",
@@ -2236,8 +2245,11 @@ final class TuneAVMacModel: ObservableObject {
                 throw TuneAVAppDataClientError.missingToken
             } catch TuneAVAccessClientError.missingBaseURL {
                 throw TuneAVAppDataClientError.missingBaseURL
-            } catch TuneAVAccessClientError.requestFailed(let statusCode) {
-                throw TuneAVAppDataClientError.requestFailed(statusCode: statusCode)
+            } catch TuneAVAccessClientError.requestFailed(let statusCode, let retryAfterSeconds) {
+                throw TuneAVAppDataClientError.requestFailed(
+                    statusCode: statusCode,
+                    retryAfterSeconds: retryAfterSeconds
+                )
             } catch {
                 throw error
             }
@@ -2282,6 +2294,7 @@ final class TuneAVMacModel: ObservableObject {
 
     private func rememberPendingLibraryOperation(_ operation: TuneAVMacPendingLibraryOperation) {
         let key = operation.storageKey
+        deferredLibrarySyncKeys.remove(key)
         librarySyncTasks[key]?.cancel()
         librarySyncTasks[key] = nil
         librarySyncTokens[key] = nil
@@ -2305,6 +2318,7 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         for operation in pendingLibraryOperations.values where operation.userID == userID {
+            guard !deferredLibrarySyncKeys.contains(operation.storageKey) else { continue }
             guard librarySyncTasks[operation.storageKey] == nil else { continue }
             startPendingLibraryOperation(operation, retryCount: 0)
         }
@@ -2312,11 +2326,12 @@ final class TuneAVMacModel: ObservableObject {
 
     private func startPendingLibraryOperation(
         _ operation: TuneAVMacPendingLibraryOperation,
-        retryCount: Int
+        retryCount: Int,
+        minimumDelay: TimeInterval? = nil
     ) {
         let key = operation.storageKey
         let token = UUID()
-        let delay = retryCount == 0
+        let computedDelay = retryCount == 0
             ? 1
             : TuneAVMacSyncRetryPolicy.delay(
                 retryCount: retryCount - 1,
@@ -2324,6 +2339,7 @@ final class TuneAVMacModel: ObservableObject {
                 maxDelay: Self.librarySyncRetryMaxDelay,
                 jitterFraction: Self.librarySyncRetryJitterFraction
             )
+        let delay = max(computedDelay, minimumDelay ?? 0)
 
         librarySyncTokens[key] = token
         librarySyncRetryCounts[key] = retryCount
@@ -2336,7 +2352,9 @@ final class TuneAVMacModel: ObservableObject {
                       self.pendingLibraryOperations[key]?.id == operation.id,
                       self.librarySyncTokens[key] == token
                 else { return }
-                try await self.sendPendingLibraryOperation(operation)
+                try await self.syncMutationGate.withPermit {
+                    try await self.sendPendingLibraryOperation(operation)
+                }
             } catch is CancellationError {
                 return
             } catch {
@@ -2353,7 +2371,16 @@ final class TuneAVMacModel: ObservableObject {
                         step: "upload_retry_scheduled"
                     )
                 }
-                self.startPendingLibraryOperation(operation, retryCount: retryCount + 1)
+                if case .retry(let retryAfterSeconds) = TuneAVSyncRetryPolicy.disposition(for: error),
+                   TuneAVSyncRetryPolicy.canRetry(afterAttempt: retryCount) {
+                    self.startPendingLibraryOperation(
+                        operation,
+                        retryCount: retryCount + 1,
+                        minimumDelay: retryAfterSeconds
+                    )
+                } else {
+                    self.deferPendingLibraryOperation(key: key, token: token)
+                }
                 return
             }
 
@@ -2377,22 +2404,22 @@ final class TuneAVMacModel: ObservableObject {
             guard let record = operation.favoriteRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.upsertFavorite(record)
+            try await client.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.favorites, .delete):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.deleteFavorite(record)
+            try await client.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .upsert):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.upsertSavedDiscovery(record)
+            try await client.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .delete):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.deleteSavedDiscovery(record)
+            try await client.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         }
     }
 
@@ -2401,7 +2428,16 @@ final class TuneAVMacModel: ObservableObject {
         librarySyncTasks.removeAll()
         librarySyncTokens.removeAll()
         librarySyncRetryCounts.removeAll()
+        deferredLibrarySyncKeys.removeAll()
         activePendingLibraryOperationUserID = nil
+    }
+
+    private func deferPendingLibraryOperation(key: String, token: UUID) {
+        guard librarySyncTokens[key] == token else { return }
+        librarySyncTasks[key] = nil
+        librarySyncTokens[key] = nil
+        librarySyncRetryCounts[key] = nil
+        deferredLibrarySyncKeys.insert(key)
     }
 
     private func resumeListeningSessionIfEligible() {
@@ -2455,6 +2491,7 @@ final class TuneAVMacModel: ObservableObject {
             maxAge: Self.pendingListeningSessionMaxAge,
             now: nowProvider()
         )
+        listeningSessionUploadsDeferred = false
         storage.savePendingListeningSessions(pendingListeningSessions)
 
         guard schedulesUpload else { return }
@@ -2484,16 +2521,19 @@ final class TuneAVMacModel: ObservableObject {
             accountServiceAvailable: accountService.isAvailable,
             apiConfigured: client.isConfigured
         ), !uploadablePendingListeningSessions().isEmpty,
+           !listeningSessionUploadsDeferred,
            listeningSessionUploadTask == nil,
            listeningSessionFlushTask == nil
         else { return }
 
-        let delay = TuneAVMacSyncRetryPolicy.delay(
+        let computedDelay = TuneAVMacSyncRetryPolicy.delay(
             retryCount: listeningSessionUploadRetryCount,
             baseDelay: Self.listeningSessionRetryBaseDelay,
             maxDelay: Self.listeningSessionRetryMaxDelay,
             jitterFraction: Self.listeningSessionRetryJitterFraction
         )
+        let delay = max(computedDelay, listeningSessionRetryAfterDelay ?? 0)
+        listeningSessionRetryAfterDelay = nil
         listeningSessionUploadTask = Task { @MainActor [weak self] in
             do {
                 try await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
@@ -2539,12 +2579,16 @@ final class TuneAVMacModel: ObservableObject {
                 else {
                     throw TuneAVAccessClientError.missingToken
                 }
-                try await self.sendListeningSessions(sessions, tokenOverride: token)
+                try await self.syncMutationGate.withPermit {
+                    try await self.sendListeningSessions(sessions, tokenOverride: token)
+                }
                 guard self.accountUser?.id == userID,
                       self.listeningSessionFlushToken == flushToken else { return }
                 self.pendingListeningSessions.removeAll { sessionIDs.contains($0.id) }
                 self.storage.savePendingListeningSessions(self.pendingListeningSessions)
                 self.listeningSessionUploadRetryCount = 0
+                self.listeningSessionUploadsDeferred = false
+                self.listeningSessionRetryAfterDelay = nil
                 self.listeningSessionFlushTask = nil
                 self.listeningSessionFlushToken = nil
                 if !self.uploadablePendingListeningSessions().isEmpty {
@@ -2558,7 +2602,17 @@ final class TuneAVMacModel: ObservableObject {
                       self.listeningSessionFlushToken == flushToken else { return }
                 self.listeningSessionFlushTask = nil
                 self.listeningSessionFlushToken = nil
-                self.listeningSessionUploadRetryCount += 1
+                let disposition = TuneAVSyncRetryPolicy.disposition(for: error)
+                let shouldRetry = disposition != .stop
+                    && TuneAVSyncRetryPolicy.canRetry(afterAttempt: self.listeningSessionUploadRetryCount)
+                if case .retry(let retryAfterSeconds) = disposition {
+                    self.listeningSessionRetryAfterDelay = retryAfterSeconds
+                }
+                if shouldRetry {
+                    self.listeningSessionUploadRetryCount += 1
+                } else {
+                    self.listeningSessionUploadsDeferred = true
+                }
                 if self.listeningSessionUploadRetryCount == 1 {
                     TuneAVMacDiagnostics.capture(
                         error,
@@ -2567,7 +2621,9 @@ final class TuneAVMacModel: ObservableObject {
                         step: "upload_retry_scheduled"
                     )
                 }
-                self.schedulePendingListeningSessionUploadsForCurrentUser()
+                if shouldRetry {
+                    self.schedulePendingListeningSessionUploadsForCurrentUser()
+                }
             }
         }
     }
@@ -2592,6 +2648,8 @@ final class TuneAVMacModel: ObservableObject {
         listeningSessionFlushTask = nil
         listeningSessionFlushToken = nil
         listeningSessionUploadRetryCount = 0
+        listeningSessionUploadsDeferred = false
+        listeningSessionRetryAfterDelay = nil
     }
 
     private func prunePendingListeningSessions() {
@@ -2645,6 +2703,7 @@ final class TuneAVMacModel: ObservableObject {
 
     private func rememberPendingFeedbackUpload(_ upload: TuneAVMacPendingFeedbackUpload) {
         let key = upload.storageKey
+        deferredFeedbackSyncKeys.remove(key)
         feedbackSyncTasks[key]?.cancel()
         feedbackSyncTasks[key] = nil
         feedbackSyncTokens[key] = nil
@@ -2668,15 +2727,20 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         for upload in pendingFeedbackUploads.values where upload.userID == userID {
+            guard !deferredFeedbackSyncKeys.contains(upload.storageKey) else { continue }
             guard feedbackSyncTasks[upload.storageKey] == nil else { continue }
             startPendingFeedbackUpload(upload, retryCount: 0)
         }
     }
 
-    private func startPendingFeedbackUpload(_ upload: TuneAVMacPendingFeedbackUpload, retryCount: Int) {
+    private func startPendingFeedbackUpload(
+        _ upload: TuneAVMacPendingFeedbackUpload,
+        retryCount: Int,
+        minimumDelay: TimeInterval? = nil
+    ) {
         let key = upload.storageKey
         let token = UUID()
-        let delay = retryCount == 0
+        let computedDelay = retryCount == 0
             ? 1
             : TuneAVMacSyncRetryPolicy.delay(
                 retryCount: retryCount - 1,
@@ -2684,6 +2748,7 @@ final class TuneAVMacModel: ObservableObject {
                 maxDelay: Self.feedbackSyncRetryMaxDelay,
                 jitterFraction: Self.feedbackSyncRetryJitterFraction
             )
+        let delay = max(computedDelay, minimumDelay ?? 0)
 
         feedbackSyncTokens[key] = token
         feedbackSyncRetryCounts[key] = retryCount
@@ -2696,7 +2761,9 @@ final class TuneAVMacModel: ObservableObject {
                       self.pendingFeedbackUploads[key]?.id == upload.id,
                       self.feedbackSyncTokens[key] == token
                 else { return }
-                try await self.sendPendingFeedbackUpload(upload)
+                try await self.syncMutationGate.withPermit {
+                    try await self.sendPendingFeedbackUpload(upload)
+                }
             } catch is CancellationError {
                 return
             } catch {
@@ -2713,7 +2780,16 @@ final class TuneAVMacModel: ObservableObject {
                         step: "upload_retry_scheduled"
                     )
                 }
-                self.startPendingFeedbackUpload(upload, retryCount: retryCount + 1)
+                if case .retry(let retryAfterSeconds) = TuneAVSyncRetryPolicy.disposition(for: error),
+                   TuneAVSyncRetryPolicy.canRetry(afterAttempt: retryCount) {
+                    self.startPendingFeedbackUpload(
+                        upload,
+                        retryCount: retryCount + 1,
+                        minimumDelay: retryAfterSeconds
+                    )
+                } else {
+                    self.deferPendingFeedbackUpload(key: key, token: token)
+                }
                 return
             }
 
@@ -2756,7 +2832,16 @@ final class TuneAVMacModel: ObservableObject {
         feedbackSyncTasks.removeAll()
         feedbackSyncTokens.removeAll()
         feedbackSyncRetryCounts.removeAll()
+        deferredFeedbackSyncKeys.removeAll()
         activePendingFeedbackUploadUserID = nil
+    }
+
+    private func deferPendingFeedbackUpload(key: String, token: UUID) {
+        guard feedbackSyncTokens[key] == token else { return }
+        feedbackSyncTasks[key] = nil
+        feedbackSyncTokens[key] = nil
+        feedbackSyncRetryCounts[key] = nil
+        deferredFeedbackSyncKeys.insert(key)
     }
 
     private func sendFeedbackRequest<Payload: Encodable>(path: String, payload: Payload) async throws {

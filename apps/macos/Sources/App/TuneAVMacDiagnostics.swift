@@ -81,7 +81,7 @@ enum TuneAVMacDiagnostics {
                 return "missing_token"
             case .missingBaseURL:
                 return "missing_base_url"
-            case .requestFailed(let statusCode):
+            case .requestFailed(let statusCode, _):
                 return "request_failed_\(statusCode)"
             }
         }
