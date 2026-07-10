@@ -98,6 +98,12 @@ bounded:
 - keep manual `Sync now` as the explicit recovery path;
 - create one realtime session and one Convex subscription for the active Pro
   account, and reuse them while the account identity is unchanged;
+- renew that realtime session before its server-provided expiry, with bounded
+  jittered retries, while keeping the existing session and subscription when
+  the app returns to the foreground outside the renewal window;
+- pause renewal and Convex observation while inactive (and during macOS system
+  sleep), and remove an expired session after the bounded retry budget is
+  exhausted;
 - preserve the confirmed Pro capability while refreshing entitlement state for
   the same internal account user, avoiding a temporary Free state that would
   tear down and recreate realtime sync;
@@ -189,7 +195,7 @@ Latest local client verification known to the maintainers, run on 2026-07-10:
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
   evidence, Sentry dSYM repair, and app-size gate passed;
-- iOS unit tests: 345 tests, 0 failures;
+- iOS unit tests: 349 tests, 0 failures;
 - macOS production runtime config, platform security, and unsigned Release
   archive preflight passed;
 - macOS unit tests: 51 tests, 0 failures;
@@ -203,6 +209,16 @@ Latest local client verification known to the maintainers, run on 2026-07-10:
 - regression coverage confirms that the first Convex projection after
   bootstrap does not repeat covered Cloudflare library, feedback, or summary
   reads, while a genuinely newer resource still requests its focused refresh.
+
+Latest TestFlight delivery checkpoint, 2026-07-10:
+
+- iPhone/iPad `1.0.7 (46)` and macOS `1.0.7 (55)` were archived from public
+  commit `1f65bc0`, passed their final archive, privacy, signing, architecture,
+  app-size, and Sentry dSYM checks, and were accepted for processing by App
+  Store Connect;
+- these builds contain the bounded realtime-session renewal supervisor. Their
+  TestFlight processing and tester-group availability still require explicit
+  confirmation in App Store Connect before installation or App Review use.
 
 Latest post-approval source checkpoint, 2026-07-03:
 

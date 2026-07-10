@@ -37,6 +37,12 @@ approval records outside this repository.
 
 ## Current App Store Status
 
+- TestFlight delivery checkpoint, 2026-07-10: iPhone/iPad `1.0.7 (46)` and
+  macOS `1.0.7 (55)` were accepted for processing by App Store Connect from
+  public commit `1f65bc0`. Both passed final archive and privacy validation and
+  include bounded Pro realtime-session renewal. Processing completion and
+  tester-group availability remain to be confirmed; neither delivery is an App
+  Review submission.
 - iPhone/iPad approved baseline: `1.0.5 (44)` per 2026-07-03 operator report.
 - macOS approved baseline: `1.0.5 (47)` per 2026-07-03 operator report.
 - iPhone/iPad `1.0.6 (45)` was uploaded to App Store Connect and submitted to
