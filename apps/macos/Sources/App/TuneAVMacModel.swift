@@ -250,6 +250,8 @@ final class TuneAVMacModel: ObservableObject {
     private var accountAccessRefreshGeneration = 0
     private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
     private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
+    private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
+    private var cloudFeedbackSourceUpdatedAt: Date?
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
@@ -1420,6 +1422,7 @@ final class TuneAVMacModel: ObservableObject {
             let client = makeAppDataSyncClient()
             let localSnapshot = librarySnapshot()
             let remoteDocument = try await client.pullLibrary()
+            cloudLibrarySourceUpdatedAtByResource = remoteDocument.sourceUpdatedAtByResource
             let snapshotToApply: TuneAVLibrarySnapshot
 
             switch TuneAVLibrarySyncPlanner.decision(
@@ -1518,6 +1521,9 @@ final class TuneAVMacModel: ObservableObject {
         guard let ownerUserId = accountUser?.id, !ownerUserId.isEmpty else { return }
         guard activeProRealtimeSessionOwnerUserID != ownerUserId else { return }
 
+        proRealtimeProjectionCursor.reset()
+        cloudLibrarySourceUpdatedAtByResource.removeAll()
+        cloudFeedbackSourceUpdatedAt = nil
         activeProRealtimeSessionOwnerUserID = ownerUserId
         proRealtimeSessionTask?.cancel()
         proRealtimeProjectionCancellable?.cancel()
@@ -1566,6 +1572,8 @@ final class TuneAVMacModel: ObservableObject {
         proRealtimeProjectionCancellable = nil
         activeProRealtimeSessionOwnerUserID = nil
         proRealtimeProjectionCursor.reset()
+        cloudLibrarySourceUpdatedAtByResource.removeAll()
+        cloudFeedbackSourceUpdatedAt = nil
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
     }
@@ -2941,7 +2949,23 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        let refreshPlan = proRealtimeProjectionCursor.consume(projection)
+        while cloudSyncExecutionGate.isRunning {
+            do {
+                try await Task.sleep(for: .milliseconds(50))
+            } catch {
+                return
+            }
+            guard accessMode == .signedInPro,
+                  accountUser?.id == projection.ownerUserId else { return }
+        }
+
+        let refreshPlan = proRealtimeProjectionCursor.consume(
+            projection,
+            coverage: TuneAVProRealtimeCoverage(
+                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource,
+                feedbackSourceUpdatedAt: cloudFeedbackSourceUpdatedAt
+            )
+        )
         if refreshPlan.refreshFeedback {
             await refreshProFeedbackNow()
         }
@@ -2959,6 +2983,8 @@ final class TuneAVMacModel: ObservableObject {
                 stationFeedback: snapshot.stationFeedback,
                 trackFeedback: snapshot.trackFeedback
             )
+            let generatedAt = TuneAVDateCoding.date(from: snapshot.generatedAt)
+            cloudFeedbackSourceUpdatedAt = generatedAt == .distantPast ? nil : generatedAt
         } catch {
             TuneAVMacDiagnostics.capture(
                 error,

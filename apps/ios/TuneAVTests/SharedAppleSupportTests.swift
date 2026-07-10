@@ -67,6 +67,58 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testRealtimeProjectionCursorSkipsCloudReadsAlreadyCoveredByBootstrap() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let sourceUpdatedAt = TuneAVDateCoding.date(from: "2026-07-10T15:54:45Z")
+        let projection = projection(
+            library: 5,
+            feedback: 3,
+            resource: "favorites",
+            sourceUpdatedAt: sourceUpdatedAt.timeIntervalSince1970 * 1_000
+        )
+        let coverage = TuneAVProRealtimeCoverage(
+            librarySourceUpdatedAtByResource: ["favorites": sourceUpdatedAt],
+            feedbackSourceUpdatedAt: sourceUpdatedAt.addingTimeInterval(1)
+        )
+
+        XCTAssertEqual(cursor.consume(projection, coverage: coverage), .none)
+    }
+
+    func testRealtimeProjectionCursorRefreshesOnlyResourceNewerThanBootstrapCoverage() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let sourceUpdatedAt = TuneAVDateCoding.date(from: "2026-07-10T15:54:45Z")
+        let projection = projection(
+            library: 5,
+            feedback: 3,
+            resource: "savedDiscoveries",
+            sourceUpdatedAt: sourceUpdatedAt.timeIntervalSince1970
+        )
+        let coverage = TuneAVProRealtimeCoverage(
+            librarySourceUpdatedAtByResource: [
+                "savedDiscoveries": sourceUpdatedAt.addingTimeInterval(-1)
+            ],
+            feedbackSourceUpdatedAt: sourceUpdatedAt.addingTimeInterval(1)
+        )
+
+        XCTAssertEqual(
+            cursor.consume(projection, coverage: coverage),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+    }
+
+    func testRealtimeProjectionCursorRemainsConservativeWithoutSourceTimestamp() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        let coverage = TuneAVProRealtimeCoverage(
+            librarySourceUpdatedAtByResource: ["favorites": .now],
+            feedbackSourceUpdatedAt: .now
+        )
+
+        XCTAssertEqual(
+            cursor.consume(projection(library: 5, feedback: 3), coverage: coverage),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
+        )
+    }
+
     func testRealtimeProjectionCursorIgnoresDuplicateGenerations() {
         var cursor = TuneAVProRealtimeProjectionCursor()
         let projection = projection(library: 4, feedback: 7)
@@ -178,6 +230,8 @@ final class SharedAppleSupportTests: XCTestCase {
         owner: String = "user-1",
         library: Int,
         feedback: Int,
+        resource: String? = nil,
+        sourceUpdatedAt: Double? = nil,
         updatedAt: Double = 100
     ) -> TuneAVProLibraryProjection {
         TuneAVProLibraryProjection(
@@ -185,8 +239,8 @@ final class SharedAppleSupportTests: XCTestCase {
             projectionVersion: 4,
             libraryGeneration: library,
             feedbackGeneration: feedback,
-            resource: nil,
-            sourceUpdatedAt: nil,
+            resource: resource,
+            sourceUpdatedAt: sourceUpdatedAt,
             updatedAt: updatedAt
         )
     }
@@ -287,6 +341,13 @@ final class SharedAppleSupportTests: XCTestCase {
         )
 
         let remoteDocument = try await client.pullLibrary()
+        XCTAssertEqual(
+            remoteDocument.sourceUpdatedAtByResource,
+            [
+                "favorites": TuneAVDateCoding.date(from: "2026-06-06T10:00:00Z"),
+                "savedDiscoveries": TuneAVDateCoding.date(from: "2026-06-06T10:00:00Z")
+            ]
+        )
         try await client.pushLibrary(
             TuneAVLibrarySnapshot(
                 favorites: try XCTUnwrap(remoteDocument.snapshot).favorites,

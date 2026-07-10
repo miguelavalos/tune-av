@@ -148,7 +148,11 @@ actor TuneAVAppDataSyncClient {
                 favorites.revision,
                 savedDiscoveries.revision
             ].max() ?? 0,
-            etag: nil
+            etag: nil,
+            sourceUpdatedAtByResource: [
+                TuneAVAppDataResource.favorites.rawValue: favorites.updatedAt,
+                TuneAVAppDataResource.savedDiscoveries.rawValue: savedDiscoveries.updatedAt
+            ]
         )
     }
 

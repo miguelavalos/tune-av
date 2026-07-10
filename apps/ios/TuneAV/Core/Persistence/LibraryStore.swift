@@ -52,6 +52,10 @@ final class LibraryStore: ObservableObject {
     private var pushTask: Task<Void, Never>?
     private var cloudLibraryRefreshTask: Task<Void, Never>?
     private var cloudLibraryRefreshedAt: Date?
+    private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
+    private var cloudFeedbackRefreshTask: Task<Bool, Never>?
+    private var cloudFeedbackRefreshedAt: Date?
+    private var cloudFeedbackSourceUpdatedAt: Date?
     private var userSummaryFetchedAt: Date?
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
@@ -835,6 +839,7 @@ final class LibraryStore: ObservableObject {
             cloudLibraryRefreshTask?.cancel()
             cloudLibraryRefreshTask = nil
             cloudLibraryRefreshedAt = nil
+            cloudLibrarySourceUpdatedAtByResource.removeAll()
         }
         if service == nil {
             setCloudSyncStatus(.idle)
@@ -850,6 +855,14 @@ final class LibraryStore: ObservableObject {
         backendServiceUserID = service == nil ? nil : userID
         if previousUserID != backendServiceUserID {
             proRealtimeProjectionCursor.reset()
+            cloudLibraryRefreshTask?.cancel()
+            cloudLibraryRefreshTask = nil
+            cloudLibraryRefreshedAt = nil
+            cloudLibrarySourceUpdatedAtByResource.removeAll()
+            cloudFeedbackRefreshTask?.cancel()
+            cloudFeedbackRefreshTask = nil
+            cloudFeedbackRefreshedAt = nil
+            cloudFeedbackSourceUpdatedAt = nil
             stopPendingLibraryOperations()
         }
         updatePendingListeningSessionDiagnostic()
@@ -1131,7 +1144,13 @@ final class LibraryStore: ObservableObject {
     }
 
     func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        let refreshPlan = proRealtimeProjectionCursor.consume(projection)
+        let refreshPlan = proRealtimeProjectionCursor.consume(
+            projection,
+            coverage: TuneAVProRealtimeCoverage(
+                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource,
+                feedbackSourceUpdatedAt: cloudFeedbackSourceUpdatedAt
+            )
+        )
         if refreshPlan.refreshFeedback {
             await refreshCloudFeedbackIfNeeded(force: true)
         }
@@ -1140,26 +1159,43 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func refreshCloudFeedbackIfNeeded(force: Bool = false) async {
+    func refreshCloudFeedbackIfNeeded(force: Bool = false, refreshSummary: Bool = true) async {
         guard shouldRestoreFeedbackFromCloud else { return }
         guard let backendService, backendService.isConfigured() else { return }
 
         if !force,
-           let userSummaryFetchedAt,
-           Date().timeIntervalSince(userSummaryFetchedAt) < Self.userSummaryRefreshInterval {
+           let cloudFeedbackRefreshedAt,
+           Date().timeIntervalSince(cloudFeedbackRefreshedAt) < Self.userSummaryRefreshInterval {
             return
         }
 
-        do {
-            let snapshot = try await backendService.fetchFeedbackSnapshot()
-            guard self.backendService === backendService else { return }
-            applyProRealtimeFeedback(
-                stationFeedback: snapshot.stationFeedback,
-                trackFeedback: snapshot.trackFeedback
-            )
+        let didRefresh: Bool
+        if let cloudFeedbackRefreshTask {
+            didRefresh = await cloudFeedbackRefreshTask.value
+        } else {
+            let task = Task { @MainActor in
+                do {
+                    let snapshot = try await backendService.fetchFeedbackSnapshot()
+                    guard self.backendService === backendService else { return false }
+                    applyProRealtimeFeedback(
+                        stationFeedback: snapshot.stationFeedback,
+                        trackFeedback: snapshot.trackFeedback
+                    )
+                    cloudFeedbackRefreshedAt = .now
+                    let generatedAt = TuneAVDateCoding.date(from: snapshot.generatedAt)
+                    cloudFeedbackSourceUpdatedAt = generatedAt == .distantPast ? nil : generatedAt
+                    return true
+                } catch {
+                    return false
+                }
+            }
+            cloudFeedbackRefreshTask = task
+            didRefresh = await task.value
+            cloudFeedbackRefreshTask = nil
+        }
+
+        if didRefresh, refreshSummary {
             await refreshUserSummary(force: true)
-        } catch {
-            return
         }
     }
 
@@ -1187,6 +1223,7 @@ final class LibraryStore: ObservableObject {
             setCloudSyncStatus(.syncing)
             let remoteDocument = try await appDataService.pullLibrary()
             guard self.appDataService === appDataService else { return }
+            cloudLibrarySourceUpdatedAtByResource = remoteDocument.sourceUpdatedAtByResource
             updateSyncDiagnostics { $0.lastCloudPullAt = .now }
             let localSnapshot = librarySnapshot()
 

@@ -70,7 +70,9 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
         }
         .onReceive(proLibraryObserver.$projection.compactMap { $0 }) { projection in
+            let activeLibrarySyncTask = librarySyncTask
             Task { @MainActor in
+                await activeLibrarySyncTask?.value
                 await libraryStore.handleProRealtimeInvalidation(projection)
             }
         }
@@ -183,7 +185,7 @@ struct RootView: View {
         libraryStore.setAppDataService(appDataService)
         startProRealtimeSyncIfNeeded()
         await libraryStore.refreshCloudLibraryIfNeeded()
-        await libraryStore.refreshCloudFeedbackIfNeeded(force: true)
+        await libraryStore.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
         await libraryStore.refreshUserSummary(force: true)
     }
 

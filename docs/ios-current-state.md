@@ -103,6 +103,12 @@ bounded:
   tear down and recreate realtime sync;
 - when the internal account user changes, immediately remove the previous
   account's capabilities until the new user's backend access is resolved.
+- compare the first Convex projection with the exact per-resource timestamps
+  returned by the Cloudflare bootstrap, so already-covered favorites, saved
+  discoveries, or feedback do not trigger duplicate reads;
+- refresh only the newer projected resource when its timestamp exceeds the
+  bootstrap coverage, and keep the conservative refresh path when the resource
+  or source timestamp is missing or invalid.
 
 Realtime invalidations may request a focused refresh, but must not create a
 polling loop or an additional foreground-driven full sync.
@@ -183,7 +189,7 @@ Latest local client verification known to the maintainers, run on 2026-07-10:
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
   evidence, Sentry dSYM repair, and app-size gate passed;
-- iOS unit tests: 341 tests, 0 failures;
+- iOS unit tests: 345 tests, 0 failures;
 - macOS production runtime config, platform security, and unsigned Release
   archive preflight passed;
 - macOS unit tests: 51 tests, 0 failures;
@@ -193,7 +199,10 @@ Latest local client verification known to the maintainers, run on 2026-07-10:
   90 seconds;
 - regression coverage confirms that refreshing the same account preserves Pro
   capabilities while backend resolution is pending, while switching accounts
-  removes the previous account's Pro capabilities immediately.
+  removes the previous account's Pro capabilities immediately;
+- regression coverage confirms that the first Convex projection after
+  bootstrap does not repeat covered Cloudflare library, feedback, or summary
+  reads, while a genuinely newer resource still requests its focused refresh.
 
 Latest post-approval source checkpoint, 2026-07-03:
 

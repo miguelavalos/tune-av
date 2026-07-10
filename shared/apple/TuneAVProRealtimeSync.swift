@@ -62,13 +62,34 @@ struct TuneAVProRealtimeRefreshPlan: Equatable {
     )
 }
 
+struct TuneAVProRealtimeCoverage: Equatable {
+    let librarySourceUpdatedAtByResource: [String: Date]
+    let feedbackSourceUpdatedAt: Date?
+
+    static let none = TuneAVProRealtimeCoverage(
+        librarySourceUpdatedAtByResource: [:],
+        feedbackSourceUpdatedAt: nil
+    )
+}
+
+extension TuneAVProLibraryProjection {
+    var sourceUpdatedAtDate: Date? {
+        guard let sourceUpdatedAt, sourceUpdatedAt.isFinite, sourceUpdatedAt > 0 else { return nil }
+        let seconds = sourceUpdatedAt >= 10_000_000_000 ? sourceUpdatedAt / 1_000 : sourceUpdatedAt
+        return Date(timeIntervalSince1970: seconds)
+    }
+}
+
 struct TuneAVProRealtimeProjectionCursor {
     private var ownerUserId: String?
     private var libraryGeneration: Int?
     private var feedbackGeneration: Int?
     private var legacyUpdatedAt: Double?
 
-    mutating func consume(_ projection: TuneAVProLibraryProjection) -> TuneAVProRealtimeRefreshPlan {
+    mutating func consume(
+        _ projection: TuneAVProLibraryProjection,
+        coverage: TuneAVProRealtimeCoverage = .none
+    ) -> TuneAVProRealtimeRefreshPlan {
         if ownerUserId != projection.ownerUserId {
             reset()
             ownerUserId = projection.ownerUserId
@@ -84,9 +105,13 @@ struct TuneAVProRealtimeProjectionCursor {
             feedbackGeneration = max(feedbackGeneration ?? 0, nextFeedbackGeneration)
             legacyUpdatedAt = max(legacyUpdatedAt ?? 0, projection.updatedAt)
 
-            return TuneAVProRealtimeRefreshPlan(
-                refreshLibrary: refreshLibrary,
-                refreshFeedback: refreshFeedback
+            return filtered(
+                TuneAVProRealtimeRefreshPlan(
+                    refreshLibrary: refreshLibrary,
+                    refreshFeedback: refreshFeedback
+                ),
+                projection: projection,
+                coverage: coverage
             )
         }
 
@@ -96,9 +121,42 @@ struct TuneAVProRealtimeProjectionCursor {
 
         legacyUpdatedAt = projection.updatedAt
         let isFeedback = projection.resource?.hasPrefix("feedback.") == true
+        return filtered(
+            TuneAVProRealtimeRefreshPlan(
+                refreshLibrary: !isFeedback,
+                refreshFeedback: isFeedback
+            ),
+            projection: projection,
+            coverage: coverage
+        )
+    }
+
+    private func filtered(
+        _ plan: TuneAVProRealtimeRefreshPlan,
+        projection: TuneAVProLibraryProjection,
+        coverage: TuneAVProRealtimeCoverage
+    ) -> TuneAVProRealtimeRefreshPlan {
+        guard let sourceUpdatedAt = projection.sourceUpdatedAtDate else { return plan }
+
+        var refreshLibrary = plan.refreshLibrary
+        if refreshLibrary,
+           let resource = projection.resource,
+           projection.resource?.hasPrefix("feedback.") != true,
+           let coveredThrough = coverage.librarySourceUpdatedAtByResource[resource],
+           coveredThrough >= sourceUpdatedAt {
+            refreshLibrary = false
+        }
+
+        var refreshFeedback = plan.refreshFeedback
+        if refreshFeedback,
+           let coveredThrough = coverage.feedbackSourceUpdatedAt,
+           coveredThrough >= sourceUpdatedAt {
+            refreshFeedback = false
+        }
+
         return TuneAVProRealtimeRefreshPlan(
-            refreshLibrary: !isFeedback,
-            refreshFeedback: isFeedback
+            refreshLibrary: refreshLibrary,
+            refreshFeedback: refreshFeedback
         )
     }
 

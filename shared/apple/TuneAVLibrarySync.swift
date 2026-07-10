@@ -38,6 +38,21 @@ struct TuneAVLibraryDocument {
     let updatedAt: Date
     let revision: Int
     let etag: String?
+    let sourceUpdatedAtByResource: [String: Date]
+
+    init(
+        snapshot: TuneAVLibrarySnapshot?,
+        updatedAt: Date,
+        revision: Int,
+        etag: String?,
+        sourceUpdatedAtByResource: [String: Date] = [:]
+    ) {
+        self.snapshot = snapshot
+        self.updatedAt = updatedAt
+        self.revision = revision
+        self.etag = etag
+        self.sourceUpdatedAtByResource = sourceUpdatedAtByResource
+    }
 }
 
 enum TuneAVLibrarySyncDecision: Equatable {

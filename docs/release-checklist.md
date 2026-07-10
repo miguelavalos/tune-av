@@ -239,6 +239,12 @@ separate development bundle identifier.
      temporarily downgrade Pro or recreate realtime sync;
    - changing to a different internal account removes the previous account's
      Pro capabilities before the new entitlement response is applied;
+   - the first Convex projection after bootstrap does not repeat Cloudflare
+     reads for covered favorites, saved discoveries, feedback, or account
+     summary;
+   - a projection newer than bootstrap coverage refreshes only its affected
+     channel/resource, while a missing or invalid source timestamp takes the
+     conservative refresh path;
    - after bootstrap completes, observe at least 90 seconds without repeated
      automatic sync or realtime-session creation.
 

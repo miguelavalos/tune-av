@@ -766,6 +766,46 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.feedback(for: discovery), .notForMe)
     }
 
+    func testBootstrapRealtimeProjectionDoesNotRepeatCoveredCloudReads() async throws {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let service = TuneAVAppDataService(apiClient: client)
+        store.configureLocalFeedbackRetention(for: .signedInPro)
+        store.setBackendService(service, userID: "user-1")
+        store.setAppDataService(service)
+
+        await store.refreshCloudLibraryIfNeeded(force: true)
+        await store.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
+        await store.refreshUserSummary(force: true)
+        await store.handleProRealtimeInvalidation(
+            TuneAVProLibraryProjection(
+                ownerUserId: "user-1",
+                projectionVersion: 4,
+                libraryGeneration: 5,
+                feedbackGeneration: 3,
+                resource: "favorites",
+                sourceUpdatedAt: TuneAVDateCoding.date(from: "2026-06-07T17:52:00Z").timeIntervalSince1970 * 1_000,
+                updatedAt: 1
+            )
+        )
+
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 1)
+    }
+
     func testRemoteTrackFeedbackCreatesTunedDiscoveryWithoutLocalHistory() async throws {
         LibraryStoreTestURLProtocol.requestHandler = { request in
             let response: String
@@ -1237,10 +1277,14 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
     private var putEntriesByPath: [String: [[String: Any]]] = [:]
     private var putPayloadsByPath: [String: [String: Any]] = [:]
     private var putRequestCountsByPath: [String: Int] = [:]
+    private var requestCountsByMethodAndPath: [String: Int] = [:]
 
     func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
         let path = request.url?.path ?? ""
         let method = request.httpMethod ?? "GET"
+        lock.lock()
+        requestCountsByMethodAndPath["\(method) \(path)", default: 0] += 1
+        lock.unlock()
 
         if method == "PUT", let body = request.httpBody ?? request.httpBodyStreamData() {
             let payload = try JSONSerialization.jsonObject(with: body) as? [String: Any]
@@ -1252,21 +1296,41 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
             lock.unlock()
         }
 
-        let resource = path.split(separator: "/").last.map(String.init) ?? "unknown"
-        let response = """
-        {
-          "data": {
-            "appId": "tuneav",
-            "resource": "\(resource)",
-            "deviceId": "test-device",
-            "sentAt": "2026-06-07T17:52:00Z",
-            "entries": []
-          },
-          "updatedAt": "2026-06-07T17:52:00Z",
-          "revision": 1,
-          "etag": "\\"revision-1\\""
+        let response: String
+        switch path {
+        case "/v1/tune/feedback":
+            response = """
+            {
+              "generatedAt": "2026-06-07T17:53:00Z",
+              "stationFeedback": [],
+              "trackFeedback": []
+            }
+            """
+        case "/v1/tune/me/summary":
+            response = """
+            {
+              "usage": {},
+              "limits": {},
+              "subscription": { "tier": "pro", "status": "active", "isPro": true }
+            }
+            """
+        default:
+            let resource = path.split(separator: "/").last.map(String.init) ?? "unknown"
+            response = """
+            {
+              "data": {
+                "appId": "tuneav",
+                "resource": "\(resource)",
+                "deviceId": "test-device",
+                "sentAt": "2026-06-07T17:52:00Z",
+                "entries": []
+              },
+              "updatedAt": "2026-06-07T17:52:00Z",
+              "revision": 1,
+              "etag": "\\"revision-1\\""
+            }
+            """
         }
-        """
 
         return (
             HTTPURLResponse(
@@ -1301,6 +1365,12 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return putRequestCountsByPath[path, default: 0]
+    }
+
+    func requestCount(method: String, path: String) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return requestCountsByMethodAndPath["\(method) \(path)", default: 0]
     }
 }
 
