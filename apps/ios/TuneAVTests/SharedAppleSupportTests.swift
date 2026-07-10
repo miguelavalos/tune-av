@@ -3,6 +3,52 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testRealtimeSessionRenewsBeforeExpiryWithBoundedJitter() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let session = TuneAVRealtimeSession(
+            realtimeSessionId: "session-1",
+            expiresAt: now.addingTimeInterval(12 * 60 * 60)
+        )
+        let policy = TuneAVRealtimeSessionRenewalPolicy()
+
+        XCTAssertEqual(
+            policy.renewalDelay(for: session, now: now, jitterUnitInterval: 0),
+            11 * 60 * 60
+        )
+        XCTAssertEqual(
+            policy.renewalDelay(for: session, now: now, jitterUnitInterval: 1),
+            (10 * 60 * 60) + (45 * 60)
+        )
+    }
+
+    func testRealtimeSessionRetryDelayIsExponentialAndCapped() {
+        let policy = TuneAVRealtimeSessionRenewalPolicy()
+
+        XCTAssertEqual(policy.retryDelay(attempt: 1, jitterUnitInterval: 0.5), 5)
+        XCTAssertEqual(policy.retryDelay(attempt: 2, jitterUnitInterval: 0.5), 10)
+        XCTAssertEqual(policy.retryDelay(attempt: 20, jitterUnitInterval: 1), 5 * 60)
+    }
+
+    func testRealtimeSessionReuseAvoidsForegroundSessionChurnUntilRenewalWindow() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let policy = TuneAVRealtimeSessionRenewalPolicy()
+
+        XCTAssertTrue(policy.canReuse(
+            TuneAVRealtimeSession(
+                realtimeSessionId: "reusable",
+                expiresAt: now.addingTimeInterval((2 * 60 * 60))
+            ),
+            now: now
+        ))
+        XCTAssertFalse(policy.canReuse(
+            TuneAVRealtimeSession(
+                realtimeSessionId: "renew-now",
+                expiresAt: now.addingTimeInterval(70 * 60)
+            ),
+            now: now
+        ))
+    }
+
     func testFavoriteStationRecordDecodesMinimalCloudDeletionTombstone() throws {
         let data = Data(
             """
@@ -224,6 +270,36 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(access.accessMode, .signedInPro)
         XCTAssertEqual(access.planTier, .pro)
         XCTAssertTrue(access.capabilities.canUseCloudSync)
+    }
+
+    @MainActor
+    func testAccessClientDecodesRealtimeSessionExpiryInMilliseconds() async throws {
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/v1/tune/workspace/realtime-sessions")
+            XCTAssertEqual(request.httpMethod, "POST")
+
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(#"{"realtimeSessionId":"session-1","expiresAt":43200000}"#.utf8))
+        }
+
+        let client = TuneAVAccessClient(
+            baseURL: URL(string: "https://api.example.test"),
+            tokenProvider: { "token-123" },
+            urlSession: testURLSession(),
+            retryPolicy: .disabled
+        )
+
+        let session = try await client.createTuneAVRealtimeSession()
+
+        XCTAssertEqual(session.realtimeSessionId, "session-1")
+        XCTAssertEqual(session.expiresAt, Date(timeIntervalSince1970: 43_200))
     }
 
     private func projection(

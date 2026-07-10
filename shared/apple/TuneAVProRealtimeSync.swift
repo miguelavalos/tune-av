@@ -271,6 +271,151 @@ enum TuneAVProRealtimeSyncError: LocalizedError {
     }
 }
 
+struct TuneAVRealtimeSession: Equatable, Sendable {
+    let realtimeSessionId: String
+    let expiresAt: Date
+}
+
+struct TuneAVRealtimeSessionRenewalPolicy: Equatable, Sendable {
+    let renewalLeadTime: TimeInterval
+    let renewalJitter: TimeInterval
+    let minimumRenewalDelay: TimeInterval
+    let retryBaseDelay: TimeInterval
+    let retryMaximumDelay: TimeInterval
+    let maximumRetryAttempts: Int
+
+    init(
+        renewalLeadTime: TimeInterval = 60 * 60,
+        renewalJitter: TimeInterval = 15 * 60,
+        minimumRenewalDelay: TimeInterval = 1,
+        retryBaseDelay: TimeInterval = 5,
+        retryMaximumDelay: TimeInterval = 5 * 60,
+        maximumRetryAttempts: Int = 5
+    ) {
+        self.renewalLeadTime = renewalLeadTime
+        self.renewalJitter = renewalJitter
+        self.minimumRenewalDelay = minimumRenewalDelay
+        self.retryBaseDelay = retryBaseDelay
+        self.retryMaximumDelay = retryMaximumDelay
+        self.maximumRetryAttempts = maximumRetryAttempts
+    }
+
+    func renewalDelay(
+        for session: TuneAVRealtimeSession,
+        now: Date,
+        jitterUnitInterval: Double
+    ) -> TimeInterval {
+        let lifetime = max(0, session.expiresAt.timeIntervalSince(now))
+        let boundedLeadTime = min(renewalLeadTime, lifetime / 4)
+        let boundedJitter = min(renewalJitter, lifetime / 10)
+            * min(max(jitterUnitInterval, 0), 1)
+        return max(minimumRenewalDelay, lifetime - boundedLeadTime - boundedJitter)
+    }
+
+    func canReuse(_ session: TuneAVRealtimeSession, now: Date) -> Bool {
+        session.expiresAt.timeIntervalSince(now) > renewalLeadTime + renewalJitter
+    }
+
+    func retryDelay(attempt: Int, jitterUnitInterval: Double) -> TimeInterval {
+        let exponent = max(0, attempt - 1)
+        let exponentialDelay = retryBaseDelay * pow(2, Double(exponent))
+        let boundedDelay = min(retryMaximumDelay, exponentialDelay)
+        let jitterMultiplier = 0.8 + (0.4 * min(max(jitterUnitInterval, 0), 1))
+        return min(retryMaximumDelay, boundedDelay * jitterMultiplier)
+    }
+}
+
+@MainActor
+final class TuneAVRealtimeSessionSupervisor: ObservableObject {
+    typealias CreateSession = @MainActor () async throws -> TuneAVRealtimeSession
+    typealias SessionHandler = @MainActor (TuneAVRealtimeSession) -> Void
+    typealias FailureHandler = @MainActor (Error) -> Void
+
+    private let policy: TuneAVRealtimeSessionRenewalPolicy
+    private let now: @MainActor () -> Date
+    private let jitterUnitInterval: @MainActor () -> Double
+    private let sleep: @MainActor (TimeInterval) async throws -> Void
+    private var renewalTask: Task<Void, Never>?
+    private var currentSession: TuneAVRealtimeSession?
+
+    init(
+        policy: TuneAVRealtimeSessionRenewalPolicy = TuneAVRealtimeSessionRenewalPolicy(),
+        now: @escaping @MainActor () -> Date = { .now },
+        jitterUnitInterval: @escaping @MainActor () -> Double = { Double.random(in: 0...1) },
+        sleep: @escaping @MainActor (TimeInterval) async throws -> Void = { delay in
+            try await Task.sleep(for: .seconds(delay))
+        }
+    ) {
+        self.policy = policy
+        self.now = now
+        self.jitterUnitInterval = jitterUnitInterval
+        self.sleep = sleep
+    }
+
+    func start(
+        createSession: @escaping CreateSession,
+        didCreateSession: @escaping SessionHandler,
+        didExhaustRetries: @escaping FailureHandler
+    ) {
+        pause()
+        renewalTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            var failedAttempts = 0
+
+            while !Task.isCancelled {
+                do {
+                    let session: TuneAVRealtimeSession
+                    if let currentSession, policy.canReuse(currentSession, now: now()) {
+                        session = currentSession
+                    } else {
+                        session = try await createSession()
+                        currentSession = session
+                    }
+                    guard !Task.isCancelled else { return }
+                    failedAttempts = 0
+                    didCreateSession(session)
+                    let delay = policy.renewalDelay(
+                        for: session,
+                        now: now(),
+                        jitterUnitInterval: jitterUnitInterval()
+                    )
+                    try await sleep(delay)
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    failedAttempts += 1
+                    guard failedAttempts < policy.maximumRetryAttempts else {
+                        currentSession = nil
+                        didExhaustRetries(error)
+                        return
+                    }
+                    do {
+                        try await sleep(policy.retryDelay(
+                            attempt: failedAttempts,
+                            jitterUnitInterval: jitterUnitInterval()
+                        ))
+                    } catch {
+                        return
+                    }
+                }
+            }
+        }
+    }
+
+    func pause() {
+        renewalTask?.cancel()
+        renewalTask = nil
+    }
+
+    func stop() {
+        pause()
+        currentSession = nil
+    }
+
+    deinit {
+        renewalTask?.cancel()
+    }
+}
+
 @MainActor
 final class TuneAVRealtimeSessionStore {
     static let shared = TuneAVRealtimeSessionStore()

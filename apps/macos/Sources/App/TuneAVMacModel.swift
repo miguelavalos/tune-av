@@ -244,11 +244,11 @@ final class TuneAVMacModel: ObservableObject {
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var cloudSyncExecutionGate = MacCloudSyncExecutionGate()
     private var pendingCloudSyncTask: Task<Void, Never>?
-    private var proRealtimeSessionTask: Task<Void, Never>?
     private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
     private var accountAccessRefreshGeneration = 0
     private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
+    private let realtimeSessionSupervisor = TuneAVRealtimeSessionSupervisor()
     private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
     private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
     private var cloudFeedbackSourceUpdatedAt: Date?
@@ -317,7 +317,6 @@ final class TuneAVMacModel: ObservableObject {
 
     deinit {
         pendingCloudSyncTask?.cancel()
-        proRealtimeSessionTask?.cancel()
         librarySyncTasks.values.forEach { $0.cancel() }
         feedbackSyncTasks.values.forEach { $0.cancel() }
         listeningSessionUploadTask?.cancel()
@@ -895,16 +894,27 @@ final class TuneAVMacModel: ObservableObject {
     func prepareForTermination() {
         flushActiveListeningSession(endedReason: "app_closed", schedulesUpload: false)
         stopListeningSessionUploads()
+        stopProRealtimeSync()
     }
 
     func prepareForSystemSleep() {
         flushActiveListeningSession(endedReason: "suspended", schedulesUpload: false)
         stopListeningSessionUploads()
+        pauseProRealtimeSync()
     }
 
     func resumeAfterSystemWake() {
         resumeListeningSessionIfEligible()
         schedulePendingListeningSessionUploadsForCurrentUser()
+        startProRealtimeSyncIfNeeded()
+    }
+
+    func prepareForAppInactivity() {
+        pauseProRealtimeSync()
+    }
+
+    func resumeAfterAppActivation() {
+        startProRealtimeSyncIfNeeded()
     }
 
     func flushPendingListeningSessions() {
@@ -1525,7 +1535,6 @@ final class TuneAVMacModel: ObservableObject {
         cloudLibrarySourceUpdatedAtByResource.removeAll()
         cloudFeedbackSourceUpdatedAt = nil
         activeProRealtimeSessionOwnerUserID = ownerUserId
-        proRealtimeSessionTask?.cancel()
         proRealtimeProjectionCancellable?.cancel()
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
@@ -1538,36 +1547,38 @@ final class TuneAVMacModel: ObservableObject {
                 }
             }
 
-        proRealtimeSessionTask = Task { [weak self] in
-            do {
+        realtimeSessionSupervisor.start(
+            createSession: { [weak self] in
+                guard let self else { throw CancellationError() }
+                return try await self.createRealtimeSession()
+            },
+            didCreateSession: { [weak self] session in
                 guard let self else { return }
-                let realtimeSessionId = try await self.createRealtimeSession()
                 guard self.accountUser?.id == ownerUserId,
                       self.hasProCloudSyncAccess else { return }
                 TuneAVRealtimeSessionStore.shared.update(
                     ownerUserId: ownerUserId,
-                    realtimeSessionId: realtimeSessionId
+                    realtimeSessionId: session.realtimeSessionId
                 )
                 self.proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
-            } catch {
-                await MainActor.run {
-                    guard self?.activeProRealtimeSessionOwnerUserID == ownerUserId else { return }
-                    self?.activeProRealtimeSessionOwnerUserID = nil
-                    self?.proLibraryObserver.clear()
-                    TuneAVMacDiagnostics.capture(
-                        error,
-                        feature: "tune.mac.sync",
-                        operation: "pro_realtime",
-                        step: "session"
-                    )
-                }
+            },
+            didExhaustRetries: { [weak self] error in
+                guard self?.activeProRealtimeSessionOwnerUserID == ownerUserId else { return }
+                self?.activeProRealtimeSessionOwnerUserID = nil
+                TuneAVRealtimeSessionStore.shared.clear()
+                self?.proLibraryObserver.clear()
+                TuneAVMacDiagnostics.capture(
+                    error,
+                    feature: "tune.mac.sync",
+                    operation: "pro_realtime",
+                    step: "session"
+                )
             }
-        }
+        )
     }
 
     private func stopProRealtimeSync() {
-        proRealtimeSessionTask?.cancel()
-        proRealtimeSessionTask = nil
+        realtimeSessionSupervisor.stop()
         proRealtimeProjectionCancellable?.cancel()
         proRealtimeProjectionCancellable = nil
         activeProRealtimeSessionOwnerUserID = nil
@@ -1578,7 +1589,15 @@ final class TuneAVMacModel: ObservableObject {
         proLibraryObserver.clear()
     }
 
-    private func createRealtimeSession() async throws -> String {
+    private func pauseProRealtimeSync() {
+        realtimeSessionSupervisor.pause()
+        proRealtimeProjectionCancellable?.cancel()
+        proRealtimeProjectionCancellable = nil
+        activeProRealtimeSessionOwnerUserID = nil
+        proLibraryObserver.clear()
+    }
+
+    private func createRealtimeSession() async throws -> TuneAVRealtimeSession {
         try await makeTuneAPIClient().createTuneAVRealtimeSession()
     }
 

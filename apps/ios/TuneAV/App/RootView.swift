@@ -17,8 +17,8 @@ struct RootView: View {
     @State private var librarySyncTask: Task<Void, Never>?
     @State private var lastAutomaticAccountRefreshRequestedAt: Date?
     @State private var lastAutomaticLibrarySyncRequestedAt: Date?
-    @State private var realtimeSessionTask: Task<Void, Never>?
     @State private var activeRealtimeSessionOwnerUserID: String?
+    @StateObject private var realtimeSessionSupervisor = TuneAVRealtimeSessionSupervisor()
     @StateObject private var proLibraryObserver = TuneAVProLibraryObserver()
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
@@ -59,6 +59,7 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
             guard scenePhase == .active else {
                 cancelScheduledLibrarySync()
+                pauseProRealtimeSync()
                 return
             }
             await refreshActiveAccountStateIfNeeded()
@@ -243,36 +244,50 @@ struct RootView: View {
         guard activeRealtimeSessionOwnerUserID != ownerUserId else { return }
 
         activeRealtimeSessionOwnerUserID = ownerUserId
-        realtimeSessionTask?.cancel()
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
         let client = TuneAVRealtimeSessionClient(
             apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
         )
-        guard client.isConfigured else { return }
+        guard client.isConfigured else {
+            activeRealtimeSessionOwnerUserID = nil
+            return
+        }
 
-        realtimeSessionTask = Task { @MainActor in
-            do {
+        realtimeSessionSupervisor.start(
+            createSession: {
                 proRealtimeLogger.info("Creating Tune AV Pro realtime session ownerUserId=\(ownerUserId, privacy: .private(mask: .hash))")
-                let realtimeSessionId = try await client.createRealtimeSession()
+                return try await client.createRealtimeSession()
+            },
+            didCreateSession: { session in
                 guard accessController.accountUser?.id == ownerUserId,
                       accessController.capabilities.canUseCloudSync else { return }
-                TuneAVRealtimeSessionStore.shared.update(ownerUserId: ownerUserId, realtimeSessionId: realtimeSessionId)
+                TuneAVRealtimeSessionStore.shared.update(
+                    ownerUserId: ownerUserId,
+                    realtimeSessionId: session.realtimeSessionId
+                )
                 proRealtimeLogger.info("Created Tune AV Pro realtime session ownerUserId=\(ownerUserId, privacy: .private(mask: .hash))")
                 proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
-            } catch {
+            },
+            didExhaustRetries: { error in
                 proRealtimeLogger.error("Tune AV Pro realtime session failed errorType=\(String(describing: type(of: error)), privacy: .public)")
                 activeRealtimeSessionOwnerUserID = nil
+                TuneAVRealtimeSessionStore.shared.clear()
                 proLibraryObserver.clear()
             }
-        }
+        )
     }
 
     private func stopProRealtimeSync() {
-        realtimeSessionTask?.cancel()
-        realtimeSessionTask = nil
+        realtimeSessionSupervisor.stop()
         activeRealtimeSessionOwnerUserID = nil
         TuneAVRealtimeSessionStore.shared.clear()
+        proLibraryObserver.clear()
+    }
+
+    private func pauseProRealtimeSync() {
+        realtimeSessionSupervisor.pause()
+        activeRealtimeSessionOwnerUserID = nil
         proLibraryObserver.clear()
     }
 

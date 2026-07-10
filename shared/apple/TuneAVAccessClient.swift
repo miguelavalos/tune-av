@@ -237,14 +237,17 @@ final class TuneAVAccessClient {
         return tuneAVAccess
     }
 
-    func createTuneAVRealtimeSession() async throws -> String {
+    func createTuneAVRealtimeSession() async throws -> TuneAVRealtimeSession {
         let response: TuneAVSharedRealtimeSessionResponse = try await request(
             path: "/v1/tune/workspace/realtime-sessions",
             method: "POST",
             body: Data("{}".utf8),
             headers: ["Content-Type": "application/json"]
         )
-        return response.realtimeSessionId
+        return TuneAVRealtimeSession(
+            realtimeSessionId: response.realtimeSessionId,
+            expiresAt: Date(timeIntervalSince1970: response.expiresAt / 1_000)
+        )
     }
 
     func request<T: Decodable>(
@@ -539,6 +542,7 @@ final class TuneAVAccessClient {
 
 private struct TuneAVSharedRealtimeSessionResponse: Decodable {
     let realtimeSessionId: String
+    let expiresAt: TimeInterval
 }
 
 private extension URLError.Code {

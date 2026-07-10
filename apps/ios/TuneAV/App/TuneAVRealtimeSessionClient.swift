@@ -12,7 +12,7 @@ struct TuneAVRealtimeSessionClient {
         apiClient.isConfigured()
     }
 
-    func createRealtimeSession() async throws -> String {
+    func createRealtimeSession() async throws -> TuneAVRealtimeSession {
         try await apiClient.createTuneAVRealtimeSession()
     }
 }

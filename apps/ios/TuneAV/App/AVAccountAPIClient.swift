@@ -79,7 +79,7 @@ final class AVAccountAPIClient {
         try await request(path: "/v1/apps/tuneav/link", method: "DELETE")
     }
 
-    func createTuneAVRealtimeSession() async throws -> String {
+    func createTuneAVRealtimeSession() async throws -> TuneAVRealtimeSession {
         try await tuneClient().createTuneAVRealtimeSession()
     }
 
