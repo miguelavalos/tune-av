@@ -329,6 +329,14 @@ separate development bundle identifier.
    initial sync with the first realtime projection before Cloudflare usage is
    considered fully optimized.
 
+   Renewal observation checkpoint, 2026-07-11: the process-verified macOS build
+   `56` cold launch created its production realtime session at approximately
+   10:06 CEST and remains open without playback. Its expected proactive renewal
+   window is approximately 20:51-21:06 CEST. Keep the Mac awake where practical
+   and, after 21:10 CEST, verify exactly one successful session renewal with no
+   library/bootstrap reads or Convex projection fanout. No product change or
+   App Review submission is part of this observation.
+
 ## Pending Product API Transition Checks
 
 These checks apply to the next Tune AV client release after the product API
