@@ -319,6 +319,16 @@ separate development bundle identifier.
    renewal boundary remain release QA gates. Neither build has been submitted
    to App Review by this checkpoint.
 
+   A process-verified macOS build `56` cold launch later exposed two bounded but
+   unresolved efficiency issues: realtime/bootstrap ordering caused one
+   duplicate library-read batch, and a persisted listening-analytics row used
+   an end reason outside the backend enum, causing one terminal `400` per cold
+   launch while that poison batch remains local. There is still no continuous
+   polling or Convex outbox fanout, but a later TestFlight build should align
+   the typed analytics contract, quarantine permanent failures, and serialize
+   initial sync with the first realtime projection before Cloudflare usage is
+   considered fully optimized.
+
 ## Pending Product API Transition Checks
 
 These checks apply to the next Tune AV client release after the product API
