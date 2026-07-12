@@ -329,13 +329,18 @@ separate development bundle identifier.
    initial sync with the first realtime projection before Cloudflare usage is
    considered fully optimized.
 
-   Renewal observation checkpoint, 2026-07-11: the process-verified macOS build
-   `56` cold launch created its production realtime session at approximately
-   10:06 CEST and remains open without playback. Its expected proactive renewal
-   window is approximately 20:51-21:06 CEST. Keep the Mac awake where practical
-   and, after 21:10 CEST, verify exactly one successful session renewal with no
-   library/bootstrap reads or Convex projection fanout. No product change or
-   App Review submission is part of this observation.
+   Renewal observation completed, 2026-07-12: the same process-verified macOS
+   build `56` instance remained alive and the Mac did not sleep during the
+   expected window. Tune AV production Convex recorded one new realtime session
+   at 20:56:08 CEST, inside the predicted 20:51-21:06 CEST window, with expiry
+   advanced exactly 12 hours. The surviving Pro UI remained `Todo al día`, its
+   library-sync activity stayed at 10:06, and the production projection outbox
+   remained healthy at 286 of 286 delivered with no incomplete, errored,
+   dead-letter, stale, timeout, or open-claim rows. This closes the real macOS
+   renewal gate without a library bootstrap or Convex projection fanout. The
+   physical same-account iOS build `47` <-> macOS build `56` propagation matrix
+   remains the final cross-device QA gate. No product change or App Review
+   submission was part of this observation.
 
 ## Pending Product API Transition Checks
 
