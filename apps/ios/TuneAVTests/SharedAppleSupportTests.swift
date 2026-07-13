@@ -184,6 +184,38 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testRealtimeProjectionCursorScopesConsecutiveLibraryGenerationToResource() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(projection(library: 4, feedback: 7))
+
+        XCTAssertEqual(
+            cursor.consume(projection(
+                library: 5,
+                feedback: 7,
+                resource: "favorites"
+            )),
+            TuneAVProRealtimeRefreshPlan(
+                refreshLibrary: true,
+                refreshFeedback: false,
+                libraryResource: "favorites"
+            )
+        )
+    }
+
+    func testRealtimeProjectionCursorKeepsGenerationGapUnscoped() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(projection(library: 4, feedback: 7))
+
+        XCTAssertEqual(
+            cursor.consume(projection(
+                library: 6,
+                feedback: 7,
+                resource: "favorites"
+            )),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+    }
+
     func testInitialProjectionPolicyBaselinesLegacySnapshotAfterSuccessfulBootstrap() {
         let projection = projection(library: 4, feedback: 7)
         var cursor = TuneAVProRealtimeProjectionCursor()
@@ -277,7 +309,11 @@ final class SharedAppleSupportTests: XCTestCase {
         )
         XCTAssertEqual(
             cursor.consume(library),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            TuneAVProRealtimeRefreshPlan(
+                refreshLibrary: true,
+                refreshFeedback: false,
+                libraryResource: "favorites"
+            )
         )
         XCTAssertEqual(cursor.consume(feedback), .none)
     }

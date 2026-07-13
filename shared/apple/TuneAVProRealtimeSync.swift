@@ -55,6 +55,17 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
 struct TuneAVProRealtimeRefreshPlan: Equatable {
     let refreshLibrary: Bool
     let refreshFeedback: Bool
+    let libraryResource: String?
+
+    init(
+        refreshLibrary: Bool,
+        refreshFeedback: Bool,
+        libraryResource: String? = nil
+    ) {
+        self.refreshLibrary = refreshLibrary
+        self.refreshFeedback = refreshFeedback
+        self.libraryResource = refreshLibrary ? libraryResource : nil
+    }
 
     static let none = TuneAVProRealtimeRefreshPlan(
         refreshLibrary: false,
@@ -120,8 +131,15 @@ struct TuneAVProRealtimeProjectionCursor {
         if projection.libraryGeneration != nil || projection.feedbackGeneration != nil {
             let nextLibraryGeneration = projection.libraryGeneration ?? 0
             let nextFeedbackGeneration = projection.feedbackGeneration ?? 0
-            let refreshLibrary = nextLibraryGeneration > (libraryGeneration ?? 0)
+            let previousLibraryGeneration = libraryGeneration
+            let refreshLibrary = nextLibraryGeneration > (previousLibraryGeneration ?? 0)
             let refreshFeedback = nextFeedbackGeneration > (feedbackGeneration ?? 0)
+            let libraryResource = scopedLibraryResource(
+                projection: projection,
+                previousGeneration: previousLibraryGeneration,
+                nextGeneration: nextLibraryGeneration,
+                refreshLibrary: refreshLibrary
+            )
 
             libraryGeneration = max(libraryGeneration ?? 0, nextLibraryGeneration)
             feedbackGeneration = max(feedbackGeneration ?? 0, nextFeedbackGeneration)
@@ -130,7 +148,8 @@ struct TuneAVProRealtimeProjectionCursor {
             return filtered(
                 TuneAVProRealtimeRefreshPlan(
                     refreshLibrary: refreshLibrary,
-                    refreshFeedback: refreshFeedback
+                    refreshFeedback: refreshFeedback,
+                    libraryResource: libraryResource
                 ),
                 projection: projection,
                 coverage: coverage
@@ -141,12 +160,14 @@ struct TuneAVProRealtimeProjectionCursor {
             return .none
         }
 
+        let hadLegacyBaseline = legacyUpdatedAt != nil
         legacyUpdatedAt = projection.updatedAt
         let isFeedback = projection.resource?.hasPrefix("feedback.") == true
         return filtered(
             TuneAVProRealtimeRefreshPlan(
                 refreshLibrary: !isFeedback,
-                refreshFeedback: isFeedback
+                refreshFeedback: isFeedback,
+                libraryResource: hadLegacyBaseline && !isFeedback ? projection.resource : nil
             ),
             projection: projection,
             coverage: coverage
@@ -178,8 +199,25 @@ struct TuneAVProRealtimeProjectionCursor {
 
         return TuneAVProRealtimeRefreshPlan(
             refreshLibrary: refreshLibrary,
-            refreshFeedback: refreshFeedback
+            refreshFeedback: refreshFeedback,
+            libraryResource: refreshLibrary ? plan.libraryResource : nil
         )
+    }
+
+    private func scopedLibraryResource(
+        projection: TuneAVProLibraryProjection,
+        previousGeneration: Int?,
+        nextGeneration: Int,
+        refreshLibrary: Bool
+    ) -> String? {
+        guard refreshLibrary,
+              let previousGeneration,
+              nextGeneration == previousGeneration + 1,
+              let resource = projection.resource,
+              !resource.hasPrefix("feedback.")
+        else { return nil }
+
+        return resource
     }
 
     mutating func reset() {

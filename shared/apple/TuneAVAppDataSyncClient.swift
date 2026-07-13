@@ -191,6 +191,13 @@ struct TuneAVAppDataResourceDocument<Entry: Codable> {
     let etag: String?
 }
 
+struct TuneAVScopedLibraryDocument {
+    let resource: TuneAVAppDataResource
+    let snapshot: TuneAVLibrarySnapshot
+    let updatedAt: Date
+    let revision: Int
+}
+
 actor TuneAVAppDataSyncClient {
     typealias Request = @Sendable (
         _ path: String,
@@ -251,6 +258,45 @@ actor TuneAVAppDataSyncClient {
                 TuneAVAppDataResource.favorites.rawValue: favorites.updatedAt,
                 TuneAVAppDataResource.savedDiscoveries.rawValue: savedDiscoveries.updatedAt
             ]
+        )
+    }
+
+    func pullLibraryResource(
+        _ resource: TuneAVAppDataResource,
+        mergingInto localSnapshot: TuneAVLibrarySnapshot
+    ) async throws -> TuneAVScopedLibraryDocument {
+        let snapshot: TuneAVLibrarySnapshot
+        let updatedAt: Date
+        let revision: Int
+
+        switch resource {
+        case .favorites:
+            let document = try await pullResource(.favorites, entryType: FavoriteStationRecord.self)
+            snapshot = TuneAVLibrarySnapshot(
+                favorites: document.entries,
+                savedDiscoveries: localSnapshot.savedDiscoveries
+            )
+            updatedAt = document.updatedAt
+            revision = document.revision
+        case .savedDiscoveries:
+            let document = try await pullLossyResource(
+                .savedDiscoveries,
+                entryType: DiscoveredTrackRecord.self
+            )
+            snapshot = TuneAVLibrarySnapshot(
+                favorites: localSnapshot.favorites,
+                savedDiscoveries: document.entries
+            )
+            updatedAt = document.updatedAt
+            revision = document.revision
+        }
+
+        lastPulledLibrarySnapshot = TuneAVLibrarySnapshotMerger.canonicalized(snapshot)
+        return TuneAVScopedLibraryDocument(
+            resource: resource,
+            snapshot: snapshot,
+            updatedAt: updatedAt,
+            revision: revision
         )
     }
 

@@ -518,6 +518,36 @@ separate development bundle identifier.
    App Review change was made. The next gate is the deliberate same-account
    iOS/macOS cross-device mutation matrix.
 
+   Cross-device saved-radio proof and macOS receiver request-budget repair,
+   2026-07-13: adding one saved radio on physical iOS build `50` created exactly
+   one source revision, one D1 outbox projection, and one Convex generation;
+   macOS build `59`, launched from a terminated state, restored it. Deleting the
+   same radio from iOS created exactly one additional projection, delivered in
+   one enqueue and one publish attempt. macOS intentionally pauses Convex while
+   inactive and applied the deletion after activation from the latest
+   invalidation. The PII-free aggregate advanced only from 286 to 288 delivered
+   events and remained healthy, with no retry or incomplete work.
+
+   That receiver trace exposed a separate bounded macOS over-read: one
+   `favorites` invalidation performed a full favorites plus saved-discoveries
+   pull and then an unrelated feedback read. The client now scopes only a
+   single consecutive library generation with a known resource to one exact
+   resource GET. Generation gaps, unknown resources, bootstrap, manual sync,
+   and concurrent follow-up retain the conservative full path; feedback is
+   refreshed only when its own generation advances. Exact-request regressions
+   cover both library resources and generation gaps. The complete iOS suite
+   passes 360 of 360 tests and the complete macOS suite passes 63 of 63 tests.
+   Public config hygiene also passes. This is client-only: no Worker, Convex,
+   Account/Tune API, Cloudflare configuration, or production-data change was
+   made. macOS TestFlight build `59` predates the repair, so a later build must
+   prove that one saved-radio invalidation causes one matching Account API GET
+   and no saved-discoveries or feedback read.
+
+   The next separate optimization is iOS receiver parity: an iOS library
+   invalidation is already isolated from feedback, but still reads both library
+   resources. Do not fold that behavior change into the macOS proof without its
+   own review and exact-request regressions.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

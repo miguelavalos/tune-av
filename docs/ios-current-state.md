@@ -120,9 +120,15 @@ bounded:
 - compare the first Convex projection with the exact per-resource timestamps
   returned by the Cloudflare bootstrap, so already-covered favorites, saved
   discoveries, or feedback do not trigger duplicate reads;
-- refresh only the newer projected resource when its timestamp exceeds the
-  bootstrap coverage, and keep the conservative refresh path when the resource
-  or source timestamp is missing or invalid.
+- use the exact per-resource timestamp to suppress a projection already covered
+  by bootstrap;
+- after a realtime baseline exists, scope a single consecutive library
+  generation to its declared resource on macOS, issuing one resource GET and no
+  unrelated feedback read;
+- keep bootstrap, manual recovery, generation gaps, and unknown resources on
+  the conservative full-library path. iOS currently keeps a library
+  invalidation within the library channel but still reads both library
+  resources; exact-resource iOS receiver parity remains a separate follow-up.
 
 Realtime invalidations may request a focused refresh, but must not create a
 polling loop or an additional foreground-driven full sync.

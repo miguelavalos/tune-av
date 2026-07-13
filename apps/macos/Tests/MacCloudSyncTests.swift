@@ -238,6 +238,130 @@ final class MacCloudSyncTests: XCTestCase {
         )
     }
 
+    func testMacRealtimeSingleGenerationUsesExactLibraryResource() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 8,
+            feedbackGeneration: 3,
+            resource: "favorites",
+            sourceUpdatedAt: 1,
+            updatedAt: 1
+        ))
+
+        let refreshPlan = cursor.consume(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 9,
+            feedbackGeneration: 3,
+            resource: "favorites",
+            sourceUpdatedAt: 2,
+            updatedAt: 2
+        ))
+        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
+
+        XCTAssertEqual(refreshPlan.libraryResource, "favorites")
+        XCTAssertEqual(executionPlan.libraryResource, .favorites)
+        XCTAssertFalse(executionPlan.requiresFullLibraryRefresh)
+        XCTAssertFalse(executionPlan.refreshFeedback)
+    }
+
+    func testMacRealtimeGenerationGapKeepsConservativeFullRefresh() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 8,
+            feedbackGeneration: 3,
+            resource: "favorites",
+            sourceUpdatedAt: 1,
+            updatedAt: 1
+        ))
+
+        let refreshPlan = cursor.consume(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 10,
+            feedbackGeneration: 3,
+            resource: "favorites",
+            sourceUpdatedAt: 3,
+            updatedAt: 3
+        ))
+        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
+
+        XCTAssertNil(refreshPlan.libraryResource)
+        XCTAssertNil(executionPlan.libraryResource)
+        XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
+        XCTAssertFalse(executionPlan.refreshFeedback)
+    }
+
+    func testMacRealtimeUnknownResourceKeepsConservativeFullRefresh() {
+        let executionPlan = MacProRealtimeRefreshExecutionPlan(
+            TuneAVProRealtimeRefreshPlan(
+                refreshLibrary: true,
+                refreshFeedback: false,
+                libraryResource: "futureResource"
+            )
+        )
+
+        XCTAssertNil(executionPlan.libraryResource)
+        XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
+        XCTAssertFalse(executionPlan.refreshFeedback)
+    }
+
+    func testScopedFavoritesPullReadsOnlyFavorites() async throws {
+        let recorder = MacScopedLibraryRequestRecorder()
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-mac",
+            platform: "macos",
+            request: { path, method, _, _ in
+                try await recorder.request(path: path, method: method)
+            }
+        )
+        let localSnapshot = TuneAVLibrarySnapshot(
+            favorites: [favoriteRecord(id: "local-favorite")],
+            savedDiscoveries: [
+                discoveryRecord(
+                    id: "local-song",
+                    playedAt: "2026-07-13T12:00:00Z",
+                    markedInterestedAt: "2026-07-13T12:01:00Z"
+                )
+            ]
+        )
+
+        let document = try await client.pullLibraryResource(.favorites, mergingInto: localSnapshot)
+        let calls = await recorder.calls
+
+        XCTAssertEqual(calls, ["GET /v1/apps/tuneav/data/favorites"])
+        XCTAssertEqual(document.resource, .favorites)
+        XCTAssertEqual(document.snapshot.favorites.map(\.station.id), ["remote-favorite"])
+        XCTAssertEqual(document.snapshot.savedDiscoveries, localSnapshot.savedDiscoveries)
+    }
+
+    func testScopedSavedDiscoveriesPullReadsOnlySavedDiscoveries() async throws {
+        let recorder = MacScopedLibraryRequestRecorder()
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-mac",
+            platform: "macos",
+            request: { path, method, _, _ in
+                try await recorder.request(path: path, method: method)
+            }
+        )
+        let localSnapshot = TuneAVLibrarySnapshot(
+            favorites: [favoriteRecord(id: "local-favorite")],
+            savedDiscoveries: []
+        )
+
+        let document = try await client.pullLibraryResource(.savedDiscoveries, mergingInto: localSnapshot)
+        let calls = await recorder.calls
+
+        XCTAssertEqual(calls, ["GET /v1/apps/tuneav/data/savedDiscoveries"])
+        XCTAssertEqual(document.resource, .savedDiscoveries)
+        XCTAssertEqual(document.snapshot.favorites, localSnapshot.favorites)
+        XCTAssertEqual(document.snapshot.savedDiscoveries.map(\.discoveryID), ["remote-song"])
+    }
+
     func testMacDiagnosticsDoesNotCaptureExpectedConfigurationErrors() {
         XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingToken))
         XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingBaseURL))
@@ -1356,5 +1480,26 @@ final class MacCloudSyncTests: XCTestCase {
             geoLatitude: nil,
             geoLongitude: nil
         )
+    }
+}
+
+private actor MacScopedLibraryRequestRecorder {
+    private(set) var calls: [String] = []
+
+    func request(path: String, method: String) throws -> Data {
+        calls.append("\(method) \(path)")
+
+        switch path {
+        case "/v1/apps/tuneav/data/favorites":
+            return Data(
+                #"{"data":{"appId":"tuneav","resource":"favorites","deviceId":"remote","sentAt":"2026-07-13T12:05:00Z","entries":[{"station":{"id":"remote-favorite","name":"Remote Favorite"},"createdAt":"2026-07-13T12:05:00Z"}]},"updatedAt":"2026-07-13T12:05:00Z","revision":11,"etag":"revision-11"}"#.utf8
+            )
+        case "/v1/apps/tuneav/data/savedDiscoveries":
+            return Data(
+                #"{"data":{"appId":"tuneav","resource":"savedDiscoveries","deviceId":"remote","sentAt":"2026-07-13T12:06:00Z","entries":[{"discoveryID":"remote-song","trackKey":"remote song::artist","title":"Remote Song","artist":"Artist","stationID":"station-1","stationName":"Station 1","playedAt":"2026-07-13T12:05:00Z","markedInterestedAt":"2026-07-13T12:06:00Z","updatedAt":"2026-07-13T12:06:00Z"}]},"updatedAt":"2026-07-13T12:06:00Z","revision":12,"etag":"revision-12"}"#.utf8
+            )
+        default:
+            throw TuneAVAppDataClientError.requestFailed(statusCode: 404)
+        }
     }
 }

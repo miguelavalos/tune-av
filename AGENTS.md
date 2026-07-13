@@ -55,6 +55,10 @@ Mandatory rules:
 - keep Pro cloud sync calm: one automatic library sync at startup or after a
   successful sign-in, explicit manual retry when requested, and no periodic or
   repeated foreground sync;
+- on macOS, consume a single consecutive realtime library generation for a
+  known resource with one exact resource GET and no unrelated feedback read;
+  generation gaps, unknown resources, bootstrap, and manual recovery must keep
+  the conservative full-library path;
 - preserve confirmed Pro capabilities while refreshing the same internal user,
   but drop capabilities from the previous account before resolving a different
   internal user.

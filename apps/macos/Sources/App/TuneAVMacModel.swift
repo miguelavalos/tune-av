@@ -1415,7 +1415,7 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
-    func synchronizeLibraryNow() async {
+    func synchronizeLibraryNow(refreshFeedback: Bool = true) async {
         guard cloudSyncExecutionGate.begin() else { return }
         let bootstrapOwnerUserID = proRealtimeBootstrapGate.ownerUserID
         var bootstrapSucceeded = false
@@ -1427,14 +1427,23 @@ final class TuneAVMacModel: ObservableObject {
             )
         }
 
-        bootstrapSucceeded = await performLibrarySyncNow()
+        bootstrapSucceeded = await performLibrarySyncNow(refreshFeedback: refreshFeedback)
         if cloudSyncExecutionGate.consumePendingFollowUp() {
-            let followUpSucceeded = await performLibrarySyncNow()
+            let followUpSucceeded = await performLibrarySyncNow(refreshFeedback: refreshFeedback)
             bootstrapSucceeded = bootstrapSucceeded && followUpSucceeded
         }
     }
 
-    private func performLibrarySyncNow() async -> Bool {
+    private func synchronizeLibraryResourceNow(_ resource: TuneAVAppDataResource) async {
+        guard cloudSyncExecutionGate.begin() else { return }
+        _ = await performLibraryResourceRefreshNow(resource)
+        if cloudSyncExecutionGate.consumePendingFollowUp() {
+            _ = await performLibrarySyncNow(refreshFeedback: true)
+        }
+        cloudSyncExecutionGate.finish()
+    }
+
+    private func performLibrarySyncNow(refreshFeedback: Bool) async -> Bool {
         guard accountService.isAvailable else {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
@@ -1486,7 +1495,12 @@ final class TuneAVMacModel: ObservableObject {
             }
 
             lastCloudSyncAt = .now
-            let didRefreshFeedback = await refreshProFeedbackNow()
+            let didRefreshFeedback: Bool
+            if refreshFeedback {
+                didRefreshFeedback = await refreshProFeedbackNow()
+            } else {
+                didRefreshFeedback = true
+            }
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
             if let accountUser {
                 persistLastKnownAccountUser(accountUser)
@@ -1535,6 +1549,87 @@ final class TuneAVMacModel: ObservableObject {
                 error,
                 feature: "tune.mac.sync",
                 operation: "synchronize_library",
+                step: "unknown"
+            )
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
+        }
+        return false
+    }
+
+    private func performLibraryResourceRefreshNow(_ resource: TuneAVAppDataResource) async -> Bool {
+        guard accountService.isAvailable else {
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
+            return false
+        }
+
+        do {
+            cloudSyncStatus = .syncing
+            cloudSyncErrorMessage = nil
+            let client = makeAppDataSyncClient()
+            let localSnapshot = librarySnapshot()
+            let remoteDocument = try await client.pullLibraryResource(
+                resource,
+                mergingInto: localSnapshot
+            )
+            let snapshotToApply = cloudBoundedSnapshot(
+                TuneAVLibrarySnapshotMerger.merged(
+                    local: localSnapshot,
+                    remote: remoteDocument.snapshot
+                )
+            )
+            applyLibrarySnapshot(snapshotToApply)
+            cloudLibrarySourceUpdatedAtByResource[resource.rawValue] = remoteDocument.updatedAt
+            lastCloudSyncAt = .now
+            cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
+            if let accountUser {
+                persistLastKnownAccountUser(accountUser)
+            }
+            return true
+        } catch TuneAVAppDataClientError.missingToken {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.missingToken,
+                feature: "tune.mac.sync",
+                operation: "refresh_library_resource",
+                step: "auth"
+            )
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
+        } catch TuneAVAppDataClientError.missingBaseURL {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.missingBaseURL,
+                feature: "tune.mac.sync",
+                operation: "refresh_library_resource",
+                step: "configuration"
+            )
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("mac.sync.error.missingBaseURL")
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 401 || statusCode == 403 {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
+                feature: "tune.mac.sync",
+                operation: "refresh_library_resource",
+                step: "http_status",
+                data: ["status_code": String(statusCode)]
+            )
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) {
+            TuneAVMacDiagnostics.capture(
+                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
+                feature: "tune.mac.sync",
+                operation: "refresh_library_resource",
+                step: "http_status",
+                data: ["status_code": String(statusCode)]
+            )
+            cloudSyncStatus = .failed
+            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
+        } catch {
+            TuneAVMacDiagnostics.capture(
+                error,
+                feature: "tune.mac.sync",
+                operation: "refresh_library_resource",
                 step: "unknown"
             )
             cloudSyncStatus = .failed
@@ -3140,11 +3235,14 @@ final class TuneAVMacModel: ObservableObject {
             )
         )
         proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
-        if refreshPlan.refreshFeedback {
+        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
+        if executionPlan.refreshFeedback {
             await refreshProFeedbackNow()
         }
-        if refreshPlan.refreshLibrary {
-            await synchronizeLibraryNow()
+        if let resource = executionPlan.libraryResource {
+            await synchronizeLibraryResourceNow(resource)
+        } else if executionPlan.requiresFullLibraryRefresh {
+            await synchronizeLibraryNow(refreshFeedback: false)
         }
     }
 
