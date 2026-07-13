@@ -602,6 +602,32 @@ separate development bundle identifier.
    predate the repair; later TestFlight builds must prove one mutation request,
    zero source-device GETs, and one exact receiver GET.
 
+   Author-device coverage TestFlight delivery checkpoint, 2026-07-13:
+   iOS/iPadOS `1.0.7 (52)` and macOS `1.0.7 (61)` were produced from public
+   commit `ea07f95`, which includes the mutation-receipt coverage repair and
+   advances only the Apple build numbers beyond it. The iOS production
+   preflight passed with zero failures and zero warnings, the Release simulator
+   build passed, and the macOS production preflight passed. The retained,
+   verified archives are
+   `.derived-data/release-archives/TuneAV-1.0.7-52-2026-07-13-173041.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-61-2026-07-13-173326.xcarchive`.
+   Archive checks passed for version/build, bundle, team, architecture,
+   privacy, stable macOS Account AV keychain identifiers, and matching
+   application/Sentry dSYMs. App Store Connect accepted iOS at 17:33 CEST and
+   macOS at 17:36 CEST; both release commands ended with `Upload succeeded`
+   and `EXPORT SUCCEEDED`. Apple then marked both uploads `Finalizado`, exposed
+   builds `52` and `61` as `Lista para enviar`, and assigned them to the
+   internal `Tune AV Test` group. Generated production config and 6.5 GB of
+   task-owned iOS/macOS DerivedData were removed; public config hygiene passed
+   before delivery, while the 131 MB iOS and 123 MB macOS archives remain as
+   evidence. No backend, Cloudflare, Convex, production-data, or App Review
+   change was made. The next gate is to install both builds and repeat one
+   isolated saved-radio mutation with exact source/receiver request counts:
+   one mutation, zero author-device App Data GETs for its own projection, one
+   receiver favorites GET, and no unrelated read, retry, or extra realtime
+   session.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
