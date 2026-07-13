@@ -385,6 +385,22 @@ separate development bundle identifier.
    is no periodic polling, analytics `400`, or Convex projection fanout in this
    residual.
 
+   macOS TestFlight delivery checkpoint, 2026-07-13: `1.0.7 (58)` was archived
+   with the same-user access-refresh repair from product source commit
+   `6d8bc50`, after advancing only the macOS build number. The production
+   release preflight and complete macOS suite passed with 57 of 57 tests. The
+   exact arm64 archive is
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-58-2026-07-13-130559.xcarchive`;
+   its bundle, team, Account AV keychain identifiers, privacy manifest, and
+   repaired Sentry dSYM were verified. App Store Connect accepted the exact
+   export for processing at 13:08 CEST, ending with `Upload succeeded` and
+   `EXPORT SUCCEEDED`. Processing and intended TestFlight-group availability
+   still require confirmation before installation. No Worker, Convex, Account
+   API, Tune API, or production-data change was part of this delivery. After
+   installation, the required bounded smoke is one cold launch followed by one
+   account-screen entry; the latter must not create another realtime session or
+   cloud-library/feedback bootstrap.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
