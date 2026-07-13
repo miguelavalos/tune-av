@@ -398,11 +398,22 @@ separate development bundle identifier.
    finished, ready to test, and assigned to the internal `Tune AV Test` group.
    TestFlight automatic updates installed `/Applications/Tune AV.app` as build
    `58`; its installed signature is `TestFlight Beta Distribution` for the
-   expected team. It has not yet been launched. No Worker, Convex, Account API,
-   Tune API, or production-data change was part of this delivery. The remaining
-   bounded smoke is one cold launch followed by one account-screen entry; the
-   latter must not create another realtime session or cloud-library/feedback
-   bootstrap.
+   expected team. Its bounded production smoke then passed. A process-verified
+   cold launch restored Pro and reached `Todo al día`; the build-58 trace
+   contained exactly one account profile read, one access read, one favorites
+   read, one saved-discoveries read, one realtime-session request, and one
+   feedback read, all `200`. There was no listening-analytics request, terminal
+   `400`, duplicate bootstrap, or error. The first account-screen entry
+   coincided with one bounded sequence consistent with a delayed Convex
+   invalidation (feedback, library, feedback), but created no new realtime
+   session and did not repeat. After a quiet baseline, a controlled second
+   account-screen entry produced exactly `GET /v1/me` and
+   `GET /v1/me/access`, both `200`, with no Tune API traffic. This runtime-proves
+   the same-user access-refresh repair. The production realtime projection
+   aggregate remained healthy at 286 of 286 delivered, with zero pending,
+   incomplete, dead-letter, stale, timed-out, or open-claim rows and one maximum
+   enqueue/publish attempt. No Worker, Convex, Account API, Tune API, or
+   production-data change was part of the smoke.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
