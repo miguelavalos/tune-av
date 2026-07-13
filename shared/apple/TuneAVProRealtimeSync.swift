@@ -72,6 +72,20 @@ struct TuneAVProRealtimeCoverage: Equatable {
     )
 }
 
+enum TuneAVProRealtimeInitialProjectionPolicy {
+    static func shouldEstablishLegacyBaseline(
+        projection: TuneAVProLibraryProjection,
+        hasProjectionBaseline: Bool,
+        didCompleteLibraryBootstrap: Bool,
+        didCompleteFeedbackBootstrap: Bool
+    ) -> Bool {
+        !hasProjectionBaseline
+            && projection.sourceUpdatedAtDate == nil
+            && didCompleteLibraryBootstrap
+            && didCompleteFeedbackBootstrap
+    }
+}
+
 extension TuneAVProLibraryProjection {
     var sourceUpdatedAtDate: Date? {
         guard let sourceUpdatedAt, sourceUpdatedAt.isFinite, sourceUpdatedAt > 0 else { return nil }
@@ -85,6 +99,10 @@ struct TuneAVProRealtimeProjectionCursor {
     private var libraryGeneration: Int?
     private var feedbackGeneration: Int?
     private var legacyUpdatedAt: Double?
+
+    func hasBaseline(for ownerUserId: String) -> Bool {
+        self.ownerUserId == ownerUserId
+    }
 
     mutating func establishBaseline(_ projection: TuneAVProLibraryProjection) {
         _ = consume(projection)

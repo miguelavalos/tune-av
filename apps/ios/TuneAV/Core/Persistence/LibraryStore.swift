@@ -1216,6 +1216,16 @@ final class LibraryStore: ObservableObject {
     }
 
     func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
+        if TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+            projection: projection,
+            hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
+            didCompleteLibraryBootstrap: cloudLibraryRefreshedAt != nil,
+            didCompleteFeedbackBootstrap: cloudFeedbackRefreshedAt != nil
+        ) {
+            proRealtimeProjectionCursor.establishBaseline(projection)
+            return
+        }
+
         let refreshPlan = proRealtimeProjectionCursor.consume(
             projection,
             coverage: TuneAVProRealtimeCoverage(

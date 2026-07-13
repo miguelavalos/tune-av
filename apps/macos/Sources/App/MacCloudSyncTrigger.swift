@@ -81,23 +81,52 @@ struct MacCloudSyncExecutionGate {
     }
 }
 
+enum MacProRealtimeProjectionStatePolicy {
+    static func shouldReset(previousOwnerUserID: String?, nextOwnerUserID: String) -> Bool {
+        previousOwnerUserID != nextOwnerUserID
+    }
+}
+
 struct MacProRealtimeBootstrapGate {
+    private enum Phase {
+        case awaitingBootstrap
+        case awaitingInitialProjection
+    }
+
     private(set) var ownerUserID: String?
+    private var phase: Phase?
 
     mutating func begin(ownerUserID: String) {
         self.ownerUserID = ownerUserID
+        phase = .awaitingBootstrap
     }
 
     func shouldAwaitBootstrap(for projectionOwnerUserID: String) -> Bool {
-        ownerUserID == projectionOwnerUserID
+        ownerUserID == projectionOwnerUserID && phase == .awaitingBootstrap
     }
 
-    mutating func complete(ownerUserID: String?) {
-        guard self.ownerUserID == ownerUserID else { return }
-        self.ownerUserID = nil
+    func hasCompletedSuccessfulBootstrap(for projectionOwnerUserID: String) -> Bool {
+        ownerUserID == projectionOwnerUserID && phase == .awaitingInitialProjection
+    }
+
+    mutating func complete(ownerUserID: String?, succeeded: Bool = true) {
+        guard let currentOwnerUserID = self.ownerUserID,
+              currentOwnerUserID == ownerUserID else { return }
+        if succeeded {
+            phase = .awaitingInitialProjection
+        } else {
+            reset()
+        }
+    }
+
+    mutating func finishInitialProjection(ownerUserID: String) {
+        guard self.ownerUserID == ownerUserID,
+              phase == .awaitingInitialProjection else { return }
+        reset()
     }
 
     mutating func reset() {
         ownerUserID = nil
+        phase = nil
     }
 }

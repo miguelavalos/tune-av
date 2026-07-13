@@ -184,6 +184,66 @@ final class SharedAppleSupportTests: XCTestCase {
         )
     }
 
+    func testInitialProjectionPolicyBaselinesLegacySnapshotAfterSuccessfulBootstrap() {
+        let projection = projection(library: 4, feedback: 7)
+        var cursor = TuneAVProRealtimeProjectionCursor()
+
+        XCTAssertTrue(
+            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+                projection: projection,
+                hasProjectionBaseline: cursor.hasBaseline(for: "user-1"),
+                didCompleteLibraryBootstrap: true,
+                didCompleteFeedbackBootstrap: true
+            )
+        )
+
+        cursor.establishBaseline(projection)
+        XCTAssertTrue(cursor.hasBaseline(for: "user-1"))
+        XCTAssertFalse(
+            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+                projection: projection,
+                hasProjectionBaseline: cursor.hasBaseline(for: "user-1"),
+                didCompleteLibraryBootstrap: true,
+                didCompleteFeedbackBootstrap: true
+            )
+        )
+    }
+
+    func testInitialProjectionPolicyKeepsUncoveredSnapshotsConservative() {
+        let timestampedProjection = projection(
+            library: 4,
+            feedback: 7,
+            resource: "favorites",
+            sourceUpdatedAt: Date().timeIntervalSince1970 * 1_000
+        )
+        let legacyProjection = projection(library: 4, feedback: 7)
+
+        XCTAssertFalse(
+            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+                projection: timestampedProjection,
+                hasProjectionBaseline: false,
+                didCompleteLibraryBootstrap: true,
+                didCompleteFeedbackBootstrap: true
+            )
+        )
+        XCTAssertFalse(
+            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+                projection: legacyProjection,
+                hasProjectionBaseline: false,
+                didCompleteLibraryBootstrap: false,
+                didCompleteFeedbackBootstrap: true
+            )
+        )
+        XCTAssertFalse(
+            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+                projection: legacyProjection,
+                hasProjectionBaseline: false,
+                didCompleteLibraryBootstrap: true,
+                didCompleteFeedbackBootstrap: false
+            )
+        )
+    }
+
     func testRealtimeProjectionCursorResetsForNewOwner() {
         var cursor = TuneAVProRealtimeProjectionCursor()
         _ = cursor.consume(projection(owner: "user-1", library: 9, feedback: 9))

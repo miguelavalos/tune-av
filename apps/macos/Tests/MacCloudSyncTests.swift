@@ -167,8 +167,40 @@ final class MacCloudSyncTests: XCTestCase {
         gate.complete(ownerUserID: "user-2")
         XCTAssertTrue(gate.shouldAwaitBootstrap(for: "user-1"))
 
-        gate.complete(ownerUserID: "user-1")
+        gate.complete(ownerUserID: "user-1", succeeded: true)
         XCTAssertFalse(gate.shouldAwaitBootstrap(for: "user-1"))
+        XCTAssertTrue(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
+
+        gate.finishInitialProjection(ownerUserID: "user-2")
+        XCTAssertTrue(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
+
+        gate.finishInitialProjection(ownerUserID: "user-1")
+        XCTAssertFalse(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
+
+        gate.begin(ownerUserID: "user-1")
+        gate.complete(ownerUserID: "user-1", succeeded: false)
+        XCTAssertNil(gate.ownerUserID)
+    }
+
+    func testMacRealtimeProjectionStateResetsOnlyForDifferentOwner() {
+        XCTAssertFalse(
+            MacProRealtimeProjectionStatePolicy.shouldReset(
+                previousOwnerUserID: "user-1",
+                nextOwnerUserID: "user-1"
+            )
+        )
+        XCTAssertTrue(
+            MacProRealtimeProjectionStatePolicy.shouldReset(
+                previousOwnerUserID: "user-1",
+                nextOwnerUserID: "user-2"
+            )
+        )
+        XCTAssertTrue(
+            MacProRealtimeProjectionStatePolicy.shouldReset(
+                previousOwnerUserID: nil,
+                nextOwnerUserID: "user-1"
+            )
+        )
     }
 
     func testMacRealtimeBaselineSkipsHistoricalReadButKeepsLaterInvalidation() {

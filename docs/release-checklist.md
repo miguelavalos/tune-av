@@ -415,6 +415,23 @@ separate development bundle identifier.
    enqueue/publish attempt. No Worker, Convex, Account API, Tune API, or
    production-data change was part of the smoke.
 
+   Apple realtime-bootstrap read hardening, 2026-07-13: the build-58 smoke
+   confirmed that the bounded `feedback -> library -> feedback` sequence could
+   be caused by the initial Convex snapshot arriving after the cloud bootstrap.
+   The Apple clients now establish a no-op baseline for a timestamp-less legacy
+   initial projection only after both the library and feedback bootstrap have
+   succeeded. Timestamped projections and any projection following a failed
+   bootstrap retain the conservative refresh behavior. macOS additionally
+   preserves the realtime cursor, covered generations, and active session when
+   the same Pro user merely pauses and resumes the app; those values are still
+   cleared for a different user or a full stop. iOS applies the matching cold
+   launch baseline rule. The complete iOS suite passed 355 of 355 tests and the
+   complete macOS suite passed 58 of 58 tests. This is client-only hardening:
+   no Worker, Convex schema/function, Cloudflare configuration, or production
+   data changed. TestFlight build `58` predates this repair, so a later Apple
+   build must verify that the delayed initial projection and a same-user
+   activation do not repeat covered Cloudflare reads.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

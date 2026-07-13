@@ -1418,22 +1418,27 @@ final class TuneAVMacModel: ObservableObject {
     func synchronizeLibraryNow() async {
         guard cloudSyncExecutionGate.begin() else { return }
         let bootstrapOwnerUserID = proRealtimeBootstrapGate.ownerUserID
+        var bootstrapSucceeded = false
         defer {
             cloudSyncExecutionGate.finish()
-            proRealtimeBootstrapGate.complete(ownerUserID: bootstrapOwnerUserID)
+            proRealtimeBootstrapGate.complete(
+                ownerUserID: bootstrapOwnerUserID,
+                succeeded: bootstrapSucceeded
+            )
         }
 
-        await performLibrarySyncNow()
+        bootstrapSucceeded = await performLibrarySyncNow()
         if cloudSyncExecutionGate.consumePendingFollowUp() {
-            await performLibrarySyncNow()
+            let followUpSucceeded = await performLibrarySyncNow()
+            bootstrapSucceeded = bootstrapSucceeded && followUpSucceeded
         }
     }
 
-    private func performLibrarySyncNow() async {
+    private func performLibrarySyncNow() async -> Bool {
         guard accountService.isAvailable else {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
-            return
+            return false
         }
 
         do {
@@ -1481,11 +1486,12 @@ final class TuneAVMacModel: ObservableObject {
             }
 
             lastCloudSyncAt = .now
-            await refreshProFeedbackNow()
+            let didRefreshFeedback = await refreshProFeedbackNow()
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
             if let accountUser {
                 persistLastKnownAccountUser(accountUser)
             }
+            return didRefreshFeedback
         } catch TuneAVAppDataClientError.missingToken {
             TuneAVMacDiagnostics.capture(
                 TuneAVAppDataClientError.missingToken,
@@ -1534,6 +1540,7 @@ final class TuneAVMacModel: ObservableObject {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         }
+        return false
     }
 
     private func startProRealtimeSyncIfNeeded() {
@@ -1543,14 +1550,23 @@ final class TuneAVMacModel: ObservableObject {
         }
         guard proLibraryObserver.isConfigured else { return }
         guard let ownerUserId = accountUser?.id, !ownerUserId.isEmpty else { return }
-        guard activeProRealtimeSessionOwnerUserID != ownerUserId else { return }
+        if activeProRealtimeSessionOwnerUserID == ownerUserId,
+           proRealtimeProjectionCancellable != nil {
+            return
+        }
 
-        proRealtimeProjectionCursor.reset()
-        cloudLibrarySourceUpdatedAtByResource.removeAll()
-        cloudFeedbackSourceUpdatedAt = nil
+        let shouldResetProjectionState = MacProRealtimeProjectionStatePolicy.shouldReset(
+            previousOwnerUserID: activeProRealtimeSessionOwnerUserID,
+            nextOwnerUserID: ownerUserId
+        )
+        if shouldResetProjectionState {
+            proRealtimeProjectionCursor.reset()
+            cloudLibrarySourceUpdatedAtByResource.removeAll()
+            cloudFeedbackSourceUpdatedAt = nil
+            TuneAVRealtimeSessionStore.shared.clear()
+        }
         activeProRealtimeSessionOwnerUserID = ownerUserId
         proRealtimeProjectionCancellable?.cancel()
-        TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
 
         proRealtimeProjectionCancellable = proLibraryObserver.$projection
@@ -1610,7 +1626,6 @@ final class TuneAVMacModel: ObservableObject {
         realtimeSessionSupervisor.pause()
         proRealtimeProjectionCancellable?.cancel()
         proRealtimeProjectionCancellable = nil
-        activeProRealtimeSessionOwnerUserID = nil
         proLibraryObserver.clear()
     }
 
@@ -3084,9 +3099,6 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        let establishesPreBootstrapBaseline = proRealtimeBootstrapGate.shouldAwaitBootstrap(
-            for: projection.ownerUserId
-        ) && pendingCloudSyncTask != nil && !cloudSyncExecutionGate.isRunning
         if proRealtimeBootstrapGate.shouldAwaitBootstrap(for: projection.ownerUserId),
            let pendingCloudSyncTask {
             await pendingCloudSyncTask.value
@@ -3094,10 +3106,6 @@ final class TuneAVMacModel: ObservableObject {
 
         guard accessMode == .signedInPro,
               accountUser?.id == projection.ownerUserId else { return }
-        if establishesPreBootstrapBaseline {
-            proRealtimeProjectionCursor.establishBaseline(projection)
-            return
-        }
 
         while cloudSyncExecutionGate.isRunning {
             do {
@@ -3109,6 +3117,21 @@ final class TuneAVMacModel: ObservableObject {
                   accountUser?.id == projection.ownerUserId else { return }
         }
 
+        if TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
+            projection: projection,
+            hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
+            didCompleteLibraryBootstrap: proRealtimeBootstrapGate.hasCompletedSuccessfulBootstrap(
+                for: projection.ownerUserId
+            ),
+            didCompleteFeedbackBootstrap: proRealtimeBootstrapGate.hasCompletedSuccessfulBootstrap(
+                for: projection.ownerUserId
+            )
+        ) {
+            proRealtimeProjectionCursor.establishBaseline(projection)
+            proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
+            return
+        }
+
         let refreshPlan = proRealtimeProjectionCursor.consume(
             projection,
             coverage: TuneAVProRealtimeCoverage(
@@ -3116,6 +3139,7 @@ final class TuneAVMacModel: ObservableObject {
                 feedbackSourceUpdatedAt: cloudFeedbackSourceUpdatedAt
             )
         )
+        proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
         if refreshPlan.refreshFeedback {
             await refreshProFeedbackNow()
         }
@@ -3124,8 +3148,9 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func refreshProFeedbackNow() async {
-        guard accessMode == .signedInPro, accountService.isAvailable else { return }
+    @discardableResult
+    private func refreshProFeedbackNow() async -> Bool {
+        guard accessMode == .signedInPro, accountService.isAvailable else { return false }
 
         do {
             let snapshot: TuneAVFeedbackSnapshot = try await makeTuneAPIClient().request(path: "/v1/tune/feedback")
@@ -3135,6 +3160,7 @@ final class TuneAVMacModel: ObservableObject {
             )
             let generatedAt = TuneAVDateCoding.date(from: snapshot.generatedAt)
             cloudFeedbackSourceUpdatedAt = generatedAt == .distantPast ? nil : generatedAt
+            return true
         } catch {
             TuneAVMacDiagnostics.capture(
                 error,
@@ -3142,6 +3168,7 @@ final class TuneAVMacModel: ObservableObject {
                 operation: "feedback_snapshot",
                 step: "download"
             )
+            return false
         }
     }
 

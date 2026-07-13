@@ -883,7 +883,7 @@ final class LibraryStoreTests: XCTestCase {
                 libraryGeneration: 5,
                 feedbackGeneration: 3,
                 resource: "favorites",
-                sourceUpdatedAt: TuneAVDateCoding.date(from: "2026-06-07T17:52:00Z").timeIntervalSince1970 * 1_000,
+                sourceUpdatedAt: nil,
                 updatedAt: 1
             )
         )
