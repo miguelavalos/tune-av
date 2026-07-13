@@ -343,6 +343,19 @@ separate development bundle identifier.
    barrier and later invalidation behavior. This second repair is likewise not
    in TestFlight builds `47`/`56` and still needs a later production smoke.
 
+   TestFlight delivery checkpoint, 2026-07-13: iOS/iPadOS `1.0.7 (48)` and
+   macOS `1.0.7 (57)` were archived from product source commit `21faf54`,
+   verified with the production release gates, and accepted by App Store
+   Connect for processing. The exact archives are
+   `.derived-data/release-archives/TuneAV-1.0.7-48-2026-07-13-115655.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-57-2026-07-13-120023.xcarchive`.
+   Both uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED`; App Store
+   Connect processing and tester availability still require confirmation. No
+   Worker or Convex deployment was part of this delivery. These builds contain
+   the terminal analytics-outbox repair and the bounded bootstrap/realtime
+   coordination repair described above.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
