@@ -359,6 +359,27 @@ separate development bundle identifier.
    terminal analytics-outbox repair and the bounded bootstrap/realtime
    coordination repair described above.
 
+   macOS build `57` installed production smoke, 2026-07-13: the TestFlight
+   bundle launched from a terminated process, restored Pro, and remained
+   `Todo al día`. The filtered production trace contained exactly one account
+   profile read, one access read, one read for each cloud-library resource, one
+   realtime-session request, and one feedback read; all returned `200`. No
+   listening-analytics request or terminal `400` appeared during launch or the
+   delayed observation window, and the realtime projection aggregate remained
+   healthy with no incomplete delivery or fanout. This validates both build
+   `57` repairs for a cold launch.
+
+   The same smoke found one separate bounded macOS inefficiency: entering the
+   account screen refreshes the same internal user through a temporary local
+   Free fallback before the confirmed Pro response arrives. That transition
+   stops and restarts realtime and schedules another complete cloud bootstrap.
+   iOS already preserves confirmed Pro capabilities while refreshing the same
+   internal user and clears them only when the internal user changes. macOS
+   should mirror that rule and add a profile-entry request-count regression
+   before this release is considered fully optimized. There is no periodic
+   polling, request duplication inside either bootstrap, analytics `400`, or
+   Convex projection fanout in this residual.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
