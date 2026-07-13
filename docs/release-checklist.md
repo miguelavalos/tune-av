@@ -432,6 +432,25 @@ separate development bundle identifier.
    build must verify that the delayed initial projection and a same-user
    activation do not repeat covered Cloudflare reads.
 
+   Apple realtime-bootstrap TestFlight delivery checkpoint, 2026-07-13:
+   iOS/iPadOS `1.0.7 (49)` and macOS `1.0.7 (59)` were archived from public
+   source commit `7cfddd5`, after advancing only their respective build
+   numbers. The governed production configuration and both release preflights
+   passed before archive creation. The source repair was already covered by
+   the complete iOS suite (355 of 355 tests) and complete macOS suite (58 of 58
+   tests). The exact archives are
+   `.derived-data/release-archives/TuneAV-1.0.7-49-2026-07-13-143841.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-59-2026-07-13-143841.xcarchive`.
+   Their version, build, bundle, team, architecture, privacy, Account AV
+   keychain identifiers where applicable, and app/Sentry dSYMs were verified.
+   App Store Connect accepted the exact iOS export at 14:42 CEST and the exact
+   macOS export at 14:43 CEST; both commands ended with `Upload succeeded` and
+   `EXPORT SUCCEEDED`, and both packages entered processing. No Worker,
+   Convex, Account API, Tune API, Cloudflare configuration, production-data,
+   or App Review change was part of this delivery. Processing, installation,
+   and the bounded cross-device production smoke remain pending.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
