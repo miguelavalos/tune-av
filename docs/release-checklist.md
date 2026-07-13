@@ -394,12 +394,15 @@ separate development bundle identifier.
    its bundle, team, Account AV keychain identifiers, privacy manifest, and
    repaired Sentry dSYM were verified. App Store Connect accepted the exact
    export for processing at 13:08 CEST, ending with `Upload succeeded` and
-   `EXPORT SUCCEEDED`. Processing and intended TestFlight-group availability
-   still require confirmation before installation. No Worker, Convex, Account
-   API, Tune API, or production-data change was part of this delivery. After
-   installation, the required bounded smoke is one cold launch followed by one
-   account-screen entry; the latter must not create another realtime session or
-   cloud-library/feedback bootstrap.
+   `EXPORT SUCCEEDED`. App Store Connect subsequently showed the upload as
+   finished, ready to test, and assigned to the internal `Tune AV Test` group.
+   TestFlight automatic updates installed `/Applications/Tune AV.app` as build
+   `58`; its installed signature is `TestFlight Beta Distribution` for the
+   expected team. It has not yet been launched. No Worker, Convex, Account API,
+   Tune API, or production-data change was part of this delivery. The remaining
+   bounded smoke is one cold launch followed by one account-screen entry; the
+   latter must not create another realtime session or cloud-library/feedback
+   bootstrap.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
