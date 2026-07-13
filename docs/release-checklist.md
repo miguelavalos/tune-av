@@ -556,6 +556,29 @@ separate development bundle identifier.
    must prove one saved-radio invalidation causes one matching resource GET and
    no unrelated library, feedback, or summary read.
 
+   Exact-resource TestFlight delivery checkpoint, 2026-07-13: iOS/iPadOS
+   `1.0.7 (51)` and macOS `1.0.7 (60)` were produced from public commit
+   `564840e`, which contains the scoped receiver repairs and advances only the
+   two Apple build numbers beyond those repairs. Both governed production
+   preflights passed with zero failures and zero warnings. The verified archives
+   are
+   `.derived-data/release-archives/TuneAV-1.0.7-51-2026-07-13-163920.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-60-2026-07-13-164202.xcarchive`.
+   Archive checks passed for the intended version/build, bundle, team,
+   architecture, privacy manifests, stable macOS Account AV keychain identity,
+   and matching app/Sentry dSYMs. Both uploads ended with `Upload succeeded`
+   and `EXPORT SUCCEEDED`. App Store Connect then marked both uploads
+   `Finalizado`, exposed builds `51` and `60` as `Lista para enviar`, and
+   assigned them to the internal `Tune AV Test` group. Generated production
+   config and 3.2 GB of task-owned macOS DerivedData were removed; public config
+   hygiene passed after cleanup, while both verified archives remain retained
+   as evidence. No backend, Cloudflare, Convex, production-data, or App Review
+   change was made. The next gate is a physical same-account receiver trace:
+   one active saved-radio invalidation in each direction must perform exactly
+   one favorites GET and no saved-discoveries, feedback, summary, retry, or
+   extra realtime-session request.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
