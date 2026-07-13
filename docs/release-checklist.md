@@ -697,9 +697,26 @@ separate development bundle identifier.
    saved radios plus saved songs only. Local verification passed with iOS
    362/362 tests, macOS 62/62 tests, the localization parity audit, backend
    typecheck, Tune API duplicate-module sync, and focused backend architecture
-   tests 26/26. No Worker deployment, TestFlight upload, production mutation,
-   or App Review action was performed. The next gate is deploy/build approval,
-   then focused production proof of the no-read/no-fanout feedback budget.
+   tests 26/26. This describes the source-verification checkpoint before the
+   separately recorded production deployment and replacement delivery below.
+
+   Feedback-migration production and replacement-delivery checkpoint,
+   2026-07-13: the compatible Account AV and Tune AV Workers were deployed and
+   signed-in Pro save/clear smokes passed through both production domains. The
+   bounded feedback outbox stayed unchanged, proving the deliberate feedback
+   mutation created no new outbox/Queue/Convex fanout; no historical feedback
+   was bulk-deleted. Replacement iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)`
+   were then archived from public commit `515bd93`. Both governed production
+   preflights and final archive checks passed, including privacy and matching
+   Sentry dSYMs. The retained archives are
+   `.derived-data/release-archives/TuneAV-1.0.7-53-2026-07-13-191207.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-62-2026-07-13-191554.xcarchive`.
+   App Store Connect accepted iOS at 19:15 CEST and macOS at 19:18 CEST; both
+   uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED`. They were not
+   submitted to App Review. Apple processing, TestFlight installation on both
+   platforms, and focused proof that current clients perform no feedback read,
+   fanout, or receiver action remain open.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

@@ -9,9 +9,11 @@ belong outside this repository.
 
 The authoritative cloud-sync boundary is
 [Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
-still implement the superseded feedback-sync behavior and are pending
-replacement. Current source implements the narrowed contract and has passed
-local iOS, macOS, localization, and backend-focused verification.
+still implement the superseded feedback-sync behavior and must not be promoted.
+Current source implements the narrowed contract and has passed local iOS,
+macOS, localization, and backend-focused verification. Replacement candidates
+iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)` were accepted for TestFlight
+processing on 2026-07-13 and await installation plus focused physical proof.
 
 ## App Scope
 
@@ -243,7 +245,13 @@ The feedback portions of this evidence describe older behavior and are not
 requirements for the replacement build. The 2026-07-13 contract removes
 feedback bootstrap, restore, and realtime refresh.
 
-Latest TestFlight delivery checkpoint, 2026-07-10:
+Latest replacement delivery checkpoint, 2026-07-13: iOS/iPadOS `1.0.7 (53)`
+and macOS `1.0.7 (62)` were archived from public source commit `515bd93`, passed
+the governed production and archive gates, and were accepted for processing by
+App Store Connect. Neither was submitted to App Review. Installation and the
+focused no-feedback-read/no-receiver physical traffic gate remain open.
+
+Historical TestFlight delivery checkpoint, 2026-07-10:
 
 - iPhone/iPad `1.0.7 (46)` and macOS `1.0.7 (55)` were archived from public
   commit `1f65bc0`, passed their final archive, privacy, signing, architecture,

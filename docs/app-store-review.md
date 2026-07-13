@@ -35,6 +35,13 @@ approval records outside this repository.
 
 ## Current App Store Status
 
+- Replacement delivery, 2026-07-13: iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7
+  (62)` were archived from public source commit `515bd93`, passed their release,
+  security, privacy, signing, and dSYM checks, and were accepted for processing
+  by App Store Connect at 19:15 and 19:18 CEST. Neither build was submitted to
+  App Review. Confirm processing completion, install both from TestFlight, and
+  complete the focused physical traffic gate before promotion.
+
 - Product-scope decision, 2026-07-13: TestFlight iOS `1.0.7 (52)` and macOS
   `1.0.7 (61)` still contain the superseded feedback bootstrap/restore contract
   and user-facing copy. Their saved-radio and saved-song traffic evidence is

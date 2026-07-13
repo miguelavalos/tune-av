@@ -49,13 +49,20 @@ superseded feedback-sync contract. Their saved-station and saved-song evidence
 is still valid, but they are migration-pending and must not be submitted for App
 Review as the final implementation of this decision.
 
-The source migration was implemented and locally verified on 2026-07-13:
-feedback bootstrap/restore and realtime fanout were removed from both Apple
-clients and the compatible Workers, Free/Guest uploads were disabled, and all
-affected product copy was updated. A replacement TestFlight build and focused
-production traffic proof are still required before submission. Compatibility
-feedback endpoints remain temporarily for older installed builds, but new
-clients do not use feedback reads as sync.
+The source migration was implemented, locally verified, and deployed on
+2026-07-13: feedback bootstrap/restore and realtime fanout were removed from
+both Apple clients and the compatible Workers, Free/Guest uploads were
+disabled, and all affected product copy was updated. Signed-in Pro feedback
+save/clear production smokes retained the D1 mutation without creating a new
+feedback outbox event. Compatibility feedback endpoints remain temporarily for
+older installed builds, but new clients do not use feedback reads as sync.
+
+Replacement TestFlight candidates iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7
+(62)` were archived from public source commit `515bd93`, passed the governed
+release gates, and were accepted for processing by App Store Connect on
+2026-07-13. Neither upload was submitted to App Review. Apple processing,
+installation, and focused physical proof of the no-read/no-receiver feedback
+budget remain required before either build becomes the final review candidate.
 
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:

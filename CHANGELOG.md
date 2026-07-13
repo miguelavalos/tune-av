@@ -17,6 +17,10 @@ This project follows semantic versioning once public source releases begin.
   backend request, and remove feedback outbox/Queue/Convex fanout.
 - Update every Apple locale so Cloud Sync advertises only saved radios and
   saved songs; local feedback is no longer described as synchronized.
+- Deliver replacement TestFlight candidates iOS/iPadOS `1.0.7 (53)` and macOS
+  `1.0.7 (62)` from source commit `515bd93`; both uploads were accepted by App
+  Store Connect on 2026-07-13 and remain outside App Review while processing
+  and focused physical traffic verification complete.
 
 ## 1.0.3 - 2026-06-28
 
