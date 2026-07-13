@@ -628,6 +628,23 @@ separate development bundle identifier.
    receiver favorites GET, and no unrelated read, retry, or extra realtime
    session.
 
+   iOS-to-macOS author-coverage proof, 2026-07-13: physical TestFlight iOS
+   `1.0.7 (52)` issued exactly one successful favorites upsert. After its
+   projection was delivered, the exact `TuneAV/52` client made zero App Data
+   GETs, proving that the mutation receipt suppressed the former author-side
+   reread. Activating physical TestFlight macOS `1.0.7 (61)` consumed the
+   pending generation with exactly one favorites GET from the exact
+   `Tune%20AV/61` client. There was no saved-discoveries GET, feedback GET,
+   post-mutation summary, retry, polling, or additional realtime-session
+   request. The one Tune summary in the trace completed 18 seconds before the
+   mutation as part of the just-updated iPhone launch and is outside the
+   mutation window. The PII-free production outbox advanced once from 290 to
+   291 delivered projections; the new `library/favorites` event used one
+   enqueue and one publish attempt and ended without error, pending work,
+   timeout, dead letter, or open claim. No source, Worker, Convex,
+   configuration, deployment, or App Review change was made. The reverse
+   macOS-to-iOS saved-radio direction remains the next gate.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
