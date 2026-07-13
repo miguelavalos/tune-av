@@ -450,8 +450,25 @@ separate development bundle identifier.
    `Finalizado`, made builds `49` and `59` available for testing, and assigned
    them to the internal `Tune AV Test` group. No Worker, Convex, Account API,
    Tune API, Cloudflare configuration, production-data, or App Review change
-   was part of this delivery. Installation and the bounded cross-device
-   production smoke remain pending.
+   was part of this delivery. The iOS/iPadOS installation and bounded
+   cross-device production smoke remain pending.
+
+   macOS build-59 production smoke, 2026-07-13: TestFlight installed
+   `/Applications/Tune AV.app` as `1.0.7 (59)` with the expected bundle, team,
+   and `TestFlight Beta Distribution` signature. The signed-in Pro account
+   showed `Todo al día`. A controlled account-screen entry produced exactly
+   `GET /v1/me` and `GET /v1/me/access`, both `200`, while Tune API remained
+   silent. A same-user background/foreground cycle produced no Account or Tune
+   request. One process-verified cold launch then produced exactly one account
+   profile read, one access read, one favorites read, one saved-discoveries
+   read, one realtime-session request, and one feedback read, all `200`. The
+   delayed observation window remained silent: there was no repeated
+   `feedback -> library -> feedback` sequence, second realtime session,
+   analytics request, polling, or error. The PII-free production projection
+   aggregate remained `healthy` at 286 of 286 delivered, with zero incomplete,
+   dead-letter, stale, timed-out, errored, or open-claim rows and maximum
+   enqueue/publish attempts of one. The total was unchanged, so the smoke
+   created no projection fanout. No backend or production-data change was made.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
