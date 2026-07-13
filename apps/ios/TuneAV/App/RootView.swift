@@ -185,7 +185,6 @@ struct RootView: View {
         libraryStore.setBackendService(appDataService, userID: accessController.accountUser?.id)
         libraryStore.setAppDataService(appDataService)
         await libraryStore.refreshCloudLibraryIfNeeded()
-        await libraryStore.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
         await libraryStore.refreshUserSummary(force: true)
         startProRealtimeSyncIfNeeded()
     }

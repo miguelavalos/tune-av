@@ -27,6 +27,12 @@ struct TuneAVLocalFeedbackLoadResult: Equatable {
     let needsPersistence: Bool
 }
 
+enum TuneAVFeedbackBackendPolicy {
+    static func canUpload(accessMode: AccessMode) -> Bool {
+        accessMode == .signedInPro
+    }
+}
+
 enum TuneAVLocalFeedbackStore {
     static func canonicalTrackFeedbackKey(_ key: String) -> String {
         let decodedKey = key.removingPercentEncoding ?? key
@@ -85,52 +91,5 @@ enum TuneAVLocalFeedbackStore {
     ) -> [String: TuneAVLocalFeedbackRecord] {
         let timestamp = TuneAVDateCoding.string(from: updatedAt)
         return feedback.mapValues { TuneAVLocalFeedbackRecord(feedback: $0, updatedAt: timestamp) }
-    }
-}
-
-enum TuneAVRealtimeFeedbackProjection {
-    static func stationFeedback(
-        from records: [TuneAVStationFeedbackRecord]
-    ) -> [String: TuneAVStationFeedback] {
-        Dictionary(uniqueKeysWithValues: records.map { ($0.stationID, $0.feedback) })
-    }
-
-    static func stationFeedbackRecords(
-        from records: [TuneAVStationFeedbackRecord],
-        fallbackUpdatedAt: Date = .now
-    ) -> [String: TuneAVLocalFeedbackRecord] {
-        let fallbackTimestamp = TuneAVDateCoding.string(from: fallbackUpdatedAt)
-        return Dictionary(
-            uniqueKeysWithValues: records.map {
-                (
-                    $0.stationID,
-                    TuneAVLocalFeedbackRecord(
-                        feedback: $0.feedback,
-                        updatedAt: $0.updatedAt ?? fallbackTimestamp
-                    )
-                )
-            }
-        )
-    }
-
-    static func trackFeedbackRecords(
-        from records: [TuneAVTrackFeedbackRecord],
-        fallbackUpdatedAt: Date = .now
-    ) -> [String: TuneAVLocalFeedbackRecord] {
-        let fallbackTimestamp = TuneAVDateCoding.string(from: fallbackUpdatedAt)
-        return Dictionary(
-            uniqueKeysWithValues: records.map {
-                (
-                    TuneAVLocalFeedbackStore.canonicalTrackFeedbackKey($0.trackKey),
-                    TuneAVLocalFeedbackRecord(
-                        feedback: $0.feedback,
-                        updatedAt: $0.updatedAt ?? fallbackTimestamp,
-                        title: $0.title,
-                        artist: $0.artist,
-                        stationID: $0.stationID
-                    )
-                )
-            }
-        )
     }
 }

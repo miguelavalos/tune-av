@@ -689,6 +689,18 @@ separate development bundle identifier.
    that removes feedback reads and realtime fanout, updates user-facing copy,
    and proves the focused feedback traffic budget without cross-device restore.
 
+   Source migration completed, 2026-07-13: iOS and macOS no longer bootstrap,
+   restore, or realtime-refresh feedback; feedback-only legacy projections are
+   ignored; Guest and signed-in Free feedback cannot enter the upload path; and
+   one deliberate Pro action retains only its D1 mutation with no projection
+   outbox/Queue/Convex event. The five Apple locales now describe Cloud Sync as
+   saved radios plus saved songs only. Local verification passed with iOS
+   362/362 tests, macOS 62/62 tests, the localization parity audit, backend
+   typecheck, Tune API duplicate-module sync, and focused backend architecture
+   tests 26/26. No Worker deployment, TestFlight upload, production mutation,
+   or App Review action was performed. The next gate is deploy/build approval,
+   then focused production proof of the no-read/no-fanout feedback budget.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

@@ -49,20 +49,23 @@ superseded feedback-sync contract. Their saved-station and saved-song evidence
 is still valid, but they are migration-pending and must not be submitted for App
 Review as the final implementation of this decision.
 
-A later build must remove feedback bootstrap/restore and feedback realtime
-fanout, update all user-facing Pro copy, and pass focused traffic tests before
-submission. Compatibility feedback endpoints may remain temporarily for older
-installed builds, but new clients must not use feedback reads as sync.
+The source migration was implemented and locally verified on 2026-07-13:
+feedback bootstrap/restore and realtime fanout were removed from both Apple
+clients and the compatible Workers, Free/Guest uploads were disabled, and all
+affected product copy was updated. A replacement TestFlight build and focused
+production traffic proof are still required before submission. Compatibility
+feedback endpoints remain temporarily for older installed builds, but new
+clients do not use feedback reads as sync.
 
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:
 
 - `profile.alert.clearSyncedLibrary.message`;
+- `limits.upgrade.discoveredTracks.message`;
 - `paywall.benefit.sync`;
 - `profile.pro.sync.detail`.
 
-This list is a release guard, not authorization to change the copy before the
-implementation step is approved.
+This list remains a release guard for every replacement archive.
 
 ## Terminology
 

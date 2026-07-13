@@ -547,6 +547,12 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(TuneAVLocalFeedbackRetention.maximumLocalRetention, TuneAVLocalFeedbackRetention.forMode(.signedInPro))
     }
 
+    func testFeedbackBackendUploadsAreExclusiveToPro() {
+        XCTAssertFalse(TuneAVFeedbackBackendPolicy.canUpload(accessMode: .guest))
+        XCTAssertFalse(TuneAVFeedbackBackendPolicy.canUpload(accessMode: .signedInFree))
+        XCTAssertTrue(TuneAVFeedbackBackendPolicy.canUpload(accessMode: .signedInPro))
+    }
+
     func testLibraryStoreInitialLoadKeepsProFeedbackBeforeAccessModeResolves() {
         let stationFeedbackStorageKey = "tuneav.stationFeedback.v1"
         let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
@@ -777,83 +783,6 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.discoveries.first?.resolvedArtworkURL, artworkURL)
     }
 
-    func testRemoteTrackFeedbackUsesCanonicalTrackKey() async throws {
-        LibraryStoreTestURLProtocol.requestHandler = { request in
-            let response: String
-            switch request.url?.path {
-            case "/v1/tune/feedback":
-                response = """
-                {
-                  "generatedAt": "2026-06-14T16:30:00Z",
-                  "stationFeedback": [],
-                  "trackFeedback": [
-                    {
-                      "trackKey": "teardrop::massive attack",
-                      "title": "Teardrop",
-                      "artist": "Massive Attack",
-                      "stationID": "test-station",
-                      "feedback": "not_for_me",
-                      "updatedAt": "2026-06-14T16:29:00Z"
-                    }
-                  ]
-                }
-                """
-            case "/v1/tune/me/summary":
-                response = """
-                {
-                  "usage": {},
-                  "limits": {},
-                  "subscription": { "tier": "free", "status": "inactive", "isPro": false }
-                }
-                """
-            default:
-                XCTFail("Unexpected request path: \(request.url?.path ?? "nil")")
-                response = "{}"
-            }
-            return (
-                HTTPURLResponse(
-                    url: request.url!,
-                    statusCode: 200,
-                    httpVersion: nil,
-                    headerFields: ["Content-Type": "application/json"]
-                )!,
-                Data(response.utf8)
-            )
-        }
-        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
-
-        let client = AVAccountAPIClient(
-            getToken: { "test-token" },
-            baseURLProvider: { URL(string: "https://api.test") },
-            tuneBaseURLProvider: { URL(string: "https://api.test") },
-            urlSession: libraryStoreTestURLSession()
-        )
-        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
-        let station = Station(
-            id: "test-station",
-            name: "Test Radio",
-            country: "Spain",
-            language: "Spanish",
-            tags: "trip hop",
-            streamURL: "https://example.com/stream.mp3"
-        )
-        XCTAssertTrue(store.toggleDiscoveredTrackSaved(
-            title: "Teardrop",
-            artist: "Massive Attack",
-            station: station,
-            artworkURL: nil,
-            savedLimit: 10,
-            discoveryLimit: 25
-        ))
-
-        store.configureLocalFeedbackRetention(for: .signedInPro)
-        store.setBackendService(TuneAVAppDataService(apiClient: client), userID: "user-1")
-        await store.refreshCloudFeedbackIfNeeded(force: true)
-
-        let discovery = try XCTUnwrap(store.discoveries.first)
-        XCTAssertEqual(store.feedback(for: discovery), .notForMe)
-    }
-
     func testBootstrapRealtimeProjectionDoesNotRepeatCoveredCloudReads() async throws {
         let recorder = LibraryStoreAppDataRequestRecorder()
         LibraryStoreTestURLProtocol.requestHandler = { request in
@@ -874,7 +803,6 @@ final class LibraryStoreTests: XCTestCase {
         store.setAppDataService(service)
 
         await store.refreshCloudLibraryIfNeeded(force: true)
-        await store.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
         await store.refreshUserSummary(force: true)
         await store.handleProRealtimeInvalidation(
             TuneAVProLibraryProjection(
@@ -890,7 +818,7 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 1)
     }
 
@@ -908,7 +836,7 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 0)
     }
 
@@ -926,7 +854,7 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 2)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 0)
     }
 
@@ -956,7 +884,7 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(recorder.requestCount(method: "PUT", path: "/v1/apps/tuneav/library/favorites/upsert"), 1)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
 
         await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
             libraryGeneration: 7,
@@ -966,7 +894,7 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
     }
 
     func testRealtimeUnknownLibraryResourceUsesConservativeFullRefresh() async {
@@ -984,69 +912,7 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 2)
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/futureResource"), 0)
-        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
-    }
-
-    func testRemoteTrackFeedbackCreatesTunedDiscoveryWithoutLocalHistory() async throws {
-        LibraryStoreTestURLProtocol.requestHandler = { request in
-            let response: String
-            switch request.url?.path {
-            case "/v1/tune/feedback":
-                response = """
-                {
-                  "generatedAt": "2026-06-14T16:30:00Z",
-                  "stationFeedback": [],
-                  "trackFeedback": [
-                    {
-                      "trackKey": "welcome to the dcc::nothing but thieves",
-                      "title": "Welcome to the DCC",
-                      "artist": "Nothing But Thieves",
-                      "stationID": "test-station",
-                      "feedback": "liked",
-                      "updatedAt": "2026-06-14T16:29:00Z"
-                    }
-                  ]
-                }
-                """
-            case "/v1/tune/me/summary":
-                response = """
-                {
-                  "usage": {},
-                  "limits": {},
-                  "subscription": { "tier": "pro", "status": "active", "isPro": true }
-                }
-                """
-            default:
-                XCTFail("Unexpected request path: \(request.url?.path ?? "nil")")
-                response = "{}"
-            }
-            return (
-                HTTPURLResponse(
-                    url: request.url!,
-                    statusCode: 200,
-                    httpVersion: nil,
-                    headerFields: ["Content-Type": "application/json"]
-                )!,
-                Data(response.utf8)
-            )
-        }
-        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
-
-        let client = AVAccountAPIClient(
-            getToken: { "test-token" },
-            baseURLProvider: { URL(string: "https://api.test") },
-            tuneBaseURLProvider: { URL(string: "https://api.test") },
-            urlSession: libraryStoreTestURLSession()
-        )
-        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
-        store.configureLocalFeedbackRetention(for: .signedInPro)
-        store.setBackendService(TuneAVAppDataService(apiClient: client), userID: "user-1")
-
-        await store.refreshCloudFeedbackIfNeeded(force: true)
-
-        XCTAssertTrue(store.discoveries.isEmpty)
-        XCTAssertEqual(store.tunedDiscoveries.map(\.title), ["Welcome to the DCC"])
-        XCTAssertEqual(store.feedback(for: try XCTUnwrap(store.tunedDiscoveries.first)), .liked)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 0)
     }
 
     func testCloudLibraryRefreshAppliesRemoteSavedDiscoveries() async throws {
@@ -1442,7 +1308,6 @@ final class LibraryStoreTests: XCTestCase {
 
     private func bootstrapRealtimeLibrary(_ store: LibraryStore) async {
         await store.refreshCloudLibraryIfNeeded(force: true)
-        await store.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
         await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
             libraryGeneration: 5,
             resource: "favorites",

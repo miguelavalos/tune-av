@@ -54,32 +54,26 @@ struct TuneAVProLibraryProjection: Decodable, Equatable {
 
 struct TuneAVProRealtimeRefreshPlan: Equatable {
     let refreshLibrary: Bool
-    let refreshFeedback: Bool
     let libraryResource: String?
 
     init(
         refreshLibrary: Bool,
-        refreshFeedback: Bool,
         libraryResource: String? = nil
     ) {
         self.refreshLibrary = refreshLibrary
-        self.refreshFeedback = refreshFeedback
         self.libraryResource = refreshLibrary ? libraryResource : nil
     }
 
     static let none = TuneAVProRealtimeRefreshPlan(
-        refreshLibrary: false,
-        refreshFeedback: false
+        refreshLibrary: false
     )
 }
 
 struct TuneAVProRealtimeCoverage: Equatable {
     let librarySourceUpdatedAtByResource: [String: Date]
-    let feedbackSourceUpdatedAt: Date?
 
     static let none = TuneAVProRealtimeCoverage(
-        librarySourceUpdatedAtByResource: [:],
-        feedbackSourceUpdatedAt: nil
+        librarySourceUpdatedAtByResource: [:]
     )
 }
 
@@ -87,13 +81,11 @@ enum TuneAVProRealtimeInitialProjectionPolicy {
     static func shouldEstablishLegacyBaseline(
         projection: TuneAVProLibraryProjection,
         hasProjectionBaseline: Bool,
-        didCompleteLibraryBootstrap: Bool,
-        didCompleteFeedbackBootstrap: Bool
+        didCompleteLibraryBootstrap: Bool
     ) -> Bool {
         !hasProjectionBaseline
             && projection.sourceUpdatedAtDate == nil
             && didCompleteLibraryBootstrap
-            && didCompleteFeedbackBootstrap
     }
 }
 
@@ -108,7 +100,6 @@ extension TuneAVProLibraryProjection {
 struct TuneAVProRealtimeProjectionCursor {
     private var ownerUserId: String?
     private var libraryGeneration: Int?
-    private var feedbackGeneration: Int?
     private var legacyUpdatedAt: Double?
 
     func hasBaseline(for ownerUserId: String) -> Bool {
@@ -130,10 +121,8 @@ struct TuneAVProRealtimeProjectionCursor {
 
         if projection.libraryGeneration != nil || projection.feedbackGeneration != nil {
             let nextLibraryGeneration = projection.libraryGeneration ?? 0
-            let nextFeedbackGeneration = projection.feedbackGeneration ?? 0
             let previousLibraryGeneration = libraryGeneration
             let refreshLibrary = nextLibraryGeneration > (previousLibraryGeneration ?? 0)
-            let refreshFeedback = nextFeedbackGeneration > (feedbackGeneration ?? 0)
             let libraryResource = scopedLibraryResource(
                 projection: projection,
                 previousGeneration: previousLibraryGeneration,
@@ -142,13 +131,11 @@ struct TuneAVProRealtimeProjectionCursor {
             )
 
             libraryGeneration = max(libraryGeneration ?? 0, nextLibraryGeneration)
-            feedbackGeneration = max(feedbackGeneration ?? 0, nextFeedbackGeneration)
             legacyUpdatedAt = max(legacyUpdatedAt ?? 0, projection.updatedAt)
 
             return filtered(
                 TuneAVProRealtimeRefreshPlan(
                     refreshLibrary: refreshLibrary,
-                    refreshFeedback: refreshFeedback,
                     libraryResource: libraryResource
                 ),
                 projection: projection,
@@ -166,7 +153,6 @@ struct TuneAVProRealtimeProjectionCursor {
         return filtered(
             TuneAVProRealtimeRefreshPlan(
                 refreshLibrary: !isFeedback,
-                refreshFeedback: isFeedback,
                 libraryResource: hadLegacyBaseline && !isFeedback ? projection.resource : nil
             ),
             projection: projection,
@@ -190,16 +176,8 @@ struct TuneAVProRealtimeProjectionCursor {
             refreshLibrary = false
         }
 
-        var refreshFeedback = plan.refreshFeedback
-        if refreshFeedback,
-           let coveredThrough = coverage.feedbackSourceUpdatedAt,
-           coveredThrough >= sourceUpdatedAt {
-            refreshFeedback = false
-        }
-
         return TuneAVProRealtimeRefreshPlan(
             refreshLibrary: refreshLibrary,
-            refreshFeedback: refreshFeedback,
             libraryResource: refreshLibrary ? plan.libraryResource : nil
         )
     }
@@ -223,100 +201,7 @@ struct TuneAVProRealtimeProjectionCursor {
     mutating func reset() {
         ownerUserId = nil
         libraryGeneration = nil
-        feedbackGeneration = nil
         legacyUpdatedAt = nil
-    }
-}
-
-struct TuneAVStationFeedbackRecord: Codable, Equatable {
-    let stationID: String
-    let feedback: TuneAVStationFeedback
-    let updatedAt: String?
-
-    private enum CodingKeys: String, CodingKey {
-        case stationID
-        case feedback
-        case updatedAt
-    }
-
-    init(stationID: String, feedback: TuneAVStationFeedback, updatedAt: String? = nil) {
-        self.stationID = stationID
-        self.feedback = feedback
-        self.updatedAt = updatedAt
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        stationID = try container.decode(String.self, forKey: .stationID)
-        feedback = try TuneAVStationFeedback(backendValue: container.decode(String.self, forKey: .feedback))
-        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
-    }
-}
-
-struct TuneAVTrackFeedbackRecord: Codable, Equatable {
-    let trackKey: String
-    let title: String
-    let artist: String?
-    let stationID: String?
-    let feedback: TuneAVStationFeedback
-    let updatedAt: String?
-
-    private enum CodingKeys: String, CodingKey {
-        case trackKey
-        case title
-        case artist
-        case stationID
-        case feedback
-        case updatedAt
-    }
-
-    init(
-        trackKey: String,
-        title: String,
-        artist: String? = nil,
-        stationID: String? = nil,
-        feedback: TuneAVStationFeedback,
-        updatedAt: String? = nil
-    ) {
-        self.trackKey = trackKey
-        self.title = title
-        self.artist = artist
-        self.stationID = stationID
-        self.feedback = feedback
-        self.updatedAt = updatedAt
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        trackKey = try container.decode(String.self, forKey: .trackKey)
-        title = try container.decode(String.self, forKey: .title)
-        artist = try container.decodeIfPresent(String.self, forKey: .artist)
-        stationID = try container.decodeIfPresent(String.self, forKey: .stationID)
-        feedback = try TuneAVStationFeedback(backendValue: container.decode(String.self, forKey: .feedback))
-        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
-    }
-}
-
-struct TuneAVFeedbackSnapshot: Decodable, Equatable {
-    let generatedAt: String
-    let stationFeedback: [TuneAVStationFeedbackRecord]
-    let trackFeedback: [TuneAVTrackFeedbackRecord]
-}
-
-private extension TuneAVStationFeedback {
-    init(backendValue: String) throws {
-        switch backendValue {
-        case "liked":
-            self = .liked
-        case "not_for_me", "notForMe":
-            self = .notForMe
-        case "disliked":
-            self = .disliked
-        default:
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(codingPath: [], debugDescription: "Unknown Tune AV feedback value.")
-            )
-        }
     }
 }
 

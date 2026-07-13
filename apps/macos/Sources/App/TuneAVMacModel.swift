@@ -257,7 +257,6 @@ final class TuneAVMacModel: ObservableObject {
     private let realtimeSessionSupervisor = TuneAVRealtimeSessionSupervisor()
     private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
     private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
-    private var cloudFeedbackSourceUpdatedAt: Date?
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
@@ -1415,7 +1414,7 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
-    func synchronizeLibraryNow(refreshFeedback: Bool = true) async {
+    func synchronizeLibraryNow() async {
         guard cloudSyncExecutionGate.begin() else { return }
         let bootstrapOwnerUserID = proRealtimeBootstrapGate.ownerUserID
         var bootstrapSucceeded = false
@@ -1427,9 +1426,9 @@ final class TuneAVMacModel: ObservableObject {
             )
         }
 
-        bootstrapSucceeded = await performLibrarySyncNow(refreshFeedback: refreshFeedback)
+        bootstrapSucceeded = await performLibrarySyncNow()
         if cloudSyncExecutionGate.consumePendingFollowUp() {
-            let followUpSucceeded = await performLibrarySyncNow(refreshFeedback: refreshFeedback)
+            let followUpSucceeded = await performLibrarySyncNow()
             bootstrapSucceeded = bootstrapSucceeded && followUpSucceeded
         }
     }
@@ -1438,12 +1437,12 @@ final class TuneAVMacModel: ObservableObject {
         guard cloudSyncExecutionGate.begin() else { return }
         _ = await performLibraryResourceRefreshNow(resource)
         if cloudSyncExecutionGate.consumePendingFollowUp() {
-            _ = await performLibrarySyncNow(refreshFeedback: true)
+            _ = await performLibrarySyncNow()
         }
         cloudSyncExecutionGate.finish()
     }
 
-    private func performLibrarySyncNow(refreshFeedback: Bool) async -> Bool {
+    private func performLibrarySyncNow() async -> Bool {
         guard accountService.isAvailable else {
             cloudSyncStatus = .failed
             cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
@@ -1495,17 +1494,11 @@ final class TuneAVMacModel: ObservableObject {
             }
 
             lastCloudSyncAt = .now
-            let didRefreshFeedback: Bool
-            if refreshFeedback {
-                didRefreshFeedback = await refreshProFeedbackNow()
-            } else {
-                didRefreshFeedback = true
-            }
             cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
             if let accountUser {
                 persistLastKnownAccountUser(accountUser)
             }
-            return didRefreshFeedback
+            return true
         } catch TuneAVAppDataClientError.missingToken {
             TuneAVMacDiagnostics.capture(
                 TuneAVAppDataClientError.missingToken,
@@ -1657,7 +1650,6 @@ final class TuneAVMacModel: ObservableObject {
         if shouldResetProjectionState {
             proRealtimeProjectionCursor.reset()
             cloudLibrarySourceUpdatedAtByResource.removeAll()
-            cloudFeedbackSourceUpdatedAt = nil
             TuneAVRealtimeSessionStore.shared.clear()
         }
         activeProRealtimeSessionOwnerUserID = ownerUserId
@@ -1712,7 +1704,6 @@ final class TuneAVMacModel: ObservableObject {
         activeProRealtimeSessionOwnerUserID = nil
         proRealtimeProjectionCursor.reset()
         cloudLibrarySourceUpdatedAtByResource.removeAll()
-        cloudFeedbackSourceUpdatedAt = nil
         TuneAVRealtimeSessionStore.shared.clear()
         proLibraryObserver.clear()
     }
@@ -2306,7 +2297,7 @@ final class TuneAVMacModel: ObservableObject {
             stopPendingLibraryOperations()
             stopListeningSessionUploads()
         }
-        if resolvedAccess.accessMode != .guest {
+        if resolvedAccess.accessMode == .signedInPro {
             schedulePendingFeedbackUploadsForCurrentUser()
         } else {
             stopPendingFeedbackUploads()
@@ -2812,7 +2803,8 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func enqueueStationFeedbackUpload(_ feedback: TuneAVStationFeedback?, stationID: String) {
-        guard accessMode != .guest, let userID = accountUser?.id else { return }
+        guard TuneAVFeedbackBackendPolicy.canUpload(accessMode: accessMode),
+              let userID = accountUser?.id else { return }
         let upload = TuneAVMacPendingFeedbackUpload(
             kind: .station,
             userID: userID,
@@ -2833,7 +2825,8 @@ final class TuneAVMacModel: ObservableObject {
         artist: String?,
         stationID: String?
     ) {
-        guard accessMode != .guest, let userID = accountUser?.id else { return }
+        guard TuneAVFeedbackBackendPolicy.canUpload(accessMode: accessMode),
+              let userID = accountUser?.id else { return }
         let upload = TuneAVMacPendingFeedbackUpload(
             kind: .track,
             userID: userID,
@@ -2860,7 +2853,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func schedulePendingFeedbackUploadsForCurrentUser() {
-        guard accessMode != .guest,
+        guard TuneAVFeedbackBackendPolicy.canUpload(accessMode: accessMode),
               accountService.isAvailable,
               let userID = accountUser?.id
         else { return }
@@ -3223,9 +3216,6 @@ final class TuneAVMacModel: ObservableObject {
             hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
             didCompleteLibraryBootstrap: proRealtimeBootstrapGate.hasCompletedSuccessfulBootstrap(
                 for: projection.ownerUserId
-            ),
-            didCompleteFeedbackBootstrap: proRealtimeBootstrapGate.hasCompletedSuccessfulBootstrap(
-                for: projection.ownerUserId
             )
         ) {
             proRealtimeProjectionCursor.establishBaseline(projection)
@@ -3236,69 +3226,15 @@ final class TuneAVMacModel: ObservableObject {
         let refreshPlan = proRealtimeProjectionCursor.consume(
             projection,
             coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource,
-                feedbackSourceUpdatedAt: cloudFeedbackSourceUpdatedAt
+                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource
             )
         )
         proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
         let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
-        if executionPlan.refreshFeedback {
-            await refreshProFeedbackNow()
-        }
         if let resource = executionPlan.libraryResource {
             await synchronizeLibraryResourceNow(resource)
         } else if executionPlan.requiresFullLibraryRefresh {
-            await synchronizeLibraryNow(refreshFeedback: false)
-        }
-    }
-
-    @discardableResult
-    private func refreshProFeedbackNow() async -> Bool {
-        guard accessMode == .signedInPro, accountService.isAvailable else { return false }
-
-        do {
-            let snapshot: TuneAVFeedbackSnapshot = try await makeTuneAPIClient().request(path: "/v1/tune/feedback")
-            applyProRealtimeFeedback(
-                stationFeedback: snapshot.stationFeedback,
-                trackFeedback: snapshot.trackFeedback
-            )
-            let generatedAt = TuneAVDateCoding.date(from: snapshot.generatedAt)
-            cloudFeedbackSourceUpdatedAt = generatedAt == .distantPast ? nil : generatedAt
-            return true
-        } catch {
-            TuneAVMacDiagnostics.capture(
-                error,
-                feature: "tune.mac.sync",
-                operation: "feedback_snapshot",
-                step: "download"
-            )
-            return false
-        }
-    }
-
-    func applyProRealtimeFeedback(
-        stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
-        trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
-    ) {
-        let pendingUploads = pendingFeedbackUploads.values.filter { $0.userID == accountUser?.id }
-        let nextStationFeedback = TuneAVMacPendingFeedbackProjection.stationFeedback(
-            remote: TuneAVRealtimeFeedbackProjection.stationFeedback(from: remoteStationFeedback),
-            pending: pendingUploads
-        )
-        if nextStationFeedback != stationFeedback {
-            stationFeedback = nextStationFeedback
-            storage.saveStationFeedback(stationFeedback)
-        }
-
-        let nextTrackRecords = TuneAVMacPendingFeedbackProjection.trackFeedbackRecords(
-            remote: TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback),
-            pending: pendingUploads
-        )
-        if nextTrackRecords != trackFeedbackRecords {
-            trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: Self.maxLocalTrackFeedbackRecords)
-            trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
-            refreshTunedTrackDiscoveries()
-            storage.saveTrackFeedbackRecords(trackFeedbackRecords)
+            await synchronizeLibraryNow()
         }
     }
 
@@ -4095,44 +4031,6 @@ enum TuneAVMacSyncRetryPolicy {
         let jitterMultiplier = 1 + ((max(0, min(randomFraction(), 1)) * 2) - 1) * boundedJitter
 
         return min(cappedDelay * jitterMultiplier, maxDelay)
-    }
-}
-
-enum TuneAVMacPendingFeedbackProjection {
-    static func stationFeedback(
-        remote: [String: TuneAVStationFeedback],
-        pending: [TuneAVMacPendingFeedbackUpload]
-    ) -> [String: TuneAVStationFeedback] {
-        var projected = remote
-        for upload in pending where upload.kind == .station {
-            if let feedback = upload.feedback {
-                projected[upload.identityKey] = feedback
-            } else {
-                projected[upload.identityKey] = nil
-            }
-        }
-        return projected
-    }
-
-    static func trackFeedbackRecords(
-        remote: [String: TuneAVLocalFeedbackRecord],
-        pending: [TuneAVMacPendingFeedbackUpload]
-    ) -> [String: TuneAVLocalFeedbackRecord] {
-        var projected = remote
-        for upload in pending where upload.kind == .track {
-            guard let feedback = upload.feedback else {
-                projected[upload.identityKey] = nil
-                continue
-            }
-            projected[upload.identityKey] = TuneAVLocalFeedbackRecord(
-                feedback: feedback,
-                updatedAt: upload.updatedAt,
-                title: upload.title,
-                artist: upload.artist,
-                stationID: upload.stationID
-            )
-        }
-        return projected
     }
 }
 

@@ -234,7 +234,7 @@ final class MacCloudSyncTests: XCTestCase {
                 sourceUpdatedAt: nil,
                 updatedAt: 2
             )),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
@@ -264,7 +264,6 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(refreshPlan.libraryResource, "favorites")
         XCTAssertEqual(executionPlan.libraryResource, .favorites)
         XCTAssertFalse(executionPlan.requiresFullLibraryRefresh)
-        XCTAssertFalse(executionPlan.refreshFeedback)
     }
 
     func testMacOwnMutationReceiptSuppressesOnlyMatchingRealtimeRead() {
@@ -299,8 +298,7 @@ final class MacCloudSyncTests: XCTestCase {
                 updatedAt: 2
             ),
             coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: coverage,
-                feedbackSourceUpdatedAt: nil
+                librarySourceUpdatedAtByResource: coverage
             )
         )
         XCTAssertEqual(ownPlan, .none)
@@ -316,13 +314,11 @@ final class MacCloudSyncTests: XCTestCase {
                 updatedAt: 3
             ),
             coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: coverage,
-                feedbackSourceUpdatedAt: nil
+                librarySourceUpdatedAtByResource: coverage
             )
         )
         let executionPlan = MacProRealtimeRefreshExecutionPlan(remotePlan)
         XCTAssertEqual(executionPlan.libraryResource, .favorites)
-        XCTAssertFalse(executionPlan.refreshFeedback)
     }
 
     func testMacMutationCoverageKeepsNewestReceiptAndIgnoresMissingTimestamp() {
@@ -377,21 +373,18 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertNil(refreshPlan.libraryResource)
         XCTAssertNil(executionPlan.libraryResource)
         XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
-        XCTAssertFalse(executionPlan.refreshFeedback)
     }
 
     func testMacRealtimeUnknownResourceKeepsConservativeFullRefresh() {
         let executionPlan = MacProRealtimeRefreshExecutionPlan(
             TuneAVProRealtimeRefreshPlan(
                 refreshLibrary: true,
-                refreshFeedback: false,
                 libraryResource: "futureResource"
             )
         )
 
         XCTAssertNil(executionPlan.libraryResource)
         XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
-        XCTAssertFalse(executionPlan.refreshFeedback)
     }
 
     func testScopedFavoritesPullReadsOnlyFavorites() async throws {
@@ -1223,134 +1216,6 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(json["deviceId"] as? String, "tuneav-mac")
         XCTAssertEqual(encodedSessions.first?["id"] as? String, "session-a")
         XCTAssertNil(encodedSessions.first?["userID"])
-    }
-
-    func testPendingFeedbackProjectionPreventsRemoteSnapshotFromRevertingLocalWrites() {
-        let pendingStation = pendingFeedbackUpload(
-            kind: .station,
-            userID: "user-a",
-            identityKey: "station-a",
-            feedback: .liked,
-            stationID: "station-a"
-        )
-        let pendingStationDeletion = pendingFeedbackUpload(
-            kind: .station,
-            userID: "user-a",
-            identityKey: "station-b",
-            feedback: nil,
-            stationID: "station-b"
-        )
-        let pendingTrack = pendingFeedbackUpload(
-            kind: .track,
-            userID: "user-a",
-            identityKey: "song::artist",
-            feedback: .notForMe,
-            stationID: "station-a",
-            title: "Song",
-            artist: "Artist"
-        )
-        let pendingTrackDeletion = pendingFeedbackUpload(
-            kind: .track,
-            userID: "user-a",
-            identityKey: "old song::artist",
-            feedback: nil,
-            stationID: "station-a",
-            title: "Old Song",
-            artist: "Artist"
-        )
-        let pending = [pendingStation, pendingStationDeletion, pendingTrack, pendingTrackDeletion]
-
-        let projectedStations = TuneAVMacPendingFeedbackProjection.stationFeedback(
-            remote: ["station-a": .disliked, "station-b": .liked],
-            pending: pending
-        )
-        let projectedTracks = TuneAVMacPendingFeedbackProjection.trackFeedbackRecords(
-            remote: [
-                "song::artist": TuneAVLocalFeedbackRecord(feedback: .disliked, updatedAt: "2026-05-23T10:00:00Z"),
-                "old song::artist": TuneAVLocalFeedbackRecord(feedback: .liked, updatedAt: "2026-05-23T10:00:00Z")
-            ],
-            pending: pending
-        )
-
-        XCTAssertEqual(projectedStations, ["station-a": .liked])
-        XCTAssertEqual(
-            projectedTracks,
-            [
-                "song::artist": TuneAVLocalFeedbackRecord(
-                    feedback: .notForMe,
-                    updatedAt: pendingTrack.updatedAt,
-                    title: "Song",
-                    artist: "Artist",
-                    stationID: "station-a"
-                )
-            ]
-        )
-    }
-
-    func testRealtimeFeedbackProjectionMapsStationAndTrackFeedback() {
-        let stationFeedback = TuneAVRealtimeFeedbackProjection.stationFeedback(
-            from: [
-                TuneAVStationFeedbackRecord(
-                    stationID: "station",
-                    feedback: .notForMe,
-                    updatedAt: "2026-05-23T11:00:00Z"
-                )
-            ]
-        )
-        let trackFeedback = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(
-            from: [
-                TuneAVTrackFeedbackRecord(
-                    trackKey: "song::artist",
-                    title: "Song",
-                    artist: "Artist",
-                    stationID: "station",
-                    feedback: .liked,
-                    updatedAt: "2026-05-23T11:01:00Z"
-                )
-            ]
-        )
-
-        XCTAssertEqual(stationFeedback, ["station": .notForMe])
-        XCTAssertEqual(
-            trackFeedback,
-            [
-                "song::artist": TuneAVLocalFeedbackRecord(
-                    feedback: .liked,
-                    updatedAt: "2026-05-23T11:01:00Z",
-                    title: "Song",
-                    artist: "Artist",
-                    stationID: "station"
-                )
-            ]
-        )
-    }
-
-    func testRealtimeFeedbackProjectionCanonicalizesEncodedTrackFeedbackKeys() {
-        let trackFeedback = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(
-            from: [
-                TuneAVTrackFeedbackRecord(
-                    trackKey: "take%20back%20the%20power%3A%3Athe%20interrupters",
-                    title: "Take Back the Power",
-                    artist: "The Interrupters",
-                    stationID: "station",
-                    feedback: .liked,
-                    updatedAt: "2026-06-14T19:01:00Z"
-                )
-            ]
-        )
-
-        XCTAssertEqual(
-            trackFeedback,
-            [
-                "take back the power::the interrupters": TuneAVLocalFeedbackRecord(
-                    feedback: .liked,
-                    updatedAt: "2026-06-14T19:01:00Z",
-                    title: "Take Back the Power",
-                    artist: "The Interrupters",
-                    stationID: "station"
-                )
-            ]
-        )
     }
 
     func testMacLibraryStorageMigratesEncodedTrackFeedbackKeys() {

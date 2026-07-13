@@ -9,7 +9,9 @@ belong outside this repository.
 
 The authoritative cloud-sync boundary is
 [Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
-still implement the superseded feedback-sync behavior and are pending migration.
+still implement the superseded feedback-sync behavior and are pending
+replacement. Current source implements the narrowed contract and has passed
+local iOS, macOS, localization, and backend-focused verification.
 
 ## App Scope
 

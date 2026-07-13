@@ -134,7 +134,6 @@ struct MacProRealtimeBootstrapGate {
 struct MacProRealtimeRefreshExecutionPlan: Equatable {
     let libraryResource: TuneAVAppDataResource?
     let requiresFullLibraryRefresh: Bool
-    let refreshFeedback: Bool
 
     init(_ refreshPlan: TuneAVProRealtimeRefreshPlan) {
         if refreshPlan.refreshLibrary,
@@ -146,6 +145,5 @@ struct MacProRealtimeRefreshExecutionPlan: Equatable {
             libraryResource = nil
             requiresFullLibraryRefresh = refreshPlan.refreshLibrary
         }
-        refreshFeedback = refreshPlan.refreshFeedback
     }
 }

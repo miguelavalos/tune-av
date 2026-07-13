@@ -54,9 +54,6 @@ final class LibraryStore: ObservableObject {
     private var cloudLibraryRefreshTask: Task<Void, Never>?
     private var cloudLibraryRefreshedAt: Date?
     private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
-    private var cloudFeedbackRefreshTask: Task<Bool, Never>?
-    private var cloudFeedbackRefreshedAt: Date?
-    private var cloudFeedbackSourceUpdatedAt: Date?
     private var userSummaryFetchedAt: Date?
     private var userSummaryRefreshTask: Task<Void, Never>?
     private var pendingListeningSessions: [TuneAVListeningSessionDraft] = []
@@ -84,7 +81,6 @@ final class LibraryStore: ObservableObject {
     private var localFeedbackRetention = TuneAVLocalFeedbackRetention.forMode(.guest)
     private let initialLocalFeedbackRetention = TuneAVLocalFeedbackRetention.maximumLocalRetention
     private var shouldUploadFeedbackToBackend = false
-    private var shouldRestoreFeedbackFromCloud = false
 
     private enum CloudLibraryItemOperation: Equatable {
         case upsert
@@ -462,8 +458,19 @@ final class LibraryStore: ObservableObject {
 
     func configureLocalFeedbackRetention(for accessMode: AccessMode) {
         let retention = TuneAVLocalFeedbackRetention.forMode(accessMode)
-        shouldUploadFeedbackToBackend = accessMode != .guest
-        shouldRestoreFeedbackFromCloud = accessMode == .signedInPro
+        shouldUploadFeedbackToBackend = TuneAVFeedbackBackendPolicy.canUpload(accessMode: accessMode)
+        if shouldUploadFeedbackToBackend {
+            schedulePendingFeedbackUploadsForCurrentUser()
+        } else {
+            stationFeedbackSyncTasks.values.forEach { $0.cancel() }
+            stationFeedbackSyncTasks.removeAll()
+            stationFeedbackSyncTokens.removeAll()
+            stationFeedbackSyncRetryCounts.removeAll()
+            trackFeedbackSyncTasks.values.forEach { $0.cancel() }
+            trackFeedbackSyncTasks.removeAll()
+            trackFeedbackSyncTokens.removeAll()
+            trackFeedbackSyncRetryCounts.removeAll()
+        }
         guard retention != localFeedbackRetention else { return }
         localFeedbackRetention = retention
         pruneLocalFeedbackIfNeeded()
@@ -868,10 +875,6 @@ final class LibraryStore: ObservableObject {
             cloudLibraryRefreshTask = nil
             cloudLibraryRefreshedAt = nil
             cloudLibrarySourceUpdatedAtByResource.removeAll()
-            cloudFeedbackRefreshTask?.cancel()
-            cloudFeedbackRefreshTask = nil
-            cloudFeedbackRefreshedAt = nil
-            cloudFeedbackSourceUpdatedAt = nil
             stopPendingLibraryOperations()
         }
         updatePendingListeningSessionDiagnostic()
@@ -1219,8 +1222,7 @@ final class LibraryStore: ObservableObject {
         if TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
             projection: projection,
             hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
-            didCompleteLibraryBootstrap: cloudLibraryRefreshedAt != nil,
-            didCompleteFeedbackBootstrap: cloudFeedbackRefreshedAt != nil
+            didCompleteLibraryBootstrap: cloudLibraryRefreshedAt != nil
         ) {
             proRealtimeProjectionCursor.establishBaseline(projection)
             return
@@ -1229,78 +1231,15 @@ final class LibraryStore: ObservableObject {
         let refreshPlan = proRealtimeProjectionCursor.consume(
             projection,
             coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource,
-                feedbackSourceUpdatedAt: cloudFeedbackSourceUpdatedAt
+                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource
             )
         )
-        if refreshPlan.refreshFeedback {
-            await refreshCloudFeedbackIfNeeded(force: true)
-        }
         if refreshPlan.refreshLibrary,
            let rawResource = refreshPlan.libraryResource,
            let resource = TuneAVAppDataResource(rawValue: rawResource) {
             await refreshCloudLibraryResourceIfNeeded(resource)
         } else if refreshPlan.refreshLibrary {
             await refreshCloudLibraryIfNeeded(force: true)
-        }
-    }
-
-    func refreshCloudFeedbackIfNeeded(force: Bool = false, refreshSummary: Bool = true) async {
-        guard shouldRestoreFeedbackFromCloud else { return }
-        guard let backendService, backendService.isConfigured() else { return }
-
-        if !force,
-           let cloudFeedbackRefreshedAt,
-           Date().timeIntervalSince(cloudFeedbackRefreshedAt) < Self.userSummaryRefreshInterval {
-            return
-        }
-
-        let didRefresh: Bool
-        if let cloudFeedbackRefreshTask {
-            didRefresh = await cloudFeedbackRefreshTask.value
-        } else {
-            let task = Task { @MainActor in
-                do {
-                    let snapshot = try await backendService.fetchFeedbackSnapshot()
-                    guard self.backendService === backendService else { return false }
-                    applyProRealtimeFeedback(
-                        stationFeedback: snapshot.stationFeedback,
-                        trackFeedback: snapshot.trackFeedback
-                    )
-                    cloudFeedbackRefreshedAt = .now
-                    let generatedAt = TuneAVDateCoding.date(from: snapshot.generatedAt)
-                    cloudFeedbackSourceUpdatedAt = generatedAt == .distantPast ? nil : generatedAt
-                    return true
-                } catch {
-                    return false
-                }
-            }
-            cloudFeedbackRefreshTask = task
-            didRefresh = await task.value
-            cloudFeedbackRefreshTask = nil
-        }
-
-        if didRefresh, refreshSummary {
-            await refreshUserSummary(force: true)
-        }
-    }
-
-    private func applyProRealtimeFeedback(
-        stationFeedback remoteStationFeedback: [TuneAVStationFeedbackRecord],
-        trackFeedback remoteTrackFeedback: [TuneAVTrackFeedbackRecord]
-    ) {
-        let nextStationRecords = TuneAVRealtimeFeedbackProjection.stationFeedbackRecords(from: remoteStationFeedback)
-        if nextStationRecords != stationFeedbackRecords {
-            stationFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextStationRecords, maxCount: localFeedbackRetention.stationFeedbackLimit)
-            stationFeedback = stationFeedbackRecords.mapValues(\.feedback)
-            Self.saveStationFeedbackRecords(stationFeedbackRecords)
-        }
-
-        let nextTrackRecords = TuneAVRealtimeFeedbackProjection.trackFeedbackRecords(from: remoteTrackFeedback)
-        if nextTrackRecords != trackFeedbackRecords {
-            trackFeedbackRecords = TuneAVLocalFeedbackStore.bounded(nextTrackRecords, maxCount: localFeedbackRetention.trackFeedbackLimit)
-            trackFeedback = trackFeedbackRecords.mapValues(\.feedback)
-            Self.saveTrackFeedbackRecords(trackFeedbackRecords)
         }
     }
 
@@ -2244,7 +2183,7 @@ final class LibraryStore: ObservableObject {
     }
 
     private func schedulePendingFeedbackUploadsForCurrentUser() {
-        guard let userID = backendServiceUserID else { return }
+        guard shouldUploadFeedbackToBackend, let userID = backendServiceUserID else { return }
         for upload in pendingFeedbackUploads.values where upload.userID == userID {
             guard !deferredFeedbackSyncKeys.contains(upload.key) else { continue }
             switch upload.kind {

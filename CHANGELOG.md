@@ -10,7 +10,13 @@ This project follows semantic versioning once public source releases begin.
   songs synchronize; feedback remains device-local and any deliberate Pro
   backend capture is upload-only, not cross-device restore.
 - Mark TestFlight builds `52` and `61` as migration-pending under the narrowed
-  contract; no client or backend behavior changes in this documentation update.
+  contract; they remain historical saved-item sync evidence only.
+- Remove feedback bootstrap, restore, and Convex-triggered reads from iOS and
+  macOS while keeping the compatibility endpoint for older installed builds.
+- Limit deliberate feedback uploads to Pro, with no Guest or signed-in Free
+  backend request, and remove feedback outbox/Queue/Convex fanout.
+- Update every Apple locale so Cloud Sync advertises only saved radios and
+  saved songs; local feedback is no longer described as synchronized.
 
 ## 1.0.3 - 2026-06-28
 

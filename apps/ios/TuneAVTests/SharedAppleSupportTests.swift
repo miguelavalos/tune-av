@@ -89,27 +89,16 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(FavoriteStationRecord.self, from: data))
     }
 
-    func testRealtimeProjectionCursorRefreshesBothCoalescedChannels() {
+    func testRealtimeProjectionCursorRefreshesOnlyLibrary() {
         var cursor = TuneAVProRealtimeProjectionCursor()
-        let plan = cursor.consume(projection(library: 2, feedback: 3))
 
         XCTAssertEqual(
-            plan,
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
-        )
-    }
-
-    func testRealtimeProjectionCursorTracksChannelsIndependentlyOutOfOrder() {
-        var cursor = TuneAVProRealtimeProjectionCursor()
-        _ = cursor.consume(projection(library: 5, feedback: 1, updatedAt: 50))
-
-        XCTAssertEqual(
-            cursor.consume(projection(library: 5, feedback: 2, updatedAt: 40)),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: false, refreshFeedback: true)
+            cursor.consume(projection(library: 2, feedback: 3)),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
         XCTAssertEqual(
-            cursor.consume(projection(library: 6, feedback: 2, updatedAt: 30)),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            cursor.consume(projection(library: 2, feedback: 4, updatedAt: 2)),
+            .none
         )
     }
 
@@ -123,8 +112,7 @@ final class SharedAppleSupportTests: XCTestCase {
             sourceUpdatedAt: sourceUpdatedAt.timeIntervalSince1970 * 1_000
         )
         let coverage = TuneAVProRealtimeCoverage(
-            librarySourceUpdatedAtByResource: ["favorites": sourceUpdatedAt],
-            feedbackSourceUpdatedAt: sourceUpdatedAt.addingTimeInterval(1)
+            librarySourceUpdatedAtByResource: ["favorites": sourceUpdatedAt]
         )
 
         XCTAssertEqual(cursor.consume(projection, coverage: coverage), .none)
@@ -142,26 +130,24 @@ final class SharedAppleSupportTests: XCTestCase {
         let coverage = TuneAVProRealtimeCoverage(
             librarySourceUpdatedAtByResource: [
                 "savedDiscoveries": sourceUpdatedAt.addingTimeInterval(-1)
-            ],
-            feedbackSourceUpdatedAt: sourceUpdatedAt.addingTimeInterval(1)
+            ]
         )
 
         XCTAssertEqual(
             cursor.consume(projection, coverage: coverage),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
     func testRealtimeProjectionCursorRemainsConservativeWithoutSourceTimestamp() {
         var cursor = TuneAVProRealtimeProjectionCursor()
         let coverage = TuneAVProRealtimeCoverage(
-            librarySourceUpdatedAtByResource: ["favorites": .now],
-            feedbackSourceUpdatedAt: .now
+            librarySourceUpdatedAtByResource: ["favorites": .now]
         )
 
         XCTAssertEqual(
             cursor.consume(projection(library: 5, feedback: 3), coverage: coverage),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
@@ -180,7 +166,7 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(cursor.consume(projection(library: 4, feedback: 7)), .none)
         XCTAssertEqual(
             cursor.consume(projection(library: 5, feedback: 7)),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
@@ -196,7 +182,6 @@ final class SharedAppleSupportTests: XCTestCase {
             )),
             TuneAVProRealtimeRefreshPlan(
                 refreshLibrary: true,
-                refreshFeedback: false,
                 libraryResource: "favorites"
             )
         )
@@ -212,7 +197,7 @@ final class SharedAppleSupportTests: XCTestCase {
                 feedback: 7,
                 resource: "favorites"
             )),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
@@ -224,8 +209,7 @@ final class SharedAppleSupportTests: XCTestCase {
             TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
                 projection: projection,
                 hasProjectionBaseline: cursor.hasBaseline(for: "user-1"),
-                didCompleteLibraryBootstrap: true,
-                didCompleteFeedbackBootstrap: true
+                didCompleteLibraryBootstrap: true
             )
         )
 
@@ -235,8 +219,7 @@ final class SharedAppleSupportTests: XCTestCase {
             TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
                 projection: projection,
                 hasProjectionBaseline: cursor.hasBaseline(for: "user-1"),
-                didCompleteLibraryBootstrap: true,
-                didCompleteFeedbackBootstrap: true
+                didCompleteLibraryBootstrap: true
             )
         )
     }
@@ -254,24 +237,14 @@ final class SharedAppleSupportTests: XCTestCase {
             TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
                 projection: timestampedProjection,
                 hasProjectionBaseline: false,
-                didCompleteLibraryBootstrap: true,
-                didCompleteFeedbackBootstrap: true
+                didCompleteLibraryBootstrap: true
             )
         )
         XCTAssertFalse(
             TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
                 projection: legacyProjection,
                 hasProjectionBaseline: false,
-                didCompleteLibraryBootstrap: false,
-                didCompleteFeedbackBootstrap: true
-            )
-        )
-        XCTAssertFalse(
-            TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
-                projection: legacyProjection,
-                hasProjectionBaseline: false,
-                didCompleteLibraryBootstrap: true,
-                didCompleteFeedbackBootstrap: false
+                didCompleteLibraryBootstrap: false
             )
         )
     }
@@ -282,7 +255,7 @@ final class SharedAppleSupportTests: XCTestCase {
 
         XCTAssertEqual(
             cursor.consume(projection(owner: "user-2", library: 1, feedback: 1)),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: true)
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
         )
     }
 
@@ -303,15 +276,11 @@ final class SharedAppleSupportTests: XCTestCase {
             updatedAt: 11
         )
 
-        XCTAssertEqual(
-            cursor.consume(feedback),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: false, refreshFeedback: true)
-        )
+        XCTAssertEqual(cursor.consume(feedback), .none)
         XCTAssertEqual(
             cursor.consume(library),
             TuneAVProRealtimeRefreshPlan(
                 refreshLibrary: true,
-                refreshFeedback: false,
                 libraryResource: "favorites"
             )
         )
@@ -1964,7 +1933,7 @@ final class SharedAppleSupportTests: XCTestCase {
             retryPolicy: AVAccountAPIClient.RetryPolicy(maxAttempts: 2, backoffNanoseconds: 0)
         )
 
-        _ = try await client.requestData(path: "/v1/tune/feedback", method: "GET")
+        _ = try await client.requestData(path: "/v1/tune/me/summary", method: "GET")
 
         XCTAssertEqual(attempts, 2)
     }
