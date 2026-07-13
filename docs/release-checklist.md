@@ -574,7 +574,12 @@ separate development bundle identifier.
    config and 3.2 GB of task-owned macOS DerivedData were removed; public config
    hygiene passed after cleanup, while both verified archives remain retained
    as evidence. No backend, Cloudflare, Convex, production-data, or App Review
-   change was made. The next gate is a physical same-account receiver trace:
+   change was made. TestFlight then installed macOS build `60` automatically
+   in `/Applications`; its bundle has the expected `TestFlight Beta
+   Distribution` signature and team. The existing account restored as Pro and
+   the account screen reported cloud sync `Todo al día` at 16:50 CEST without a
+   manual sync or data mutation. The next gate is a physical same-account
+   receiver trace:
    one active saved-radio invalidation in each direction must perform exactly
    one favorites GET and no saved-discoveries, feedback, summary, retry, or
    extra realtime-session request.
