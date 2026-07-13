@@ -1,5 +1,18 @@
 import Foundation
 
+enum MacAccountAccessRefreshPolicy {
+    static func shouldResolveLocalAccessAfterActiveRestore(
+        previousUserID: String?,
+        restoredUserID: String
+    ) -> Bool {
+        previousUserID != restoredUserID
+    }
+
+    static func shouldResolveLocalAccessAfterUnavailableRestore(hasCurrentUser: Bool) -> Bool {
+        !hasCurrentUser
+    }
+}
+
 struct MacCloudSyncTrigger {
     enum Action: Equatable {
         case schedule(Duration)

@@ -370,15 +370,20 @@ separate development bundle identifier.
    `57` repairs for a cold launch.
 
    The same smoke found one separate bounded macOS inefficiency: entering the
-   account screen refreshes the same internal user through a temporary local
-   Free fallback before the confirmed Pro response arrives. That transition
-   stops and restarts realtime and schedules another complete cloud bootstrap.
-   iOS already preserves confirmed Pro capabilities while refreshing the same
-   internal user and clears them only when the internal user changes. macOS
-   should mirror that rule and add a profile-entry request-count regression
-   before this release is considered fully optimized. There is no periodic
-   polling, request duplication inside either bootstrap, analytics `400`, or
-   Convex projection fanout in this residual.
+   account screen refreshed the same internal user through a temporary local
+   Free fallback before the confirmed Pro response arrived. That transition
+   stopped and restarted realtime and scheduled another complete cloud
+   bootstrap. The source repair completed on 2026-07-13 now mirrors iOS: an
+   active or temporarily unavailable refresh preserves confirmed capabilities
+   while the internal user is unchanged, while a different internal user still
+   clears the previous capabilities before its access response is applied.
+   The complete macOS test suite passed 57 tests, including regressions for
+   same-user preservation, different-user clearing, and temporary provider
+   unavailability. This repair is not in TestFlight build `57`; the next macOS
+   build must prove that opening the account screen performs only its bounded
+   account refresh and does not restart realtime or cloud-library sync. There
+   is no periodic polling, analytics `400`, or Convex projection fanout in this
+   residual.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

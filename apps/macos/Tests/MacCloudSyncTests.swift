@@ -2,6 +2,43 @@ import XCTest
 @testable import TuneAVMac
 
 final class MacCloudSyncTests: XCTestCase {
+    func testAccountRefreshPreservesConfirmedAccessForSameInternalUser() {
+        XCTAssertFalse(
+            MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterActiveRestore(
+                previousUserID: "user-1",
+                restoredUserID: "user-1"
+            )
+        )
+    }
+
+    func testAccountRefreshDropsPreviousAccessBeforeResolvingDifferentInternalUser() {
+        XCTAssertTrue(
+            MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterActiveRestore(
+                previousUserID: "user-1",
+                restoredUserID: "user-2"
+            )
+        )
+        XCTAssertTrue(
+            MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterActiveRestore(
+                previousUserID: nil,
+                restoredUserID: "user-1"
+            )
+        )
+    }
+
+    func testTemporarilyUnavailableRefreshPreservesCurrentAccountAccess() {
+        XCTAssertFalse(
+            MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterUnavailableRestore(
+                hasCurrentUser: true
+            )
+        )
+        XCTAssertTrue(
+            MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterUnavailableRestore(
+                hasCurrentUser: false
+            )
+        )
+    }
+
     func testMacCloudSyncDecodesMinimalFavoriteDeletionTombstone() throws {
         let data = Data(
             """

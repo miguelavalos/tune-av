@@ -3306,6 +3306,8 @@ final class TuneAVMacModel: ObservableObject {
 
     @discardableResult
     private func restoreAccountSessionForAccessRefresh() async -> Bool {
+        let previousAccountUserID = accountUser?.id
+
         switch await accountService.restoreSession() {
         case .active(let providerUser):
             TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_active")
@@ -3320,12 +3322,21 @@ final class TuneAVMacModel: ObservableObject {
             TuneAVMacDiagnostics.setUserContext(id: user.id)
             isAccountSessionTemporarilyUnavailable = false
             persistLastKnownAccountUser(user)
-            resolveLocalAccessState()
+            if MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterActiveRestore(
+                previousUserID: previousAccountUserID,
+                restoredUserID: user.id
+            ) {
+                resolveLocalAccessState()
+            }
             return true
         case .temporarilyUnavailable:
             TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_temporarily_unavailable")
             isAccountSessionTemporarilyUnavailable = true
-            resolveLocalAccessState()
+            if MacAccountAccessRefreshPolicy.shouldResolveLocalAccessAfterUnavailableRestore(
+                hasCurrentUser: accountUser != nil
+            ) {
+                resolveLocalAccessState()
+            }
             return false
         case .signedOut, .invalidated:
             TuneAVMacDiagnostics.addBreadcrumb(feature: "tune.mac.account", operation: "restore_signed_out")
