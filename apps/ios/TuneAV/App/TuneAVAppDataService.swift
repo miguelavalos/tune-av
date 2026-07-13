@@ -58,19 +58,31 @@ final class TuneAVAppDataService {
         try await syncClient.overwriteLibrary(snapshot)
     }
 
-    func upsertFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+    func upsertFavorite(
+        _ record: FavoriteStationRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await syncClient.upsertFavorite(record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+    func deleteFavorite(
+        _ record: FavoriteStationRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await syncClient.deleteFavorite(record, idempotencyKey: idempotencyKey)
     }
 
-    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+    func upsertSavedDiscovery(
+        _ record: DiscoveredTrackRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await syncClient.upsertSavedDiscovery(record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+    func deleteSavedDiscovery(
+        _ record: DiscoveredTrackRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await syncClient.deleteSavedDiscovery(record, idempotencyKey: idempotencyKey)
     }
 

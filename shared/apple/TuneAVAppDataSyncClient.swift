@@ -116,6 +116,26 @@ enum TuneAVAppDataResource: String, CaseIterable {
     ]
 }
 
+struct TuneAVLibraryMutationReceipt: Equatable {
+    let resource: TuneAVAppDataResource
+    let sourceUpdatedAt: Date?
+    let revision: Int?
+    let etag: String?
+}
+
+enum TuneAVLibraryMutationCoverage {
+    static func record(
+        _ receipt: TuneAVLibraryMutationReceipt,
+        in coverage: inout [String: Date]
+    ) {
+        guard let sourceUpdatedAt = receipt.sourceUpdatedAt else { return }
+        coverage[receipt.resource.rawValue] = max(
+            coverage[receipt.resource.rawValue] ?? .distantPast,
+            sourceUpdatedAt
+        )
+    }
+}
+
 struct TuneAVAppDataResponsePayload<Entry: Codable>: Decodable {
     let data: TuneAVAppDataEnvelopePayload<Entry>
     let updatedAt: String
@@ -340,19 +360,35 @@ actor TuneAVAppDataSyncClient {
         try await pushLibrary(snapshot)
     }
 
-    func upsertFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+    @discardableResult
+    func upsertFavorite(
+        _ record: FavoriteStationRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await putLibraryOperation(.favorites, action: "upsert", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteFavorite(_ record: FavoriteStationRecord, idempotencyKey: String? = nil) async throws {
+    @discardableResult
+    func deleteFavorite(
+        _ record: FavoriteStationRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await putLibraryOperation(.favorites, action: "delete", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func upsertSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+    @discardableResult
+    func upsertSavedDiscovery(
+        _ record: DiscoveredTrackRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await putLibraryOperation(.savedDiscoveries, action: "upsert", entry: record, idempotencyKey: idempotencyKey)
     }
 
-    func deleteSavedDiscovery(_ record: DiscoveredTrackRecord, idempotencyKey: String? = nil) async throws {
+    @discardableResult
+    func deleteSavedDiscovery(
+        _ record: DiscoveredTrackRecord,
+        idempotencyKey: String? = nil
+    ) async throws -> TuneAVLibraryMutationReceipt {
         try await putLibraryOperation(.savedDiscoveries, action: "delete", entry: record, idempotencyKey: idempotencyKey)
     }
 
@@ -427,7 +463,7 @@ actor TuneAVAppDataSyncClient {
         action: String,
         entry: Entry,
         idempotencyKey: String?
-    ) async throws {
+    ) async throws -> TuneAVLibraryMutationReceipt {
         var headers = defaultHeaders()
         if let idempotencyKey {
             headers["Idempotency-Key"] = idempotencyKey
@@ -442,6 +478,13 @@ actor TuneAVAppDataSyncClient {
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
             lastPulledLibrarySnapshot = nil
+            let sourceUpdatedAt = TuneAVDateCoding.date(from: response.updatedAt)
+            return TuneAVLibraryMutationReceipt(
+                resource: resource,
+                sourceUpdatedAt: sourceUpdatedAt == .distantPast ? nil : sourceUpdatedAt,
+                revision: response.revision,
+                etag: response.etag
+            )
         } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
         }

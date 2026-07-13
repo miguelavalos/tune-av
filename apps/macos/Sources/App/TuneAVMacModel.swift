@@ -2476,9 +2476,13 @@ final class TuneAVMacModel: ObservableObject {
                       self.pendingLibraryOperations[key]?.id == operation.id,
                       self.librarySyncTokens[key] == token
                 else { return }
-                try await self.syncMutationGate.withPermit {
+                let receipt = try await self.syncMutationGate.withPermit {
                     try await self.sendPendingLibraryOperation(operation)
                 }
+                TuneAVLibraryMutationCoverage.record(
+                    receipt,
+                    in: &self.cloudLibrarySourceUpdatedAtByResource
+                )
             } catch is CancellationError {
                 return
             } catch {
@@ -2521,29 +2525,31 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
-    private func sendPendingLibraryOperation(_ operation: TuneAVMacPendingLibraryOperation) async throws {
+    private func sendPendingLibraryOperation(
+        _ operation: TuneAVMacPendingLibraryOperation
+    ) async throws -> TuneAVLibraryMutationReceipt {
         let client = makeAppDataSyncClient()
         switch (operation.resource, operation.action) {
         case (.favorites, .upsert):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await client.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.favorites, .delete):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await client.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .upsert):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await client.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .delete):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVMacPendingLibraryOperationError.invalidPayload
             }
-            try await client.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await client.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         }
     }
 

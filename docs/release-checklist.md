@@ -584,6 +584,24 @@ separate development bundle identifier.
    one favorites GET and no saved-discoveries, feedback, summary, retry, or
    extra realtime-session request.
 
+   Author-device projection coverage repair, 2026-07-13: the physical
+   iOS `1.0.7 (51)` add trace showed a successful favorites mutation followed
+   by a redundant favorites GET from the same iPhone 171 ms after its D1
+   projection was delivered; the Mac then performed the required receiver GET.
+   The deletion receiver trace was otherwise exact: one delivered projection,
+   one macOS favorites GET after activation, no Tune API request, and the radio
+   removed locally. The shared App Data client already decoded the mutation
+   response `updatedAt`, revision, and ETag but discarded the timestamp. It now
+   returns a mutation receipt, and both Apple models advance only the matching
+   resource coverage before consuming realtime. A matching own projection is
+   therefore filtered without a GET, while a later projection with a newer
+   source timestamp still produces one exact receiver GET. Invalid or absent
+   timestamps remain conservative. The complete suites pass 364 iOS and 65
+   macOS tests with zero failures. This is client-only; no Worker, API, Convex,
+   Cloudflare configuration, or production state changed. Builds `51` and `60`
+   predate the repair; later TestFlight builds must prove one mutation request,
+   zero source-device GETs, and one exact receiver GET.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

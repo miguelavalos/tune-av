@@ -1848,12 +1848,16 @@ final class LibraryStore: ObservableObject {
                       self.pendingLibraryOperations[key]?.id == operation.id,
                       self.librarySyncTokens[key] == token
                 else { return }
-                try await self.syncMutationGate.withPermit {
+                let receipt = try await self.syncMutationGate.withPermit {
                     try await self.sendPendingLibraryOperation(
                         operation,
                         using: appDataService
                     )
                 }
+                TuneAVLibraryMutationCoverage.record(
+                    receipt,
+                    in: &self.cloudLibrarySourceUpdatedAtByResource
+                )
             } catch is CancellationError {
                 return
             } catch {
@@ -1899,28 +1903,28 @@ final class LibraryStore: ObservableObject {
     private func sendPendingLibraryOperation(
         _ operation: TuneAVPendingLibraryOperation,
         using appDataService: TuneAVAppDataService
-    ) async throws {
+    ) async throws -> TuneAVLibraryMutationReceipt {
         switch (operation.resource, operation.action) {
         case (.favorites, .upsert):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await appDataService.upsertFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.favorites, .delete):
             guard let record = operation.favoriteRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await appDataService.deleteFavorite(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .upsert):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await appDataService.upsertSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         case (.savedDiscoveries, .delete):
             guard let record = operation.discoveryRecord else {
                 throw TuneAVPendingLibraryOperationError.invalidPayload
             }
-            try await appDataService.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
+            return try await appDataService.deleteSavedDiscovery(record, idempotencyKey: operation.id.uuidString.lowercased())
         }
     }
 

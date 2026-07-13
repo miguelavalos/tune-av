@@ -267,6 +267,90 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertFalse(executionPlan.refreshFeedback)
     }
 
+    func testMacOwnMutationReceiptSuppressesOnlyMatchingRealtimeRead() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 8,
+            feedbackGeneration: 3,
+            resource: "favorites",
+            sourceUpdatedAt: 1,
+            updatedAt: 1
+        ))
+        let mutationUpdatedAt = TuneAVDateCoding.date(from: "2026-07-13T15:05:09.614Z")
+        let receipt = TuneAVLibraryMutationReceipt(
+            resource: .favorites,
+            sourceUpdatedAt: mutationUpdatedAt,
+            revision: 12,
+            etag: "\"revision-12\""
+        )
+        var coverage: [String: Date] = [:]
+        TuneAVLibraryMutationCoverage.record(receipt, in: &coverage)
+
+        let ownPlan = cursor.consume(
+            TuneAVProLibraryProjection(
+                ownerUserId: "user-1",
+                projectionVersion: 4,
+                libraryGeneration: 9,
+                feedbackGeneration: 3,
+                resource: "favorites",
+                sourceUpdatedAt: mutationUpdatedAt.timeIntervalSince1970 * 1_000,
+                updatedAt: 2
+            ),
+            coverage: TuneAVProRealtimeCoverage(
+                librarySourceUpdatedAtByResource: coverage,
+                feedbackSourceUpdatedAt: nil
+            )
+        )
+        XCTAssertEqual(ownPlan, .none)
+
+        let remotePlan = cursor.consume(
+            TuneAVProLibraryProjection(
+                ownerUserId: "user-1",
+                projectionVersion: 4,
+                libraryGeneration: 10,
+                feedbackGeneration: 3,
+                resource: "favorites",
+                sourceUpdatedAt: mutationUpdatedAt.addingTimeInterval(1).timeIntervalSince1970 * 1_000,
+                updatedAt: 3
+            ),
+            coverage: TuneAVProRealtimeCoverage(
+                librarySourceUpdatedAtByResource: coverage,
+                feedbackSourceUpdatedAt: nil
+            )
+        )
+        let executionPlan = MacProRealtimeRefreshExecutionPlan(remotePlan)
+        XCTAssertEqual(executionPlan.libraryResource, .favorites)
+        XCTAssertFalse(executionPlan.refreshFeedback)
+    }
+
+    func testMacMutationCoverageKeepsNewestReceiptAndIgnoresMissingTimestamp() {
+        let latest = TuneAVDateCoding.date(from: "2026-07-13T15:05:09.614Z")
+        var coverage = ["savedDiscoveries": latest]
+
+        TuneAVLibraryMutationCoverage.record(
+            TuneAVLibraryMutationReceipt(
+                resource: .savedDiscoveries,
+                sourceUpdatedAt: latest.addingTimeInterval(-1),
+                revision: 4,
+                etag: nil
+            ),
+            in: &coverage
+        )
+        TuneAVLibraryMutationCoverage.record(
+            TuneAVLibraryMutationReceipt(
+                resource: .savedDiscoveries,
+                sourceUpdatedAt: nil,
+                revision: 5,
+                etag: nil
+            ),
+            in: &coverage
+        )
+
+        XCTAssertEqual(coverage["savedDiscoveries"], latest)
+    }
+
     func testMacRealtimeGenerationGapKeepsConservativeFullRefresh() {
         var cursor = TuneAVProRealtimeProjectionCursor()
         cursor.establishBaseline(TuneAVProLibraryProjection(

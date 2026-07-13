@@ -59,6 +59,10 @@ Mandatory rules:
   generation for a known resource with one exact resource GET and no unrelated
   feedback read; generation gaps, unknown resources, bootstrap, and manual
   recovery must keep the conservative full-library path;
+- after a successful item-level library mutation, retain the response
+  `updatedAt` as coverage for that exact resource before consuming its realtime
+  projection; the authoring device must perform zero follow-up GETs for its own
+  covered mutation, while another device still performs one exact resource GET;
 - preserve confirmed Pro capabilities while refreshing the same internal user,
   but drop capabilities from the previous account before resolving a different
   internal user.

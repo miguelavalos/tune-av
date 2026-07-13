@@ -122,6 +122,9 @@ bounded:
   discoveries, or feedback do not trigger duplicate reads;
 - use the exact per-resource timestamp to suppress a projection already covered
   by bootstrap;
+- after an item-level favorite or saved-discovery mutation succeeds, retain the
+  response `updatedAt` as coverage for that resource so the matching projection
+  does not make the authoring device read its own write;
 - after a realtime baseline exists, scope a single consecutive library
   generation to its declared resource on both Apple clients, issuing one
   resource GET and no unrelated feedback or summary read;
@@ -130,6 +133,12 @@ bounded:
 
 Realtime invalidations may request a focused refresh, but must not create a
 polling loop or an additional foreground-driven full sync.
+
+For one successful local item mutation, the steady-state cross-device request
+budget is one mutation request from the authoring device, zero follow-up App
+Data GETs on that device for the matching covered projection, and one exact
+resource GET on each active receiving device. Missing or malformed mutation
+timestamps remain conservative and do not suppress a read.
 
 ## Runtime Configuration
 

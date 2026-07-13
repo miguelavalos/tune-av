@@ -930,6 +930,45 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 0)
     }
 
+    func testOwnFavoriteMutationReceiptSuppressesOnlyMatchingRealtimeRead() async throws {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        let store = makeRealtimeLibraryStore(recorder: recorder)
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        await bootstrapRealtimeLibrary(store)
+        store.toggleFavorite(for: Station(
+            id: "local-favorite",
+            name: "Local Favorite",
+            country: "Spain",
+            language: "Spanish",
+            tags: "radio",
+            streamURL: "https://example.com/local-favorite.mp3"
+        ))
+        try await Task.sleep(for: .milliseconds(1_300))
+
+        let mutationUpdatedAt = TuneAVDateCoding.date(from: "2026-06-07T17:55:00Z")
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 6,
+            resource: "favorites",
+            sourceUpdatedAt: mutationUpdatedAt
+        ))
+
+        XCTAssertEqual(recorder.requestCount(method: "PUT", path: "/v1/apps/tuneav/library/favorites/upsert"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 7,
+            resource: "favorites",
+            sourceUpdatedAt: mutationUpdatedAt.addingTimeInterval(1)
+        ))
+
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+    }
+
     func testRealtimeUnknownLibraryResourceUsesConservativeFullRefresh() async {
         let recorder = LibraryStoreAppDataRequestRecorder()
         let store = makeRealtimeLibraryStore(recorder: recorder)
@@ -1414,7 +1453,8 @@ final class LibraryStoreTests: XCTestCase {
     private func realtimeLibraryProjection(
         libraryGeneration: Int,
         resource: String,
-        updatedAt: Double
+        updatedAt: Double = 1,
+        sourceUpdatedAt: Date? = nil
     ) -> TuneAVProLibraryProjection {
         TuneAVProLibraryProjection(
             ownerUserId: "user-1",
@@ -1422,7 +1462,7 @@ final class LibraryStoreTests: XCTestCase {
             libraryGeneration: libraryGeneration,
             feedbackGeneration: 3,
             resource: resource,
-            sourceUpdatedAt: nil,
+            sourceUpdatedAt: sourceUpdatedAt.map { $0.timeIntervalSince1970 * 1_000 },
             updatedAt: updatedAt
         )
     }
@@ -1506,6 +1546,9 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
             """
         default:
             let resource = path.split(separator: "/").last.map(String.init) ?? "unknown"
+            let updatedAt = path.contains("/library/")
+                ? "2026-06-07T17:55:00Z"
+                : "2026-06-07T17:52:00Z"
             response = """
             {
               "data": {
@@ -1515,7 +1558,7 @@ private final class LibraryStoreAppDataRequestRecorder: @unchecked Sendable {
                 "sentAt": "2026-06-07T17:52:00Z",
                 "entries": []
               },
-              "updatedAt": "2026-06-07T17:52:00Z",
+              "updatedAt": "\(updatedAt)",
               "revision": 1,
               "etag": "\\"revision-1\\""
             }

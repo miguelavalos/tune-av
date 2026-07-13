@@ -614,14 +614,14 @@ final class SharedAppleSupportTests: XCTestCase {
             }
         )
 
-        try await client.upsertFavorite(
+        let favoriteReceipt = try await client.upsertFavorite(
             FavoriteStationRecord(
                 station: Self.stationRecord(id: "radio-bob-rock"),
                 createdAt: "2026-06-30T10:00:00Z"
             ),
             idempotencyKey: "11111111-1111-4111-8111-111111111111"
         )
-        try await client.deleteSavedDiscovery(
+        let discoveryReceipt = try await client.deleteSavedDiscovery(
             DiscoveredTrackRecord(
                 discoveryID: "song-1",
                 trackKey: "song::artist",
@@ -650,6 +650,12 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-device-id"], "test-device")
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["x-appsav-platform"], "ios")
         XCTAssertEqual(headersByCall["PUT /v1/apps/tuneav/library/savedDiscoveries/delete"]?["Idempotency-Key"], "22222222-2222-4222-8222-222222222222")
+        XCTAssertEqual(favoriteReceipt.resource, .favorites)
+        XCTAssertEqual(favoriteReceipt.sourceUpdatedAt, TuneAVDateCoding.date(from: "2026-06-06T10:00:00Z"))
+        XCTAssertEqual(favoriteReceipt.revision, 1)
+        XCTAssertEqual(favoriteReceipt.etag, "\"revision-1\"")
+        XCTAssertEqual(discoveryReceipt.resource, .savedDiscoveries)
+        XCTAssertEqual(discoveryReceipt.sourceUpdatedAt, TuneAVDateCoding.date(from: "2026-06-06T10:00:00Z"))
     }
 
     func testSyncRetryPolicyOnlyRetriesTransientFailuresAndStopsAfterFiveAttempts() {
