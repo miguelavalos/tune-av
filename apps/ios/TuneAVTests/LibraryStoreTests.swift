@@ -894,6 +894,60 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 1)
     }
 
+    func testRealtimeFavoritesInvalidationReadsOnlyFavorites() async {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        let store = makeRealtimeLibraryStore(recorder: recorder)
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        await bootstrapRealtimeLibrary(store)
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 6,
+            resource: "favorites",
+            updatedAt: 2
+        ))
+
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 0)
+    }
+
+    func testRealtimeSavedDiscoveriesInvalidationReadsOnlySavedDiscoveries() async {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        let store = makeRealtimeLibraryStore(recorder: recorder)
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        await bootstrapRealtimeLibrary(store)
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 6,
+            resource: "savedDiscoveries",
+            updatedAt: 2
+        ))
+
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 2)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/me/summary"), 0)
+    }
+
+    func testRealtimeUnknownLibraryResourceUsesConservativeFullRefresh() async {
+        let recorder = LibraryStoreAppDataRequestRecorder()
+        let store = makeRealtimeLibraryStore(recorder: recorder)
+        defer { LibraryStoreTestURLProtocol.requestHandler = nil }
+
+        await bootstrapRealtimeLibrary(store)
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 6,
+            resource: "futureResource",
+            updatedAt: 2
+        ))
+
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/favorites"), 2)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/savedDiscoveries"), 2)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/apps/tuneav/data/futureResource"), 0)
+        XCTAssertEqual(recorder.requestCount(method: "GET", path: "/v1/tune/feedback"), 1)
+    }
+
     func testRemoteTrackFeedbackCreatesTunedDiscoveryWithoutLocalHistory() async throws {
         LibraryStoreTestURLProtocol.requestHandler = { request in
             let response: String
@@ -1324,6 +1378,52 @@ final class LibraryStoreTests: XCTestCase {
                 reviewStatus: "generated",
                 updatedAt: "2026-05-09T00:00:00Z"
             )
+        )
+    }
+
+    private func makeRealtimeLibraryStore(
+        recorder: LibraryStoreAppDataRequestRecorder
+    ) -> LibraryStore {
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            try recorder.response(for: request)
+        }
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession()
+        )
+        let store = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let service = TuneAVAppDataService(apiClient: client)
+        store.configureLocalFeedbackRetention(for: .signedInPro)
+        store.setBackendService(service, userID: "user-1")
+        store.setAppDataService(service)
+        return store
+    }
+
+    private func bootstrapRealtimeLibrary(_ store: LibraryStore) async {
+        await store.refreshCloudLibraryIfNeeded(force: true)
+        await store.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
+        await store.handleProRealtimeInvalidation(realtimeLibraryProjection(
+            libraryGeneration: 5,
+            resource: "favorites",
+            updatedAt: 1
+        ))
+    }
+
+    private func realtimeLibraryProjection(
+        libraryGeneration: Int,
+        resource: String,
+        updatedAt: Double
+    ) -> TuneAVProLibraryProjection {
+        TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: libraryGeneration,
+            feedbackGeneration: 3,
+            resource: resource,
+            sourceUpdatedAt: nil,
+            updatedAt: updatedAt
         )
     }
 

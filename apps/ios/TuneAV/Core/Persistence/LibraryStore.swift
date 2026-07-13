@@ -1236,7 +1236,11 @@ final class LibraryStore: ObservableObject {
         if refreshPlan.refreshFeedback {
             await refreshCloudFeedbackIfNeeded(force: true)
         }
-        if refreshPlan.refreshLibrary {
+        if refreshPlan.refreshLibrary,
+           let rawResource = refreshPlan.libraryResource,
+           let resource = TuneAVAppDataResource(rawValue: rawResource) {
+            await refreshCloudLibraryResourceIfNeeded(resource)
+        } else if refreshPlan.refreshLibrary {
             await refreshCloudLibraryIfNeeded(force: true)
         }
     }
@@ -1365,6 +1369,54 @@ final class LibraryStore: ObservableObject {
             guard self.appDataService === appDataService else { return }
             setCloudSyncStatus(.failed)
             return
+        }
+    }
+
+    private func refreshCloudLibraryResourceIfNeeded(_ resource: TuneAVAppDataResource) async {
+        guard let appDataService, appDataService.isConfigured() else {
+            setCloudSyncStatus(.idle)
+            return
+        }
+
+        if let cloudLibraryRefreshTask {
+            await cloudLibraryRefreshTask.value
+            return
+        }
+
+        let task = Task { @MainActor in
+            await performCloudLibraryResourceRefresh(resource, using: appDataService)
+        }
+        cloudLibraryRefreshTask = task
+        await task.value
+        cloudLibraryRefreshTask = nil
+    }
+
+    private func performCloudLibraryResourceRefresh(
+        _ resource: TuneAVAppDataResource,
+        using appDataService: TuneAVAppDataService
+    ) async {
+        do {
+            setCloudSyncStatus(.syncing)
+            let localSnapshot = librarySnapshot()
+            let remoteDocument = try await appDataService.pullLibraryResource(
+                resource,
+                mergingInto: localSnapshot
+            )
+            guard self.appDataService === appDataService else { return }
+            cloudLibrarySourceUpdatedAtByResource[resource.rawValue] = remoteDocument.updatedAt
+            updateSyncDiagnostics { $0.lastCloudPullAt = .now }
+            let mergedSnapshot = cloudBoundedSnapshot(
+                TuneAVLibrarySnapshotMerger.merged(
+                    local: localSnapshot,
+                    remote: remoteDocument.snapshot
+                )
+            )
+            applyRemoteSnapshot(mergedSnapshot)
+            setCloudSyncStatus(.synced(.now))
+            cloudLibraryRefreshedAt = .now
+        } catch {
+            guard self.appDataService === appDataService else { return }
+            setCloudSyncStatus(.failed)
         }
     }
 

@@ -543,10 +543,18 @@ separate development bundle identifier.
    prove that one saved-radio invalidation causes one matching Account API GET
    and no saved-discoveries or feedback read.
 
-   The next separate optimization is iOS receiver parity: an iOS library
-   invalidation is already isolated from feedback, but still reads both library
-   resources. Do not fold that behavior change into the macOS proof without its
-   own review and exact-request regressions.
+   iOS exact-resource receiver parity completed in source on 2026-07-13. The
+   iOS App Data service now exposes the same scoped pull, and `LibraryStore`
+   uses it only for a known resource on one consecutive generation. It merges
+   the remote resource with the untouched local snapshot, updates only that
+   resource's coverage, and performs no feedback or summary request. Unknown
+   resources still execute the full two-resource refresh. Three exact-request
+   regressions passed first, all 37 `LibraryStoreTests` passed next, and the
+   complete iOS suite passed 363 tests with zero failures. This is iOS
+   client-only; macOS and all backend/runtime configuration remain unchanged.
+   Physical iOS build `50` predates this repair, so a later iOS TestFlight build
+   must prove one saved-radio invalidation causes one matching resource GET and
+   no unrelated library, feedback, or summary read.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

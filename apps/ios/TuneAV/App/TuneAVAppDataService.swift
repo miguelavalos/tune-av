@@ -43,6 +43,13 @@ final class TuneAVAppDataService {
         try await syncClient.pullLibrary()
     }
 
+    func pullLibraryResource(
+        _ resource: TuneAVAppDataResource,
+        mergingInto localSnapshot: TuneAVLibrarySnapshot
+    ) async throws -> TuneAVScopedLibraryDocument {
+        try await syncClient.pullLibraryResource(resource, mergingInto: localSnapshot)
+    }
+
     func pushLibrary(_ snapshot: TuneAVLibrarySnapshot) async throws {
         try await syncClient.pushLibrary(snapshot)
     }
