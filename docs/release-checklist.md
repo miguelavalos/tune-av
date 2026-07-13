@@ -501,6 +501,23 @@ separate development bundle identifier.
    `Tune AV Test` group. No backend deployment, production-data mutation, or
    App Review submission was performed.
 
+   iOS build-50 production request-budget proof, 2026-07-13: a physical
+   TestFlight cold launch emitted exactly one `GET /v1/me`, one
+   `GET /v1/me/access`, one favorites read, one saved-discoveries read, one
+   realtime-session creation, one feedback read, and one
+   `GET /v1/tune/me/summary?limit=12`; every response was `200`. The summary
+   request is the intentional, cached Pro activity bootstrap and its regression
+   requires exactly one read. A further 15-second observation window was fully
+   quiet, with no retry, polling, repeated realtime session, or cloud-library
+   refresh. The PII-free production projection aggregate remained `healthy`
+   and unchanged at 286 of 286 delivered, with zero pending, incomplete,
+   dead-letter, stale, timed-out, errored, or open-claim rows and maximum
+   enqueue/publish attempts of one. This closes the iOS account-bootstrap
+   overfetch gate: build `49` used four profile and two access reads, while
+   build `50` uses one of each. No backend, configuration, production-data, or
+   App Review change was made. The next gate is the deliberate same-account
+   iOS/macOS cross-device mutation matrix.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
