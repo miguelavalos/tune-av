@@ -20,7 +20,7 @@ final class LibraryStore: ObservableObject {
     private static let trackFeedbackStorageKey = "tuneav.trackFeedback.v1"
     static let pendingLibraryOperationsStorageKey = "tuneav.pendingLibraryOperations.v1"
     private static let pendingFeedbackUploadsStorageKey = "tuneav.pendingFeedbackUploads.v1"
-    private static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
+    static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
     private static let cloudLibraryRefreshInterval: TimeInterval = 300
     private static let discoveryRefreshInterval: TimeInterval = 60
@@ -142,7 +142,11 @@ final class LibraryStore: ObservableObject {
         if loadedTrackFeedback.needsPersistence || trackFeedbackRecords != loadedTrackFeedback.records {
             Self.saveTrackFeedbackRecords(trackFeedbackRecords)
         }
-        pendingListeningSessions = Self.loadPendingListeningSessions(maxCount: Self.maxPendingListeningSessions)
+        pendingListeningSessions = Self.loadPendingListeningSessions(
+            maxCount: Self.maxPendingListeningSessions,
+            userDefaults: userDefaults
+        )
+        persistPendingListeningSessions()
         updatePendingListeningSessionDiagnostic()
         pendingLibraryOperations = LibraryStorePendingLibraryOperationPersistence.load(
             storageKey: Self.pendingLibraryOperationsStorageKey,
@@ -963,7 +967,7 @@ final class LibraryStore: ObservableObject {
         startedAt: Date,
         endedAt: Date,
         source: String,
-        endedReason: String,
+        endedReason: TuneAVListeningEndedReason,
         trackDetectedCount: Int
     ) {
         guard AppConfig.isListeningAnalyticsUploadEnabled else { return }
@@ -1063,7 +1067,8 @@ final class LibraryStore: ObservableObject {
                     sessions: sessions,
                     result: result,
                     incrementRetry: false,
-                    deferUpload: false
+                    deferUpload: false,
+                    discardFailedSessions: false
                 )
             } catch is CancellationError {
                 guard self.backendService === backendService else {
@@ -1075,7 +1080,8 @@ final class LibraryStore: ObservableObject {
                     sessions: sessions,
                     result: nil,
                     incrementRetry: false,
-                    deferUpload: false
+                    deferUpload: false,
+                    discardFailedSessions: false
                 )
             } catch {
                 guard self.backendService === backendService else {
@@ -1093,7 +1099,8 @@ final class LibraryStore: ObservableObject {
                     sessions: sessions,
                     result: nil,
                     incrementRetry: shouldRetry,
-                    deferUpload: !shouldRetry
+                    deferUpload: !shouldRetry,
+                    discardFailedSessions: disposition == .stop
                 )
             }
         }
@@ -1104,11 +1111,30 @@ final class LibraryStore: ObservableObject {
         sessions: [TuneAVListeningSessionDraft],
         result: TuneAVListeningSessionsUploadResult?,
         incrementRetry: Bool,
-        deferUpload: Bool
+        deferUpload: Bool,
+        discardFailedSessions: Bool
     ) {
         listeningSessionFlushTask = nil
 
         guard didUpload else {
+            if discardFailedSessions {
+                listeningSessionUploadRetryCount = 0
+                listeningSessionUploadsDeferred = false
+                listeningSessionRetryAfterDelay = nil
+                updatePendingListeningSessionDiagnostic()
+                persistPendingListeningSessions()
+                analyticsLogger.error(
+                    "Permanently rejected listening sessions discarded=\(sessions.count, privacy: .public) pending=\(self.pendingListeningSessions.count, privacy: .public)"
+                )
+                let uploadableCount = uploadablePendingListeningSessions().count
+                guard uploadableCount > 0 else { return }
+                if uploadableCount >= Self.listeningSessionBatchSize {
+                    flushListeningSessionUploads()
+                } else {
+                    scheduleListeningSessionUpload()
+                }
+                return
+            }
             if incrementRetry {
                 listeningSessionUploadRetryCount += 1
             }
@@ -2424,9 +2450,13 @@ final class LibraryStore: ObservableObject {
         TuneAVLibrarySnapshotMerger.stationIdentityKey(station.appDataRecord)
     }
 
-    private static func loadPendingListeningSessions(maxCount: Int) -> [TuneAVListeningSessionDraft] {
+    private static func loadPendingListeningSessions(
+        maxCount: Int,
+        userDefaults: UserDefaults = .standard
+    ) -> [TuneAVListeningSessionDraft] {
         LibraryStoreListeningSessionPersistence.load(
             storageKey: pendingListeningSessionsStorageKey,
+            userDefaults: userDefaults,
             maxCount: maxCount,
             maxAge: maxPendingListeningSessionAge
         )
@@ -2436,6 +2466,7 @@ final class LibraryStore: ObservableObject {
         LibraryStoreListeningSessionPersistence.save(
             pendingListeningSessions,
             storageKey: Self.pendingListeningSessionsStorageKey,
+            userDefaults: userDefaults,
             maxCount: Self.maxPendingListeningSessions,
             maxAge: Self.maxPendingListeningSessionAge
         )

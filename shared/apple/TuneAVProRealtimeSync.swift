@@ -86,6 +86,10 @@ struct TuneAVProRealtimeProjectionCursor {
     private var feedbackGeneration: Int?
     private var legacyUpdatedAt: Double?
 
+    mutating func establishBaseline(_ projection: TuneAVProLibraryProjection) {
+        _ = consume(projection)
+    }
+
     mutating func consume(
         _ projection: TuneAVProLibraryProjection,
         coverage: TuneAVProRealtimeCoverage = .none

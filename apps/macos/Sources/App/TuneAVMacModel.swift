@@ -248,6 +248,7 @@ final class TuneAVMacModel: ObservableObject {
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var cloudSyncExecutionGate = MacCloudSyncExecutionGate()
+    private var proRealtimeBootstrapGate = MacProRealtimeBootstrapGate()
     private var pendingCloudSyncTask: Task<Void, Never>?
     private var proRealtimeProjectionCancellable: AnyCancellable?
     private var activeProRealtimeSessionOwnerUserID: String?
@@ -721,7 +722,7 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         if let activeListeningSession, activeListeningSession.station.id != station.id {
-            flushActiveListeningSession(endedReason: "station_changed")
+            flushActiveListeningSession(endedReason: .stationChanged)
         }
 
         if let queue {
@@ -830,7 +831,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func stopPlayback() {
-        flushActiveListeningSession(endedReason: "stopped")
+        flushActiveListeningSession(endedReason: .paused)
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentStation = nil
@@ -897,13 +898,13 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func prepareForTermination() {
-        flushActiveListeningSession(endedReason: "app_closed", schedulesUpload: false)
+        flushActiveListeningSession(endedReason: .appClosed, schedulesUpload: false)
         stopListeningSessionUploads()
         stopProRealtimeSync()
     }
 
     func prepareForSystemSleep() {
-        flushActiveListeningSession(endedReason: "suspended", schedulesUpload: false)
+        flushActiveListeningSession(endedReason: .appBackgrounded, schedulesUpload: false)
         stopListeningSessionUploads()
         pauseProRealtimeSync()
     }
@@ -1280,7 +1281,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     func signOut() async {
-        flushActiveListeningSession(endedReason: "signed_out")
+        flushActiveListeningSession(endedReason: .appClosed)
         handleCloudSyncTriggerAction(cloudSyncTrigger.signOutStarted())
         stopProRealtimeSync()
         stopPendingLibraryOperations()
@@ -1416,7 +1417,11 @@ final class TuneAVMacModel: ObservableObject {
 
     func synchronizeLibraryNow() async {
         guard cloudSyncExecutionGate.begin() else { return }
-        defer { cloudSyncExecutionGate.finish() }
+        let bootstrapOwnerUserID = proRealtimeBootstrapGate.ownerUserID
+        defer {
+            cloudSyncExecutionGate.finish()
+            proRealtimeBootstrapGate.complete(ownerUserID: bootstrapOwnerUserID)
+        }
 
         await performLibrarySyncNow()
         if cloudSyncExecutionGate.consumePendingFollowUp() {
@@ -1590,6 +1595,9 @@ final class TuneAVMacModel: ObservableObject {
         realtimeSessionSupervisor.stop()
         proRealtimeProjectionCancellable?.cancel()
         proRealtimeProjectionCancellable = nil
+        pendingCloudSyncTask?.cancel()
+        pendingCloudSyncTask = nil
+        proRealtimeBootstrapGate.reset()
         activeProRealtimeSessionOwnerUserID = nil
         proRealtimeProjectionCursor.reset()
         cloudLibrarySourceUpdatedAtByResource.removeAll()
@@ -1814,11 +1822,11 @@ final class TuneAVMacModel: ObservableObject {
             resumeListeningSessionIfEligible()
         case .paused:
             if previousStatus != .paused {
-                flushActiveListeningSession(endedReason: "paused")
+                flushActiveListeningSession(endedReason: .paused)
             }
         case .failed:
             if previousStatus.failureMessage == nil {
-                flushActiveListeningSession(endedReason: "stream_error")
+                flushActiveListeningSession(endedReason: .streamError)
             }
         case .idle, .loading:
             break
@@ -2160,10 +2168,11 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         if accessMode == .signedInPro, resolvedAccess.accessMode != .signedInPro {
-            flushActiveListeningSession(endedReason: "access_changed", schedulesUpload: false)
+            flushActiveListeningSession(endedReason: .appClosed, schedulesUpload: false)
             stopListeningSessionUploads()
         }
 
+        let previousAccessMode = accessMode
         planTier = resolvedAccess.planTier
         accessMode = resolvedAccess.accessMode
         capabilities = resolvedAccess.capabilities
@@ -2173,6 +2182,11 @@ final class TuneAVMacModel: ObservableObject {
         }
         if resolvedAccess.accessMode == .signedInPro {
             clearSubscriptionReconciliationState()
+            if previousAccessMode != .signedInPro,
+               let ownerUserID = accountUser?.id {
+                proRealtimeBootstrapGate.begin(ownerUserID: ownerUserID)
+                scheduleCloudSync(delay: MacCloudSyncTrigger.startupDelay)
+            }
             startProRealtimeSyncIfNeeded()
             schedulePendingLibraryOperationsForCurrentUser()
             resumeListeningSessionIfEligible()
@@ -2449,7 +2463,7 @@ final class TuneAVMacModel: ObservableObject {
         else { return }
 
         if let activeListeningSession, activeListeningSession.userID != userID {
-            flushActiveListeningSession(endedReason: "account_changed", schedulesUpload: false)
+            flushActiveListeningSession(endedReason: .appClosed, schedulesUpload: false)
         }
 
         TuneAVMacListeningSessionCoordinator.resumeIfNeeded(
@@ -2473,7 +2487,7 @@ final class TuneAVMacModel: ObservableObject {
         )
     }
 
-    private func flushActiveListeningSession(endedReason: String, schedulesUpload: Bool = true) {
+    private func flushActiveListeningSession(endedReason: TuneAVListeningEndedReason, schedulesUpload: Bool = true) {
         guard listeningAnalyticsUploadEnabled,
               let session = TuneAVMacListeningSessionCoordinator.flush(session: &activeListeningSession),
               let draft = TuneAVMacListeningSessionDraft(
@@ -2603,6 +2617,23 @@ final class TuneAVMacModel: ObservableObject {
                 self.listeningSessionFlushTask = nil
                 self.listeningSessionFlushToken = nil
                 let disposition = TuneAVSyncRetryPolicy.disposition(for: error)
+                if disposition == .stop {
+                    self.pendingListeningSessions.removeAll { sessionIDs.contains($0.id) }
+                    self.storage.savePendingListeningSessions(self.pendingListeningSessions)
+                    self.listeningSessionUploadRetryCount = 0
+                    self.listeningSessionUploadsDeferred = false
+                    self.listeningSessionRetryAfterDelay = nil
+                    TuneAVMacDiagnostics.capture(
+                        error,
+                        feature: "tune.mac.analytics",
+                        operation: "listening_sessions",
+                        step: "upload_permanently_rejected"
+                    )
+                    if !self.uploadablePendingListeningSessions().isEmpty {
+                        self.flushListeningSessionUploads()
+                    }
+                    return
+                }
                 let shouldRetry = disposition != .stop
                     && TuneAVSyncRetryPolicy.canRetry(afterAttempt: self.listeningSessionUploadRetryCount)
                 if case .retry(let retryAfterSeconds) = disposition {
@@ -3053,6 +3084,21 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
+        let establishesPreBootstrapBaseline = proRealtimeBootstrapGate.shouldAwaitBootstrap(
+            for: projection.ownerUserId
+        ) && pendingCloudSyncTask != nil && !cloudSyncExecutionGate.isRunning
+        if proRealtimeBootstrapGate.shouldAwaitBootstrap(for: projection.ownerUserId),
+           let pendingCloudSyncTask {
+            await pendingCloudSyncTask.value
+        }
+
+        guard accessMode == .signedInPro,
+              accountUser?.id == projection.ownerUserId else { return }
+        if establishesPreBootstrapBaseline {
+            proRealtimeProjectionCursor.establishBaseline(projection)
+            return
+        }
+
         while cloudSyncExecutionGate.isRunning {
             do {
                 try await Task.sleep(for: .milliseconds(50))
@@ -3252,6 +3298,7 @@ final class TuneAVMacModel: ObservableObject {
         case .cancel:
             pendingCloudSyncTask?.cancel()
             pendingCloudSyncTask = nil
+            proRealtimeBootstrapGate.reset()
         case .none:
             break
         }
@@ -3335,15 +3382,16 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func scheduleCloudSync(delay: Duration) {
-        pendingCloudSyncTask?.cancel()
+        guard pendingCloudSyncTask == nil else { return }
         pendingCloudSyncTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: delay)
                 guard !Task.isCancelled else { return }
                 await self?.synchronizeLibraryNow()
             } catch {
-                return
+                // Cancellation is expected when the account or access changes.
             }
+            self?.pendingCloudSyncTask = nil
         }
     }
 
@@ -3456,7 +3504,7 @@ struct TuneAVMacListeningSessionDraft: Codable, Equatable {
     let endedAt: Date
     let durationSeconds: Int
     let source: String
-    let endedReason: String
+    let endedReason: TuneAVListeningEndedReason
     let trackDetectedCount: Int
     let userID: String
 
@@ -3464,7 +3512,7 @@ struct TuneAVMacListeningSessionDraft: Codable, Equatable {
         id: String = UUID().uuidString,
         session: TuneAVMacActiveListeningSession,
         endedAt: Date,
-        endedReason: String,
+        endedReason: TuneAVListeningEndedReason,
         minimumDuration: TimeInterval = 10
     ) {
         let durationSeconds = max(0, Int(endedAt.timeIntervalSince(session.startedAt).rounded()))
@@ -3489,7 +3537,7 @@ struct TuneAVMacListeningSessionDraft: Codable, Equatable {
         endedAt: Date,
         durationSeconds: Int,
         source: String,
-        endedReason: String,
+        endedReason: TuneAVListeningEndedReason,
         trackDetectedCount: Int,
         userID: String
     ) {
@@ -3604,7 +3652,7 @@ struct TuneAVMacListeningSessionInput: Encodable {
     let endedAt: String
     let durationSeconds: Int
     let source: String
-    let endedReason: String
+    let endedReason: TuneAVListeningEndedReason
     let trackDetectedCount: Int
 }
 

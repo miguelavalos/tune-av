@@ -120,6 +120,55 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(trigger.signOutStarted(), .cancel)
     }
 
+    func testRealtimeProjectionWaitsOnlyForMatchingInitialBootstrap() {
+        var gate = MacProRealtimeBootstrapGate()
+        gate.begin(ownerUserID: "user-1")
+
+        XCTAssertTrue(gate.shouldAwaitBootstrap(for: "user-1"))
+        XCTAssertFalse(gate.shouldAwaitBootstrap(for: "user-2"))
+
+        gate.complete(ownerUserID: "user-2")
+        XCTAssertTrue(gate.shouldAwaitBootstrap(for: "user-1"))
+
+        gate.complete(ownerUserID: "user-1")
+        XCTAssertFalse(gate.shouldAwaitBootstrap(for: "user-1"))
+    }
+
+    func testMacRealtimeBaselineSkipsHistoricalReadButKeepsLaterInvalidation() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(TuneAVProLibraryProjection(
+            ownerUserId: "user-1",
+            projectionVersion: 4,
+            libraryGeneration: 4,
+            feedbackGeneration: 7,
+            sourceUpdatedAt: nil,
+            updatedAt: 1
+        ))
+
+        XCTAssertEqual(
+            cursor.consume(TuneAVProLibraryProjection(
+                ownerUserId: "user-1",
+                projectionVersion: 4,
+                libraryGeneration: 4,
+                feedbackGeneration: 7,
+                sourceUpdatedAt: nil,
+                updatedAt: 1
+            )),
+            .none
+        )
+        XCTAssertEqual(
+            cursor.consume(TuneAVProLibraryProjection(
+                ownerUserId: "user-1",
+                projectionVersion: 4,
+                libraryGeneration: 5,
+                feedbackGeneration: 7,
+                sourceUpdatedAt: nil,
+                updatedAt: 2
+            )),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+    }
+
     func testMacDiagnosticsDoesNotCaptureExpectedConfigurationErrors() {
         XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingToken))
         XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(TuneAVAppDataClientError.missingBaseURL))
@@ -729,7 +778,7 @@ final class MacCloudSyncTests: XCTestCase {
                 id: "session-a",
                 session: $0,
                 endedAt: startedAt.addingTimeInterval(12),
-                endedReason: "station_changed"
+                endedReason: .stationChanged
             )
         }
 
@@ -737,7 +786,7 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(draft?.durationSeconds, 12)
         XCTAssertEqual(draft?.trackDetectedCount, 2)
         XCTAssertEqual(draft?.source, "home")
-        XCTAssertEqual(draft?.endedReason, "station_changed")
+        XCTAssertEqual(draft?.endedReason, .stationChanged)
         XCTAssertEqual(session?.station.id, Station.samples[1].id)
     }
 
@@ -754,12 +803,12 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertNil(TuneAVMacListeningSessionDraft(
             session: session,
             endedAt: startedAt.addingTimeInterval(9),
-            endedReason: "paused"
+            endedReason: .paused
         ))
         XCTAssertNotNil(TuneAVMacListeningSessionDraft(
             session: session,
             endedAt: startedAt.addingTimeInterval(10),
-            endedReason: "paused"
+            endedReason: .paused
         ))
     }
 
@@ -776,6 +825,49 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(relaunchedStorage.loadPendingListeningSessions(), [session])
         relaunchedStorage.savePendingListeningSessions([])
         XCTAssertTrue(relaunchedStorage.loadPendingListeningSessions().isEmpty)
+    }
+
+    func testMacListeningSessionStorageNormalizesLegacyEndedReasons() throws {
+        struct LegacyDraft: Encodable {
+            let id: String
+            let stationID: String
+            let stationName: String
+            let startedAt: Date
+            let endedAt: Date
+            let durationSeconds: Int
+            let source: String
+            let endedReason: String
+            let trackDetectedCount: Int
+            let userID: String
+        }
+
+        let suiteName = "MacCloudSyncTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let key = TuneAVMacLibraryStorage.pendingListeningSessionsKey
+        let endedAt = fixedDate("2026-05-23T11:00:00Z")
+        let legacy = LegacyDraft(
+            id: "legacy-session",
+            stationID: "station-a",
+            stationName: "Station A",
+            startedAt: endedAt.addingTimeInterval(-30),
+            endedAt: endedAt,
+            durationSeconds: 30,
+            source: "home",
+            endedReason: "access_changed",
+            trackDetectedCount: 1,
+            userID: "user-a"
+        )
+        defaults.set(try JSONEncoder().encode([legacy]), forKey: key)
+        let storage = TuneAVMacLibraryStorage(defaults: defaults)
+
+        let restored = storage.loadPendingListeningSessions()
+
+        XCTAssertEqual(restored.first?.endedReason, .appClosed)
+        storage.savePendingListeningSessions(restored)
+        let migratedJSON = String(decoding: try XCTUnwrap(defaults.data(forKey: key)), as: UTF8.self)
+        XCTAssertTrue(migratedJSON.contains("\"endedReason\":\"app_closed\""))
+        XCTAssertFalse(migratedJSON.contains("access_changed"))
     }
 
     func testMacListeningSessionOutboxBoundsAgeDeduplicatesAndIsolatesUsers() {
@@ -1047,7 +1139,7 @@ final class MacCloudSyncTests: XCTestCase {
             endedAt: endedAt,
             durationSeconds: 30,
             source: "home",
-            endedReason: "paused",
+            endedReason: .paused,
             trackDetectedCount: 1,
             userID: userID
         )

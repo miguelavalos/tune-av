@@ -1204,7 +1204,7 @@ struct AppShellView: View {
             source: source
         )
         if let endedSession {
-            recordListeningSession(endedSession, endedReason: "station_changed")
+            recordListeningSession(endedSession, endedReason: .stationChanged)
         }
     }
 
@@ -1214,11 +1214,11 @@ struct AppShellView: View {
     ) {
         switch newStatus {
         case .paused:
-            flushListeningSession(endedReason: "paused")
+            flushListeningSession(endedReason: .paused)
         case .idle:
-            flushListeningSession(endedReason: "app_closed")
+            flushListeningSession(endedReason: .appClosed)
         case .failed:
-            flushListeningSession(endedReason: "stream_error")
+            flushListeningSession(endedReason: .streamError)
             autoSkipUnstableStreamIfNeeded()
         case .playing:
             if let station = audioPlayer.currentStation {
@@ -1239,7 +1239,7 @@ struct AppShellView: View {
 
     private func handleScenePhaseChange(_ phase: ScenePhase) {
         if ShellListeningSessionLifecycle.shouldFlushPendingSessions(scenePhase: phase) {
-            flushListeningSession(endedReason: "background")
+            flushListeningSession(endedReason: .appBackgrounded)
             libraryStore.flushPendingListeningSessions()
             return
         }
@@ -1283,12 +1283,12 @@ struct AppShellView: View {
         }
     }
 
-    private func flushListeningSession(endedReason: String) {
+    private func flushListeningSession(endedReason: TuneAVListeningEndedReason) {
         guard let session = ShellListeningSessionCoordinator.flush(session: &listeningSession) else { return }
         recordListeningSession(session, endedReason: endedReason)
     }
 
-    private func recordListeningSession(_ session: ActiveListeningSession, endedReason: String) {
+    private func recordListeningSession(_ session: ActiveListeningSession, endedReason: TuneAVListeningEndedReason) {
         libraryStore.recordListeningSession(
             station: session.station,
             startedAt: session.startedAt,

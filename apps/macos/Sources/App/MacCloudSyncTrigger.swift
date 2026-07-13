@@ -67,3 +67,24 @@ struct MacCloudSyncExecutionGate {
         hasPendingFollowUp = false
     }
 }
+
+struct MacProRealtimeBootstrapGate {
+    private(set) var ownerUserID: String?
+
+    mutating func begin(ownerUserID: String) {
+        self.ownerUserID = ownerUserID
+    }
+
+    func shouldAwaitBootstrap(for projectionOwnerUserID: String) -> Bool {
+        ownerUserID == projectionOwnerUserID
+    }
+
+    mutating func complete(ownerUserID: String?) {
+        guard self.ownerUserID == ownerUserID else { return }
+        self.ownerUserID = nil
+    }
+
+    mutating func reset() {
+        ownerUserID = nil
+    }
+}

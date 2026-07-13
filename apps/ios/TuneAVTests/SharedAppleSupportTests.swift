@@ -173,6 +173,17 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(cursor.consume(projection), .none)
     }
 
+    func testRealtimeProjectionCursorBaselineSkipsHistoricalReadButKeepsLaterInvalidation() {
+        var cursor = TuneAVProRealtimeProjectionCursor()
+        cursor.establishBaseline(projection(library: 4, feedback: 7))
+
+        XCTAssertEqual(cursor.consume(projection(library: 4, feedback: 7)), .none)
+        XCTAssertEqual(
+            cursor.consume(projection(library: 5, feedback: 7)),
+            TuneAVProRealtimeRefreshPlan(refreshLibrary: true, refreshFeedback: false)
+        )
+    }
+
     func testRealtimeProjectionCursorResetsForNewOwner() {
         var cursor = TuneAVProRealtimeProjectionCursor()
         _ = cursor.consume(projection(owner: "user-1", library: 9, feedback: 9))
@@ -552,6 +563,32 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(TuneAVSyncRetryPolicy.disposition(statusCode: 401), .stop)
         XCTAssertTrue(TuneAVSyncRetryPolicy.canRetry(afterAttempt: 3))
         XCTAssertFalse(TuneAVSyncRetryPolicy.canRetry(afterAttempt: 4))
+    }
+
+    func testListeningEndedReasonNormalizesLegacyValuesAndEncodesCanonicalContract() throws {
+        let legacyValues: [String: TuneAVListeningEndedReason] = [
+            "station_changed": .stationChanged,
+            "stopped": .paused,
+            "background": .appBackgrounded,
+            "suspended": .appBackgrounded,
+            "signed_out": .appClosed,
+            "account_changed": .appClosed,
+            "access_changed": .appClosed,
+            "stream_error": .streamError,
+            "future_value": .unknown,
+        ]
+
+        for (legacyValue, expected) in legacyValues {
+            let decoded = try JSONDecoder().decode(
+                TuneAVListeningEndedReason.self,
+                from: Data("\"\(legacyValue)\"".utf8)
+            )
+            XCTAssertEqual(decoded, expected)
+            XCTAssertEqual(
+                String(decoding: try JSONEncoder().encode(decoded), as: UTF8.self),
+                "\"\(expected.rawValue)\""
+            )
+        }
     }
 
     func testAppDataClientPullsLegacySavedDiscoveriesWithoutDroppingSongs() async throws {
@@ -1695,7 +1732,7 @@ final class SharedAppleSupportTests: XCTestCase {
             endedAt: Date(timeIntervalSince1970: 140),
             durationSeconds: 40,
             source: "home",
-            endedReason: "networkRetry",
+            endedReason: .unknown,
             trackDetectedCount: 2
         )
 
@@ -1743,7 +1780,7 @@ final class SharedAppleSupportTests: XCTestCase {
             endedAt: Date(timeIntervalSince1970: 140),
             durationSeconds: 40,
             source: "home",
-            endedReason: "networkRetry",
+            endedReason: .unknown,
             trackDetectedCount: 2
         )
 

@@ -63,8 +63,8 @@ struct RootView: View {
                 return
             }
             await refreshActiveAccountStateIfNeeded()
-            startProRealtimeSyncIfNeeded()
             scheduleSignedInLibrarySync(after: .milliseconds(350))
+            startProRealtimeSyncIfNeeded()
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
         .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
@@ -184,10 +184,10 @@ struct RootView: View {
 
         libraryStore.setBackendService(appDataService, userID: accessController.accountUser?.id)
         libraryStore.setAppDataService(appDataService)
-        startProRealtimeSyncIfNeeded()
         await libraryStore.refreshCloudLibraryIfNeeded()
         await libraryStore.refreshCloudFeedbackIfNeeded(force: true, refreshSummary: false)
         await libraryStore.refreshUserSummary(force: true)
+        startProRealtimeSyncIfNeeded()
     }
 
     private func scheduleLibrarySync(after delay: Duration? = nil) {

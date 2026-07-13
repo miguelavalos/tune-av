@@ -196,12 +196,12 @@ final class LibraryStoreTests: XCTestCase {
         let older = listeningSessionDraft(
             id: "stable-session",
             stationID: "station-old",
-            endedReason: "stream_error"
+            endedReason: .streamError
         )
         let newer = listeningSessionDraft(
             id: "stable-session",
             stationID: "station-new",
-            endedReason: "paused"
+            endedReason: .paused
         )
 
         let deduplicated = LibraryStoreListeningSessionBuffer.deduplicated([
@@ -212,7 +212,7 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(deduplicated.map(\.id), ["first-session", "stable-session"])
         XCTAssertEqual(deduplicated.last?.stationID, "station-new")
-        XCTAssertEqual(deduplicated.last?.endedReason, "paused")
+        XCTAssertEqual(deduplicated.last?.endedReason, .paused)
     }
 
     func testListeningSessionBufferBoundsAfterDeduplicatingRetries() {
@@ -314,7 +314,7 @@ final class LibraryStoreTests: XCTestCase {
             endedAt: Date(timeIntervalSince1970: 30),
             durationSeconds: 20,
             source: "home",
-            endedReason: "paused",
+            endedReason: "background",
             trackDetectedCount: 1
         )
         userDefaults.set(try JSONEncoder().encode([legacyDraft]), forKey: storageKey)
@@ -329,6 +329,19 @@ final class LibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(restored.first?.stationID, "legacy-station")
         XCTAssertEqual(restored.first?.stationName, "Legacy Station")
+        XCTAssertEqual(restored.first?.endedReason, .appBackgrounded)
+
+        LibraryStoreListeningSessionPersistence.save(
+            restored,
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 2,
+            maxAge: 100,
+            now: Date(timeIntervalSince1970: 40)
+        )
+        let migratedJSON = String(decoding: try XCTUnwrap(userDefaults.data(forKey: storageKey)), as: UTF8.self)
+        XCTAssertTrue(migratedJSON.contains("\"endedReason\":\"app_backgrounded\""))
+        XCTAssertFalse(migratedJSON.contains("\"endedReason\":\"background\""))
     }
 
     func testListeningSessionPersistenceDropsExpiredSessions() throws {
@@ -370,6 +383,81 @@ final class LibraryStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(restored.map(\.id), ["retained"])
+    }
+
+    func testPermanentListeningSessionRejectionIsDiscardedAndNotRetriedAfterRelaunch() async throws {
+        let suiteName = "test.pendingListeningSessions.terminal.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer {
+            LibraryStoreTestURLProtocol.requestHandler = nil
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+        let storageKey = LibraryStore.pendingListeningSessionsStorageKey
+        let endedAt = Date()
+        LibraryStoreListeningSessionPersistence.save(
+            [listeningSessionDraft(
+                id: "terminal-session",
+                stationID: "station-a",
+                startedAt: endedAt.addingTimeInterval(-30),
+                endedAt: endedAt,
+                userID: "user-1"
+            )],
+            storageKey: storageKey,
+            userDefaults: userDefaults,
+            maxCount: 50,
+            maxAge: 7 * 24 * 60 * 60,
+            now: endedAt
+        )
+
+        let requestCounter = LibraryStoreAppDataRequestRecorder()
+        LibraryStoreTestURLProtocol.requestHandler = { request in
+            _ = try requestCounter.response(for: request)
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 400,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data(#"{"error":"invalid_request"}"#.utf8)
+            )
+        }
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
+            urlSession: libraryStoreTestURLSession(),
+            retryPolicy: .disabled
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+        let firstStore = LibraryStore(
+            container: PersistenceController(inMemory: true).container,
+            userDefaults: userDefaults
+        )
+        firstStore.setBackendService(service, userID: "user-1")
+        firstStore.flushPendingListeningSessions()
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(
+            requestCounter.requestCount(method: "POST", path: "/v1/tune/analytics/listening-sessions"),
+            1
+        )
+        XCTAssertNil(userDefaults.data(forKey: storageKey))
+
+        let relaunchedStore = LibraryStore(
+            container: PersistenceController(inMemory: true).container,
+            userDefaults: userDefaults
+        )
+        relaunchedStore.setBackendService(service, userID: "user-1")
+        relaunchedStore.flushPendingListeningSessions()
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(
+            requestCounter.requestCount(method: "POST", path: "/v1/tune/analytics/listening-sessions"),
+            1
+        )
     }
 
     func testListeningSessionPersistenceClearsStorageWhenEmpty() throws {
@@ -1242,9 +1330,10 @@ final class LibraryStoreTests: XCTestCase {
     private func listeningSessionDraft(
         id: String = UUID().uuidString,
         stationID: String,
-        endedReason: String = "paused",
+        endedReason: TuneAVListeningEndedReason = .paused,
         startedAt: Date = Date(timeIntervalSince1970: 10),
-        endedAt: Date = Date(timeIntervalSince1970: 30)
+        endedAt: Date = Date(timeIntervalSince1970: 30),
+        userID: String? = nil
     ) -> TuneAVListeningSessionDraft {
         TuneAVListeningSessionDraft(
             id: id,
@@ -1261,7 +1350,8 @@ final class LibraryStoreTests: XCTestCase {
             durationSeconds: max(0, Int(endedAt.timeIntervalSince(startedAt).rounded())),
             source: "home",
             endedReason: endedReason,
-            trackDetectedCount: 1
+            trackDetectedCount: 1,
+            userID: userID
         )
     }
 }

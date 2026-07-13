@@ -109,7 +109,7 @@ final class TuneAVAppDataService {
         startedAt: Date,
         endedAt: Date,
         source: String,
-        endedReason: String,
+        endedReason: TuneAVListeningEndedReason,
         trackDetectedCount: Int
     ) async throws {
         let duration = max(0, Int(endedAt.timeIntervalSince(startedAt).rounded()))
@@ -221,7 +221,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
     let endedAt: Date
     let durationSeconds: Int
     let source: String
-    let endedReason: String
+    let endedReason: TuneAVListeningEndedReason
     let trackDetectedCount: Int
     let userID: String?
 
@@ -246,7 +246,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         endedAt: Date,
         durationSeconds: Int,
         source: String,
-        endedReason: String,
+        endedReason: TuneAVListeningEndedReason,
         trackDetectedCount: Int,
         userID: String? = nil
     ) {
@@ -280,7 +280,7 @@ struct TuneAVListeningSessionDraft: Codable, Equatable {
         endedAt = try container.decode(Date.self, forKey: .endedAt)
         durationSeconds = try container.decode(Int.self, forKey: .durationSeconds)
         source = try container.decode(String.self, forKey: .source)
-        endedReason = try container.decode(String.self, forKey: .endedReason)
+        endedReason = try container.decode(TuneAVListeningEndedReason.self, forKey: .endedReason)
         trackDetectedCount = try container.decode(Int.self, forKey: .trackDetectedCount)
         userID = try container.decodeIfPresent(String.self, forKey: .userID)
     }
@@ -352,7 +352,7 @@ private struct TuneAVListeningSessionInput: Encodable {
     let endedAt: String
     let durationSeconds: Int
     let source: String
-    let endedReason: String
+    let endedReason: TuneAVListeningEndedReason
     let trackDetectedCount: Int
 }
 

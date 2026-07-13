@@ -319,15 +319,29 @@ separate development bundle identifier.
    renewal boundary remain release QA gates. Neither build has been submitted
    to App Review by this checkpoint.
 
-   A process-verified macOS build `56` cold launch later exposed two bounded but
-   unresolved efficiency issues: realtime/bootstrap ordering caused one
-   duplicate library-read batch, and a persisted listening-analytics row used
-   an end reason outside the backend enum, causing one terminal `400` per cold
-   launch while that poison batch remains local. There is still no continuous
-   polling or Convex outbox fanout, but a later TestFlight build should align
-   the typed analytics contract, quarantine permanent failures, and serialize
-   initial sync with the first realtime projection before Cloudflare usage is
-   considered fully optimized.
+   A process-verified macOS build `56` cold launch later exposed two bounded
+   efficiency issues: realtime/bootstrap ordering caused one duplicate
+   library-read batch, and a persisted listening-analytics row used an end
+   reason outside the backend enum, causing one terminal `400` per cold launch
+   while that poison batch remained local. The analytics issue was repaired in
+   source on 2026-07-13 for both Apple clients: lifecycle reasons now use the
+   shared typed backend enum, legacy persisted values are normalized and saved
+   canonically, and terminal `4xx` batches are removed from durable storage so
+   they cannot be retried after relaunch. Focused iOS coverage proves one
+   request and no second request after a simulated relaunch; focused macOS
+   cloud-sync coverage proves legacy migration. This repair is not part of
+   TestFlight builds `47`/`56`; a later build must still be installed and
+   production-smoked. There is still no continuous polling or Convex outbox
+   fanout. The duplicate bootstrap read was also repaired in source on
+   2026-07-13: iOS now registers its initial library task before starting the
+   realtime observer, while macOS schedules a per-user bootstrap barrier before
+   opening realtime and makes an early historical projection await that pull.
+   A projection received during the pre-bootstrap delay becomes the cursor
+   baseline; later generations still trigger normal refreshes. Exact-count iOS
+   coverage remains one favorites GET, one saved-discoveries GET, one feedback
+   GET, and one summary GET. The macOS cloud-sync suite covers the matching-user
+   barrier and later invalidation behavior. This second repair is likewise not
+   in TestFlight builds `47`/`56` and still needs a later production smoke.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

@@ -62,6 +62,46 @@ enum TuneAVAccessClientError: Error, Equatable {
     case avTunesysAccessMissing
 }
 
+/// Canonical values accepted by the Tune AV listening-analytics contract.
+///
+/// Decoding also repairs values written by older app builds so a legacy row
+/// cannot invalidate an otherwise valid upload batch.
+enum TuneAVListeningEndedReason: String, Codable, CaseIterable {
+    case stationChanged = "station_changed"
+    case paused
+    case appBackgrounded = "app_backgrounded"
+    case appClosed = "app_closed"
+    case streamError = "stream_error"
+    case unknown
+
+    init(legacyValue: String) {
+        switch legacyValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "station_changed":
+            self = .stationChanged
+        case "paused", "stopped":
+            self = .paused
+        case "app_backgrounded", "background", "suspended":
+            self = .appBackgrounded
+        case "app_closed", "signed_out", "account_changed", "access_changed":
+            self = .appClosed
+        case "stream_error":
+            self = .streamError
+        default:
+            self = .unknown
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(legacyValue: try container.decode(String.self))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+}
+
 typealias MacMeAccessResponse = MeAccessResponse
 typealias MacAppAccess = AppAccess
 typealias MacAccessRefreshError = TuneAVAccessClientError
