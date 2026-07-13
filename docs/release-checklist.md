@@ -661,6 +661,21 @@ separate development bundle identifier.
    directions. No code, Worker, Convex, configuration, deployment, or App
    Review change was made.
 
+   Bidirectional saved-song proof, 2026-07-13: with live tails ready, physical
+   iOS `1.0.7 (52)` made exactly one successful `savedDiscoveries` upsert and
+   zero author-side App Data GETs. Activating physical macOS `1.0.7 (61)`
+   consumed the projection with exactly one `savedDiscoveries` GET. The
+   cleanup deletion then proved the reverse direction: one successful
+   `savedDiscoveries` delete from macOS, zero author-side GETs, and exactly one
+   receiver GET on iOS. Neither mutation produced a favorites or feedback GET,
+   post-mutation summary, retry, polling, extra realtime session, or Tune API
+   request, and both delayed windows were silent. The PII-free outbox advanced
+   exactly twice from 293 to 295 delivered events; both projections used one
+   enqueue and one publish attempt with no incomplete or error state. The test
+   song was removed at the end. This closes saved-song propagation in both
+   Apple directions without a source, Worker, Convex, configuration,
+   deployment, or App Review change.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
