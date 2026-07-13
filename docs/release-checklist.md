@@ -488,6 +488,19 @@ separate development bundle identifier.
    repair, so the next iOS TestFlight build must prove exactly one profile and
    one access read on cold launch before the cross-device mutation matrix.
 
+   iOS account-bootstrap TestFlight delivery checkpoint, 2026-07-13: version
+   `1.0.7 (50)` was produced from public source commit `4db8b0a`, with the build
+   number advanced by commit `5cfd102`. The governed production release
+   preflight passed with zero failures and zero warnings. The exact archive is
+   `.derived-data/release-archives/TuneAV-1.0.7-50-2026-07-13-152650.xcarchive`;
+   final verification passed for version/build, bundle, team, architecture,
+   privacy, and matching app/Sentry dSYMs. App Store Connect accepted the exact
+   export at 15:30 CEST, ending with `Upload succeeded` and
+   `EXPORT SUCCEEDED`. Apple subsequently marked the upload `Finalizado`, made
+   build `50` available for testing, and assigned it to the internal
+   `Tune AV Test` group. No backend deployment, production-data mutation, or
+   App Review submission was performed.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
