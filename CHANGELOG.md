@@ -30,6 +30,10 @@ This project follows semantic versioning once public source releases begin.
 - Keep TestFlight builds `53` and `62` outside App Review because they predate
   this client repair; the temporary build-62 test reaction was removed with one
   exact production cleanup and no feedback-outbox change.
+- Deliver repaired TestFlight candidates iOS/iPadOS `1.0.7 (54)` and macOS
+  `1.0.7 (63)` from source commit `efc9515`; App Store Connect accepted both
+  exact archives for processing, but processing completion and internal-group
+  availability still require confirmation before installation or focused QA.
 
 ## 1.0.3 - 2026-06-28
 

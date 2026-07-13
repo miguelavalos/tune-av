@@ -758,6 +758,26 @@ separate development bundle identifier.
    data, or App Review change. Builds `53`/`62` predate it and remain blocked
    from review until later TestFlight builds pass a bounded save/clear trace.
 
+   Apple feedback-clear repaired-candidate delivery, 2026-07-13: public source
+   commit `efc9515` advanced iOS/iPadOS to `1.0.7 (54)` and macOS to `1.0.7
+   (63)` on top of explicit-null repair commit `51aa48a`. Both production
+   preflights passed with zero failures and zero warnings, and the iOS Release
+   simulator gate passed. Final archive checks passed for bundle, version,
+   build, team, privacy, architecture, and matching application/Sentry dSYMs.
+   The retained archives are
+   `.derived-data/release-archives/TuneAV-1.0.7-54-2026-07-13-205426.xcarchive`
+   and
+   `.derived-data/macos-release-archives/TuneAVMac-1.0.7-63-2026-07-13-205902.xcarchive`.
+   App Store Connect accepted iOS at 20:57 CEST and macOS at 21:02 CEST; both
+   exact uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED` and began
+   processing. The App Store Connect browser session expired before completed
+   processing or internal `Tune AV Test` assignment could be confirmed. Do not
+   treat either build as installable, test-ready, or review-eligible until that
+   confirmation exists. Neither was submitted to App Review and no backend,
+   Convex, production configuration, or production data changed. After
+   availability is confirmed, repeat the bounded Pro save/clear trace and keep
+   physical iOS proof as an independent gate.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

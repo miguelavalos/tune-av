@@ -88,6 +88,22 @@ data, or App Review state changed as part of the repair. Builds `53` and `62`
 predate it and remain ineligible for review; later TestFlight candidates still
 need a bounded save/clear live-tail proof. Physical iOS proof remains open.
 
+Repaired candidates iOS/iPadOS `1.0.7 (54)` and macOS `1.0.7 (63)` were then
+archived from public source commit `efc9515`. Both governed production
+preflights passed with zero failures and zero warnings; the iOS Release
+simulator build, final archive identity/privacy checks, and matching
+application/Sentry dSYMs also passed. The retained exact archives are
+`.derived-data/release-archives/TuneAV-1.0.7-54-2026-07-13-205426.xcarchive`
+and
+`.derived-data/macos-release-archives/TuneAVMac-1.0.7-63-2026-07-13-205902.xcarchive`.
+App Store Connect accepted iOS at 20:57 CEST and macOS at 21:02 CEST; both
+uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED` and entered
+processing. The App Store Connect session expired before processing completion
+or internal `Tune AV Test` assignment could be confirmed. Neither build was
+submitted to App Review. Do not install, test, or select these builds for
+review until processing and intended-group availability are confirmed; after
+that, require the bounded Pro save/clear proof described above.
+
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:
 

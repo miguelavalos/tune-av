@@ -278,6 +278,21 @@ App Review state changed. Builds `53` and `62` predate the fix and must not be
 selected for review; later TestFlight candidates require a bounded save/clear
 proof. Physical iOS proof remains deferred while the iPhone is unavailable.
 
+Latest repaired-candidate delivery checkpoint, 2026-07-13: iOS/iPadOS
+`1.0.7 (54)` and macOS `1.0.7 (63)` were archived from public source commit
+`efc9515`, which contains the explicit-null repair. Production preflights
+passed with zero failures and zero warnings; the iOS Release simulator build,
+final archive, privacy, signing-team, architecture, and application/Sentry dSYM
+checks passed. App Store Connect accepted iOS at 20:57 CEST and macOS at 21:02
+CEST with `Upload succeeded` and `EXPORT SUCCEEDED`; both began processing.
+The signed-in browser session expired before finished-processing and internal
+group availability could be confirmed, so neither is yet recorded as ready to
+install or test. Neither build was submitted to App Review. Once availability
+is confirmed, the next gate is one bounded signed-in Pro save/clear trace on
+the repaired build: exactly one successful save PUT and one successful clear
+PUT, with no feedback GET, summary, retry, realtime request, second mutation,
+or outbox/Queue/Convex fanout. Physical iOS proof remains separate.
+
 Historical TestFlight delivery checkpoint, 2026-07-10:
 
 - iPhone/iPad `1.0.7 (46)` and macOS `1.0.7 (55)` were archived from public
