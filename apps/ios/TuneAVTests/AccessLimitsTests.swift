@@ -640,6 +640,77 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
+    func testConcurrentAccountRefreshesShareOneProviderAndEntitlementResolution() async {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+        let accountProfileResolver = CountingAccountProfileResolver(user: user)
+        let entitlementService = SuspendingEntitlementService(access: .signedInPro)
+        entitlementService.suspendNextRefresh()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: accountProfileResolver,
+            entitlementService: entitlementService,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        let rootRefresh = Task { @MainActor in
+            await controller.syncFromAccountProvider()
+        }
+        await entitlementService.waitUntilRefreshIsSuspended()
+        let profileRefresh = Task { @MainActor in
+            await controller.syncFromAccountProviderIfNeeded()
+        }
+
+        entitlementService.resumeRefresh()
+        await rootRefresh.value
+        await profileRefresh.value
+
+        XCTAssertEqual(accountProfileResolver.resolveCount, 1)
+        XCTAssertEqual(entitlementService.refreshCount, 1)
+    }
+
+    @MainActor
+    func testRecentAccountRefreshSkipsProfileEntryRefresh() async {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+        let accountProfileResolver = CountingAccountProfileResolver(user: user)
+        let entitlementService = SuspendingEntitlementService(access: .signedInPro)
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: accountProfileResolver,
+            entitlementService: entitlementService,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+        await controller.syncFromAccountProviderIfNeeded()
+
+        XCTAssertEqual(accountProfileResolver.resolveCount, 1)
+        XCTAssertEqual(entitlementService.refreshCount, 1)
+    }
+
+    @MainActor
+    func testAccountRefreshPublishesResolvedSummaryForProfileReuse() async {
+        let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
+        let summary = AccountSummary(
+            id: user.id,
+            emailAddress: user.emailAddress,
+            displayName: user.displayName
+        )
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user, summary: summary),
+            entitlementService: StubEntitlementService(access: .signedInPro),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        await controller.syncFromAccountProvider()
+
+        XCTAssertEqual(controller.accountSummary, summary)
+    }
+
+    @MainActor
     func testExplicitAccountRefreshPromotesStaleSignedInFreeAccountToBackendPro() async {
         let user = AccountUser(id: "pro-user", displayName: "Pro User", emailAddress: "pro@example.com")
         let entitlementService = SequenceStubEntitlementService(accesses: [
@@ -1336,10 +1407,12 @@ private struct StubAccountService: AVAccountService {
 private struct StubAccountProfileResolver: AccountProfileResolving {
     var user: AccountUser?
     var error: Error?
+    var summary: AccountSummary?
 
-    init(user: AccountUser? = nil, error: Error? = nil) {
+    init(user: AccountUser? = nil, error: Error? = nil, summary: AccountSummary? = nil) {
         self.user = user
         self.error = error
+        self.summary = summary
     }
 
     func resolveCurrentAccountUser() async throws -> AccountUser {
@@ -1349,6 +1422,26 @@ private struct StubAccountProfileResolver: AccountProfileResolving {
         guard let user else {
             throw AccountProfileResolverError.missingInternalUserId
         }
+        return user
+    }
+
+    func resolvedAccountSummary(for userID: String) -> AccountSummary? {
+        guard summary?.id == userID else { return nil }
+        return summary
+    }
+}
+
+@MainActor
+private final class CountingAccountProfileResolver: AccountProfileResolving {
+    let user: AccountUser
+    private(set) var resolveCount = 0
+
+    init(user: AccountUser) {
+        self.user = user
+    }
+
+    func resolveCurrentAccountUser() async throws -> AccountUser {
+        resolveCount += 1
         return user
     }
 }
@@ -1423,6 +1516,7 @@ private final class SuspendingEntitlementService: EntitlementService {
     private var shouldSuspendNextRefresh = false
     private var refreshIsSuspended = false
     private var continuation: CheckedContinuation<Void, Never>?
+    private(set) var refreshCount = 0
 
     init(access: ResolvedAccess, refreshedAccess: ResolvedAccess? = nil) {
         self.access = access
@@ -1435,6 +1529,7 @@ private final class SuspendingEntitlementService: EntitlementService {
 
     func refreshAccess(for user: AccountUser?) async -> ResolvedAccess {
         guard user != nil else { return .guest }
+        refreshCount += 1
         if shouldSuspendNextRefresh {
             shouldSuspendNextRefresh = false
             refreshIsSuspended = true

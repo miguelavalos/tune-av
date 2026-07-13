@@ -58,6 +58,10 @@ Mandatory rules:
 - preserve confirmed Pro capabilities while refreshing the same internal user,
   but drop capabilities from the previous account before resolving a different
   internal user.
+- Coalesce concurrent iOS account refresh callers in `AccessController` and
+  reuse the resolved `/v1/me` summary in account UI. A signed-in cold launch
+  should issue one profile read and one access read; `ProfileScreen` must not
+  add its own duplicate summary fetch after the shared bootstrap.
 
 If the private repo is unavailable, stop and say that the authoritative runbook
 cannot be checked. Do not substitute a guessed local workflow.

@@ -470,6 +470,24 @@ separate development bundle identifier.
    enqueue/publish attempts of one. The total was unchanged, so the smoke
    created no projection fanout. No backend or production-data change was made.
 
+   iOS build-49 production smoke and account-read repair, 2026-07-13: the
+   physical TestFlight app restored Pro, synchronized successfully, and every
+   observed Account/Tune request returned `200`. Favorites, saved discoveries,
+   realtime session, and feedback each used one request, the delayed window was
+   quiet, and the PII-free projection aggregate remained healthy and unchanged
+   at 286 of 286 delivered. The account bootstrap nevertheless issued four
+   profile reads and two access reads. Source analysis mapped them exactly to
+   overlapping `RootView`/`ProfileScreen` account refreshes plus two redundant
+   profile-summary tasks. The iOS client now shares one in-flight account
+   refresh, retains the resolved Account summary in `AccessController`, reuses
+   a recent completed refresh on immediate profile entry, and removes direct
+   profile-summary networking from `ProfileScreen`. The focused account suite
+   passed 50 tests, the complete iOS unit suite passed 358 tests, and the Pro
+   Profile UI smoke passed. This is client-only; no Worker, Convex, API,
+   configuration, or production-data change was made. Build `49` predates the
+   repair, so the next iOS TestFlight build must prove exactly one profile and
+   one access read on cold launch before the cross-device mutation matrix.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

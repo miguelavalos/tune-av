@@ -49,7 +49,6 @@ struct ProfileScreen: View {
     @State private var isShowingAccountDeletion = false
     @State private var isShowingProPaywall = false
     @State private var isCheckingAccountAccessOnEntry = true
-    @State private var accountSummary: AccountSummary?
     private let genreTags = TuneAVMusicGenreCatalog.visibleTags
 
     var body: some View {
@@ -102,19 +101,8 @@ struct ProfileScreen: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
-        .task(id: accessController.accessMode) {
-            await refreshAccountSummaryIfNeeded()
-        }
         .task(id: mode) {
-            guard mode == .account else {
-                isCheckingAccountAccessOnEntry = true
-                return
-            }
-            isCheckingAccountAccessOnEntry = true
-            await accessController.syncFromAccountProvider()
-            await refreshAccountSummaryIfNeeded()
-            guard !Task.isCancelled else { return }
-            isCheckingAccountAccessOnEntry = false
+            await refreshAccountAccessForEntry()
         }
     }
 
@@ -809,7 +797,7 @@ struct ProfileScreen: View {
 
     private var subscriptionStatusDetail: String? {
         guard accessController.accessMode == .signedInPro else { return nil }
-        guard let subscription = accountSummary?.billing?.subscriptions.first(where: { subscription in
+        guard let subscription = accessController.accountSummary?.billing?.subscriptions.first(where: { subscription in
             subscription.appId == "tuneav" && subscription.planTier == .pro
         }) else {
             return nil
@@ -1305,17 +1293,15 @@ struct ProfileScreen: View {
         return AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
     }
 
-    private func refreshAccountSummaryIfNeeded() async {
-        guard accessController.accessMode != .guest else {
-            accountSummary = nil
+    private func refreshAccountAccessForEntry() async {
+        guard mode == .account else {
+            isCheckingAccountAccessOnEntry = true
             return
         }
-
-        do {
-            accountSummary = try await accountDeletionAPI.fetchAccountSummary()
-        } catch {
-            accountSummary = nil
-        }
+        isCheckingAccountAccessOnEntry = true
+        await accessController.syncFromAccountProviderIfNeeded()
+        guard !Task.isCancelled else { return }
+        isCheckingAccountAccessOnEntry = false
     }
 
     private func signOut() async {

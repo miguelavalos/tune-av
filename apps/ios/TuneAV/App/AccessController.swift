@@ -5,6 +5,14 @@ import OSLog
 @MainActor
 protocol AccountProfileResolving {
     func resolveCurrentAccountUser() async throws -> AccountUser
+    func resolvedAccountSummary(for userID: String) -> AccountSummary?
+}
+
+extension AccountProfileResolving {
+    func resolvedAccountSummary(for userID: String) -> AccountSummary? {
+        _ = userID
+        return nil
+    }
 }
 
 enum AccountProfileResolverError: Error, Equatable {
@@ -14,6 +22,7 @@ enum AccountProfileResolverError: Error, Equatable {
 @MainActor
 final class PlatformAccountProfileResolver: AccountProfileResolving {
     private let apiClient: AVAccountAPIClient
+    private var latestAccountSummary: AccountSummary?
 
     init(apiClient: AVAccountAPIClient) {
         self.apiClient = apiClient
@@ -24,6 +33,7 @@ final class PlatformAccountProfileResolver: AccountProfileResolving {
         guard let id = summary.id, !id.isEmpty else {
             throw AccountProfileResolverError.missingInternalUserId
         }
+        latestAccountSummary = summary
         let displayName = summary.displayName.flatMap { value -> String? in
             value.isEmpty ? nil : value
         } ?? L10n.string("app.name")
@@ -32,6 +42,11 @@ final class PlatformAccountProfileResolver: AccountProfileResolving {
             displayName: displayName,
             emailAddress: summary.emailAddress
         )
+    }
+
+    func resolvedAccountSummary(for userID: String) -> AccountSummary? {
+        guard latestAccountSummary?.id == userID else { return nil }
+        return latestAccountSummary
     }
 }
 
@@ -47,6 +62,7 @@ final class AccessController: ObservableObject {
     @Published private(set) var planTier: PlanTier
     @Published private(set) var capabilities: AccessCapabilities
     @Published private(set) var accountUser: AccountUser?
+    @Published private(set) var accountSummary: AccountSummary?
     @Published private(set) var accountSession: AccountSession?
     @Published private(set) var limits: AccessLimits
     @Published private(set) var platformUserId: String?
@@ -75,6 +91,8 @@ final class AccessController: ObservableObject {
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
     private let lastKnownAccountUserKey = "tuneav.account.lastKnownUser"
     private var accessRefreshGeneration = 0
+    private var accountRefreshTask: Task<Void, Never>?
+    private var lastAccountRefreshCompletedAt: Date?
 
     init(
         accountService: AVAccountService = DefaultAVAccountService(),
@@ -125,6 +143,7 @@ final class AccessController: ObservableObject {
             now: now
         )
         self.accountUser = currentUser
+        self.accountSummary = nil
         self.planTier = .free
         self.capabilities = AccessCapabilities.forMode(.guest)
         self.accountSession = nil
@@ -178,6 +197,34 @@ final class AccessController: ObservableObject {
     }
 
     func syncFromAccountProvider() async {
+        if let accountRefreshTask {
+            await accountRefreshTask.value
+            return
+        }
+
+        let refreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performAccountProviderSync()
+        }
+        accountRefreshTask = refreshTask
+        await refreshTask.value
+        accountRefreshTask = nil
+        lastAccountRefreshCompletedAt = now()
+    }
+
+    func syncFromAccountProviderIfNeeded(maximumAge: TimeInterval = 30) async {
+        if let accountRefreshTask {
+            await accountRefreshTask.value
+            return
+        }
+        if let lastAccountRefreshCompletedAt,
+           now().timeIntervalSince(lastAccountRefreshCompletedAt) < maximumAge {
+            return
+        }
+        await syncFromAccountProvider()
+    }
+
+    private func performAccountProviderSync() async {
         accessRefreshGeneration += 1
         let generation = accessRefreshGeneration
         let previousAccountUserID = accountUser?.id
@@ -224,14 +271,21 @@ final class AccessController: ObservableObject {
         switch productAccountState {
         case .signedIn(let session):
             accountUser = AccountUser(productAccountUser: session.user)
+            accountSummary = accountProfileResolver.resolvedAccountSummary(for: session.user.id)
             TuneAVDiagnostics.setUserContext(id: session.user.id)
             isAccountSessionTemporarilyUnavailable = false
         case .temporarilyUnavailable(let session):
+            if accountUser?.id != session.user.id {
+                accountSummary = nil
+            }
             accountUser = AccountUser(productAccountUser: session.user)
             TuneAVDiagnostics.setUserContext(id: session.user.id)
             isAccountSessionTemporarilyUnavailable = true
             authLogger.error("Account AV session is temporarily unavailable during access refresh")
         case .restoring(let lastKnownUser):
+            if accountUser?.id != lastKnownUser?.id {
+                accountSummary = nil
+            }
             accountUser = lastKnownUser.map(AccountUser.init(productAccountUser:))
             isAccountSessionTemporarilyUnavailable = lastKnownUser != nil
         case .guest:
@@ -338,6 +392,7 @@ final class AccessController: ObservableObject {
         try await accountService.signOut()
         accessRefreshGeneration += 1
         accountUser = nil
+        accountSummary = nil
         platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
@@ -471,6 +526,7 @@ final class AccessController: ObservableObject {
 
     private func clearSignedOutAccountState() {
         accountUser = nil
+        accountSummary = nil
         platformUserId = nil
         subscriptionOffer = nil
         subscriptionError = nil
