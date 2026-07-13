@@ -446,10 +446,12 @@ separate development bundle identifier.
    keychain identifiers where applicable, and app/Sentry dSYMs were verified.
    App Store Connect accepted the exact iOS export at 14:42 CEST and the exact
    macOS export at 14:43 CEST; both commands ended with `Upload succeeded` and
-   `EXPORT SUCCEEDED`, and both packages entered processing. No Worker,
-   Convex, Account API, Tune API, Cloudflare configuration, production-data,
-   or App Review change was part of this delivery. Processing, installation,
-   and the bounded cross-device production smoke remain pending.
+   `EXPORT SUCCEEDED`. App Store Connect subsequently marked both uploads
+   `Finalizado`, made builds `49` and `59` available for testing, and assigned
+   them to the internal `Tune AV Test` group. No Worker, Convex, Account API,
+   Tune API, Cloudflare configuration, production-data, or App Review change
+   was part of this delivery. Installation and the bounded cross-device
+   production smoke remain pending.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
