@@ -714,9 +714,23 @@ separate development bundle identifier.
    `.derived-data/macos-release-archives/TuneAVMac-1.0.7-62-2026-07-13-191554.xcarchive`.
    App Store Connect accepted iOS at 19:15 CEST and macOS at 19:18 CEST; both
    uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED`. They were not
-   submitted to App Review. Apple processing, TestFlight installation on both
-   platforms, and focused proof that current clients perform no feedback read,
-   fanout, or receiver action remain open.
+   submitted to App Review. Apple subsequently marked both uploads complete,
+   made builds `53` and `62` ready to test, and assigned them to the internal
+   `Tune AV Test` group.
+
+   TestFlight automatically installed macOS build `62`. The installed app
+   reported version `1.0.7 (62)`, bundle `com.avalsys.tuneav`, team
+   `935PM55U6R`, a `TestFlight Beta Distribution` signature, and Gatekeeper
+   acceptance. The existing signed-in Pro account survived the replacement;
+   the UI showed the narrowed saved-radio/saved-song copy and `Todo al día`.
+   A clean launch observed through short live production tails made exactly one
+   `GET /v1/me`, one `GET /v1/me/access`, one favorites GET, one
+   saved-discoveries GET, and one realtime-session POST, all `200`. It made no
+   feedback GET, summary, retry, or mutation. A single delayed idempotent
+   listening-session upload represented playback analytics from before the
+   clean launch, not sync. The tails were stopped after the bounded quiet
+   window; no historical observability query was used. iOS build `53`
+   installation and the remaining focused physical gate remain open.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

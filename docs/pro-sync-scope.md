@@ -60,9 +60,15 @@ older installed builds, but new clients do not use feedback reads as sync.
 Replacement TestFlight candidates iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7
 (62)` were archived from public source commit `515bd93`, passed the governed
 release gates, and were accepted for processing by App Store Connect on
-2026-07-13. Neither upload was submitted to App Review. Apple processing,
-installation, and focused physical proof of the no-read/no-receiver feedback
-budget remain required before either build becomes the final review candidate.
+2026-07-13. Apple subsequently completed both uploads and assigned the builds to
+the internal TestFlight group. Neither upload was submitted to App Review.
+
+TestFlight automatically installed macOS build `62` on the verification Mac.
+Its signed-in Pro cold launch fetched only `favorites` and
+`savedDiscoveries` as app-data resources and created the expected realtime
+session. A bounded live-tail window observed no feedback GET, summary, retry,
+or mutation. iOS installation and focused physical proof, plus any deliberate
+feedback-action gate, remain required before selecting a final review candidate.
 
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:

@@ -13,7 +13,8 @@ still implement the superseded feedback-sync behavior and must not be promoted.
 Current source implements the narrowed contract and has passed local iOS,
 macOS, localization, and backend-focused verification. Replacement candidates
 iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)` were accepted for TestFlight
-processing on 2026-07-13 and await installation plus focused physical proof.
+processing on 2026-07-13. Both finished processing and joined the internal test
+group; macOS `62` is installed and its cold-launch no-feedback-read gate passed.
 
 ## App Scope
 
@@ -248,8 +249,15 @@ feedback bootstrap, restore, and realtime refresh.
 Latest replacement delivery checkpoint, 2026-07-13: iOS/iPadOS `1.0.7 (53)`
 and macOS `1.0.7 (62)` were archived from public source commit `515bd93`, passed
 the governed production and archive gates, and were accepted for processing by
-App Store Connect. Neither was submitted to App Review. Installation and the
-focused no-feedback-read/no-receiver physical traffic gate remain open.
+App Store Connect. Both later became ready for internal testing. TestFlight
+automatically installed macOS `62`; its TestFlight signature, bundle, team, Pro
+session, and `Todo al día` state were verified. One bounded signed-in Pro cold
+launch made one profile GET, one access GET, one favorites GET, one
+saved-discoveries GET, and one realtime-session POST, all successful. It made
+no feedback GET, summary request, retry, or mutation. One delayed idempotent
+listening-session upload from playback before the clean launch was observed and
+is analytics, not sync. Neither build was submitted to App Review. iOS `53`
+installation and the remaining focused physical gate are open.
 
 Historical TestFlight delivery checkpoint, 2026-07-10:
 
