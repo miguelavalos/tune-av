@@ -21,6 +21,13 @@ This project follows semantic versioning once public source releases begin.
   `1.0.7 (62)` from source commit `515bd93`; both uploads completed processing,
   became available to the internal TestFlight group, and remain outside App
   Review while focused physical verification completes.
+- Verify on macOS TestFlight build `62` that one deliberate Pro feedback save
+  produces one successful backend write and no feedback read, summary, retry,
+  realtime request, or projection fanout during the bounded quiet window.
+- Record a shared iOS/macOS clear-serialization defect: optional Swift feedback
+  currently omits the required `feedback` key instead of encoding JSON `null`,
+  so the backend rejects client clears with `400`; the temporary test reaction
+  was removed with one exact production cleanup and no outbox change.
 
 ## 1.0.3 - 2026-06-28
 

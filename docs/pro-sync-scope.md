@@ -67,8 +67,19 @@ TestFlight automatically installed macOS build `62` on the verification Mac.
 Its signed-in Pro cold launch fetched only `favorites` and
 `savedDiscoveries` as app-data resources and created the expected realtime
 session. A bounded live-tail window observed no feedback GET, summary, retry,
-or mutation. iOS installation and focused physical proof, plus any deliberate
-feedback-action gate, remain required before selecting a final review candidate.
+or mutation.
+
+The deliberate macOS feedback gate subsequently proved that one Pro selection
+created exactly one successful Tune API write and no feedback GET, summary,
+retry, realtime request, or projection fanout. Clearing the selection exposed a
+shared Apple-client defect: synthesized `Encodable` omits the optional
+`feedback` field when it is `nil`, while the backend contract requires the key
+with a JSON `null` value. The clear request therefore returned `400` and was not
+retried. The one temporary row was removed by an exact, fully constrained
+production cleanup; the feedback projection outbox remained unchanged at four
+historical rows, latest `2026-07-10T10:40:38.112Z`. Fixing and testing the
+explicit-null encoding on both Apple clients is required before either build is
+selected for review. iOS installation and focused physical proof remain open.
 
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:

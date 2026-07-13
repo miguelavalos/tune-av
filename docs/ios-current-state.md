@@ -259,6 +259,20 @@ listening-session upload from playback before the clean launch was observed and
 is analytics, not sync. Neither build was submitted to App Review. iOS `53`
 installation and the remaining focused physical gate are open.
 
+Latest focused feedback checkpoint, 2026-07-13: macOS TestFlight build `62`
+sent exactly one successful Pro station-feedback save. The following bounded
+quiet window contained no feedback read, summary, retry, realtime request, or
+second write, and the projection outbox did not advance. The subsequent clear
+attempt was rejected with `400` because the shared iOS/macOS request structs
+omit an optional `nil` feedback field instead of encoding the backend-required
+JSON `null`. The client correctly made no retry, but the backend row remained;
+it was removed with one exact production cleanup and verified absent. The
+outbox remained at four historical feedback rows with nothing newer than
+`2026-07-10T10:40:38.112Z`. Source repair and Apple regression coverage for
+explicit-null station and track clears are still required. No App Review
+submission occurred, and physical iOS build `53` proof remains deferred while
+the iPhone is unavailable.
+
 Historical TestFlight delivery checkpoint, 2026-07-10:
 
 - iPhone/iPad `1.0.7 (46)` and macOS `1.0.7 (55)` were archived from public

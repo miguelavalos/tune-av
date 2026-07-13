@@ -732,6 +732,21 @@ separate development bundle identifier.
    window; no historical observability query was used. iOS build `53`
    installation and the remaining focused physical gate remain open.
 
+   Focused macOS build-62 feedback proof, 2026-07-13: one deliberate Pro
+   `not_for_me` selection produced exactly one successful station-feedback PUT.
+   No feedback GET, summary, retry, realtime request, second write, or outbox
+   event followed during the bounded quiet window. Pressing the visible clear
+   control removed the local selection but its single PUT returned `400`.
+   Root cause is shared by iOS and macOS: synthesized `Encodable` omits the
+   optional `feedback` key for `nil`, while the strict backend schema requires
+   `"feedback": null`. The permanent `400` was not retried. The uniquely
+   identified temporary D1 row was then removed with one exact constrained
+   cleanup; a verification read returned zero rows for that station. The
+   feedback projection outbox stayed at four rows with latest timestamp
+   `2026-07-10T10:40:38.112Z`. Do not select builds `53`/`62` for App Review
+   until explicit-null station and track clear encoding is fixed and covered on
+   both Apple clients, then re-proved with bounded live tails.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
