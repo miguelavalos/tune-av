@@ -645,6 +645,22 @@ separate development bundle identifier.
    configuration, deployment, or App Review change was made. The reverse
    macOS-to-iOS saved-radio direction remains the next gate.
 
+   macOS-to-iOS author-coverage proof, 2026-07-13: the initial radio add was
+   completed before the live tails were ready, so only its single healthy
+   delivered projection is claimed. With both tails active and iOS in the
+   foreground, deleting the same radio from physical TestFlight macOS
+   `1.0.7 (61)` produced exactly one successful favorites delete. The exact
+   `Tune%20AV/61` author made zero App Data GETs after its own projection, and
+   physical TestFlight iOS `1.0.7 (52)` made exactly one favorites GET from
+   `TuneAV/52`. There was no saved-discoveries, feedback, summary, retry,
+   polling, or additional realtime-session request, and the delayed window
+   remained silent. The deletion advanced the healthy PII-free outbox once
+   from 292 to 293 delivered events through one enqueue and one publish
+   attempt, without error or incomplete work. Together with the prior
+   iOS-to-macOS proof, this closes the saved-radio request budget in both
+   directions. No code, Worker, Convex, configuration, deployment, or App
+   Review change was made.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session
