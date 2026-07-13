@@ -351,9 +351,12 @@ separate development bundle identifier.
    and
    `.derived-data/macos-release-archives/TuneAVMac-1.0.7-57-2026-07-13-120023.xcarchive`.
    Both uploads ended with `Upload succeeded` and `EXPORT SUCCEEDED`; App Store
-   Connect processing and tester availability still require confirmation. No
-   Worker or Convex deployment was part of this delivery. These builds contain
-   the terminal analytics-outbox repair and the bounded bootstrap/realtime
+   Connect processing and tester availability initially required confirmation.
+   The macOS TestFlight app subsequently showed build `57` published on
+   2026-07-13 at 12:04 CEST with `Actualizar` available; iOS/iPadOS build `48`
+   still requires independent processing/group confirmation. No Worker or
+   Convex deployment was part of this delivery. These builds contain the
+   terminal analytics-outbox repair and the bounded bootstrap/realtime
    coordination repair described above.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
