@@ -6,7 +6,11 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
-- No unreleased public client changes.
+- Document the 2026-07-13 Pro sync decision: only explicitly saved stations and
+  songs synchronize; feedback remains device-local and any deliberate Pro
+  backend capture is upload-only, not cross-device restore.
+- Mark TestFlight builds `52` and `61` as migration-pending under the narrowed
+  contract; no client or backend behavior changes in this documentation update.
 
 ## 1.0.3 - 2026-06-28
 

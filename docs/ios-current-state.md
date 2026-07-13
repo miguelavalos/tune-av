@@ -1,11 +1,15 @@
 # Tune AV iOS Current State
 
-Date: 2026-07-10
+Date: 2026-07-13
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
 approval status, signing, service setup, service consoles, and private evidence
 belong outside this repository.
+
+The authoritative cloud-sync boundary is
+[Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
+still implement the superseded feedback-sync behavior and are pending migration.
 
 ## App Scope
 
@@ -17,8 +21,10 @@ Current app shape:
 
 - local-first playback, recents, discovery history, playback state, and device
   settings;
-- saved stations, saved songs, station feedback, and song feedback restore with
-  Pro cloud sync when configured;
+- explicitly saved stations and explicitly saved songs restore with Pro cloud
+  sync when configured;
+- station and song feedback remains local to each device; a deliberate Pro
+  action may upload once for server-side summaries and recommendations;
 - optional sign-in and premium UI surfaces when local configuration enables
   them;
 - Guest, signed-in Free, and signed-in Pro presentation states;
@@ -65,8 +71,8 @@ The public fallback policy is:
 | Mode | State | Daily Avi actions | Cloud sync |
 | --- | --- | ---: | --- |
 | Guest | local-only | 5 | no |
-| Signed-in Free | account-connected | 15 | uploads station and song feedback for internal product data; no user-facing restore sync |
-| Signed-in Pro | account-connected Pro | unlimited in-app policy | saved stations, saved songs, station feedback, and song feedback restore, when configured |
+| Signed-in Free | account-connected | 15 | no cloud sync; feedback remains local |
+| Signed-in Pro | account-connected Pro | unlimited in-app policy | explicitly saved stations and saved songs restore, when configured |
 
 Recents, discovery history, playback state, and settings are local-only in the
 current public client contract. Premium access is displayed by the client only
@@ -77,14 +83,11 @@ The current iOS external-link settings are local device preferences. Public-info
 and lyrics searches use the selected shared Apps AV search engine. Web links use
 the embedded Tune AV browser unless the user selects the system browser.
 
-Saved songs and song feedback use canonical track keys across iOS, macOS, and
-the account backend. Saved songs sync through active saved-song records. Song
-feedback sync restores from backend feedback rows that include title/artist
-metadata, so the tuned songs view can show remote feedback without requiring the
-local discovery history item to exist on that device. Clients must normalize
-remote records and migrate any URL-encoded local feedback keys on load so
-historical local state does not mask synced feedback. Discovery history remains
-local-only and can legitimately show different song totals per device.
+Saved songs use canonical track keys across iOS, macOS, and the account backend
+and sync through active saved-song records. Feedback keys may still be
+normalized for stable local storage and backend analytics, but feedback is not
+downloaded or restored as user-visible cross-device state. Discovery history
+remains local-only and can legitimately show different song totals per device.
 
 ## Calm Pro Sync Contract
 
@@ -118,8 +121,8 @@ bounded:
 - when the internal account user changes, immediately remove the previous
   account's capabilities until the new user's backend access is resolved.
 - compare the first Convex projection with the exact per-resource timestamps
-  returned by the Cloudflare bootstrap, so already-covered favorites, saved
-  discoveries, or feedback do not trigger duplicate reads;
+  returned by the Cloudflare bootstrap, so already-covered favorites or saved
+  discoveries do not trigger duplicate reads;
 - use the exact per-resource timestamp to suppress a projection already covered
   by bootstrap;
 - after an item-level favorite or saved-discovery mutation succeeds, retain the
@@ -128,6 +131,8 @@ bounded:
 - after a realtime baseline exists, scope a single consecutive library
   generation to its declared resource on both Apple clients, issuing one
   resource GET and no unrelated feedback or summary read;
+- do not bootstrap, restore, poll, or subscribe to feedback as a sync resource;
+  feedback writes must not create Convex invalidations or projection fanout;
 - keep bootstrap, manual recovery, generation gaps, and unknown resources on
   the conservative full-library path.
 
@@ -211,7 +216,8 @@ vp run macos:release:preflight
 vp run macos:release:preflight -- --with-archive
 ```
 
-Latest local client verification known to the maintainers, run on 2026-07-10:
+Historical local client verification under the superseded feedback-sync
+contract, run on 2026-07-10:
 
 - Convex client configuration checks passed with generated production config;
 - iOS production runtime config, release privacy gate, archive privacy
@@ -230,6 +236,10 @@ Latest local client verification known to the maintainers, run on 2026-07-10:
 - regression coverage confirms that the first Convex projection after
   bootstrap does not repeat covered Cloudflare library, feedback, or summary
   reads, while a genuinely newer resource still requests its focused refresh.
+
+The feedback portions of this evidence describe older behavior and are not
+requirements for the replacement build. The 2026-07-13 contract removes
+feedback bootstrap, restore, and realtime refresh.
 
 Latest TestFlight delivery checkpoint, 2026-07-10:
 

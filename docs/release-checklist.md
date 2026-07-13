@@ -12,6 +12,11 @@ Tune AV follows the public
 guide for Account AV, shared Apple packages, app shell, settings, and
 public-safe config hygiene.
 
+The authoritative product boundary is
+[Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
+still implement the superseded feedback-sync contract and must not be promoted
+to App Review as the final implementation of that decision.
+
 ## Repository Hygiene
 
 1. Run `pnpm install`.
@@ -223,15 +228,15 @@ separate development bundle identifier.
 
 7. Confirm Pro sync on iOS and macOS with the same account:
 
-   - saved stations and station feedback sync across devices;
+   - explicitly saved stations sync across devices;
    - saved songs sync only for actively saved song records, not local discovery
      history;
-   - song feedback sync restores from backend feedback rows with title/artist
-     metadata, even when the song is not present in local discovery history;
-   - song feedback sync survives tracks with spaces or punctuation in their
-     canonical `trackKey`;
-   - old URL-encoded local song feedback keys are migrated on launch and do not
-     produce duplicate or invisible feedback states.
+   - station and song feedback stays local to the authoring device and is not
+     restored after a fresh install or on another device;
+   - one deliberate Pro feedback action may create one backend mutation for
+     summaries/recommendations, but creates no feedback snapshot GET, Convex
+     invalidation, projection outbox/Queue event, or receiver-side request;
+   - Guest and signed-in Free feedback create no backend request;
    - a cold startup or completed sign-in creates no more than one automatic
      full library sync, one realtime session, and one Convex subscription;
    - foreground transitions do not start another automatic full library sync;
@@ -244,17 +249,15 @@ separate development bundle identifier.
    - changing to a different internal account removes the previous account's
      Pro capabilities before the new entitlement response is applied;
    - the first Convex projection after bootstrap does not repeat Cloudflare
-     reads for covered favorites, saved discoveries, feedback, or account
-     summary;
+     reads for covered favorites, saved discoveries, or account summary;
    - a projection newer than bootstrap coverage refreshes only its affected
      channel/resource, while a missing or invalid source timestamp takes the
      conservative refresh path;
    - after bootstrap completes, observe at least 90 seconds without repeated
      automatic sync or realtime-session creation.
 
-   Signed-in Free accounts can upload station and song feedback for product data
-   and recommendations, but only Pro accounts should restore feedback across
-   devices as a user-facing sync feature.
+   Feedback upload and listening analytics are not sync and must never be
+   described or tested as restored cross-device state.
 
 8. When macOS changes touch Music, Library/Radios, filtering, sync projection,
    or local history state, verify the list source for every mode before archive:
@@ -675,6 +678,16 @@ separate development bundle identifier.
    song was removed at the end. This closes saved-song propagation in both
    Apple directions without a source, Worker, Convex, configuration,
    deployment, or App Review change.
+
+   Product-scope override, 2026-07-13: after reviewing the earlier explicit-save
+   decision, current docs, backend request cost, and the inherited feedback-sync
+   implementation, the approved forward contract was narrowed to saved stations
+   and saved songs only. The feedback directions formerly listed as the next
+   matrix gate are cancelled. Builds `52` and `61` are historical TestFlight
+   evidence for saved-item sync, but are migration-pending because they still
+   bootstrap/restore feedback. The next gate is a later client/backend build
+   that removes feedback reads and realtime fanout, updates user-facing copy,
+   and proves the focused feedback traffic budget without cross-device restore.
 
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the

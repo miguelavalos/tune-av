@@ -42,8 +42,9 @@ shared/
 - local-first listening experience
 - local-first playback, recents, automatic discoveries, and on-device settings
 - configurable external public-info and lyrics search engine on web/iOS
-- Pro cloud sync for saved stations, saved songs, station feedback, and song
-  feedback
+- Pro cloud sync for explicitly saved stations and explicitly saved songs
+- optional Pro feedback upload for server-side summaries and recommendations;
+  feedback is not restored across devices
 - optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
 - shared SwiftUI shell, branding, settings, Avi, and text-fit helpers
@@ -67,8 +68,9 @@ shared/
 - Network-backed and premium behaviors are optional, configuration-gated, and
   documented publicly only at the client-behavior level.
 
-Use [docs/ios-current-state.md](docs/ios-current-state.md) as the public source
-of truth for current Apple client behavior and verification state.
+Use [docs/pro-sync-scope.md](docs/pro-sync-scope.md) as the authoritative public
+Pro sync contract. Use [docs/ios-current-state.md](docs/ios-current-state.md) for
+the wider Apple client behavior and verification state.
 
 ## Local Setup
 

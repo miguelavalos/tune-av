@@ -6,17 +6,15 @@ approval records outside this repository.
 
 ## Release Scope
 
-- Tune AV Pro sync covers saved stations, saved songs, station feedback, and song
-  feedback restore for signed-in Pro accounts.
-- Signed-in Free and Pro accounts may upload station and song feedback to the
-  account backend for product data and recommendations. Only Pro accounts should
-  restore that feedback across devices as a user-facing sync feature.
+- [The approved Pro sync scope](pro-sync-scope.md) covers only explicitly saved
+  stations and explicitly saved songs for signed-in Pro accounts.
+- Feedback remains user-visible only on the device where it was given. A
+  deliberate Pro feedback action may upload once for server-side summaries and
+  recommendations, but it is not downloaded, restored, or delivered through
+  realtime sync. Guest and signed-in Free feedback remains fully local.
 - Recents, discovery history, playback state, and device settings are local-only.
-- Saved song sync is based on active saved-song records. Song feedback sync is
-  based on backend feedback rows with title/artist metadata, so the tuned songs
-  view can restore feedback without requiring the local discovery history item.
-  Discovery history can show more songs locally and is not expected to match
-  across devices.
+- Saved song sync is based on active saved-song records. Discovery history and
+  feedback can differ across devices by design.
 - iOS and macOS should be tested together with the same signed-in Pro account
   before submission.
 - macOS is currently Apple Silicon-only while the Convex Swift binary dependency
@@ -36,6 +34,13 @@ approval records outside this repository.
 ## Suggested Public Release Copy
 
 ## Current App Store Status
+
+- Product-scope decision, 2026-07-13: TestFlight iOS `1.0.7 (52)` and macOS
+  `1.0.7 (61)` still contain the superseded feedback bootstrap/restore contract
+  and user-facing copy. Their saved-radio and saved-song traffic evidence is
+  valid, but neither build is the final App Review candidate. Submit only a
+  later build that implements [the approved scope](pro-sync-scope.md) and passes
+  the focused migration gates.
 
 - TestFlight delivery checkpoint, 2026-07-10: iPhone/iPad `1.0.7 (46)` and
   macOS `1.0.7 (55)` were accepted for processing by App Store Connect from
@@ -82,15 +87,11 @@ approval records outside this repository.
 ## Suggested Review Notes
 
 Tune AV uses Account AV sign-in and Tune AV Pro for cloud sync. With a signed-in
-Pro account, saved radios, saved songs, station feedback, and song feedback sync
-between iOS and macOS. Recents, discovery history, playback state, and device
-settings remain local to each device by design. Signed-in Free accounts may
-upload station and song feedback for internal product data, but that feedback is
-not restored as cross-device sync unless the account is Pro.
-
-Before review, test song feedback with tracks containing spaces or punctuation.
-Both clients must canonicalize stored and remote song feedback keys so older
-URL-encoded local keys do not hide synced feedback in the UI.
+Pro account, explicitly saved radios and explicitly saved songs sync between iOS
+and macOS. Recents, discovery history, playback state, device settings, station
+feedback, and song feedback remain local to each device by design. A deliberate
+Pro feedback action may be retained by the backend for summaries and
+recommendations, but it is not restored on another device.
 
 If a reviewer account is needed, provide it only in App Store Connect review
 notes or private release operations, never in this public repository.

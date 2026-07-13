@@ -55,6 +55,10 @@ Mandatory rules:
 - keep Pro cloud sync calm: one automatic library sync at startup or after a
   successful sign-in, explicit manual retry when requested, and no periodic or
   repeated foreground sync;
+- treat `docs/pro-sync-scope.md` as the authoritative product boundary: only
+  explicitly saved stations and songs sync; feedback is device-local, may have
+  one explicit Pro analytics mutation, and must not be restored or delivered
+  through Convex/outbox/Queue;
 - on both Apple clients, consume a single consecutive realtime library
   generation for a known resource with one exact resource GET and no unrelated
   feedback read; generation gaps, unknown resources, bootstrap, and manual

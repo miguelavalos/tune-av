@@ -2,8 +2,10 @@
 
 SwiftUI iOS app for Tune AV.
 
-Use [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
-current public state document for the iOS app.
+Use [`../../docs/pro-sync-scope.md`](../../docs/pro-sync-scope.md) as the
+authoritative Pro sync contract and
+[`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
+wider current public state document for the iOS app.
 
 Current checked-in iOS bundle version: `1.0.6` build `45`.
 `Config/ExportOptionsUpload.plist` remains the checked-in export options file
@@ -40,8 +42,8 @@ Optional account-connected behavior:
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
 - optional RevenueCat monthly Pro purchase/restore flow when configured
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
-- Pro cloud sync for saved stations, saved songs, station feedback, and song feedback restore when Account AV backend config is available
-- signed-in Free and Pro accounts can upload station and song feedback for product data and recommendations; only Pro restores it across devices
+- Pro cloud sync for explicitly saved stations and explicitly saved songs when Account AV backend config is available
+- deliberate Pro feedback actions may upload once for server-side summaries and recommendations, but feedback remains device-local and is not restored across devices; Guest and signed-in Free feedback remains fully local
 - recents, discovery history, playback state, and settings remain local-only unless a future public contract says otherwise
 - signing in keeps local-first storage behavior unless private configuration enables account-connected behavior
 - shared app shell, launch, settings/account, Avi feedback/actions, paywall, and
