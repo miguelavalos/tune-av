@@ -24,10 +24,12 @@ This project follows semantic versioning once public source releases begin.
 - Verify on macOS TestFlight build `62` that one deliberate Pro feedback save
   produces one successful backend write and no feedback read, summary, retry,
   realtime request, or projection fanout during the bounded quiet window.
-- Record a shared iOS/macOS clear-serialization defect: optional Swift feedback
-  currently omits the required `feedback` key instead of encoding JSON `null`,
-  so the backend rejects client clears with `400`; the temporary test reaction
-  was removed with one exact production cleanup and no outbox change.
+- Fix the shared iOS/macOS feedback-clear payload so station and song clears
+  encode the backend-required `"feedback": null` instead of omitting the key;
+  add exact-payload regressions and pass all 363 iOS and 63 macOS unit tests.
+- Keep TestFlight builds `53` and `62` outside App Review because they predate
+  this client repair; the temporary build-62 test reaction was removed with one
+  exact production cleanup and no feedback-outbox change.
 
 ## 1.0.3 - 2026-06-28
 

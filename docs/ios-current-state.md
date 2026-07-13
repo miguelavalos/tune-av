@@ -264,14 +264,19 @@ sent exactly one successful Pro station-feedback save. The following bounded
 quiet window contained no feedback read, summary, retry, realtime request, or
 second write, and the projection outbox did not advance. The subsequent clear
 attempt was rejected with `400` because the shared iOS/macOS request structs
-omit an optional `nil` feedback field instead of encoding the backend-required
-JSON `null`. The client correctly made no retry, but the backend row remained;
-it was removed with one exact production cleanup and verified absent. The
-outbox remained at four historical feedback rows with nothing newer than
-`2026-07-10T10:40:38.112Z`. Source repair and Apple regression coverage for
-explicit-null station and track clears are still required. No App Review
-submission occurred, and physical iOS build `53` proof remains deferred while
-the iPhone is unavailable.
+omitted an optional `nil` feedback field instead of encoding the
+backend-required JSON `null`. The client correctly made no retry, but the
+backend row remained; it was removed with one exact production cleanup and
+verified absent. The outbox remained at four historical feedback rows with
+nothing newer than `2026-07-10T10:40:38.112Z`.
+
+Current source now explicitly encodes JSON `null` for station and track clears
+on both iOS and macOS. Exact payload regressions pass, as do the complete 363
+iOS and 63 macOS unit tests and public configuration hygiene. This repair is
+client-only: no Worker, Convex, production configuration, production data, or
+App Review state changed. Builds `53` and `62` predate the fix and must not be
+selected for review; later TestFlight candidates require a bounded save/clear
+proof. Physical iOS proof remains deferred while the iPhone is unavailable.
 
 Historical TestFlight delivery checkpoint, 2026-07-10:
 

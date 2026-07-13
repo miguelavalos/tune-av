@@ -1907,6 +1907,60 @@ final class SharedAppleSupportTests: XCTestCase {
     }
 
     @MainActor
+    func testFeedbackClearRequestsEncodeExplicitNull() async throws {
+        var requestBodies: [Data] = []
+        TuneAVTestURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "PUT")
+            requestBodies.append(try XCTUnwrap(Self.requestBodyData(from: request)))
+
+            return (
+                HTTPURLResponse(
+                    url: request.url!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!,
+                Data("{}".utf8)
+            )
+        }
+        defer { TuneAVTestURLProtocol.requestHandler = nil }
+
+        let client = AVAccountAPIClient(
+            getToken: { "test-token" },
+            baseURLProvider: { URL(string: "https://api.test") },
+            tuneBaseURLProvider: { URL(string: "https://api.test") },
+            urlSession: testURLSession()
+        )
+        let service = TuneAVAppDataService(apiClient: client)
+
+        try await service.setStationFeedback(nil, stationID: "BBC Radio 1")
+        try await service.setTrackFeedback(
+            nil,
+            title: "Teardrop",
+            artist: "Massive Attack",
+            stationID: "BBC Radio 1"
+        )
+
+        XCTAssertEqual(requestBodies.count, 2)
+        let stationBody = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: requestBodies[0]) as? [String: Any]
+        )
+        let trackBody = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: requestBodies[1]) as? [String: Any]
+        )
+
+        XCTAssertEqual(stationBody["deviceId"] as? String, "tuneav-ios")
+        XCTAssertTrue(stationBody.keys.contains("feedback"))
+        XCTAssertTrue(stationBody["feedback"] is NSNull)
+        XCTAssertEqual(trackBody["deviceId"] as? String, "tuneav-ios")
+        XCTAssertEqual(trackBody["title"] as? String, "Teardrop")
+        XCTAssertEqual(trackBody["artist"] as? String, "Massive Attack")
+        XCTAssertEqual(trackBody["stationId"] as? String, "BBC Radio 1")
+        XCTAssertTrue(trackBody.keys.contains("feedback"))
+        XCTAssertTrue(trackBody["feedback"] is NSNull)
+    }
+
+    @MainActor
     func testAccountAPIClientRetriesTransientNetworkFailuresForSafeReads() async throws {
         var attempts = 0
         TuneAVTestURLProtocol.requestHandler = { request in

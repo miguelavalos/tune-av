@@ -72,14 +72,21 @@ or mutation.
 The deliberate macOS feedback gate subsequently proved that one Pro selection
 created exactly one successful Tune API write and no feedback GET, summary,
 retry, realtime request, or projection fanout. Clearing the selection exposed a
-shared Apple-client defect: synthesized `Encodable` omits the optional
-`feedback` field when it is `nil`, while the backend contract requires the key
+shared Apple-client defect: synthesized `Encodable` omitted the optional
+`feedback` field when it was `nil`, while the backend contract requires the key
 with a JSON `null` value. The clear request therefore returned `400` and was not
 retried. The one temporary row was removed by an exact, fully constrained
 production cleanup; the feedback projection outbox remained unchanged at four
-historical rows, latest `2026-07-10T10:40:38.112Z`. Fixing and testing the
-explicit-null encoding on both Apple clients is required before either build is
-selected for review. iOS installation and focused physical proof remain open.
+historical rows, latest `2026-07-10T10:40:38.112Z`.
+
+Current source fixes that client-only defect on both Apple platforms: station
+and track feedback request encoders now emit explicit JSON `null` for a clear.
+Exact payload regressions passed through the iOS service request path and the
+macOS request models, and the complete suites passed 363 iOS and 63 macOS tests
+with zero failures. No Worker, Convex, production configuration, production
+data, or App Review state changed as part of the repair. Builds `53` and `62`
+predate it and remain ineligible for review; later TestFlight candidates still
+need a bounded save/clear live-tail proof. Physical iOS proof remains open.
 
 The product-copy migration must update every locale for at least these shared
 iOS/macOS keys before a replacement archive is accepted:

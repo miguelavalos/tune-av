@@ -4034,17 +4034,53 @@ enum TuneAVMacSyncRetryPolicy {
     }
 }
 
-private struct TuneAVMacFeedbackRequest: Encodable {
+struct TuneAVMacFeedbackRequest: Encodable {
     let deviceId: String
     let feedback: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case deviceId
+        case feedback
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(deviceId, forKey: .deviceId)
+        if let feedback {
+            try container.encode(feedback, forKey: .feedback)
+        } else {
+            try container.encodeNil(forKey: .feedback)
+        }
+    }
 }
 
-private struct TuneAVMacTrackFeedbackRequest: Encodable {
+struct TuneAVMacTrackFeedbackRequest: Encodable {
     let deviceId: String
     let title: String
     let artist: String?
     let stationId: String?
     let feedback: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case deviceId
+        case title
+        case artist
+        case stationId
+        case feedback
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(deviceId, forKey: .deviceId)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(artist, forKey: .artist)
+        try container.encodeIfPresent(stationId, forKey: .stationId)
+        if let feedback {
+            try container.encode(feedback, forKey: .feedback)
+        } else {
+            try container.encodeNil(forKey: .feedback)
+        }
+    }
 }
 
 private extension TuneAVStationFeedback {

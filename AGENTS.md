@@ -59,6 +59,9 @@ Mandatory rules:
   explicitly saved stations and songs sync; feedback is device-local, may have
   one explicit Pro analytics mutation, and must not be restored or delivered
   through Convex/outbox/Queue;
+- keep station and track feedback clear payloads explicit: the strict Tune API
+  requires a present `feedback` key with JSON `null`; Swift optional encoding
+  that omits the key is a permanent regression covered on both Apple clients;
 - on both Apple clients, consume a single consecutive realtime library
   generation for a known resource with one exact resource GET and no unrelated
   feedback read; generation gaps, unknown resources, bootstrap, and manual

@@ -747,6 +747,17 @@ separate development bundle identifier.
    until explicit-null station and track clear encoding is fixed and covered on
    both Apple clients, then re-proved with bounded live tails.
 
+   Apple feedback-clear source repair, 2026-07-13: both clients now use custom
+   request encoding for station and track feedback, preserving normal string
+   values and emitting a present `"feedback": null` for clears. The iOS
+   regression exercises the real service request path and asserts both JSON
+   bodies; the macOS regression asserts both request models. The complete iOS
+   unit suite passed 363 of 363 tests, the complete macOS suite passed 63 of 63
+   tests, and public configuration hygiene passed. This was a client-only
+   source repair with no Worker, Convex, production configuration, production
+   data, or App Review change. Builds `53`/`62` predate it and remain blocked
+   from review until later TestFlight builds pass a bounded save/clear trace.
+
    Renewal observation completed, 2026-07-12: the same process-verified macOS
    build `56` instance remained alive and the Mac did not sleep during the
    expected window. Tune AV production Convex recorded one new realtime session

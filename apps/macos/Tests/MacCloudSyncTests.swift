@@ -956,6 +956,37 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertTrue(storage.loadPendingFeedbackUploads().isEmpty)
     }
 
+    func testFeedbackClearPayloadsEncodeExplicitNull() throws {
+        let stationData = try JSONEncoder().encode(
+            TuneAVMacFeedbackRequest(deviceId: "tuneav-mac", feedback: nil)
+        )
+        let trackData = try JSONEncoder().encode(
+            TuneAVMacTrackFeedbackRequest(
+                deviceId: "tuneav-mac",
+                title: "Teardrop",
+                artist: "Massive Attack",
+                stationId: "BBC Radio 1",
+                feedback: nil
+            )
+        )
+        let stationBody = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: stationData) as? [String: Any]
+        )
+        let trackBody = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: trackData) as? [String: Any]
+        )
+
+        XCTAssertEqual(stationBody["deviceId"] as? String, "tuneav-mac")
+        XCTAssertTrue(stationBody.keys.contains("feedback"))
+        XCTAssertTrue(stationBody["feedback"] is NSNull)
+        XCTAssertEqual(trackBody["deviceId"] as? String, "tuneav-mac")
+        XCTAssertEqual(trackBody["title"] as? String, "Teardrop")
+        XCTAssertEqual(trackBody["artist"] as? String, "Massive Attack")
+        XCTAssertEqual(trackBody["stationId"] as? String, "BBC Radio 1")
+        XCTAssertTrue(trackBody.keys.contains("feedback"))
+        XCTAssertTrue(trackBody["feedback"] is NSNull)
+    }
+
     func testPendingFeedbackOutboxKeepsLatestWritePerUserAndIdentity() {
         let first = pendingFeedbackUpload(
             kind: .station,
