@@ -147,7 +147,7 @@ if [ "$env_name" = "prod" ]; then
   fi
   [ "$listening_analytics_uploads" = "1" ] || fail "prod listening analytics uploads must be enabled after signed-in backend smoke and App Privacy update"
   [[ "$publishable_key" == pk_live_* ]] || fail "prod publishable key must be pk_live"
-  if printf '%s\n%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tune_api_base_url" "$tuneav_convex_url" "$management_url" | rg -q 'preview|127\.0\.0\.1|localhost|\.dev'; then
+  if printf '%s\n%s\n%s\n%s\n%s\n' "$product_bundle_identifier" "$api_base_url" "$tune_api_base_url" "$tuneav_convex_url" "$management_url" | grep -Eq 'preview|127\.0\.0\.1|localhost|\.dev'; then
     fail "prod settings contain preview/local/dev values"
   fi
 else

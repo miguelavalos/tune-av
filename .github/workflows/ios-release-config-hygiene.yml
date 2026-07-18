@@ -99,7 +99,7 @@ jobs:
 
           scripts/generate-ios-ci-release-xcconfig.sh --source ".github/workflows/ios-release-config-hygiene.yml"
           vp run ios:release-config:hygiene
-          vp run ios:privacy:release -- --check-urls | tee build/release-privacy/privacy-release-gate.txt
+          vp run ios:privacy:release --check-urls | tee build/release-privacy/privacy-release-gate.txt
 
           {
             echo "## iOS privacy release gate"

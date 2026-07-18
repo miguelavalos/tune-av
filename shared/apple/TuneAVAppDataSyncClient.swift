@@ -80,7 +80,7 @@ final class TuneAVSyncMutationGate {
     private var isHeld = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
-    func withPermit<Value>(_ operation: () async throws -> Value) async throws -> Value {
+    func withPermit<Value: Sendable>(_ operation: () async throws -> Value) async throws -> Value {
         await acquire()
         defer { release() }
         try Task.checkCancellation()
