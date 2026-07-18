@@ -19,7 +19,6 @@
   "dependencies": {
     "@avalsys/account-av-web": "file:../../../account-av/web",
     "@avalsys/apps-av-web": "file:../../../apps-av/web",
-    "@clerk/clerk-react": "^5.0.0",
     "@clerk/backend": "3.8.0",
     "@clerk/localizations": "^4.9.0",
     "@clerk/react": "6.10.1",
