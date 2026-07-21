@@ -35,6 +35,12 @@ Do not invent a local runtime flow from this public repo.
 
 Mandatory rules:
 
+- Infisical is owner-managed and strictly read-only for agents and repository
+  workflows. Never create, add, update, rotate, rename, restore, import, or
+  delete any Infisical value through CLI, API, browser, MCP, or a script. If a
+  value must be added or changed, tell the user the exact variable name, target
+  environment, reason, and secret-free validation result; the user performs
+  the change personally and confirms it before read-only validation resumes.
 - use Cloudflare preview for signed API runtime;
 - use Convex cloud `dev`, not local Convex, when a native app workflow depends
   on Convex-backed state;
