@@ -82,6 +82,7 @@ enum AppConfig {
             environment: diagnosticsEnvironment,
             releaseName: diagnosticsReleaseName,
             tracesSampleRate: 0,
+            capturesFailedRequests: false,
             isEnabled: isDiagnosticsEnabled
         )
     }
