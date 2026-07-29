@@ -17,6 +17,14 @@ The authoritative product boundary is
 still implement the superseded feedback-sync contract and must not be promoted
 to App Review as the final implementation of that decision.
 
+Apple-client compatibility gate, 2026-07-29: currently distributed Tune AV
+clients retain the production Convex endpoint that preceded the owner-account
+transition. Do not retire that endpoint merely because a replacement TestFlight
+build exists. First release current-endpoint builds on both Apple platforms,
+verify the App Store-installed binaries, and complete an explicit adoption and
+deprecation window. Core D1/API behavior does not make realtime endpoint
+compatibility optional for supported Pro clients.
+
 ## Repository Hygiene
 
 1. Run `pnpm install`.

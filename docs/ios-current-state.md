@@ -23,6 +23,15 @@ physical iPhone and iPad. The verified archive was accepted by App Store
 Connect on 2026-07-29, finished processing, and is available to the internal
 `Tune AV Test` group. It was not submitted to App Review.
 
+App Store compatibility note, 2026-07-29: the currently distributed iOS and
+macOS clients were built before the Convex owner-account transition and retain
+their previous production realtime endpoint. Keep that deployment available
+while those clients remain supported. Removing it would not remove the durable
+D1/API library authority or core playback/search behavior, but it can degrade
+Pro realtime invalidation for installed clients. A replacement may be retired
+only after new iOS and macOS builds using the current endpoint are released,
+verified from the App Store, and given an explicit adoption/deprecation window.
+
 ## App Scope
 
 Tune AV iOS is a SwiftUI radio app in `apps/ios/TuneAV`. Tune AV macOS is a
@@ -351,6 +360,9 @@ build, install, and launch the app.
 
 ## Open Public Work
 
+- release and verify replacement iOS/macOS builds that use the current
+  production realtime endpoint before retiring compatibility for older Apple
+  clients;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
 - keep public docs focused on client behavior, local setup, and local
