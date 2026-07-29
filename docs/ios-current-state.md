@@ -34,8 +34,8 @@ checks passed. The owner accepted the exact archived app locally. App Store
 Connect accepted that archive on 2026-07-29, finished processing it, and lists
 build 64 as `Ready to Submit` in the internal `Tune AV Test` group. A macOS
 `1.0.7` App Store version is prepared with build 64, manual release, inherited
-five-screenshot metadata, and the same five localized release notes. It has
-not been submitted to App Review.
+five-screenshot metadata, and the same five localized release notes. The owner
+submitted macOS on 2026-07-29, and App Store Connect reports `Pending Review`.
 
 App Store compatibility note, 2026-07-29: the currently distributed iOS and
 macOS clients were built before the Convex owner-account transition and retain
