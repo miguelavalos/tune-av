@@ -822,10 +822,16 @@ still calculates 4+. The owner submitted iOS and App Store Connect reports
 `Pending Review`. The macOS `1.0.7` version was then prepared with build 64,
 manual release, the inherited five screenshots, and the same five localized
 release notes. The owner subsequently submitted macOS, and App Store Connect
-also reports `Pending Review`. The currently distributed iOS `1.0.5` and macOS
-`1.0.6` clients still use the pre-transition realtime endpoint. Retain that
-legacy deployment until both replacements are released, verified after App
-Store installation, and complete an explicit adoption/deprecation window.
+also reported `Pending Review` at that checkpoint.
+
+Approval checkpoint later on 2026-07-29: the owner confirmed Apple approval of
+iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)`. A signed-in App Store Connect
+read independently listed both platform versions as `Ready for Distribution`.
+No agent performed a post-approval manual-release action. The previously
+distributed iOS `1.0.5` and macOS `1.0.6` clients use the pre-transition
+realtime endpoint. Retain that legacy deployment until both replacements are
+verified after App Store installation and complete an explicit
+adoption/deprecation window.
 
 ## Pending Product API Transition Checks
 

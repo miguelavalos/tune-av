@@ -25,7 +25,8 @@ Connect on 2026-07-29, finished processing, and is available to the internal
 manual release, and the narrowed-contract release notes in all five supported
 storefront locales. The global age-rating questionnaire records no social
 media capabilities and remains 4+. The owner submitted the iOS version on
-2026-07-29, and App Store Connect reports `Pending Review`.
+2026-07-29. The owner subsequently confirmed approval, and a signed-in App
+Store Connect read lists iOS `1.0.7` as `Ready for Distribution`.
 
 The matching macOS account-transition candidate is `1.0.7 (64)`, built from
 public commit `d0d4993`. Its current production configuration, complete 63-test
@@ -35,7 +36,9 @@ Connect accepted that archive on 2026-07-29, finished processing it, and lists
 build 64 as `Ready to Submit` in the internal `Tune AV Test` group. A macOS
 `1.0.7` App Store version is prepared with build 64, manual release, inherited
 five-screenshot metadata, and the same five localized release notes. The owner
-submitted macOS on 2026-07-29, and App Store Connect reports `Pending Review`.
+submitted macOS on 2026-07-29. The owner subsequently confirmed approval, and
+a signed-in App Store Connect read lists macOS `1.0.7` as `Ready for
+Distribution`.
 
 App Store compatibility note, 2026-07-29: the currently distributed iOS and
 macOS clients were built before the Convex owner-account transition and retain

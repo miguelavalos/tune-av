@@ -35,6 +35,13 @@ approval records outside this repository.
 
 ## Current App Store Status
 
+- Approval checkpoint, 2026-07-29: the owner confirmed approval of
+  iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)`. A signed-in App Store Connect
+  read listed both `1.0.7` platform versions as `Ready for Distribution`. No
+  agent performed a post-approval manual-release action. Verify both exact
+  builds after installation from App Store before closing the replacement
+  release or retiring compatibility for older clients.
+
 - Replacement delivery, 2026-07-13: iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7
   (62)` were archived from public source commit `515bd93`, passed their release,
   security, privacy, signing, and dSYM checks, and were accepted for processing
