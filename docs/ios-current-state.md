@@ -23,6 +23,14 @@ physical iPhone and iPad. The verified archive was accepted by App Store
 Connect on 2026-07-29, finished processing, and is available to the internal
 `Tune AV Test` group. It was not submitted to App Review.
 
+The matching macOS account-transition candidate is `1.0.7 (64)`, built from
+public commit `d0d4993`. Its current production configuration, complete 63-test
+suite, archive identity, privacy, signing, architecture, keychain, and dSYM
+checks passed. The owner accepted the exact archived app locally. App Store
+Connect accepted that archive on 2026-07-29, finished processing it, and lists
+build 64 as `Ready to Submit` in the internal `Tune AV Test` group. It was not
+submitted to App Review.
+
 App Store compatibility note, 2026-07-29: the currently distributed iOS and
 macOS clients were built before the Convex owner-account transition and retain
 their previous production realtime endpoint. Keep that deployment available

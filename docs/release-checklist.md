@@ -799,6 +799,27 @@ separate development bundle identifier.
    remains the final cross-device QA gate. No product change or App Review
    submission was part of this observation.
 
+## Convex Owner-Account Replacement Candidates
+
+Delivery checkpoint, 2026-07-29: iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7
+(64)` are the paired Apple candidates configured for the current production
+Convex deployment. The iOS archive was built from public commit `ba140ef`,
+passed production/archive gates, was accepted on physical iPhone and iPad, and
+is `Ready to Submit` in the internal `Tune AV Test` group. The macOS archive was
+built from public commit `d0d4993`; its complete 63-test suite and production,
+archive, privacy, signing, arm64, keychain, and matching dSYM gates passed. The
+owner accepted the exact archived Mac app locally. Its retained archive is
+`.derived-data/macos-release-archives/TuneAVMac-1.0.7-64-2026-07-29-151414.xcarchive`.
+The exact upload completed at 15:26 Europe/Madrid with `Upload succeeded` and
+`EXPORT SUCCEEDED`; App Store Connect then listed build 64 as `Ready to Submit`
+in `Tune AV Test`.
+
+Neither candidate has been submitted to App Review. The currently distributed
+iOS `1.0.5` and macOS `1.0.6` clients still use the pre-transition realtime
+endpoint. Retain that legacy deployment until both replacements are released,
+verified after App Store installation, and complete an explicit
+adoption/deprecation window.
+
 ## Pending Product API Transition Checks
 
 These checks apply to the next Tune AV client release after the product API
