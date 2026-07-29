@@ -814,10 +814,17 @@ The exact upload completed at 15:26 Europe/Madrid with `Upload succeeded` and
 `EXPORT SUCCEEDED`; App Store Connect then listed build 64 as `Ready to Submit`
 in `Tune AV Test`.
 
-Neither candidate has been submitted to App Review. The currently distributed
-iOS `1.0.5` and macOS `1.0.6` clients still use the pre-transition realtime
-endpoint. Retain that legacy deployment until both replacements are released,
-verified after App Store installation, and complete an explicit
+App Store preparation checkpoint later on 2026-07-29: the iOS `1.0.7` version
+was created with build 56, manual release, and narrowed-contract release notes
+in English (UK), German, Catalan, Spanish (Spain), and French (France). The
+global age-rating questionnaire now records no social-media capability and
+still calculates 4+. The owner submitted iOS and App Store Connect reports
+`Pending Review`. The macOS `1.0.7` version was then prepared with build 64,
+manual release, the inherited five screenshots, and the same five localized
+release notes; macOS remains unsubmitted for owner preview. The currently
+distributed iOS `1.0.5` and macOS `1.0.6` clients still use the pre-transition
+realtime endpoint. Retain that legacy deployment until both replacements are
+released, verified after App Store installation, and complete an explicit
 adoption/deprecation window.
 
 ## Pending Product API Transition Checks
