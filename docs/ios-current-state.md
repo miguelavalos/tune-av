@@ -1,6 +1,6 @@
 # Tune AV iOS Current State
 
-Date: 2026-07-13
+Date: 2026-07-29
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
@@ -15,6 +15,13 @@ macOS, localization, and backend-focused verification. Replacement candidates
 iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)` were accepted for TestFlight
 processing on 2026-07-13. Both finished processing and joined the internal test
 group; macOS `62` is installed and its cold-launch no-feedback-read gate passed.
+
+The current iOS/iPadOS account-transition candidate is `1.0.7 (56)`, built from
+public commit `ba140ef`. Its production configuration and signed Release build
+passed the repository gates, and the same build was installed and accepted on a
+physical iPhone and iPad. The verified archive was accepted by App Store
+Connect on 2026-07-29, finished processing, and is available to the internal
+`Tune AV Test` group. It was not submitted to App Review.
 
 ## App Scope
 
