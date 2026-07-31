@@ -94,7 +94,7 @@ targets:
     info:
       path: Supporting/Info.plist
       properties:
-        CFBundleShortVersionString: "1.0.7"
+        CFBundleShortVersionString: "1.0.8"
         CFBundleVersion: "65"
         CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
         CFBundleURLTypes:
