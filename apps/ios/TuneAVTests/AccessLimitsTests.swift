@@ -1036,7 +1036,7 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testPurchaseRefreshesAccessAndWaitsForBackendEntitlementAuthority() async {
+    func testPurchaseStopsWaitingWhenBackendEntitlementBudgetIsExhausted() async {
         let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
         let entitlementService = MutableStubEntitlementService(access: .signedInFree)
         let subscriptionPurchasing = StubSubscriptionPurchasing()
@@ -1059,8 +1059,9 @@ final class AccessLimitsTests: XCTestCase {
         await controller.purchaseMonthlyPro()
 
         XCTAssertEqual(controller.accessMode, .signedInFree)
-        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
-        XCTAssertEqual(controller.subscriptionReconciliationSource, .purchase)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+        XCTAssertEqual(controller.subscriptionError, .purchaseReconciliationDelayed)
         XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [user.id])
 
         entitlementService.access = .signedInPro
@@ -1069,6 +1070,7 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertEqual(controller.accessMode, .signedInPro)
         XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
         XCTAssertNil(controller.subscriptionReconciliationSource)
+        XCTAssertNil(controller.subscriptionError)
     }
 
     @MainActor
@@ -1141,7 +1143,7 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testRestoreRefreshesAccessWithRestoreReconciliationSource() async {
+    func testRestoreStopsWaitingWhenBackendEntitlementBudgetIsExhausted() async {
         let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
         let entitlementService = MutableStubEntitlementService(access: .signedInFree)
         let subscriptionPurchasing = StubSubscriptionPurchasing()
@@ -1159,9 +1161,62 @@ final class AccessLimitsTests: XCTestCase {
         await controller.restorePurchases()
 
         XCTAssertEqual(controller.accessMode, .signedInFree)
-        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
-        XCTAssertEqual(controller.subscriptionReconciliationSource, .restore)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+        XCTAssertEqual(controller.subscriptionError, .restoreReconciliationDelayed)
         XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, [user.id])
+    }
+
+    @MainActor
+    func testInactiveRevenueCatOutcomesDoNotStartBackendReconciliation() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        subscriptionPurchasing.purchaseError = TuneAVSubscriptionPurchaseError.purchaseNotEntitled
+        subscriptionPurchasing.restoreError = TuneAVSubscriptionPurchaseError.restoreNotEntitled
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: StubEntitlementService(access: .signedInFree),
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
+        )
+
+        await controller.syncFromAccountProvider()
+        await controller.purchaseMonthlyPro()
+
+        XCTAssertEqual(controller.subscriptionError, .purchaseNotEntitled)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+
+        await controller.restorePurchases()
+
+        XCTAssertEqual(controller.subscriptionError, .restoreNotEntitled)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+    }
+
+    @MainActor
+    func testProviderFailureRemainsDistinctAndDoesNotStartBackendReconciliation() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        subscriptionPurchasing.purchaseError = .underlying("Provider unavailable")
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: StubEntitlementService(access: .signedInFree),
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: []
+        )
+
+        await controller.syncFromAccountProvider()
+        await controller.purchaseMonthlyPro()
+
+        XCTAssertEqual(controller.subscriptionError, .underlying("Provider unavailable"))
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
     }
 
     @MainActor
@@ -1185,8 +1240,9 @@ final class AccessLimitsTests: XCTestCase {
 
         XCTAssertEqual(promotionCodeRedeemer.codes, ["tune-pro-2026"])
         XCTAssertEqual(controller.accessMode, .signedInFree)
-        XCTAssertTrue(controller.isWaitingForSubscriptionReconciliation)
-        XCTAssertEqual(controller.subscriptionReconciliationSource, .redeemCode)
+        XCTAssertFalse(controller.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(controller.subscriptionReconciliationSource)
+        XCTAssertEqual(controller.subscriptionError, .redemptionReconciliationDelayed)
 
         entitlementService.access = .signedInPro
         await controller.syncFromAccountProvider()
@@ -1604,6 +1660,8 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     private(set) var loadedOfferUserIDs: [String] = []
     private(set) var purchaseUserIDs: [String] = []
     private(set) var restoreUserIDs: [String] = []
+    var purchaseError: TuneAVSubscriptionPurchaseError?
+    var restoreError: TuneAVSubscriptionPurchaseError?
 
     func prepare(for user: AccountUser?) async throws {
         _ = try userID(user)
@@ -1623,12 +1681,18 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let id = try userID(user)
         purchaseUserIDs.append(id)
+        if let purchaseError {
+            throw purchaseError
+        }
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
     }
 
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
         let id = try userID(user)
         restoreUserIDs.append(id)
+        if let restoreError {
+            throw restoreError
+        }
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: id)
     }
 

@@ -912,6 +912,11 @@
 "subscription.error.configuration" = "Les abonnements ne sont pas configurés dans cette build.";
 "subscription.error.offerUnavailable" = "L'offre Pro n'est pas disponible pour le moment.";
 "subscription.error.productUnavailable" = "L'abonnement mensuel Pro n'est pas disponible pour le moment.";
+"subscription.error.purchaseNotEntitled" = "Apple n'a pas confirmé l'accès actif à Tune AV Pro. Ne rachète pas l'abonnement. Vérifie ton compte App Store, puis essaie Restaurer les achats.";
+"subscription.error.restoreNotEntitled" = "Aucun abonnement Tune AV Pro actif n'a été trouvé pour ce compte App Store. Abonne-toi pour activer Pro.";
+"subscription.error.purchaseReconciliationDelayed" = "Ton achat est confirmé, mais Pro est encore en cours de synchronisation. Ne rachète pas l'abonnement. Réessaie bientôt Restaurer les achats.";
+"subscription.error.restoreReconciliationDelayed" = "Apple a confirmé un abonnement actif, mais Pro est encore en cours de synchronisation. Réessaie bientôt Restaurer les achats.";
+"subscription.error.redemptionReconciliationDelayed" = "Ton code a été accepté, mais Pro est encore en cours de synchronisation. Actualise bientôt ton compte.";
 "subscription.error.sdkUnavailable" = "Les abonnements ne sont pas disponibles dans cette build.";
 "subscription.error.redemptionUnavailable" = "L'utilisation des codes n'est pas disponible pour le moment.";
 "subscription.error.signInRequired" = "Connecte-toi avant de démarrer un abonnement.";

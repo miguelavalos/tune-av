@@ -3,6 +3,13 @@ import XCTest
 @testable import TuneAV
 
 final class SharedAppleSupportTests: XCTestCase {
+    func testRevenueCatProEntitlementPolicyRequiresExactActiveIdentifier() {
+        XCTAssertTrue(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement(["pro"]))
+        XCTAssertTrue(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement(["other", "pro"]))
+        XCTAssertFalse(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement([]))
+        XCTAssertFalse(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement(["tuneav_pro_monthly"]))
+    }
+
     func testRealtimeSessionRenewsBeforeExpiryWithBoundedJitter() {
         let now = Date(timeIntervalSince1970: 1_000)
         let session = TuneAVRealtimeSession(

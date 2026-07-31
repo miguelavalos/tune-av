@@ -512,11 +512,32 @@ final class AccessController: ObservableObject {
                 return
             }
         }
+
+        guard isWaitingForSubscriptionReconciliation,
+              accountUser == reconciliationAccountUser else { return }
+        finishSubscriptionReconciliationAsDelayed()
+    }
+
+    private func finishSubscriptionReconciliationAsDelayed() {
+        let source = subscriptionReconciliationSource
+        isWaitingForSubscriptionReconciliation = false
+        subscriptionReconciliationSource = nil
+        switch source {
+        case .purchase:
+            subscriptionError = .purchaseReconciliationDelayed
+        case .restore:
+            subscriptionError = .restoreReconciliationDelayed
+        case .redeemCode:
+            subscriptionError = .redemptionReconciliationDelayed
+        case .none:
+            break
+        }
     }
 
     private func clearSubscriptionReconciliationState() {
         isWaitingForSubscriptionReconciliation = false
         subscriptionReconciliationSource = nil
+        subscriptionError = nil
         upgradePrompt = nil
     }
 

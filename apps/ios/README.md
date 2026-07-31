@@ -6,6 +6,8 @@ Use [`../../docs/pro-sync-scope.md`](../../docs/pro-sync-scope.md) as the
 authoritative Pro sync contract and
 [`../../docs/ios-current-state.md`](../../docs/ios-current-state.md) as the
 wider current public state document for the iOS app.
+Purchase and restore behavior is defined in
+[`../../docs/subscription-access-contract.md`](../../docs/subscription-access-contract.md).
 
 Current checked-in iOS bundle version: `1.0.6` build `45`.
 `Config/ExportOptionsUpload.plist` remains the checked-in export options file
@@ -40,7 +42,9 @@ Optional account-connected behavior:
 - Radios and Music use overview screens with lightweight section previews, plus dedicated detail pages for long lists, search, and sorting
 - Radio surfaces contain only radios; Music surfaces contain songs and artists
 - full player uses a fixed portrait-only layout with large artwork, truncating title text, artwork/text zoom for full metadata, and no mini-player overlay
-- optional RevenueCat monthly Pro purchase/restore flow when configured
+- optional RevenueCat monthly Pro purchase/restore flow when configured; the
+  returned exact active `pro` entitlement gates a bounded Apps AV access
+  refresh, and inactive purchase/restore results never enter an endless sync
 - Pro paywall can route guests to sign-in first and shows purchase/restore only when subscription config and account state allow it
 - Pro cloud sync for explicitly saved stations and explicitly saved songs when Account AV backend config is available
 - deliberate Pro feedback actions may upload once for server-side summaries and recommendations, but feedback remains device-local and is not restored across devices; Guest and signed-in Free feedback remains fully local

@@ -6,6 +6,12 @@ import XCTest
 final class MacSubscriptionPurchasingTests: XCTestCase {
     private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
+    func testRevenueCatProEntitlementPolicyRequiresExactActiveIdentifier() {
+        XCTAssertTrue(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement(["pro"]))
+        XCTAssertFalse(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement([]))
+        XCTAssertFalse(TuneAVSubscriptionEntitlementPolicy.hasActiveProEntitlement(["tuneav_pro_monthly"]))
+    }
+
     func testUITestPurchasingLoadsMonthlyOfferForSignedInUser() async throws {
         let purchasing = MacUITestTuneAVSubscriptionPurchasing()
         let user = AccountAVUser(id: "user_123", displayName: "Tune Listener", emailAddress: "listener@example.com")
@@ -61,7 +67,42 @@ final class MacSubscriptionPurchasingTests: XCTestCase {
         XCTAssertEqual(model.subscriptionOffer?.productIdentifier, "tuneav_pro_monthly")
     }
 
-    func testModelClaimPromotionCodeUsesBackendRedeemerAndStartsReconciliation() async throws {
+    func testModelStopsWaitingAfterPurchaseAndRestoreReconciliationBudgetsExpire() async {
+        let userDefaults = UserDefaults.standard
+        let originalUser = userDefaults.data(forKey: lastKnownAccountUserKey)
+        defer {
+            if let originalUser {
+                userDefaults.set(originalUser, forKey: lastKnownAccountUserKey)
+            } else {
+                userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+            }
+        }
+
+        let userSnapshot = """
+        {"id":"user_123","displayName":"Tune Listener","emailAddress":"listener@example.com"}
+        """
+        userDefaults.set(Data(userSnapshot.utf8), forKey: lastKnownAccountUserKey)
+
+        let model = TuneAVMacModel(
+            subscriptionPurchasing: MacUITestTuneAVSubscriptionPurchasing(),
+            subscriptionReconciliationRetryDelaysNanoseconds: [],
+            sleepNanoseconds: { _ in }
+        )
+
+        await model.purchaseMonthlyPro()
+
+        XCTAssertFalse(model.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(model.subscriptionReconciliationSource)
+        XCTAssertEqual(model.subscriptionError, .purchaseReconciliationDelayed)
+
+        await model.restorePurchases()
+
+        XCTAssertFalse(model.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(model.subscriptionReconciliationSource)
+        XCTAssertEqual(model.subscriptionError, .restoreReconciliationDelayed)
+    }
+
+    func testModelClaimPromotionCodeStopsWaitingWhenReconciliationBudgetIsExhausted() async throws {
         let userDefaults = UserDefaults.standard
         let originalUser = userDefaults.data(forKey: lastKnownAccountUserKey)
         defer {
@@ -91,9 +132,9 @@ final class MacSubscriptionPurchasingTests: XCTestCase {
 
         XCTAssertEqual(promotionCodeRedeemer.codes, ["tune-pro-2026"])
         XCTAssertEqual(model.accessMode, .signedInFree)
-        XCTAssertTrue(model.isWaitingForSubscriptionReconciliation)
-        XCTAssertEqual(model.subscriptionReconciliationSource, .redeemCode)
-        XCTAssertNil(model.subscriptionError)
+        XCTAssertFalse(model.isWaitingForSubscriptionReconciliation)
+        XCTAssertNil(model.subscriptionReconciliationSource)
+        XCTAssertEqual(model.subscriptionError, .redemptionReconciliationDelayed)
     }
 }
 
