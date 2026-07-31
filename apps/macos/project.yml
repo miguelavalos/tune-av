@@ -94,8 +94,8 @@ targets:
     info:
       path: Supporting/Info.plist
       properties:
-        CFBundleShortVersionString: "1.0.6"
-        CFBundleVersion: "49"
+        CFBundleShortVersionString: "1.0.7"
+        CFBundleVersion: "64"
         CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
@@ -121,6 +121,7 @@ targets:
         TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS: $(TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS)
         SUPPORT_EMAIL_TO: $(SUPPORT_EMAIL_TO)
         LSApplicationCategoryType: public.app-category.music
+        ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:
           NSAllowsArbitraryLoadsForMedia: true
     settings:
