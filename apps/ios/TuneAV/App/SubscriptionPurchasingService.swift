@@ -32,6 +32,15 @@ enum TuneAVSubscriptionPurchaseError: LocalizedError, Equatable {
     case redemptionUnavailable
     case underlying(String)
 
+    var isExpectedStoreOutcome: Bool {
+        switch self {
+        case .purchaseCancelled, .purchaseNotEntitled, .restoreNotEntitled:
+            true
+        default:
+            false
+        }
+    }
+
     var errorDescription: String? {
         switch self {
         case .missingAccountUser:
@@ -202,6 +211,11 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
                 throw TuneAVSubscriptionPurchaseError.purchaseCancelled
             }
             guard hasActiveProEntitlement(result.customerInfo) else {
+                TuneAVDiagnostics.addBreadcrumb(
+                    feature: "tune.subscription",
+                    operation: "purchase_not_entitled",
+                    data: ["product_key": "pro_monthly"]
+                )
                 throw TuneAVSubscriptionPurchaseError.purchaseNotEntitled
             }
             purchaseLogger.info(
@@ -209,10 +223,9 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
             )
             TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "purchase_completed", data: ["product_key": "pro_monthly"])
             return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
+        } catch let error as TuneAVSubscriptionPurchaseError where error.isExpectedStoreOutcome {
+            throw error
         } catch {
-            if let purchaseError = error as? TuneAVSubscriptionPurchaseError, purchaseError == .purchaseCancelled {
-                throw error
-            }
             TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "purchase", step: "revenuecat", data: ["product_key": "pro_monthly"])
             throw error
         }
@@ -226,11 +239,17 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
             purchaseLogger.info("Starting RevenueCat restore userID=\(userID, privacy: .private)")
             let customerInfo = try await restorePurchases()
             guard hasActiveProEntitlement(customerInfo) else {
+                TuneAVDiagnostics.addBreadcrumb(
+                    feature: "tune.subscription",
+                    operation: "restore_not_entitled"
+                )
                 throw TuneAVSubscriptionPurchaseError.restoreNotEntitled
             }
             purchaseLogger.info("Finished RevenueCat restore userID=\(userID, privacy: .private)")
             TuneAVDiagnostics.addBreadcrumb(feature: "tune.subscription", operation: "restore_completed")
             return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: userID)
+        } catch let error as TuneAVSubscriptionPurchaseError where error.isExpectedStoreOutcome {
+            throw error
         } catch {
             TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "restore", step: "revenuecat")
             throw error

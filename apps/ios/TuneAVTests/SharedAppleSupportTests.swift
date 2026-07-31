@@ -838,6 +838,16 @@ final class SharedAppleSupportTests: XCTestCase {
         )))
     }
 
+    @MainActor
+    func testDiagnosticsTreatExpectedSubscriptionOutcomesAsBreadcrumbOnly() {
+        XCTAssertFalse(TuneAVDiagnostics.shouldCapture(TuneAVSubscriptionPurchaseError.purchaseCancelled))
+        XCTAssertFalse(TuneAVDiagnostics.shouldCapture(TuneAVSubscriptionPurchaseError.purchaseNotEntitled))
+        XCTAssertFalse(TuneAVDiagnostics.shouldCapture(TuneAVSubscriptionPurchaseError.restoreNotEntitled))
+        XCTAssertTrue(TuneAVDiagnostics.shouldCapture(TuneAVSubscriptionPurchaseError.underlying(
+            "RevenueCat request failed"
+        )))
+    }
+
     func testBundleConfigParsesBooleanValuesAndFallsBackForMissingOrUnknownValues() throws {
         let bundleURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

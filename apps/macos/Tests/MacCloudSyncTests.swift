@@ -460,6 +460,15 @@ final class MacCloudSyncTests: XCTestCase {
         )))
     }
 
+    func testMacDiagnosticsTreatExpectedSubscriptionOutcomesAsBreadcrumbOnly() {
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(MacTuneAVSubscriptionPurchaseError.purchaseCancelled))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(MacTuneAVSubscriptionPurchaseError.purchaseNotEntitled))
+        XCTAssertFalse(TuneAVMacDiagnostics.shouldCapture(MacTuneAVSubscriptionPurchaseError.restoreNotEntitled))
+        XCTAssertTrue(TuneAVMacDiagnostics.shouldCapture(MacTuneAVSubscriptionPurchaseError.underlying(
+            "RevenueCat request failed"
+        )))
+    }
+
     func testMacSyncMergeKeepsLocalAndRemoteLibraryItems() {
         let local = librarySnapshot(
             favorites: [favoriteRecord(id: "local-favorite")],

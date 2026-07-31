@@ -74,6 +74,11 @@ enum TuneAVDiagnostics {
             return false
         }
 
+        if let subscriptionError = error as? TuneAVSubscriptionPurchaseError,
+           subscriptionError.isExpectedStoreOutcome {
+            return false
+        }
+
         return true
     }
 
