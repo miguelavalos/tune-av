@@ -16,6 +16,11 @@ The current Apple clients are `apps/ios` and `apps/macos`. iOS remains the
 primary mobile target; macOS shares the same product behavior where practical
 and uses native macOS presentation differences.
 
+On a fresh install, both Apple clients persist the device's primary supported
+EN/ES/CA/FR/DE language, with English fallback, following the shared
+[Apps AV contract](https://github.com/miguelavalos/apps-av/blob/main/docs/initial-app-language.md).
+An explicit in-app choice always wins afterward.
+
 ## License
 
 This repository is released under the MIT license. See [LICENSE](LICENSE).
