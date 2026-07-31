@@ -130,6 +130,7 @@ if [ "$use_existing_archive" -eq 0 ]; then
     -configuration Release \
     -destination "generic/platform=iOS" \
     -archivePath "$archive_path" \
+    -derivedDataPath "$repo_root/.derived-data/release-derived-data" \
     -allowProvisioningUpdates
 else
   run_step "Use existing iOS archive"
