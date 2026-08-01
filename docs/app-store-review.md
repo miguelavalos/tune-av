@@ -35,6 +35,12 @@ approval records outside this repository.
 
 ## Current App Store Status
 
+- Subscription-repair delivery, 2026-08-01: iOS/iPadOS `1.0.8 (57)` and macOS
+  `1.0.8 (65)` contain bounded purchase/restore reconciliation and were
+  accepted by App Store Connect for processing. Processing completion and
+  internal-group availability are not yet confirmed. Neither build has been
+  attached or submitted to App Review.
+
 - Approval checkpoint, 2026-07-29: the owner confirmed approval of
   iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)`. A signed-in App Store Connect
   read listed both `1.0.7` platform versions as `Ready for Distribution`. No

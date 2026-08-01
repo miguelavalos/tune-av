@@ -801,6 +801,22 @@ separate development bundle identifier.
 
 ## Convex Owner-Account Replacement Candidates
 
+Subscription-reconciliation delivery checkpoint, 2026-08-01: iOS/iPadOS
+`1.0.8 (57)` and macOS `1.0.8 (65)` were produced from public source
+`126d989`, including bounded purchase/restore reconciliation from `b9b3cd8`.
+Both governed archive and upload flows passed; App Store Connect accepted the
+uploads and reported Apple processing. Processing completion and internal
+tester-group availability remain unconfirmed, so neither build is yet treated
+as TestFlight-ready. No App Review submission, purchase, backend deployment,
+production-data mutation, or Infisical mutation was performed. The exact
+retained archives are
+`.derived-data/release-archives/TuneAV-1.0.8-57-2026-08-01-003627.xcarchive`
+and
+`.derived-data/macos-release-archives/TuneAVMac-1.0.8-65-2026-08-01-004014.xcarchive`.
+Apple rejected the earlier iOS `1.0.7 (57)` attempt because that approved train
+is closed; it was not accepted as a TestFlight build and its rejected archive
+was removed.
+
 Delivery checkpoint, 2026-07-29: iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7
 (64)` are the paired Apple candidates configured for the current production
 Convex deployment. The iOS archive was built from public commit `ba140ef`,

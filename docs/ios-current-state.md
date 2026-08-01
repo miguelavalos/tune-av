@@ -1,11 +1,21 @@
 # Tune AV iOS Current State
 
-Date: 2026-07-29
+Date: 2026-08-01
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
 approval status, signing, service setup, service consoles, and private evidence
 belong outside this repository.
+
+The next subscription-repair candidates are iOS/iPadOS `1.0.8 (57)` and macOS
+`1.0.8 (65)`, built from public source `126d989` on top of the bounded
+purchase/restore reconciliation repair in `b9b3cd8`. Both governed archives
+passed their platform release, signing, privacy, keychain, architecture, and
+matching dSYM checks, and App Store Connect accepted both uploads on
+2026-08-01. Apple processing and internal-group availability have not yet been
+confirmed, so neither build is represented as TestFlight-ready or submitted to
+App Review. The `1.0.8` train was required because Apple rejected reuse of the
+closed approved `1.0.7` train before accepting any replacement upload.
 
 The authoritative cloud-sync boundary is
 [Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
