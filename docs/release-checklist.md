@@ -805,11 +805,11 @@ Subscription-reconciliation delivery checkpoint, 2026-08-01: iOS/iPadOS
 `1.0.8 (57)` and macOS `1.0.8 (65)` were produced from public source
 `126d989`, including bounded purchase/restore reconciliation from `b9b3cd8`.
 Both governed archive and upload flows passed; App Store Connect accepted the
-uploads and reported Apple processing. Processing completion and internal
-tester-group availability remain unconfirmed, so neither build is yet treated
-as TestFlight-ready. No App Review submission, purchase, backend deployment,
-production-data mutation, or Infisical mutation was performed. The exact
-retained archives are
+uploads. Authenticated readback now confirms both builds are `VALID`,
+encryption-exempt, unexpired through 2026-10-29, and `IN_BETA_TESTING` only
+with the internal `Tune AV Test` group. No App Review submission, purchase,
+backend deployment, production-data mutation, or Infisical mutation was
+performed. The exact retained archives are
 `.derived-data/release-archives/TuneAV-1.0.8-57-2026-08-01-003627.xcarchive`
 and
 `.derived-data/macos-release-archives/TuneAVMac-1.0.8-65-2026-08-01-004014.xcarchive`.

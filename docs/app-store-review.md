@@ -37,9 +37,10 @@ approval records outside this repository.
 
 - Subscription-repair delivery, 2026-08-01: iOS/iPadOS `1.0.8 (57)` and macOS
   `1.0.8 (65)` contain bounded purchase/restore reconciliation and were
-  accepted by App Store Connect for processing. Processing completion and
-  internal-group availability are not yet confirmed. Neither build has been
-  attached or submitted to App Review.
+  accepted by App Store Connect. Authenticated readback now confirms both
+  builds are `VALID`, encryption-exempt, unexpired through 2026-10-29, and
+  `IN_BETA_TESTING` only with the internal `Tune AV Test` group. Neither build
+  has been attached or submitted to App Review.
 
 - Approval checkpoint, 2026-07-29: the owner confirmed approval of
   iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)`. A signed-in App Store Connect
