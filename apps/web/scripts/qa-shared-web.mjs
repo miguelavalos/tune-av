@@ -7,40 +7,40 @@ const result = await runSharedWebSmokeQa({
   guestCopyPattern: /\b(guest-mode|invitado|invitada|convidat|convidada|gastmodus)\b/i,
   expectations: {
     ca: {
-      protectedTitle: "La teva escolta queda darrere del compte AV",
-      publicCopy: "La teva sala d'escolta esta a punt",
+      protectedTitle: "Radio tranquil.la, compte connectat",
+      publicCopy: "Radio tranquil.la, compte connectat",
       signInCopy: "Inicia sessio",
-      signInRouteCopy: "Inicia sessio per connectar"
+      signInRouteCopy: "Inicia sessio per gestionar"
     },
     de: {
-      protectedTitle: "Dein Hoeren bleibt hinter deinem AV-Konto",
-      publicCopy: "Dein Hoerraum ist bereit",
+      protectedTitle: "Ruhiges Radio, verbundenes Konto",
+      publicCopy: "Ruhiges Radio, verbundenes Konto",
       signInCopy: "Anmelden",
       signInRouteCopy: "Melde dich an"
     },
     en: {
-      protectedTitle: "Your listening stays behind your AV account",
-      publicCopy: "Your listening room is ready",
+      protectedTitle: "Radio calm, account connected",
+      publicCopy: "Radio calm, account connected",
       signInCopy: "Sign in",
-      signInRouteCopy: "Sign in to connect"
+      signInRouteCopy: "Sign in to manage"
     },
     es: {
-      protectedTitle: "Tu escucha queda detras de tu cuenta AV",
-      publicCopy: "Tu sala de escucha esta lista",
+      protectedTitle: "Radio tranquila, cuenta conectada",
+      publicCopy: "Radio tranquila, cuenta conectada",
       signInCopy: "Iniciar sesion",
-      signInRouteCopy: "Inicia sesion para conectar"
+      signInRouteCopy: "Inicia sesion para gestionar"
     },
     fr: {
-      protectedTitle: "Votre ecoute reste derriere votre compte AV",
-      publicCopy: "Votre salle d'ecoute est prete",
+      protectedTitle: "Radio calme, compte connecte",
+      publicCopy: "Radio calme, compte connecte",
       signInCopy: "Se connecter",
-      signInRouteCopy: "Connectez-vous pour relier"
+      signInRouteCopy: "Connectez-vous pour gerer"
     }
   },
   name: "Tune AV",
-  ownRoutePrefixes: ["/", "/listen", "/library", "/music", "/avi", "/account", "/settings", "/sign-in"],
+  ownRoutePrefixes: ["/", "/account", "/settings", "/sign-in"],
   productIdentity: "Tune AV",
-  routes: ["/", "/sign-in", "/listen", "/library", "/music", "/avi", "/account", "/settings"],
+  routes: ["/", "/sign-in", "/account", "/settings"],
   signInRoutes: ["/sign-in"]
 });
 

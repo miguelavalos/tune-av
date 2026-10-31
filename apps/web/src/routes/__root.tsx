@@ -4,15 +4,14 @@ import { createIsomorphicFn } from "@tanstack/react-start";
 import { HeadContent, Outlet, Scripts, createRootRoute, redirect, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { getAccountApiBaseUrl, getAccountPublishableKey, isTuneWebAppComingSoon } from "@/lib/tune-config";
+import { getAccountApiBaseUrl, getAccountPublishableKey, isTuneWebAppComingSoon, tuneBrandAssets } from "@/lib/tune-config";
 import { getRequestSearch } from "@/lib/tune-request.server";
-import { TunePlayer } from "@/components/tune-player";
-import { TuneAppProvider } from "@/lib/tune-store";
-import { localizedTunePath, useTuneAccountLocalization, useTuneText } from "@/lib/tune-i18n";
+import { localizedTunePath, tuneText, useTuneAccountLocalization, useTuneText } from "@/lib/tune-i18n";
 import "../styles.css";
 
 const faviconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/favicon-32x32.png?v=20260619c";
 const appleTouchIconUrl = "https://cdn.avalsys.com/apps-av/tune-av/web-v2/apple-touch-icon.png?v=20260619c";
+const siteUrl = "https://app.tune-av.avalsys.com";
 
 export const Route = createRootRoute({
   beforeLoad: ({ location }) => {
@@ -21,17 +20,31 @@ export const Route = createRootRoute({
     }
   },
   component: RootComponent,
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Tune AV" }
-    ],
-    links: [
-      { rel: "icon", type: "image/png", sizes: "32x32", href: faviconUrl },
-      { rel: "apple-touch-icon", href: appleTouchIconUrl }
-    ]
-  })
+  head: ({ match }) => {
+    const lang = (match.search as { lang?: unknown }).lang;
+    const locale = getAppsAvLocaleFromSearch(typeof lang === "string" ? `?lang=${encodeURIComponent(lang)}` : "");
+    const description = tuneText[locale].meta.description;
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Tune AV" },
+        { name: "description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:site_name", content: "Tune AV" },
+        { property: "og:title", content: "Tune AV" },
+        { property: "og:description", content: description },
+        { property: "og:url", content: siteUrl },
+        { property: "og:image", content: tuneBrandAssets.logo },
+        { name: "twitter:card", content: "summary" }
+      ],
+      links: [
+        { rel: "icon", type: "image/png", sizes: "32x32", href: faviconUrl },
+        { rel: "apple-touch-icon", href: appleTouchIconUrl }
+      ]
+    };
+  }
 });
 
 function comingSoonHomeHref(searchStr: string) {
@@ -104,10 +117,7 @@ function AccountBoundary({ children }: Readonly<{ children: ReactNode }>) {
       signInUrl={localizedTunePath("/sign-in", locale)}
       signUpUrl={localizedTunePath("/sign-in", locale)}
     >
-      <TuneAppProvider>
-        {children}
-        <TunePlayer />
-      </TuneAppProvider>
+      {children}
     </AccountAvProvider>
   );
 }

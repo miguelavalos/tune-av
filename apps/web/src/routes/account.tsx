@@ -1,12 +1,11 @@
-import { AccountSignOutButton, useAccountUser } from "@avalsys/account-av-web";
-import { AccountSafetySection, CloudSyncSection, PlanFeatureSection, SettingsButton, SettingsInfoRow, SettingsProfileScaffold, SettingsSectionCard, useAppsAvLocale } from "@avalsys/apps-av-web";
+import { AccountSignOutButton, useAccountAppAccess, useAccountUser } from "@avalsys/account-av-web";
+import { AccountSafetySection, PlanFeatureSection, SettingsButton, SettingsInfoRow, SettingsProfileScaffold, SettingsSectionCard, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { createFileRoute } from "@tanstack/react-router";
 import { Mail, Sparkles, UserCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { TuneAppShell } from "@/components/tune-app-shell";
-import { tuneProductConfig } from "@/lib/tune-config";
+import { tuneAppStore, tuneProductConfig } from "@/lib/tune-config";
 import { tuneProfileLabels } from "@/lib/tune-profile-labels";
-import { useTune } from "@/lib/tune-store";
 import { localizedExternalUrl } from "@/lib/tune-url";
 
 export const Route = createFileRoute("/account")({
@@ -15,11 +14,10 @@ export const Route = createFileRoute("/account")({
 
 function AccountRoute() {
   const account = useAccountUser();
+  const access = useAccountAppAccess("tuneav");
   const locale = useAppsAvLocale();
-  const tune = useTune();
   const labels = tuneProfileLabels[locale];
-  const isPro = tune.access.accessMode === "signedInPro" || tune.access.planTier === "pro";
-  const canUseCloudSync = tune.access.capabilities.canUseCloudSync === true;
+  const isPro = access.data?.accessMode === "signedInPro" || access.data?.planTier === "pro";
   const email = account.data?.email ?? null;
   const displayName = account.data?.displayName ?? email ?? labels.account.signedIn;
 
@@ -36,11 +34,11 @@ function AccountRoute() {
             </AccountSignOutButton>
           </SettingsSectionCard>
 
-          <PlanFeatureSection isPro={isPro} labels={labels.pro} manageHref={localizedExternalUrl(tuneProductConfig.links.suite?.href, locale)} />
-
-          {canUseCloudSync ? (
-            <CloudSyncSection labels={labels.sync} syncState={tune.syncStatus} onRetry={() => void tune.synchronizeLibrary()} />
-          ) : null}
+          <PlanFeatureSection
+            isPro={isPro}
+            labels={labels.pro}
+            manageHref={isPro ? localizedExternalUrl(tuneProductConfig.links.suite?.href, locale) : tuneAppStore.url}
+          />
 
           <AccountSafetySection labels={labels.safety} deleteHref={localizedExternalUrl(tuneProductConfig.links.deleteAccount?.href, locale)} />
         </SettingsProfileScaffold>
