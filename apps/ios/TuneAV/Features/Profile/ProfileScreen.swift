@@ -345,12 +345,20 @@ struct ProfileScreen: View {
             case .guest:
                 tabletAlignedSettingsButton {
                     ProfilePrimaryButton(
+                        title: L10n.string("profile.pro.viewOffer"),
+                        accessibilityID: "profile.pro.viewOffer",
+                        action: { isShowingProPaywall = true }
+                    )
+                }
+                tabletAlignedSettingsButton {
+                    AVSettingsButton(
                         title: accessController.accountIsAvailable
                             ? L10n.string("profile.pro.signIn")
                             : L10n.string("profile.account.connectUnavailable"),
-                        accessibilityID: "profile.pro.signIn",
+                        style: .secondary,
                         action: { startSignInFlow(true) }
                     )
+                    .accessibilityIdentifier("profile.pro.signIn")
                 }
                 .disabled(!accessController.accountIsAvailable)
             case .signedInFree:

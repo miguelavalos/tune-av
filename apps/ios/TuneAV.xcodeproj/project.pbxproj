@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0020EDECB0E4FE157BC2CC89 /* ShellLaunchBootstrapPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F9B420331C4682DFB2282 /* ShellLaunchBootstrapPlanner.swift */; };
 		00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */; };
+		02733C45F13B09949F90D851 /* TuneAVUpgradeMomentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC03433AEFD375F909F71ED /* TuneAVUpgradeMomentPolicy.swift */; };
 		0329AE84F43EFCEDA3B88D1D /* AviFullPlayerViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */; };
 		048EAE755F2A9BD6B24B09F7 /* AVLaunchFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 321C1010CFADDB13248FB756 /* AVLaunchFoundation */; };
 		04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */; };
@@ -77,6 +78,7 @@
 		5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B77C435B56B564DDAC2DE52 /* UITestAccountDeletionAPI.swift */; };
 		5F51D9CF98F00F3E799DFDFB /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 6794F21337B7CE6C965181CA /* RevenueCat */; };
 		60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */; };
+		62167863AB5CD3D4D89D93FA /* TuneAVRevenueCatPlanMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F45DB0981BD30B476ED1B /* TuneAVRevenueCatPlanMapping.swift */; };
 		634403CECCF87F79302E718A /* HomeRefreshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */; };
 		6645EF704E9550CAF49ACDE3 /* TuneAVDateCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AC513C805AD2F44578DF27 /* TuneAVDateCoding.swift */; };
 		665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E041E8E7568784E3A837D8 /* LibraryStore.swift */; };
@@ -142,6 +144,7 @@
 		B4EC53597531260584D454A8 /* TuneAVLibrarySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DF0889936876263303726A /* TuneAVLibrarySync.swift */; };
 		B6A461131A5A9DDCEFE0A8B7 /* TuneAVDailyUsageLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7CBB3F4E1C56B85A3C8D0B /* TuneAVDailyUsageLimiter.swift */; };
 		B6C85867F5A1A382B32FA8B4 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F47CF14CA97DB4109E43622F /* Localizable.strings */; };
+		BACFCC1D89D11537231E23EA /* TuneAVSubscriptionIntroductoryOffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A39DEC82A2C7F23FAEA368 /* TuneAVSubscriptionIntroductoryOffer.swift */; };
 		BB0512F4EA6C02C44AB73D75 /* TuneAVOverviewSectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FB0ED9FA7E77E305808692 /* TuneAVOverviewSectionViews.swift */; };
 		BCCF390C61B8E18D167DB605 /* HomeEmptyStateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD0A67AA9366F52644BCFA5 /* HomeEmptyStateUITests.swift */; };
 		BDE55228F16441FBE1E2F256 /* AviRecommendationsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C5ED7575C9647A5AEE8507 /* AviRecommendationsCoordinator.swift */; };
@@ -220,6 +223,7 @@
 /* Begin PBXFileReference section */
 		008936263180E93620BF3D42 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviFooterPlayerView.swift; sourceTree = "<group>"; };
+		05A39DEC82A2C7F23FAEA368 /* TuneAVSubscriptionIntroductoryOffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSubscriptionIntroductoryOffer.swift; sourceTree = "<group>"; };
 		06624915894913972B482E00 /* LaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchContext.swift; sourceTree = "<group>"; };
 		09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
 		0A2443197B44A3463AFABCB5 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
@@ -242,6 +246,7 @@
 		277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroActionRouterTests.swift; sourceTree = "<group>"; };
 		27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReturnCoordinator.swift; sourceTree = "<group>"; };
 		2B9B7F56042C625D2BBC6C8D /* StationListActionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationListActionRow.swift; sourceTree = "<group>"; };
+		2C5F45DB0981BD30B476ED1B /* TuneAVRevenueCatPlanMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVRevenueCatPlanMapping.swift; sourceTree = "<group>"; };
 		2C6FA815423F3608CDA5F3E3 /* LibraryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryScreen.swift; sourceTree = "<group>"; };
 		2D2A5D575B593F4C9087F552 /* RadioLibraryMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioLibraryMode.swift; sourceTree = "<group>"; };
 		2DD1D5DB93174C34E51A3031 /* TuneAV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuneAV.entitlements; sourceTree = "<group>"; };
@@ -408,6 +413,7 @@
 		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
 		FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellScaffoldView.swift; sourceTree = "<group>"; };
 		FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellNowPlayingPreviews.swift; sourceTree = "<group>"; };
+		FFC03433AEFD375F909F71ED /* TuneAVUpgradeMomentPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUpgradeMomentPolicy.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -648,6 +654,7 @@
 				CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */,
 				19FB0ED9FA7E77E305808692 /* TuneAVOverviewSectionViews.swift */,
 				87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */,
+				2C5F45DB0981BD30B476ED1B /* TuneAVRevenueCatPlanMapping.swift */,
 				8C0C0C8E1735D7E25BCDA665 /* TuneAVSavedDiscoveryPolicy.swift */,
 				B88BE8A291767D3B19DB2920 /* TuneAVSavedStationIcon.swift */,
 				889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */,
@@ -660,10 +667,12 @@
 				A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */,
 				3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */,
 				41CD7A93DE3378B3083FBB50 /* TuneAVSubscriptionEntitlementPolicy.swift */,
+				05A39DEC82A2C7F23FAEA368 /* TuneAVSubscriptionIntroductoryOffer.swift */,
 				12A3B12BBA94111AA7B04163 /* TuneAVText.swift */,
 				AC0417E3D522BA4E2564ADF9 /* TuneAVTrackArtworkService.swift */,
 				38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */,
 				7E72DA3D66622D24493F5809 /* TuneAVUITestAccountDeletionScenarios.swift */,
+				FFC03433AEFD375F909F71ED /* TuneAVUpgradeMomentPolicy.swift */,
 				A1FA208F40AD230576155DB4 /* TuneAVUpgradePrompt.swift */,
 				513BDBDAF4D86F1F9B65A11D /* TuneAVUpgradePromptContent.swift */,
 				C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */,
@@ -1064,6 +1073,7 @@
 				BB0512F4EA6C02C44AB73D75 /* TuneAVOverviewSectionViews.swift in Sources */,
 				CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */,
 				753E16848B55643A3634E922 /* TuneAVProPaywallView.swift in Sources */,
+				62167863AB5CD3D4D89D93FA /* TuneAVRevenueCatPlanMapping.swift in Sources */,
 				8F1A8A26BBE4A617B23DAEC8 /* TuneAVSavedDiscoveryPolicy.swift in Sources */,
 				D2528A14030A3AF11F0F76B9 /* TuneAVSavedStationIcon.swift in Sources */,
 				35E62D1CAA5B80E2C3B64C47 /* TuneAVServiceAliases.swift in Sources */,
@@ -1077,11 +1087,13 @@
 				2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */,
 				2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */,
 				09198DA179A16E6562FB88B9 /* TuneAVSubscriptionEntitlementPolicy.swift in Sources */,
+				BACFCC1D89D11537231E23EA /* TuneAVSubscriptionIntroductoryOffer.swift in Sources */,
 				76A00FB3315D803C57E9D7E2 /* TuneAVText.swift in Sources */,
 				8F263B120926F737D7EDD17F /* TuneAVTrackArtworkService.swift in Sources */,
 				45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */,
 				7A1CC0DDEC30317BB62F0C0B /* TuneAVUITestAccountDeletionScenarios.swift in Sources */,
 				60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */,
+				02733C45F13B09949F90D851 /* TuneAVUpgradeMomentPolicy.swift in Sources */,
 				0E8962EDE4E9D460672144A8 /* TuneAVUpgradePrompt.swift in Sources */,
 				699AFAE222C5B2AB4DF681F7 /* TuneAVUpgradePromptContent.swift in Sources */,
 				ED94E280B27C514C1B5E8B0E /* TuneAdaptiveLayout.swift in Sources */,

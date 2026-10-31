@@ -1009,6 +1009,7 @@ struct AppShellView: View {
             discoveryLimit: accessController.limits.discoveredTracks
         )
         rememberTrackForListeningSession(title: trackTitle, artist: trackArtist)
+        accessController.noteDiscoveredTrackForUpgradeMoment(key: "\(station.id)|\(trackTitle)|\(trackArtist)")
     }
 
     private func rememberTrackForListeningSession(title: String, artist: String?) {
@@ -1167,6 +1168,7 @@ struct AppShellView: View {
         AVHaptics.perform(.primaryAction)
         audioPlayer.play(station: selection.station, queue: selection.queue)
         beginListeningSession(for: selection.station, source: selection.queue.source)
+        accessController.noteListeningDayForUpgradeMoment()
     }
 
     private func requestStopPlaybackConfirmation() {

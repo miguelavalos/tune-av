@@ -74,6 +74,8 @@ final class AccessController: ObservableObject {
     @Published private(set) var isWaitingForSubscriptionReconciliation: Bool
     @Published private(set) var subscriptionReconciliationSource: SubscriptionReconciliationSource?
     @Published var upgradePrompt: UpgradePrompt?
+    /// Monthly purchase a guest asked for before signing in; completed by `resumePendingPurchaseIfNeeded()`.
+    @Published private(set) var hasPendingPurchase = false
 
     let accountService: AVAccountService
 
@@ -87,6 +89,7 @@ final class AccessController: ObservableObject {
     private let subscriptionReconciliationRetryDelaysNanoseconds: [UInt64]
     private let sleepNanoseconds: (UInt64) async -> Void
     private let dailyUsageLimiter: TuneAVDailyUsageLimiter
+    private var upgradeMomentPolicy: TuneAVUpgradeMomentPolicy
     private let authLogger = Logger(subsystem: "com.avalsys.tuneav", category: "auth")
     private let guestOnboardingLastPromptAtKey = "tuneav.guestOnboarding.lastPromptAt"
     private let lastKnownAccountUserKey = "tuneav.account.lastKnownUser"
@@ -142,6 +145,7 @@ final class AccessController: ObservableObject {
             limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures,
             now: now
         )
+        self.upgradeMomentPolicy = TuneAVUpgradeMomentPolicy(defaults: userDefaults)
         self.accountUser = currentUser
         self.accountSummary = nil
         self.planTier = .free
@@ -159,6 +163,7 @@ final class AccessController: ObservableObject {
         self.upgradePrompt = nil
         self.accessMode = .guest
         resolveAccessState()
+        subscriptionPurchasing.configureAtLaunchIfPossible()
     }
 
     var isSignedIn: Bool {
@@ -317,12 +322,9 @@ final class AccessController: ObservableObject {
         applyResolvedAccess(refreshedAccess)
     }
 
+    /// Loads the monthly offer and its StoreKit price. Works for guests: the store session is anonymous
+    /// until an Apps AV account user appears.
     func loadMonthlySubscriptionOffer() async {
-        guard accountUser != nil else {
-            subscriptionError = .missingAccountUser
-            return
-        }
-
         do {
             subscriptionOffer = try await subscriptionPurchasing.loadMonthlyOffer(for: subscriptionAccountUser)
             subscriptionError = nil
@@ -335,9 +337,51 @@ final class AccessController: ObservableObject {
     }
 
     func purchaseMonthlyPro() async {
+        hasPendingPurchase = false
         await runSubscriptionOperation(source: .purchase) {
             try await subscriptionPurchasing.purchaseMonthlyPro(for: subscriptionAccountUser)
         }
+    }
+
+    /// Guest tap on "Subscribe": remembers the intent so the purchase continues right after sign-in.
+    /// Returns `false` when the caller must present sign-in first.
+    func requestMonthlyPurchase() -> Bool {
+        guard isSignedIn else {
+            hasPendingPurchase = true
+            return false
+        }
+        return true
+    }
+
+    /// Continues a purchase requested before sign-in. Entitlement still resolves through Apps AV.
+    func resumePendingPurchaseIfNeeded() async {
+        guard hasPendingPurchase else { return }
+        guard isSignedIn else { return }
+        guard accessMode != .signedInPro else {
+            hasPendingPurchase = false
+            return
+        }
+        await purchaseMonthlyPro()
+    }
+
+    func cancelPendingPurchase() {
+        hasPendingPurchase = false
+    }
+
+    /// Contextual upgrade moment: shown once, after the 10th distinct song discovered in this session.
+    func noteDiscoveredTrackForUpgradeMoment(key: String) {
+        guard let trigger = upgradeMomentPolicy.noteDiscoveredTrack(key: key, isEligible: isEligibleForUpgradeMoment) else { return }
+        upgradePrompt = .upgradeMoment(trigger)
+    }
+
+    /// Contextual upgrade moment: shown once, on the 3rd distinct day the person listens.
+    func noteListeningDayForUpgradeMoment() {
+        guard let trigger = upgradeMomentPolicy.noteListeningDay(now(), isEligible: isEligibleForUpgradeMoment) else { return }
+        upgradePrompt = .upgradeMoment(trigger)
+    }
+
+    private var isEligibleForUpgradeMoment: Bool {
+        accessMode != .signedInPro && upgradePrompt == nil
     }
 
     func restorePurchases() async {
@@ -394,8 +438,8 @@ final class AccessController: ObservableObject {
         accountUser = nil
         accountSummary = nil
         platformUserId = nil
-        subscriptionOffer = nil
         subscriptionError = nil
+        hasPendingPurchase = false
         isAccountSessionTemporarilyUnavailable = false
         isWaitingForSubscriptionReconciliation = false
         subscriptionReconciliationSource = nil

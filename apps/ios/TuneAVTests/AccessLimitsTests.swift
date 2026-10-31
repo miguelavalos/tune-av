@@ -1066,7 +1066,7 @@ final class AccessLimitsTests: XCTestCase {
     }
 
     @MainActor
-    func testGuestCannotStartSubscriptionPurchaseBoundary() async {
+    func testGuestSeesMonthlyPriceButCannotPurchaseWithoutAccount() async {
         let subscriptionPurchasing = StubSubscriptionPurchasing()
         let controller = AccessController(
             accountService: StubAccountService(user: nil),
@@ -1078,13 +1078,93 @@ final class AccessLimitsTests: XCTestCase {
         )
 
         await controller.loadMonthlySubscriptionOffer()
+
+        XCTAssertEqual(controller.subscriptionOffer?.localizedPrice, "$4.99")
+        XCTAssertNil(controller.subscriptionError)
+        XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, ["anonymous"])
+        XCTAssertTrue(subscriptionPurchasing.didConfigureAtLaunch)
+
         await controller.purchaseMonthlyPro()
         await controller.restorePurchases()
 
         XCTAssertEqual(controller.subscriptionError, .missingAccountUser)
-        XCTAssertEqual(subscriptionPurchasing.loadedOfferUserIDs, [])
         XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [])
         XCTAssertEqual(subscriptionPurchasing.restoreUserIDs, [])
+    }
+
+    @MainActor
+    func testGuestPurchaseRequestWaitsForSignInThenContinues() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let subscriptionPurchasing = StubSubscriptionPurchasing()
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: StubEntitlementService(access: .localFallback(for: .signedInFree)),
+            subscriptionPurchasing: subscriptionPurchasing,
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") },
+            subscriptionReconciliationRetryDelaysNanoseconds: [],
+            sleepNanoseconds: { _ in }
+        )
+        XCTAssertFalse(controller.isSignedIn)
+
+        XCTAssertFalse(controller.requestMonthlyPurchase(), "A guest must sign in before the purchase")
+        XCTAssertTrue(controller.hasPendingPurchase)
+        XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [])
+
+        await controller.syncFromAccountProvider()
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+        await controller.resumePendingPurchaseIfNeeded()
+
+        XCTAssertEqual(subscriptionPurchasing.purchaseUserIDs, [user.id])
+        XCTAssertFalse(controller.hasPendingPurchase)
+        XCTAssertTrue(controller.requestMonthlyPurchase(), "A signed-in user purchases directly")
+    }
+
+    @MainActor
+    func testUpgradeMomentShowsOnceAfterTenthDiscoveredTrackAndNeverForPro() {
+        let userDefaults = isolatedUserDefaults()
+        let controller = AccessController(
+            accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
+            entitlementService: StubEntitlementService(access: .guest),
+            userDefaults: userDefaults,
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        for index in 0..<9 {
+            controller.noteDiscoveredTrackForUpgradeMoment(key: "station|song \(index)|artist")
+            controller.noteDiscoveredTrackForUpgradeMoment(key: "station|song \(index)|artist")
+            XCTAssertNil(controller.upgradePrompt, "Repeated songs do not count twice")
+        }
+        controller.noteDiscoveredTrackForUpgradeMoment(key: "station|song 9|artist")
+
+        XCTAssertEqual(controller.upgradePrompt?.title, L10n.string("limits.upgrade.moment.discoveries.title"))
+        XCTAssertTrue(userDefaults.bool(forKey: TuneAVUpgradeMomentPolicy.shownKey))
+
+        controller.upgradePrompt = nil
+        controller.noteDiscoveredTrackForUpgradeMoment(key: "station|song 10|artist")
+        controller.noteListeningDayForUpgradeMoment()
+        XCTAssertNil(controller.upgradePrompt, "The moment is shown once per install")
+
+        var proPolicy = TuneAVUpgradeMomentPolicy(defaults: isolatedUserDefaults())
+        for index in 0..<12 {
+            XCTAssertNil(proPolicy.noteDiscoveredTrack(key: "song \(index)", isEligible: false))
+        }
+        XCTAssertFalse(proPolicy.hasBeenShown)
+    }
+
+    func testUpgradeMomentShowsOnThirdDistinctListeningDay() {
+        var policy = TuneAVUpgradeMomentPolicy(defaults: isolatedUserDefaults())
+        let firstDay = fixedDate("2026-04-30T10:00:00Z")
+
+        XCTAssertNil(policy.noteListeningDay(firstDay, isEligible: true))
+        XCTAssertNil(policy.noteListeningDay(firstDay.addingTimeInterval(3_600), isEligible: true), "Same day counts once")
+        XCTAssertNil(policy.noteListeningDay(firstDay.addingTimeInterval(86_400), isEligible: true))
+        XCTAssertEqual(policy.listeningDayCount, 2)
+        XCTAssertEqual(policy.noteListeningDay(firstDay.addingTimeInterval(5 * 86_400), isEligible: true), .thirdListeningDay)
+        XCTAssertTrue(policy.hasBeenShown)
+        XCTAssertNil(policy.noteListeningDay(firstDay.addingTimeInterval(6 * 86_400), isEligible: true))
     }
 
     @MainActor
@@ -1719,9 +1799,14 @@ private final class StubSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
         _ = try userID(user)
     }
 
+    private(set) var didConfigureAtLaunch = false
+
+    func configureAtLaunchIfPossible() {
+        didConfigureAtLaunch = true
+    }
+
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
-        let id = try userID(user)
-        loadedOfferUserIDs.append(id)
+        loadedOfferUserIDs.append(user?.id ?? "anonymous")
         return TuneAVSubscriptionOffer(
             identifier: "$rc_monthly",
             productIdentifier: "tuneav_pro_monthly",

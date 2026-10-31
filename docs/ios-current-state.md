@@ -95,7 +95,12 @@ Current app shape:
   inside Tune AV by default and can be switched to the system browser;
 - local iOS Profile preference for external public-info and lyrics search, using
   the shared Apps AV engine list with DuckDuckGo as the default;
-- premium paywall and restore-entry UI when configured;
+- premium paywall and restore-entry UI when configured; the monthly price is
+  visible to guests, a guest purchase signs in first and then continues, and
+  the limit prompt always leads to the paywall;
+- Avi lookups metered per day for every tier (Guest 5, Free 15, Pro
+  unlimited) and a one-time contextual upgrade moment after the 10th song
+  discovered in a session or on the 3rd distinct listening day;
 - account deletion entry point and local data clearing from Profile;
 - app-neutral shared Apple UI foundations for brand tokens, shell structure,
   launch/splash support, settings/account surfaces, Avi controls, paywall/limit

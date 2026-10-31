@@ -23,17 +23,58 @@ final class MacSubscriptionPurchasingTests: XCTestCase {
         XCTAssertFalse(offer.localizedPrice.isEmpty)
     }
 
-    func testUITestPurchasingRequiresSignedInUser() async {
+    func testUITestPurchasingLoadsMonthlyOfferForGuestButRequiresSignedInUserToPurchase() async throws {
         let purchasing = MacUITestTuneAVSubscriptionPurchasing()
 
+        let offer = try await purchasing.loadMonthlyOffer(for: nil)
+        XCTAssertEqual(offer.productIdentifier, "tuneav_pro_monthly")
+        XCTAssertFalse(offer.localizedPrice.isEmpty)
+
         do {
-            _ = try await purchasing.loadMonthlyOffer(for: nil)
+            _ = try await purchasing.purchaseMonthlyPro(for: nil)
             XCTFail("Expected missing account user error")
         } catch let error as MacTuneAVSubscriptionPurchaseError {
             XCTAssertEqual(error, .missingAccountUser)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testGuestModelLoadsMonthlyOfferWithoutAccount() async {
+        let userDefaults = UserDefaults.standard
+        let originalUser = userDefaults.data(forKey: lastKnownAccountUserKey)
+        userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+        defer {
+            if let originalUser {
+                userDefaults.set(originalUser, forKey: lastKnownAccountUserKey)
+            } else {
+                userDefaults.removeObject(forKey: lastKnownAccountUserKey)
+            }
+        }
+
+        let model = TuneAVMacModel(
+            subscriptionPurchasing: MacUITestTuneAVSubscriptionPurchasing(),
+            subscriptionReconciliationRetryDelaysNanoseconds: [],
+            sleepNanoseconds: { _ in }
+        )
+        XCTAssertEqual(model.accessMode, .guest)
+
+        await model.loadMonthlySubscriptionOffer()
+
+        XCTAssertNil(model.subscriptionError)
+        XCTAssertEqual(model.subscriptionOffer?.localizedPrice, "$4.99")
+    }
+
+    func testUpgradeMomentPolicyShowsOnceAfterTenthDiscoveredTrack() {
+        var policy = TuneAVUpgradeMomentPolicy(defaults: UserDefaults(suiteName: "MacUpgradeMoment.\(UUID().uuidString)")!)
+
+        for index in 0..<9 {
+            XCTAssertNil(policy.noteDiscoveredTrack(key: "song \(index)", isEligible: true))
+        }
+        XCTAssertEqual(policy.noteDiscoveredTrack(key: "song 9", isEligible: true), .tenthDiscoveredTrack)
+        XCTAssertTrue(policy.hasBeenShown)
+        XCTAssertNil(policy.noteDiscoveredTrack(key: "song 10", isEligible: true))
+        XCTAssertNil(policy.noteListeningDay(.now, isEligible: true))
     }
 
     func testModelLoadsMonthlyOfferForPersistedSignedInFreeUser() async {

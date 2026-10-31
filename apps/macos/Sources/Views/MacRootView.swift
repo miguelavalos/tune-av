@@ -108,9 +108,9 @@ struct MacRootView: View {
             Button(L10n.string("limits.upgrade.notNow")) {
                 model.upgradePrompt = nil
             }
-            Button(L10n.string("limits.upgrade.profile")) {
+            Button(L10n.string("limits.upgrade.viewPro")) {
                 model.upgradePrompt = nil
-                model.selectedSection = .profile
+                model.requestProPaywall()
             }
         } message: {
             Text(model.upgradePrompt?.message ?? "")

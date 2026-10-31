@@ -25,8 +25,10 @@ struct MacProPaywallView: View {
             backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
             onClose: { dismiss() }
         ) {
-            paywallHeader
             paywallOfferCard
+            trialRow
+            guestHintRow
+            paywallHeader
             subscriptionTermsRow
 
             if model.isWaitingForSubscriptionReconciliation {
@@ -86,12 +88,35 @@ struct MacProPaywallView: View {
 
     @ViewBuilder
     private var subscriptionTermsRow: some View {
-        if model.accountUser != nil, let offer = model.subscriptionOffer {
+        if let offer = model.subscriptionOffer {
             AVPaywallStatusRow(
                 systemImage: "calendar.badge.clock",
-                message: L10n.string("paywall.subscriptionTerms", offer.localizedPrice)
+                message: TuneAVSubscriptionOfferCopy.terms(
+                    localizedPrice: offer.localizedPrice,
+                    introductoryOffer: offer.introductoryOffer
+                )
             )
             .accessibilityIdentifier("paywall.subscriptionTerms")
+        }
+    }
+
+    @ViewBuilder
+    private var trialRow: some View {
+        if let offer = model.subscriptionOffer,
+           let trialLine = TuneAVSubscriptionOfferCopy.trialLine(
+               localizedPrice: offer.localizedPrice,
+               introductoryOffer: offer.introductoryOffer
+           ) {
+            AVPaywallStatusRow(systemImage: "gift", message: trialLine)
+                .accessibilityIdentifier("paywall.trial")
+        }
+    }
+
+    @ViewBuilder
+    private var guestHintRow: some View {
+        if model.accountUser == nil {
+            AVPaywallStatusRow(systemImage: "person.crop.circle.badge.checkmark", message: L10n.string("paywall.guest.hint"))
+                .accessibilityIdentifier("paywall.guest.hint")
         }
     }
 
@@ -107,12 +132,8 @@ struct MacProPaywallView: View {
     }
 
     private func primaryAction() {
-        if model.accountUser != nil {
-            Task { await model.purchaseMonthlyPro() }
-        } else {
-            dismiss()
-            startSignInFlow()
-        }
+        // Guests sign in first and the purchase continues automatically; the paywall stays open.
+        Task { await model.purchaseMonthlyProSigningInIfNeeded() }
     }
 
     private var redeemCodeSheet: some View {
@@ -279,8 +300,8 @@ struct MacProPaywallView: View {
     }
 
     private var primaryButtonTitle: String {
-        guard model.accountUser != nil else {
-            return L10n.string("profile.pro.signIn")
+        if model.isAccountOperationInProgress {
+            return L10n.string("profile.account.signingIn")
         }
         if model.isSubscriptionOperationInProgress {
             return L10n.string("paywall.purchase.loading")
@@ -292,10 +313,7 @@ struct MacProPaywallView: View {
     }
 
     private var primaryButtonIsDisabled: Bool {
-        if model.accountUser == nil {
-            return false
-        }
-        return model.isSubscriptionOperationInProgress || model.subscriptionOffer == nil
+        model.isAccountOperationInProgress || model.isSubscriptionOperationInProgress || model.subscriptionOffer == nil
     }
 
     private var restoreTitle: String {

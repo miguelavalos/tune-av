@@ -90,6 +90,11 @@ struct MacProfileView: View {
         .task {
             await refreshAccountAccessForProfile()
         }
+        .onChange(of: model.isProPaywallRequested, initial: true) { _, isRequested in
+            guard isRequested else { return }
+            model.isProPaywallRequested = false
+            isShowingProPaywall = true
+        }
     }
 
     private var header: some View {
@@ -254,8 +259,14 @@ struct MacProfileView: View {
             .accessibilityIdentifier("profile.pro.checkingAccess")
         } else if model.accountUser == nil {
             AVSettingsButton(
-                title: accountActionTitle(L10n.string("profile.pro.signIn")),
+                title: L10n.string("profile.pro.viewOffer"),
                 style: .primary,
+                action: { isShowingProPaywall = true }
+            )
+            .accessibilityIdentifier("profile.pro.viewOffer")
+            AVSettingsButton(
+                title: accountActionTitle(L10n.string("profile.pro.signIn")),
+                style: .secondary,
                 isLoading: model.isAccountOperationInProgress,
                 action: { Task { await model.signInWithApple() } }
             )

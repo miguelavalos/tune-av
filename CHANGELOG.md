@@ -14,6 +14,23 @@ This project follows semantic versioning once public source releases begin.
 - Build the macOS app for Apple Silicon and Intel again; the arm64-only
   constraint came from the removed Convex binary.
 - Update RevenueCat to 5.100.0 so the iOS target compiles with Xcode 27.1.
+- Meter Avi lookups (lyrics, YouTube, Spotify, Apple Music, web) for every
+  tier instead of hiding them behind Pro: Guest 5 and Free 15 per day, Pro
+  unlimited; the upgrade prompt appears only when the budget is exhausted.
+- Raise Guest favorites to 10 and Free favorites to 30, mirroring the backend.
+- Show the Pro paywall and the monthly StoreKit price without an account on
+  iOS and macOS: RevenueCat is configured anonymously at launch and logs in
+  when an Apps AV account appears; a guest who taps Subscribe signs in first
+  and the purchase continues automatically. Entitlement still resolves
+  through Apps AV.
+- Open the paywall from every limit prompt, including for guests (sign-in
+  stays available as a secondary action), and show the monthly free-trial
+  intro offer text and plan-aware terms when App Store Connect defines one.
+- Rewrite the paywall copy in all five locales around concrete value:
+  unlimited Avi lookups, up to 1000 saved radios and songs, cloud sync between
+  iPhone, iPad and Mac, price first.
+- Add a one-time contextual upgrade moment after the 10th song discovered in a
+  session or on the 3rd distinct listening day for Guest and Free listeners.
 - Document the 2026-07-13 Pro sync decision: only explicitly saved stations and
   songs synchronize; feedback remains device-local and any deliberate Pro
   backend capture is upload-only, not cross-device restore.

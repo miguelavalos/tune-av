@@ -25,8 +25,10 @@ struct TuneAVProPaywallView: View {
             backgroundStyle: AnyShapeStyle(TuneAVTheme.shellBackground),
             onClose: { dismiss() }
         ) {
-            paywallHeader
             paywallOfferCard
+            trialRow
+            guestHintRow
+            paywallHeader
             subscriptionTermsRow
 
             if accessController.isWaitingForSubscriptionReconciliation {
@@ -89,12 +91,35 @@ struct TuneAVProPaywallView: View {
 
     @ViewBuilder
     private var subscriptionTermsRow: some View {
-        if accessController.isSignedIn, let offer = accessController.subscriptionOffer {
+        if let offer = accessController.subscriptionOffer {
             AVPaywallStatusRow(
                 systemImage: "calendar.badge.clock",
-                message: L10n.string("paywall.subscriptionTerms", offer.localizedPrice)
+                message: TuneAVSubscriptionOfferCopy.terms(
+                    localizedPrice: offer.localizedPrice,
+                    introductoryOffer: offer.introductoryOffer
+                )
             )
             .accessibilityIdentifier("paywall.subscriptionTerms")
+        }
+    }
+
+    @ViewBuilder
+    private var trialRow: some View {
+        if let offer = accessController.subscriptionOffer,
+           let trialLine = TuneAVSubscriptionOfferCopy.trialLine(
+               localizedPrice: offer.localizedPrice,
+               introductoryOffer: offer.introductoryOffer
+           ) {
+            AVPaywallStatusRow(systemImage: "gift", message: trialLine)
+                .accessibilityIdentifier("paywall.trial")
+        }
+    }
+
+    @ViewBuilder
+    private var guestHintRow: some View {
+        if !accessController.isSignedIn {
+            AVPaywallStatusRow(systemImage: "person.crop.circle.badge.checkmark", message: L10n.string("paywall.guest.hint"))
+                .accessibilityIdentifier("paywall.guest.hint")
         }
     }
 
@@ -110,12 +135,13 @@ struct TuneAVProPaywallView: View {
     }
 
     private func primaryAction() {
-        if accessController.isSignedIn {
-            Task { await accessController.purchaseMonthlyPro() }
-        } else {
+        guard accessController.requestMonthlyPurchase() else {
+            // Guest: sign in first; the purchase continues automatically once the account exists.
             dismiss()
             startSignInFlow()
+            return
         }
+        Task { await accessController.purchaseMonthlyPro() }
     }
 
     private var redeemCodeSheet: some View {
@@ -285,9 +311,6 @@ struct TuneAVProPaywallView: View {
     }
 
     private var primaryButtonTitle: String {
-        guard accessController.isSignedIn else {
-            return L10n.string("profile.pro.signIn")
-        }
         if accessController.isSubscriptionOperationInProgress {
             return L10n.string("paywall.purchase.loading")
         }
@@ -302,7 +325,7 @@ struct TuneAVProPaywallView: View {
 
     private var primaryButtonIsDisabled: Bool {
         if !accessController.isSignedIn {
-            return !accessController.accountIsAvailable
+            return !accessController.accountIsAvailable || accessController.subscriptionOffer == nil
         }
         return accessController.isRefreshingAccountAccess ||
             accessController.isSubscriptionOperationInProgress ||

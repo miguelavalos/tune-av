@@ -108,6 +108,7 @@ struct RootView: View {
     }
 
     private func skipAuthentication() {
+        accessController.cancelPendingPurchase()
         authenticationWasSkipped = true
         automaticGuestOnboardingIsPresented = false
         authPresentationState = .hidden
@@ -121,6 +122,7 @@ struct RootView: View {
         await accessController.syncFromAccountProvider()
         lastAutomaticAccountRefreshRequestedAt = .now
         authPresentationState = .hidden
+        await accessController.resumePendingPurchaseIfNeeded()
     }
 
     private func startGoogleSignIn() async throws {
@@ -130,6 +132,7 @@ struct RootView: View {
         await accessController.syncFromAccountProvider()
         lastAutomaticAccountRefreshRequestedAt = .now
         authPresentationState = .hidden
+        await accessController.resumePendingPurchaseIfNeeded()
     }
 
     private func refreshLibrarySync() async {
@@ -338,34 +341,41 @@ struct RootStartupSyncPolicy: Equatable {
     }
 }
 
+/// Limit and upgrade-moment sheet. The primary action opens the Pro paywall for every tier (guests see
+/// the price there and sign in on purchase); guests also get sign-in as a secondary action.
 struct UpgradeRecommendationSheet: View {
     let prompt: UpgradePrompt
     let isGuest: Bool
     let accountIsAvailable: Bool
     let onPrimaryAction: () -> Void
+    let onSignIn: () -> Void
     let onDismiss: () -> Void
 
     var body: some View {
-        AVUpgradePromptSheet(
-            eyebrow: L10n.string("limits.upgrade.eyebrow"),
-            title: prompt.title,
-            message: prompt.message,
-            primaryButtonTitle: primaryButtonTitle,
-            primaryButtonIsDisabled: isGuest && !accountIsAvailable,
-            dismissButtonTitle: L10n.string("limits.upgrade.notNow"),
-            accessibilityIdentifier: "limits.upgrade.sheet.\(prompt.feature.rawValue)",
-            onPrimaryAction: onPrimaryAction,
-            onDismiss: onDismiss
-        )
-    }
+        VStack(spacing: 0) {
+            AVUpgradePromptSheet(
+                eyebrow: L10n.string("limits.upgrade.eyebrow"),
+                title: prompt.title,
+                message: prompt.message,
+                primaryButtonTitle: L10n.string("limits.upgrade.viewPro"),
+                dismissButtonTitle: L10n.string("limits.upgrade.notNow"),
+                accessibilityIdentifier: "limits.upgrade.sheet.\(prompt.feature.rawValue)",
+                onPrimaryAction: onPrimaryAction,
+                onDismiss: onDismiss
+            )
 
-    private var primaryButtonTitle: String {
-        if isGuest {
-            accountIsAvailable
-                ? L10n.string("limits.upgrade.connectAccount")
-                : L10n.string("limits.upgrade.profile")
-        } else {
-            L10n.string("limits.upgrade.profile")
+            if isGuest, accountIsAvailable {
+                Button(action: onSignIn) {
+                    Text(L10n.string("limits.upgrade.signInInstead"))
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(TuneAVTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                }
+                .accessibilityIdentifier("limits.upgrade.signIn")
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+            }
         }
     }
 }

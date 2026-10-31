@@ -10,6 +10,22 @@ struct TuneAVSubscriptionOffer: Equatable {
     let productIdentifier: String
     let localizedTitle: String
     let localizedPrice: String
+    /// Free-trial introductory offer on the monthly product, when App Store Connect defines one.
+    let introductoryOffer: TuneAVSubscriptionIntroductoryOffer?
+
+    init(
+        identifier: String,
+        productIdentifier: String,
+        localizedTitle: String,
+        localizedPrice: String,
+        introductoryOffer: TuneAVSubscriptionIntroductoryOffer? = nil
+    ) {
+        self.identifier = identifier
+        self.productIdentifier = productIdentifier
+        self.localizedTitle = localizedTitle
+        self.localizedPrice = localizedPrice
+        self.introductoryOffer = introductoryOffer
+    }
 }
 
 struct TuneAVPurchaseOutcome: Equatable {
@@ -73,20 +89,26 @@ enum TuneAVSubscriptionPurchaseError: LocalizedError, Equatable {
     }
 }
 
+/// Store access for Tune AV Pro. The monthly offer and its price load anonymously (no account needed);
+/// a purchase or restore still needs the Apps AV account user so the entitlement resolves through the backend.
 @MainActor
 protocol TuneAVSubscriptionPurchasing {
+    /// Configures the store SDK anonymously at launch when the public key exists. Never throws or blocks.
+    func configureAtLaunchIfPossible()
+    /// Prepares the SDK for `user`; `nil` prepares an anonymous session that can show the price.
     func prepare(for user: AccountUser?) async throws
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer
     func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome
 }
 
+extension TuneAVSubscriptionPurchasing {
+    func configureAtLaunchIfPossible() {}
+}
+
 @MainActor
 final class NoopTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     func prepare(for user: AccountUser?) async throws {
-        guard user != nil else {
-            throw TuneAVSubscriptionPurchaseError.missingAccountUser
-        }
         throw TuneAVSubscriptionPurchaseError.missingConfiguration
     }
 
@@ -109,14 +131,15 @@ final class NoopTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
 
 @MainActor
 final class UITestTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
-    func prepare(for user: AccountUser?) async throws {
+    func prepare(for user: AccountUser?) async throws {}
+
+    private func requireUser(_ user: AccountUser?) throws {
         guard user != nil else {
             throw TuneAVSubscriptionPurchaseError.missingAccountUser
         }
     }
 
     func loadMonthlyOffer(for user: AccountUser?) async throws -> TuneAVSubscriptionOffer {
-        try await prepare(for: user)
         return TuneAVSubscriptionOffer(
             identifier: "$rc_monthly",
             productIdentifier: "tuneav_pro_monthly",
@@ -126,12 +149,12 @@ final class UITestTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing {
     }
 
     func purchaseMonthlyPro(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        try await prepare(for: user)
+        try requireUser(user)
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
     }
 
     func restorePurchases(for user: AccountUser?) async throws -> TuneAVPurchaseOutcome {
-        try await prepare(for: user)
+        try requireUser(user)
         return TuneAVPurchaseOutcome(shouldRefreshAccess: true, customerUserID: user?.id ?? "")
     }
 
@@ -156,10 +179,22 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
         self.monthlyPackageIDProvider = monthlyPackageIDProvider
     }
 
+    func configureAtLaunchIfPossible() {
+        guard !Purchases.isConfigured, let apiKey = apiKeyProvider(), !apiKey.isEmpty else { return }
+        Purchases.configure(withAPIKey: apiKey)
+        purchaseLogger.info("Configured RevenueCat anonymously at launch")
+    }
+
     func prepare(for user: AccountUser?) async throws {
-        let userID = try requireUserID(user)
         guard let apiKey = apiKeyProvider(), !apiKey.isEmpty else {
             throw TuneAVSubscriptionPurchaseError.missingConfiguration
+        }
+
+        guard let userID = user?.id, !userID.isEmpty else {
+            if !Purchases.isConfigured {
+                Purchases.configure(withAPIKey: apiKey)
+            }
+            return
         }
 
         if configuredUserID == userID, Purchases.isConfigured {
@@ -188,7 +223,8 @@ final class RevenueCatTuneAVSubscriptionPurchasing: TuneAVSubscriptionPurchasing
                 identifier: package.identifier,
                 productIdentifier: productIdentifier,
                 localizedTitle: package.storeProduct.localizedTitle,
-                localizedPrice: localizedPrice
+                localizedPrice: localizedPrice,
+                introductoryOffer: TuneAVRevenueCatPlanMapping.introductoryOffer(for: package.storeProduct)
             )
         } catch {
             TuneAVDiagnostics.capture(error, feature: "tune.subscription", operation: "load_offer", step: "revenuecat")

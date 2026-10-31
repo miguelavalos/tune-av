@@ -82,11 +82,11 @@ private struct AppShellGlobalPresentations: ViewModifier {
                     accountIsAvailable: accountIsAvailable,
                     onPrimaryAction: {
                         upgradePrompt = nil
-                        if isGuest {
-                            startSignInFlow()
-                        } else {
-                            showProPaywall = true
-                        }
+                        showProPaywall = true
+                    },
+                    onSignIn: {
+                        upgradePrompt = nil
+                        startSignInFlow()
                     },
                     onDismiss: {
                         upgradePrompt = nil

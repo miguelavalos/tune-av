@@ -189,6 +189,8 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var isAccountOperationInProgress = false
     @Published private(set) var isRefreshingAccountAccess = false
     @Published var upgradePrompt: UpgradePrompt?
+    /// Set when a limit prompt or contextual moment asks the Profile screen to open the Pro paywall.
+    @Published var isProPaywallRequested = false
     @Published private(set) var cloudSyncStatus: CloudSyncStatus = .idle
     @Published private(set) var lastCloudSyncAt: Date?
     @Published var errorMessage: String?
@@ -258,6 +260,7 @@ final class TuneAVMacModel: ObservableObject {
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
     private let dailyUsageLimiter: TuneAVDailyUsageLimiter
+    private var upgradeMomentPolicy: TuneAVUpgradeMomentPolicy
     private let accountUserDefaults = UserDefaults.standard
     private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
@@ -291,6 +294,7 @@ final class TuneAVMacModel: ObservableObject {
             limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures,
             now: nowProvider
         )
+        self.upgradeMomentPolicy = TuneAVUpgradeMomentPolicy(defaults: dailyUsageDefaults)
         self.listeningAnalyticsUploadEnabled = listeningAnalyticsUploadEnabled
         self.nowProvider = nowProvider
         self.sleepNanoseconds = sleepNanoseconds
@@ -319,6 +323,7 @@ final class TuneAVMacModel: ObservableObject {
         accountUser = Self.lastKnownAccountUser(from: accountUserDefaults)
         resolveLocalAccessState()
         configureSystemNowPlaying()
+        self.subscriptionPurchasing.configureAtLaunchIfPossible()
     }
 
     deinit {
@@ -734,6 +739,7 @@ final class TuneAVMacModel: ObservableObject {
         }
 
         currentStation = station
+        noteListeningDayForUpgradeMoment()
         playbackFailuresInCurrentQueue.remove(station.id)
         playbackStatus = .loading
         isPlaying = false
@@ -1315,12 +1321,8 @@ final class TuneAVMacModel: ObservableObject {
         resolveLocalAccessState()
     }
 
+    /// Loads the monthly offer and its StoreKit price; works for guests through an anonymous store session.
     func loadMonthlySubscriptionOffer() async {
-        guard accountUser != nil else {
-            subscriptionError = .missingAccountUser
-            return
-        }
-
         do {
             subscriptionOffer = try await subscriptionPurchasing.loadMonthlyOffer(for: accountUser)
             subscriptionError = nil
@@ -1341,6 +1343,38 @@ final class TuneAVMacModel: ObservableObject {
         await runSubscriptionOperation(source: .purchase) {
             try await subscriptionPurchasing.purchaseMonthlyPro(for: accountUser)
         }
+    }
+
+    /// Guest tap on "Subscribe": signs in first, then continues to the purchase when the account is
+    /// not already Pro. Entitlement still resolves through Apps AV.
+    func purchaseMonthlyProSigningInIfNeeded() async {
+        if accountUser == nil {
+            await signInWithApple()
+            guard accountUser != nil else { return }
+            guard accessMode != .signedInPro else { return }
+        }
+        await purchaseMonthlyPro()
+    }
+
+    func requestProPaywall() {
+        selectedSection = .profile
+        isProPaywallRequested = true
+    }
+
+    /// Contextual upgrade moment: shown once, after the 10th distinct song discovered in this session.
+    private func noteDiscoveredTrackForUpgradeMoment(key: String) {
+        guard let trigger = upgradeMomentPolicy.noteDiscoveredTrack(key: key, isEligible: isEligibleForUpgradeMoment) else { return }
+        upgradePrompt = .upgradeMoment(trigger)
+    }
+
+    /// Contextual upgrade moment: shown once, on the 3rd distinct day the person listens.
+    private func noteListeningDayForUpgradeMoment() {
+        guard let trigger = upgradeMomentPolicy.noteListeningDay(nowProvider(), isEligible: isEligibleForUpgradeMoment) else { return }
+        upgradePrompt = .upgradeMoment(trigger)
+    }
+
+    private var isEligibleForUpgradeMoment: Bool {
+        accessMode != .signedInPro && upgradePrompt == nil
     }
 
     func restorePurchases() async {
@@ -1900,6 +1934,7 @@ final class TuneAVMacModel: ObservableObject {
             discoveredTracks[index].updatedAt = now
         } else {
             discoveredTracks.insert(discovery, at: 0)
+            noteDiscoveredTrackForUpgradeMoment(key: discovery.discoveryID)
         }
 
         trimDiscoveriesToAccessLimit()
