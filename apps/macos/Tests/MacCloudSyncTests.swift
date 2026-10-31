@@ -157,168 +157,79 @@ final class MacCloudSyncTests: XCTestCase {
         XCTAssertEqual(trigger.signOutStarted(), .cancel)
     }
 
-    func testRealtimeProjectionWaitsOnlyForMatchingInitialBootstrap() {
-        var gate = MacProRealtimeBootstrapGate()
-        gate.begin(ownerUserID: "user-1")
-
-        XCTAssertTrue(gate.shouldAwaitBootstrap(for: "user-1"))
-        XCTAssertFalse(gate.shouldAwaitBootstrap(for: "user-2"))
-
-        gate.complete(ownerUserID: "user-2")
-        XCTAssertTrue(gate.shouldAwaitBootstrap(for: "user-1"))
-
-        gate.complete(ownerUserID: "user-1", succeeded: true)
-        XCTAssertFalse(gate.shouldAwaitBootstrap(for: "user-1"))
-        XCTAssertTrue(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
-
-        gate.finishInitialProjection(ownerUserID: "user-2")
-        XCTAssertTrue(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
-
-        gate.finishInitialProjection(ownerUserID: "user-1")
-        XCTAssertFalse(gate.hasCompletedSuccessfulBootstrap(for: "user-1"))
-
-        gate.begin(ownerUserID: "user-1")
-        gate.complete(ownerUserID: "user-1", succeeded: false)
-        XCTAssertNil(gate.ownerUserID)
-    }
-
-    func testMacRealtimeProjectionStateResetsOnlyForDifferentOwner() {
-        XCTAssertFalse(
-            MacProRealtimeProjectionStatePolicy.shouldReset(
-                previousOwnerUserID: "user-1",
-                nextOwnerUserID: "user-1"
-            )
-        )
-        XCTAssertTrue(
-            MacProRealtimeProjectionStatePolicy.shouldReset(
-                previousOwnerUserID: "user-1",
-                nextOwnerUserID: "user-2"
-            )
-        )
-        XCTAssertTrue(
-            MacProRealtimeProjectionStatePolicy.shouldReset(
-                previousOwnerUserID: nil,
-                nextOwnerUserID: "user-1"
-            )
-        )
-    }
-
-    func testMacRealtimeBaselineSkipsHistoricalReadButKeepsLaterInvalidation() {
-        var cursor = TuneAVProRealtimeProjectionCursor()
-        cursor.establishBaseline(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 4,
-            feedbackGeneration: 7,
-            sourceUpdatedAt: nil,
-            updatedAt: 1
-        ))
+    func testForegroundActivationSchedulesOneThrottledSync() {
+        var trigger = MacCloudSyncTrigger()
+        let now = Date(timeIntervalSince1970: 10_000)
 
         XCTAssertEqual(
-            cursor.consume(TuneAVProLibraryProjection(
-                ownerUserId: "user-1",
-                projectionVersion: 4,
-                libraryGeneration: 4,
-                feedbackGeneration: 7,
-                sourceUpdatedAt: nil,
-                updatedAt: 1
-            )),
+            trigger.foregroundActivated(
+                accountAvailable: true,
+                hasUser: true,
+                hasProAccess: true,
+                lastAutomaticSyncRequestedAt: nil,
+                now: now
+            ),
+            .none,
+            "Activation before the startup sync must not add a second automatic sync"
+        )
+        XCTAssertEqual(
+            trigger.startupCompleted(accountAvailable: true, hasUser: true, hasProAccess: true),
+            .schedule(MacCloudSyncTrigger.startupDelay)
+        )
+        XCTAssertEqual(
+            trigger.foregroundActivated(
+                accountAvailable: true,
+                hasUser: true,
+                hasProAccess: true,
+                lastAutomaticSyncRequestedAt: now,
+                now: now.addingTimeInterval(30)
+            ),
             .none
         )
         XCTAssertEqual(
-            cursor.consume(TuneAVProLibraryProjection(
-                ownerUserId: "user-1",
-                projectionVersion: 4,
-                libraryGeneration: 5,
-                feedbackGeneration: 7,
-                sourceUpdatedAt: nil,
-                updatedAt: 2
-            )),
-            TuneAVProRealtimeRefreshPlan(refreshLibrary: true)
+            trigger.foregroundActivated(
+                accountAvailable: true,
+                hasUser: true,
+                hasProAccess: true,
+                lastAutomaticSyncRequestedAt: now,
+                now: now.addingTimeInterval(MacCloudSyncTrigger.foregroundSyncInterval)
+            ),
+            .schedule(MacCloudSyncTrigger.startupDelay)
+        )
+        XCTAssertEqual(
+            trigger.foregroundActivated(
+                accountAvailable: true,
+                hasUser: true,
+                hasProAccess: false,
+                lastAutomaticSyncRequestedAt: nil,
+                now: now.addingTimeInterval(600)
+            ),
+            .none
         )
     }
 
-    func testMacRealtimeSingleGenerationUsesExactLibraryResource() {
-        var cursor = TuneAVProRealtimeProjectionCursor()
-        cursor.establishBaseline(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 8,
-            feedbackGeneration: 3,
-            resource: "favorites",
-            sourceUpdatedAt: 1,
-            updatedAt: 1
-        ))
-
-        let refreshPlan = cursor.consume(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 9,
-            feedbackGeneration: 3,
-            resource: "favorites",
-            sourceUpdatedAt: 2,
-            updatedAt: 2
-        ))
-        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
-
-        XCTAssertEqual(refreshPlan.libraryResource, "favorites")
-        XCTAssertEqual(executionPlan.libraryResource, .favorites)
-        XCTAssertFalse(executionPlan.requiresFullLibraryRefresh)
-    }
-
-    func testMacOwnMutationReceiptSuppressesOnlyMatchingRealtimeRead() {
-        var cursor = TuneAVProRealtimeProjectionCursor()
-        cursor.establishBaseline(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 8,
-            feedbackGeneration: 3,
-            resource: "favorites",
-            sourceUpdatedAt: 1,
-            updatedAt: 1
-        ))
-        let mutationUpdatedAt = TuneAVDateCoding.date(from: "2026-07-13T15:05:09.614Z")
-        let receipt = TuneAVLibraryMutationReceipt(
-            resource: .favorites,
-            sourceUpdatedAt: mutationUpdatedAt,
-            revision: 12,
-            etag: "\"revision-12\""
+    func testSyncClientSendsIfNoneMatchAndReplaysCachedBodyOnNotModified() async throws {
+        let recorder = MacConditionalLibraryRequestRecorder()
+        let client = TuneAVAppDataSyncClient(
+            deviceId: "test-mac",
+            platform: "macos",
+            request: { path, method, _, headers in
+                try await recorder.request(path: path, method: method, headers: headers)
+            }
         )
-        var coverage: [String: Date] = [:]
-        TuneAVLibraryMutationCoverage.record(receipt, in: &coverage)
 
-        let ownPlan = cursor.consume(
-            TuneAVProLibraryProjection(
-                ownerUserId: "user-1",
-                projectionVersion: 4,
-                libraryGeneration: 9,
-                feedbackGeneration: 3,
-                resource: "favorites",
-                sourceUpdatedAt: mutationUpdatedAt.timeIntervalSince1970 * 1_000,
-                updatedAt: 2
-            ),
-            coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: coverage
-            )
-        )
-        XCTAssertEqual(ownPlan, .none)
+        let first = try await client.pullLibrary()
+        let second = try await client.pullLibrary()
 
-        let remotePlan = cursor.consume(
-            TuneAVProLibraryProjection(
-                ownerUserId: "user-1",
-                projectionVersion: 4,
-                libraryGeneration: 10,
-                feedbackGeneration: 3,
-                resource: "favorites",
-                sourceUpdatedAt: mutationUpdatedAt.addingTimeInterval(1).timeIntervalSince1970 * 1_000,
-                updatedAt: 3
-            ),
-            coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: coverage
-            )
-        )
-        let executionPlan = MacProRealtimeRefreshExecutionPlan(remotePlan)
-        XCTAssertEqual(executionPlan.libraryResource, .favorites)
+        XCTAssertEqual(first.revision, 11)
+        XCTAssertEqual(second.revision, 11)
+        XCTAssertEqual(second.snapshot?.favorites.map(\.station.id), ["remote-favorite"])
+        XCTAssertEqual(second.sourceUpdatedAtByResource, first.sourceUpdatedAtByResource)
+        let favoritesCalls = await recorder.calls.filter { $0.path == "/v1/apps/tuneav/data/favorites" }
+        XCTAssertEqual(favoritesCalls.map(\.ifNoneMatch), [nil, "\"revision-11\""])
+        XCTAssertEqual(favoritesCalls.map(\.statusCode), [200, 304])
+        let discoveryCalls = await recorder.calls.filter { $0.path == "/v1/apps/tuneav/data/savedDiscoveries" }
+        XCTAssertEqual(discoveryCalls.map(\.statusCode), [200, 304])
     }
 
     func testMacMutationCoverageKeepsNewestReceiptAndIgnoresMissingTimestamp() {
@@ -345,46 +256,6 @@ final class MacCloudSyncTests: XCTestCase {
         )
 
         XCTAssertEqual(coverage["savedDiscoveries"], latest)
-    }
-
-    func testMacRealtimeGenerationGapKeepsConservativeFullRefresh() {
-        var cursor = TuneAVProRealtimeProjectionCursor()
-        cursor.establishBaseline(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 8,
-            feedbackGeneration: 3,
-            resource: "favorites",
-            sourceUpdatedAt: 1,
-            updatedAt: 1
-        ))
-
-        let refreshPlan = cursor.consume(TuneAVProLibraryProjection(
-            ownerUserId: "user-1",
-            projectionVersion: 4,
-            libraryGeneration: 10,
-            feedbackGeneration: 3,
-            resource: "favorites",
-            sourceUpdatedAt: 3,
-            updatedAt: 3
-        ))
-        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
-
-        XCTAssertNil(refreshPlan.libraryResource)
-        XCTAssertNil(executionPlan.libraryResource)
-        XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
-    }
-
-    func testMacRealtimeUnknownResourceKeepsConservativeFullRefresh() {
-        let executionPlan = MacProRealtimeRefreshExecutionPlan(
-            TuneAVProRealtimeRefreshPlan(
-                refreshLibrary: true,
-                libraryResource: "futureResource"
-            )
-        )
-
-        XCTAssertNil(executionPlan.libraryResource)
-        XCTAssertTrue(executionPlan.requiresFullLibraryRefresh)
     }
 
     func testScopedFavoritesPullReadsOnlyFavorites() async throws {
@@ -1469,6 +1340,40 @@ final class MacCloudSyncTests: XCTestCase {
             geoLatitude: nil,
             geoLongitude: nil
         )
+    }
+}
+
+private actor MacConditionalLibraryRequestRecorder {
+    struct Call: Equatable {
+        let path: String
+        let ifNoneMatch: String?
+        let statusCode: Int
+    }
+
+    private(set) var calls: [Call] = []
+
+    func request(path: String, method: String, headers: [String: String]) throws -> Data {
+        let etag: String
+        let body: String
+        switch path {
+        case "/v1/apps/tuneav/data/favorites":
+            etag = "\"revision-11\""
+            body = #"{"data":{"appId":"tuneav","resource":"favorites","deviceId":"remote","sentAt":"2026-07-13T12:05:00Z","entries":[{"station":{"id":"remote-favorite","name":"Remote Favorite"},"createdAt":"2026-07-13T12:05:00Z"}]},"updatedAt":"2026-07-13T12:05:00Z","revision":11,"etag":"\"revision-11\""}"#
+        case "/v1/apps/tuneav/data/savedDiscoveries":
+            etag = "\"revision-4\""
+            body = #"{"data":{"appId":"tuneav","resource":"savedDiscoveries","deviceId":"remote","sentAt":"2026-07-13T12:06:00Z","entries":[]},"updatedAt":"2026-07-13T12:06:00Z","revision":4,"etag":"\"revision-4\""}"#
+        default:
+            calls.append(Call(path: path, ifNoneMatch: nil, statusCode: 404))
+            throw TuneAVAppDataClientError.requestFailed(statusCode: 404)
+        }
+
+        let ifNoneMatch = headers["If-None-Match"]
+        if method == "GET", ifNoneMatch == etag {
+            calls.append(Call(path: path, ifNoneMatch: ifNoneMatch, statusCode: 304))
+            throw TuneAVAppDataClientError.requestFailed(statusCode: 304)
+        }
+        calls.append(Call(path: path, ifNoneMatch: ifNoneMatch, statusCode: 200))
+        return Data(body.utf8)
     }
 }
 

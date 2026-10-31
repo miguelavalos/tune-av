@@ -179,9 +179,9 @@ find . -type d \( -name '.DerivedData*' -o -name '.derived-data*' -o -name 'Deri
 ## macOS
 
 Tune AV macOS shares product behavior with the iOS client where practical and
-uses native macOS UI patterns where the platforms differ. The current macOS
-release target is Apple Silicon-only because the current Convex Swift binary
-dependency does not provide an Intel macOS slice.
+uses native macOS UI patterns where the platforms differ. The macOS target
+builds for Apple Silicon and Intel; the former arm64-only constraint came from
+the removed Convex Swift binary dependency.
 
 ### Requirements
 

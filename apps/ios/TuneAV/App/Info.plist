@@ -56,8 +56,6 @@
 	<string>$(TUNEAV_API_BASE_URL)</string>
 	<key>TUNEAV_CONFIG_ENVIRONMENT</key>
 	<string>$(TUNEAV_CONFIG_ENVIRONMENT)</string>
-	<key>TUNEAV_CONVEX_URL</key>
-	<string>$(TUNEAV_CONVEX_URL)</string>
 	<key>TUNEAV_DELETE_ACCOUNT_URL</key>
 	<string>$(TUNEAV_DELETE_ACCOUNT_URL)</string>
 	<key>TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS</key>

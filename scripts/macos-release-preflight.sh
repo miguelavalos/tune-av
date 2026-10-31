@@ -87,8 +87,7 @@ if [ "$with_archive" -eq 1 ]; then
         CODE_SIGNING_ALLOWED=NO \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGN_IDENTITY="" \
-        ARCHS=arm64 \
-        ONLY_ACTIVE_ARCH=NO
+              ONLY_ACTIVE_ARCH=NO
   fi
 
   archive_app_path="$archive_path/Products/Applications/Tune AV.app"
@@ -112,10 +111,13 @@ if [ "$with_archive" -eq 1 ]; then
     exit 1
   fi
   app_archs="$(lipo -archs "$app_binary")"
-  if [ "$app_archs" != "arm64" ]; then
-    echo "FAIL macOS archive must be Apple Silicon-only arm64, got: $app_archs" >&2
-    exit 1
-  fi
+  case " $app_archs " in
+    *" arm64 "*) ;;
+    *)
+      echo "FAIL macOS archive must include arm64, got: $app_archs" >&2
+      exit 1
+      ;;
+  esac
 
   run_step "macOS privacy manifest archive gate" \
     node scripts/check-macos-privacy-manifest.mjs --app "$archive_app_path"

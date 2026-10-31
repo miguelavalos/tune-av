@@ -104,10 +104,13 @@ if [ "$accountav_keychain_access_group" != "$expected_keychain_access_group" ]; 
 fi
 
 app_archs="$(lipo -archs "$app_binary")"
-if [ "$app_archs" != "arm64" ]; then
-  echo "FAIL macOS archive must be Apple Silicon-only arm64, got: $app_archs" >&2
-  exit 1
-fi
+case " $app_archs " in
+  *" arm64 "*) ;;
+  *)
+    echo "FAIL macOS archive must include arm64, got: $app_archs" >&2
+    exit 1
+    ;;
+esac
 
 codesign_output="$(codesign -dv --verbose=4 "$app_path" 2>&1)"
 spctl_output="$(spctl -a -vv "$app_path" 2>&1 || true)"

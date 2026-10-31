@@ -17,13 +17,11 @@ The authoritative product boundary is
 still implement the superseded feedback-sync contract and must not be promoted
 to App Review as the final implementation of that decision.
 
-Apple-client compatibility gate, 2026-07-29: currently distributed Tune AV
-clients retain the production Convex endpoint that preceded the owner-account
-transition. Do not retire that endpoint merely because a replacement TestFlight
-build exists. First release current-endpoint builds on both Apple platforms,
-verify the App Store-installed binaries, and complete an explicit adoption and
-deprecation window. Core D1/API behavior does not make realtime endpoint
-compatibility optional for supported Pro clients.
+Realtime retirement, 2026-11-01: current source contains no Convex client and
+no realtime-session request. Installed older builds that still call
+`POST /v1/tune/workspace/realtime-sessions` receive `503 realtime_disabled` and
+continue with their startup and manual sync paths. Keep that compatibility reply
+until the realtime-free iOS and macOS builds are released and verified.
 
 ## Repository Hygiene
 
@@ -174,9 +172,9 @@ Client checks:
 ## macOS Client Checks
 
 macOS shares the product behavior where practical and uses native macOS
-presentation differences. The current macOS release target is Apple
-Silicon-only because the current Convex Swift binary dependency does not provide
-an Intel macOS slice. App Store Connect macOS builds are uploaded under the
+presentation differences. The macOS target builds universal (Apple Silicon and
+Intel) archives; the archive gates require the arm64 slice to be present. App
+Store Connect macOS builds are uploaded under the
 existing Tune AV app record, so Release/prod archives must use the iOS app
 bundle identifier `com.avalsys.tuneav`; Debug/local macOS builds may keep a
 separate development bundle identifier.

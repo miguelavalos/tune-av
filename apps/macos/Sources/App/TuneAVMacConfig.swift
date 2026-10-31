@@ -13,10 +13,6 @@ enum TuneAVMacConfig {
         )
     }
 
-    static var tuneConvexURL: String {
-        TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
-    }
-
     static var revenueCatPublicAPIKey: String? {
         TuneAVBundleConfig.nonEmptyStringValue(for: "TUNEAV_REVENUECAT_PUBLIC_API_KEY")
     }

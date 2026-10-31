@@ -28,7 +28,7 @@ final class AccessLimitsTests: XCTestCase {
         let policy = RootStartupSyncPolicy(
             accountIsAvailable: true,
             isSignedIn: true,
-            lastLibrarySyncRequestedAt: now.addingTimeInterval(-60),
+            lastLibrarySyncRequestedAt: now.addingTimeInterval(-30),
             now: now
         )
 
@@ -36,17 +36,18 @@ final class AccessLimitsTests: XCTestCase {
         XCTAssertFalse(policy.shouldScheduleLibrarySync)
     }
 
-    func testRootStartupSyncPolicyDoesNotRepeatAutomaticLibrarySyncAfterInterval() {
+    func testRootStartupSyncPolicyRepeatsForegroundLibrarySyncAfterThrottleInterval() {
         let now = Date(timeIntervalSince1970: 1_000)
         let policy = RootStartupSyncPolicy(
             accountIsAvailable: true,
             isSignedIn: true,
-            lastLibrarySyncRequestedAt: now.addingTimeInterval(-86_400),
+            lastLibrarySyncRequestedAt: now.addingTimeInterval(-RootStartupSyncPolicy.foregroundSyncInterval),
             now: now
         )
 
+        XCTAssertEqual(RootStartupSyncPolicy.foregroundSyncInterval, 60)
         XCTAssertTrue(policy.shouldRefreshAccountState)
-        XCTAssertFalse(policy.shouldScheduleLibrarySync)
+        XCTAssertTrue(policy.shouldScheduleLibrarySync)
     }
 
     func testRootStartupSyncPolicyDoesNotRepeatAccountRefreshAfterForegrounding() {

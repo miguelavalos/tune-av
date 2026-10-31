@@ -30,17 +30,21 @@ contract. It is analytics input, never synchronized or restored app state.
 
 ## Traffic Contract
 
-Only saved-station and saved-song mutations may publish library realtime
-invalidations. Feedback must not create a Convex feedback invalidation, a
-projection outbox/Queue event, or a cross-device feedback snapshot read.
+There is no realtime channel. Saved stations and saved songs reach another
+device through open/foreground/manual sync: each client pulls the two library
+resources when the app opens, when it returns to the foreground (throttled to
+once per minute), after a successful sign-in, and when the user taps `Sync
+now`. Repeated pulls send `If-None-Match`; an unchanged resource answers `304`
+and nothing is re-applied. Feedback must not create a cross-device feedback
+snapshot read or any fanout.
 
 The steady-state budget for one saved-item mutation is:
 
 - one mutation from the authoring device;
-- zero author-side reads for the covered projection;
-- one exact-resource read on each active receiving device;
-- no unrelated library, feedback, summary, retry, or extra realtime-session
-  request.
+- zero author-side reads for its own covered mutation;
+- at most one conditional read per synced resource on each other device at its
+  next open, foreground activation, or manual sync;
+- no unrelated library, feedback, summary, retry, or realtime-session request.
 
 ## Migration And Release Status
 
@@ -118,6 +122,6 @@ This list remains a release guard for every replacement archive.
 
 - **Sync** means user-visible state is restored across devices.
 - **Upload** means one explicit event may be retained for server-side product
-  processing; it does not imply download, restore, or realtime delivery.
+  processing; it does not imply download, restore, or cross-device delivery.
 - **Historical evidence** records what an older build actually did and does not
   override this contract.

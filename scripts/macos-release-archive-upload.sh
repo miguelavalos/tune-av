@@ -132,8 +132,7 @@ if [ "$use_existing_archive" -eq 0 ]; then
     -archivePath "$archive_path" \
     -derivedDataPath "$repo_root/.derived-data/macos-release-derived-data" \
     -allowProvisioningUpdates \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO
+      ONLY_ACTIVE_ARCH=NO
 else
   run_step "Use existing macOS archive"
   echo "$archive_path"

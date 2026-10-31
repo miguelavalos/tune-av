@@ -7,7 +7,6 @@ options:
 
 settings:
   base:
-    ARCHS: arm64
     DEVELOPMENT_LANGUAGE: en
     PRODUCT_NAME: Tune AV
     SWIFT_VERSION: "6.0"
@@ -17,9 +16,6 @@ packages:
     path: ../../../account-av
   AppsAV:
     path: ../../../apps-av/apple
-  ConvexMobile:
-    url: https://github.com/get-convex/convex-swift
-    from: 0.8.1
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios-spm.git
     from: 5.0.0
@@ -87,8 +83,6 @@ targets:
         product: AVPaywallFoundation
       - package: AppsAV
         product: AVDiagnosticsFoundation
-      - package: ConvexMobile
-        product: ConvexMobile
       - package: RevenueCat
         product: RevenueCat
     info:
@@ -109,7 +103,6 @@ targets:
         ACCOUNTAV_MANAGEMENT_URL: $(ACCOUNTAV_MANAGEMENT_URL)
         SUPPORTAV_BASE_URL: $(SUPPORTAV_BASE_URL)
         TUNEAV_CONFIG_ENVIRONMENT: $(TUNEAV_CONFIG_ENVIRONMENT)
-        TUNEAV_CONVEX_URL: $(TUNEAV_CONVEX_URL)
         TUNEAV_MACOS_SENTRY_DSN: $(TUNEAV_MACOS_SENTRY_DSN)
         TUNEAV_DELETE_ACCOUNT_URL: $(TUNEAV_DELETE_ACCOUNT_URL)
         TUNEAV_TERMS_URL: $(TUNEAV_TERMS_URL)

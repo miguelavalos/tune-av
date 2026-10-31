@@ -52,14 +52,15 @@ submitted macOS on 2026-07-29. The owner subsequently confirmed approval, and
 a signed-in App Store Connect read lists macOS `1.0.7` as `Ready for
 Distribution`.
 
-App Store compatibility note, 2026-07-29: the currently distributed iOS and
-macOS clients were built before the Convex owner-account transition and retain
-their previous production realtime endpoint. Keep that deployment available
-while those clients remain supported. Removing it would not remove the durable
-D1/API library authority or core playback/search behavior, but it can degrade
-Pro realtime invalidation for installed clients. A replacement may be retired
-only after new iOS and macOS builds using the current endpoint are released,
-verified from the App Store, and given an explicit adoption/deprecation window.
+Realtime retirement note, 2026-11-01: the Convex realtime layer was removed
+from both Apple clients. Current source no longer links `ConvexMobile`, no
+longer reads `TUNEAV_CONVEX_URL`, and never calls
+`POST /v1/tune/workspace/realtime-sessions`. Pro cloud sync now refreshes on
+app open, on foreground activation (throttled to once per minute), after a
+successful sign-in, and on the manual `Sync now` action. Older installed builds
+that still request a realtime session receive `503 realtime_disabled` from the
+backend and keep working with their startup and manual sync paths; durable D1/API
+library authority and playback/search behavior are unaffected.
 
 ## App Scope
 
@@ -99,8 +100,8 @@ Current app shape:
 - app-neutral shared Apple UI foundations for brand tokens, shell structure,
   launch/splash support, settings/account surfaces, Avi controls, paywall/limit
   surfaces, external link/search defaults, and text-fit hardening.
-- macOS Apple Silicon release target while the current Convex Swift binary
-  dependency does not provide an Intel macOS slice.
+- macOS universal build target (Apple Silicon and Intel) now that the Convex
+  Swift binary dependency is gone.
 
 ## Branding And First Run
 
@@ -141,14 +142,17 @@ remains local-only and can legitimately show different song totals per device.
 
 ## Calm Pro Sync Contract
 
-The Apple clients use a calm-sync model to keep Cloudflare and Convex traffic
-bounded:
+The Apple clients use a calm-sync model to keep Cloudflare traffic bounded:
 
 - perform one automatic full library sync at cold startup or after successful
   sign-in when Pro cloud sync is available;
-- keep foreground transitions passive instead of treating every activation as
-  another full-sync trigger;
-- keep manual `Sync now` as the explicit recovery path;
+- pull again when the app returns to the foreground (iOS scene activation,
+  macOS app activation or system wake), throttled to at most one automatic
+  pull per 60 seconds; there is no timer, polling loop, or push channel;
+- send `If-None-Match` with the last known resource ETag on every repeated
+  app-data GET and treat `304 Not Modified` as "library unchanged" without
+  re-applying or re-pushing anything;
+- keep manual `Sync now` as the explicit recovery path on iOS and macOS;
 - serialize backend mutations within each app process so a burst of local
   changes cannot create parallel Cloudflare writes;
 - attach the persisted operation UUID as `Idempotency-Key` to item-level
@@ -157,42 +161,20 @@ bounded:
   respect numeric `Retry-After`, and stop after five total attempts; permanent
   failures remain persisted for a later manual/session recovery instead of
   looping;
-- create one realtime session and one Convex subscription for the active Pro
-  account, and reuse them while the account identity is unchanged;
-- renew that realtime session before its server-provided expiry, with bounded
-  jittered retries, while keeping the existing session and subscription when
-  the app returns to the foreground outside the renewal window;
-- pause renewal and Convex observation while inactive (and during macOS system
-  sleep), and remove an expired session after the bounded retry budget is
-  exhausted;
 - preserve the confirmed Pro capability while refreshing entitlement state for
-  the same internal account user, avoiding a temporary Free state that would
-  tear down and recreate realtime sync;
+  the same internal account user, avoiding a temporary Free state;
 - when the internal account user changes, immediately remove the previous
-  account's capabilities until the new user's backend access is resolved.
-- compare the first Convex projection with the exact per-resource timestamps
-  returned by the Cloudflare bootstrap, so already-covered favorites or saved
-  discoveries do not trigger duplicate reads;
-- use the exact per-resource timestamp to suppress a projection already covered
-  by bootstrap;
+  account's capabilities until the new user's backend access is resolved;
 - after an item-level favorite or saved-discovery mutation succeeds, retain the
-  response `updatedAt` as coverage for that resource so the matching projection
-  does not make the authoring device read its own write;
-- after a realtime baseline exists, scope a single consecutive library
-  generation to its declared resource on both Apple clients, issuing one
-  resource GET and no unrelated feedback or summary read;
+  response `updatedAt` and ETag as coverage for that resource so the next
+  conditional pull is validated instead of re-downloaded;
 - do not bootstrap, restore, poll, or subscribe to feedback as a sync resource;
-  feedback writes must not create Convex invalidations or projection fanout;
-- keep bootstrap, manual recovery, generation gaps, and unknown resources on
-  the conservative full-library path.
-
-Realtime invalidations may request a focused refresh, but must not create a
-polling loop or an additional foreground-driven full sync.
+- keep bootstrap and manual recovery on the conservative full-library path.
 
 For one successful local item mutation, the steady-state cross-device request
-budget is one mutation request from the authoring device, zero follow-up App
-Data GETs on that device for the matching covered projection, and one exact
-resource GET on each active receiving device. Missing or malformed mutation
+budget is one mutation request from the authoring device and, on each other
+device, one conditional GET per synced resource at its next open, foreground
+activation, or manual sync. Missing or malformed mutation
 timestamps remain conservative and do not suppress a read.
 
 ## Runtime Configuration
@@ -389,12 +371,11 @@ build, install, and launch the app.
 
 ## Open Public Work
 
-- release and verify replacement iOS/macOS builds that use the current
-  production realtime endpoint before retiring compatibility for older Apple
-  clients;
+- release and verify iOS/macOS builds without the realtime layer so the
+  backend `503 realtime_disabled` compatibility reply can later be removed;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
 - keep public docs focused on client behavior, local setup, and local
   verification;
-- keep macOS release documentation aligned with the Apple Silicon-only target
-  until the Convex Swift dependency supports Intel macOS archives.
+- produce and verify the first universal (Apple Silicon and Intel) macOS
+  archive now that the arm64-only constraint is gone.

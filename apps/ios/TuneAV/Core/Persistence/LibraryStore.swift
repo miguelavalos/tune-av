@@ -22,7 +22,8 @@ final class LibraryStore: ObservableObject {
     private static let pendingFeedbackUploadsStorageKey = "tuneav.pendingFeedbackUploads.v1"
     static let pendingListeningSessionsStorageKey = "tuneav.pendingListeningSessions.v1"
     private static let userSummaryRefreshInterval: TimeInterval = 300
-    private static let cloudLibraryRefreshInterval: TimeInterval = 300
+    /// Automatic pulls (startup, sign-in, foreground activation) are spaced at least this far apart.
+    private static let cloudLibraryRefreshInterval: TimeInterval = 60
     private static let discoveryRefreshInterval: TimeInterval = 60
     private static let listeningSessionBatchSize = 5
     private static let maxPendingListeningSessions = 50
@@ -49,7 +50,6 @@ final class LibraryStore: ObservableObject {
     private let tombstoneEncoder = JSONEncoder()
     private let tombstoneDecoder = JSONDecoder()
     private var isApplyingRemoteSnapshot = false
-    private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
     private var pushTask: Task<Void, Never>?
     private var cloudLibraryRefreshTask: Task<Void, Never>?
     private var cloudLibraryRefreshedAt: Date?
@@ -870,7 +870,6 @@ final class LibraryStore: ObservableObject {
         backendService = service
         backendServiceUserID = service == nil ? nil : userID
         if previousUserID != backendServiceUserID {
-            proRealtimeProjectionCursor.reset()
             cloudLibraryRefreshTask?.cancel()
             cloudLibraryRefreshTask = nil
             cloudLibraryRefreshedAt = nil
@@ -1218,31 +1217,6 @@ final class LibraryStore: ObservableObject {
         cloudLibraryRefreshTask = nil
     }
 
-    func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        if TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
-            projection: projection,
-            hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
-            didCompleteLibraryBootstrap: cloudLibraryRefreshedAt != nil
-        ) {
-            proRealtimeProjectionCursor.establishBaseline(projection)
-            return
-        }
-
-        let refreshPlan = proRealtimeProjectionCursor.consume(
-            projection,
-            coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource
-            )
-        )
-        if refreshPlan.refreshLibrary,
-           let rawResource = refreshPlan.libraryResource,
-           let resource = TuneAVAppDataResource(rawValue: rawResource) {
-            await refreshCloudLibraryResourceIfNeeded(resource)
-        } else if refreshPlan.refreshLibrary {
-            await refreshCloudLibraryIfNeeded(force: true)
-        }
-    }
-
     private func performCloudLibraryRefresh(using appDataService: TuneAVAppDataService) async {
         do {
             setCloudSyncStatus(.syncing)
@@ -1308,54 +1282,6 @@ final class LibraryStore: ObservableObject {
             guard self.appDataService === appDataService else { return }
             setCloudSyncStatus(.failed)
             return
-        }
-    }
-
-    private func refreshCloudLibraryResourceIfNeeded(_ resource: TuneAVAppDataResource) async {
-        guard let appDataService, appDataService.isConfigured() else {
-            setCloudSyncStatus(.idle)
-            return
-        }
-
-        if let cloudLibraryRefreshTask {
-            await cloudLibraryRefreshTask.value
-            return
-        }
-
-        let task = Task { @MainActor in
-            await performCloudLibraryResourceRefresh(resource, using: appDataService)
-        }
-        cloudLibraryRefreshTask = task
-        await task.value
-        cloudLibraryRefreshTask = nil
-    }
-
-    private func performCloudLibraryResourceRefresh(
-        _ resource: TuneAVAppDataResource,
-        using appDataService: TuneAVAppDataService
-    ) async {
-        do {
-            setCloudSyncStatus(.syncing)
-            let localSnapshot = librarySnapshot()
-            let remoteDocument = try await appDataService.pullLibraryResource(
-                resource,
-                mergingInto: localSnapshot
-            )
-            guard self.appDataService === appDataService else { return }
-            cloudLibrarySourceUpdatedAtByResource[resource.rawValue] = remoteDocument.updatedAt
-            updateSyncDiagnostics { $0.lastCloudPullAt = .now }
-            let mergedSnapshot = cloudBoundedSnapshot(
-                TuneAVLibrarySnapshotMerger.merged(
-                    local: localSnapshot,
-                    remote: remoteDocument.snapshot
-                )
-            )
-            applyRemoteSnapshot(mergedSnapshot)
-            setCloudSyncStatus(.synced(.now))
-            cloudLibraryRefreshedAt = .now
-        } catch {
-            guard self.appDataService === appDataService else { return }
-            setCloudSyncStatus(.failed)
         }
     }
 

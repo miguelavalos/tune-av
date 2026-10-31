@@ -38,14 +38,12 @@ cd "$IOS_DIR"
 xcodegen generate >/dev/null
 
 echo "==> Building Tune AV Release for simulator $device_id"
-echo "==> Forcing arm64 because ConvexMobile does not ship an x86_64 simulator slice."
 xcodebuild build \
   -project "$PROJECT_PATH" \
   -scheme "$SCHEME" \
   -configuration Release \
   -destination "platform=iOS Simulator,id=$device_id" \
   -derivedDataPath "$DERIVED_DATA_PATH" \
-  ARCHS=arm64 \
   ONLY_ACTIVE_ARCH=YES \
   CODE_SIGNING_ALLOWED=NO
 

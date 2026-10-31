@@ -277,19 +277,6 @@ final class TuneAVAccessClient {
         return tuneAVAccess
     }
 
-    func createTuneAVRealtimeSession() async throws -> TuneAVRealtimeSession {
-        let response: TuneAVSharedRealtimeSessionResponse = try await request(
-            path: "/v1/tune/workspace/realtime-sessions",
-            method: "POST",
-            body: Data("{}".utf8),
-            headers: ["Content-Type": "application/json"]
-        )
-        return TuneAVRealtimeSession(
-            realtimeSessionId: response.realtimeSessionId,
-            expiresAt: Date(timeIntervalSince1970: response.expiresAt / 1_000)
-        )
-    }
-
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
@@ -369,8 +356,9 @@ final class TuneAVAccessClient {
             throw URLError(.badServerResponse)
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
+            // `304 Not Modified` is a successful validation of a cached resource, not a failure.
             recordNetworkEvent(NetworkEvent(
-                kind: .failed,
+                kind: httpResponse.statusCode == 304 ? .completed : .failed,
                 operation: operation,
                 method: method,
                 statusCode: httpResponse.statusCode,
@@ -508,8 +496,6 @@ final class TuneAVAccessClient {
             return "v1.tune.feedback"
         case ["v1", "tune", "analytics", "listening-sessions"]:
             return "v1.tune.analytics.listening_sessions"
-        case ["v1", "tune", "workspace", "realtime-sessions"]:
-            return "v1.tune.workspace.realtime_sessions"
         case ["v1", "tune", "me", "summary"]:
             return "v1.tune.me.summary"
         default:
@@ -606,11 +592,6 @@ final class TuneAVAccessClient {
             try await Task.sleep(nanoseconds: backoffNanoseconds)
         }
     }
-}
-
-private struct TuneAVSharedRealtimeSessionResponse: Decodable {
-    let realtimeSessionId: String
-    let expiresAt: TimeInterval
 }
 
 private extension URLError.Code {

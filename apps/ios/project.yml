@@ -16,9 +16,6 @@ packages:
     path: ../../../account-av
   AppsAV:
     path: ../../../apps-av/apple
-  ConvexMobile:
-    url: https://github.com/get-convex/convex-swift
-    from: 0.8.1
   Clerk:
     url: https://github.com/clerk/clerk-ios
     from: 1.0.0
@@ -85,8 +82,6 @@ targets:
         product: AVPaywallFoundation
       - package: AppsAV
         product: AVProductAccountFoundation
-      - package: ConvexMobile
-        product: ConvexMobile
       - package: Clerk
         product: ClerkKit
       - package: Clerk

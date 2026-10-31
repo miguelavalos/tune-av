@@ -234,6 +234,8 @@ actor TuneAVAppDataSyncClient {
     private let encoder: JSONEncoder
     private var lastKnownRevisions: [String: Int] = [:]
     private var lastKnownEtags: [String: String] = [:]
+    /// Last full resource representation returned by the backend, replayed when a validated GET answers `304`.
+    private var cachedResourceResponseData: [String: Data] = [:]
     private var lastPulledLibrarySnapshot: TuneAVLibrarySnapshot?
 
     init(
@@ -396,7 +398,7 @@ actor TuneAVAppDataSyncClient {
         _ resource: TuneAVAppDataResource,
         entryType: Entry.Type
     ) async throws -> TuneAVAppDataResourceDocument<Entry> {
-        let data = try await request(dataPath(for: resource), "GET", nil, defaultHeaders())
+        let data = try await fetchResourceData(for: resource)
         let payload = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
         rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
 
@@ -412,7 +414,7 @@ actor TuneAVAppDataSyncClient {
         _ resource: TuneAVAppDataResource,
         entryType: Entry.Type
     ) async throws -> TuneAVAppDataResourceDocument<Entry> {
-        let data = try await request(dataPath(for: resource), "GET", nil, defaultHeaders())
+        let data = try await fetchResourceData(for: resource)
         let payload = try decoder.decode(TuneAVLossyAppDataResponsePayload<Entry>.self, from: data)
         rememberSyncVersion(for: resource, revision: payload.revision, etag: payload.etag)
 
@@ -452,6 +454,7 @@ actor TuneAVAppDataSyncClient {
             )
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
+            cachedResourceResponseData[resource.rawValue] = data
             return response.data.entries
         } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 409 {
             throw TuneAVAppDataError.conflict
@@ -477,6 +480,7 @@ actor TuneAVAppDataSyncClient {
             )
             let response = try decoder.decode(TuneAVAppDataResponsePayload<Entry>.self, from: data)
             rememberSyncVersion(for: resource, revision: response.revision, etag: response.etag)
+            cachedResourceResponseData[resource.rawValue] = nil
             lastPulledLibrarySnapshot = nil
             let sourceUpdatedAt = TuneAVDateCoding.date(from: response.updatedAt)
             return TuneAVLibraryMutationReceipt(
@@ -498,6 +502,30 @@ actor TuneAVAppDataSyncClient {
     private func forgetSyncVersion(for resource: TuneAVAppDataResource) {
         lastKnownRevisions[resource.rawValue] = nil
         lastKnownEtags[resource.rawValue] = nil
+        cachedResourceResponseData[resource.rawValue] = nil
+    }
+
+    /// Sends `If-None-Match` with the last known ETag when a cached representation exists and treats a
+    /// `304 Not Modified` reply as "unchanged", replaying the cached body instead of failing the pull.
+    private func fetchResourceData(for resource: TuneAVAppDataResource) async throws -> Data {
+        var headers = defaultHeaders()
+        let cachedData = cachedResourceResponseData[resource.rawValue]
+        if cachedData != nil, let etag = lastKnownEtags[resource.rawValue] {
+            headers["If-None-Match"] = etag
+        }
+
+        do {
+            let data = try await request(dataPath(for: resource), "GET", nil, headers)
+            cachedResourceResponseData[resource.rawValue] = data
+            return data
+        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 304 {
+            if let cachedData {
+                return cachedData
+            }
+            let data = try await request(dataPath(for: resource), "GET", nil, defaultHeaders())
+            cachedResourceResponseData[resource.rawValue] = data
+            return data
+        }
     }
 
     private func dataPath(for resource: TuneAVAppDataResource) -> String {

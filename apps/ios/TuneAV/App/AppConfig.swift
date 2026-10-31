@@ -25,10 +25,6 @@ enum AppConfig {
             ?? avAccountAPIBaseURL
     }
 
-    static var tuneConvexURL: String {
-        TuneAVBundleConfig.stringValue(for: "TUNEAV_CONVEX_URL")
-    }
-
     static var isListeningAnalyticsUploadEnabled: Bool {
         TuneAVBundleConfig.boolValue(for: "TUNEAV_ENABLE_LISTENING_ANALYTICS_UPLOADS")
     }

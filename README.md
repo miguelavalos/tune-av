@@ -30,7 +30,7 @@ This repository is released under the MIT license. See [LICENSE](LICENSE).
 ```text
 apps/
   ios/      SwiftUI iOS app
-  macos/    SwiftUI macOS app, Apple Silicon release target
+  macos/    SwiftUI macOS app, universal (Apple Silicon and Intel)
   web/      TanStack web app for signed-in Tune AV surfaces
 docs/
   ios-current-state.md
@@ -53,14 +53,13 @@ shared/
 - optional account and premium UI surfaces when local configuration enables them
 - iOS project and public Xcode configuration
 - shared SwiftUI shell, branding, settings, Avi, and text-fit helpers
-- macOS project and public Xcode configuration for Apple Silicon builds
+- macOS project and public Xcode configuration for universal macOS builds
 
 ## Current State
 
 - `apps/ios` is the current Tune AV iOS app.
-- `apps/macos` is the current Tune AV macOS app. The macOS release target is
-  Apple Silicon-only while the current Convex Swift binary dependency does not
-  provide an Intel macOS slice. App Store release builds use the same
+- `apps/macos` is the current Tune AV macOS app. It builds for Apple Silicon
+  and Intel Macs. App Store release builds use the same
   `com.avalsys.tuneav` bundle identifier as iOS because macOS is added as a
   platform on the existing App Store Connect app record.
 - `apps/web` is the current Tune AV web app for signed-in app surfaces.
@@ -99,7 +98,7 @@ The tracked debug configuration uses neutral defaults and optional
 3. Open `apps/macos/TuneAVMac.xcodeproj` in Xcode and run the `TuneAVMac`
    scheme.
 
-The macOS target is configured for Apple Silicon builds.
+The macOS target builds for Apple Silicon and Intel Macs.
 
 ## Local Secrets
 

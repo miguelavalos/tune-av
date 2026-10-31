@@ -248,14 +248,11 @@ final class TuneAVMacModel: ObservableObject {
     private var libraryTombstones: [TuneAVLibraryTombstone] = []
     private var cloudSyncTrigger = MacCloudSyncTrigger()
     private var cloudSyncExecutionGate = MacCloudSyncExecutionGate()
-    private var proRealtimeBootstrapGate = MacProRealtimeBootstrapGate()
     private var pendingCloudSyncTask: Task<Void, Never>?
-    private var proRealtimeProjectionCancellable: AnyCancellable?
-    private var activeProRealtimeSessionOwnerUserID: String?
     private var accountAccessRefreshGeneration = 0
-    private let proLibraryObserver = TuneAVProLibraryObserver(deploymentURL: TuneAVMacConfig.tuneConvexURL)
-    private let realtimeSessionSupervisor = TuneAVRealtimeSessionSupervisor()
-    private var proRealtimeProjectionCursor = TuneAVProRealtimeProjectionCursor()
+    private var lastAutomaticCloudSyncRequestedAt: Date?
+    private var appDataSyncClient: TuneAVAppDataSyncClient?
+    private var appDataSyncClientUserID: String?
     private var cloudLibrarySourceUpdatedAtByResource: [String: Date] = [:]
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
@@ -899,27 +896,39 @@ final class TuneAVMacModel: ObservableObject {
     func prepareForTermination() {
         flushActiveListeningSession(endedReason: .appClosed, schedulesUpload: false)
         stopListeningSessionUploads()
-        stopProRealtimeSync()
     }
 
     func prepareForSystemSleep() {
         flushActiveListeningSession(endedReason: .appBackgrounded, schedulesUpload: false)
         stopListeningSessionUploads()
-        pauseProRealtimeSync()
     }
 
     func resumeAfterSystemWake() {
         resumeListeningSessionIfEligible()
         schedulePendingListeningSessionUploadsForCurrentUser()
-        startProRealtimeSyncIfNeeded()
+        scheduleForegroundCloudSyncIfNeeded()
     }
 
     func prepareForAppInactivity() {
-        pauseProRealtimeSync()
+        // Nothing to pause: cloud sync only runs on open, activation, sign-in, or manual request.
     }
 
     func resumeAfterAppActivation() {
-        startProRealtimeSyncIfNeeded()
+        scheduleForegroundCloudSyncIfNeeded()
+    }
+
+    /// Pulls the Pro library when the app returns to the foreground or wakes, at most once per
+    /// `MacCloudSyncTrigger.foregroundSyncInterval`.
+    private func scheduleForegroundCloudSyncIfNeeded() {
+        handleCloudSyncTriggerAction(
+            cloudSyncTrigger.foregroundActivated(
+                accountAvailable: accountService.isAvailable,
+                hasUser: accountUser != nil,
+                hasProAccess: hasProCloudSyncAccess,
+                lastAutomaticSyncRequestedAt: lastAutomaticCloudSyncRequestedAt,
+                now: nowProvider()
+            )
+        )
     }
 
     func flushPendingListeningSessions() {
@@ -1282,7 +1291,9 @@ final class TuneAVMacModel: ObservableObject {
     func signOut() async {
         flushActiveListeningSession(endedReason: .appClosed)
         handleCloudSyncTriggerAction(cloudSyncTrigger.signOutStarted())
-        stopProRealtimeSync()
+        lastAutomaticCloudSyncRequestedAt = nil
+        appDataSyncClient = nil
+        appDataSyncClientUserID = nil
         stopPendingLibraryOperations()
         stopPendingFeedbackUploads()
         stopListeningSessionUploads()
@@ -1416,30 +1427,12 @@ final class TuneAVMacModel: ObservableObject {
 
     func synchronizeLibraryNow() async {
         guard cloudSyncExecutionGate.begin() else { return }
-        let bootstrapOwnerUserID = proRealtimeBootstrapGate.ownerUserID
-        var bootstrapSucceeded = false
-        defer {
-            cloudSyncExecutionGate.finish()
-            proRealtimeBootstrapGate.complete(
-                ownerUserID: bootstrapOwnerUserID,
-                succeeded: bootstrapSucceeded
-            )
-        }
+        defer { cloudSyncExecutionGate.finish() }
 
-        bootstrapSucceeded = await performLibrarySyncNow()
-        if cloudSyncExecutionGate.consumePendingFollowUp() {
-            let followUpSucceeded = await performLibrarySyncNow()
-            bootstrapSucceeded = bootstrapSucceeded && followUpSucceeded
-        }
-    }
-
-    private func synchronizeLibraryResourceNow(_ resource: TuneAVAppDataResource) async {
-        guard cloudSyncExecutionGate.begin() else { return }
-        _ = await performLibraryResourceRefreshNow(resource)
+        _ = await performLibrarySyncNow()
         if cloudSyncExecutionGate.consumePendingFollowUp() {
             _ = await performLibrarySyncNow()
         }
-        cloudSyncExecutionGate.finish()
     }
 
     private func performLibrarySyncNow() async -> Bool {
@@ -1548,175 +1541,6 @@ final class TuneAVMacModel: ObservableObject {
             cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
         }
         return false
-    }
-
-    private func performLibraryResourceRefreshNow(_ resource: TuneAVAppDataResource) async -> Bool {
-        guard accountService.isAvailable else {
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("mac.sync.error.accountUnavailable")
-            return false
-        }
-
-        do {
-            cloudSyncStatus = .syncing
-            cloudSyncErrorMessage = nil
-            let client = makeAppDataSyncClient()
-            let localSnapshot = librarySnapshot()
-            let remoteDocument = try await client.pullLibraryResource(
-                resource,
-                mergingInto: localSnapshot
-            )
-            let snapshotToApply = cloudBoundedSnapshot(
-                TuneAVLibrarySnapshotMerger.merged(
-                    local: localSnapshot,
-                    remote: remoteDocument.snapshot
-                )
-            )
-            applyLibrarySnapshot(snapshotToApply)
-            cloudLibrarySourceUpdatedAtByResource[resource.rawValue] = remoteDocument.updatedAt
-            lastCloudSyncAt = .now
-            cloudSyncStatus = .synced(lastCloudSyncAt ?? .now)
-            if let accountUser {
-                persistLastKnownAccountUser(accountUser)
-            }
-            return true
-        } catch TuneAVAppDataClientError.missingToken {
-            TuneAVMacDiagnostics.capture(
-                TuneAVAppDataClientError.missingToken,
-                feature: "tune.mac.sync",
-                operation: "refresh_library_resource",
-                step: "auth"
-            )
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
-        } catch TuneAVAppDataClientError.missingBaseURL {
-            TuneAVMacDiagnostics.capture(
-                TuneAVAppDataClientError.missingBaseURL,
-                feature: "tune.mac.sync",
-                operation: "refresh_library_resource",
-                step: "configuration"
-            )
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("mac.sync.error.missingBaseURL")
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) where statusCode == 401 || statusCode == 403 {
-            TuneAVMacDiagnostics.capture(
-                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
-                feature: "tune.mac.sync",
-                operation: "refresh_library_resource",
-                step: "http_status",
-                data: ["status_code": String(statusCode)]
-            )
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("profile.sync.detail.signInAgain")
-        } catch TuneAVAppDataClientError.requestFailed(let statusCode, _) {
-            TuneAVMacDiagnostics.capture(
-                TuneAVAppDataClientError.requestFailed(statusCode: statusCode),
-                feature: "tune.mac.sync",
-                operation: "refresh_library_resource",
-                step: "http_status",
-                data: ["status_code": String(statusCode)]
-            )
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
-        } catch {
-            TuneAVMacDiagnostics.capture(
-                error,
-                feature: "tune.mac.sync",
-                operation: "refresh_library_resource",
-                step: "unknown"
-            )
-            cloudSyncStatus = .failed
-            cloudSyncErrorMessage = L10n.string("profile.sync.detail.failed")
-        }
-        return false
-    }
-
-    private func startProRealtimeSyncIfNeeded() {
-        guard hasProCloudSyncAccess else {
-            stopProRealtimeSync()
-            return
-        }
-        guard proLibraryObserver.isConfigured else { return }
-        guard let ownerUserId = accountUser?.id, !ownerUserId.isEmpty else { return }
-        if activeProRealtimeSessionOwnerUserID == ownerUserId,
-           proRealtimeProjectionCancellable != nil {
-            return
-        }
-
-        let shouldResetProjectionState = MacProRealtimeProjectionStatePolicy.shouldReset(
-            previousOwnerUserID: activeProRealtimeSessionOwnerUserID,
-            nextOwnerUserID: ownerUserId
-        )
-        if shouldResetProjectionState {
-            proRealtimeProjectionCursor.reset()
-            cloudLibrarySourceUpdatedAtByResource.removeAll()
-            TuneAVRealtimeSessionStore.shared.clear()
-        }
-        activeProRealtimeSessionOwnerUserID = ownerUserId
-        proRealtimeProjectionCancellable?.cancel()
-        proLibraryObserver.clear()
-
-        proRealtimeProjectionCancellable = proLibraryObserver.$projection
-            .compactMap { $0 }
-            .sink { [weak self] projection in
-                Task { @MainActor [weak self] in
-                    await self?.handleProRealtimeInvalidation(projection)
-                }
-            }
-
-        realtimeSessionSupervisor.start(
-            createSession: { [weak self] in
-                guard let self else { throw CancellationError() }
-                return try await self.createRealtimeSession()
-            },
-            didCreateSession: { [weak self] session in
-                guard let self else { return }
-                guard self.accountUser?.id == ownerUserId,
-                      self.hasProCloudSyncAccess else { return }
-                TuneAVRealtimeSessionStore.shared.update(
-                    ownerUserId: ownerUserId,
-                    realtimeSessionId: session.realtimeSessionId
-                )
-                self.proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
-            },
-            didExhaustRetries: { [weak self] error in
-                guard self?.activeProRealtimeSessionOwnerUserID == ownerUserId else { return }
-                self?.activeProRealtimeSessionOwnerUserID = nil
-                TuneAVRealtimeSessionStore.shared.clear()
-                self?.proLibraryObserver.clear()
-                TuneAVMacDiagnostics.capture(
-                    error,
-                    feature: "tune.mac.sync",
-                    operation: "pro_realtime",
-                    step: "session"
-                )
-            }
-        )
-    }
-
-    private func stopProRealtimeSync() {
-        realtimeSessionSupervisor.stop()
-        proRealtimeProjectionCancellable?.cancel()
-        proRealtimeProjectionCancellable = nil
-        pendingCloudSyncTask?.cancel()
-        pendingCloudSyncTask = nil
-        proRealtimeBootstrapGate.reset()
-        activeProRealtimeSessionOwnerUserID = nil
-        proRealtimeProjectionCursor.reset()
-        cloudLibrarySourceUpdatedAtByResource.removeAll()
-        TuneAVRealtimeSessionStore.shared.clear()
-        proLibraryObserver.clear()
-    }
-
-    private func pauseProRealtimeSync() {
-        realtimeSessionSupervisor.pause()
-        proRealtimeProjectionCancellable?.cancel()
-        proRealtimeProjectionCancellable = nil
-        proLibraryObserver.clear()
-    }
-
-    private func createRealtimeSession() async throws -> TuneAVRealtimeSession {
-        try await makeTuneAPIClient().createTuneAVRealtimeSession()
     }
 
     func fetchAccountDeletionSummary() async throws -> AccountSummary {
@@ -2304,17 +2128,15 @@ final class TuneAVMacModel: ObservableObject {
         }
         if resolvedAccess.accessMode == .signedInPro {
             clearSubscriptionReconciliationState()
-            if previousAccessMode != .signedInPro,
-               let ownerUserID = accountUser?.id {
-                proRealtimeBootstrapGate.begin(ownerUserID: ownerUserID)
+            if previousAccessMode != .signedInPro {
                 scheduleCloudSync(delay: MacCloudSyncTrigger.startupDelay)
             }
-            startProRealtimeSyncIfNeeded()
             schedulePendingLibraryOperationsForCurrentUser()
             resumeListeningSessionIfEligible()
             schedulePendingListeningSessionUploadsForCurrentUser()
         } else {
-            stopProRealtimeSync()
+            pendingCloudSyncTask?.cancel()
+            pendingCloudSyncTask = nil
             stopPendingLibraryOperations()
             stopListeningSessionUploads()
         }
@@ -2367,8 +2189,12 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
+    /// One sync client per signed-in user so remembered ETags can turn unchanged pulls into `304` replies.
     private func makeAppDataSyncClient() -> TuneAVAppDataSyncClient {
-        TuneAVAppDataSyncClient(deviceId: "tuneav-mac", platform: "macos") { [weak self] path, method, body, headers in
+        if let appDataSyncClient, appDataSyncClientUserID == accountUser?.id {
+            return appDataSyncClient
+        }
+        let client = TuneAVAppDataSyncClient(deviceId: "tuneav-mac", platform: "macos") { [weak self] path, method, body, headers in
             guard let self else { throw TuneAVAppDataClientError.missingToken }
             do {
                 return try await self.makeAccountAPIClient().requestData(
@@ -2390,6 +2216,9 @@ final class TuneAVMacModel: ObservableObject {
                 throw error
             }
         }
+        appDataSyncClient = client
+        appDataSyncClientUserID = accountUser?.id
+        return client
     }
 
     private func enqueueFavoriteLibraryOperation(
@@ -3213,52 +3042,6 @@ final class TuneAVMacModel: ObservableObject {
         markCloudLibraryApplied()
     }
 
-    private func handleProRealtimeInvalidation(_ projection: TuneAVProLibraryProjection) async {
-        if proRealtimeBootstrapGate.shouldAwaitBootstrap(for: projection.ownerUserId),
-           let pendingCloudSyncTask {
-            await pendingCloudSyncTask.value
-        }
-
-        guard accessMode == .signedInPro,
-              accountUser?.id == projection.ownerUserId else { return }
-
-        while cloudSyncExecutionGate.isRunning {
-            do {
-                try await Task.sleep(for: .milliseconds(50))
-            } catch {
-                return
-            }
-            guard accessMode == .signedInPro,
-                  accountUser?.id == projection.ownerUserId else { return }
-        }
-
-        if TuneAVProRealtimeInitialProjectionPolicy.shouldEstablishLegacyBaseline(
-            projection: projection,
-            hasProjectionBaseline: proRealtimeProjectionCursor.hasBaseline(for: projection.ownerUserId),
-            didCompleteLibraryBootstrap: proRealtimeBootstrapGate.hasCompletedSuccessfulBootstrap(
-                for: projection.ownerUserId
-            )
-        ) {
-            proRealtimeProjectionCursor.establishBaseline(projection)
-            proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
-            return
-        }
-
-        let refreshPlan = proRealtimeProjectionCursor.consume(
-            projection,
-            coverage: TuneAVProRealtimeCoverage(
-                librarySourceUpdatedAtByResource: cloudLibrarySourceUpdatedAtByResource
-            )
-        )
-        proRealtimeBootstrapGate.finishInitialProjection(ownerUserID: projection.ownerUserId)
-        let executionPlan = MacProRealtimeRefreshExecutionPlan(refreshPlan)
-        if let resource = executionPlan.libraryResource {
-            await synchronizeLibraryResourceNow(resource)
-        } else if executionPlan.requiresFullLibraryRefresh {
-            await synchronizeLibraryNow()
-        }
-    }
-
     @discardableResult
     private func rememberFavoriteDeletion(for station: Station) -> FavoriteStationRecord {
         let deletedAt = Date.now
@@ -3386,7 +3169,6 @@ final class TuneAVMacModel: ObservableObject {
         case .cancel:
             pendingCloudSyncTask?.cancel()
             pendingCloudSyncTask = nil
-            proRealtimeBootstrapGate.reset()
         case .none:
             break
         }
@@ -3481,6 +3263,7 @@ final class TuneAVMacModel: ObservableObject {
     }
 
     private func scheduleCloudSync(delay: Duration) {
+        lastAutomaticCloudSyncRequestedAt = nowProvider()
         guard pendingCloudSyncTask == nil else { return }
         pendingCloudSyncTask = Task { [weak self] in
             do {

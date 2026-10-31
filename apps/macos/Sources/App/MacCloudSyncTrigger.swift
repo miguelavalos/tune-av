@@ -22,6 +22,8 @@ struct MacCloudSyncTrigger {
 
     static let startupDelay: Duration = .seconds(1)
     static let localChangeDelay: Duration = .seconds(5)
+    /// Minimum spacing between automatic pulls triggered by app activation or system wake.
+    static let foregroundSyncInterval: TimeInterval = 60
 
     private(set) var hasStarted = false
     private(set) var isApplyingCloudSnapshot = false
@@ -38,6 +40,21 @@ struct MacCloudSyncTrigger {
 
     func localLibraryChanged(accountAvailable _: Bool, hasUser _: Bool, hasProAccess _: Bool) -> Action {
         .none
+    }
+
+    func foregroundActivated(
+        accountAvailable: Bool,
+        hasUser: Bool,
+        hasProAccess: Bool,
+        lastAutomaticSyncRequestedAt: Date?,
+        now: Date = .now
+    ) -> Action {
+        guard hasStarted else { return .none }
+        if let lastAutomaticSyncRequestedAt,
+           now.timeIntervalSince(lastAutomaticSyncRequestedAt) < Self.foregroundSyncInterval {
+            return .none
+        }
+        return syncAction(accountAvailable: accountAvailable, hasUser: hasUser, hasProAccess: hasProAccess, delay: Self.startupDelay)
     }
 
     func signOutStarted() -> Action {
@@ -81,69 +98,3 @@ struct MacCloudSyncExecutionGate {
     }
 }
 
-enum MacProRealtimeProjectionStatePolicy {
-    static func shouldReset(previousOwnerUserID: String?, nextOwnerUserID: String) -> Bool {
-        previousOwnerUserID != nextOwnerUserID
-    }
-}
-
-struct MacProRealtimeBootstrapGate {
-    private enum Phase {
-        case awaitingBootstrap
-        case awaitingInitialProjection
-    }
-
-    private(set) var ownerUserID: String?
-    private var phase: Phase?
-
-    mutating func begin(ownerUserID: String) {
-        self.ownerUserID = ownerUserID
-        phase = .awaitingBootstrap
-    }
-
-    func shouldAwaitBootstrap(for projectionOwnerUserID: String) -> Bool {
-        ownerUserID == projectionOwnerUserID && phase == .awaitingBootstrap
-    }
-
-    func hasCompletedSuccessfulBootstrap(for projectionOwnerUserID: String) -> Bool {
-        ownerUserID == projectionOwnerUserID && phase == .awaitingInitialProjection
-    }
-
-    mutating func complete(ownerUserID: String?, succeeded: Bool = true) {
-        guard let currentOwnerUserID = self.ownerUserID,
-              currentOwnerUserID == ownerUserID else { return }
-        if succeeded {
-            phase = .awaitingInitialProjection
-        } else {
-            reset()
-        }
-    }
-
-    mutating func finishInitialProjection(ownerUserID: String) {
-        guard self.ownerUserID == ownerUserID,
-              phase == .awaitingInitialProjection else { return }
-        reset()
-    }
-
-    mutating func reset() {
-        ownerUserID = nil
-        phase = nil
-    }
-}
-
-struct MacProRealtimeRefreshExecutionPlan: Equatable {
-    let libraryResource: TuneAVAppDataResource?
-    let requiresFullLibraryRefresh: Bool
-
-    init(_ refreshPlan: TuneAVProRealtimeRefreshPlan) {
-        if refreshPlan.refreshLibrary,
-           let rawResource = refreshPlan.libraryResource,
-           let resource = TuneAVAppDataResource(rawValue: rawResource) {
-            libraryResource = resource
-            requiresFullLibraryRefresh = false
-        } else {
-            libraryResource = nil
-            requiresFullLibraryRefresh = refreshPlan.refreshLibrary
-        }
-    }
-}

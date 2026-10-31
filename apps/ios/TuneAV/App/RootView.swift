@@ -17,12 +17,8 @@ struct RootView: View {
     @State private var librarySyncTask: Task<Void, Never>?
     @State private var lastAutomaticAccountRefreshRequestedAt: Date?
     @State private var lastAutomaticLibrarySyncRequestedAt: Date?
-    @State private var activeRealtimeSessionOwnerUserID: String?
-    @StateObject private var realtimeSessionSupervisor = TuneAVRealtimeSessionSupervisor()
-    @StateObject private var proLibraryObserver = TuneAVProLibraryObserver()
 
     private let startupLogger = Logger(subsystem: "com.avalsys.tuneav", category: "startup")
-    private let proRealtimeLogger = Logger(subsystem: "com.avalsys.tuneav", category: "pro-realtime")
     private let launchContext = LaunchContext.current
     private var splashPolicy: AVSplashTransitionPolicy {
         AVSplashTransitionPolicy(isDisabled: launchContext.shouldDisableSplash)
@@ -59,26 +55,14 @@ struct RootView: View {
             updateIdleTimer(for: scenePhase)
             guard scenePhase == .active else {
                 cancelScheduledLibrarySync()
-                pauseProRealtimeSync()
                 return
             }
             await refreshActiveAccountStateIfNeeded()
             scheduleSignedInLibrarySync(after: .milliseconds(350))
-            startProRealtimeSyncIfNeeded()
             markAutomaticGuestOnboardingSeenIfNeeded()
         }
         .onChange(of: libraryStore.settings.keepScreenAwake) { _, _ in
             updateIdleTimer(for: scenePhase)
-        }
-        .onReceive(proLibraryObserver.$projection.compactMap { $0 }) { projection in
-            let activeLibrarySyncTask = librarySyncTask
-            Task { @MainActor in
-                await activeLibrarySyncTask?.value
-                await libraryStore.handleProRealtimeInvalidation(projection)
-            }
-        }
-        .onReceive(proLibraryObserver.$errorMessage.compactMap { $0 }) { errorMessage in
-            proRealtimeLogger.error("Tune AV Pro realtime observer error=\(errorMessage, privacy: .public)")
         }
         .onChange(of: accessController.accessMode) { _, _ in
             libraryStore.configureLocalFeedbackRetention(for: accessController.accessMode)
@@ -97,17 +81,10 @@ struct RootView: View {
                 }
             } else {
                 cancelScheduledLibrarySync()
-                stopProRealtimeSync()
                 libraryStore.setAppDataService(nil)
                 libraryStore.setBackendService(nil)
                 clearTuneBackendService()
             }
-        }
-        .onChange(of: accessController.accountUser) { _, _ in
-            startProRealtimeSyncIfNeeded()
-        }
-        .onChange(of: accessController.capabilities) { _, _ in
-            startProRealtimeSyncIfNeeded()
         }
     }
 
@@ -186,7 +163,6 @@ struct RootView: View {
         libraryStore.setAppDataService(appDataService)
         await libraryStore.refreshCloudLibraryIfNeeded()
         await libraryStore.refreshUserSummary(force: true)
-        startProRealtimeSyncIfNeeded()
     }
 
     private func scheduleLibrarySync(after delay: Duration? = nil) {
@@ -231,63 +207,6 @@ struct RootView: View {
     private func cancelScheduledLibrarySync() {
         librarySyncTask?.cancel()
         librarySyncTask = nil
-    }
-
-    private func startProRealtimeSyncIfNeeded() {
-        guard proLibraryObserver.isConfigured,
-              accessController.capabilities.canUseCloudSync,
-              let ownerUserId = accessController.accountUser?.id else {
-            stopProRealtimeSync()
-            return
-        }
-        guard activeRealtimeSessionOwnerUserID != ownerUserId else { return }
-
-        activeRealtimeSessionOwnerUserID = ownerUserId
-        TuneAVRealtimeSessionStore.shared.clear()
-        proLibraryObserver.clear()
-        let client = TuneAVRealtimeSessionClient(
-            apiClient: AVAccountAPIClient(getToken: { try await accessController.accountService.getToken() })
-        )
-        guard client.isConfigured else {
-            activeRealtimeSessionOwnerUserID = nil
-            return
-        }
-
-        realtimeSessionSupervisor.start(
-            createSession: {
-                proRealtimeLogger.info("Creating Tune AV Pro realtime session ownerUserId=\(ownerUserId, privacy: .private(mask: .hash))")
-                return try await client.createRealtimeSession()
-            },
-            didCreateSession: { session in
-                guard accessController.accountUser?.id == ownerUserId,
-                      accessController.capabilities.canUseCloudSync else { return }
-                TuneAVRealtimeSessionStore.shared.update(
-                    ownerUserId: ownerUserId,
-                    realtimeSessionId: session.realtimeSessionId
-                )
-                proRealtimeLogger.info("Created Tune AV Pro realtime session ownerUserId=\(ownerUserId, privacy: .private(mask: .hash))")
-                proLibraryObserver.observeLibraryProjection(ownerUserId: ownerUserId)
-            },
-            didExhaustRetries: { error in
-                proRealtimeLogger.error("Tune AV Pro realtime session failed errorType=\(String(describing: type(of: error)), privacy: .public)")
-                activeRealtimeSessionOwnerUserID = nil
-                TuneAVRealtimeSessionStore.shared.clear()
-                proLibraryObserver.clear()
-            }
-        )
-    }
-
-    private func stopProRealtimeSync() {
-        realtimeSessionSupervisor.stop()
-        activeRealtimeSessionOwnerUserID = nil
-        TuneAVRealtimeSessionStore.shared.clear()
-        proLibraryObserver.clear()
-    }
-
-    private func pauseProRealtimeSync() {
-        realtimeSessionSupervisor.pause()
-        activeRealtimeSessionOwnerUserID = nil
-        proLibraryObserver.clear()
     }
 
     private func refreshTuneBackendService() async {
@@ -409,9 +328,13 @@ struct RootStartupSyncPolicy: Equatable {
         (accountIsAvailable || isSignedIn) && lastAccountRefreshRequestedAt == nil
     }
 
+    /// Minimum spacing between automatic library pulls triggered by app activation.
+    static let foregroundSyncInterval: TimeInterval = 60
+
     var shouldScheduleLibrarySync: Bool {
         guard isSignedIn else { return false }
-        return lastLibrarySyncRequestedAt == nil
+        guard let lastLibrarySyncRequestedAt else { return true }
+        return now.timeIntervalSince(lastLibrarySyncRequestedAt) >= Self.foregroundSyncInterval
     }
 }
 

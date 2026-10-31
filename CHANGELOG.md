@@ -6,6 +6,14 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Remove the Convex realtime layer from iOS and macOS: no `ConvexMobile`
+  dependency, no `TUNEAV_CONVEX_URL`, and no realtime-session request. Pro
+  cloud sync now pulls on app open, on foreground activation (throttled to once
+  per minute), after sign-in, and on manual `Sync now`; repeated pulls send
+  `If-None-Match` and treat `304 Not Modified` as unchanged.
+- Build the macOS app for Apple Silicon and Intel again; the arm64-only
+  constraint came from the removed Convex binary.
+- Update RevenueCat to 5.100.0 so the iOS target compiles with Xcode 27.1.
 - Document the 2026-07-13 Pro sync decision: only explicitly saved stations and
   songs synchronize; feedback remains device-local and any deliberate Pro
   backend capture is upload-only, not cross-device restore.
