@@ -254,7 +254,7 @@ enum TuneAVAccessPolicy {
         switch accessMode {
         case "guest":
             TuneAVAccessLimitValues(
-                favoriteStations: 5,
+                favoriteStations: 10,
                 recentStations: 15,
                 discoveredTracks: 25,
                 savedTracks: 10,
@@ -268,7 +268,7 @@ enum TuneAVAccessPolicy {
             )
         case "signedInFree":
             TuneAVAccessLimitValues(
-                favoriteStations: 15,
+                favoriteStations: 30,
                 recentStations: 50,
                 discoveredTracks: 100,
                 savedTracks: 50,

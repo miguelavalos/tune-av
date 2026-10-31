@@ -74,6 +74,7 @@
 		BE7765ACC4B1BEDE27DACCD8 /* TuneAVSavedStationIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C7D3F1E4C73F0AFA606C8E3 /* TuneAVSavedStationIcon.swift */; };
 		C06D14E62FEA5E809E1473B2 /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */; };
 		C11E80DE5CF0F91C08416A98 /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */; };
+		C2D3A2783AC8110494801974 /* MacAviActionLimitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0096109F625DD7590DF6E176 /* MacAviActionLimitTests.swift */; };
 		CA27342578046FF28B0ECB8D /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = C547C8DDD40412AA45F4F655 /* TuneAVL10n.swift */; };
 		CEBC3B1592332B76535B408B /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = E80A66F42DA2B6DE1F514487 /* TuneAVAppShellHomeFeed.swift */; };
 		CEE7318443B34B96E5D0D969 /* TuneAVStationArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EE7710AA11913E59C7F507 /* TuneAVStationArtworkView.swift */; };
@@ -111,6 +112,7 @@
 /* Begin PBXFileReference section */
 		0014B27DC883D3ED407960DF /* MacNowPlayingSystemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacNowPlayingSystemController.swift; sourceTree = "<group>"; };
 		008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMacApp.swift; sourceTree = "<group>"; };
+		0096109F625DD7590DF6E176 /* MacAviActionLimitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAviActionLimitTests.swift; sourceTree = "<group>"; };
 		00C4509340FBCDAC730F4CFE /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		01633AB133A446A862EAA0D2 /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = "../../../apps-av/apple"; sourceTree = SOURCE_ROOT; };
 		0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStation.swift; sourceTree = "<group>"; };
@@ -397,6 +399,7 @@
 		F799F66CAAB9180D830B782A /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				0096109F625DD7590DF6E176 /* MacAviActionLimitTests.swift */,
 				17334A568C86EE82A2ECDDFE /* MacCloudSyncTests.swift */,
 				86CDFEA1924E937953B580A6 /* MacSubscriptionPurchasingTests.swift */,
 				6BECFD55C06EFFE74CA3E47B /* TuneAVMacSmokeTests.swift */,
@@ -618,6 +621,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C2D3A2783AC8110494801974 /* MacAviActionLimitTests.swift in Sources */,
 				7D1AAB0B317C266DDC8688B4 /* MacCloudSyncTests.swift in Sources */,
 				8DDBF8EC5632552DF4CF5BFC /* MacSubscriptionPurchasingTests.swift in Sources */,
 				462E87FB1176BE67A4E3CABE /* TuneAVMacSmokeTests.swift in Sources */,

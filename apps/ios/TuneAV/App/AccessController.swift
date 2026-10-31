@@ -435,6 +435,18 @@ final class AccessController: ObservableObject {
         dailyUsageLimiter.recordUse(dailyUsageFeature(for: feature), usageKey: dailyUsageKey(for: feature, usageKey: usageKey))
     }
 
+    /// Counts one Avi lookup against the shared daily budget (Guest 5, Free 15, Pro unlimited) and shows
+    /// the upgrade prompt only when that budget is exhausted. Repeating an identical lookup is free.
+    @discardableResult
+    func useDailyFeatureIfAllowed(_ feature: LimitedFeature, usageKey: String) -> Bool {
+        guard canUseDailyFeature(feature, usageKey: usageKey) else {
+            presentUpgradePrompt(for: feature)
+            return false
+        }
+        recordDailyFeatureUse(feature, usageKey: usageKey)
+        return true
+    }
+
     func presentUpgradePrompt(for feature: LimitedFeature, currentUsage: Int? = nil) {
         let state = FeatureLimitState(
             feature: feature,

@@ -45,14 +45,6 @@ struct MusicScreen: View {
     let removeDiscovery: (DiscoveredTrack) -> Void
     let clearDiscoveries: () -> Void
 
-    private func runProAviAction(_ action: () -> Void) {
-        guard accessController.capabilities.canAccessPremiumFeatures else {
-            accessController.presentUpgradePrompt(for: .aviAction)
-            return
-        }
-        action()
-    }
-
     var body: some View {
         let snapshot = musicDerivedState
         let showsOverview = isShowingOverview && trimmedQuery.isEmpty && historyStationFilter == nil
@@ -183,16 +175,16 @@ struct MusicScreen: View {
             trackFeedback: { discovery in trackFeedback(discovery) },
             openTrackInfo: { discovery in openDiscoveryInfo(discovery, nil) },
             toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-            openTrackYouTube: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryYouTube(discovery) } },
-            openLyrics: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryLyrics(discovery) } },
-            openTrackAppleMusic: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) } },
-            openTrackSpotify: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoverySpotify(discovery) } },
+            openTrackYouTube: { discovery in musicExternalSearchRouter.openDiscoveryYouTube(discovery) },
+            openLyrics: { discovery in musicExternalSearchRouter.openDiscoveryLyrics(discovery) },
+            openTrackAppleMusic: { discovery in musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) },
+            openTrackSpotify: { discovery in musicExternalSearchRouter.openDiscoverySpotify(discovery) },
             hideAction: hideDiscoveryWithUndo(_:),
             removeAction: { discovery in removeDiscovery(discovery) },
             openArtistInfo: { artist in openArtistInfo(artist, nil) },
-            openArtistYouTube: { artist in runProAviAction { musicExternalSearchRouter.openArtistYouTube(artist) } },
-            openArtistAppleMusic: { artist in runProAviAction { musicExternalSearchRouter.openArtistAppleMusic(artist) } },
-            openArtistSpotify: { artist in runProAviAction { musicExternalSearchRouter.openArtistSpotify(artist) } }
+            openArtistYouTube: { artist in musicExternalSearchRouter.openArtistYouTube(artist) },
+            openArtistAppleMusic: { artist in musicExternalSearchRouter.openArtistAppleMusic(artist) },
+            openArtistSpotify: { artist in musicExternalSearchRouter.openArtistSpotify(artist) }
         )
     }
 
@@ -239,10 +231,10 @@ struct MusicScreen: View {
             openArtistInfo: { discovery, mode in openArtistInfo(discoveryArtistSummary(for: discovery), mode) },
             openStationInfo: { discovery in openDiscoveryStationInfo(discovery) },
             toggleSaved: { discovery in toggleDiscoverySaved(discovery) },
-            openYouTube: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryYouTube(discovery) } },
-            openLyrics: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryLyrics(discovery) } },
-            openAppleMusic: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) } },
-            openSpotify: { discovery in runProAviAction { musicExternalSearchRouter.openDiscoverySpotify(discovery) } },
+            openYouTube: { discovery in musicExternalSearchRouter.openDiscoveryYouTube(discovery) },
+            openLyrics: { discovery in musicExternalSearchRouter.openDiscoveryLyrics(discovery) },
+            openAppleMusic: { discovery in musicExternalSearchRouter.openDiscoveryAppleMusic(discovery) },
+            openSpotify: { discovery in musicExternalSearchRouter.openDiscoverySpotify(discovery) },
             hideAction: hideDiscoveryWithUndo(_:),
             removeAction: { discovery in removeDiscovery(discovery) }
         )
@@ -263,9 +255,9 @@ struct MusicScreen: View {
             openArtist: { artist, mode in openArtistInfo(artist, mode) },
             openArtistSongs: { artist in openArtistSongs(artist.name) },
             openArtistRadios: { artist, mode in openArtistInfo(artist, mode) },
-            openYouTube: { artist in runProAviAction { musicExternalSearchRouter.openArtistYouTube(artist.name) } },
-            openAppleMusic: { artist in runProAviAction { musicExternalSearchRouter.openArtistAppleMusic(artist.name) } },
-            openSpotify: { artist in runProAviAction { musicExternalSearchRouter.openArtistSpotify(artist.name) } }
+            openYouTube: { artist in musicExternalSearchRouter.openArtistYouTube(artist.name) },
+            openAppleMusic: { artist in musicExternalSearchRouter.openArtistAppleMusic(artist.name) },
+            openSpotify: { artist in musicExternalSearchRouter.openArtistSpotify(artist.name) }
         )
     }
 
@@ -644,12 +636,6 @@ struct MusicScreen: View {
     }
 
     private func useDailyFeatureIfAllowed(_ feature: LimitedFeature, usageKey: String) -> Bool {
-        guard accessController.canUseDailyFeature(feature, usageKey: usageKey) else {
-            accessController.presentUpgradePrompt(for: feature)
-            return false
-        }
-
-        accessController.recordDailyFeatureUse(feature, usageKey: usageKey)
-        return true
+        accessController.useDailyFeatureIfAllowed(feature, usageKey: usageKey)
     }
 }

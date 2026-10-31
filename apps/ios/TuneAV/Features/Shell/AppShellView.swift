@@ -980,11 +980,9 @@ struct AppShellView: View {
         accessController.capabilities.canAccessPremiumFeatures
     }
 
+    /// Avi lookups are no longer Pro-only: the browser router counts each one against the daily budget
+    /// and shows the limit prompt only when it is exhausted.
     private func runProAviAction(_ action: () -> Void) {
-        guard accessController.capabilities.canAccessPremiumFeatures else {
-            isShowingProPaywall = true
-            return
-        }
         action()
     }
 
@@ -2232,7 +2230,10 @@ struct AviScreen: View {
             openSystemURL: { UIApplication.shared.open($0) },
             closeAviActions: closeAviActions,
             searchEngine: AVExternalSearchEngine.resolved(from: libraryStore.settings.externalSearchEngine),
-            webOpenMode: AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode)
+            webOpenMode: AVExternalWebOpenMode.resolved(from: libraryStore.settings.externalWebOpenMode),
+            allowLookup: { feature, url in
+                accessController.useDailyFeatureIfAllowed(feature, usageKey: url.absoluteString)
+            }
         )
     }
 
@@ -2560,18 +2561,10 @@ struct AviScreen: View {
     }
 
     private func runProAviAction(_ action: () -> Void) {
-        guard accessController.capabilities.canAccessPremiumFeatures else {
-            openProPaywall()
-            return
-        }
         action()
     }
 
     private func runProAviActionOutsideFullPlayer(_ action: () -> Void) {
-        guard isNowPlayingFullPlayer || accessController.capabilities.canAccessPremiumFeatures else {
-            openProPaywall()
-            return
-        }
         action()
     }
 

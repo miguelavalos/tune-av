@@ -86,7 +86,7 @@ final class AccessLimitsTests: XCTestCase {
     func testGuestLimitsAllowSmallLocalPreviewOnly() {
         let limits = AccessLimits.forMode(.guest)
 
-        XCTAssertEqual(limits.favoriteStations, 5)
+        XCTAssertEqual(limits.favoriteStations, 10)
         XCTAssertEqual(limits.recentStations, 15)
         XCTAssertEqual(limits.discoveredTracks, 25)
         XCTAssertEqual(limits.savedTracks, 10)
@@ -103,7 +103,7 @@ final class AccessLimitsTests: XCTestCase {
         let limits = AccessLimits.forMode(.signedInFree)
         let capabilities = AccessCapabilities.forMode(.signedInFree)
 
-        XCTAssertEqual(limits.favoriteStations, 15)
+        XCTAssertEqual(limits.favoriteStations, 30)
         XCTAssertEqual(limits.recentStations, 50)
         XCTAssertEqual(limits.discoveredTracks, 100)
         XCTAssertEqual(limits.savedTracks, 50)
@@ -455,6 +455,57 @@ final class AccessLimitsTests: XCTestCase {
 
         XCTAssertFalse(controller.canUseDailyFeature(.lyricsSearch))
         XCTAssertEqual(controller.dailyLimitState(for: .lyricsSearch).remaining, 0)
+    }
+
+    @MainActor
+    func testGuestGetsFiveAviLookupsBeforeTheUpgradePrompt() {
+        let controller = AccessController(
+            accountService: StubAccountService(user: nil),
+            accountProfileResolver: StubAccountProfileResolver(),
+            entitlementService: StubEntitlementService(access: .guest),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+
+        for index in 0..<5 {
+            XCTAssertTrue(
+                controller.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://example.com/lyrics/\(index)"),
+                "Lookup \(index + 1) of 5 must be allowed for a guest"
+            )
+            XCTAssertNil(controller.upgradePrompt)
+        }
+
+        XCTAssertFalse(controller.useDailyFeatureIfAllowed(.youtubeSearch, usageKey: "https://example.com/youtube/new"))
+        XCTAssertEqual(controller.upgradePrompt?.feature, .youtubeSearch)
+        XCTAssertTrue(
+            controller.useDailyFeatureIfAllowed(.lyricsSearch, usageKey: "https://example.com/lyrics/0"),
+            "A lookup already counted today stays available"
+        )
+    }
+
+    @MainActor
+    func testFreeAccountGetsFifteenAviLookupsBeforeTheUpgradePrompt() async {
+        let user = AccountUser(id: "signed-in-free", displayName: "Free User", emailAddress: "free@example.com")
+        let controller = AccessController(
+            accountService: StubAccountService(user: user),
+            accountProfileResolver: StubAccountProfileResolver(user: user),
+            entitlementService: StubEntitlementService(access: .localFallback(for: .signedInFree)),
+            userDefaults: isolatedUserDefaults(),
+            now: { self.fixedDate("2026-04-30T10:00:00Z") }
+        )
+        await controller.syncFromAccountProvider()
+        XCTAssertEqual(controller.accessMode, .signedInFree)
+
+        for index in 0..<15 {
+            XCTAssertTrue(
+                controller.useDailyFeatureIfAllowed(.spotifySearch, usageKey: "https://open.spotify.com/search/\(index)"),
+                "Lookup \(index + 1) of 15 must be allowed for a Free account"
+            )
+            XCTAssertNil(controller.upgradePrompt)
+        }
+
+        XCTAssertFalse(controller.useDailyFeatureIfAllowed(.appleMusicSearch, usageKey: "https://music.apple.com/search?term=16"))
+        XCTAssertEqual(controller.upgradePrompt?.feature, .appleMusicSearch)
     }
 
     @MainActor

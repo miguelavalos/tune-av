@@ -257,10 +257,7 @@ final class TuneAVMacModel: ObservableObject {
     private var sleepTimerTask: Task<Void, Never>?
     private var sleepTimerEndDate: Date?
     private var trackArtworkTask: Task<Void, Never>?
-    private let dailyUsageLimiter = TuneAVDailyUsageLimiter(
-        keyStyle: .dayBucket(prefix: "tuneav.featureUsage."),
-        limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures
-    )
+    private let dailyUsageLimiter: TuneAVDailyUsageLimiter
     private let accountUserDefaults = UserDefaults.standard
     private let lastKnownAccountUserKey = "tuneav.mac.account.lastKnownUser"
 
@@ -274,6 +271,7 @@ final class TuneAVMacModel: ObservableObject {
             5_000_000_000
         ],
         storage: TuneAVMacLibraryStorage = TuneAVMacLibraryStorage(),
+        dailyUsageDefaults: UserDefaults = .standard,
         listeningAnalyticsUploadEnabled: Bool = TuneAVMacConfig.isListeningAnalyticsUploadEnabled,
         nowProvider: @escaping () -> Date = { .now },
         sleepNanoseconds: @escaping (UInt64) async -> Void = { nanoseconds in
@@ -287,6 +285,12 @@ final class TuneAVMacModel: ObservableObject {
         self.promotionCodeRedeemer = promotionCodeRedeemer
         self.subscriptionReconciliationRetryDelaysNanoseconds = subscriptionReconciliationRetryDelaysNanoseconds
         self.storage = storage
+        self.dailyUsageLimiter = TuneAVDailyUsageLimiter(
+            defaults: dailyUsageDefaults,
+            keyStyle: .dayBucket(prefix: "tuneav.featureUsage."),
+            limitedFeatures: LimitedFeature.dailyUsageLimitedFeatures,
+            now: nowProvider
+        )
         self.listeningAnalyticsUploadEnabled = listeningAnalyticsUploadEnabled
         self.nowProvider = nowProvider
         self.sleepNanoseconds = sleepNanoseconds
@@ -1382,12 +1386,9 @@ final class TuneAVMacModel: ObservableObject {
         }
     }
 
+    /// Counts one Avi lookup against the daily budget (Guest 5, Free 15, Pro unlimited) and shows the
+    /// upgrade prompt only when that budget is exhausted.
     func canPerformPremiumAviAction(feature: LimitedFeature, usageKey: String? = nil) -> Bool {
-        guard capabilities.canAccessPremiumFeatures else {
-            presentUpgradePrompt(for: feature)
-            return false
-        }
-
         let dailyFeature = dailyUsageFeature(for: feature)
         let limit = limits.limit(for: feature)
         let canUse: Bool
