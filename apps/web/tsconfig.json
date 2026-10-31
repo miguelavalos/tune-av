@@ -12,7 +12,6 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "preserveSymlinks": true,
     "paths": {
       "@/*": ["./src/*"]
     },
