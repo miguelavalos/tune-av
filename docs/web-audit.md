@@ -94,3 +94,66 @@ Tune AV app web now exists at `apps/web`.
 - Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
   version `045ac1dd-2025-4191-81bb-18dde4855f28`; HTTP smoke passed for `/` and
   `/settings`.
+
+## 2026-11-01 Account-Only Reduction
+
+- Decision: the web app duplicated the native app (radio playback, library,
+  music, Avi) at ~140 requests/day and cannot sell Pro, because purchase is
+  App Store only. It is reduced to a landing plus account surfaces so delete
+  account, privacy, support, and Pro status stay reachable, and users are
+  pointed to the App Store app.
+- Routes kept: `/`, `/sign-in`, `/account`, `/settings`. Routes removed:
+  `/listen`, `/music`, `/library`, `/avi`. Removed with them: the audio store
+  (`tune-store.tsx`), the player (`tune-player.tsx`, `tune-listen.tsx`,
+  `tune-station-card.tsx`), the public station API proxies
+  (`tune-public-api.ts`), `tune-station.ts`, `tune-api.ts`, `tune-types.ts`,
+  `tune-access.ts`, `tune-functional-text.ts`, the unused `tune-account-area`
+  and `ui/input` components, their tests, the station fallback artwork, and the
+  i18n keys that only those surfaces used (the five locales stay).
+- Signed-in `/` now shows a short product summary, a localized "Download on
+  the App Store" badge linking to the same listing as the commercial site
+  (`https://apps.apple.com/us/app/tune-av/id6766301702`), links to Account and
+  Settings, and the Free/Pro plan state from `useAccountAppAccess("tuneav")`.
+  Signed-out `/` keeps the informational landing plus the App Store badge.
+- `/account` keeps session, email, plan, sign out, Pro feature summary, and
+  the shared account deletion row. For Free users the Pro button opens the
+  App Store; for Pro users it opens Account AV. Cloud sync status was removed
+  with the store. `/settings` keeps language, appearance, and help/legal rows;
+  the listening preferences and local-data sections were removed.
+- Signed-out protected routes now render the public landing (with sign-in and
+  App Store CTAs) instead of a skeleton plus client redirect, so
+  `/account?lang=es` answers 200 with a real gate.
+- The navigation shell lists only Home, Account, and Settings; the Avi
+  assistant entry was removed from the product config.
+- `__root.tsx` now emits a localized `<meta name="description">`, Open Graph
+  `type/site_name/title/description/url/image`, and `twitter:card`.
+- Dependencies: `apps/web/package.json` went from 48 to 19 direct
+  dependencies. The 17 exact-pinned `@tanstack/*` internals, `@clerk/backend`,
+  `@clerk/shared`, and the transitive pins (`cookie-es`, `dequal`,
+  `glob-to-regexp`, `h3-v2`, `isbot`, `js-cookie`, `scheduler`, `seroval`,
+  `seroval-plugins`, `standardwebhooks`, `tslib`, `use-sync-external-store`)
+  were removed. They existed only because `preserveSymlinks: true` in
+  `vite.config.ts` and `tsconfig.json` forced transitive imports to resolve
+  from `apps/web/node_modules`; pnpm already installs the `file:` shared
+  packages (`@avalsys/account-av-web`, `@avalsys/apps-av-web`) into its store
+  with their own dependencies, so `preserveSymlinks` was dropped instead of
+  restoring the pins. No root `pnpm-workspace.yaml` or root `package.json`
+  change was needed; `pnpm-lock.yaml` shrank accordingly.
+- `manualChunks` now only splits `vendor-react`, `vendor-clerk-localizations`,
+  and `vendor-clerk`.
+- Preview build client JS went from 1,057,912 bytes to 923,552 bytes
+  (CSS 58.1 kB to 47.8 kB); player and public-scene CSS and six unused
+  brand images under `public/assets` were removed. Typecheck, `vp test run` (i18n parity test), and
+  `build:preview` pass.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
+  Worker version `1fe58fe7-3c4e-4724-97d4-a4b96a083d34`. HTTP checks: `/` 200,
+  `/account?lang=es` 200, `/settings?lang=fr` 200, `/sign-in` 200, `/listen`
+  404.
+- Known limitation, pre-existing: the server render emits only the document
+  head; the body is filled on the client because `SignedIn`/`SignedOut` in
+  `@avalsys/account-av-web` wait for Clerk to load. Production
+  `app.tune-av.avalsys.com` behaves the same today, so the shared HTTP smoke
+  QA checks for public and gate copy fail on both. `qa:shared` was updated to
+  the four remaining routes and the new copy; it will pass once the shared
+  provider renders auth state on the server.
+- Production was not deployed; `CHANGELOG.md` is edited on another branch.

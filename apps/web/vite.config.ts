@@ -15,26 +15,11 @@ export default defineConfig({
           if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/")) {
             return "vendor-react";
           }
-          if (id.includes("/@tanstack/")) {
-            return "vendor-tanstack";
-          }
-          if (id.includes("/@clerk/react/")) {
-            return "vendor-clerk-react";
-          }
-          if (id.includes("/@clerk/shared/")) {
-            return "vendor-clerk-shared";
-          }
           if (id.includes("/@clerk/localizations/")) {
             return "vendor-clerk-localizations";
           }
-          if (id.includes("/@clerk/tanstack-react-start/")) {
-            return "vendor-clerk-tanstack";
-          }
-          if (id.includes("/lucide-react/") || id.includes("/sonner/") || id.includes("/@radix-ui/")) {
-            return "vendor-ui";
-          }
-          if (id.includes("/seroval/")) {
-            return "vendor-serialization";
+          if (id.includes("/@clerk/")) {
+            return "vendor-clerk";
           }
           return undefined;
         }
@@ -45,7 +30,6 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url))
     },
-    preserveSymlinks: true
   },
   server: {
     port: 5194

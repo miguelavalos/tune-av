@@ -83,7 +83,6 @@ if [ -z "${CLERK_SECRET_KEY:-}" ]; then
 fi
 export_from_varlock "ACCOUNTAV_API_BASE_URL" "VITE_ACCOUNTAV_API_BASE_URL"
 export_from_varlock "TUNEAV_API_BASE_URL" "VITE_TUNEAV_API_BASE_URL" optional
-export_from_varlock "TUNEAV_CONVEX_URL" "VITE_TUNEAV_CONVEX_URL" optional
 export_from_varlock "TUNEAV_TERMS_URL" "VITE_TUNEAV_TERMS_URL" optional
 export_from_varlock "TUNEAV_PRIVACY_URL" "VITE_TUNEAV_PRIVACY_URL" optional
 export_from_varlock "TUNEAV_WEBAPP_COMING_SOON" "VITE_TUNEAV_WEBAPP_COMING_SOON" optional

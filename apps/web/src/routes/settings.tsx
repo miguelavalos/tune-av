@@ -1,30 +1,24 @@
 import {
-  SettingsActionRow,
   HelpLegalSection,
   SettingsInfoRow,
   SettingsOptionButtonGroup,
   SettingsProfileScaffold,
   SettingsSectionCard,
-  SettingsSelect,
-  appsAvExternalSearchEngines,
   appsAvLocaleNames,
   normalizeAppsAvThemePreference,
   readAppsAvThemePreference,
   useAppsAvLocale,
-  type AppsAvExternalSearchEngine,
   type AppsAvLocale,
   type AppsAvThemePreference
 } from "@avalsys/apps-av-web";
 import { createFileRoute } from "@tanstack/react-router";
-import { Contrast, Globe, HardDrive, Languages, ListMusic, Moon, Music, Radio, Search, Smartphone, Sun, Trash2 } from "lucide-react";
+import { Contrast, Globe, Languages, Moon, Smartphone, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { TuneAppShell } from "@/components/tune-app-shell";
 import { tuneProductConfig } from "@/lib/tune-config";
-import { tuneFunctionalText } from "@/lib/tune-functional-text";
 import { localizedTunePath } from "@/lib/tune-i18n";
 import { tuneProfileLabels } from "@/lib/tune-profile-labels";
-import { useTune } from "@/lib/tune-store";
 import { localizedExternalUrl } from "@/lib/tune-url";
 
 export const Route = createFileRoute("/settings")({
@@ -33,11 +27,8 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsRoute() {
   const locale = useAppsAvLocale();
-  const tune = useTune();
   const labels = tuneProfileLabels[locale];
-  const functionalLabels = tuneFunctionalText[locale].listen;
   const [theme, setThemeState] = useState<AppsAvThemePreference>("system");
-  const localItemCount = tune.favoriteStations.length + tune.recentStations.length + tune.discoveries.length + Object.keys(tune.stationFeedback).length + Object.keys(tune.trackFeedback).length;
 
   useEffect(() => {
     const storedTheme = normalizeAppsAvThemePreference(readAppsAvThemePreference(themeStorageKey));
@@ -48,13 +39,6 @@ function SettingsRoute() {
   const setTheme = (nextTheme: AppsAvThemePreference) => {
     setThemeState(nextTheme);
     applyTheme(nextTheme);
-  };
-
-  const clearLocalData = () => {
-    const detail = localItemCount === 0 ? labels.local.delete.empty : labels.local.delete.detail(localItemCount);
-    if (window.confirm(`${labels.local.delete.confirmTitle}\n\n${labels.local.delete.confirmDetail}\n\n${detail}`)) {
-      tune.clearLocalData();
-    }
   };
 
   return (
@@ -86,46 +70,6 @@ function SettingsRoute() {
             />
           </SettingsSectionCard>
 
-          <SettingsSectionCard title={labels.tune.title} subtitle={labels.tune.subtitle}>
-            <SettingsInfoRow icon={<Radio className="size-5" />} title={labels.tune.countryTitle} detail={labels.tune.countryDetail} />
-            <SettingsOptionButtonGroup
-              selectedId={tune.settings.preferredCountryCode || "worldwide"}
-              onSelect={(id) => tune.setPreferredCountry(id === "worldwide" ? "" : id)}
-              options={countryOptions.map((item) => ({ id: item, label: functionalLabels.countries[item as keyof typeof functionalLabels.countries] ?? item }))}
-            />
-            <SettingsInfoRow icon={<ListMusic className="size-5" />} title={labels.tune.discoveryTitle} detail={labels.tune.discoveryDetail} />
-            <SettingsOptionButtonGroup
-              selectedId={tune.settings.discoveryMode}
-              onSelect={(id) => tune.setDiscoveryMode(id as "music" | "allRadio")}
-              options={[
-                { id: "music", icon: <Music className="size-4" />, label: labels.tune.discoveryOptions.music },
-                { id: "allRadio", icon: <Radio className="size-4" />, label: labels.tune.discoveryOptions.allRadio }
-              ]}
-            />
-            <SettingsInfoRow icon={<Search className="size-5" />} title={labels.tune.externalSearchTitle} detail={labels.tune.externalSearchDetail} />
-            <SettingsSelect
-              ariaLabel={labels.tune.externalSearchTitle}
-              selectedId={tune.settings.externalSearchEngine}
-              onSelect={(id) => tune.setExternalSearchEngine(id as AppsAvExternalSearchEngine)}
-              options={appsAvExternalSearchEngines.map((engine) => ({
-                id: engine,
-                label: labels.tune.externalSearchOptions[engine]
-              }))}
-            />
-          </SettingsSectionCard>
-
-          <SettingsSectionCard title={labels.local.title} subtitle={labels.local.subtitle}>
-            <SettingsInfoRow icon={<Smartphone className="size-5" />} title={labels.local.libraryTitle} detail={labels.local.libraryDetail} />
-            <SettingsInfoRow icon={<HardDrive className="size-5" />} title={labels.local.syncTitle} detail={labels.local.syncDetail} />
-            <SettingsActionRow
-              icon={<Trash2 className="size-5" />}
-              title={labels.local.delete.title}
-              detail={localItemCount === 0 ? labels.local.delete.empty : labels.local.delete.detail(localItemCount)}
-              disabled={localItemCount === 0}
-              onAction={clearLocalData}
-            />
-          </SettingsSectionCard>
-
           <HelpLegalSection labels={labels.help} links={helpLegalLinks(locale)} />
         </SettingsProfileScaffold>
       </TuneAppShell>
@@ -136,7 +80,6 @@ function SettingsRoute() {
 const locales: AppsAvLocale[] = ["en", "es", "fr", "de", "ca"];
 const themeStorageKey = "tuneav.web.theme";
 const themeOptions: AppsAvThemePreference[] = ["system", "light", "dark"];
-const countryOptions = ["worldwide", "US", "ES", "GB", "DE", "FR", "CA"];
 
 function themeIcon(theme: AppsAvThemePreference) {
   if (theme === "light") return <Sun className="size-4" />;

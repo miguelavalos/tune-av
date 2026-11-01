@@ -1,20 +1,9 @@
-import { AuthLoading, SignedIn, SignedOut, useAccountSession } from "@avalsys/account-av-web";
-import { AuthSkeleton, useAppsAvLocale } from "@avalsys/apps-av-web";
-import { useEffect } from "react";
+import { AuthLoading, SignedIn, SignedOut } from "@avalsys/account-av-web";
+import { AuthSkeleton } from "@avalsys/apps-av-web";
 import type { ReactNode } from "react";
-import { localizedTunePath } from "@/lib/tune-i18n";
+import { TuneLoginPage } from "@/components/tune-login-page";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const locale = useAppsAvLocale();
-  const homeHref = localizedTunePath("/", locale);
-  const session = useAccountSession();
-
-  useEffect(() => {
-    if (session.isLoaded && !session.isSignedIn && window.location.pathname !== "/sign-in") {
-      window.location.replace(homeHref);
-    }
-  }, [homeHref, session.isLoaded, session.isSignedIn]);
-
   return (
     <>
       <AuthLoading>
@@ -22,7 +11,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
       </AuthLoading>
       <SignedIn>{children}</SignedIn>
       <SignedOut>
-        <AuthSkeleton />
+        <TuneLoginPage />
       </SignedOut>
     </>
   );

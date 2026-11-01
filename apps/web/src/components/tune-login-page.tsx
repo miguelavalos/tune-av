@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { AvAppFooter, useAppsAvLocale } from "@avalsys/apps-av-web";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TuneAppStoreBadge } from "@/components/tune-app-store-link";
 import { getLocalizedTuneProductConfig, tuneBrandAssets } from "@/lib/tune-config";
 import { localizedTunePath, useTuneText } from "@/lib/tune-i18n";
 
@@ -97,7 +98,7 @@ function LoginCopy({ comingSoon, locale, text }: { comingSoon: boolean; locale: 
         <p className="tune-guest-body mt-6 text-base leading-7 text-[#334766]">
           {text.login.heroBody}
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           {comingSoon ? (
             <Button disabled className="h-12 rounded-full bg-[#112a55] px-5 text-white shadow-lg shadow-[#112a55]/18 disabled:opacity-100">
               {comingSoonLabel(locale)}
@@ -110,7 +111,9 @@ function LoginCopy({ comingSoon, locale, text }: { comingSoon: boolean; locale: 
               </Link>
             </Button>
           )}
+          <TuneAppStoreBadge />
         </div>
+        <p className="mt-4 max-w-md text-sm leading-6 text-[#53617a]">{text.login.appStoreNote}</p>
       </div>
 
       <div className="grid gap-3 text-sm text-[#334766] sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">

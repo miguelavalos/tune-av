@@ -11,10 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as MusicRouteImport } from './routes/music'
-import { Route as ListenRouteImport } from './routes/listen'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as AviRouteImport } from './routes/avi'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -26,26 +22,6 @@ const SignInRoute = SignInRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MusicRoute = MusicRouteImport.update({
-  id: '/music',
-  path: '/music',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ListenRoute = ListenRouteImport.update({
-  id: '/listen',
-  path: '/listen',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AviRoute = AviRouteImport.update({
-  id: '/avi',
-  path: '/avi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -62,20 +38,12 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/avi': typeof AviRoute
-  '/library': typeof LibraryRoute
-  '/listen': typeof ListenRoute
-  '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/avi': typeof AviRoute
-  '/library': typeof LibraryRoute
-  '/listen': typeof ListenRoute
-  '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
@@ -83,53 +51,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/avi': typeof AviRoute
-  '/library': typeof LibraryRoute
-  '/listen': typeof ListenRoute
-  '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/account'
-    | '/avi'
-    | '/library'
-    | '/listen'
-    | '/music'
-    | '/settings'
-    | '/sign-in'
+  fullPaths: '/' | '/account' | '/settings' | '/sign-in'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/account'
-    | '/avi'
-    | '/library'
-    | '/listen'
-    | '/music'
-    | '/settings'
-    | '/sign-in'
-  id:
-    | '__root__'
-    | '/'
-    | '/account'
-    | '/avi'
-    | '/library'
-    | '/listen'
-    | '/music'
-    | '/settings'
-    | '/sign-in'
+  to: '/' | '/account' | '/settings' | '/sign-in'
+  id: '__root__' | '/' | '/account' | '/settings' | '/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  AviRoute: typeof AviRoute
-  LibraryRoute: typeof LibraryRoute
-  ListenRoute: typeof ListenRoute
-  MusicRoute: typeof MusicRoute
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
 }
@@ -148,34 +83,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/music': {
-      id: '/music'
-      path: '/music'
-      fullPath: '/music'
-      preLoaderRoute: typeof MusicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/listen': {
-      id: '/listen'
-      path: '/listen'
-      fullPath: '/listen'
-      preLoaderRoute: typeof ListenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/avi': {
-      id: '/avi'
-      path: '/avi'
-      fullPath: '/avi'
-      preLoaderRoute: typeof AviRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -198,10 +105,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  AviRoute: AviRoute,
-  LibraryRoute: LibraryRoute,
-  ListenRoute: ListenRoute,
-  MusicRoute: MusicRoute,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
 }
