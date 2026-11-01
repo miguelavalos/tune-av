@@ -1,7 +1,7 @@
 # Tune AV Agent Rules
 
 Before work that touches signed runtime, subscriptions, purchases, deployment,
-TestFlight/App Store, Convex, Cloudflare remote state, or cross-app workflow
+TestFlight/App Store, Cloudflare remote state, or cross-app workflow
 behavior, run the private workspace preflight first:
 
 ```bash
@@ -42,8 +42,6 @@ Mandatory rules:
   environment, reason, and secret-free validation result; the user performs
   the change personally and confirms it before read-only validation resumes.
 - use Cloudflare preview for signed API runtime;
-- use Convex cloud `dev`, not local Convex, when a native app workflow depends
-  on Convex-backed state;
 - do not use `wrangler dev` or another local Worker as product app backend;
 - do not invent alternate runtime/testing flows when the private guide already
   defines one;
@@ -64,18 +62,17 @@ Mandatory rules:
 - treat `docs/pro-sync-scope.md` as the authoritative product boundary: only
   explicitly saved stations and songs sync; feedback is device-local, may have
   one explicit Pro analytics mutation, and must not be restored or delivered
-  through Convex/outbox/Queue;
+  through any realtime fanout; Pro sync is open/foreground/manual with
+  conditional GETs (ETag/304), there is no realtime channel;
 - keep station and track feedback clear payloads explicit: the strict Tune API
   requires a present `feedback` key with JSON `null`; Swift optional encoding
   that omits the key is a permanent regression covered on both Apple clients;
-- on both Apple clients, consume a single consecutive realtime library
-  generation for a known resource with one exact resource GET and no unrelated
-  feedback read; generation gaps, unknown resources, bootstrap, and manual
-  recovery must keep the conservative full-library path;
+- on both Apple clients, Pro library refresh happens once at startup or after
+  sign-in, on foreground/activation with a 60-second throttle, and on explicit
+  manual sync; resource GETs send `If-None-Match` and treat `304` as unchanged;
 - after a successful item-level library mutation, retain the response
-  `updatedAt` as coverage for that exact resource before consuming its realtime
-  projection; the authoring device must perform zero follow-up GETs for its own
-  covered mutation, while another device still performs one exact resource GET;
+  `updatedAt` as coverage for that exact resource so the authoring device does
+  not re-fetch what it just wrote;
 - preserve confirmed Pro capabilities while refreshing the same internal user,
   but drop capabilities from the previous account before resolving a different
   internal user.
