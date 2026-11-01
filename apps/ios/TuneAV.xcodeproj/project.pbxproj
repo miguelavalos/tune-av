@@ -72,6 +72,7 @@
 		53C0BDDB8DE64709781948DE /* HomeDerivedStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */; };
 		570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */; };
 		594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */; };
+		59591917AC2A3E7480834BC0 /* TuneAVSurpriseStationPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D973989ECDA76787FA8EDF /* TuneAVSurpriseStationPickerTests.swift */; };
 		59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */; };
 		5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */; };
 		5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */; };
@@ -157,6 +158,7 @@
 		C199AD1593FBF97BD0D39231 /* HomeFeaturedStationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E397D94AE85EDDA7CAE99FC8 /* HomeFeaturedStationBuilder.swift */; };
 		C251B301DC91D6E149165562 /* TuneAVLaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A59E1F744BB8D10605B28B /* TuneAVLaunchContext.swift */; };
 		C8D6B63B482564E9094BB3AE /* AviReactionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EAA921786FA4DFF4281138 /* AviReactionAnimation.swift */; };
+		C92BA16D5CDD481D46DE7D27 /* TuneAVSurpriseStationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */; };
 		CBFA20E7AA1D0A3393D3C587 /* TuneAVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */; };
 		CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */; };
 		D0F4865A251C1F99784D6491 /* TuneAVBundleConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */; };
@@ -173,6 +175,7 @@
 		DD6AEC7D8894EC110ED5D67D /* TuneAVMusicLibraryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */; };
 		DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */; };
 		E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */; };
+		E44B4840FFB26F2FFD8EF391 /* TuneAVStationPlayLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A10E8C4A72867917D1420C6 /* TuneAVStationPlayLog.swift */; };
 		E58B3F8E72B91F1B0F207DC9 /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 459263F3E9B809F0A8546FC1 /* TuneAVEighties80sNowPlaying.swift */; };
 		E5F0639AD50A6DDD7F572BEF /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32EAF81A20F877B3162053 /* TuneAVStation.swift */; };
 		E6280B2EA6F15127B5B7D670 /* ShellChromeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1713B09701E9777A700FA782 /* ShellChromeViews.swift */; };
@@ -231,6 +234,7 @@
 		12A3B12BBA94111AA7B04163 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
 		157CE45E6D5DDB143B162F5F /* HomeRecommendationInsightBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendationInsightBuilder.swift; sourceTree = "<group>"; };
 		15C40DE517DC98F53CE653CD /* TuneAV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TuneAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		15D973989ECDA76787FA8EDF /* TuneAVSurpriseStationPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPickerTests.swift; sourceTree = "<group>"; };
 		1667E2EFC88D39F6B00F4E37 /* TuneAdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAdaptiveLayout.swift; sourceTree = "<group>"; };
 		1713B09701E9777A700FA782 /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
 		198A05B4515ED79560A09DEF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -274,6 +278,7 @@
 		45E041E8E7568784E3A837D8 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSharedTheme.swift; sourceTree = "<group>"; };
 		47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
+		4A10E8C4A72867917D1420C6 /* TuneAVStationPlayLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationPlayLog.swift; sourceTree = "<group>"; };
 		4B051E1E5AF2384C13A12AD7 /* TuneAVBundleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVBundleConfig.swift; sourceTree = "<group>"; };
 		4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecentFavoriteStationSelector.swift; sourceTree = "<group>"; };
 		4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviPlanComparisonSheet.swift; sourceTree = "<group>"; };
@@ -408,6 +413,7 @@
 		F24273B1AA0D400CEC6E0D9E /* TuneAVDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDiagnostics.swift; sourceTree = "<group>"; };
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
+		F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPicker.swift; sourceTree = "<group>"; };
 		F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITestBootstrapSeeder.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
 		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
@@ -468,6 +474,7 @@
 				1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */,
 				09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */,
 				B952CBDC8F8A3E8886C83EC7 /* SharedAppleSupportTests.swift */,
+				15D973989ECDA76787FA8EDF /* TuneAVSurpriseStationPickerTests.swift */,
 			);
 			path = TuneAVTests;
 			sourceTree = "<group>";
@@ -664,10 +671,12 @@
 				7B7340C7B87492F0AFCDAD41 /* TuneAVStationArtworkView.swift */,
 				9E588F242FDC53EAB15D56C3 /* TuneAVStationFeedbackControls.swift */,
 				F0E7E30C6B91F6DE1267AD2C /* TuneAVStationInfoViews.swift */,
+				4A10E8C4A72867917D1420C6 /* TuneAVStationPlayLog.swift */,
 				A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */,
 				3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */,
 				41CD7A93DE3378B3083FBB50 /* TuneAVSubscriptionEntitlementPolicy.swift */,
 				05A39DEC82A2C7F23FAEA368 /* TuneAVSubscriptionIntroductoryOffer.swift */,
+				F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */,
 				12A3B12BBA94111AA7B04163 /* TuneAVText.swift */,
 				AC0417E3D522BA4E2564ADF9 /* TuneAVTrackArtworkService.swift */,
 				38377DBA3A43F9C5BB7EF128 /* TuneAVTrackMetadata.swift */,
@@ -936,6 +945,7 @@
 				FAE2D86B8E94C39687AC6C77 /* HomeScreenStateBuilderTests.swift in Sources */,
 				570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */,
 				E85E7EFDB73629ABF7C5A524 /* SharedAppleSupportTests.swift in Sources */,
+				59591917AC2A3E7480834BC0 /* TuneAVSurpriseStationPickerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1084,10 +1094,12 @@
 				0FBAD2A1F3F7F81047182C42 /* TuneAVStationArtworkView.swift in Sources */,
 				DB1BF22E52A58AABF6AB6923 /* TuneAVStationFeedbackControls.swift in Sources */,
 				BDFBC8A6A66F24C0722ED2FD /* TuneAVStationInfoViews.swift in Sources */,
+				E44B4840FFB26F2FFD8EF391 /* TuneAVStationPlayLog.swift in Sources */,
 				2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */,
 				2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */,
 				09198DA179A16E6562FB88B9 /* TuneAVSubscriptionEntitlementPolicy.swift in Sources */,
 				BACFCC1D89D11537231E23EA /* TuneAVSubscriptionIntroductoryOffer.swift in Sources */,
+				C92BA16D5CDD481D46DE7D27 /* TuneAVSurpriseStationPicker.swift in Sources */,
 				76A00FB3315D803C57E9D7E2 /* TuneAVText.swift in Sources */,
 				8F263B120926F737D7EDD17F /* TuneAVTrackArtworkService.swift in Sources */,
 				45626A10F78B7635A01C2968 /* TuneAVTrackMetadata.swift in Sources */,

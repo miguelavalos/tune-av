@@ -3916,10 +3916,6 @@ final class SharedAppleSupportTests: XCTestCase {
             },
             openArtistSearch: { events.append("artist") },
             openStationSearch: { station in events.append("station:\(station.id)") },
-            runProActionOutsideFullPlayer: { action in
-                events.append("pro")
-                action()
-            },
             showStationDetails: { station, queue, initialSection in
                 events.append("details:\(station.id):\(queue.map(\.id).joined(separator: ",")):\(initialSection.accessibilityID)")
             },
@@ -3939,15 +3935,12 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(events, [
             "reaction:curious",
             "track:nova:web:lyrics",
-            "pro",
             "reaction:curious",
             "station:nova",
-            "pro",
             "reaction:curious",
             "web:nova",
             "details:nova:nova:about",
             "close",
-            "pro",
             "details:nova:nova:history",
             "close",
             "reaction:curious",

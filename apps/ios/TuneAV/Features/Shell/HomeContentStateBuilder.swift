@@ -1,9 +1,16 @@
+/// A recent radio the listener keeps returning to this week, as Avi notices it.
+struct HomeReturningStation: Equatable {
+    let name: String
+    let count: Int
+}
+
 struct HomeHeaderContentState {
     let statusTitle: String
     let liveNowStatus: String
     let currentStation: Station?
     let recentCount: Int
     let favoriteCount: Int
+    let returningStation: HomeReturningStation?
     let showsLiveNowPanel: Bool
 }
 
@@ -27,6 +34,7 @@ enum HomeContentStateBuilder {
         playbackStatusLabel: String,
         recentCount: Int,
         favoriteCount: Int,
+        returningStation: HomeReturningStation? = nil,
         hasPersonalActivity: Bool,
         featuredStation: Station?
     ) -> HomeHeaderContentState {
@@ -44,6 +52,7 @@ enum HomeContentStateBuilder {
             currentStation: currentStation,
             recentCount: recentCount,
             favoriteCount: favoriteCount,
+            returningStation: returningStation,
             showsLiveNowPanel: currentStation == nil && !hasPersonalActivity && featuredStation == nil
         )
     }

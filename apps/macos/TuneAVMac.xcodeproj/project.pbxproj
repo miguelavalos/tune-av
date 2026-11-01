@@ -31,6 +31,7 @@
 		3C66F4B67C2C0F312AD7236C /* TuneAVLibraryTombstone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E1A55B511C4D08B33974A4 /* TuneAVLibraryTombstone.swift */; };
 		3EB8D04032E7E589B575F853 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 99DF84A634CD654D5194F8CA /* Localizable.strings */; };
 		3ED91BE180569BBA0BBF2B96 /* TuneAVAppDataSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4800B97412F65A7D48DA7259 /* TuneAVAppDataSyncClient.swift */; };
+		44E42A498FC4F1A3BC9E44D7 /* TuneAVSurpriseStationPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3633FCE057943AFDBB45495 /* TuneAVSurpriseStationPickerTests.swift */; };
 		4517CBAFE4D60F933644F368 /* TuneAVSavedDiscoveryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCA11EFF39C50A234F6A6C7 /* TuneAVSavedDiscoveryPolicy.swift */; };
 		46097D54AAA9FBFF1CBD7518 /* MacProPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BCB8CE6B56B9B0EB0CAA956 /* MacProPaywallView.swift */; };
 		462E87FB1176BE67A4E3CABE /* TuneAVMacSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BECFD55C06EFFE74CA3E47B /* TuneAVMacSmokeTests.swift */; };
@@ -50,6 +51,7 @@
 		755B50D75DD9898A7DFE44E1 /* TuneAVLibrarySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B4987CBF8EC41105DBEEB4 /* TuneAVLibrarySync.swift */; };
 		7A6D7C654B9ACE837D7DD009 /* MacMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B084B9AAAC81CC6B40215DE /* MacMusicView.swift */; };
 		7B0309A86C6D98398658CA6E /* TuneAVUITestAccountDeletionScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A7AC7B73C839883433878A /* TuneAVUITestAccountDeletionScenarios.swift */; };
+		7C674DAE7DE7F67F05DBB7BE /* TuneAVStationPlayLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BB48265A1DA1EFEB3237FE /* TuneAVStationPlayLog.swift */; };
 		7D04E09AD5DD321B60222524 /* TuneAVMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008D0BA4DF03C532ABC11140 /* TuneAVMacApp.swift */; };
 		7D1AAB0B317C266DDC8688B4 /* MacCloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17334A568C86EE82A2ECDDFE /* MacCloudSyncTests.swift */; };
 		86361103BE48CA0FF0A0BAAB /* AVExternalLinkFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 5A552B76A5A6A50E7560D123 /* AVExternalLinkFoundation */; };
@@ -86,6 +88,7 @@
 		E001508D1B89AF2D87BE7995 /* AVLaunchFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 852F686E59DEE687DF7D7A21 /* AVLaunchFoundation */; };
 		E2172617569AE8FD4167CC02 /* TuneAVLibraryStationLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C4509340FBCDAC730F4CFE /* TuneAVLibraryStationLogic.swift */; };
 		E319885B3FA60FE3C8DAE42D /* TuneAVAccountDeletionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D53ACCC98B84A22C9650E2 /* TuneAVAccountDeletionPolicy.swift */; };
+		E9B336BF76B229A367E100C3 /* TuneAVSurpriseStationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F798F1F94832F4BF1E2E09 /* TuneAVSurpriseStationPicker.swift */; };
 		EF261B5CD47108127D07FEBF /* MacMusicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0E798D8F5D618F96F889892 /* MacMusicDetailView.swift */; };
 		EF844812578920F30B199CB0 /* MacProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB438CFA382907963DF4581A /* MacProfileView.swift */; };
 		F34A723563A5C566B111EC7F /* TuneAVRevenueCatPlanMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CF084428D8097AE805BEA5F /* TuneAVRevenueCatPlanMapping.swift */; };
@@ -135,6 +138,7 @@
 		4186E1C0F2B5E1F3A2066A71 /* MacHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacHomeView.swift; sourceTree = "<group>"; };
 		41E1A55B511C4D08B33974A4 /* TuneAVLibraryTombstone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryTombstone.swift; sourceTree = "<group>"; };
 		43020E23D4675B7E49C389AF /* TuneAVNowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVNowPlayingService.swift; sourceTree = "<group>"; };
+		43BB48265A1DA1EFEB3237FE /* TuneAVStationPlayLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationPlayLog.swift; sourceTree = "<group>"; };
 		43BF1BA3D8D70F28791FE4D2 /* TuneAviPopoverActionsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAviPopoverActionsPanel.swift; sourceTree = "<group>"; };
 		473B194F4640945709B1E509 /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4800B97412F65A7D48DA7259 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
@@ -144,6 +148,7 @@
 		5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationService.swift; sourceTree = "<group>"; };
 		53A7AC7B73C839883433878A /* TuneAVUITestAccountDeletionScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUITestAccountDeletionScenarios.swift; sourceTree = "<group>"; };
 		555D34D6619792C6FCDF7FDB /* TuneAVDateCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDateCoding.swift; sourceTree = "<group>"; };
+		56F798F1F94832F4BF1E2E09 /* TuneAVSurpriseStationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPicker.swift; sourceTree = "<group>"; };
 		5B5B98CF5933EAE1A87E50A0 /* TuneAVTrackArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackArtworkService.swift; sourceTree = "<group>"; };
 		5D1323087CE3D03848F1E095 /* TuneAVAudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAudioPlaybackPolicy.swift; sourceTree = "<group>"; };
 		5FA1404F908BC7318A328CDC /* TuneAVDailyUsageLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVDailyUsageLimiter.swift; sourceTree = "<group>"; };
@@ -169,6 +174,7 @@
 		9F70EEBD2ED0934A00C217E9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A0E798D8F5D618F96F889892 /* MacMusicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacMusicDetailView.swift; sourceTree = "<group>"; };
 		A2E395D20FB6B0E1A7C6C37C /* TuneAVBundleConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVBundleConfig.swift; sourceTree = "<group>"; };
+		A3633FCE057943AFDBB45495 /* TuneAVSurpriseStationPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPickerTests.swift; sourceTree = "<group>"; };
 		AB9AFD48BFD500CCBB1F87F9 /* TuneAVUpgradeMomentPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVUpgradeMomentPolicy.swift; sourceTree = "<group>"; };
 		B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVTrackMetadata.swift; sourceTree = "<group>"; };
 		B804B81EE903D677990E1899 /* TuneAVAviMusicDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAviMusicDetailViews.swift; sourceTree = "<group>"; };
@@ -379,10 +385,12 @@
 				30EE7710AA11913E59C7F507 /* TuneAVStationArtworkView.swift */,
 				F88785BF8E497CD1DBFAC244 /* TuneAVStationFeedbackControls.swift */,
 				78C434A9C4A7C9D1C159BE9A /* TuneAVStationInfoViews.swift */,
+				43BB48265A1DA1EFEB3237FE /* TuneAVStationPlayLog.swift */,
 				5132DE73C7E0D76B1F25A119 /* TuneAVStationService.swift */,
 				F546054602ED9447DD71B662 /* TuneAVStreamMetadataDelegate.swift */,
 				2AEBDDC8B7E66D05B6D93E8A /* TuneAVSubscriptionEntitlementPolicy.swift */,
 				C1FC560E97BF1D24BBE16131 /* TuneAVSubscriptionIntroductoryOffer.swift */,
+				56F798F1F94832F4BF1E2E09 /* TuneAVSurpriseStationPicker.swift */,
 				891985721D6B47B10DA4E6F8 /* TuneAVText.swift */,
 				5B5B98CF5933EAE1A87E50A0 /* TuneAVTrackArtworkService.swift */,
 				B742B0081A7F0D35C5BC8E20 /* TuneAVTrackMetadata.swift */,
@@ -412,6 +420,7 @@
 				17334A568C86EE82A2ECDDFE /* MacCloudSyncTests.swift */,
 				86CDFEA1924E937953B580A6 /* MacSubscriptionPurchasingTests.swift */,
 				6BECFD55C06EFFE74CA3E47B /* TuneAVMacSmokeTests.swift */,
+				A3633FCE057943AFDBB45495 /* TuneAVSurpriseStationPickerTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -613,10 +622,12 @@
 				CEE7318443B34B96E5D0D969 /* TuneAVStationArtworkView.swift in Sources */,
 				07A45F961828AC143CA5D655 /* TuneAVStationFeedbackControls.swift in Sources */,
 				FE9A5AD2BA5BDB71469733B1 /* TuneAVStationInfoViews.swift in Sources */,
+				7C674DAE7DE7F67F05DBB7BE /* TuneAVStationPlayLog.swift in Sources */,
 				F7D4B4F97C6747AA4C872DDD /* TuneAVStationService.swift in Sources */,
 				5D4B73E8C2966B3F0BBE22C2 /* TuneAVStreamMetadataDelegate.swift in Sources */,
 				1351841C19BAF5F13450E293 /* TuneAVSubscriptionEntitlementPolicy.swift in Sources */,
 				247E6671CF4850923D781A54 /* TuneAVSubscriptionIntroductoryOffer.swift in Sources */,
+				E9B336BF76B229A367E100C3 /* TuneAVSurpriseStationPicker.swift in Sources */,
 				6716515508AEB7968EF1966E /* TuneAVText.swift in Sources */,
 				6D04968C92A2E22913A52C46 /* TuneAVTrackArtworkService.swift in Sources */,
 				1ACC6052B1279928A6EA2971 /* TuneAVTrackMetadata.swift in Sources */,
@@ -637,6 +648,7 @@
 				7D1AAB0B317C266DDC8688B4 /* MacCloudSyncTests.swift in Sources */,
 				8DDBF8EC5632552DF4CF5BFC /* MacSubscriptionPurchasingTests.swift in Sources */,
 				462E87FB1176BE67A4E3CABE /* TuneAVMacSmokeTests.swift in Sources */,
+				44E42A498FC4F1A3BC9E44D7 /* TuneAVSurpriseStationPickerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

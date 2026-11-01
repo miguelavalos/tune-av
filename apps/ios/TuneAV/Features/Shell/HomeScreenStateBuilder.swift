@@ -25,7 +25,8 @@ enum HomeScreenStateBuilder {
         isPlaying: Bool,
         isStationLoading: Bool,
         currentTrackTitle: String?,
-        currentTrackArtist: String?
+        currentTrackArtist: String?,
+        returningStation: HomeReturningStation? = nil
     ) -> HomeScreenState {
         let featuredState = HomeFeaturedStationBuilder.build(
             currentStation: currentStation,
@@ -41,6 +42,7 @@ enum HomeScreenStateBuilder {
             playbackStatusLabel: playbackStatusLabel,
             recentCount: recentStations.count,
             favoriteCount: favoriteStations.count,
+            returningStation: returningStation,
             hasPersonalActivity: hasPersonalActivity,
             featuredStation: featuredState.station
         )

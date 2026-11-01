@@ -415,6 +415,17 @@
 "shell.count.tunedSignal.other" = "%d signaux affinés";
 "shell.home.aviBrief.localSignals" = "Aujourd'hui j'ai %@ et %@ sous la main. Envie de nouveau ?";
 "shell.home.aviBrief.title" = "Ce que j'ai remarqué aujourd'hui";
+"shell.home.surprise.action" = "Surprends-moi";
+"shell.home.surprise.unavailable" = "Il me manque encore des radios. Lancez ou enregistrez-en et redemandez.";
+"shell.home.surprise.reason.favoriteRested" = "Ça fait des jours sans %@. On y retourne.";
+"shell.home.surprise.reason.favoriteUnplayed" = "Vous avez enregistré %@ sans jamais l'écouter. On l'écoute.";
+"shell.home.surprise.reason.band.morning" = "Le matin, vous écoutez souvent %@. Essayons.";
+"shell.home.surprise.reason.band.midday" = "À midi, vous écoutez souvent %@. Essayons.";
+"shell.home.surprise.reason.band.afternoon" = "L'après-midi, vous écoutez souvent %@. Essayons.";
+"shell.home.surprise.reason.band.evening" = "Le soir, vous écoutez souvent %@. Essayons.";
+"shell.home.surprise.reason.band.night" = "Tard la nuit, vous écoutez souvent %@. Essayons.";
+"shell.home.surprise.reason.tag" = "Nouveau pour vous : %@, parmi les radios %@.";
+"shell.home.surprise.reason.popular" = "Nouveau pour vous : %@. Voyons ce que ça donne.";
 "shell.home.aviBrief.returning" = "Vous êtes revenu sur %@ %d fois cette semaine. On tente autre chose ?";
 "shell.home.aroundYou.subtitle" = "Correspondances de pays et de contexte pour votre prochaine station.";
 "shell.home.aroundYou.title" = "Autour de vous";

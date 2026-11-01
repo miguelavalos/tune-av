@@ -466,6 +466,17 @@
 "shell.count.tunedSignal.other" = "%d tuned signals";
 "shell.home.aviBrief.localSignals" = "I've got %@ and %@ to work with today. Want something new?";
 "shell.home.aviBrief.title" = "What I've noticed today";
+"shell.home.surprise.action" = "Surprise me";
+"shell.home.surprise.unavailable" = "I need a few more radios first. Play or save some and ask me again.";
+"shell.home.surprise.reason.favoriteRested" = "You haven't played %@ in days. Let's go again.";
+"shell.home.surprise.reason.favoriteUnplayed" = "You saved %@ and never played it. Let's hear it.";
+"shell.home.surprise.reason.band.morning" = "In the morning you often play %@. Let's try it.";
+"shell.home.surprise.reason.band.midday" = "Around midday you often play %@. Let's try it.";
+"shell.home.surprise.reason.band.afternoon" = "In the afternoon you often play %@. Let's try it.";
+"shell.home.surprise.reason.band.evening" = "In the evening you often play %@. Let's try it.";
+"shell.home.surprise.reason.band.night" = "Late at night you often play %@. Let's try it.";
+"shell.home.surprise.reason.tag" = "New for you: %@, from the %@ radios.";
+"shell.home.surprise.reason.popular" = "New for you: %@. Let's see how it sounds.";
 "shell.home.aviBrief.returning" = "You've come back to %@ %d times this week. Want to try something new?";
 "shell.home.aroundYou.subtitle" = "Country and listening-context matches for your next station.";
 "shell.home.aroundYou.title" = "Around you";

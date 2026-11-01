@@ -12,6 +12,8 @@ struct MacHomeView: View {
             VStack(alignment: .leading, spacing: 24) {
                 header
 
+                surpriseDesk
+
                 if let station = model.heroStation {
                     MacHomeHeroCard(station: station)
                 }
@@ -53,6 +55,36 @@ struct MacHomeView: View {
             .padding(.horizontal, 30)
             .padding(.vertical, 26)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Avi's "Surprise me": one tap plays a radio Avi can justify and the reason shows beside Avi.
+    private var surpriseDesk: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let reason = model.homeSurpriseReason {
+                HStack(spacing: 12) {
+                    Image(TuneAVAviEmotion.curious.assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 44, height: 44)
+                        .accessibilityHidden(true)
+
+                    Text(reason)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(TuneAVTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("home.surprise.reason")
+            }
+
+            AVAviPrimaryActionButton(
+                title: L10n.string("shell.home.surprise.action"),
+                systemImage: "sparkles",
+                accessibilityIdentifier: "home.surprise"
+            ) {
+                model.surpriseMe()
+            }
+            .frame(maxWidth: 320)
         }
     }
 

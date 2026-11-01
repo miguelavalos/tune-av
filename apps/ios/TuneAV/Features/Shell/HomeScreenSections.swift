@@ -1,10 +1,13 @@
 import AVAppShellFoundation
+import AVAviFoundation
 import SwiftUI
 
 struct HomeHeaderContent: View {
     let state: HomeHeaderContentState
     var layoutClass: TuneLayoutClass = .compact
+    var surpriseReason: String? = nil
     let openAvi: () -> Void
+    var surpriseMe: (() -> Void)? = nil
 
     var body: some View {
         if layoutClass.isTabletLike {
@@ -35,6 +38,8 @@ struct HomeHeaderContent: View {
             currentStation: state.currentStation,
             recentCount: state.recentCount,
             favoriteCount: state.favoriteCount,
+            returningStation: state.returningStation,
+            surpriseReason: surpriseReason,
             emotion: TuneAVAviEmotionResolver.homeEmotion(
                 currentStation: state.currentStation,
                 recentCount: state.recentCount,
@@ -42,6 +47,15 @@ struct HomeHeaderContent: View {
             ),
             openAvi: openAvi
         )
+
+        if let surpriseMe {
+            AVAviPrimaryActionButton(
+                title: L10n.string("shell.home.surprise.action"),
+                systemImage: "sparkles",
+                accessibilityIdentifier: "home.surprise",
+                action: surpriseMe
+            )
+        }
 
         if state.showsLiveNowPanel {
             LiveNowPanel(currentStation: state.currentStation, status: state.liveNowStatus)

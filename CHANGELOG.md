@@ -10,6 +10,11 @@ This project follows semantic versioning once public source releases begin.
   radios, recommendation fallback and the Home brief now read as a companion
   talking to the listener in all five locales, and the Home brief notices a
   recent radio the listener has come back to three or more times this week.
+- Add "Surprise me" to Home on iOS and macOS: one tap plays a radio Avi can
+  justify from device-local signals (a rested or never-played favorite, a liked
+  radio usual for this hour of day, a popular radio with a familiar tag, or a
+  popular radio not played yet), never the current radio or one with negative
+  feedback, through the normal play path with Avi's one-line reason on Home.
 - Remove the Convex realtime layer from iOS and macOS: no `ConvexMobile`
   dependency, no `TUNEAV_CONVEX_URL`, and no realtime-session request. Pro
   cloud sync now pulls on app open, on foreground activation (throttled to once

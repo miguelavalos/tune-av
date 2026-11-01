@@ -195,6 +195,8 @@ final class TuneAVMacModel: ObservableObject {
     @Published private(set) var lastCloudSyncAt: Date?
     @Published var errorMessage: String?
     @Published var cloudSyncErrorMessage: String?
+    @Published private(set) var stationPlayLog = TuneAVStationPlayLog.load()
+    @Published private(set) var homeSurpriseBrief: MacHomeSurpriseBrief?
 
     private let stationService = TuneAVStationService()
     private let player = AVPlayer()
@@ -338,6 +340,39 @@ final class TuneAVMacModel: ObservableObject {
 
     var heroStation: Station? {
         currentStation ?? recentStations.first ?? favoriteStations.first ?? featuredStations.first
+    }
+
+    /// Avi's one-line reason for the last "Surprise me", while the picked radio is still the current one.
+    var homeSurpriseReason: String? {
+        homeSurpriseBrief?.reason(forCurrentStationID: currentStation?.id)
+    }
+
+    /// One tap: Avi picks a radio it can justify from device-local signals and plays it through the
+    /// normal play path, then says why on Home.
+    func surpriseMe() {
+        let currentStationID = currentStation?.id
+        let pick = TuneAVSurpriseStationPicker.pick(
+            favorites: favoriteStations,
+            recentPlays: stationPlayLog.recentPlays(stations: recentStations),
+            feedback: stationFeedback,
+            popular: featuredStations,
+            now: nowProvider(),
+            currentStationID: currentStationID
+        )
+        guard let pick else {
+            homeSurpriseBrief = MacHomeSurpriseBrief(
+                stationID: nil,
+                currentStationIDAtRequest: currentStationID,
+                reason: L10n.string("shell.home.surprise.unavailable")
+            )
+            return
+        }
+        homeSurpriseBrief = MacHomeSurpriseBrief(
+            stationID: pick.station.id,
+            currentStationIDAtRequest: currentStationID,
+            reason: pick.localizedReason()
+        )
+        play(pick.station, queue: [pick.station], source: .homeDiscovery)
     }
 
     var moodGenreSuggestions: [MacHomeMoodGenreSuggestion] {
@@ -1600,6 +1635,8 @@ final class TuneAVMacModel: ObservableObject {
         recentStations.insert(station, at: 0)
         recentStations = Array(recentStations.prefix(12))
         storage.save(recentStations, forKey: TuneAVMacLibraryStorage.recentsKey)
+        stationPlayLog = stationPlayLog.recording(station.id, at: nowProvider())
+        stationPlayLog.save()
         markLocalLibraryUpdated(syncsCloud: false)
     }
 
@@ -3572,6 +3609,19 @@ struct TuneAVMacListeningSessionInput: Encodable {
     let source: String
     let endedReason: TuneAVListeningEndedReason
     let trackDetectedCount: Int
+}
+
+/// What Avi said after the last "Surprise me". It stays on Home while the picked radio is the
+/// current one; when nothing could be picked it stays while the current radio is unchanged.
+struct MacHomeSurpriseBrief: Equatable {
+    let stationID: String?
+    let currentStationIDAtRequest: String?
+    let reason: String
+
+    func reason(forCurrentStationID currentStationID: String?) -> String? {
+        let anchor = stationID ?? currentStationIDAtRequest
+        return anchor == currentStationID ? reason : nil
+    }
 }
 
 struct TuneAVMacLibraryStorage {

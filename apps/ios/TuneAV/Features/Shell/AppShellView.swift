@@ -27,6 +27,19 @@ struct AppShellView: View {
         let queue: [Station]?
     }
 
+    /// What Avi said after the last "Surprise me". It stays on Home while the picked radio is the
+    /// current one; when nothing could be picked it stays while the current radio is unchanged.
+    struct HomeSurpriseBrief: Equatable {
+        let stationID: String?
+        let currentStationIDAtRequest: String?
+        let reason: String
+
+        func reason(forCurrentStationID currentStationID: String?) -> String? {
+            let anchor = stationID ?? currentStationIDAtRequest
+            return anchor == currentStationID ? reason : nil
+        }
+    }
+
     private enum LastOpenedStationPresentation: String {
         case detail
         case player
@@ -75,6 +88,8 @@ struct AppShellView: View {
     @State private var isShowingFooterArtworkZoom = false
     @State private var pendingCellularPlayback: PendingPlayback?
     @State private var isConfirmingStopPlayback = false
+    @State private var stationPlayLog = TuneAVStationPlayLog.load()
+    @State private var homeSurpriseBrief: HomeSurpriseBrief?
 
     private let stationService = StationService()
     private let stationNowPlayingService = NowPlayingService()
@@ -495,7 +510,10 @@ struct AppShellView: View {
             bottomContentPadding: shellScrollBottomPadding,
             favoriteStationIDs: favoriteStationIDs,
             nowPlayingTracks: stationNowPlayingTracks,
+            returningStation: homeReturningStation(in: recentStations),
+            surpriseReason: homeSurpriseBrief?.reason(forCurrentStationID: audioPlayer.currentStation?.id),
             openAvi: openContextualAvi,
+            surpriseMe: surpriseMe,
             openSearchTag: openHomeSearchTag(_:),
             refreshHome: refreshHomePresentationAndFeed,
             playStation: playStation,
@@ -510,6 +528,45 @@ struct AppShellView: View {
     private func openHomeSearchTag(_ tag: String) {
         searchPresentation.openTag(tag)
         selectedTab = .search
+    }
+
+    /// The recent radio played most this week, once it reaches three plays on this device.
+    private func homeReturningStation(in recentStations: [Station]) -> HomeReturningStation? {
+        guard
+            let mostPlayed = stationPlayLog.mostPlayedStation(since: Date().addingTimeInterval(-TuneAVStationPlayLog.returningWindow)),
+            let station = recentStations.first(where: { $0.id == mostPlayed.stationID })
+        else { return nil }
+        return HomeReturningStation(name: station.name, count: mostPlayed.count)
+    }
+
+    /// One tap: Avi picks a radio it can justify from device-local signals and plays it through the
+    /// normal play path, then says why in the Home brief.
+    private func surpriseMe() {
+        let currentStationID = audioPlayer.currentStation?.id
+        let lastPlayedByID = Dictionary(libraryStore.recents.map { ($0.stationID, $0.lastPlayedAt) }, uniquingKeysWith: { max($0, $1) })
+        let pick = TuneAVSurpriseStationPicker.pick(
+            favorites: enrichedFavoriteStations,
+            recentPlays: stationPlayLog.recentPlays(stations: enrichedRecentStations, lastPlayedByID: lastPlayedByID),
+            feedback: libraryStore.stationFeedback,
+            popular: enrichedStations(homeSnapshot.stations),
+            now: .now,
+            currentStationID: currentStationID
+        )
+        guard let pick else {
+            AVHaptics.perform(.warning)
+            homeSurpriseBrief = HomeSurpriseBrief(
+                stationID: nil,
+                currentStationIDAtRequest: currentStationID,
+                reason: L10n.string("shell.home.surprise.unavailable")
+            )
+            return
+        }
+        homeSurpriseBrief = HomeSurpriseBrief(
+            stationID: pick.station.id,
+            currentStationIDAtRequest: currentStationID,
+            reason: pick.localizedReason()
+        )
+        playStation(pick.station, queueSource: .homeDiscovery, queue: [pick.station])
     }
 
     private var searchScreen: some View {
@@ -980,12 +1037,6 @@ struct AppShellView: View {
         accessController.capabilities.canAccessPremiumFeatures
     }
 
-    /// Avi lookups are no longer Pro-only: the browser router counts each one against the daily budget
-    /// and shows the limit prompt only when it is exhausted.
-    private func runProAviAction(_ action: () -> Void) {
-        action()
-    }
-
     private func recordCurrentTrackDiscovery() {
         guard
             let station = audioPlayer.currentStation,
@@ -1264,6 +1315,8 @@ struct AppShellView: View {
     private func recordConfirmedPlaybackIfNeeded(_ station: Station) {
         guard lastConfirmedPlaybackStationID != station.id else { return }
         libraryStore.recordPlayback(of: enrichedStation(station), recentLimit: accessController.limits.recentStations)
+        stationPlayLog = stationPlayLog.recording(station.id)
+        stationPlayLog.save()
         lastConfirmedPlaybackStationID = station.id
     }
 
@@ -2562,14 +2615,6 @@ struct AviScreen: View {
         }
     }
 
-    private func runProAviAction(_ action: () -> Void) {
-        action()
-    }
-
-    private func runProAviActionOutsideFullPlayer(_ action: () -> Void) {
-        action()
-    }
-
     private var activeMusicDetail: SelectedMusicAviDetail? {
         guard !isNowPlayingFullPlayer else { return nil }
         return nestedMusicDetail ?? focusedMusicDetail
@@ -2746,12 +2791,10 @@ struct AviScreen: View {
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: "avi.command.primary.search"
         ) {
-            runProAviActionOutsideFullPlayer {
-                if hasCurrentSongContext {
-                    openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                } else {
-                    openAviStationSearch(for: station)
-                }
+            if hasCurrentSongContext {
+                openAviSearch(for: station, destination: .web, suffix: "lyrics")
+            } else {
+                openAviStationSearch(for: station)
             }
         }
 
@@ -2760,9 +2803,7 @@ struct AviScreen: View {
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
-            runProAviActionOutsideFullPlayer {
-                showStationDetails(station, [station], .history)
-            }
+            showStationDetails(station, [station], .history)
         }
 
         AVAviCommandButton(
@@ -2783,27 +2824,21 @@ struct AviScreen: View {
                 systemImage: "text.quote",
                 accessibilityIdentifier: "avi.command.primary.music.lyrics"
             ) {
-                runProAviActionOutsideFullPlayer {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
             }
             AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.music.youtube"
             ) {
-                runProAviActionOutsideFullPlayer {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
             }
             AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchArtist"),
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.music.artist"
             ) {
-                runProAviActionOutsideFullPlayer {
-                    openExternalSearch(query: discovery.artistDisplayText)
-                }
+                openExternalSearch(query: discovery.artistDisplayText)
             }
         case .artist(let summary):
             AVAviCommandButton(
@@ -2811,18 +2846,14 @@ struct AviScreen: View {
                 systemImage: "person.crop.circle",
                 accessibilityIdentifier: "avi.command.primary.artist.search"
             ) {
-                runProAviActionOutsideFullPlayer {
-                    openExternalSearch(query: summary.name)
-                }
+                openExternalSearch(query: summary.name)
             }
             AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.searchYouTube"),
                 systemImage: "play.rectangle",
                 accessibilityIdentifier: "avi.command.primary.artist.youtube"
             ) {
-                runProAviActionOutsideFullPlayer {
-                    openExternalSearch(query: summary.name, destination: .youtube)
-                }
+                openExternalSearch(query: summary.name, destination: .youtube)
             }
             AVAviCommandButton(
                 title: L10n.string("shell.avi.actions.findRelatedRadios"),
@@ -2846,12 +2877,10 @@ struct AviScreen: View {
             systemImage: hasCurrentSongContext ? "text.quote" : "info.circle",
             accessibilityIdentifier: hasCurrentSongContext ? "avi.command.primary.searchLyrics" : "avi.command.primary.searchRadio"
         ) {
-            runProAviActionOutsideFullPlayer {
-                if hasCurrentSongContext {
-                    openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                } else {
-                    openAviStationSearch(for: station)
-                }
+            if hasCurrentSongContext {
+                openAviSearch(for: station, destination: .web, suffix: "lyrics")
+            } else {
+                openAviStationSearch(for: station)
             }
         }
 
@@ -2860,9 +2889,7 @@ struct AviScreen: View {
             systemImage: "clock.arrow.circlepath",
             accessibilityIdentifier: "avi.command.primary.history"
         ) {
-            runProAviActionOutsideFullPlayer {
-                showStationDetails(station, [station], .history)
-            }
+            showStationDetails(station, [station], .history)
         }
     }
 
@@ -3370,24 +3397,16 @@ struct AviScreen: View {
             openStationInfo: { openDiscoveryStation(discovery) },
             toggleSaved: { toggleDiscoverySaved(discovery) },
             openYouTube: {
-                runProAviAction {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
             },
             openLyrics: {
-                runProAviAction {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
             },
             openAppleMusic: {
-                runProAviAction {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
             },
             openSpotify: {
-                runProAviAction {
-                    openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
-                }
+                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
             },
             hideAction: nil,
             removeAction: nil
@@ -4035,24 +4054,16 @@ struct AviScreen: View {
                         openStationInfo: { showStationDetails(station, [station], .about) },
                         toggleSaved: { toggleDiscoverySaved(discovery) },
                         openYouTube: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
-                            }
+                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .youtube)
                         },
                         openLyrics: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
-                            }
+                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title) lyrics")
                         },
                         openAppleMusic: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
-                            }
+                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .appleMusic)
                         },
                         openSpotify: {
-                            runProAviAction {
-                                openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
-                            }
+                            openExternalSearch(query: "\(discovery.artistDisplayText) \(discovery.title)", destination: .spotify)
                         },
                         hideAction: nil,
                         removeAction: nil
@@ -5493,7 +5504,6 @@ struct AviScreen: View {
             },
             openArtistSearch: openAviArtistSearch,
             openStationSearch: openAviStationSearch,
-            runProActionOutsideFullPlayer: runProAviActionOutsideFullPlayer,
             showStationDetails: { station, queue, initialSection in
                 showStationDetails(station, queue, initialSection)
             },
@@ -5758,23 +5768,17 @@ struct AviScreen: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     AVAviActionChip(title: isFocusedStationActive ? L10n.string("player.discovery.lyricsShort") : L10n.string("shell.avi.actions.publicInfo"), systemImage: isFocusedStationActive ? "text.quote" : "info.circle") {
-                        runProAviActionOutsideFullPlayer {
-                            if isFocusedStationActive && hasCurrentSongContext {
-                                openAviSearch(for: station, destination: .web, suffix: "lyrics")
-                            } else {
-                                openAviStationSearch(for: station)
-                            }
+                        if isFocusedStationActive && hasCurrentSongContext {
+                            openAviSearch(for: station, destination: .web, suffix: "lyrics")
+                        } else {
+                            openAviStationSearch(for: station)
                         }
                     }
                     AVAviActionChip(title: L10n.string("shell.avi.actions.historyShort"), systemImage: "clock.arrow.circlepath") {
-                        runProAviActionOutsideFullPlayer {
-                            showStationDetails(station, [station], .history)
-                        }
+                        showStationDetails(station, [station], .history)
                     }
                     AVAviActionChip(title: L10n.string("player.avi.action.web"), systemImage: "safari") {
-                        runProAviActionOutsideFullPlayer {
-                            browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
-                        }
+                        browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
                     }
                     AVAviActionChip(title: L10n.string("shell.avi.actions.findRelatedRadios"), systemImage: "sparkles") {
                         showRelatedStations(for: station)

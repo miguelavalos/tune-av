@@ -19,7 +19,10 @@ struct HomeScreen: View {
     let bottomContentPadding: CGFloat
     let favoriteStationIDs: Set<String>
     let nowPlayingTracks: [String: NowPlayingTrack]
+    var returningStation: HomeReturningStation? = nil
+    var surpriseReason: String? = nil
     let openAvi: () -> Void
+    var surpriseMe: (() -> Void)? = nil
     let openSearchTag: (String) -> Void
     let refreshHome: () async -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
@@ -47,7 +50,9 @@ struct HomeScreen: View {
                 HomeHeaderContent(
                     state: screenState.headerContentState,
                     layoutClass: contentLayoutClass,
-                    openAvi: openAvi
+                    surpriseReason: surpriseReason,
+                    openAvi: openAvi,
+                    surpriseMe: surpriseMe
                 )
                 HomeHeroContent(
                     state: screenState.heroContentState,
@@ -115,7 +120,8 @@ struct HomeScreen: View {
             isPlaying: audioPlayer.isPlaying,
             isStationLoading: audioPlayer.isLoading,
             currentTrackTitle: audioPlayer.currentTrackTitle,
-            currentTrackArtist: audioPlayer.currentTrackArtist
+            currentTrackArtist: audioPlayer.currentTrackArtist,
+            returningStation: returningStation
         )
     }
 
