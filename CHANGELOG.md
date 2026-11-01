@@ -6,6 +6,8 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+## 1.0.9 - 2026-11-01
+
 - Let Avi speak in first person on iOS and macOS: the Avi signals, moods, related
   radios, recommendation fallback and the Home brief now read as a companion
   talking to the listener in all five locales, and the Home brief notices a
