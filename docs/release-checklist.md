@@ -890,3 +890,35 @@ split:
 4. Attach only public artifacts. Do not attach local config, signing output,
    archives containing provisioning profiles, logs with account data, or private
    evidence.
+
+## 1.0.9 TestFlight delivery checkpoint, 2026-11-01
+
+iOS/iPadOS `1.0.9 (58)` and macOS `1.0.9 (66)` were produced on `openspace`
+from public source `0055b37` (release train opened on top of `d2a3664`, the
+merge of the Convex-realtime removal, metered Avi lookups for every tier, the
+guest-priced monthly paywall, Avi first-person copy, "Surprise me", and the
+account-only web app).
+
+- Verification before archiving: iOS 362 unit tests and macOS 75 unit tests
+  passed on `home` (Xcode 27.2); i18n parity and public config hygiene passed.
+- iOS: release preflight, production config check, platform security, network
+  privacy, privacy manifest and strict archive gates passed. Archive
+  `.derived-data/release-archives/TuneAV-1.0.9-58-2026-11-01-134201.xcarchive`,
+  team `935PM55U6R`, app UUID `80F62665-D16B-3C20-9F09-18CE2A3A1657`, Sentry
+  UUID `6C5F22F7-8C8A-3804-A52A-FC2CD9676BF1`. Upload accepted at 13:46 CET
+  (`Upload succeeded`, `EXPORT SUCCEEDED`). Authenticated readback at 13:49 CET:
+  `processingState VALID`, `internalBuildState IN_BETA_TESTING`, group
+  `Tune AV Test`.
+- macOS: release preflight, config hygiene, platform security and privacy
+  manifest gates passed. First universal archive since the Convex binary left
+  (`x86_64 arm64`):
+  `.derived-data/macos-release-archives/TuneAVMac-1.0.9-66-2026-11-01-134644.xcarchive`.
+  Upload accepted at 13:53 CET (`Upload succeeded`, `EXPORT SUCCEEDED`).
+  Processing/group status: see the private runbook checkpoint.
+- Toolchain: Xcode 27.1 (27A9275). The Xcode Apple ID session on `openspace`
+  had expired (`exportArchive Failed to Use Accounts`); both uploads used the
+  App Store Connect API key path documented in the private release machine
+  setup instead. No change to signing identity or export options.
+- No App Review attachment or submission, no external testing, no backend or
+  production-data change from this delivery. Generated production config was
+  removed after the uploads.
