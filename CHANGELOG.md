@@ -6,6 +6,10 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Let Avi speak in first person on iOS and macOS: the Avi signals, moods, related
+  radios, recommendation fallback and the Home brief now read as a companion
+  talking to the listener in all five locales, and the Home brief notices a
+  recent radio the listener has come back to three or more times this week.
 - Remove the Convex realtime layer from iOS and macOS: no `ConvexMobile`
   dependency, no `TUNEAV_CONVEX_URL`, and no realtime-session request. Pro
   cloud sync now pulls on app open, on foreground activation (throttled to once
