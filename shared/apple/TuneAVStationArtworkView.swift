@@ -671,9 +671,22 @@ struct TuneAVRemoteArtworkImage<Placeholder: View>: View {
     let url: URL
     let size: CGFloat
     let scale: CGFloat
-    @ViewBuilder let placeholder: () -> Placeholder
+    let placeholder: () -> Placeholder
 
     @State private var image: Image?
+
+    init(url: URL, size: CGFloat, scale: CGFloat, @ViewBuilder placeholder: @escaping () -> Placeholder) {
+        self.url = url
+        self.size = size
+        self.scale = scale
+        self.placeholder = placeholder
+        _image = State(
+            initialValue: TuneAVArtworkImagePipeline.shared.cachedImage(
+                from: url,
+                maxPixelSize: TuneAVArtworkImagePipeline.maxPixelSize(size: size, scale: scale)
+            )
+        )
+    }
 
     var body: some View {
         Group {
@@ -686,18 +699,26 @@ struct TuneAVRemoteArtworkImage<Placeholder: View>: View {
             }
         }
         .task(id: requestKey) {
+            if let cachedImage = TuneAVArtworkImagePipeline.shared.cachedImage(from: url, maxPixelSize: maxPixelSize) {
+                image = cachedImage
+                return
+            }
             image = nil
             let loadedImage = await TuneAVArtworkImagePipeline.shared.image(
                 from: url,
-                maxPixelSize: max(1, Int((size * scale).rounded(.up)))
+                maxPixelSize: maxPixelSize
             )
             guard !Task.isCancelled else { return }
             image = loadedImage
         }
     }
 
+    private var maxPixelSize: Int {
+        TuneAVArtworkImagePipeline.maxPixelSize(size: size, scale: scale)
+    }
+
     private var requestKey: String {
-        "\(url.absoluteString)|\(Int((size * scale).rounded(.up)))"
+        "\(url.absoluteString)|\(maxPixelSize)"
     }
 }
 
@@ -713,7 +734,7 @@ actor TuneAVArtworkImagePipeline {
     private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "artwork")
 
     private let session: URLSession
-    private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
+    nonisolated(unsafe) private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
     private var inFlight: [String: Task<TuneAVPlatformImageBox?, Never>] = [:]
     private var failedLookups: [String: FailedLookup] = [:]
 
@@ -723,8 +744,21 @@ actor TuneAVArtworkImagePipeline {
         cache.totalCostLimit = 36 * 1024 * 1024
     }
 
+    nonisolated static func maxPixelSize(size: CGFloat, scale: CGFloat) -> Int {
+        max(1, Int((size * scale).rounded(.up)))
+    }
+
+    nonisolated func cachedImage(from url: URL, maxPixelSize: Int) -> Image? {
+        cache.object(forKey: Self.cacheKey(url: url, maxPixelSize: maxPixelSize) as NSString)
+            .map { Image(platformImage: $0.image) }
+    }
+
+    func prewarm(url: URL, size: CGFloat, scale: CGFloat) async {
+        _ = await image(from: url, maxPixelSize: Self.maxPixelSize(size: size, scale: scale))
+    }
+
     func image(from url: URL, maxPixelSize: Int) async -> Image? {
-        let key = cacheKey(url: url, maxPixelSize: maxPixelSize)
+        let key = Self.cacheKey(url: url, maxPixelSize: maxPixelSize)
         if let cached = cache.object(forKey: key as NSString)?.image {
             return Image(platformImage: cached)
         }
@@ -765,7 +799,7 @@ actor TuneAVArtworkImagePipeline {
         failedLookups.removeAll()
     }
 
-    private func cacheKey(url: URL, maxPixelSize: Int) -> String {
+    nonisolated private static func cacheKey(url: URL, maxPixelSize: Int) -> String {
         "\(url.absoluteString)|\(maxPixelSize)"
     }
 

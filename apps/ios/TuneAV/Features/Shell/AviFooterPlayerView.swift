@@ -56,6 +56,7 @@ struct AviExpandedFooterPlayerView: View {
     let stations: [Station]
     let recentStations: [Station]
     let favoriteStations: [Station]
+    var artworkMorphNamespace: Namespace.ID? = nil
     let openPlayer: () -> Void
     let showArtworkZoom: () -> Void
     let stopPlayback: () -> Void
@@ -147,9 +148,20 @@ struct AviExpandedFooterPlayerView: View {
         return currentStation.id == station.id && currentStation.streamURL != station.streamURL
     }
 
-    @ViewBuilder
     private var artwork: some View {
         ZStack(alignment: .topLeading) {
+            artworkImage
+                .tunePlayerArtworkMorph(in: artworkMorphNamespace, baseSize: Self.artworkSize)
+
+            if let feedback = currentTrackFeedback {
+                TuneAVFeedbackBadge(feedback: feedback, size: 26, fontSize: 10)
+                    .offset(x: -5, y: -5)
+            }
+        }
+    }
+
+    private var artworkImage: some View {
+        Group {
             if let artworkURL = audioPlayer.currentTrackArtworkURL {
                 AVFramedArtwork(
                     size: Self.artworkSize,
@@ -168,15 +180,10 @@ struct AviExpandedFooterPlayerView: View {
                     isAnimationActive: false
                 )
             }
-
-            if let feedback = currentTrackFeedback {
-                TuneAVFeedbackBadge(feedback: feedback, size: 26, fontSize: 10)
-                    .offset(x: -5, y: -5)
-            }
         }
     }
 
-    private static let artworkSize: CGFloat = 200
+    static let artworkSize: CGFloat = 200
 
     @ViewBuilder
     private var backdrop: some View {

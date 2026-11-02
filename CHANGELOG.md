@@ -23,6 +23,9 @@ This project follows semantic versioning once public source releases begin.
   into the card as a soft line drawing instead of a grey block, and the header
   pills, badges and sparkle button are readable on the dark card. Light mode is
   unchanged.
+- Open and close the iOS full player smoothly: the card grows from the mini
+  player and the artwork moves into place with a short spring, and closing
+  reverses it. With Reduce Motion on, the two simply crossfade.
 
 ## 1.0.9 - 2026-11-01
 
