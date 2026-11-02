@@ -22,11 +22,4 @@ enum HomeHeroActionBuilder {
     static func detailsAction(featuredState: HomeFeaturedStationState) -> HomeHeroDetailsAction {
         .show(featuredState.queueSource, featuredState.queueStations)
     }
-
-    static func toggledFeedback(
-        currentFeedback: TuneAVStationFeedback?,
-        selectedFeedback: TuneAVStationFeedback
-    ) -> TuneAVStationFeedback? {
-        currentFeedback == selectedFeedback ? nil : selectedFeedback
-    }
 }

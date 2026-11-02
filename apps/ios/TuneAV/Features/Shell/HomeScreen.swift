@@ -27,7 +27,6 @@ struct HomeScreen: View {
     let refreshHome: () async -> Void
     let playStation: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     let toggleFavorite: (Station) -> Void
-    let setStationFeedback: (Station, TuneAVStationFeedback?) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?) -> Void
     @State private var browserDestination: BrowserDestination?
 
@@ -129,9 +128,7 @@ struct HomeScreen: View {
             isCurrentStation: audioPlayer.isCurrent(_:),
             togglePlayback: togglePlayback,
             playStation: playStation,
-            showStationDetails: showStationDetails,
-            currentFeedback: { stationFeedback[$0.id] },
-            setStationFeedback: setStationFeedback
+            showStationDetails: showStationDetails
         )
     }
 

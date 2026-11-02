@@ -325,7 +325,6 @@ struct AppShellView: View {
             refreshHome: refreshHomePresentationAndFeed,
             playStation: playStation,
             toggleFavorite: toggleFavorite(_:),
-            setStationFeedback: setStationFeedbackWithHaptic(_:feedback:),
             showStationDetails: { station, queueSource, queue in
                 showStationDetails(station, queueSource: queueSource, queue: queue)
             }

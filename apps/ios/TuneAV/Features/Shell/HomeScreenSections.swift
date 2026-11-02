@@ -106,36 +106,23 @@ struct HomeRecommendationSections: View {
 
     @ViewBuilder
     var body: some View {
+        if !forYouStations.isEmpty {
+            homeStationCarouselSection(
+                title: L10n.string("shell.home.featured.frontPage"),
+                accessibilityIdentifier: "home.section.forYou",
+                stations: forYouStations,
+                queueSource: .homeDiscovery,
+                stationInsight: { derivedState.recommendationInsights[$0.id] }
+            )
+        }
+
         if !derivedState.moodGenreTags.isEmpty {
             HomeMoodGenreDesk(tags: derivedState.moodGenreTags, selectTag: openSearchTag)
-        }
-
-        if !derivedState.displayedAviPickStations.isEmpty {
-            homeStationCarouselSection(
-                title: L10n.string("shell.home.aviPicks.title"),
-                subtitle: "",
-                accessibilityIdentifier: "home.section.aviPicks",
-                stations: derivedState.displayedAviPickStations,
-                queueSource: .homeDiscovery,
-                stationInsight: { derivedState.recommendationInsights[$0.id] }
-            )
-        }
-
-        if !derivedState.displayedAroundYouStations.isEmpty {
-            homeStationCarouselSection(
-                title: L10n.string("shell.home.aroundYou.title"),
-                subtitle: "",
-                accessibilityIdentifier: "home.section.aroundYou",
-                stations: derivedState.displayedAroundYouStations,
-                queueSource: .homeDiscovery,
-                stationInsight: { derivedState.recommendationInsights[$0.id] }
-            )
         }
 
         if !derivedState.displayedRecentStations.isEmpty || !derivedState.displayedFavoriteStations.isEmpty {
             homeStationCarouselSection(
                 title: L10n.string("shell.home.recentsFavorites.title"),
-                subtitle: "",
                 accessibilityIdentifier: "home.section.recentsFavorites",
                 stations: derivedState.displayedRecentAndFavoriteStations,
                 queueSource: .homeRecents,
@@ -144,9 +131,13 @@ struct HomeRecommendationSections: View {
         }
     }
 
+    private var forYouStations: [Station] {
+        var seen = Set<String>()
+        return (derivedState.displayedAviPickStations + derivedState.displayedAroundYouStations).filter { seen.insert($0.id).inserted }
+    }
+
     private func homeStationCarouselSection(
         title: String,
-        subtitle: String,
         accessibilityIdentifier: String,
         stations: [Station],
         queueSource: AudioPlayerService.PlaybackQueue.Source,
@@ -154,7 +145,7 @@ struct HomeRecommendationSections: View {
     ) -> some View {
         StationSection(
             title: title,
-            subtitle: subtitle,
+            subtitle: "",
             accessibilityIdentifier: accessibilityIdentifier
         ) {
             StationCompactCarousel(
