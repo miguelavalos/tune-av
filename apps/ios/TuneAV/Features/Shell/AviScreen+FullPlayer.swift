@@ -289,12 +289,12 @@ extension AviScreen {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: isShowingAviActions ? 424 : 156, alignment: .top)
+            .frame(height: isShowingAviActions ? 424 : 96, alignment: .top)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 570 : 300, alignment: .top)
+        .frame(height: isShowingAviActions ? 570 : 240, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
@@ -317,7 +317,7 @@ extension AviScreen {
 
     func fullPlayerAviSignalSummary(for station: Station) -> some View {
         let selectedFeedback = focusedPrimaryFeedback(for: station)
-        return VStack(alignment: .leading, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
                 Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
                     .font(.system(size: 11, weight: .black))
@@ -355,38 +355,98 @@ extension AviScreen {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 32)
 
-            Text(isNowPlayingFullPlayer && hasCurrentSongContext ? L10n.string("player.avi.feedback.songQuestion") : L10n.string("player.avi.feedback.radioQuestion"))
-                .font(.system(size: 17, weight: .black, design: .rounded))
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 22)
-
-            fullPlayerFeedbackPicker(
-                selectedFeedback: selectedFeedback,
-                selectFeedback: { feedback in
-                    let currentFeedback = focusedPrimaryFeedback(for: station)
-                    let nextFeedback = currentFeedback == feedback ? nil : feedback
-                    setFocusedPrimaryFeedback(nextFeedback, for: station)
-                    if let nextFeedback {
-                        showAviReaction(for: nextFeedback)
-                    }
-                },
-                clearFeedback: {
-                    setFocusedPrimaryFeedback(nil, for: station)
-                }
-            )
-            .frame(height: 38)
-
-            fullPlayerFeedbackFollowUp(
-                feedback: selectedFeedback,
-                station: station
-            )
-            .frame(height: 42, alignment: .top)
+            fullPlayerHeartButton(for: station, selectedFeedback: selectedFeedback)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    func fullPlayerHeartButton(for station: Station, selectedFeedback: TuneAVStationFeedback?) -> some View {
+        let isSaved = hasCurrentSongContext ? isCurrentTrackSaved(for: station) : libraryStore.isFavorite(station)
+        let title = hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station)
+        return Button {
+            if hasCurrentSongContext {
+                saveAviCurrentDiscovery(for: station)
+            } else {
+                if !isSaved {
+                    showAviReaction(.liked)
+                }
+                toggleFavorite(station)
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: isSaved ? "heart.fill" : "heart")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(isSaved ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
+                    .symbolEffect(.bounce, value: isSaved)
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(.system(size: 16, weight: .black, design: .rounded))
+                    .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Spacer(minLength: 8)
+
+                if let selectedFeedback {
+                    TuneAVFeedbackBadge(feedback: selectedFeedback, size: 24, fontSize: 10)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(
+                isSaved ? TuneAVTheme.highlight.opacity(0.16) : TuneAVTheme.borderSubtle.opacity(0.32),
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            ForEach(TuneAVStationFeedback.displayOrder, id: \.self) { feedback in
+                Button {
+                    toggleFullPlayerFeedback(feedback, current: selectedFeedback, for: station)
+                } label: {
+                    Label(
+                        feedback.localizedState,
+                        systemImage: selectedFeedback == feedback ? "checkmark" : fullPlayerFeedbackSystemImage(feedback)
+                    )
+                }
+                .accessibilityIdentifier("avi.fullPlayer.feedback.\(feedback.rawValue)")
+            }
+        }
+        .accessibilityLabel(title)
+        .accessibilityValue(selectedFeedback?.localizedState ?? "")
+        .accessibilityAction(named: Text(TuneAVStationFeedback.liked.localizedState)) {
+            toggleFullPlayerFeedback(.liked, current: selectedFeedback, for: station)
+        }
+        .accessibilityAction(named: Text(TuneAVStationFeedback.notForMe.localizedState)) {
+            toggleFullPlayerFeedback(.notForMe, current: selectedFeedback, for: station)
+        }
+        .accessibilityAction(named: Text(TuneAVStationFeedback.disliked.localizedState)) {
+            toggleFullPlayerFeedback(.disliked, current: selectedFeedback, for: station)
+        }
+        .accessibilityIdentifier("avi.fullPlayer.heart")
+    }
+
+    func toggleFullPlayerFeedback(_ feedback: TuneAVStationFeedback, current: TuneAVStationFeedback?, for station: Station) {
+        let nextFeedback = current == feedback ? nil : feedback
+        setFocusedPrimaryFeedback(nextFeedback, for: station)
+        if let nextFeedback {
+            showAviReaction(for: nextFeedback)
+        }
+    }
+
+    func fullPlayerFeedbackSystemImage(_ feedback: TuneAVStationFeedback) -> String {
+        switch feedback {
+        case .liked:
+            return "hand.thumbsup"
+        case .notForMe:
+            return "minus.circle"
+        case .disliked:
+            return "hand.thumbsdown"
+        }
     }
 
     func openFullPlayerAviActions() {
@@ -394,192 +454,6 @@ extension AviScreen {
         withAnimation(.snappy(duration: 0.22)) {
             applyAviTransientState(currentAviTransientState.openingActions())
         }
-    }
-
-    @ViewBuilder
-    func fullPlayerFeedbackPicker(
-        selectedFeedback: TuneAVStationFeedback?,
-        selectFeedback: @escaping (TuneAVStationFeedback) -> Void,
-        clearFeedback: @escaping () -> Void
-    ) -> some View {
-        if let selectedFeedback {
-            HStack(spacing: 8) {
-                SelectedStationFeedbackStatus(feedback: selectedFeedback)
-
-                AVAviFeedbackClearButton(
-                    accessibilityLabel: L10n.string("shell.stationFeedback.clear"),
-                    accessibilityIdentifier: "stationFeedback.clear",
-                    action: clearFeedback
-                )
-            }
-            .frame(height: 38)
-        } else {
-            StationFeedbackOptionsRow(selectFeedback: selectFeedback)
-            .frame(height: 38)
-        }
-    }
-
-    @ViewBuilder
-    func fullPlayerFeedbackFollowUp(
-        feedback: TuneAVStationFeedback?,
-        station: Station
-    ) -> some View {
-        if hasCurrentSongContext {
-            fullPlayerFeedbackDecisionRow(station: station)
-        } else if feedback != nil {
-            AVAviFeedbackInfoRow(
-                title: L10n.string("player.avi.feedback.tuned"),
-                subtitle: L10n.string("player.avi.feedback.tunedHint"),
-                systemImage: "sparkles",
-                isAction: false
-            )
-        } else {
-            AVAviFeedbackInfoRow(
-                title: L10n.string("player.avi.feedback.choose"),
-                subtitle: L10n.string("player.avi.feedback.chooseHint"),
-                systemImage: "slider.horizontal.3",
-                isAction: false
-            )
-        }
-    }
-
-    func fullPlayerFeedbackDecisionRow(station: Station) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if aviDiscoveryDecision == .ignored {
-                HStack(spacing: 8) {
-                    AVAviFeedbackInfoRow(
-                        title: L10n.string("player.discovery.noSave"),
-                        subtitle: L10n.string("player.discovery.noSaveHint"),
-                        systemImage: "xmark",
-                        isAction: false
-                    )
-                    .accessibilityIdentifier("avi.fullPlayer.discoveryNoSave")
-
-                    fullPlayerDiscoveryCompactButton(
-                        title: L10n.string("player.discovery.saveShort"),
-                        systemImage: "bookmark",
-                        accessibilityIdentifier: "avi.fullPlayer.saveAfterNoSave"
-                    ) {
-                        let didToggle = saveAviCurrentDiscovery(for: station)
-                        if didToggle {
-                            aviDiscoveryDecision = .saved
-                        }
-                    }
-                }
-                .frame(height: 42)
-            } else if isCurrentTrackSaved(for: station) {
-                HStack(spacing: 8) {
-                    AVAviFeedbackInfoRow(
-                        title: L10n.string("player.discovery.savedShort"),
-                        subtitle: L10n.string("player.discovery.savedHintShort"),
-                        systemImage: "bookmark.fill",
-                        isAction: false
-                    )
-
-                    fullPlayerDiscoveryCompactButton(
-                        title: L10n.string("player.discovery.unsaveShort"),
-                        systemImage: "bookmark.slash",
-                        accessibilityIdentifier: "avi.fullPlayer.unsaveSong"
-                    ) {
-                        let didToggle = saveAviCurrentDiscovery(for: station)
-                        if didToggle {
-                            aviDiscoveryDecision = .removed
-                        }
-                    }
-                }
-                .frame(height: 42)
-            } else {
-                HStack(spacing: 8) {
-                    fullPlayerDiscoveryDecisionButton(
-                        title: currentTrackSaveActionTitle(for: station),
-                        systemImage: currentTrackSaveActionSystemImage(for: station),
-                        isSelected: isCurrentTrackSaved(for: station),
-                        accessibilityIdentifier: "avi.fullPlayer.saveSong"
-                    ) {
-                        let didToggle = saveAviCurrentDiscovery(for: station)
-                        if didToggle {
-                            aviDiscoveryDecision = isCurrentTrackSaved(for: station) ? .saved : .removed
-                        }
-                    }
-
-                    fullPlayerDiscoveryDecisionButton(
-                        title: L10n.string("player.discovery.noSave"),
-                        systemImage: "xmark",
-                        isSelected: false,
-                        accessibilityIdentifier: "avi.fullPlayer.noSaveSong"
-                    ) {
-                        aviDiscoveryDecision = .ignored
-                        showAviReaction(.notForMe)
-                    }
-                }
-                .frame(height: 42)
-
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .accessibilityIdentifier("avi.fullPlayer.discoveryDecision")
-    }
-
-    func fullPlayerDiscoveryCompactButton(
-        title: String,
-        systemImage: String,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            fullPlayerDiscoveryButtonLabel(title: title, systemImage: systemImage)
-                .foregroundStyle(TuneAVTheme.textPrimary)
-                .frame(width: 126, height: 42)
-                .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
-    }
-
-    func fullPlayerDiscoveryDecisionButton(
-        title: String,
-        systemImage: String,
-        isSelected: Bool,
-        accessibilityIdentifier: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            fullPlayerDiscoveryButtonLabel(title: title, systemImage: systemImage)
-                .foregroundStyle(isSelected ? TuneAVTheme.brandBlack : TuneAVTheme.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 42)
-                .background(
-                    isSelected ? TuneAVTheme.highlight : TuneAVTheme.cardSurface,
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(isSelected ? TuneAVTheme.highlight.opacity(0.44) : TuneAVTheme.borderSubtle, lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
-    }
-
-    func fullPlayerDiscoveryButtonLabel(title: String, systemImage: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .black))
-
-            Text(title)
-                .font(.system(size: 11, weight: .black))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .minimumScaleFactor(0.72)
-                .allowsTightening(true)
-        }
-        .padding(.horizontal, 8)
     }
 
     func compactAviActionsSheet(for station: Station) -> some View {

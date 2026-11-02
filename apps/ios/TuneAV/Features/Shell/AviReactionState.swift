@@ -83,19 +83,3 @@ enum AviScreenReaction: Equatable {
     }
 }
 
-enum AviDiscoveryDecision {
-    case saved
-    case removed
-    case ignored
-
-    var localizedHint: String {
-        switch self {
-        case .saved:
-            return L10n.string("player.avi.feedback.savedHint")
-        case .removed:
-            return L10n.string("player.discovery.removed")
-        case .ignored:
-            return L10n.string("player.discovery.noSaveHint")
-        }
-    }
-}

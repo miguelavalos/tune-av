@@ -183,12 +183,11 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         }
         XCTAssertTrue(aviEmotion.waitForExistence(timeout: 5))
 
-        let clearButton = app.descendants(matching: .any)["stationFeedback.clear"].firstMatch
-        if clearButton.exists && clearButton.isHittable {
-            clearButton.tap()
-        }
+        let heartButton = app.descendants(matching: .any)["avi.fullPlayer.heart"].firstMatch
+        XCTAssertTrue(heartButton.waitForExistence(timeout: 5))
+        heartButton.press(forDuration: 0.8)
 
-        let likeButton = app.descendants(matching: .any)["stationFeedback.liked"].firstMatch
+        let likeButton = app.descendants(matching: .any)["avi.fullPlayer.feedback.liked"].firstMatch
         XCTAssertTrue(likeButton.waitForExistence(timeout: 5))
         likeButton.tap()
 

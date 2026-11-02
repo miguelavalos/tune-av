@@ -15,6 +15,10 @@ This project follows semantic versioning once public source releases begin.
   card, a larger artwork, the song title in large white text and an animated AV
   live signal next to the station name that stops with Reduce Motion or Low
   Power Mode.
+- Replace the song question, the three feedback buttons and the save / don't
+  save row in the iOS full player with a single heart that saves the song (or
+  the radio when the stream sends no title). A long press on the heart keeps
+  like, not for me and dislike.
 
 ## 1.0.9 - 2026-11-01
 
