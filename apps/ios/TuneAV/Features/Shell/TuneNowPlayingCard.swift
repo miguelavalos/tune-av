@@ -137,7 +137,7 @@ struct TuneAVLiveSignal: View {
         .clipped()
         .opacity(isActive ? 1 : 0.45)
         .accessibilityHidden(true)
-        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange).receive(on: RunLoop.main)) { _ in
             isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
         }
     }
