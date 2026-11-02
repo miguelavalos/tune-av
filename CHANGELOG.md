@@ -11,6 +11,10 @@ This project follows semantic versioning once public source releases begin.
   buttons from the main Home card. Feedback stays in the player.
 - Merge Avi picks and "around you" into a single "For You" row on iOS Home,
   shown before moods and genres.
+- Redesign the iOS full player card: the current artwork blurred behind the
+  card, a larger artwork, the song title in large white text and an animated AV
+  live signal next to the station name that stops with Reduce Motion or Low
+  Power Mode.
 
 ## 1.0.9 - 2026-11-01
 

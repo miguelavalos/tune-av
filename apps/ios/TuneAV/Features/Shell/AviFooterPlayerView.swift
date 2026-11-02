@@ -64,23 +64,21 @@ struct AviExpandedFooterPlayerView: View {
     @State private var isShowingQueueSwitcher = false
 
     var body: some View {
-        AVExpandedFooterPlayerScaffold(
-            primaryTitle: station.name,
-            subtitle: artistLine,
+        TuneNowPlayingCard(
+            stationName: station.name,
             title: titleLine,
-            isSubtitleHighlighted: trackArtworkExists,
-            primaryTitleAccessibilityIdentifier: "avi.footerPlayer.primaryTitle",
+            subtitle: artistLine,
+            isLive: audioPlayer.isPlaying && audioPlayer.isCurrent(station),
             artworkAccessibilityLabel: L10n.string("shell.accessibility.zoomArtwork"),
-            artworkAccessibilityIdentifier: "avi.footerPlayer.artworkZoom",
-            metadataAccessibilityIdentifier: "avi.footerPlayer.textZoom",
             accessibilityLabel: L10n.string("shell.miniPlayer.accessibility.label", station.name),
             accessibilityHint: L10n.string("shell.miniPlayer.accessibility.hint"),
-            accessibilityIdentifier: "avi.footerPlayer.container",
             primaryAction: showArtworkZoom,
             artworkAction: showArtworkZoom,
             metadataAction: showArtworkZoom
         ) {
             artwork
+        } backdrop: {
+            backdrop
         } controls: {
             controlsRow
         }
@@ -127,15 +125,15 @@ struct AviExpandedFooterPlayerView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(audioPlayer.isPlaying ? TuneAVTheme.brandGraphite : TuneAVTheme.highlight)
+                    .fill(audioPlayer.isPlaying ? Color.white : TuneAVTheme.highlight)
 
                 if audioPlayer.isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(audioPlayer.isPlaying ? TuneAVTheme.brandBlack : .white)
                 } else {
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(audioPlayer.isPlaying ? TuneAVTheme.brandBlack : .white)
                 }
             }
             .frame(width: 72, height: 72)
@@ -154,18 +152,18 @@ struct AviExpandedFooterPlayerView: View {
         ZStack(alignment: .topLeading) {
             if let artworkURL = audioPlayer.currentTrackArtworkURL {
                 AVFramedArtwork(
-                    size: 152,
-                    cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: 152),
+                    size: Self.artworkSize,
+                    cornerRadius: StationArtworkView.ArtworkStyle.cornerRadius(for: Self.artworkSize),
                     strokeOpacity: 0.55
                 ) {
-                    TuneAVRemoteArtworkImage(url: artworkURL, size: 152, scale: displayScale) {
-                        StationArtworkView(station: station, size: 152)
+                    TuneAVRemoteArtworkImage(url: artworkURL, size: Self.artworkSize, scale: displayScale) {
+                        StationArtworkView(station: station, size: Self.artworkSize)
                     }
                 }
             } else {
                 StationArtworkView(
                     station: station,
-                    size: 152,
+                    size: Self.artworkSize,
                     animationOverlay: .none,
                     isAnimationActive: false
                 )
@@ -175,6 +173,20 @@ struct AviExpandedFooterPlayerView: View {
                 TuneAVFeedbackBadge(feedback: feedback, size: 26, fontSize: 10)
                     .offset(x: -5, y: -5)
             }
+        }
+    }
+
+    private static let artworkSize: CGFloat = 200
+
+    @ViewBuilder
+    private var backdrop: some View {
+        if let artworkURL = audioPlayer.currentTrackArtworkURL {
+            TuneAVRemoteArtworkImage(url: artworkURL, size: 160, scale: 1) {
+                StationArtworkView(station: station, size: 160, animationOverlay: .none, isAnimationActive: false)
+            }
+        } else {
+            StationArtworkView(station: station, size: 160, animationOverlay: .none, isAnimationActive: false)
+                .scaleEffect(3)
         }
     }
 
