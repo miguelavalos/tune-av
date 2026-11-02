@@ -19,6 +19,10 @@ This project follows semantic versioning once public source releases begin.
   save row in the iOS full player with a single heart that saves the song (or
   the radio when the stream sends no title). A long press on the heart keeps
   like, not for me and dislike.
+- Fix the main Home card on iOS in dark mode: the radio illustration now blends
+  into the card as a soft line drawing instead of a grey block, and the header
+  pills, badges and sparkle button are readable on the dark card. Light mode is
+  unchanged.
 
 ## 1.0.9 - 2026-11-01
 

@@ -63,7 +63,11 @@ struct HomeTuningDeskHero: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(TuneAVTheme.highlight)
                     .padding(9)
-                    .background(Color.white.opacity(0.62), in: Circle())
+                    .background(heroChipFill, in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(colorScheme == .dark ? heroControlStroke : Color.clear, lineWidth: 1)
+                    }
                     .accessibilityHidden(true)
             }
         }
@@ -201,11 +205,7 @@ struct HomeTuningDeskHero: View {
                 .opacity(colorScheme == .dark ? 0.96 : 0.9)
 
             ZStack(alignment: .bottomTrailing) {
-                Image("AviOnboardingHeroStatic")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 250)
-                    .opacity(colorScheme == .dark ? 0.1 : 0.16)
+                heroIllustration
                     .offset(x: 56, y: 34)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -223,6 +223,33 @@ struct HomeTuningDeskHero: View {
                 .stroke(heroBorderColor, lineWidth: 1)
         }
         .shadow(color: TuneAVTheme.softShadow.opacity(0.18), radius: 18, y: 8)
+    }
+
+    @ViewBuilder
+    private var heroIllustration: some View {
+        let image = Image("AviOnboardingHeroStatic")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 250)
+
+        if colorScheme == .dark {
+            image
+                .colorInvert()
+                .luminanceToAlpha()
+                .colorInvert()
+                .opacity(0.2)
+                .mask {
+                    RadialGradient(
+                        colors: [.white, .white.opacity(0.6), .clear],
+                        center: .center,
+                        startRadius: 20,
+                        endRadius: 125
+                    )
+                }
+        } else {
+            image
+                .opacity(0.16)
+        }
     }
 
     private var heroBackgroundColors: [Color] {
@@ -259,6 +286,10 @@ struct HomeTuningDeskHero: View {
         colorScheme == .dark ? Color.white.opacity(0.12) : TuneAVTheme.brandGraphite.opacity(0.12)
     }
 
+    private var heroChipFill: Color {
+        colorScheme == .dark ? Color.white.opacity(0.1) : Color.white.opacity(0.62)
+    }
+
     private var heroBorderColor: Color {
         colorScheme == .dark ? Color.white.opacity(0.08) : TuneAVTheme.brandGraphite.opacity(0.12)
     }
@@ -276,6 +307,8 @@ struct HomeTuningDeskHero: View {
 }
 
 private struct HomeLiveStatePill: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let isPlaying: Bool
     let isLoading: Bool
 
@@ -288,14 +321,14 @@ private struct HomeLiveStatePill: View {
             Text(title)
                 .font(.system(size: 11, weight: .black))
                 .tracking(0.7)
-                .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.78))
+                .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite.opacity(0.78))
                 .lineLimit(1)
         }
         .homeHeroCapsule(
             horizontalPadding: 9,
             verticalPadding: 7,
-            fill: TuneAVTheme.highlight.opacity(0.12),
-            stroke: TuneAVTheme.highlight.opacity(0.2)
+            fill: TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.2 : 0.12),
+            stroke: TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.4 : 0.2)
         )
     }
 
@@ -311,23 +344,27 @@ private struct HomeLiveStatePill: View {
 }
 
 private struct HomeDeskBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let title: String
 
     var body: some View {
         Text(title)
             .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(TuneAVTheme.brandGraphite.opacity(0.76))
+            .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textSecondary : TuneAVTheme.brandGraphite.opacity(0.76))
             .lineLimit(1)
             .homeHeroCapsule(
                 horizontalPadding: 8,
                 verticalPadding: 5,
-                fill: Color.white.opacity(0.58),
-                stroke: TuneAVTheme.brandGraphite.opacity(0.08)
+                fill: colorScheme == .dark ? Color.white.opacity(0.08) : Color.white.opacity(0.58),
+                stroke: colorScheme == .dark ? Color.white.opacity(0.12) : TuneAVTheme.brandGraphite.opacity(0.08)
             )
     }
 }
 
 private struct HomeDeskSignalPill: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let title: String
 
     var body: some View {
@@ -339,15 +376,15 @@ private struct HomeDeskSignalPill: View {
             Text(title)
                 .font(.system(size: 12, weight: .black))
                 .tracking(0.9)
-                .foregroundStyle(TuneAVTheme.brandGraphite)
+                .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
         }
         .homeHeroCapsule(
             horizontalPadding: 10,
             verticalPadding: 7,
-            fill: Color.white.opacity(0.62),
-            stroke: TuneAVTheme.brandGraphite.opacity(0.08)
+            fill: colorScheme == .dark ? Color.white.opacity(0.1) : Color.white.opacity(0.62),
+            stroke: colorScheme == .dark ? Color.white.opacity(0.14) : TuneAVTheme.brandGraphite.opacity(0.08)
         )
     }
 }
