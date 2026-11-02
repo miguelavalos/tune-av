@@ -170,3 +170,80 @@ struct TuneAVSignalWave: Shape {
         return path
     }
 }
+
+enum TuneFooterPlayerPresentation: Equatable {
+    case hidden
+    case mini
+    case full
+}
+
+enum TunePlayerTransition {
+    static let artworkID = "tune.player.artwork"
+    static let collapsedCardHeight: CGFloat = 72
+    static let shadowOutset: CGFloat = 40
+
+    static func animation(reduceMotion: Bool) -> Animation {
+        reduceMotion
+            ? .easeInOut(duration: 0.2)
+            : .spring(response: 0.4, dampingFraction: 0.86)
+    }
+
+    static func cardTransition(reduceMotion: Bool) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return AnyTransition.modifier(
+            active: TunePlayerCardReveal(progress: 0),
+            identity: TunePlayerCardReveal(progress: 1)
+        )
+        .combined(with: .opacity)
+    }
+}
+
+struct TunePlayerCardReveal: ViewModifier, Animatable {
+    var progress: CGFloat
+
+    nonisolated var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.mask {
+            GeometryReader { proxy in
+                let collapsedHeight = min(TunePlayerTransition.collapsedCardHeight, proxy.size.height)
+                let visibleHeight = collapsedHeight + (proxy.size.height - collapsedHeight) * progress
+                let outset = TunePlayerTransition.shadowOutset * progress
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .frame(width: proxy.size.width + outset * 2, height: visibleHeight + outset * 2)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height - visibleHeight / 2)
+            }
+        }
+    }
+}
+
+struct TunePlayerMorphingArtwork<Content: View>: View {
+    let namespace: Namespace.ID
+    let baseSize: CGFloat
+    let content: Content
+
+    var body: some View {
+        GeometryReader { proxy in
+            content
+                .frame(width: baseSize, height: baseSize)
+                .scaleEffect(min(proxy.size.width, proxy.size.height) / max(baseSize, 1))
+                .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .matchedGeometryEffect(id: TunePlayerTransition.artworkID, in: namespace)
+        .frame(width: baseSize, height: baseSize)
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func tunePlayerArtworkMorph(in namespace: Namespace.ID?, baseSize: CGFloat) -> some View {
+        if let namespace {
+            TunePlayerMorphingArtwork(namespace: namespace, baseSize: baseSize, content: self)
+        } else {
+            self
+        }
+    }
+}

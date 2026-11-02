@@ -55,6 +55,8 @@ struct AppShellView: View {
     @EnvironmentObject var libraryStore: LibraryStore
     @Environment(\.scenePhase) var scenePhase
     @Environment(\.avCommonAppExperience) var appExperience
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Namespace var playerTransitionNamespace
 
     @StateObject var chromeActions = AppShellChromeActions()
     @StateObject var searchPresentation: SearchPresentationStore
@@ -250,33 +252,54 @@ struct AppShellView: View {
 
     @ViewBuilder
     var compactFooterPlayer: some View {
-        if let station = audioPlayer.currentStation {
+        if let station = audioPlayer.currentStation, footerPlayerPresentation != .hidden {
             let displayStation = enrichedStation(station)
-            if isAviFullPlayerActive && !isAviActionPanelOpen {
-                AviExpandedFooterPlayerView(
-                    station: displayStation,
-                    playbackQueueSource: audioPlayer.playbackQueue.source,
-                    playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
-                    stations: enrichedStations(homeStations),
-                    recentStations: enrichedRecentStations,
-                    favoriteStations: enrichedFavoriteStations
-                ) {
-                    openNowPlayingFullPlayer(displayStation)
-                } showArtworkZoom: {
-                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                        isShowingFooterArtworkZoom = true
+            ZStack(alignment: .bottom) {
+                if footerPlayerPresentation == .full {
+                    AviExpandedFooterPlayerView(
+                        station: displayStation,
+                        playbackQueueSource: audioPlayer.playbackQueue.source,
+                        playbackQueueStations: enrichedStations(audioPlayer.playbackQueue.stations),
+                        stations: enrichedStations(homeStations),
+                        recentStations: enrichedRecentStations,
+                        favoriteStations: enrichedFavoriteStations,
+                        artworkMorphNamespace: playerArtworkMorphNamespace
+                    ) {
+                        openNowPlayingFullPlayer(displayStation)
+                    } showArtworkZoom: {
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                            isShowingFooterArtworkZoom = true
+                        }
+                    } stopPlayback: {
+                        stopPlaybackAndCloseSignal()
+                    } playStationFromQueue: { station, source, queue in
+                        playStation(station, queueSource: source, queue: queue)
                     }
-                } stopPlayback: {
-                    stopPlaybackAndCloseSignal()
-                } playStationFromQueue: { station, source, queue in
-                    playStation(station, queueSource: source, queue: queue)
-                }
-            } else if !shouldHideFooterPlayer {
-                MiniPlayerView(station: displayStation) {
-                    openNowPlayingFullPlayer(displayStation)
+                    .transition(TunePlayerTransition.cardTransition(reduceMotion: reduceMotion))
+                } else {
+                    MiniPlayerView(
+                        station: displayStation,
+                        artworkMorphNamespace: playerArtworkMorphNamespace
+                    ) {
+                        openNowPlayingFullPlayer(displayStation)
+                    }
+                    .transition(.opacity)
                 }
             }
+            .animation(TunePlayerTransition.animation(reduceMotion: reduceMotion), value: footerPlayerPresentation)
         }
+    }
+
+    var footerPlayerPresentation: TuneFooterPlayerPresentation {
+        guard audioPlayer.currentStation != nil else { return .hidden }
+        if isAviFullPlayerActive {
+            return isAviActionPanelOpen ? .hidden : .full
+        }
+        return shouldHideFooterPlayer ? .hidden : .mini
+    }
+
+    var playerArtworkMorphNamespace: Namespace.ID? {
+        reduceMotion ? nil : playerTransitionNamespace
     }
 
     @ViewBuilder

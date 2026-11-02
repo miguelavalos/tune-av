@@ -8,6 +8,7 @@ struct MiniPlayerView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
 
     let station: Station
+    var artworkMorphNamespace: Namespace.ID? = nil
     let openPlayer: () -> Void
 
     var body: some View {
@@ -22,6 +23,7 @@ struct MiniPlayerView: View {
         ) {
             ZStack(alignment: .topLeading) {
                 miniArtwork
+                    .tunePlayerArtworkMorph(in: artworkMorphNamespace, baseSize: 46)
                 feedbackBadge
                     .offset(x: -5, y: -5)
             }
@@ -62,6 +64,22 @@ struct MiniPlayerView: View {
                 audioPlayer.playNextInQueue()
             }
         }
+        .task(id: fullPlayerArtworkPrewarmKey) {
+            guard let url = fullPlayerArtworkURL else { return }
+            await TuneAVArtworkImagePipeline.shared.prewarm(
+                url: url,
+                size: AviExpandedFooterPlayerView.artworkSize,
+                scale: displayScale
+            )
+        }
+    }
+
+    private var fullPlayerArtworkURL: URL? {
+        audioPlayer.currentTrackArtworkURL ?? station.displayArtworkURL
+    }
+
+    private var fullPlayerArtworkPrewarmKey: String {
+        "\(fullPlayerArtworkURL?.absoluteString ?? "")|\(displayScale)"
     }
 
     private var shouldRestartWithVisibleStation: Bool {
