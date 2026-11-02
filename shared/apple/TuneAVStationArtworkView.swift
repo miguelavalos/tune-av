@@ -734,14 +734,12 @@ actor TuneAVArtworkImagePipeline {
     private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "artwork")
 
     private let session: URLSession
-    nonisolated(unsafe) private let cache = NSCache<NSString, TuneAVPlatformImageBox>()
+    nonisolated private let cache = TuneAVArtworkMemoryCache(countLimit: 120, totalCostLimit: 36 * 1024 * 1024)
     private var inFlight: [String: Task<TuneAVPlatformImageBox?, Never>] = [:]
     private var failedLookups: [String: FailedLookup] = [:]
 
     init(session: URLSession = TuneAVURLSessions.artwork) {
         self.session = session
-        cache.countLimit = 120
-        cache.totalCostLimit = 36 * 1024 * 1024
     }
 
     nonisolated static func maxPixelSize(size: CGFloat, scale: CGFloat) -> Int {
@@ -749,7 +747,7 @@ actor TuneAVArtworkImagePipeline {
     }
 
     nonisolated func cachedImage(from url: URL, maxPixelSize: Int) -> Image? {
-        cache.object(forKey: Self.cacheKey(url: url, maxPixelSize: maxPixelSize) as NSString)
+        cache.object(forKey: Self.cacheKey(url: url, maxPixelSize: maxPixelSize))
             .map { Image(platformImage: $0.image) }
     }
 
@@ -759,7 +757,7 @@ actor TuneAVArtworkImagePipeline {
 
     func image(from url: URL, maxPixelSize: Int) async -> Image? {
         let key = Self.cacheKey(url: url, maxPixelSize: maxPixelSize)
-        if let cached = cache.object(forKey: key as NSString)?.image {
+        if let cached = cache.object(forKey: key)?.image {
             return Image(platformImage: cached)
         }
         if let failedLookup = failedLookups[key] {
@@ -785,7 +783,7 @@ actor TuneAVArtworkImagePipeline {
             failedLookups[key] = nil
             cache.setObject(
                 loadedImageBox,
-                forKey: key as NSString,
+                forKey: key,
                 cost: maxPixelSize * maxPixelSize * 4
             )
         } else {
@@ -867,6 +865,27 @@ actor TuneAVArtworkImagePipeline {
         #elseif canImport(AppKit)
         return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
         #endif
+    }
+}
+
+private final class TuneAVArtworkMemoryCache: @unchecked Sendable {
+    private let storage = NSCache<NSString, TuneAVPlatformImageBox>()
+
+    init(countLimit: Int, totalCostLimit: Int) {
+        storage.countLimit = countLimit
+        storage.totalCostLimit = totalCostLimit
+    }
+
+    func object(forKey key: String) -> TuneAVPlatformImageBox? {
+        storage.object(forKey: key as NSString)
+    }
+
+    func setObject(_ object: TuneAVPlatformImageBox, forKey key: String, cost: Int) {
+        storage.setObject(object, forKey: key as NSString, cost: cost)
+    }
+
+    func removeAllObjects() {
+        storage.removeAllObjects()
     }
 }
 
