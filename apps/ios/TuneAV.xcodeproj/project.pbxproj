@@ -25,6 +25,7 @@
 		111145901EC3E6E5F79C5459 /* AccountDeletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD2AD3365E308FA6A45AE9C /* AccountDeletionViewModel.swift */; };
 		1128115FFD9AD7844185A94C /* AVExternalLinkFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = AA3D73D7807192537FBC94D0 /* AVExternalLinkFoundation */; };
 		1135792ADAF1DD6490EB73F0 /* AccountAV in Frameworks */ = {isa = PBXBuildFile; productRef = 4AB3D9EBECC62D9E2BF5A81D /* AccountAV */; };
+		13711A16D9363F404C09B4EF /* AviScreen+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4553C78C0CD04359BF08460 /* AviScreen+Actions.swift */; };
 		13E78839BA278A2B9CD1BC4A /* TuneAVAppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC69262601FB5E323BE52A6F /* TuneAVAppTheme.swift */; };
 		151635FADD47D1B88D07889F /* TuneAVAccessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */; };
 		163441DCB87B05F2B9FD0514 /* TuneAVDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24273B1AA0D400CEC6E0D9E /* TuneAVDiagnostics.swift */; };
@@ -77,6 +78,7 @@
 		594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */; };
 		59591917AC2A3E7480834BC0 /* TuneAVSurpriseStationPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D973989ECDA76787FA8EDF /* TuneAVSurpriseStationPickerTests.swift */; };
 		59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */; };
+		5A3C2D3D6BB4A099856CCC34 /* AviScreen+Recommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D891FC2CCA0BCBD15F3E92 /* AviScreen+Recommendations.swift */; };
 		5DD991326D8A68C2584C717A /* AviFooterPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04312E0EE8D70494F0AC64DE /* AviFooterPlayerView.swift */; };
 		5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */; };
 		5F4C9378626C91420BF53302 /* UITestAccountDeletionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B77C435B56B564DDAC2DE52 /* UITestAccountDeletionAPI.swift */; };
@@ -84,6 +86,7 @@
 		60B4E2B88C1AD974116D82D3 /* TuneAVURLSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */; };
 		62167863AB5CD3D4D89D93FA /* TuneAVRevenueCatPlanMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F45DB0981BD30B476ED1B /* TuneAVRevenueCatPlanMapping.swift */; };
 		634403CECCF87F79302E718A /* HomeRefreshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */; };
+		6347096F88343A8F44403EBC /* AviScreen+StationInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40706D8E7CAF2828E89E8587 /* AviScreen+StationInfo.swift */; };
 		6645EF704E9550CAF49ACDE3 /* TuneAVDateCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AC513C805AD2F44578DF27 /* TuneAVDateCoding.swift */; };
 		665E60A408D4C1817EB015F4 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E041E8E7568784E3A837D8 /* LibraryStore.swift */; };
 		66ABFD9D4D80C70B76396FBF /* MusicExternalSearchRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B68303A43B5470159D47B7 /* MusicExternalSearchRouter.swift */; };
@@ -106,6 +109,7 @@
 		7B0060FA0D191CE8C1500F8D /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */; };
 		7D3E648D556B20163DE57A82 /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 9744CD1D4ACE67E92FC87D91 /* AVPaywallFoundation */; };
 		7F95781EA9741CC5BC958DAB /* TuneAVSleepTimerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */; };
+		8093E98F8977CFF8D3223D23 /* AviScreen+PlayerDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5749DAB52B36F86B75C6A85 /* AviScreen+PlayerDock.swift */; };
 		8173B6F9E09CBB364BA4A5AF /* AVAccountAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A712F782B9CC6A3143D2B122 /* AVAccountAPIClient.swift */; };
 		8315851166D4B5F324552123 /* AVAppShellFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 6941B5FACEE428F30B3447EC /* AVAppShellFoundation */; };
 		835DB04BF3CA0FCDB726B90B /* SearchFilterViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89FB0FEA33AD342BE0E7126 /* SearchFilterViews.swift */; };
@@ -127,6 +131,7 @@
 		945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E6B173571331D31167D9AC /* InAppBrowserView.swift */; };
 		9527699C0DC7F9264E32024B /* MusicScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719C764B25F8D88A52B45FBC /* MusicScreen.swift */; };
 		9853B126FAAE0E262216049F /* AppShellScaffoldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFD41325614A233401B5A89 /* AppShellScaffoldView.swift */; };
+		9A47FAB3A239901F751321D1 /* AviScreen+RadioDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CA644B88FEB854728F54E5 /* AviScreen+RadioDetail.swift */; };
 		9A9A886CF765816751C8B4F6 /* ShellUITestBootstrapSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */; };
 		9E7B7C771DCBA9814EED3704 /* AviActionsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D105E1BEB11BF8E50BA6C6E7 /* AviActionsPanelView.swift */; };
 		A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */; };
@@ -148,6 +153,7 @@
 		B321D36D9C0F690C596B93C9 /* DiscoveriesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */; };
 		B41F6E43939C9E5746B866B2 /* Station.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631EDD19FB5AEBFAF5EFD9B2 /* Station.swift */; };
 		B4EC53597531260584D454A8 /* TuneAVLibrarySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DF0889936876263303726A /* TuneAVLibrarySync.swift */; };
+		B5F848DD13C7096076BD7A1E /* AviScreen+FullPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466CD5B2C51D3D70E38767AF /* AviScreen+FullPlayer.swift */; };
 		B6A461131A5A9DDCEFE0A8B7 /* TuneAVDailyUsageLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7CBB3F4E1C56B85A3C8D0B /* TuneAVDailyUsageLimiter.swift */; };
 		B6C85867F5A1A382B32FA8B4 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F47CF14CA97DB4109E43622F /* Localizable.strings */; };
 		B6C866E5E6049B3B10EC1AEA /* AppShellView+Feeds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D947B54B82D7C130B39BF33 /* AppShellView+Feeds.swift */; };
@@ -165,6 +171,7 @@
 		C251B301DC91D6E149165562 /* TuneAVLaunchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A59E1F744BB8D10605B28B /* TuneAVLaunchContext.swift */; };
 		C8D6B63B482564E9094BB3AE /* AviReactionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EAA921786FA4DFF4281138 /* AviReactionAnimation.swift */; };
 		C92BA16D5CDD481D46DE7D27 /* TuneAVSurpriseStationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */; };
+		C9EF782A434A674B3F11B521 /* AviScreen+Header.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F948A3F9E1BBAD93A7ED58 /* AviScreen+Header.swift */; };
 		CBFA20E7AA1D0A3393D3C587 /* TuneAVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */; };
 		CCE86D14377FBD9968032C52 /* AppShellView+Tablet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251FEE123D1A64D00BD97C59 /* AppShellView+Tablet.swift */; };
 		CDC02C0A4667352348F75259 /* TuneAVPlaybackQueueLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87BB20B6D3C5F9C37154EF81 /* TuneAVPlaybackQueueLogic.swift */; };
@@ -182,6 +189,7 @@
 		DD6AEC7D8894EC110ED5D67D /* TuneAVMusicLibraryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */; };
 		DE6A03606404D620BA20F58A /* ShellCommonBehaviors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */; };
 		E0008CE5CE149725A03F83C7 /* AppShellGlobalPresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */; };
+		E2F54032598188151FBFD029 /* AviScreen+CommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91DCDD015017EACF65AF20DF /* AviScreen+CommandCenter.swift */; };
 		E44B4840FFB26F2FFD8EF391 /* TuneAVStationPlayLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A10E8C4A72867917D1420C6 /* TuneAVStationPlayLog.swift */; };
 		E58B3F8E72B91F1B0F207DC9 /* TuneAVEighties80sNowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 459263F3E9B809F0A8546FC1 /* TuneAVEighties80sNowPlaying.swift */; };
 		E5F0639AD50A6DDD7F572BEF /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32EAF81A20F877B3162053 /* TuneAVStation.swift */; };
@@ -201,10 +209,13 @@
 		F0F24B103288CCBC8EF78DB1 /* AppShellView+Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A73F07BC70CCB345DC8160A /* AppShellView+Navigation.swift */; };
 		F2190F523E542A07E42C34D6 /* TuneAviPopoverActionsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23BBEC39BFC1E0E46427821C /* TuneAviPopoverActionsPanel.swift */; };
 		F2C68235431B81D8DC7A20A9 /* AppShellNowPlayingPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2A1A07252E744DE69758C3 /* AppShellNowPlayingPreviews.swift */; };
+		F365BE7A15FD78C351872748 /* AviScreen+Preview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CFFD88D020AE63275D22DD /* AviScreen+Preview.swift */; };
 		F38B002AE78E71329FBAFE07 /* SearchQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */; };
 		F4D73ED4165AF6E6E8B8F5DA /* TuneAVCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21209407EE85FC234EA27B /* TuneAVCountry.swift */; };
 		F73A1017B5BC7D5325D165E8 /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECEE2B4FACAC9EA16B737B1 /* TuneAVAppShellHomeFeed.swift */; };
+		F77C9B0922BA624208F86F3D /* AviScreen+Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = F46080E97EDF938F8D3AFBB0 /* AviScreen+Feedback.swift */; };
 		F7EACDCDDF02578E446D4485 /* ShellHeaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */; };
+		F7FAB18D68FFBBAF11812546 /* AviScreen+MusicDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4381718C8F9B90D7421F2D0C /* AviScreen+MusicDetail.swift */; };
 		F8BEE34E0F80EAC9432C3873 /* AVDiagnosticsFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 387B9DCAF9702383316CA475 /* AVDiagnosticsFoundation */; };
 		FA0801A605B9E3AB0847B0AD /* StationDetailQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3326B8D3D5E9B93CB534858 /* StationDetailQueueUITests.swift */; };
 		FAE2D86B8E94C39687AC6C77 /* HomeScreenStateBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */; };
@@ -277,8 +288,10 @@
 		3E89514F30FEAEB0078C58CA /* AccessMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessMode.swift; sourceTree = "<group>"; };
 		3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStreamMetadataDelegate.swift; sourceTree = "<group>"; };
 		3FA01DDE4849773226DDE4FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		40706D8E7CAF2828E89E8587 /* AviScreen+StationInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+StationInfo.swift"; sourceTree = "<group>"; };
 		41CD7A93DE3378B3083FBB50 /* TuneAVSubscriptionEntitlementPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSubscriptionEntitlementPolicy.swift; sourceTree = "<group>"; };
 		43337F851171AB4EB4E1111A /* TuneAVAccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountModels.swift; sourceTree = "<group>"; };
+		4381718C8F9B90D7421F2D0C /* AviScreen+MusicDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+MusicDetail.swift"; sourceTree = "<group>"; };
 		43958E2D148CAE7F77753A2E /* AppShellGlobalPresentations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellGlobalPresentations.swift; sourceTree = "<group>"; };
 		4442649A1E700CC3A17083F9 /* TuneAVLocalFeedbackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLocalFeedbackStore.swift; sourceTree = "<group>"; };
 		447FB9154FC56A647BD11EEA /* TuneAVProPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVProPaywallView.swift; sourceTree = "<group>"; };
@@ -286,6 +299,7 @@
 		458EF57C362E247FF5234C69 /* AppShellTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellTab.swift; sourceTree = "<group>"; };
 		459263F3E9B809F0A8546FC1 /* TuneAVEighties80sNowPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVEighties80sNowPlaying.swift; sourceTree = "<group>"; };
 		45E041E8E7568784E3A837D8 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		466CD5B2C51D3D70E38767AF /* AviScreen+FullPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+FullPlayer.swift"; sourceTree = "<group>"; };
 		47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSharedTheme.swift; sourceTree = "<group>"; };
 		47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVGuestOnboardingPolicy.swift; sourceTree = "<group>"; };
 		4A10E8C4A72867917D1420C6 /* TuneAVStationPlayLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationPlayLog.swift; sourceTree = "<group>"; };
@@ -325,10 +339,12 @@
 		7077C33F59F8A1A3D97CF666 /* AppShellMusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellMusicLibrary.swift; sourceTree = "<group>"; };
 		7085396ED648EBB47E68EBFC /* TuneAVMusicLibraryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVMusicLibraryLogic.swift; sourceTree = "<group>"; };
 		719C764B25F8D88A52B45FBC /* MusicScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicScreen.swift; sourceTree = "<group>"; };
+		73CFFD88D020AE63275D22DD /* AviScreen+Preview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Preview.swift"; sourceTree = "<group>"; };
 		74194B0B1D604F32BCC62F2F /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
 		750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRefreshUITests.swift; sourceTree = "<group>"; };
 		77DFA1FC59ADC137B4738A0E /* ShellDemoStationBootstrapPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellDemoStationBootstrapPlanner.swift; sourceTree = "<group>"; };
 		78E26A38B7BC6D3D3963CC70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		78F948A3F9E1BBAD93A7ED58 /* AviScreen+Header.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Header.swift"; sourceTree = "<group>"; };
 		799EE02D5E057AF1E6F84B67 /* AppShellView+Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Screens.swift"; sourceTree = "<group>"; };
 		7AA0DBF5917410034B9D572A /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		7B2B3D1DEB4D5796B1320027 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -353,6 +369,7 @@
 		90B314ABD80140CF0AE14B2A /* ShellAviActionsRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellAviActionsRouter.swift; sourceTree = "<group>"; };
 		9123677EFD411D6E6506AB24 /* AccessLimitsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessLimitsTests.swift; sourceTree = "<group>"; };
 		91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVApp.swift; sourceTree = "<group>"; };
+		91DCDD015017EACF65AF20DF /* AviScreen+CommandCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+CommandCenter.swift"; sourceTree = "<group>"; };
 		9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviScreen.swift; sourceTree = "<group>"; };
 		969857CE9E9F5A0C0E195E34 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		98AF851755C4BBE2BD0E7F41 /* AppShellView+Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Playback.swift"; sourceTree = "<group>"; };
@@ -381,6 +398,7 @@
 		B37F14B5C7BA8FACBA84FD2A /* HomeContentStateBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeContentStateBuilder.swift; sourceTree = "<group>"; };
 		B3C5ED7575C9647A5AEE8507 /* AviRecommendationsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviRecommendationsCoordinator.swift; sourceTree = "<group>"; };
 		B4385237EFC99C1FCA9A00AE /* AppShellView+Bootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Bootstrap.swift"; sourceTree = "<group>"; };
+		B4553C78C0CD04359BF08460 /* AviScreen+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Actions.swift"; sourceTree = "<group>"; };
 		B88BE8A291767D3B19DB2920 /* TuneAVSavedStationIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSavedStationIcon.swift; sourceTree = "<group>"; };
 		B8A8A74CF9078AA2D12F7466 /* TuneAVSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSplashView.swift; sourceTree = "<group>"; };
 		B8D47E5F8F0472C543A0680F /* TuneAVCollectionRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCollectionRules.swift; sourceTree = "<group>"; };
@@ -390,12 +408,15 @@
 		BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviFullPlayerViews.swift; sourceTree = "<group>"; };
 		BD95C0068EC297AAD27DFCAD /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		BE4CCC09FB0AB5E8406245F2 /* ShellHeaderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHeaderViews.swift; sourceTree = "<group>"; };
+		C0D891FC2CCA0BCBD15F3E92 /* AviScreen+Recommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Recommendations.swift"; sourceTree = "<group>"; };
 		C116E1ECDD4752E0E53980B5 /* TuneAVURLSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVURLSupport.swift; sourceTree = "<group>"; };
 		C19EF859DCC74B91394C9B1B /* TuneAVLibraryStationLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLibraryStationLogic.swift; sourceTree = "<group>"; };
 		C22737B2F1933C12F37355F3 /* ShellCommonBehaviors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonBehaviors.swift; sourceTree = "<group>"; };
 		C49373DED603EEF524E67C56 /* TuneAVAppDataSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppDataSyncClient.swift; sourceTree = "<group>"; };
 		C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationCompactCarousel.swift; sourceTree = "<group>"; };
 		C514986DA39CFF7329EDF7E8 /* MusicLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryViews.swift; sourceTree = "<group>"; };
+		C5749DAB52B36F86B75C6A85 /* AviScreen+PlayerDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+PlayerDock.swift"; sourceTree = "<group>"; };
+		C7CA644B88FEB854728F54E5 /* AviScreen+RadioDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+RadioDetail.swift"; sourceTree = "<group>"; };
 		CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueueUITests.swift; sourceTree = "<group>"; };
 		CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVNowPlayingService.swift; sourceTree = "<group>"; };
 		CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
@@ -430,6 +451,7 @@
 		F3579A166CC650E808D54ABA /* TuneAVAccessClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccessClient.swift; sourceTree = "<group>"; };
 		F40CD81B506D2F87D7C4B448 /* TuneAVAccountDeletionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAccountDeletionPolicy.swift; sourceTree = "<group>"; };
 		F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPicker.swift; sourceTree = "<group>"; };
+		F46080E97EDF938F8D3AFBB0 /* AviScreen+Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Feedback.swift"; sourceTree = "<group>"; };
 		F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITestBootstrapSeeder.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
 		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
@@ -527,6 +549,17 @@
 				68715A10D3771C20D116F2BA /* AviRelatedStationsCoordinator.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
 				9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */,
+				B4553C78C0CD04359BF08460 /* AviScreen+Actions.swift */,
+				91DCDD015017EACF65AF20DF /* AviScreen+CommandCenter.swift */,
+				F46080E97EDF938F8D3AFBB0 /* AviScreen+Feedback.swift */,
+				466CD5B2C51D3D70E38767AF /* AviScreen+FullPlayer.swift */,
+				78F948A3F9E1BBAD93A7ED58 /* AviScreen+Header.swift */,
+				4381718C8F9B90D7421F2D0C /* AviScreen+MusicDetail.swift */,
+				C5749DAB52B36F86B75C6A85 /* AviScreen+PlayerDock.swift */,
+				73CFFD88D020AE63275D22DD /* AviScreen+Preview.swift */,
+				C7CA644B88FEB854728F54E5 /* AviScreen+RadioDetail.swift */,
+				C0D891FC2CCA0BCBD15F3E92 /* AviScreen+Recommendations.swift */,
+				40706D8E7CAF2828E89E8587 /* AviScreen+StationInfo.swift */,
 				B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */,
 				54C2142EBD775E3AAAED9E58 /* FeedbackBadgeViews.swift */,
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
@@ -1014,6 +1047,17 @@
 				BDE55228F16441FBE1E2F256 /* AviRecommendationsCoordinator.swift in Sources */,
 				92325AECFFA96E59F5477CD6 /* AviRelatedStationsCoordinator.swift in Sources */,
 				33BBBE7EC2FDB8BFF9868C96 /* AviReturnCoordinator.swift in Sources */,
+				13711A16D9363F404C09B4EF /* AviScreen+Actions.swift in Sources */,
+				E2F54032598188151FBFD029 /* AviScreen+CommandCenter.swift in Sources */,
+				F77C9B0922BA624208F86F3D /* AviScreen+Feedback.swift in Sources */,
+				B5F848DD13C7096076BD7A1E /* AviScreen+FullPlayer.swift in Sources */,
+				C9EF782A434A674B3F11B521 /* AviScreen+Header.swift in Sources */,
+				F7FAB18D68FFBBAF11812546 /* AviScreen+MusicDetail.swift in Sources */,
+				8093E98F8977CFF8D3223D23 /* AviScreen+PlayerDock.swift in Sources */,
+				F365BE7A15FD78C351872748 /* AviScreen+Preview.swift in Sources */,
+				9A47FAB3A239901F751321D1 /* AviScreen+RadioDetail.swift in Sources */,
+				5A3C2D3D6BB4A099856CCC34 /* AviScreen+Recommendations.swift in Sources */,
+				6347096F88343A8F44403EBC /* AviScreen+StationInfo.swift in Sources */,
 				8A3124E735C1C420E748E70B /* AviScreen.swift in Sources */,
 				59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */,
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
