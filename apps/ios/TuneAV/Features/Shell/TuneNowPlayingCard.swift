@@ -198,7 +198,15 @@ enum TunePlayerTransition {
     }
 }
 
-struct TunePlayerCardReveal: ViewModifier, Animatable {
+struct TunePlayerCardReveal: ViewModifier {
+    let progress: CGFloat
+
+    func body(content: Content) -> some View {
+        content.clipShape(TunePlayerCardRevealShape(progress: progress))
+    }
+}
+
+struct TunePlayerCardRevealShape: Shape {
     var progress: CGFloat
 
     nonisolated var animatableData: CGFloat {
@@ -206,17 +214,17 @@ struct TunePlayerCardReveal: ViewModifier, Animatable {
         set { progress = newValue }
     }
 
-    func body(content: Content) -> some View {
-        content.mask {
-            GeometryReader { proxy in
-                let collapsedHeight = min(TunePlayerTransition.collapsedCardHeight, proxy.size.height)
-                let visibleHeight = collapsedHeight + (proxy.size.height - collapsedHeight) * progress
-                let outset = TunePlayerTransition.shadowOutset * progress
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .frame(width: proxy.size.width + outset * 2, height: visibleHeight + outset * 2)
-                    .position(x: proxy.size.width / 2, y: proxy.size.height - visibleHeight / 2)
-            }
-        }
+    nonisolated func path(in rect: CGRect) -> Path {
+        let collapsedHeight = min(TunePlayerTransition.collapsedCardHeight, rect.height)
+        let visibleHeight = collapsedHeight + (rect.height - collapsedHeight) * progress
+        let outset = TunePlayerTransition.shadowOutset * progress
+        let revealedRect = CGRect(
+            x: rect.minX - outset,
+            y: rect.maxY - visibleHeight - outset,
+            width: rect.width + outset * 2,
+            height: visibleHeight + outset * 2
+        )
+        return Path(roundedRect: revealedRect, cornerRadius: 24, style: .continuous)
     }
 }
 
