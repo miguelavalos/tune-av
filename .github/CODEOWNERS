@@ -1,4 +1,13 @@
-* @miguelavalos
-/docs/
-*.md
 /.github/ @miguelavalos
+*Purchas* @miguelavalos
+*Subscription* @miguelavalos
+*Paywall* @miguelavalos
+*Billing* @miguelavalos
+*Entitlement* @miguelavalos
+*.entitlements @miguelavalos
+*Deletion* @miguelavalos
+*Auth* @miguelavalos
+*Signing* @miguelavalos
+*.xcconfig @miguelavalos
+project.yml @miguelavalos
+wrangler*.jsonc @miguelavalos
