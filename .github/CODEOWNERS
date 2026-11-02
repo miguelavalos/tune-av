@@ -1,13 +1,58 @@
-/.github/ @miguelavalos
 *Purchas* @miguelavalos
+*purchas* @miguelavalos
 *Subscription* @miguelavalos
+*subscription* @miguelavalos
 *Paywall* @miguelavalos
+*paywall* @miguelavalos
 *Billing* @miguelavalos
+*billing* @miguelavalos
 *Entitlement* @miguelavalos
-*.entitlements @miguelavalos
-*Deletion* @miguelavalos
+*entitlement* @miguelavalos
+*RevenueCat* @miguelavalos
+*revenuecat* @miguelavalos
+*StoreKit* @miguelavalos
+*.storekit @miguelavalos
+**/Credits/Rules/ @miguelavalos
+**/Credits/Services/ @miguelavalos
+**/Access/ @miguelavalos
+*Access.swift @miguelavalos
+*AccessController* @miguelavalos
+*AccessClient* @miguelavalos
+*AccessPolicy* @miguelavalos
+*AccessLimit* @miguelavalos
+*AccessMode* @miguelavalos
+*AccessSnapshot* @miguelavalos
+*AccessModels* @miguelavalos
+*access-* @miguelavalos
 *Auth* @miguelavalos
+*auth* @miguelavalos
+*Account* @miguelavalos
+*account* @miguelavalos
+*SignIn* @miguelavalos
+*sign-in* @miguelavalos
+*Login* @miguelavalos
+*login* @miguelavalos
+*Clerk* @miguelavalos
+*clerk* @miguelavalos
 *Signing* @miguelavalos
-*.xcconfig @miguelavalos
+*signing* @miguelavalos
+*xcconfig* @miguelavalos
 project.yml @miguelavalos
-wrangler*.jsonc @miguelavalos
+ExportOptions*.plist @miguelavalos
+/app.json @miguelavalos
+/app.config.* @miguelavalos
+/eas.json @miguelavalos
+*wrangler* @miguelavalos
+**/scripts/**/*release* @miguelavalos
+**/scripts/**/*archive* @miguelavalos
+**/scripts/**/*export* @miguelavalos
+**/scripts/**/*deploy* @miguelavalos
+**/scripts/**/*cloudflare* @miguelavalos
+**/scripts/**/*infisical* @miguelavalos
+*.md
+*.imageset/
+*.png
+*.jpg
+*.svg
+*.webp
+/.github/ @miguelavalos
