@@ -13,7 +13,6 @@ struct HomeTuningDeskHero: View {
     var layoutClass: TuneLayoutClass = .compact
     let playAction: () -> Void
     let favoriteAction: () -> Void
-    let feedbackAction: (TuneAVStationFeedback) -> Void
     let detailsAction: () -> Void
 
     var body: some View {
@@ -36,11 +35,8 @@ struct HomeTuningDeskHero: View {
                 stationText
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    deskControls
-                    feedbackControl
-                }
-                .frame(width: 268, alignment: .topLeading)
+                deskControls
+                    .frame(width: 268, alignment: .topLeading)
             }
         } else {
             VStack(alignment: .leading, spacing: 14) {
@@ -48,23 +44,8 @@ struct HomeTuningDeskHero: View {
                     .layoutPriority(1)
 
                 deskControls
-                feedbackControl
             }
         }
-    }
-
-    private var feedbackControl: some View {
-        AviCompactFeedbackControl(
-            feedbackIdentity: "station:\(station.id)",
-            selectedFeedback: stationFeedback,
-            selectFeedback: feedbackAction,
-            clearFeedback: {
-                if let stationFeedback {
-                    feedbackAction(stationFeedback)
-                }
-            }
-        )
-        .accessibilityIdentifier("home.hero.feedback")
     }
 
     private var heroHeader: some View {

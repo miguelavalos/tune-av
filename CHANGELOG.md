@@ -6,6 +6,10 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Simplify Home on iOS: drop the "Daily Tuning Desk" title and the explanatory
+  subtitles under every section, and remove the like, neutral and dislike
+  buttons from the main Home card. Feedback stays in the player.
+
 ## 1.0.9 - 2026-11-01
 
 - Let Avi speak in first person on iOS and macOS: the Avi signals, moods, related
