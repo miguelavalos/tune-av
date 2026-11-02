@@ -49,6 +49,17 @@ ExportOptions*.plist @miguelavalos
 **/scripts/**/*deploy* @miguelavalos
 **/scripts/**/*cloudflare* @miguelavalos
 **/scripts/**/*infisical* @miguelavalos
+*signed* @miguelavalos
+*capabilities* @miguelavalos
+**/scripts/**/*build* @miguelavalos
+run-with-varlock.sh @miguelavalos
+.env.schema @miguelavalos
+protected-route* @miguelavalos
+Package.swift @miguelavalos
+*tier-policy* @miguelavalos
+*UsageLimiter* @miguelavalos
+*UpgradeMoment* @miguelavalos
+*PlanComparison* @miguelavalos
 *.md
 *.imageset/
 *.png
