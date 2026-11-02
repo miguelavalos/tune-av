@@ -364,10 +364,12 @@ extension AviScreen {
         let isSaved = hasCurrentSongContext ? isCurrentTrackSaved(for: station) : libraryStore.isFavorite(station)
         let title = hasCurrentSongContext ? currentTrackSaveActionTitle(for: station) : stationSaveActionTitle(for: station)
         return Button {
-            AVHaptics.perform(isSaved ? .clear : .positiveFeedback)
             if hasCurrentSongContext {
                 saveAviCurrentDiscovery(for: station)
             } else {
+                if !isSaved {
+                    showAviReaction(.liked)
+                }
                 toggleFavorite(station)
             }
         } label: {
@@ -376,6 +378,7 @@ extension AviScreen {
                     .font(.system(size: 20, weight: .black))
                     .foregroundStyle(isSaved ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
                     .symbolEffect(.bounce, value: isSaved)
+                    .accessibilityHidden(true)
 
                 Text(title)
                     .font(.system(size: 16, weight: .black, design: .rounded))
@@ -387,7 +390,7 @@ extension AviScreen {
 
                 if let selectedFeedback {
                     TuneAVFeedbackBadge(feedback: selectedFeedback, size: 24, fontSize: 10)
-                        .accessibilityLabel(selectedFeedback.localizedState)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, 14)
@@ -401,22 +404,38 @@ extension AviScreen {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            ForEach([TuneAVStationFeedback.liked, .notForMe, .disliked], id: \.self) { feedback in
+            ForEach(TuneAVStationFeedback.displayOrder, id: \.self) { feedback in
                 Button {
-                    let nextFeedback = selectedFeedback == feedback ? nil : feedback
-                    setFocusedPrimaryFeedback(nextFeedback, for: station)
-                    if let nextFeedback {
-                        showAviReaction(for: nextFeedback)
-                    }
+                    toggleFullPlayerFeedback(feedback, current: selectedFeedback, for: station)
                 } label: {
                     Label(
                         feedback.localizedState,
                         systemImage: selectedFeedback == feedback ? "checkmark" : fullPlayerFeedbackSystemImage(feedback)
                     )
                 }
+                .accessibilityIdentifier("avi.fullPlayer.feedback.\(feedback.rawValue)")
             }
         }
+        .accessibilityLabel(title)
+        .accessibilityValue(selectedFeedback?.localizedState ?? "")
+        .accessibilityAction(named: Text(TuneAVStationFeedback.liked.localizedState)) {
+            toggleFullPlayerFeedback(.liked, current: selectedFeedback, for: station)
+        }
+        .accessibilityAction(named: Text(TuneAVStationFeedback.notForMe.localizedState)) {
+            toggleFullPlayerFeedback(.notForMe, current: selectedFeedback, for: station)
+        }
+        .accessibilityAction(named: Text(TuneAVStationFeedback.disliked.localizedState)) {
+            toggleFullPlayerFeedback(.disliked, current: selectedFeedback, for: station)
+        }
         .accessibilityIdentifier("avi.fullPlayer.heart")
+    }
+
+    func toggleFullPlayerFeedback(_ feedback: TuneAVStationFeedback, current: TuneAVStationFeedback?, for station: Station) {
+        let nextFeedback = current == feedback ? nil : feedback
+        setFocusedPrimaryFeedback(nextFeedback, for: station)
+        if let nextFeedback {
+            showAviReaction(for: nextFeedback)
+        }
     }
 
     func fullPlayerFeedbackSystemImage(_ feedback: TuneAVStationFeedback) -> String {

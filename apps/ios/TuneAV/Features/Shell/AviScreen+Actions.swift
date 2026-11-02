@@ -271,10 +271,6 @@ extension AviScreen {
         isCurrentTrackSaved(for: station) ? L10n.string("player.discovery.unsaveShort") : L10n.string("player.discovery.saveShort")
     }
 
-    func currentTrackSaveActionSystemImage(for station: Station) -> String {
-        isCurrentTrackSaved(for: station) ? "bookmark.slash" : "bookmark"
-    }
-
     func stationSaveActionTitle(for station: Station) -> String {
         libraryStore.isFavorite(station) ? L10n.string("player.station.unsave") : L10n.string("player.station.save")
     }
