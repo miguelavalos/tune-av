@@ -59,7 +59,6 @@ struct HomeScreen: View {
                     layoutClass: contentLayoutClass,
                     playAction: { heroActionRouter.play($0, featuredState: screenState.featuredState) },
                     favoriteAction: toggleFavorite,
-                    feedbackAction: heroActionRouter.setFeedback,
                     detailsAction: { heroActionRouter.showDetails($0, featuredState: screenState.featuredState) }
                 )
                 HomeRecommendationSections(

@@ -11,16 +11,9 @@ struct HomeMoodGenreDesk: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L10n.string("shell.home.moodsGenres.title"))
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-
-                Text(L10n.string("shell.home.moodsGenres.subtitle"))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(L10n.string("shell.home.moodsGenres.title"))
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
 
             FlowLayout(horizontalSpacing: 8, verticalSpacing: 8) {
                 ForEach(tags, id: \.self) { suggestion in
