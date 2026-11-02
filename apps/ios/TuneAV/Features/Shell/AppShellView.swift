@@ -701,7 +701,7 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 186
         }
-        return isAviFullPlayerActive ? 500 : 224
+        return isAviFullPlayerActive ? 580 : 224
     }
 
     var shellFooterBackdropHeight: CGFloat {
@@ -711,7 +711,7 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 156
         }
-        return isAviFullPlayerActive ? 500 : 210
+        return isAviFullPlayerActive ? 580 : 210
     }
 
     var shellFooterPlayerTabSpacing: CGFloat {

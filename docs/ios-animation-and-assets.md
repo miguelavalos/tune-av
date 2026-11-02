@@ -36,6 +36,13 @@ Allowed:
 
 The full player is the only default place for procedural playback visuals.
 
+The full player card (`TuneNowPlayingCard`) uses one: the AV live signal next to
+the station name, a zigzag drawn from the AV monogram proportions that scrolls
+at most 30 times per second through `TimelineView(.animation(paused:))`. It only
+moves while the station plays, the scene is active, Reduce Motion is off and Low
+Power Mode is off; otherwise it is drawn still. The card's blurred artwork
+backdrop is static.
+
 ## Runtime Guards
 
 Any continuous player animation must stop unless all are true:
