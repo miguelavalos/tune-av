@@ -110,6 +110,7 @@
 		84FB8B926DB0F482FDB09F9D /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008936263180E93620BF3D42 /* AppShellView.swift */; };
 		87C54F2C80182821DCD4978F /* TuneAVLibraryTombstone.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEA3DEF80C8A67124C60474 /* TuneAVLibraryTombstone.swift */; };
 		87D6DE07507EA8FED16C5D86 /* ShellDemoStationBootstrapPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DFA1FC59ADC137B4738A0E /* ShellDemoStationBootstrapPlanner.swift */; };
+		8A3124E735C1C420E748E70B /* AviScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */; };
 		8C31A7EA2DC805FDBA7029FE /* AVAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452F24716A1A3B0F57DA65DF /* AVAccountService.swift */; };
 		8C55F5F020F160F719528D6F /* SelectedMusicAviDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A34C38EC079BF6A0936F1BB /* SelectedMusicAviDetail.swift */; };
 		8E261DF063D5C71FEC90152D /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2443197B44A3463AFABCB5 /* PersistenceController.swift */; };
@@ -341,6 +342,7 @@
 		90B314ABD80140CF0AE14B2A /* ShellAviActionsRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellAviActionsRouter.swift; sourceTree = "<group>"; };
 		9123677EFD411D6E6506AB24 /* AccessLimitsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessLimitsTests.swift; sourceTree = "<group>"; };
 		91CCD81A08E174E9D27A4E3D /* TuneAVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVApp.swift; sourceTree = "<group>"; };
+		9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviScreen.swift; sourceTree = "<group>"; };
 		969857CE9E9F5A0C0E195E34 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		99668EA286936B4217A4DA02 /* AccountDeletionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionScreen.swift; sourceTree = "<group>"; };
 		9C071CD5FC33A2899B94A407 /* ShellSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellSessionState.swift; sourceTree = "<group>"; };
@@ -503,6 +505,7 @@
 				DBD506BA7F6EE370324E722A /* AviRecommendationViews.swift */,
 				68715A10D3771C20D116F2BA /* AviRelatedStationsCoordinator.swift */,
 				27F53CC09D7692786A3941E9 /* AviReturnCoordinator.swift */,
+				9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */,
 				B2D887548168707E0D0FBE63 /* AviStationDetailBuilder.swift */,
 				54C2142EBD775E3AAAED9E58 /* FeedbackBadgeViews.swift */,
 				334537DF729276D24C1E3215 /* HomeAroundYouStationSelector.swift */,
@@ -983,6 +986,7 @@
 				BDE55228F16441FBE1E2F256 /* AviRecommendationsCoordinator.swift in Sources */,
 				92325AECFFA96E59F5477CD6 /* AviRelatedStationsCoordinator.swift in Sources */,
 				33BBBE7EC2FDB8BFF9868C96 /* AviReturnCoordinator.swift in Sources */,
+				8A3124E735C1C420E748E70B /* AviScreen.swift in Sources */,
 				59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */,
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
 				1BEA0ADD69D85ECAAF67FDA6 /* FeedbackBadgeViews.swift in Sources */,
