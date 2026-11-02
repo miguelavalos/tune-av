@@ -93,7 +93,6 @@ struct AviScreen: View {
     @State var isLoadingRelatedStations = false
     @State var aviReactionStartedAt = Date.distantPast
     @State var aviReactionToken = UUID()
-    @State var aviDiscoveryDecision: AviDiscoveryDecision?
     @State var lastAutomaticAviReactionIdentity = ""
     @State var lastAutomaticAviReactionAt = Date.distantPast
     @State var visibleArtistSongLimit = artistDetailPageSize
@@ -193,7 +192,6 @@ struct AviScreen: View {
                 }
             }
             .onChange(of: currentSongIdentity) { _, nextIdentity in
-                aviDiscoveryDecision = nil
                 resetTransientAviUI()
                 showAviReactionForCurrentSongChange(identity: nextIdentity)
             }
