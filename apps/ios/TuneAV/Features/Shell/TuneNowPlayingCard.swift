@@ -96,6 +96,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
                         .blur(radius: 34)
                         .saturation(1.25)
                 }
+                .clipped()
                 LinearGradient(
                     colors: [Color.black.opacity(0.18), Color.black.opacity(0.62)],
                     startPoint: .top,
@@ -103,6 +104,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
                 )
             }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .allowsHitTesting(false)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -123,6 +125,7 @@ struct TuneAVLiveSignal: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     private static let cycle: TimeInterval = 1.2
 
@@ -134,10 +137,13 @@ struct TuneAVLiveSignal: View {
         .clipped()
         .opacity(isActive ? 1 : 0.45)
         .accessibilityHidden(true)
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
     }
 
     private var isAnimating: Bool {
-        isActive && !reduceMotion && scenePhase == .active && !ProcessInfo.processInfo.isLowPowerModeEnabled
+        isActive && !reduceMotion && scenePhase == .active && !isLowPowerModeEnabled
     }
 
     private func phase(at date: Date) -> Double {

@@ -181,13 +181,17 @@ struct AviExpandedFooterPlayerView: View {
     @ViewBuilder
     private var backdrop: some View {
         if let artworkURL = audioPlayer.currentTrackArtworkURL {
-            TuneAVRemoteArtworkImage(url: artworkURL, size: 160, scale: 1) {
-                StationArtworkView(station: station, size: 160, animationOverlay: .none, isAnimationActive: false)
+            TuneAVRemoteArtworkImage(url: artworkURL, size: Self.artworkSize, scale: displayScale) {
+                stationBackdrop
             }
         } else {
-            StationArtworkView(station: station, size: 160, animationOverlay: .none, isAnimationActive: false)
-                .scaleEffect(3)
+            stationBackdrop
         }
+    }
+
+    private var stationBackdrop: some View {
+        StationArtworkView(station: station, size: Self.artworkSize, animationOverlay: .none, isAnimationActive: false)
+            .scaleEffect(2.4)
     }
 
     private var artistLine: String {
@@ -210,10 +214,6 @@ struct AviExpandedFooterPlayerView: View {
                 ?? L10n.string("shell.station.row.defaultDetail"),
             liveFallback: L10n.string("player.track.liveStreamActive")
         )
-    }
-
-    private var trackArtworkExists: Bool {
-        audioPlayer.currentTrackArtworkURL != nil
     }
 
     private var currentTrackFeedback: TuneAVStationFeedback? {
