@@ -162,14 +162,12 @@ function compareWebStrings() {
   const auditSource = String.raw`
     import { describe, it } from "vite-plus/test";
     import { tuneText } from "./src/lib/tune-i18n.ts";
-    import { tuneFunctionalText } from "./src/lib/tune-functional-text.ts";
     import { tuneProfileLabels } from "./src/lib/tune-profile-labels.ts";
 
     const webLocales = ${JSON.stringify(webLocales)};
     const allowlist = new Set(${JSON.stringify([...normalizedIdenticalAllowlist])});
     const bundles = [
       ["tuneText", tuneText],
-      ["tuneFunctionalText", tuneFunctionalText],
       ["tuneProfileLabels", tuneProfileLabels]
     ];
 
