@@ -5352,14 +5352,6 @@ final class SharedAppleSupportTests: XCTestCase {
         case .play:
             XCTFail("Expected current hero playback to toggle the active station")
         }
-
-        XCTAssertNil(
-            HomeHeroActionBuilder.toggledFeedback(currentFeedback: .liked, selectedFeedback: .liked)
-        )
-        XCTAssertEqual(
-            HomeHeroActionBuilder.toggledFeedback(currentFeedback: .disliked, selectedFeedback: .liked),
-            .liked
-        )
     }
 
     func testHomeContentStateBuilderBuildsHeaderState() {

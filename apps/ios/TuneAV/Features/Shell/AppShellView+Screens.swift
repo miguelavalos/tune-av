@@ -24,7 +24,6 @@ extension AppShellView {
         refreshHome: @escaping () async -> Void,
         playStation: @escaping (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void,
         toggleFavorite: @escaping (Station) -> Void,
-        setStationFeedback: @escaping (Station, TuneAVStationFeedback?) -> Void,
         showStationDetails: @escaping (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void
     ) -> some View {
         HomeScreen(
@@ -50,7 +49,6 @@ extension AppShellView {
             refreshHome: refreshHome,
             playStation: playStation,
             toggleFavorite: toggleFavorite,
-            setStationFeedback: setStationFeedback,
             showStationDetails: showStationDetails
         )
     }

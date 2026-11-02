@@ -9,6 +9,8 @@ This project follows semantic versioning once public source releases begin.
 - Simplify Home on iOS: drop the "Daily Tuning Desk" title and the explanatory
   subtitles under every section, and remove the like, neutral and dislike
   buttons from the main Home card. Feedback stays in the player.
+- Merge Avi picks and "around you" into a single "For You" row on iOS Home,
+  shown before moods and genres.
 
 ## 1.0.9 - 2026-11-01
 

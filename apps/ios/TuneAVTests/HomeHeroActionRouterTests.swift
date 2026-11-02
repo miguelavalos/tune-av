@@ -69,36 +69,17 @@ final class HomeHeroActionRouterTests: XCTestCase {
         XCTAssertEqual(routedQueueIDs, ["queued", "hero"])
     }
 
-    func testSetFeedbackTogglesSelectedFeedback() {
-        let station = makeStation(id: "hero")
-        var routedFeedback: TuneAVStationFeedback?
-        let router = makeRouter(
-            currentFeedback: { _ in .liked },
-            setStationFeedback: { _, feedback in routedFeedback = feedback }
-        )
-
-        router.setFeedback(.liked, for: station)
-        XCTAssertNil(routedFeedback)
-
-        router.setFeedback(.disliked, for: station)
-        XCTAssertEqual(routedFeedback, .disliked)
-    }
-
     private func makeRouter(
         isCurrentStation: @escaping (Station) -> Bool = { _ in false },
         togglePlayback: @escaping () -> Void = {},
         playStation: @escaping (Station, AudioPlayerService.PlaybackQueue.Source, [Station]) -> Void = { _, _, _ in },
-        showStationDetails: @escaping (Station, AudioPlayerService.PlaybackQueue.Source, [Station]) -> Void = { _, _, _ in },
-        currentFeedback: @escaping (Station) -> TuneAVStationFeedback? = { _ in nil },
-        setStationFeedback: @escaping (Station, TuneAVStationFeedback?) -> Void = { _, _ in }
+        showStationDetails: @escaping (Station, AudioPlayerService.PlaybackQueue.Source, [Station]) -> Void = { _, _, _ in }
     ) -> HomeHeroActionRouter {
         HomeHeroActionRouter(
             isCurrentStation: isCurrentStation,
             togglePlayback: togglePlayback,
             playStation: playStation,
-            showStationDetails: showStationDetails,
-            currentFeedback: currentFeedback,
-            setStationFeedback: setStationFeedback
+            showStationDetails: showStationDetails
         )
     }
 
