@@ -6,6 +6,8 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Live Activity desactivada: la pantalla de bloqueo usa solo el reproductor del
+  sistema, sin duplicado.
 - Surprise me on Home no longer says a saved radio was "never played" when it
   was played before 1.1.0, more than two weeks ago or on another device: Avi
   now only says the radio is saved. Saved radios and recents count as played

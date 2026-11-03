@@ -1,6 +1,13 @@
 import AppIntents
 import Foundation
 
+/// The one switch for the now playing Live Activity, shared by the app and the widget extension.
+/// Off since 1.1.0 (62): the lock screen shows only the system Now Playing player. See
+/// `TuneAVLiveActivityController.isEnabled` for the two other lines turning it back on needs.
+enum TuneAVLiveActivityFeature {
+    static let isEnabled = false
+}
+
 enum TuneAVLiveActivityAction: Sendable {
     case togglePlayback
     case toggleHeart

@@ -7,7 +7,9 @@ struct TuneAVWidgetsBundle: WidgetBundle {
         TuneAVMyRadioWidget()
         TuneAVNowPlayingFavoritesWidget()
         TuneAVLockScreenRadioWidget()
-        TuneAVNowPlayingLiveActivity()
+        // The Live Activity is off (`TuneAVLiveActivityFeature.isEnabled`): the lock screen shows
+        // only the system Now Playing player. Register `TuneAVNowPlayingLiveActivity()` here again
+        // when the switch is turned back on.
         TuneAVMyRadioControl()
     }
 }
