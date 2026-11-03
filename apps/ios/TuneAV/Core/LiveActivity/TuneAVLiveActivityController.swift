@@ -368,12 +368,12 @@ final class TuneAVLiveActivityController {
             }
 
             let fileName = Self.artworkFileName(for: url)
-            let previousFileName = self.lastWrittenArtworkFileName
+            let keptFileNames = Set([self.lastWrittenArtworkFileName, self.lastPushedState?.artworkFileName].compactMap { $0 })
             let previousWrite = self.artworkWriteTail
             let write = Task.detached(priority: .utility) { () -> Bool in
                 await previousWrite?.value
                 guard let data = image.jpegData(compressionQuality: Self.artworkCompressionQuality) else { return false }
-                return Self.writeArtwork(data, fileName: fileName, directory: directory, keeping: previousFileName)
+                return Self.writeArtwork(data, fileName: fileName, directory: directory, keeping: keptFileNames)
             }
             self.artworkWriteTail = Task { _ = await write.value }
             self.lastWrittenArtworkFileName = fileName
@@ -395,7 +395,7 @@ final class TuneAVLiveActivityController {
         _ data: Data,
         fileName: String,
         directory: URL,
-        keeping previousFileName: String?
+        keeping keptFileNames: Set<String>
     ) -> Bool {
         let fileManager = FileManager.default
         do {
@@ -405,7 +405,7 @@ final class TuneAVLiveActivityController {
                 try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
             }
 
-            let keep: Set<String> = [fileName, previousFileName].compactMap { $0 }.reduce(into: []) { $0.insert($1) }
+            let keep = keptFileNames.union([fileName])
             for existing in try fileManager.contentsOfDirectory(atPath: directory.path) where !keep.contains(existing) {
                 try? fileManager.removeItem(at: directory.appendingPathComponent(existing, isDirectory: false))
             }

@@ -15,7 +15,7 @@ enum TuneAVLiveActivityActionRouter {
     }
 }
 
-struct TuneAVTogglePlaybackIntent: LiveActivityIntent {
+struct TuneAVTogglePlaybackIntent: AudioPlaybackIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "player.control.play"
     static let isDiscoverable = false
 
