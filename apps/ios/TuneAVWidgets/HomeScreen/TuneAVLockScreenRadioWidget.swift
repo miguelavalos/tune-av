@@ -29,6 +29,7 @@ struct TuneAVLockScreenRadioWidgetView: View {
                 rectangular
             }
         }
+        .tuneAVWidgetDynamicTypeLimit()
         .widgetURL(entry.compactTapURL)
     }
 
@@ -92,13 +93,11 @@ struct TuneAVLockScreenRadioWidgetView: View {
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 8) {
+                TuneAVMark(color: .primary, lineWidthRatio: 0.22)
+                    .frame(width: 24)
                 Text(entry.strings.emptyTitle)
                     .font(.system(.headline, design: .rounded).weight(.bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(entry.strings.emptyMessage)
-                    .font(.caption2)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
             }

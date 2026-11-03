@@ -55,7 +55,11 @@ final class TuneAVWidgetController {
             .merge(with: libraryStore.objectWillChange)
             .sink { [weak self] _ in
                 MainActor.assumeIsolated {
-                    self?.scheduleEvaluation()
+                    guard let self else { return }
+                    if !self.isLaunchSettled, self.audioPlayer?.status == .playing {
+                        self.settleAfterLaunch(delay: Self.launchSettleDelay)
+                    }
+                    self.scheduleEvaluation()
                 }
             }
             .store(in: &cancellables)
@@ -163,10 +167,7 @@ final class TuneAVWidgetController {
                 let queue = isFavoriteShortcut ? libraryStore.favoriteStations() : nil
                 if let shellPlaybackHandler {
                     shellPlaybackHandler(station, source, queue)
-                } else if ShellCellularPlaybackGate.decision(
-                    warnBeforeCellularPlayback: libraryStore.settings.warnBeforeCellularPlayback,
-                    currentNetworkIsExpensive: audioPlayer.currentNetworkIsExpensive
-                ) == .requestConfirmation {
+                } else if libraryStore.settings.warnBeforeCellularPlayback {
                     Self.logger.debug("Widget playback waits for the cellular confirmation in the app")
                 } else {
                     audioPlayer.play(

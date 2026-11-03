@@ -57,6 +57,7 @@ struct TuneAVWidgetPlayControl<Label: View>: View {
                 label()
                     .accessibilityElement()
                     .accessibilityLabel(accessibilityText)
+                    .accessibilityAddTraits(.isButton)
             }
         } else {
             Button(intent: TuneAVPlayStationIntent(
