@@ -2,7 +2,8 @@ import XCTest
 
 @MainActor
 final class LaunchPerformanceUITests: TuneAVUITestCase {
-    private static let warmUpTimeout: TimeInterval = 120
+    private static let warmUpTimeout: TimeInterval = 60
+    private static let settleAfterHome: TimeInterval = 2
     private static let timedLaunchCount = 2
 
     private struct LaunchReadiness {
@@ -16,10 +17,10 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
 
         let warmUp = measureLaunchReadiness(timeout: Self.warmUpTimeout)
         print("Tune AV launch ready: warm-up \(Self.describe(warmUp)) (untimed)")
-        guard warmUp.reachedHome else {
+        guard warmUp.reachedHome, warmUp.appState == .runningForeground else {
             XCTFail(
-                "Tune AV did not reach the home shell on the warm-up launch within \(Int(Self.warmUpTimeout))s "
-                    + "(app state \(warmUp.appState.rawValue))."
+                "Tune AV did not reach and stay on the home shell on the warm-up launch within "
+                    + "\(Int(Self.warmUpTimeout))s (reachedHome \(warmUp.reachedHome), app state \(warmUp.appState.rawValue))."
             )
             return
         }
@@ -67,6 +68,9 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
         }
 
         let elapsedMilliseconds = Date().timeIntervalSince(startedAt) * 1_000
+        if reachedHome {
+            RunLoop.current.run(until: Date().addingTimeInterval(Self.settleAfterHome))
+        }
         let state = app.state
         app.terminate()
         return LaunchReadiness(milliseconds: elapsedMilliseconds, reachedHome: reachedHome, appState: state)
