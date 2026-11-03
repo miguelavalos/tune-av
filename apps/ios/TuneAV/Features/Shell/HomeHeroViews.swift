@@ -50,10 +50,14 @@ struct HomeTuningDeskHero: View {
 
     private var heroHeader: some View {
         HStack(alignment: .center, spacing: 12) {
-            HomeDeskSignalPill(title: presentation.label)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 12) {
+                    heroPills
+                }
 
-            if isCurrentStation {
-                HomeLiveStatePill(isPlaying: isPlaying, isLoading: isLoading)
+                VStack(alignment: .leading, spacing: 8) {
+                    heroPills
+                }
             }
 
             Spacer(minLength: 8)
@@ -70,6 +74,15 @@ struct HomeTuningDeskHero: View {
                     }
                     .accessibilityHidden(true)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var heroPills: some View {
+        HomeDeskSignalPill(title: presentation.label)
+
+        if isCurrentStation {
+            HomeLiveStatePill(isPlaying: isPlaying, isLoading: isLoading)
         }
     }
 
@@ -92,7 +105,6 @@ struct HomeTuningDeskHero: View {
                 Text(primaryLine)
                     .font(.system(size: presentation.tier == .rich ? 15 : 14, weight: .semibold))
                     .foregroundStyle(heroSecondaryColor)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -100,7 +112,7 @@ struct HomeTuningDeskHero: View {
                 Text(secondaryLine)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(heroSecondaryColor.opacity(0.78))
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if !presentation.badges.isEmpty {
@@ -323,6 +335,7 @@ private struct HomeLiveStatePill: View {
                 .tracking(0.7)
                 .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite.opacity(0.78))
                 .lineLimit(1)
+                .minimumScaleFactor(0.72)
         }
         .homeHeroCapsule(
             horizontalPadding: 9,
@@ -334,10 +347,10 @@ private struct HomeLiveStatePill: View {
 
     private var title: String {
         if isLoading {
-            return L10n.string("audio.status.loading").uppercased(with: .current)
+            return L10n.string("shell.home.hero.status.loading").uppercased(with: .current)
         }
         if isPlaying {
-            return L10n.string("audio.status.playing").uppercased(with: .current)
+            return L10n.string("shell.home.hero.status.playing").uppercased(with: .current)
         }
         return L10n.string("shell.status.live").uppercased(with: .current)
     }

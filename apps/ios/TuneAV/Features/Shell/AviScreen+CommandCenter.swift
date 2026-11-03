@@ -29,7 +29,6 @@ extension AviScreen {
                     Text(aviCommandDetail)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(4)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

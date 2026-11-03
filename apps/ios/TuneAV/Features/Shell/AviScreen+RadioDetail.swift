@@ -233,7 +233,7 @@ extension AviScreen {
                     .font(.system(size: 14, weight: .black))
                     .foregroundStyle(TuneAVTheme.textPrimary)
                     .lineLimit(1)
-                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.8)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -254,7 +254,6 @@ extension AviScreen {
                     Text(L10n.string("player.avi.poorInfo"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("player.avi.poorInfo")
                 }
@@ -303,13 +302,13 @@ extension AviScreen {
                         .font(.system(size: 17, weight: .black))
                         .foregroundStyle(TuneAVTheme.textPrimary)
                         .lineLimit(1)
-                        .truncationMode(.tail)
+                        .minimumScaleFactor(0.8)
 
                     Text(currentTrackArtist ?? L10n.string("player.track.liveNow"))
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(hasCurrentSongContext ? TuneAVTheme.highlight : TuneAVTheme.textSecondary)
                         .lineLimit(1)
-                        .truncationMode(.tail)
+                        .minimumScaleFactor(0.8)
 
                     Text(currentTrackTitle ?? station.primaryDetailLine)
                         .font(.system(size: 13, weight: .semibold))

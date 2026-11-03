@@ -184,38 +184,10 @@ private struct StationCompactCard: View {
                 favoriteButton
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(station.name)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Text(compactPrimaryLine)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(reliableArtist != nil || reliableTitle != nil ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Text(compactSecondaryLine)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.78))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                HStack(spacing: 5) {
-                    feedbackBadgeIfNeeded
-
-                    stationQualityBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
-
-                    if compactStatusBadges.isEmpty {
-                        Text(compactTertiaryLine)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
+            ViewThatFits(in: .vertical) {
+                compactText(showsSecondaryLine: true, showsStatusRow: true)
+                compactText(showsSecondaryLine: false, showsStatusRow: true)
+                compactText(showsSecondaryLine: false, showsStatusRow: false)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: StationCompactMetrics.artworkSize, alignment: .center)
@@ -236,6 +208,42 @@ private struct StationCompactCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .onTapGesture(perform: detailsAction)
+    }
+
+    private func compactText(showsSecondaryLine: Bool, showsStatusRow: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(station.name)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(TuneAVTheme.textPrimary)
+                .lineLimit(showsStatusRow ? nil : 2)
+                .minimumScaleFactor(showsStatusRow ? 1 : 0.8)
+
+            Text(compactPrimaryLine)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(reliableArtist != nil || reliableTitle != nil ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
+                .lineLimit(showsStatusRow ? nil : 2)
+                .minimumScaleFactor(showsStatusRow ? 1 : 0.8)
+
+            if showsSecondaryLine {
+                Text(compactSecondaryLine)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.78))
+            }
+
+            if showsStatusRow {
+                HStack(spacing: 5) {
+                    feedbackBadgeIfNeeded
+
+                    stationQualityBadges(hasNowPlaying: reliableArtist != nil || reliableTitle != nil)
+
+                    if compactStatusBadges.isEmpty {
+                        Text(compactTertiaryLine)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
