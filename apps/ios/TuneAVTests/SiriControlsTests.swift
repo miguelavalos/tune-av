@@ -8,19 +8,7 @@ final class SiriControlsTests: XCTestCase {
         let link: TuneAVWidgetDeepLink
     }
 
-    private var savedHandler: (@MainActor (TuneAVWidgetAction) async -> TuneAVWidgetActionOutcome)?
     private var actions: [TuneAVWidgetAction] = []
-
-    override func setUp() async throws {
-        try await super.setUp()
-        savedHandler = TuneAVWidgetActionRouter.handler
-        actions = []
-    }
-
-    override func tearDown() async throws {
-        TuneAVWidgetActionRouter.handler = savedHandler
-        try await super.tearDown()
-    }
 
     private func station(_ id: String, name: String) -> Station {
         Station(
@@ -34,11 +22,22 @@ final class SiriControlsTests: XCTestCase {
         )
     }
 
-    private func route(to outcome: TuneAVWidgetActionOutcome) {
-        TuneAVWidgetActionRouter.handler = { [weak self] action in
-            self?.actions.append(action)
-            return outcome
+    private func routed(
+        to outcome: TuneAVWidgetActionOutcome?,
+        _ body: () async throws -> Void
+    ) async rethrows {
+        let savedHandler = TuneAVWidgetActionRouter.handler
+        defer { TuneAVWidgetActionRouter.handler = savedHandler }
+        actions = []
+        if let outcome {
+            TuneAVWidgetActionRouter.handler = { [weak self] action in
+                self?.actions.append(action)
+                return outcome
+            }
+        } else {
+            TuneAVWidgetActionRouter.handler = nil
         }
+        try await body()
     }
 
     // MARK: Start and pause plans
@@ -183,100 +182,110 @@ final class SiriControlsTests: XCTestCase {
 
     // MARK: Intent routing
 
-    func testRouterWithoutHandlerHasNothingToPlay() async {
-        TuneAVWidgetActionRouter.handler = nil
-        let outcome = await TuneAVWidgetActionRouter.perform(.startMyRadio)
-        XCTAssertEqual(outcome, .noStation)
+    func testRouterWithoutHandlerHasNothingToPlay() async throws {
+        try await routed(to: nil) {
+            let outcome = await TuneAVWidgetActionRouter.perform(.startMyRadio)
+            XCTAssertEqual(outcome, .noStation)
+        }
     }
 
     func testPlayMyRadioIntentStartsMyRadio() async throws {
-        route(to: .playing)
-        _ = try await TuneAVPlayMyRadioIntent().perform()
-        XCTAssertEqual(actions, [.startMyRadio])
+        try await routed(to: .playing) {
+            _ = try await TuneAVPlayMyRadioIntent().perform()
+            XCTAssertEqual(actions, [.startMyRadio])
+        }
     }
 
     func testPlayMyRadioIntentIsQuietWhenAlreadyPlaying() async throws {
-        route(to: .alreadyPlaying)
-        _ = try await TuneAVPlayMyRadioIntent().perform()
-        XCTAssertEqual(actions, [.startMyRadio])
+        try await routed(to: .alreadyPlaying) {
+            _ = try await TuneAVPlayMyRadioIntent().perform()
+            XCTAssertEqual(actions, [.startMyRadio])
+        }
     }
 
-    func testPlayMyRadioIntentExplainsWhenThereIsNoRadio() async {
-        route(to: .noStation)
-        do {
-            _ = try await TuneAVPlayMyRadioIntent().perform()
-            XCTFail("Expected an error")
-        } catch let error as TuneAVSiriIntentError {
-            XCTAssertEqual(error, .noRadio)
-        } catch {
-            XCTFail("Unexpected error \(error)")
+    func testPlayMyRadioIntentExplainsWhenThereIsNoRadio() async throws {
+        try await routed(to: .noStation) {
+            do {
+                _ = try await TuneAVPlayMyRadioIntent().perform()
+                XCTFail("Expected an error")
+            } catch let error as TuneAVSiriIntentError {
+                XCTAssertEqual(error, .noRadio)
+            } catch {
+                XCTFail("Unexpected error \(error)")
+            }
         }
     }
 
     func testPlayRadioIntentStartsTheChosenStation() async throws {
-        route(to: .playing)
-        let intent = TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "abc", name: "Radio"))
-        _ = try await intent.perform()
-        XCTAssertEqual(actions, [.startStation(id: "abc")])
-    }
-
-    func testPlayRadioIntentReportsAStationThatIsGone() async {
-        route(to: .noStation)
-        do {
-            _ = try await TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "gone", name: "Gone")).perform()
-            XCTFail("Expected an error")
-        } catch let error as TuneAVSiriIntentError {
-            XCTAssertEqual(error, .stationUnavailable)
-        } catch {
-            XCTFail("Unexpected error \(error)")
+        try await routed(to: .playing) {
+            let intent = TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "abc", name: "Radio"))
+            _ = try await intent.perform()
+            XCTAssertEqual(actions, [.startStation(id: "abc")])
         }
     }
 
-    func testStartRoutingContinuesInTheAppWhenTheCellularWarningIsOn() async {
-        let link = TuneAVWidgetDeepLink.play(stationID: "abc", isFavoriteShortcut: false)
-        route(to: .needsApp(link))
-        do {
-            try await TuneAVSiriIntentRouting.start(.startMyRadio, missing: .noRadio) { link in
-                ForegroundRequested(link: link)
+    func testPlayRadioIntentReportsAStationThatIsGone() async throws {
+        try await routed(to: .noStation) {
+            do {
+                _ = try await TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "gone", name: "Gone")).perform()
+                XCTFail("Expected an error")
+            } catch let error as TuneAVSiriIntentError {
+                XCTAssertEqual(error, .stationUnavailable)
+            } catch {
+                XCTFail("Unexpected error \(error)")
             }
-            XCTFail("Expected a foreground request")
-        } catch let error as ForegroundRequested {
-            XCTAssertEqual(error.link, link)
-        } catch {
-            XCTFail("Unexpected error \(error)")
         }
     }
 
-    func testPlayIntentsAskToContinueInTheAppWhenTheCellularWarningIsOn() async {
-        route(to: .needsApp(.play(stationID: "abc", isFavoriteShortcut: false)))
-        do {
-            _ = try await TuneAVPlayMyRadioIntent().perform()
-            XCTFail("Expected a foreground request")
-        } catch {
-            XCTAssertFalse(error is TuneAVSiriIntentError)
+    func testStartRoutingContinuesInTheAppWhenTheCellularWarningIsOn() async throws {
+        let link = TuneAVWidgetDeepLink.play(stationID: "abc", isFavoriteShortcut: false)
+        try await routed(to: .needsApp(link)) {
+            do {
+                try await TuneAVSiriIntentRouting.start(.startMyRadio, missing: .noRadio) { link in
+                    ForegroundRequested(link: link)
+                }
+                XCTFail("Expected a foreground request")
+            } catch let error as ForegroundRequested {
+                XCTAssertEqual(error.link, link)
+            } catch {
+                XCTFail("Unexpected error \(error)")
+            }
         }
-        do {
-            _ = try await TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "abc", name: "Radio")).perform()
-            XCTFail("Expected a foreground request")
-        } catch {
-            XCTAssertFalse(error is TuneAVSiriIntentError)
+    }
+
+    func testPlayIntentsAskToContinueInTheAppWhenTheCellularWarningIsOn() async throws {
+        try await routed(to: .needsApp(.play(stationID: "abc", isFavoriteShortcut: false))) {
+            do {
+                _ = try await TuneAVPlayMyRadioIntent().perform()
+                XCTFail("Expected a foreground request")
+            } catch {
+                XCTAssertFalse(error is TuneAVSiriIntentError)
+            }
+            do {
+                _ = try await TuneAVPlayRadioIntent(station: TuneAVStationEntity(id: "abc", name: "Radio")).perform()
+                XCTFail("Expected a foreground request")
+            } catch {
+                XCTAssertFalse(error is TuneAVSiriIntentError)
+            }
         }
     }
 
     func testPauseIntentPausesWithoutErrors() async throws {
-        route(to: .nothingToPause)
-        _ = try await TuneAVPausePlaybackIntent().perform()
-        XCTAssertEqual(actions, [.pausePlayback])
+        try await routed(to: .nothingToPause) {
+            _ = try await TuneAVPausePlaybackIntent().perform()
+            XCTAssertEqual(actions, [.pausePlayback])
+        }
     }
 
     func testControlIntentStartsAndPausesMyRadio() async throws {
-        route(to: .playing)
-        var intent = TuneAVMyRadioControlIntent()
-        intent.value = true
-        _ = try await intent.perform()
-        intent.value = false
-        _ = try await intent.perform()
-        XCTAssertEqual(actions, [.startMyRadio, .pausePlayback])
+        try await routed(to: .playing) {
+            var intent = TuneAVMyRadioControlIntent()
+            intent.value = true
+            _ = try await intent.perform()
+            intent.value = false
+            _ = try await intent.perform()
+            XCTAssertEqual(actions, [.startMyRadio, .pausePlayback])
+        }
     }
 
     func testControlIntentOpensTheAppOnlyWhenItCannotPlayInPlace() {
@@ -301,11 +310,12 @@ final class SiriControlsTests: XCTestCase {
     }
 
     func testControlIntentRunsWhenTheCellularWarningIsOn() async throws {
-        route(to: .needsApp(.play(stationID: "abc", isFavoriteShortcut: false)))
-        var intent = TuneAVMyRadioControlIntent()
-        intent.value = true
-        _ = try await intent.perform()
-        XCTAssertEqual(actions, [.startMyRadio])
+        try await routed(to: .needsApp(.play(stationID: "abc", isFavoriteShortcut: false))) {
+            var intent = TuneAVMyRadioControlIntent()
+            intent.value = true
+            _ = try await intent.perform()
+            XCTAssertEqual(actions, [.startMyRadio])
+        }
     }
 
     func testOnlyMyRadioChangesReloadTheControl() {
