@@ -38,7 +38,8 @@ The full suite, release builds and device runs belong to CI and to the
 required checks; do not repeat them locally unless the change needs it.
 
 A fresh worktree is prepared by `t3.json`, which runs
-`scripts/setup-worktree.sh` (XcodeGen for `apps/ios` and `apps/macos`); wait
+`scripts/setup-worktree.sh` (links the `account-av` and `apps-av` siblings from
+the main checkout, then XcodeGen for `apps/ios` and `apps/macos`); wait
 for it to finish before installing anything by hand.
 
 This public repo does not define the full signed-runtime testing workflow.
