@@ -580,6 +580,57 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertFalse(TuneAVBundleConfig.boolValue(for: "TuneAVBundleConfigMissingFixture", in: bundle))
     }
 
+    func testBundleConfigAlwaysResolvesPublicLegalURLsAndAllowsHTTPSOverrides() throws {
+        func makeBundle(_ entries: [String: String]) throws -> Bundle {
+            let bundleURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("bundle")
+            try FileManager.default.createDirectory(at: bundleURL, withIntermediateDirectories: true)
+            addTeardownBlock { try? FileManager.default.removeItem(at: bundleURL) }
+            var info: [String: Any] = ["CFBundleIdentifier": "com.avalsys.tuneav.tests.legal-\(UUID().uuidString)"]
+            entries.forEach { info[$0.key] = $0.value }
+            let data = try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+            try data.write(to: bundleURL.appendingPathComponent("Info.plist"))
+            return try XCTUnwrap(Bundle(url: bundleURL))
+        }
+
+        XCTAssertEqual(TuneAVBundleConfig.defaultTermsURL.absoluteString, "https://tune-av.avalsys.com/terms")
+        XCTAssertEqual(TuneAVBundleConfig.defaultPrivacyURL.absoluteString, "https://tune-av.avalsys.com/privacy")
+
+        let missing = try makeBundle([:])
+        XCTAssertEqual(TuneAVBundleConfig.termsURL(in: missing), TuneAVBundleConfig.defaultTermsURL)
+        XCTAssertEqual(TuneAVBundleConfig.privacyURL(in: missing), TuneAVBundleConfig.defaultPrivacyURL)
+
+        let unresolved = try makeBundle([
+            "TUNEAV_TERMS_URL": "  ",
+            "TUNEAV_PRIVACY_URL": "$(inherited)"
+        ])
+        XCTAssertEqual(TuneAVBundleConfig.termsURL(in: unresolved), TuneAVBundleConfig.defaultTermsURL)
+        XCTAssertEqual(TuneAVBundleConfig.privacyURL(in: unresolved), TuneAVBundleConfig.defaultPrivacyURL)
+
+        let insecure = try makeBundle([
+            "TUNEAV_TERMS_URL": "http://example.test/terms",
+            "TUNEAV_PRIVACY_URL": "ftp://example.test/privacy"
+        ])
+        XCTAssertEqual(TuneAVBundleConfig.termsURL(in: insecure), TuneAVBundleConfig.defaultTermsURL)
+        XCTAssertEqual(TuneAVBundleConfig.privacyURL(in: insecure), TuneAVBundleConfig.defaultPrivacyURL)
+
+        let overridden = try makeBundle([
+            "TUNEAV_TERMS_URL": "https://legal.example.test/terms",
+            "TUNEAV_PRIVACY_URL": "https://legal.example.test/privacy"
+        ])
+        XCTAssertEqual(TuneAVBundleConfig.termsURL(in: overridden).absoluteString, "https://legal.example.test/terms")
+        XCTAssertEqual(TuneAVBundleConfig.privacyURL(in: overridden).absoluteString, "https://legal.example.test/privacy")
+    }
+
+    @MainActor
+    func testAppConfigLegalURLsAreAlwaysAvailableForPaywall() {
+        XCTAssertEqual(AppConfig.termsURL.scheme, "https")
+        XCTAssertEqual(AppConfig.privacyURL.scheme, "https")
+        XCTAssertEqual(TuneAppExperience.legalLinks.termsURL, AppConfig.termsURL)
+        XCTAssertEqual(TuneAppExperience.legalLinks.privacyURL, AppConfig.privacyURL)
+    }
+
     func testUITestAccountDeletionScenariosResolveSharedBlockedProSummary() {
         let summary = TuneAVUITestAccountDeletionScenarios.summary(for: "blocked_pro")
 

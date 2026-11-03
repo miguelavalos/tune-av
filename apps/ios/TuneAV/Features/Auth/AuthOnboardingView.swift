@@ -124,9 +124,7 @@ struct AuthOnboardingView: View {
     }
 
     private var legalConsentText: AttributedString {
-        let termsURL = AppConfig.termsURL?.absoluteString ?? "https://www.avalsys.com/account-av/tune-av/terms"
-        let privacyURL = AppConfig.privacyURL?.absoluteString ?? "https://www.avalsys.com/account-av/tune-av/privacy"
-        return L10n.markdown("auth.legalConsent", termsURL, privacyURL)
+        L10n.markdown("auth.legalConsent", AppConfig.termsURL.absoluteString, AppConfig.privacyURL.absoluteString)
     }
 
     private func logAuthError(_ error: Error, provider: AVAuthProvider) {

@@ -379,22 +379,16 @@ struct TuneAVProPaywallView: View {
     }
 
     private var legalLinkItems: [AVPaywallLegalLink] {
-        var links: [AVPaywallLegalLink] = []
-        if let termsURL = AppConfig.termsURL {
-            links.append(
-                AVPaywallLegalLink(title: L10n.string("paywall.terms"), accessibilityIdentifier: "paywall.terms") {
-                    openURL(termsURL)
-                }
-            )
-        }
-        if let privacyURL = AppConfig.privacyURL {
-            links.append(
-                AVPaywallLegalLink(title: L10n.string("paywall.privacy"), accessibilityIdentifier: "paywall.privacy") {
-                    openURL(privacyURL)
-                }
-            )
-        }
-        return links
+        let termsURL = AppConfig.termsURL
+        let privacyURL = AppConfig.privacyURL
+        return [
+            AVPaywallLegalLink(title: L10n.string("paywall.terms"), accessibilityIdentifier: "paywall.terms") {
+                openURL(termsURL)
+            },
+            AVPaywallLegalLink(title: L10n.string("paywall.privacy"), accessibilityIdentifier: "paywall.privacy") {
+                openURL(privacyURL)
+            }
+        ]
     }
 
     private var footerActionItems: [AVPaywallFooterAction] {

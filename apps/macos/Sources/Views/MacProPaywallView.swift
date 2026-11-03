@@ -396,12 +396,10 @@ struct MacProPaywallView: View {
     }
 
     private var privacyURL: URL {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_PRIVACY_URL", requireSupportedAVAccountBaseURL: true)
-            ?? URL(string: "https://tune-av.avalsys.com/privacy")!
+        TuneAVBundleConfig.privacyURL()
     }
 
     private var termsURL: URL {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_TERMS_URL", requireSupportedAVAccountBaseURL: true)
-            ?? URL(string: "https://tune-av.avalsys.com/terms")!
+        TuneAVBundleConfig.termsURL()
     }
 }
