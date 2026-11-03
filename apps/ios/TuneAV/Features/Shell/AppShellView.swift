@@ -173,6 +173,15 @@ struct AppShellView: View {
             .task {
                 await bootstrapIfNeeded()
             }
+            .onAppear {
+                registerWidgetPlayback()
+            }
+            .onDisappear {
+                TuneAVWidgetController.shared.unregisterShellPlayback()
+            }
+            .onOpenURL { url in
+                handleWidgetDeepLink(url)
+            }
             .task(id: homeFeedRequestKey) {
                 await refreshHomePresentationAndFeed()
             }

@@ -1184,3 +1184,18 @@
 "accountAPI.error.missingBaseURL" = "Basis-URL der Apps AV API fehlt.";
 "accountAPI.error.requestFailed" = "Die Anfrage an die Apps AV API ist mit Status %d fehlgeschlagen.";
 "stationService.error.requestFailed" = "Die Anfrage an den Senderdienst ist mit Status %d fehlgeschlagen.";
+
+"widget.myRadio.title" = "Mein Radio";
+"widget.myRadio.description" = "Starte dein Radio mit einem Tippen.";
+"widget.favorites.title" = "Radio und Favoriten";
+"widget.favorites.description" = "Dein Radio, der Song und deine Lieblingssender, nur ein Tippen entfernt.";
+"widget.lockScreen.title" = "Mein Radio abspielen";
+"widget.lockScreen.description" = "Starte dein Radio vom Sperrbildschirm.";
+"widget.status.loading" = "Lädt";
+"widget.action.playStation" = "%@ abspielen";
+"widget.action.openPlayer" = "Öffnet den Player";
+"widget.empty.title" = "Wähle ein Radio";
+"widget.empty.message" = "Öffne Tune AV und spiele einen Sender ab. Er erscheint dann hier.";
+"widget.intent.playStation" = "Radio abspielen";
+"widget.intent.station" = "Radiosender";
+"widget.intent.favoriteShortcut" = "Aus den Favoriten";
