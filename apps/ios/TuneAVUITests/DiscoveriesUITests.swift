@@ -277,7 +277,7 @@ final class DiscoveriesUITests: TuneAVUITestCase {
         XCTAssertTrue(app.staticTexts["Roads"].waitForExistence(timeout: 5))
 
         closePlayer(in: app)
-        tapShellButton("music", in: app)
+        openLibrarySegment("songs", in: app)
         openDiscover(in: app)
 
         let discoveriesSection = app.otherElements["music.section.discoveries"]
@@ -297,20 +297,20 @@ final class DiscoveriesUITests: TuneAVUITestCase {
             closeOptionsButton.tap()
         }
 
-        let musicTab = shellButton("music", in: app)
+        let libraryTab = shellButton("library", in: app)
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.86))
 
         for _ in 0..<3 {
-            if musicTab.exists && musicTab.isHittable {
+            if libraryTab.exists && libraryTab.isHittable {
                 return
             }
 
             start.press(forDuration: 0.05, thenDragTo: end)
         }
 
-        XCTAssertTrue(musicTab.waitForExistence(timeout: 5))
-        XCTAssertTrue(musicTab.isHittable)
+        XCTAssertTrue(libraryTab.waitForExistence(timeout: 5))
+        XCTAssertTrue(libraryTab.isHittable)
     }
 
     private func openAviActions(in app: XCUIApplication, timeout: TimeInterval = 5) {

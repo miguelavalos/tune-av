@@ -387,6 +387,7 @@
 "shell.avi.title" = "Avi";
 "shell.error.home" = "Comprova la connexió o prova un altre gènere.";
 "shell.error.search" = "No hem pogut carregar emissores. Prova una altra cerca.";
+"shell.explore.title" = "Explora";
 "shell.featured.play" = "Reprodueix ara";
 "shell.header.account" = "El meu compte";
 "shell.header.settings" = "Configuració";
@@ -661,8 +662,10 @@
 "stationService.fallback.unknownCountry" = "País desconegut";
 "stationService.fallback.unknownLanguage" = "Idioma desconegut";
 "stationService.fallback.unnamed" = "Emissora sense nom";
+"tab.explore" = "Explora";
 "tab.home" = "Inici";
 "tab.library" = "Ràdios";
+"tab.libraryHub" = "Biblioteca";
 "tab.music" = "Música";
 "tab.profile" = "Perfil";
 "tab.search" = "Cerca";
@@ -882,6 +885,9 @@
 "shell.library.sort.mostPlayed" = "Més escoltades";
 "shell.library.sort.recentlyAdded" = "Afegides recentment";
 "shell.library.sort.title" = "Ordre";
+"shell.libraryHub.segment.radios" = "Ràdios";
+"shell.libraryHub.segment.songs" = "Cançons";
+"shell.libraryHub.segments" = "Seccions de la biblioteca";
 "shell.music.overview.artists" = "Artistes";
 "shell.music.overview.empty" = "Encara no hi ha música";
 "shell.music.overview.empty.detail" = "Quan Avi detecti cançons, les més recents apareixeran aquí.";

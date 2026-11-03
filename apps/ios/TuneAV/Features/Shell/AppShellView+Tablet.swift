@@ -67,8 +67,8 @@ extension AppShellView {
             tabletSidebarBrandHeader
                 .padding(.bottom, 12)
 
-            ForEach([AppShellTab.home, .library, .music, .search, .avi], id: \.self) { tab in
-                tabletSidebarButton(tab: tab, isSelected: selectedTab == tab)
+            ForEach(AppShellTab.navigationTabs + [.avi], id: \.self) { tab in
+                tabletSidebarButton(tab: tab, isSelected: selectedTab.navigationTab == tab)
             }
 
             Spacer(minLength: 16)
@@ -112,14 +112,15 @@ extension AppShellView {
     func tabletSidebarButton(tab: AppShellTab, isSelected: Bool) -> some View {
         AVAppShellTabletSidebarButton(
             title: tabletTitle(for: tab),
-            systemImage: tabletSystemImage(for: tab),
+            systemImage: tab.navigationSystemImage,
             isSelected: isSelected
         ) {
             selectTabletTab(tab)
         }
-        .accessibilityIdentifier("tune.sidebar.\(tabletAccessibilityID(for: tab))")
+        .accessibilityIdentifier(tab.navigationAccessibilityIdentifier)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tabletTitle(for: tab))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     func tabletChromeButton(
@@ -145,58 +146,11 @@ extension AppShellView {
         if tab == .avi {
             openContextualAvi()
         } else {
-            selectedTab = tab
+            selectNavigationTab(tab)
         }
     }
 
     func tabletTitle(for tab: AppShellTab) -> String {
-        switch tab {
-        case .home:
-            return L10n.string("tab.home")
-        case .library:
-            return L10n.string("tab.library")
-        case .music:
-            return L10n.string("tab.music")
-        case .search:
-            return L10n.string("tab.search")
-        case .avi:
-            return appExperience.identity.assistantName
-        case .profile:
-            return L10n.string("profile.settingsScreen.title")
-        }
-    }
-
-    func tabletSystemImage(for tab: AppShellTab) -> String {
-        switch tab {
-        case .home:
-            return "house.fill"
-        case .library:
-            return "dot.radiowaves.left.and.right"
-        case .music:
-            return "music.note.list"
-        case .search:
-            return "magnifyingglass"
-        case .avi:
-            return "sparkles"
-        case .profile:
-            return "gearshape.fill"
-        }
-    }
-
-    func tabletAccessibilityID(for tab: AppShellTab) -> String {
-        switch tab {
-        case .home:
-            return "home"
-        case .library:
-            return "library"
-        case .music:
-            return "music"
-        case .search:
-            return "search"
-        case .avi:
-            return "avi"
-        case .profile:
-            return "profile"
-        }
+        tab == .avi ? appExperience.identity.assistantName : tab.navigationTitle
     }
 }

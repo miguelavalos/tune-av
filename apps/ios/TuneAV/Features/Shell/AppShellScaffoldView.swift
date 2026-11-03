@@ -17,7 +17,7 @@ struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
 
     var body: some View {
         AVAppShellConfiguredScaffold(
-            selectedTabID: selectedTab,
+            selectedTabID: selectedTab.navigationTab,
             tabs: footerTabs,
             assistantID: AppShellTab.avi,
             assistant: footerAssistant,
@@ -45,32 +45,14 @@ struct AppShellScaffold<Content: View, FooterPlayer: View>: View {
     }
 
     private var footerTabs: [AVAppShellTab<AppShellTab>] {
-        [
+        AppShellTab.navigationTabs.map { tab in
             AVAppShellTab(
-                id: .home,
-                title: L10n.string("tab.home"),
-                systemImage: "house.fill",
-                accessibilityIdentifier: "tab.home"
-            ),
-            AVAppShellTab(
-                id: .library,
-                title: L10n.string("tab.library"),
-                systemImage: "dot.radiowaves.left.and.right",
-                accessibilityIdentifier: "tab.library"
-            ),
-            AVAppShellTab(
-                id: .music,
-                title: L10n.string("tab.music"),
-                systemImage: "music.note.list",
-                accessibilityIdentifier: "tab.music"
-            ),
-            AVAppShellTab(
-                id: .search,
-                title: L10n.string("tab.search"),
-                systemImage: "magnifyingglass",
-                accessibilityIdentifier: "tab.search"
+                id: tab,
+                title: tab.navigationTitle,
+                systemImage: tab.navigationSystemImage,
+                accessibilityIdentifier: tab.navigationAccessibilityIdentifier
             )
-        ]
+        }
     }
 
     private var footerConfiguration: AVAppShellFooterConfiguration {

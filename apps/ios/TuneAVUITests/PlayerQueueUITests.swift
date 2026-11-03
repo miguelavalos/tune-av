@@ -13,8 +13,12 @@ final class PlayerQueueUITests: TuneAVUITestCase {
             ]
         )
 
-        let sidebarHomeButton = app.descendants(matching: .any)["tune.sidebar.home"].firstMatch
+        let sidebarHomeButton = app.descendants(matching: .any)["shell.tab.home"].firstMatch
         XCTAssertTrue(sidebarHomeButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["shell.tab.explore"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["shell.tab.library"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["tune.sidebar.avi"].firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["tune.sidebar.music"].firstMatch.exists)
 
         let miniPlayerPlayPause = app.buttons["miniPlayer.playPause"].firstMatch
         XCTAssertTrue(miniPlayerPlayPause.waitForExistence(timeout: 5))

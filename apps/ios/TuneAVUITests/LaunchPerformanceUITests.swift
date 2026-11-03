@@ -10,7 +10,7 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
         let timeout = budgetMilliseconds / 1_000
 
         XCTAssertTrue(
-            shellButton("search", in: app, timeout: timeout).exists,
+            shellButton("explore", in: app, timeout: timeout).exists,
             "Tune AV did not reach the home shell within \(Int(budgetMilliseconds))ms."
         )
 

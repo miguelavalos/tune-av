@@ -3293,6 +3293,41 @@ final class SharedAppleSupportTests: XCTestCase {
         XCTAssertEqual(AppShellTab(.player, preferredSearchQuery: nil), .home)
     }
 
+    func testAppShellTabGroupsRadiosAndSongsUnderLibrary() {
+        XCTAssertEqual(AppShellTab.navigationTabs, [.home, .search, .library])
+        XCTAssertEqual(AppShellTab.library.navigationTab, .library)
+        XCTAssertEqual(AppShellTab.music.navigationTab, .library)
+        XCTAssertEqual(AppShellTab.search.navigationTab, .search)
+        XCTAssertEqual(AppShellTab.avi.navigationTab, .avi)
+        XCTAssertEqual(AppShellTab.profile.navigationTab, .profile)
+        XCTAssertEqual(AppShellTab.library.librarySegment, .radios)
+        XCTAssertEqual(AppShellTab.music.librarySegment, .songs)
+        XCTAssertNil(AppShellTab.home.librarySegment)
+        XCTAssertEqual(LibrarySegment.radios.tab, .library)
+        XCTAssertEqual(LibrarySegment.songs.tab, .music)
+        XCTAssertEqual(AppShellTab(.library, preferredSearchQuery: nil).librarySegment, .radios)
+        XCTAssertEqual(AppShellTab(.music, preferredSearchQuery: nil).librarySegment, .songs)
+    }
+
+    func testAppShellTabSelectionRestoresLastLibrarySegment() {
+        XCTAssertEqual(AppShellTab.home.selectingNavigationTab(.library, lastLibraryTab: .music), .music)
+        XCTAssertEqual(AppShellTab.home.selectingNavigationTab(.library, lastLibraryTab: .library), .library)
+        XCTAssertEqual(AppShellTab.search.selectingNavigationTab(.library, lastLibraryTab: .home), .library)
+        XCTAssertEqual(AppShellTab.music.selectingNavigationTab(.library, lastLibraryTab: .library), .music)
+        XCTAssertEqual(AppShellTab.library.selectingNavigationTab(.library, lastLibraryTab: .music), .library)
+        XCTAssertEqual(AppShellTab.music.selectingNavigationTab(.home, lastLibraryTab: .music), .home)
+        XCTAssertEqual(AppShellTab.home.selectingNavigationTab(.search, lastLibraryTab: .music), .search)
+    }
+
+    func testAppShellNavigationTabsUseStableAccessibilityIdentifiers() {
+        XCTAssertEqual(AppShellTab.home.navigationAccessibilityIdentifier, "shell.tab.home")
+        XCTAssertEqual(AppShellTab.search.navigationAccessibilityIdentifier, "shell.tab.explore")
+        XCTAssertEqual(AppShellTab.library.navigationAccessibilityIdentifier, "shell.tab.library")
+        XCTAssertEqual(AppShellTab.music.navigationAccessibilityIdentifier, "shell.tab.library")
+        XCTAssertEqual(LibrarySegment.radios.accessibilityIdentifier, "library.segment.radios")
+        XCTAssertEqual(LibrarySegment.songs.accessibilityIdentifier, "library.segment.songs")
+    }
+
     func testSearchFiltersLocalUITestSamples() {
         let jazz = Station(
             id: "jazz-es",
