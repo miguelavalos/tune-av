@@ -54,7 +54,7 @@ extension AppShellView {
         let actions = ShellLaunchBootstrapPlanner.actions(
             preferredTab: launchContext.preferredTab,
             hasPreferredSearchQuery: launchContext.preferredSearchQuery != nil,
-            shouldRestoreLastOpenedStation: libraryStore.settings.openLastStationOnLaunch,
+            shouldRestoreLastOpenedStation: libraryStore.settings.openLastStationOnLaunch && audioPlayer.currentStation == nil,
             hasLastPlayedStation: lastPlayedStation != nil,
             hasDemoStation: launchContext.demoStation != nil
         )

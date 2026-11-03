@@ -41,6 +41,11 @@ struct TuneAVApp: App {
             libraryStore: libraryStore,
             accessController: accessController
         )
+        TuneAVWidgetController.shared.attach(
+            audioPlayer: audioPlayer,
+            libraryStore: libraryStore,
+            accessController: accessController
+        )
     }
 
     var body: some Scene {

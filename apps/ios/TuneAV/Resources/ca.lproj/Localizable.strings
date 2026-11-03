@@ -1184,3 +1184,19 @@
 "accountAPI.error.missingBaseURL" = "Falta l'URL base de l'API d'Apps AV.";
 "accountAPI.error.requestFailed" = "La sol·licitud a l'API d'Apps AV ha fallat amb l'estat %d.";
 "stationService.error.requestFailed" = "La sol·licitud al servei d'emissores ha fallat amb l'estat %d.";
+
+"widget.myRadio.title" = "La meva ràdio";
+"widget.myRadio.description" = "Posa la teva ràdio amb un toc.";
+"widget.favorites.title" = "Ràdio i preferides";
+"widget.favorites.description" = "La teva ràdio, la cançó i les teves ràdios preferides, a un toc.";
+"widget.lockScreen.title" = "Posa la meva ràdio";
+"widget.lockScreen.description" = "Posa la teva ràdio des de la pantalla bloquejada.";
+"widget.status.loading" = "Carregant";
+"widget.action.playStation" = "Reprodueix %@";
+"widget.action.openPlayer" = "Obre el reproductor";
+"widget.empty.title" = "Tria una ràdio";
+"widget.empty.message" = "Obre Tune AV i posa una ràdio. Apareixerà aquí.";
+"widget.intent.playStation" = "Reprodueix la ràdio";
+"widget.intent.station" = "Emissora";
+"widget.intent.favoriteShortcut" = "Des de les preferides";
+"widget.intent.wasPlaying" = "Estava sonant";

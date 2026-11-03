@@ -6,6 +6,12 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- iPhone home-screen widgets: "My radio" (small) starts or pauses your last
+  or favorite radio with one tap without opening the app, and "Radio and
+  favorites" (medium) shows the current or last radio and song with play/pause
+  plus up to four favorite radios as one-tap buttons. Lock Screen widgets play
+  "My radio" too. Tapping elsewhere opens the player. The app shares a small
+  snapshot with the widgets through the App Group.
 - Live Activity on the iPhone lock screen and Dynamic Island while a radio
   plays: station, current song and artist, artwork (or the AV mark), a heart
   that saves the song (or the radio when there is no song) like the full
