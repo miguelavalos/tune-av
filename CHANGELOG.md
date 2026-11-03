@@ -6,23 +6,33 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
-- Live Activity desactivada: la pantalla de bloqueo usa solo el reproductor del
-  sistema, sin duplicado.
-- Surprise me on Home no longer says a saved radio was "never played" when it
-  was played before 1.1.0, more than two weeks ago or on another device: Avi
-  now only says the radio is saved. Saved radios and recents count as played
-  even with a different id or no logged date, so they are no longer offered as
-  "New for you" either (iOS and macOS).
-
 ## 1.1.0 - 2026-11-03
 
-iOS/iPadOS `1.1.0 (62)` and macOS `1.1.0 (67)`. Siri, Control Center, widgets,
-the Live Activity and AirPlay are iPhone and iPad only; on Mac this release
-changes only the paywall texts, the Terms and Privacy links and cached artwork.
+iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)`. Siri, Control Center, widgets
+and AirPlay are iPhone and iPad only; on Mac this release changes only the
+paywall texts, the Terms and Privacy links, cached artwork and the Surprise me
+line.
 
 iOS build `62` replaces `61`, which App Store Connect rejected with ITMS-90626
 because App Intents string keys contained "siri": they are renamed from
 `siri.*` to `appShortcut.*`, with the same texts.
+
+iOS build `63` and macOS build `68` add, after iOS `62` and macOS `67`:
+
+- Surprise me on Home no longer says a saved radio was "never played" when it
+  was played before 1.1.0, more than two weeks ago or on another device: Avi
+  now only says the radio is saved. Saved radios and recents count as played
+  even with a different id or no logged date, so they are no longer offered as
+  "New for you" either (iOS and macOS, #118).
+- Fix a crash on Home on iPhone and iPad: the radio badges in the Home
+  carousel no longer build a lazy list that SwiftUI's async renderer could
+  create off the main thread (#119).
+- The Live Activity is turned off on iPhone: the lock screen shows only the
+  system Now Playing player, without a duplicate. A Live Activity left from
+  build 62 is ended at launch. Home-screen and Lock Screen widgets and the
+  Control Center control stay (#120).
+
+The 1.1.0 changes delivered in iOS `62` and macOS `67`:
 
 - Siri, Shortcuts and the Action button on iPhone: "Play my radio on Tune AV"
   starts your last or favorite radio, "Pause Tune AV" pauses it, and "Play
@@ -38,10 +48,11 @@ because App Intents string keys contained "siri": they are renamed from
   "My radio" too. Tapping elsewhere opens the player. The app shares a small
   snapshot with the widgets through the App Group.
 - Live Activity on the iPhone lock screen and Dynamic Island while a radio
-  plays: station, current song and artist, artwork (or the AV mark), a heart
-  that saves the song (or the radio when there is no song) like the full
-  player, and play/pause. It lives in the new `TuneAVWidgets` extension, which
-  shares artwork with the app through the `group.<bundle id>` App Group.
+  plays (iOS `62` only; turned off in `63`): station, current song and artist,
+  artwork (or the AV mark), a heart that saves the song (or the radio when
+  there is no song) like the full player, and play/pause. It lives in the new
+  `TuneAVWidgets` extension, which shares artwork with the app through the
+  `group.<bundle id>` App Group.
 - Add an AirPlay button to the iOS full player card, next to the station name,
   to send the radio to AirPlay speakers, Apple TV or Bluetooth.
 - The Pro paywall on iPhone, iPad and Mac shows every text in full: titles,
