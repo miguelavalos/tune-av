@@ -112,6 +112,9 @@ jobs:
       - name: Localization parity audit
         run: vp run i18n:audit
 
+      - name: iOS platform security
+        run: vp run ios:platform:security
+
       - name: iOS network privacy gate
         run: vp run ios:privacy:network
 

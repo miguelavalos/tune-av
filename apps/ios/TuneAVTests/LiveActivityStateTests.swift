@@ -150,6 +150,27 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(TuneAVNowPlayingContentState.self, from: data), state)
     }
 
+    func testVeryLongMetadataIsCappedSoThePayloadNeverOverflows() throws {
+        let huge = String(repeating: "x", count: 10_000)
+        let state = try XCTUnwrap(TuneAVLiveActivityStateMapper.contentState(
+            for: input(title: huge, artist: huge),
+            strings: strings
+        ))
+
+        XCTAssertEqual(state.songTitle?.count, TuneAVLiveActivityStateMapper.maximumTextLength)
+        XCTAssertEqual(state.songArtist?.count, TuneAVLiveActivityStateMapper.maximumTextLength)
+        XCTAssertLessThan(try JSONEncoder().encode(state).count, 4 * 1024)
+    }
+
+    func testPlayPauseFromTheActivityNeverStartsARadioWhenNoStationIsLoaded() {
+        XCTAssertNil(TuneAVLiveActivityStateMapper.playbackCommand(status: .idle, hasStation: false))
+        XCTAssertNil(TuneAVLiveActivityStateMapper.playbackCommand(status: .paused, hasStation: false))
+        XCTAssertEqual(TuneAVLiveActivityStateMapper.playbackCommand(status: .playing, hasStation: true), .pause)
+        XCTAssertEqual(TuneAVLiveActivityStateMapper.playbackCommand(status: .loading, hasStation: true), .pause)
+        XCTAssertEqual(TuneAVLiveActivityStateMapper.playbackCommand(status: .paused, hasStation: true), .toggle)
+        XCTAssertEqual(TuneAVLiveActivityStateMapper.playbackCommand(status: .failed("x"), hasStation: true), .toggle)
+    }
+
     func testThrottleAllowsFirstUpdateAndSpacesFollowingOnes() {
         var throttle = TuneAVLiveActivityUpdateThrottle(minimumInterval: 1)
         let start = Date(timeIntervalSince1970: 1_000)

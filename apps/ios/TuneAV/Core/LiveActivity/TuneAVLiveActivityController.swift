@@ -14,8 +14,9 @@ final class TuneAVLiveActivityController {
     private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "live-activity")
     private static let coalescingDelay: Duration = .milliseconds(250)
     private static let minimumUpdateInterval: TimeInterval = 1
-    private static let artworkPixelSize = 168
-    private static let artworkCompressionQuality: CGFloat = 0.82
+    private static let launchSettleDelay: Duration = .milliseconds(1500)
+    private static let artworkPixelSize = 200
+    private nonisolated static let artworkCompressionQuality: CGFloat = 0.82
 
     private weak var audioPlayer: AudioPlayerService?
     private weak var libraryStore: LibraryStore?
@@ -34,6 +35,9 @@ final class TuneAVLiveActivityController {
     private var artworkFileName: String?
     private var lastWrittenArtworkFileName: String?
     private var artworkTask: Task<Void, Never>?
+    private var artworkWriteTail: Task<Void, Never>?
+    private var isLaunchSettled = false
+    private var launchSettleTask: Task<Void, Never>?
 
     private init() {}
 
@@ -59,8 +63,13 @@ final class TuneAVLiveActivityController {
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
                 MainActor.assumeIsolated {
-                    self?.isStartBlockedUntilActive = false
-                    self?.scheduleEvaluation()
+                    guard let self else { return }
+                    self.isStartBlockedUntilActive = false
+                    if self.isLaunchSettled {
+                        self.scheduleEvaluation()
+                    } else {
+                        self.settleAfterLaunch(delay: Self.launchSettleDelay)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -72,19 +81,47 @@ final class TuneAVLiveActivityController {
                 }
             }
             .store(in: &cancellables)
+    }
 
-        endActivitiesLeftByPreviousLaunch()
+    private func settleAfterLaunch(delay: Duration) {
+        guard !isLaunchSettled, launchSettleTask == nil else { return }
+        launchSettleTask = Task { [weak self] in
+            if delay > .zero {
+                try? await Task.sleep(for: delay)
+            }
+            await Task.detached(priority: .utility) {
+                for leftover in NowPlayingActivity.activities {
+                    await leftover.end(nil, dismissalPolicy: .immediate)
+                }
+            }.value
+            guard let self else { return }
+            self.isLaunchSettled = true
+            self.launchSettleTask = nil
+            self.scheduleEvaluation()
+        }
+    }
+
+    private func waitUntilLaunchSettled() async {
+        settleAfterLaunch(delay: .zero)
+        await launchSettleTask?.value
     }
 
     private func handle(_ action: TuneAVLiveActivityAction) async {
+        await waitUntilLaunchSettled()
         guard let audioPlayer else { return }
 
         switch action {
         case .togglePlayback:
-            if audioPlayer.isPlaying || audioPlayer.isLoading {
+            switch TuneAVLiveActivityStateMapper.playbackCommand(
+                status: audioPlayer.status,
+                hasStation: audioPlayer.currentStation != nil
+            ) {
+            case .pause:
                 audioPlayer.pause()
-            } else {
+            case .toggle:
                 audioPlayer.togglePlayback()
+            case nil:
+                break
             }
         case .toggleHeart:
             guard let libraryStore, let accessController, let station = audioPlayer.currentStation else { break }
@@ -118,7 +155,7 @@ final class TuneAVLiveActivityController {
     }
 
     private func scheduleEvaluation() {
-        guard scheduledEvaluation == nil else { return }
+        guard isLaunchSettled, scheduledEvaluation == nil else { return }
         scheduledEvaluation = Task { [weak self] in
             try? await Task.sleep(for: Self.coalescingDelay)
             guard !Task.isCancelled, let self else { return }
@@ -138,7 +175,7 @@ final class TuneAVLiveActivityController {
     }
 
     private func evaluate(bypassThrottle: Bool) {
-        guard let audioPlayer, let libraryStore else { return }
+        guard isLaunchSettled, let audioPlayer, let libraryStore else { return }
 
         let status = audioPlayer.status
         if !TuneAVLiveActivityStateMapper.isPlaybackStarting(status) {
@@ -286,16 +323,6 @@ final class TuneAVLiveActivityController {
         }
     }
 
-    private func endActivitiesLeftByPreviousLaunch() {
-        let leftovers = NowPlayingActivity.activities
-        guard !leftovers.isEmpty else { return }
-        enqueue {
-            for leftover in leftovers {
-                await leftover.end(nil, dismissalPolicy: .immediate)
-            }
-        }
-    }
-
     private func enqueue(_ operation: @escaping @MainActor () async -> Void) {
         let previous = operationTail
         operationTail = Task {
@@ -320,29 +347,40 @@ final class TuneAVLiveActivityController {
     private func updateArtworkSource(_ url: URL?) {
         guard url != artworkSourceURL else { return }
         artworkSourceURL = url
-        artworkFileName = nil
         artworkTask?.cancel()
         artworkTask = nil
 
-        guard let url, let directory = TuneAVSharedContainer.liveActivityDirectoryURL else { return }
-        let previousFileName = lastWrittenArtworkFileName
+        guard let url, let directory = TuneAVSharedContainer.liveActivityDirectoryURL else {
+            artworkFileName = nil
+            return
+        }
 
         artworkTask = Task { [weak self] in
-            guard let image = await TuneAVArtworkImagePipeline.shared.uiImage(
+            let image = await TuneAVArtworkImagePipeline.shared.uiImage(
                 from: url,
                 maxPixelSize: Self.artworkPixelSize
-            ) else { return }
-            guard !Task.isCancelled,
-                  let data = image.jpegData(compressionQuality: Self.artworkCompressionQuality) else { return }
+            )
+            guard !Task.isCancelled, let self, self.artworkSourceURL == url else { return }
+            guard let image else {
+                self.artworkFileName = nil
+                self.scheduleEvaluation()
+                return
+            }
 
             let fileName = Self.artworkFileName(for: url)
-            let didWrite = await Task.detached(priority: .utility) {
-                Self.writeArtwork(data, fileName: fileName, directory: directory, keeping: previousFileName)
-            }.value
-
-            guard didWrite, !Task.isCancelled, let self, self.artworkSourceURL == url else { return }
+            let previousFileName = self.lastWrittenArtworkFileName
+            let previousWrite = self.artworkWriteTail
+            let write = Task.detached(priority: .utility) { () -> Bool in
+                await previousWrite?.value
+                guard let data = image.jpegData(compressionQuality: Self.artworkCompressionQuality) else { return false }
+                return Self.writeArtwork(data, fileName: fileName, directory: directory, keeping: previousFileName)
+            }
+            self.artworkWriteTail = Task { _ = await write.value }
             self.lastWrittenArtworkFileName = fileName
-            self.artworkFileName = fileName
+
+            let didWrite = await write.value
+            guard !Task.isCancelled, self.artworkSourceURL == url else { return }
+            self.artworkFileName = didWrite ? fileName : nil
             self.scheduleEvaluation()
         }
     }

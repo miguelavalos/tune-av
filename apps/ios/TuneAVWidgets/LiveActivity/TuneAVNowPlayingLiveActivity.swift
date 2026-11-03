@@ -39,12 +39,18 @@ struct TuneAVNowPlayingLiveActivity: Widget {
                 }
             } compactLeading: {
                 TuneAVActivityArtwork(fileName: state.artworkFileName, size: 24, cornerRadius: 6)
+                    .accessibilityElement()
+                    .accessibilityLabel(state.primaryText)
             } compactTrailing: {
                 TuneAVLiveBars(isLive: state.isLive)
                     .frame(width: 13, height: 13)
+                    .accessibilityElement()
+                    .accessibilityLabel(state.statusText)
             } minimal: {
                 TuneAVMark()
                     .frame(width: 18)
+                    .accessibilityElement()
+                    .accessibilityLabel(state.primaryText)
             }
             .keylineTint(TuneAVWidgetBrand.green)
         }
@@ -59,7 +65,8 @@ struct TuneAVNowPlayingLockScreenView: View {
             HStack(spacing: 8) {
                 TuneAVLiveBars(isLive: state.isLive)
                     .frame(width: 13, height: 12)
-                Text(state.statusText.uppercased())
+                Text(state.statusText)
+                    .textCase(.uppercase)
                     .font(.system(size: 11, weight: .black, design: .rounded))
                     .tracking(0.8)
                     .foregroundStyle(state.isLive ? TuneAVWidgetBrand.green : TuneAVWidgetBrand.paper.opacity(0.7))

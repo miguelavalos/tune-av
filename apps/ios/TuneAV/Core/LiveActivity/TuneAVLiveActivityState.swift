@@ -38,6 +38,29 @@ struct TuneAVLiveActivityStrings: Equatable {
 }
 
 enum TuneAVLiveActivityStateMapper {
+    enum PlaybackCommand: Equatable {
+        case pause
+        case toggle
+    }
+
+    static let maximumTextLength = 160
+
+    static func playbackCommand(status: TuneAVPlaybackState, hasStation: Bool) -> PlaybackCommand? {
+        guard hasStation else { return nil }
+        switch status {
+        case .playing, .loading:
+            return .pause
+        case .paused, .failed, .idle:
+            return .toggle
+        }
+    }
+
+    static func capped(_ value: String?) -> String? {
+        guard let value else { return nil }
+        guard value.count > maximumTextLength else { return value }
+        return String(value.prefix(maximumTextLength)).trimmingCharacters(in: .whitespaces)
+    }
+
     static func playback(for status: TuneAVPlaybackState) -> TuneAVNowPlayingContentState.Playback? {
         switch status {
         case .idle:
@@ -67,9 +90,9 @@ enum TuneAVLiveActivityStateMapper {
         guard let station = input.station,
               let playback = playback(for: input.status) else { return nil }
 
-        let stationName = TuneAVDisplayMetadata.normalized(station.name) ?? station.name
-        let title = TuneAVDisplayMetadata.plausibleTitle(input.trackTitle, stationName: station.name)
-        let artist = title == nil ? nil : TuneAVDisplayMetadata.plausibleArtist(input.trackArtist, stationName: station.name)
+        let stationName = capped(TuneAVDisplayMetadata.normalized(station.name) ?? station.name) ?? station.name
+        let title = capped(TuneAVDisplayMetadata.plausibleTitle(input.trackTitle, stationName: station.name))
+        let artist = title == nil ? nil : capped(TuneAVDisplayMetadata.plausibleArtist(input.trackArtist, stationName: station.name))
 
         let statusText: String
         switch playback {
