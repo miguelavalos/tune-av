@@ -14,7 +14,8 @@ final class TuneAVLiveActivityController {
     /// any activity an earlier build left running and removes that build's cached artwork.
     /// To turn it back on, set `TuneAVLiveActivityFeature.isEnabled` to `true`, add
     /// `NSSupportsLiveActivities` (YES) back to `TuneAV/App/Info.plist` and register
-    /// `TuneAVNowPlayingLiveActivity()` again in `TuneAVWidgetsBundle`.
+    /// `TuneAVNowPlayingLiveActivity()` again in `TuneAVWidgetsBundle`;
+    /// `scripts/check-ios-platform-security.mjs` checks the key against the switch.
     nonisolated static let isEnabled = TuneAVLiveActivityFeature.isEnabled
 
     static let shared = TuneAVLiveActivityController()
