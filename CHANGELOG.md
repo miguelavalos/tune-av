@@ -8,6 +8,9 @@ This project follows semantic versioning once public source releases begin.
 
 - Add an AirPlay button to the iOS full player card, next to the station name,
   to send the radio to AirPlay speakers, Apple TV or Bluetooth.
+- The Pro paywall on iPhone, iPad and Mac always shows the Terms and Privacy
+  links, with the public default URLs `https://tune-av.avalsys.com/terms` and
+  `https://tune-av.avalsys.com/privacy` when no private config overrides them.
 - Three tabs on iPhone and iPad: Home, Explore (search with mood and genre
   chips) and Library, which joins Radios and Songs behind one segmented
   control. Avi stays the floating button and Profile stays in the header;
