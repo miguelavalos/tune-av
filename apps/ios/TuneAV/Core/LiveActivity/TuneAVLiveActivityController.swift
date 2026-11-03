@@ -7,6 +7,17 @@ import UIKit
 
 @MainActor
 final class TuneAVLiveActivityController {
+    /// The Live Activity switch, off since 1.1.0 (62). The lock screen already shows the system
+    /// Now Playing player (`MPNowPlayingInfoCenter` and the remote commands in
+    /// `AudioPlayerService`), so our activity showed the same song a second time.
+    /// While it is off, the app never requests or updates an activity; on launch it only ends
+    /// any activity an earlier build left running and removes that build's cached artwork.
+    /// To turn it back on, set `TuneAVLiveActivityFeature.isEnabled` to `true`, add
+    /// `NSSupportsLiveActivities` (YES) back to `TuneAV/App/Info.plist` and register
+    /// `TuneAVNowPlayingLiveActivity()` again in `TuneAVWidgetsBundle`;
+    /// `scripts/check-ios-platform-security.mjs` checks the key against the switch.
+    nonisolated static let isEnabled = TuneAVLiveActivityFeature.isEnabled
+
     static let shared = TuneAVLiveActivityController()
 
     private typealias NowPlayingActivity = Activity<TuneAVNowPlayingAttributes>
@@ -38,10 +49,18 @@ final class TuneAVLiveActivityController {
     private var artworkWriteTail: Task<Void, Never>?
     private var isLaunchSettled = false
     private var launchSettleTask: Task<Void, Never>?
+    private var leftoverCleanupTask: Task<Void, Never>?
+    private(set) var activityRequestCount = 0
 
-    private init() {}
+    var isObservingPlayback: Bool { !cancellables.isEmpty }
+
+    init() {}
 
     func attach(audioPlayer: AudioPlayerService, libraryStore: LibraryStore, accessController: AccessController) {
+        guard Self.isEnabled else {
+            endLeftoverActivities()
+            return
+        }
         guard self.audioPlayer == nil else { return }
         self.audioPlayer = audioPlayer
         self.libraryStore = libraryStore
@@ -81,6 +100,23 @@ final class TuneAVLiveActivityController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Ends activities started by a build that had the switch on, so nobody keeps a stale one
+    /// after updating, and removes the artwork those builds cached in the app group. It waits
+    /// for the launch to settle and runs off the main actor, like the start-up cleanup above.
+    private func endLeftoverActivities() {
+        guard leftoverCleanupTask == nil else { return }
+        let settleDelay = Self.launchSettleDelay
+        leftoverCleanupTask = Task.detached(priority: .utility) {
+            try? await Task.sleep(for: settleDelay)
+            for leftover in NowPlayingActivity.activities {
+                await leftover.end(nil, dismissalPolicy: .immediate)
+            }
+            if let directory = TuneAVSharedContainer.liveActivityDirectoryURL {
+                try? FileManager.default.removeItem(at: directory)
+            }
+        }
     }
 
     private func settleAfterLaunch(delay: Duration) {
@@ -248,6 +284,7 @@ final class TuneAVLiveActivityController {
               !isStartBlockedUntilActive,
               ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
+        activityRequestCount += 1
         do {
             let newActivity = try NowPlayingActivity.request(
                 attributes: TuneAVNowPlayingAttributes(),

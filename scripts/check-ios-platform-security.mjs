@@ -7,6 +7,7 @@ const entitlementsPath = "apps/ios/TuneAV/App/TuneAV.entitlements";
 const widgetsInfoPlistPath = "apps/ios/TuneAVWidgets/Info.plist";
 const widgetsEntitlementsPath = "apps/ios/TuneAVWidgets/TuneAVWidgets.entitlements";
 const widgetsPrivacyManifestPath = "apps/ios/TuneAVWidgets/PrivacyInfo.xcprivacy";
+const liveActivitySwitchPath = "apps/ios/WidgetShared/TuneAVLiveActivityIntents.swift";
 const appGroupValue = "group.$(TUNEAV_BUNDLE_IDENTIFIER)";
 
 function readPlist(path) {
@@ -105,8 +106,17 @@ function checkAppGroup(label, value) {
 
 checkAppGroup("iOS app", entitlements["com.apple.security.application-groups"]);
 
-if (info.NSSupportsLiveActivities !== true) {
-  fail("NSSupportsLiveActivities must be enabled for the now playing Live Activity.");
+// The Info.plist key follows the one Live Activity switch: required while the activity is on,
+// absent while it is off so iOS Settings shows no Live Activities toggle for Tune AV.
+const liveActivitySwitch = readFileSync(liveActivitySwitchPath, "utf8").match(
+  /enum TuneAVLiveActivityFeature \{\s*static let isEnabled = (true|false)\b/,
+);
+if (!liveActivitySwitch) {
+  fail(`TuneAVLiveActivityFeature.isEnabled must be a literal true or false in ${liveActivitySwitchPath}.`);
+} else if (liveActivitySwitch[1] === "true" && info.NSSupportsLiveActivities !== true) {
+  fail("NSSupportsLiveActivities must be enabled while the now playing Live Activity is on.");
+} else if (liveActivitySwitch[1] === "false" && Object.hasOwn(info, "NSSupportsLiveActivities")) {
+  fail("NSSupportsLiveActivities must be absent while the Live Activity is off (TuneAVLiveActivityFeature.isEnabled).");
 }
 if (Object.hasOwn(info, "NSSupportsLiveActivitiesFrequentUpdates")) {
   fail("NSSupportsLiveActivitiesFrequentUpdates is not needed: Live Activity updates are local and throttled.");

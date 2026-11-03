@@ -1,3 +1,6 @@
+import ActivityKit
+import AVFoundation
+import MediaPlayer
 import XCTest
 @testable import TuneAV
 
@@ -196,4 +199,86 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertFalse(TuneAVSharedContainer.isValidArtworkFileName("../secret.jpg"))
         XCTAssertFalse(TuneAVSharedContainer.isValidArtworkFileName("artwork-../../x.jpg"))
     }
+
+    // MARK: Live Activity switched off (1.1.0 build 62 showed the song twice on the lock screen)
+
+    func testLiveActivitySwitchIsOffInTheAppAndTheWidgetExtension() {
+        XCTAssertFalse(TuneAVLiveActivityController.isEnabled)
+        XCTAssertFalse(TuneAVLiveActivityFeature.isEnabled)
+        XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: "NSSupportsLiveActivities"))
+    }
+
+    @MainActor
+    func testStartingPlaybackRequestsNoActivityAndKeepsTheSystemNowPlayingPlayer() async throws {
+        let suiteName = "LiveActivityStateTests.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+        let audioPlayer = AudioPlayerService()
+        let libraryStore = LibraryStore(container: PersistenceController(inMemory: true).container)
+        let accessController = AccessController(
+            accountService: SignedOutAccountService(),
+            accountProfileResolver: NoAccountProfileResolver(),
+            entitlementService: GuestEntitlementService(),
+            userDefaults: userDefaults
+        )
+        let controller = TuneAVLiveActivityController()
+        controller.attach(audioPlayer: audioPlayer, libraryStore: libraryStore, accessController: accessController)
+        defer { audioPlayer.stop() }
+
+        let station = Station(
+            id: "live-activity-off",
+            name: "Live Activity Off FM",
+            country: "Spain",
+            language: "Spanish",
+            tags: "pop",
+            streamURL: "http://127.0.0.1:9/live-activity-off.mp3",
+            artwork: nil
+        )
+        audioPlayer.play(station: station)
+        XCTAssertTrue(TuneAVLiveActivityStateMapper.isPlaybackStarting(audioPlayer.status))
+
+        // The system player still gets the station and its remote commands, on an
+        // AirPlay-capable long-form playback session.
+        let info = try XCTUnwrap(MPNowPlayingInfoCenter.default().nowPlayingInfo)
+        XCTAssertEqual(info[MPMediaItemPropertyAlbumTitle] as? String, station.name)
+        XCTAssertEqual(info[MPNowPlayingInfoPropertyIsLiveStream] as? Bool, true)
+        let commands = MPRemoteCommandCenter.shared()
+        XCTAssertTrue(commands.playCommand.isEnabled)
+        XCTAssertTrue(commands.pauseCommand.isEnabled)
+        XCTAssertTrue(commands.togglePlayPauseCommand.isEnabled)
+        XCTAssertEqual(AVAudioSession.sharedInstance().category, .playback)
+        XCTAssertEqual(AVAudioSession.sharedInstance().routeSharingPolicy, .longFormAudio)
+
+        // Longer than the coalescing delay an enabled controller waits before it requests.
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        try await Task.sleep(for: .milliseconds(600))
+
+        XCTAssertFalse(controller.isObservingPlayback)
+        XCTAssertEqual(controller.activityRequestCount, 0)
+        XCTAssertTrue(Activity<TuneAVNowPlayingAttributes>.activities.isEmpty)
+    }
+}
+
+private struct SignedOutAccountService: AVAccountService {
+    var isAvailable: Bool { true }
+    var providerSessionUser: AccountUser? { nil }
+
+    func restoreSession() async -> AVAccountSessionRestoreResult { .signedOut }
+    func getToken() async throws -> String? { nil }
+    func signInWithApple() async throws {}
+    func signInWithGoogle() async throws {}
+    func signOut() async throws {}
+}
+
+@MainActor
+private struct NoAccountProfileResolver: AccountProfileResolving {
+    func resolveCurrentAccountUser() async throws -> AccountUser {
+        throw AccountProfileResolverError.missingInternalUserId
+    }
+}
+
+@MainActor
+private struct GuestEntitlementService: EntitlementService {
+    func resolveAccess(for user: AccountUser?) -> ResolvedAccess { .guest }
+    func refreshAccess(for user: AccountUser?) async -> ResolvedAccess { .guest }
 }

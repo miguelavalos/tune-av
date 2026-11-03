@@ -48,8 +48,6 @@
 		<key>NSAllowsArbitraryLoadsForMedia</key>
 		<true/>
 	</dict>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
 	<key>SUPPORTAV_BASE_URL</key>
 	<string>$(SUPPORTAV_BASE_URL)</string>
 	<key>SUPPORT_EMAIL_TO</key>
