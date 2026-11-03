@@ -61,9 +61,11 @@ final class PlayerQueueUITests: TuneAVUITestCase {
 
         let playPause = app.buttons["avi.footerPlayer.playPause"].firstMatch
         if !playPause.waitForExistence(timeout: 2) {
-            let miniPlayer = app.descendants(matching: .any)["miniPlayer.container"].firstMatch
-            XCTAssertTrue(miniPlayer.waitForExistence(timeout: 5))
-            miniPlayer.tap()
+            let opener = UIDevice.current.userInterfaceIdiom == .pad
+                ? app.descendants(matching: .any)["tune.sidebar.avi"].firstMatch
+                : app.descendants(matching: .any)["miniPlayer.container"].firstMatch
+            XCTAssertTrue(opener.waitForExistence(timeout: 5))
+            opener.tap()
         }
         XCTAssertTrue(playPause.waitForExistence(timeout: 5))
 
@@ -78,9 +80,8 @@ final class PlayerQueueUITests: TuneAVUITestCase {
         XCTAssertLessThanOrEqual(airPlay.frame.midY, stationTitle.frame.maxY)
         XCTAssertLessThan(airPlay.frame.maxY, playPause.frame.minY)
 
-        let container = app.descendants(matching: .any)["avi.footerPlayer.container"].firstMatch
-        XCTAssertTrue(container.frame.contains(airPlay.frame))
-        XCTAssertGreaterThan(airPlay.frame.minX, container.frame.midX)
+        XCTAssertGreaterThan(airPlay.frame.minX, stationTitle.frame.midX)
+        XCTAssertLessThanOrEqual(airPlay.frame.maxX, stationTitle.frame.maxX + 1)
 
         for identifier in ["queue", "previous", "next", "sleepTimer"] {
             XCTAssertTrue(app.descendants(matching: .any)["avi.footerPlayer.\(identifier)"].firstMatch.exists, identifier)
