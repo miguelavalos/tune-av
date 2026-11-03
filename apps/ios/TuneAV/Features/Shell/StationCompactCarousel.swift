@@ -286,12 +286,8 @@ private struct StationCompactCard: View {
     }
 
     private func stationQualityBadges(hasNowPlaying: Bool) -> some View {
-        HStack(spacing: 5) {
-            ForEach(compactStatusBadges(hasNowPlaying: hasNowPlaying), id: \.self) { badge in
-                AVCompactStatusBadge(title: badge)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        StationSignalBadgeRow(badges: compactStatusBadges(hasNowPlaying: hasNowPlaying))
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var compactStatusBadges: [String] {

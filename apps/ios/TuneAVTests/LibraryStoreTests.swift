@@ -105,8 +105,12 @@ final class LibraryStoreTests: XCTestCase {
             userDefaults: userDefaults
         )
 
+        let failedFavoriteUpserts = LibraryStoreTestRequestCounter()
         LibraryStoreTestURLProtocol.requestHandler = { request in
-            (
+            if request.httpMethod == "PUT", request.url?.path == "/v1/apps/tuneav/library/favorites/upsert" {
+                failedFavoriteUpserts.increment()
+            }
+            return (
                 HTTPURLResponse(
                     url: request.url!,
                     statusCode: 503,
@@ -130,8 +134,11 @@ final class LibraryStoreTests: XCTestCase {
         firstStore.setBackendService(failingService, userID: "user-1")
         firstStore.setAppDataService(failingService)
 
-        try await Task.sleep(for: .milliseconds(1_300))
-
+        // The store sends a pending operation one second after it is scheduled.
+        // Wait for the request instead of a fixed sleep, which a busy CI
+        // simulator can outrun.
+        let favoriteUpsertFailed = await waitUntil { failedFavoriteUpserts.value > 0 }
+        XCTAssertTrue(favoriteUpsertFailed, "The pending favorite upsert was never attempted.")
         XCTAssertEqual(
             LibraryStorePendingLibraryOperationPersistence.load(
                 storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
@@ -160,7 +167,12 @@ final class LibraryStoreTests: XCTestCase {
         relaunchedStore.setBackendService(succeedingService, userID: "user-1")
         relaunchedStore.setAppDataService(succeedingService)
 
-        try await Task.sleep(for: .milliseconds(1_300))
+        await waitUntil {
+            LibraryStorePendingLibraryOperationPersistence.load(
+                storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
+                userDefaults: userDefaults
+            ).count < 2
+        }
 
         let remainingOperations = LibraryStorePendingLibraryOperationPersistence.load(
             storageKey: LibraryStore.pendingLibraryOperationsStorageKey,
@@ -1212,6 +1224,35 @@ final class LibraryStoreTests: XCTestCase {
             trackDetectedCount: 1,
             userID: userID
         )
+    }
+}
+
+/// Polls `condition` on the main actor until it holds or `timeout` passes, so
+/// tests wait for scheduled store work instead of racing it with a fixed sleep.
+@MainActor
+@discardableResult
+private func waitUntil(
+    timeout: Duration = .seconds(15),
+    _ condition: () -> Bool
+) async -> Bool {
+    let deadline = ContinuousClock.now.advanced(by: timeout)
+    while !condition() {
+        guard ContinuousClock.now < deadline else { return false }
+        try? await Task.sleep(for: .milliseconds(50))
+    }
+    return true
+}
+
+private final class LibraryStoreTestRequestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.withLock { count }
+    }
+
+    func increment() {
+        lock.withLock { count += 1 }
     }
 }
 
