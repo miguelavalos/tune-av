@@ -255,7 +255,7 @@ extension AviScreen {
                 Text(aviPrimaryLine)
                     .font(.system(size: 18, weight: .black, design: .rounded))
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.82)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

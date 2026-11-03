@@ -113,7 +113,7 @@
 "player.avi.detail.error" = "Avi lost the signal. Try again or move to another station.";
 "player.avi.detail.discoveryMemory" = "Avi remembers %d discoveries from %@. Latest: %@.";
 "player.avi.detail.listening" = "Avi is listening with %@ and watching for discovery signals.";
-"player.avi.detail.neutral" = "Avi is ready when you press play.";
+"player.avi.detail.neutral" = "Press play and I'll start.";
 "player.avi.detail.thinking" = "Avi is tuning %@.";
 "player.avi.context.discoveries" = "%d discoveries";
 "player.avi.context.discoveries.one" = "%d discovery";
@@ -398,7 +398,7 @@
 "shell.avi.action.openPlayer" = "Open live player";
 "shell.avi.action.saved" = "Saved";
 "shell.avi.detail.listening" = "I'm here beside the stream, keeping track of what plays.";
-"shell.avi.detail.ready" = "Start with a search or a saved radio. I'll follow along and suggest.";
+"shell.avi.detail.ready" = "Search for a radio and I'll follow.";
 "shell.avi.mood.listening" = "Listening to %@ with you";
 "shell.avi.mood.ready" = "Ready when you are";
 "shell.avi.mood.thinking" = "Thinking about what you'd like next";
@@ -944,8 +944,8 @@
 "shell.stationDetail.suggestedSignal" = "Suggested signal";
 "shell.avi.mood.curiousRadio" = "Curious about this one";
 "shell.avi.mood.vibing" = "I like where this is going";
-"shell.avi.primary.reacting" = "Avi reacts to what is playing.";
-"shell.avi.primary.reading" = "Avi is reading this signal.";
+"shell.avi.primary.reacting" = "I react to what's playing.";
+"shell.avi.primary.reading" = "I'm reading this signal.";
 "shell.avi.primary.reviewing" = "Avi is checking whether it is worth trying.";
 "shell.avi.state.attentive" = "Attentive";
 "shell.avi.state.exploring" = "Exploring";
@@ -1107,7 +1107,7 @@
 "profile.pro.title" = "Tune AV Pro";
 "profile.pro.viewOffer" = "View Pro";
 "player.control.listen" = "Listen";
-"shell.avi.header.ready.label" = "WAITING";
+"shell.avi.header.ready.label" = "READY";
 "shell.avi.header.ready.title" = "Waiting for your signal";
 "shell.avi.header.ready.summary" = "Pick a radio and I'll listen.";
 "shell.avi.header.tuning.label" = "TUNING";

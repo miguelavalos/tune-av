@@ -240,6 +240,7 @@ private struct StationCompactCard: View {
                         Text(compactTertiaryLine)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
+                            .layoutPriority(1)
                     }
                 }
             }

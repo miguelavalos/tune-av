@@ -43,14 +43,16 @@ struct FullPlayerAviHeader: View {
                 Text(title)
                     .font(.system(size: 19, weight: .black, design: .rounded))
                     .foregroundStyle(TuneAVTheme.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                     .allowsTightening(true)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(summary)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(TuneAVTheme.textSecondary)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
                     .allowsTightening(true)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

@@ -150,7 +150,7 @@ extension AviScreen {
                     Text(aviPrimaryLine)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 

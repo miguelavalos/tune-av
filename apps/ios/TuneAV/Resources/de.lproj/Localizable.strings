@@ -113,7 +113,7 @@
 "player.avi.detail.error" = "Avi hat das Signal verloren. Versuche es erneut oder wechsle zu einem anderen Sender.";
 "player.avi.detail.discoveryMemory" = "Avi merkt sich %d Entdeckungen von %@. Zuletzt: %@.";
 "player.avi.detail.listening" = "Avi hört %@ und achtet auf Entdeckungssignale.";
-"player.avi.detail.neutral" = "Avi ist bereit, sobald du auf Abspielen tippst.";
+"player.avi.detail.neutral" = "Tipp auf Abspielen, ich lege los.";
 "player.avi.detail.thinking" = "Avi stimmt %@ ab.";
 "player.avi.context.discoveries" = "%d Entdeckungen";
 "player.avi.context.discoveries.one" = "%d Entdeckung";
@@ -347,7 +347,7 @@
 "shell.avi.action.openPlayer" = "Live-Player öffnen";
 "shell.avi.action.saved" = "Gespeichert";
 "shell.avi.detail.listening" = "Ich bin hier, direkt am Stream, und verfolge, was läuft.";
-"shell.avi.detail.ready" = "Starte mit einer Suche oder einem gespeicherten Radio. Ich folge und schlage vor.";
+"shell.avi.detail.ready" = "Such ein Radio, ich folge dir.";
 "shell.avi.mood.listening" = "Ich höre %@ mit dir";
 "shell.avi.mood.ready" = "Bereit, wenn du es bist";
 "shell.avi.mood.thinking" = "Ich überlege, was dir jetzt gefallen würde";
@@ -391,7 +391,7 @@
 "shell.header.account" = "Mein Konto";
 "shell.header.settings" = "Einstellungen";
 "shell.home.aviBrief.action" = "Avi öffnen";
-"shell.home.aviBrief.empty" = "Wähl ein Radio, ich lerne deinen Geschmack.";
+"shell.home.aviBrief.empty" = "Wähl ein Radio, ich lerne deinen Geschmack kennen.";
 "shell.home.aviBrief.listening" = "Ich höre %@ mit dir.";
 "shell.count.discovery.one" = "%d Entdeckung";
 "shell.count.discovery.other" = "%d Entdeckungen";
@@ -842,8 +842,8 @@
 "shell.avi.detail.scanning" = "Prüft öffentliche Signale vor dem Einschalten.";
 "shell.avi.mood.curiousRadio" = "Das hier macht mich neugierig";
 "shell.avi.mood.vibing" = "Mir gefällt, wohin das geht";
-"shell.avi.primary.reacting" = "Avi reagiert auf das, was läuft.";
-"shell.avi.primary.reading" = "Avi liest dieses Signal.";
+"shell.avi.primary.reacting" = "Ich reagiere auf das, was läuft.";
+"shell.avi.primary.reading" = "Ich lese das Signal.";
 "shell.avi.primary.reviewing" = "Avi prüft, ob es einen Versuch wert ist.";
 "shell.avi.state.attentive" = "Aufmerksam";
 "shell.avi.state.exploring" = "Erkundet";
@@ -1127,7 +1127,7 @@
 "shell.avi.header.discarding.label" = "AUSSORTIEREN";
 "shell.avi.header.disliked.title" = "Ich nehme es raus";
 "shell.avi.header.dislikedSong.summary" = "Ich meide solche Songs.";
-"shell.avi.header.dislikedStation.summary" = "Ich wähle nicht mehr danach.";
+"shell.avi.header.dislikedStation.summary" = "Ich richte mich nicht mehr danach.";
 "shell.avi.header.listening.label" = "HÖRT ZU";
 "shell.avi.header.track.title" = "Ich folge dem Song";
 "shell.avi.header.trackWithArtist.summary" = "Von %@. Gefällt er dir?";

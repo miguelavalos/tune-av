@@ -113,7 +113,7 @@
 "player.avi.detail.error" = "Avi ha perdido la señal. Inténtalo de nuevo o pasa a otra emisora.";
 "player.avi.detail.discoveryMemory" = "Avi recuerda %d descubrimientos de %@. Último: %@.";
 "player.avi.detail.listening" = "Avi está escuchando %@ y atento a señales de descubrimiento.";
-"player.avi.detail.neutral" = "Avi está listo cuando pulses reproducir.";
+"player.avi.detail.neutral" = "Dale al play y empiezo.";
 "player.avi.detail.thinking" = "Avi está sintonizando %@.";
 "player.avi.context.discoveries" = "%d descubrimientos";
 "player.avi.context.discoveries.one" = "%d descubrimiento";
@@ -398,7 +398,7 @@
 "shell.avi.action.openPlayer" = "Abrir reproductor en directo";
 "shell.avi.action.saved" = "Guardadas";
 "shell.avi.detail.listening" = "Estoy aquí, junto a la emisión, siguiendo lo que suena.";
-"shell.avi.detail.ready" = "Empieza con una búsqueda o una radio guardada. Te sigo y te sugiero.";
+"shell.avi.detail.ready" = "Busca una radio y te sigo.";
 "shell.avi.mood.listening" = "Escuchando %@ contigo";
 "shell.avi.mood.ready" = "Lista cuando quieras";
 "shell.avi.mood.thinking" = "Pensando en qué te apetece ahora";
@@ -944,8 +944,8 @@
 "shell.avi.detail.scanning" = "Mirando señales públicas antes de sintonizar.";
 "shell.avi.mood.curiousRadio" = "Esta me da curiosidad";
 "shell.avi.mood.vibing" = "Me gusta por dónde va esto";
-"shell.avi.primary.reacting" = "Avi reacciona a lo que suena.";
-"shell.avi.primary.reading" = "Avi está leyendo esta señal.";
+"shell.avi.primary.reacting" = "Reacciono a lo que suena.";
+"shell.avi.primary.reading" = "Leo esta señal.";
 "shell.avi.primary.reviewing" = "Avi revisa si merece probarla.";
 "shell.avi.state.attentive" = "Atenta";
 "shell.avi.state.exploring" = "Explorando";

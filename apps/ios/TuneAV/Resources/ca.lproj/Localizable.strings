@@ -113,7 +113,7 @@
 "player.avi.detail.error" = "Avi ha perdut el senyal. Torna-ho a provar o passa a una altra emissora.";
 "player.avi.detail.discoveryMemory" = "Avi recorda %d descobriments de %@. Últim: %@.";
 "player.avi.detail.listening" = "Avi escolta %@ i vigila senyals de descobriment.";
-"player.avi.detail.neutral" = "Avi està a punt quan premis reproduir.";
+"player.avi.detail.neutral" = "Prem play i començo.";
 "player.avi.detail.thinking" = "Avi està sintonitzant %@.";
 "player.avi.context.discoveries" = "%d descobriments";
 "player.avi.context.discoveries.one" = "%d descobriment";
@@ -347,7 +347,7 @@
 "shell.avi.action.openPlayer" = "Obre el reproductor en directe";
 "shell.avi.action.saved" = "Desades";
 "shell.avi.detail.listening" = "Soc aquí, al costat de l'emissió, seguint el que sona.";
-"shell.avi.detail.ready" = "Comença amb una cerca o una ràdio desada. Et segueixo i et suggereixo.";
+"shell.avi.detail.ready" = "Cerca una ràdio i et segueixo.";
 "shell.avi.mood.listening" = "Escoltant %@ amb tu";
 "shell.avi.mood.ready" = "A punt quan vulguis";
 "shell.avi.mood.thinking" = "Pensant què et ve de gust ara";
@@ -842,8 +842,8 @@
 "shell.avi.detail.scanning" = "Mirant senyals públics abans de sintonitzar.";
 "shell.avi.mood.curiousRadio" = "Aquesta em fa curiositat";
 "shell.avi.mood.vibing" = "M'agrada per on va això";
-"shell.avi.primary.reacting" = "Avi reacciona al que sona.";
-"shell.avi.primary.reading" = "Avi està llegint aquest senyal.";
+"shell.avi.primary.reacting" = "Reacciono al que sona.";
+"shell.avi.primary.reading" = "Llegeixo aquest senyal.";
 "shell.avi.primary.reviewing" = "Avi revisa si val la pena provar-la.";
 "shell.avi.state.attentive" = "Atenta";
 "shell.avi.state.exploring" = "Explorant";

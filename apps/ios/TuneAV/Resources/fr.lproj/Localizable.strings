@@ -113,7 +113,7 @@
 "player.avi.detail.error" = "Avi a perdu le signal. Réessayez ou passez à une autre station.";
 "player.avi.detail.discoveryMemory" = "Avi mémorise %d découvertes de %@. Dernière : %@.";
 "player.avi.detail.listening" = "Avi écoute %@ et surveille les signaux de découverte.";
-"player.avi.detail.neutral" = "Avi est prêt quand vous lancez la lecture.";
+"player.avi.detail.neutral" = "Lancez la lecture et je commence.";
 "player.avi.detail.thinking" = "Avi accorde %@.";
 "player.avi.context.discoveries" = "%d découvertes";
 "player.avi.context.discoveries.one" = "%d découverte";
@@ -347,7 +347,7 @@
 "shell.avi.action.openPlayer" = "Ouvrir le lecteur en direct";
 "shell.avi.action.saved" = "Enregistrées";
 "shell.avi.detail.listening" = "Je suis là, à côté du flux, à suivre ce qui passe.";
-"shell.avi.detail.ready" = "Commencez par une recherche ou une radio enregistrée. Je suis et je suggère.";
+"shell.avi.detail.ready" = "Cherchez une radio, je vous suis.";
 "shell.avi.mood.listening" = "J'écoute %@ avec vous";
 "shell.avi.mood.ready" = "Prête quand vous voulez";
 "shell.avi.mood.thinking" = "Je réfléchis à ce qui vous plairait";
@@ -842,8 +842,8 @@
 "shell.avi.detail.scanning" = "Analyse des signaux publics avant de syntoniser.";
 "shell.avi.mood.curiousRadio" = "Celle-ci m'intrigue";
 "shell.avi.mood.vibing" = "J'aime où ça nous mène";
-"shell.avi.primary.reacting" = "Avi réagit à ce qui passe.";
-"shell.avi.primary.reading" = "Avi lit ce signal.";
+"shell.avi.primary.reacting" = "Je réagis à ce qui passe.";
+"shell.avi.primary.reading" = "Je lis ce signal.";
 "shell.avi.primary.reviewing" = "Avi vérifie si cela vaut le coup d'essayer.";
 "shell.avi.state.attentive" = "Attentive";
 "shell.avi.state.exploring" = "Exploration";
@@ -1131,13 +1131,13 @@
 "shell.avi.header.listening.label" = "ÉCOUTE";
 "shell.avi.header.track.title" = "Je suis ce morceau";
 "shell.avi.header.trackWithArtist.summary" = "C'est de %@. Ça vous plaît ?";
-"shell.avi.header.track.summary" = "Dites-moi s'il vous plaît.";
+"shell.avi.header.track.summary" = "Ce morceau vous plaît ?";
 "shell.avi.header.known.label" = "CONNUE";
 "shell.avi.header.favorite.title" = "De votre collection";
 "shell.avi.header.favorite.summary" = "Je la compare à vos écoutes récentes.";
 "shell.avi.header.exploring.label" = "EXPLORATION";
 "shell.avi.header.context.title" = "J'ai des indices";
-"shell.avi.header.contextWithCategory.summary" = "Ça sonne %@. Ça vous va ?";
+"shell.avi.header.contextWithCategory.summary" = "Style %@. Ça vous va ?";
 "shell.avi.header.context.summary" = "Je commence à comprendre cette radio.";
 "shell.avi.header.reading.label" = "LECTURE";
 "shell.avi.header.reading.title" = "Je lis ce signal";
