@@ -1,0 +1,10 @@
+"Play my radio on ${applicationName}" = "Posa la meva ràdio a ${applicationName}";
+"Play my radio in ${applicationName}" = "Reprodueix la meva ràdio a ${applicationName}";
+"Start my radio on ${applicationName}" = "Engega la meva ràdio a ${applicationName}";
+"Play ${applicationName}" = "Posa ${applicationName}";
+"Pause ${applicationName}" = "Pausa ${applicationName}";
+"Stop ${applicationName}" = "Atura ${applicationName}";
+"Pause my radio on ${applicationName}" = "Pausa la meva ràdio a ${applicationName}";
+"Stop the radio on ${applicationName}" = "Atura la ràdio a ${applicationName}";
+"Play ${station} on ${applicationName}" = "Posa ${station} a ${applicationName}";
+"Listen to ${station} on ${applicationName}" = "Escolta ${station} a ${applicationName}";

@@ -1200,3 +1200,15 @@
 "widget.intent.station" = "Emissora";
 "widget.intent.favoriteShortcut" = "Des de les preferides";
 "widget.intent.wasPlaying" = "Estava sonant";
+"control.intent.isPlaying" = "Sonant";
+"control.myRadio.description" = "Posa o pausa la teva ràdio.";
+"siri.shortcut.playMyRadio" = "Posa la meva ràdio";
+"siri.shortcut.pause" = "Pausar la ràdio";
+"siri.shortcut.playStation" = "Posa una ràdio";
+"siri.intent.playMyRadio.description" = "Posa la teva última ràdio o la teva primera preferida.";
+"siri.intent.playStation.description" = "Posa una de les teves ràdios preferides o recents.";
+"siri.intent.pause.description" = "Pausa la ràdio que està sonant.";
+"siri.error.noRadio" = "Primer tria una ràdio a Tune AV.";
+"siri.error.stationUnavailable" = "Aquesta ràdio ja no és a les teves preferides ni a les recents.";
+"siri.dialog.continueInApp" = "Obre Tune AV per reproduir. Vas demanar un avís abans d'usar dades mòbils.";
+"control.intent.link" = "Enllaç";

@@ -8,5 +8,6 @@ struct TuneAVWidgetsBundle: WidgetBundle {
         TuneAVNowPlayingFavoritesWidget()
         TuneAVLockScreenRadioWidget()
         TuneAVNowPlayingLiveActivity()
+        TuneAVMyRadioControl()
     }
 }

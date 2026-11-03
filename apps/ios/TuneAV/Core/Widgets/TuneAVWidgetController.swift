@@ -7,6 +7,7 @@ import WidgetKit
 @MainActor
 final class TuneAVWidgetController {
     typealias ShellPlaybackHandler = @MainActor (Station, TuneAVPlaybackQueueSource, [Station]?) -> Void
+    typealias ShellDeepLinkHandler = @MainActor (TuneAVWidgetDeepLink) -> Void
 
     static let shared = TuneAVWidgetController()
 
@@ -22,6 +23,9 @@ final class TuneAVWidgetController {
     private weak var libraryStore: LibraryStore?
     private weak var accessController: AccessController?
     private var shellPlaybackHandler: ShellPlaybackHandler?
+    private var shellDeepLinkHandler: ShellDeepLinkHandler?
+    private var pendingAppDeepLink: TuneAVWidgetDeepLink?
+    private var siriStationSignature: [String]?
     private var shellPlaybackToken: UUID?
     private var cancellables: Set<AnyCancellable> = []
     private var directory: URL?
@@ -48,7 +52,10 @@ final class TuneAVWidgetController {
         self.accessController = accessController
 
         TuneAVWidgetActionRouter.handler = { [weak self] action in
-            await self?.handle(action)
+            await self?.handle(action) ?? .noStation
+        }
+        TuneAVWidgetActionRouter.appLinkHandler = { [weak self] link in
+            self?.continueInApp(link)
         }
 
         audioPlayer.objectWillChange
@@ -94,17 +101,48 @@ final class TuneAVWidgetController {
             .store(in: &cancellables)
     }
 
-    func registerShellPlayback(_ handler: @escaping ShellPlaybackHandler) -> UUID {
+    func registerShellPlayback(
+        _ handler: @escaping ShellPlaybackHandler,
+        deepLink deepLinkHandler: @escaping ShellDeepLinkHandler
+    ) -> UUID {
         let token = UUID()
         shellPlaybackHandler = handler
+        shellDeepLinkHandler = deepLinkHandler
         shellPlaybackToken = token
+        if let pendingAppDeepLink {
+            self.pendingAppDeepLink = nil
+            Task { @MainActor [weak self] in
+                self?.shellDeepLinkHandler?(pendingAppDeepLink)
+            }
+        }
         return token
     }
 
     func unregisterShellPlayback(token: UUID?) {
         guard let token, token == shellPlaybackToken else { return }
         shellPlaybackHandler = nil
+        shellDeepLinkHandler = nil
         shellPlaybackToken = nil
+    }
+
+    func continueInApp(_ link: TuneAVWidgetDeepLink) {
+        if let shellDeepLinkHandler {
+            shellDeepLinkHandler(link)
+        } else {
+            pendingAppDeepLink = link
+        }
+    }
+
+    func siriStations() -> [Station] {
+        guard let libraryStore else { return [] }
+        return TuneAVSiriStationCatalog.stations(
+            favorites: libraryStore.favoriteStations(),
+            recents: libraryStore.recentStations()
+        )
+    }
+
+    func siriStation(id: String) -> Station? {
+        station(for: id)
     }
 
     private func settleAfterLaunch(delay: Duration) {
@@ -139,10 +177,11 @@ final class TuneAVWidgetController {
         await launchSettleTask?.value
     }
 
-    private func handle(_ action: TuneAVWidgetAction) async {
+    private func handle(_ action: TuneAVWidgetAction) async -> TuneAVWidgetActionOutcome {
         await waitUntilLaunchSettled()
-        guard let audioPlayer, let libraryStore else { return }
+        guard let audioPlayer, let libraryStore else { return .noStation }
 
+        let outcome: TuneAVWidgetActionOutcome
         switch action {
         case let .playStation(id, isFavoriteShortcut, expectsActivePlayback):
             switch TuneAVWidgetPlaybackPlanner.command(
@@ -159,30 +198,85 @@ final class TuneAVWidgetController {
             case .none:
                 break
             case .play:
-                guard let station = station(for: id) else {
-                    Self.logger.debug("Widget station is no longer in the library")
-                    break
-                }
-                let source = TuneAVWidgetPlaybackPlanner.queueSource(isFavoriteShortcut: isFavoriteShortcut)
-                let queue = isFavoriteShortcut ? libraryStore.favoriteStations() : nil
-                if let shellPlaybackHandler {
-                    shellPlaybackHandler(station, source, queue)
-                } else if libraryStore.settings.warnBeforeCellularPlayback {
-                    Self.logger.debug("Widget playback waits for the cellular confirmation in the app")
-                } else {
-                    audioPlayer.play(
-                        station: station,
-                        queue: AudioPlayerService.PlaybackQueue(source: source, stations: queue ?? [station])
-                    )
-                    pendingRecentStationID = station.id
-                }
+                startPlayback(stationID: id, isFavoriteShortcut: isFavoriteShortcut)
             }
+            outcome = .done
+        case .startMyRadio:
+            let radio = TuneAVWidgetSnapshotMapper.myRadio(
+                currentStation: audioPlayer.currentStation,
+                lastPlayedStation: libraryStore.station(for: libraryStore.settings.lastPlayedStationID),
+                favorites: libraryStore.favoriteStations()
+            )
+            outcome = perform(TuneAVPlaybackRequestPlanner.startPlan(
+                stationID: radio?.id,
+                isFavoriteShortcut: false,
+                currentStationID: audioPlayer.currentStation?.id,
+                status: audioPlayer.status,
+                opensAppToPlay: libraryStore.settings.warnBeforeCellularPlayback
+            ))
+        case let .startStation(id):
+            let station = station(for: id)
+            outcome = perform(TuneAVPlaybackRequestPlanner.startPlan(
+                stationID: station?.id,
+                isFavoriteShortcut: station.map(libraryStore.isFavorite) ?? false,
+                currentStationID: audioPlayer.currentStation?.id,
+                status: audioPlayer.status,
+                opensAppToPlay: libraryStore.settings.warnBeforeCellularPlayback
+            ))
+        case .pausePlayback:
+            outcome = perform(TuneAVPlaybackRequestPlanner.pausePlan(status: audioPlayer.status))
         }
 
         scheduledEvaluation?.cancel()
         scheduledEvaluation = nil
         evaluate(bypassThrottle: true)
         await ioTail?.value
+        return outcome
+    }
+
+    private func perform(_ plan: TuneAVPlaybackRequestPlanner.Plan) -> TuneAVWidgetActionOutcome {
+        guard let audioPlayer else { return .noStation }
+        switch plan {
+        case let .play(stationID, isFavoriteShortcut):
+            return startPlayback(stationID: stationID, isFavoriteShortcut: isFavoriteShortcut) ? .playing : .noStation
+        case .resume:
+            audioPlayer.togglePlayback()
+            return .playing
+        case .alreadyPlaying:
+            return .alreadyPlaying
+        case .pause:
+            audioPlayer.pause()
+            return .paused
+        case .nothingToPause:
+            return .nothingToPause
+        case .noStation:
+            return .noStation
+        case let .openApp(link):
+            return .needsApp(link)
+        }
+    }
+
+    @discardableResult
+    private func startPlayback(stationID: String, isFavoriteShortcut: Bool) -> Bool {
+        guard let audioPlayer, let libraryStore, let station = station(for: stationID) else {
+            Self.logger.debug("Widget station is no longer in the library")
+            return false
+        }
+        let source = TuneAVWidgetPlaybackPlanner.queueSource(isFavoriteShortcut: isFavoriteShortcut)
+        let queue = isFavoriteShortcut ? libraryStore.favoriteStations() : nil
+        if let shellPlaybackHandler {
+            shellPlaybackHandler(station, source, queue)
+        } else if libraryStore.settings.warnBeforeCellularPlayback {
+            Self.logger.debug("Widget playback waits for the cellular confirmation in the app")
+            return false
+        } else {
+            audioPlayer.play(
+                station: station,
+                queue: AudioPlayerService.PlaybackQueue(source: source, stations: queue ?? [station])
+            )
+            pendingRecentStationID = station.id
+        }
+        return true
     }
 
     private func station(for id: String) -> Station? {
@@ -203,7 +297,9 @@ final class TuneAVWidgetController {
     }
 
     private func evaluate(bypassThrottle: Bool) {
-        guard isLaunchSettled, let directory, let audioPlayer, let libraryStore else { return }
+        guard isLaunchSettled, let audioPlayer, let libraryStore else { return }
+        updateAppShortcutParametersIfNeeded()
+        guard let directory else { return }
 
         recordWidgetStartedPlaybackIfNeeded(audioPlayer: audioPlayer, libraryStore: libraryStore)
 
@@ -239,6 +335,15 @@ final class TuneAVWidgetController {
             directory: directory,
             bypassThrottle: bypassThrottle
         )
+    }
+
+    private func updateAppShortcutParametersIfNeeded() {
+        let signature = TuneAVSiriStationCatalog.signature(of: siriStations())
+        guard signature != siriStationSignature else { return }
+        siriStationSignature = signature
+        Task.detached(priority: .utility) {
+            TuneAVAppShortcuts.updateAppShortcutParameters()
+        }
     }
 
     private func recordWidgetStartedPlaybackIfNeeded(audioPlayer: AudioPlayerService, libraryStore: LibraryStore) {
@@ -296,11 +401,15 @@ final class TuneAVWidgetController {
         let kinds = TuneAVWidgetKind.all.filter(pendingReloadKinds.contains)
         pendingReloadKinds = []
         guard !kinds.isEmpty else { return }
+        let reloadsControls = TuneAVWidgetReloadPlanner.reloadsControls(kinds: kinds)
         let pendingWrites = ioTail
         Task {
             await pendingWrites?.value
             for kind in kinds {
                 WidgetCenter.shared.reloadTimelines(ofKind: kind)
+            }
+            if reloadsControls {
+                ControlCenter.shared.reloadControls(ofKind: TuneAVControlKind.myRadio)
             }
         }
     }
@@ -381,6 +490,7 @@ final class TuneAVWidgetController {
         for kind in TuneAVWidgetKind.all {
             WidgetCenter.shared.reloadTimelines(ofKind: kind)
         }
+        ControlCenter.shared.reloadControls(ofKind: TuneAVControlKind.myRadio)
     }
 
     private nonisolated static func writeSnapshot(

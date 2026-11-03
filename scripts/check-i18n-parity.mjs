@@ -156,6 +156,66 @@ function compareAppleStrings() {
   return failures;
 }
 
+function shortcutPlaceholders(value) {
+  return (normalizeText(value).match(/\$\{[A-Za-z]+\}/g) ?? []).sort();
+}
+
+function compareAppleShortcutPhrases() {
+  const basePath = join(rootDir, "apps/ios/TuneAV/Resources/en.lproj/AppShortcuts.strings");
+  const base = parseStringsFile(basePath);
+  const failures = [];
+
+  if (base.size === 0) failures.push("Apple App Shortcuts en: no phrases");
+
+  const providerPath = join(rootDir, "apps/ios/TuneAV/Core/Siri/TuneAVAppShortcuts.swift");
+  const providerSource = readFileSync(providerPath, "utf8");
+  const codePhrases = [...providerSource.matchAll(/"((?:\\.|[^"\\])*\\\(\.applicationName\)(?:\\.|[^"\\])*)"/g)].map((match) =>
+    match[1].replace(/\\\(\.applicationName\)/g, "${applicationName}").replace(/\\\(\\\.\$([A-Za-z]+)\)/g, "${$1}")
+  );
+  if (codePhrases.length === 0) failures.push("Apple App Shortcuts: no phrases found in TuneAVAppShortcuts.swift");
+  for (const phrase of codePhrases) {
+    if (!base.has(phrase)) failures.push(`Apple App Shortcuts en: code phrase without a localized entry ${phrase}`);
+  }
+  for (const key of base.keys()) {
+    if (!codePhrases.includes(key)) failures.push(`Apple App Shortcuts en: phrase not used in code ${key}`);
+  }
+
+  for (const locale of appleLocales) {
+    const filePath = join(rootDir, `apps/ios/TuneAV/Resources/${locale}.lproj/AppShortcuts.strings`);
+    let current;
+    try {
+      current = parseStringsFile(filePath);
+    } catch {
+      failures.push(`Apple App Shortcuts ${locale}: missing AppShortcuts.strings`);
+      continue;
+    }
+    const missing = [...base.keys()].filter((key) => !current.has(key));
+    const extra = [...current.keys()].filter((key) => !base.has(key));
+
+    for (const key of missing) failures.push(`Apple App Shortcuts ${locale}: missing phrase ${key}`);
+    for (const key of extra) failures.push(`Apple App Shortcuts ${locale}: extra phrase ${key}`);
+
+    for (const [key, value] of current) {
+      if (!base.has(key)) continue;
+      if (!value.includes("${applicationName}")) {
+        failures.push(`Apple App Shortcuts ${locale}: phrase without \${applicationName} for ${key}`);
+      }
+      if (shortcutPlaceholders(key).join(",") !== shortcutPlaceholders(value).join(",")) {
+        failures.push(`Apple App Shortcuts ${locale}: parameter mismatch for ${key}`);
+      }
+      if (locale === "en") {
+        if (normalizeText(key) !== normalizeText(value)) {
+          failures.push(`Apple App Shortcuts en: phrase differs from its key ${key}`);
+        }
+      } else if (normalizeText(key) === normalizeText(value)) {
+        failures.push(`Apple App Shortcuts ${locale}: identical to English for ${key}`);
+      }
+    }
+  }
+
+  return failures;
+}
+
 function compareWebStrings() {
   const appWebDir = join(rootDir, "apps/web");
   const auditFilePath = join(appWebDir, ".i18n-parity-audit.test.ts");
@@ -249,7 +309,7 @@ function compareWebStrings() {
   }
 }
 
-const failures = [...compareAppleStrings(), ...compareWebStrings()];
+const failures = [...compareAppleStrings(), ...compareAppleShortcutPhrases(), ...compareWebStrings()];
 
 if (failures.length > 0) {
   console.error(`i18n parity audit failed with ${failures.length} issue(s):`);
@@ -257,4 +317,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("i18n parity audit passed: Apple and web locales match English keys, shapes, placeholders, and translated text expectations.");
+console.log("i18n parity audit passed: Apple strings, App Shortcut phrases and web locales match English keys, shapes, placeholders, and translated text expectations.");

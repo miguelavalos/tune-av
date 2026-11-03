@@ -176,6 +176,10 @@ enum TuneAVWidgetReloadPlanner {
 
     static let minimumInterval: TimeInterval = 2
 
+    static func reloadsControls(kinds: some Sequence<String>) -> Bool {
+        kinds.contains(TuneAVWidgetKind.myRadio)
+    }
+
     static func kinds(previous: TuneAVWidgetSnapshot?, next: TuneAVWidgetSnapshot) -> Set<String> {
         guard let previous else { return Set(TuneAVWidgetKind.all) }
         guard previous != next else { return [] }
@@ -200,5 +204,87 @@ enum TuneAVWidgetReloadPlanner {
         guard previous != next else { return .none }
         let delay = throttle.delay(now: now)
         return delay > 0 ? .after(delay) : .now
+    }
+}
+
+enum TuneAVPlaybackRequestPlanner {
+    enum Plan: Equatable {
+        case play(stationID: String, isFavoriteShortcut: Bool)
+        case resume
+        case alreadyPlaying
+        case pause
+        case nothingToPause
+        case noStation
+        case openApp(TuneAVWidgetDeepLink)
+    }
+
+    static func startPlan(
+        stationID: String?,
+        isFavoriteShortcut: Bool,
+        currentStationID: String?,
+        status: TuneAVPlaybackState,
+        opensAppToPlay: Bool
+    ) -> Plan {
+        guard let stationID else { return .noStation }
+        let isCurrent = currentStationID == stationID
+        if isCurrent, status == .playing || status == .loading {
+            return .alreadyPlaying
+        }
+        if opensAppToPlay {
+            return .openApp(.play(stationID: stationID, isFavoriteShortcut: isFavoriteShortcut))
+        }
+        return isCurrent ? .resume : .play(stationID: stationID, isFavoriteShortcut: isFavoriteShortcut)
+    }
+
+    static func pausePlan(status: TuneAVPlaybackState) -> Plan {
+        switch status {
+        case .playing, .loading:
+            return .pause
+        case .paused, .failed, .idle:
+            return .nothingToPause
+        }
+    }
+}
+
+enum TuneAVSiriStationCatalog {
+    static let maximumStations = 30
+
+    static func stations(favorites: [Station], recents: [Station], limit: Int = maximumStations) -> [Station] {
+        var seenIDs = Set<String>()
+        var seenNames = Set<String>()
+        var result: [Station] = []
+        for station in favorites + recents {
+            let name = nameKey(for: station.name)
+            guard !name.isEmpty, seenIDs.insert(station.id).inserted, seenNames.insert(name).inserted else { continue }
+            result.append(station)
+            if result.count == limit { break }
+        }
+        return result
+    }
+
+    static func matching(_ query: String, in stations: [Station]) -> [Station] {
+        let needle = nameKey(for: query)
+        guard !needle.isEmpty else { return stations }
+        let exact = stations.filter { nameKey(for: $0.name) == needle }
+        let prefix = stations.filter { nameKey(for: $0.name).hasPrefix(needle) && nameKey(for: $0.name) != needle }
+        let contains = stations.filter {
+            let key = nameKey(for: $0.name)
+            return key.contains(needle) && !key.hasPrefix(needle)
+        }
+        return exact + prefix + contains
+    }
+
+    static func displayName(for station: Station) -> String {
+        TuneAVDisplayMetadata.normalized(station.name) ?? station.name
+    }
+
+    static func nameKey(for name: String) -> String {
+        (TuneAVDisplayMetadata.normalized(name) ?? name)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func signature(of stations: [Station]) -> [String] {
+        stations.map { "\($0.id)\u{1F}\(displayName(for: $0))" }
     }
 }
