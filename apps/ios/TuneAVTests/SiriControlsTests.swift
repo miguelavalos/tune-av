@@ -353,4 +353,26 @@ final class SiriControlsTests: XCTestCase {
         let shortcuts = TuneAVAppShortcuts.appShortcuts
         XCTAssertEqual(shortcuts.count, 3)
     }
+
+    // App Store Connect rejects App Intents metadata whose string keys contain "siri" (ITMS-90626).
+    func testAppIntentsMetadataKeysDoNotContainSiri() throws {
+        let url = try XCTUnwrap(
+            Bundle.main.url(forResource: "extract", withExtension: "actionsdata", subdirectory: "Metadata.appintents"),
+            "Metadata.appintents/extract.actionsdata is missing from the app bundle"
+        )
+        var keys: [String] = []
+        func collectKeys(_ value: Any) {
+            if let dictionary = value as? [String: Any] {
+                for (name, child) in dictionary {
+                    if name == "key", let key = child as? String { keys.append(key) }
+                    collectKeys(child)
+                }
+            } else if let array = value as? [Any] {
+                array.forEach(collectKeys)
+            }
+        }
+        collectKeys(try JSONSerialization.jsonObject(with: Data(contentsOf: url)))
+        XCTAssertTrue(keys.contains("appShortcut.playMyRadio.description"), "Expected the App Intents string keys in \(url.lastPathComponent)")
+        XCTAssertEqual(keys.filter { $0.range(of: "siri", options: .caseInsensitive) != nil }, [])
+    }
 }

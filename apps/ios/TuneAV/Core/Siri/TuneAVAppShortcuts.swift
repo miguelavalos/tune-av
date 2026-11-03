@@ -12,7 +12,7 @@ struct TuneAVAppShortcuts: AppShortcutsProvider {
                 "Start my radio on \(.applicationName)",
                 "Play \(.applicationName)",
             ],
-            shortTitle: "siri.shortcut.playMyRadio",
+            shortTitle: "appShortcut.playMyRadio",
             systemImageName: "play.circle.fill"
         )
         AppShortcut(
@@ -23,7 +23,7 @@ struct TuneAVAppShortcuts: AppShortcutsProvider {
                 "Pause my radio on \(.applicationName)",
                 "Stop the radio on \(.applicationName)",
             ],
-            shortTitle: "siri.shortcut.pause",
+            shortTitle: "appShortcut.pause",
             systemImageName: "pause.circle.fill"
         )
         AppShortcut(
@@ -32,7 +32,7 @@ struct TuneAVAppShortcuts: AppShortcutsProvider {
                 "Play \(\.$station) on \(.applicationName)",
                 "Listen to \(\.$station) on \(.applicationName)",
             ],
-            shortTitle: "siri.shortcut.playStation",
+            shortTitle: "appShortcut.playStation",
             systemImageName: "radio"
         )
     }
