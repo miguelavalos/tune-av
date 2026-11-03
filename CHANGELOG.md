@@ -46,6 +46,10 @@ This project follows semantic versioning once public source releases begin.
 - Open and close the iOS full player smoothly: the card grows from the mini
   player and the artwork moves into place with a short spring, and closing
   reverses it. With Reduce Motion on, the two simply crossfade.
+- Make the iOS launch-time check in CI steadier: it launches the app once
+  without timing it, then times two more launches and keeps the faster one
+  against the same budget. It fails at once if the app stops before reaching
+  Home, and logs every measured time.
 
 ## 1.0.9 - 2026-11-01
 
