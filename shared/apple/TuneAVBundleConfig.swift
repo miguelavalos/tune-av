@@ -43,6 +43,17 @@ enum TuneAVBundleConfig {
         return url
     }
 
+    static let defaultTermsURL = URL(string: "https://tune-av.avalsys.com/terms")!
+    static let defaultPrivacyURL = URL(string: "https://tune-av.avalsys.com/privacy")!
+
+    static func termsURL(in bundle: Bundle = .main) -> URL {
+        urlValue(for: "TUNEAV_TERMS_URL", in: bundle, requireSupportedAVAccountBaseURL: true) ?? defaultTermsURL
+    }
+
+    static func privacyURL(in bundle: Bundle = .main) -> URL {
+        urlValue(for: "TUNEAV_PRIVACY_URL", in: bundle, requireSupportedAVAccountBaseURL: true) ?? defaultPrivacyURL
+    }
+
     static func deleteAccountURL(
         explicitURL: URL?,
         accountManagementURL: URL?

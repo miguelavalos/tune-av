@@ -40,12 +40,12 @@ enum AppConfig {
         )
     }
 
-    static var termsURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_TERMS_URL", requireSupportedAVAccountBaseURL: true)
+    static var termsURL: URL {
+        TuneAVBundleConfig.termsURL()
     }
 
-    static var privacyURL: URL? {
-        TuneAVBundleConfig.urlValue(for: "TUNEAV_PRIVACY_URL", requireSupportedAVAccountBaseURL: true)
+    static var privacyURL: URL {
+        TuneAVBundleConfig.privacyURL()
     }
 
     static var openSourceURL: URL? {
