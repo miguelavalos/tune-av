@@ -91,11 +91,14 @@ struct StationListActionRow: View {
     }
 
     private var stationQualityBadges: some View {
-        HStack(spacing: 5) {
-            ForEach(station.userSignalBadges(hasNowPlaying: primaryDetailIsNowPlaying, isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)).prefix(2), id: \.self) { badge in
-                AVCompactStatusBadge(title: badge)
-            }
-        }
+        StationSignalBadgeRow(
+            badges: Array(
+                station.userSignalBadges(
+                    hasNowPlaying: primaryDetailIsNowPlaying,
+                    isTemporarilyUnstable: audioPlayer.isTemporarilyUnstable(station)
+                ).prefix(2)
+            )
+        )
     }
 
     private var aviActionsMenu: some View {
@@ -227,5 +230,27 @@ struct StationListActionRow: View {
         }
 
         return TuneAVText.normalizedValue(station.country, excluding: Station.unknownDetailValues, locale: L10n.locale)
+    }
+}
+
+/// The first two signal badges of a station row or card.
+///
+/// Built from plain conditionals instead of `ForEach`: during an async
+/// display-link render, SwiftUI can create a lazily built `ForEach` item on
+/// the `com.apple.SwiftUI.AsyncRenderer` thread, and the main-actor content
+/// closure then traps under Swift 6 isolation checks (seen in the home
+/// carousel, whose `ViewThatFits` sizes its fallback layouts lazily).
+struct StationSignalBadgeRow: View {
+    let badges: [String]
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if let first = badges.first {
+                AVCompactStatusBadge(title: first)
+            }
+            if badges.count > 1 {
+                AVCompactStatusBadge(title: badges[1])
+            }
+        }
     }
 }
