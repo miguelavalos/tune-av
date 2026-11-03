@@ -1200,3 +1200,15 @@
 "widget.intent.station" = "Radio station";
 "widget.intent.favoriteShortcut" = "From favorites";
 "widget.intent.wasPlaying" = "Was playing";
+"control.intent.isPlaying" = "Playing";
+"control.myRadio.description" = "Play or pause your radio.";
+"siri.shortcut.playMyRadio" = "Play my radio";
+"siri.shortcut.pause" = "Pause the radio";
+"siri.shortcut.playStation" = "Play a radio";
+"siri.intent.playMyRadio.description" = "Plays your last radio, or your first favorite.";
+"siri.intent.playStation.description" = "Plays one of your favorite or recent radios.";
+"siri.intent.pause.description" = "Pauses the radio that is playing.";
+"siri.error.noRadio" = "Pick a radio in Tune AV first.";
+"siri.error.stationUnavailable" = "That radio is no longer in your favorites or recents.";
+"siri.dialog.continueInApp" = "Open Tune AV to play. You asked for a warning before using mobile data.";
+"control.intent.link" = "Link";

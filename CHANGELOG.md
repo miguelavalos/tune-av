@@ -6,6 +6,13 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Siri, Shortcuts and the Action button on iPhone: "Play my radio on Tune AV"
+  starts your last or favorite radio, "Pause Tune AV" pauses it, and "Play
+  <radio> on Tune AV" starts one of your favorite or recent radios by name, in
+  English, Spanish, Catalan, French and German. A "My radio" play/pause control
+  is available in Control Center, on the Lock Screen and on the Action button
+  (iOS 18). With the mobile data warning on, starting a radio opens the app so
+  you can confirm; pausing always works in place.
 - iPhone home-screen widgets: "My radio" (small) starts or pauses your last
   or favorite radio with one tap without opening the app, and "Radio and
   favorites" (medium) shows the current or last radio and song with play/pause
