@@ -271,6 +271,10 @@ if [ -n "$archive_path" ] && [ -d "$archive_path" ]; then
   if ! node "$repo_root/scripts/check-apple-privacy-manifest.mjs" "$ios_app_manifest"; then
     fail "the archived iOS app privacy manifest is missing, incomplete, or invalid"
   fi
+  widgets_manifest="$archive_path/Products/Applications/TuneAV.app/PlugIns/TuneAVWidgets.appex/PrivacyInfo.xcprivacy"
+  if [ ! -f "$widgets_manifest" ] || ! plutil -lint "$widgets_manifest" >/dev/null; then
+    fail "the archived TuneAVWidgets privacy manifest is missing or invalid"
+  fi
 fi
 
 if [ "$env_name" = "prod" ] && [ "$analytics_uploads" != "1" ]; then

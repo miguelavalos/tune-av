@@ -7,7 +7,7 @@ import SwiftUI
 struct TuneAVApp: App {
     private let launchContext: LaunchContext
     private let persistenceController: PersistenceController
-    @StateObject private var audioPlayer = AudioPlayerService()
+    @StateObject private var audioPlayer: AudioPlayerService
     @StateObject private var languageController = AppLanguageController()
     @StateObject private var themeController = AppThemeController()
     @StateObject private var libraryStore: LibraryStore
@@ -20,19 +20,26 @@ struct TuneAVApp: App {
         AVDiagnostics.configure(AppConfig.diagnosticsConfiguration)
         let persistenceController = launchContext.isUITesting ? PersistenceController(inMemory: true) : PersistenceController.shared
         self.persistenceController = persistenceController
-        _libraryStore = StateObject(wrappedValue: LibraryStore(container: persistenceController.container))
-        _accessController = StateObject(
-            wrappedValue: AccessController(
-                accountService: TuneAVUITestEnvironment.current.hasAccountOverride
-                    ? UITestAVAccountService()
-                    : DefaultAVAccountService(),
-                accountProfileResolver: TuneAVUITestEnvironment.current.hasAccountOverride
-                    ? UITestAccountProfileResolver()
-                    : nil,
-                subscriptionPurchasing: TuneAVUITestEnvironment.current.shouldUseSubscriptionPurchasingStub
-                    ? UITestTuneAVSubscriptionPurchasing()
-                    : RevenueCatTuneAVSubscriptionPurchasing()
-            )
+        let audioPlayer = AudioPlayerService()
+        let libraryStore = LibraryStore(container: persistenceController.container)
+        let accessController = AccessController(
+            accountService: TuneAVUITestEnvironment.current.hasAccountOverride
+                ? UITestAVAccountService()
+                : DefaultAVAccountService(),
+            accountProfileResolver: TuneAVUITestEnvironment.current.hasAccountOverride
+                ? UITestAccountProfileResolver()
+                : nil,
+            subscriptionPurchasing: TuneAVUITestEnvironment.current.shouldUseSubscriptionPurchasingStub
+                ? UITestTuneAVSubscriptionPurchasing()
+                : RevenueCatTuneAVSubscriptionPurchasing()
+        )
+        _audioPlayer = StateObject(wrappedValue: audioPlayer)
+        _libraryStore = StateObject(wrappedValue: libraryStore)
+        _accessController = StateObject(wrappedValue: accessController)
+        TuneAVLiveActivityController.shared.attach(
+            audioPlayer: audioPlayer,
+            libraryStore: libraryStore,
+            accessController: accessController
         )
     }
 

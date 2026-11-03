@@ -111,6 +111,21 @@ else
   lipo -archs "$app_binary" | grep -q "arm64" || fail "app binary architectures must include arm64"
 fi
 
+widgets_path="$app_path/PlugIns/TuneAVWidgets.appex"
+widgets_info="$widgets_path/Info.plist"
+expected_widgets_bundle_id="$expected_bundle_id.widgets"
+[ -d "$widgets_path" ] || fail "TuneAVWidgets extension is missing: $widgets_path"
+[ -f "$widgets_info" ] || fail "TuneAVWidgets Info.plist is missing: $widgets_info"
+widgets_bundle_id="$(plist_print "$widgets_info" "CFBundleIdentifier")"
+widgets_version="$(plist_print "$widgets_info" "CFBundleShortVersionString")"
+widgets_build="$(plist_print "$widgets_info" "CFBundleVersion")"
+[ "$widgets_bundle_id" = "$expected_widgets_bundle_id" ] || fail "TuneAVWidgets bundle id must be $expected_widgets_bundle_id, got ${widgets_bundle_id:-<missing>}"
+[ "$widgets_version" = "$version" ] || fail "TuneAVWidgets version must match the app ($version), got ${widgets_version:-<missing>}"
+[ "$widgets_build" = "$build" ] || fail "TuneAVWidgets build must match the app ($build), got ${widgets_build:-<missing>}"
+[ -f "$widgets_path/PrivacyInfo.xcprivacy" ] || fail "TuneAVWidgets PrivacyInfo.xcprivacy is missing"
+widgets_codesign_team="$(codesign -dv "$widgets_path" 2>&1 | awk -F= '/TeamIdentifier=/ {print $2; exit}')"
+[ "$widgets_codesign_team" = "$expected_team_id" ] || fail "TuneAVWidgets codesign team must be $expected_team_id, got ${widgets_codesign_team:-<missing>}"
+
 app_dsym="$archive_path/dSYMs/TuneAV.app.dSYM"
 sentry_binary="$app_path/Frameworks/Sentry.framework/Sentry"
 sentry_dsym="$archive_path/dSYMs/Sentry.framework.dSYM"
@@ -135,6 +150,7 @@ iOS release archive passed.
   version: $version
   build: $build
   bundle id: $bundle_id
+  widgets bundle id: $widgets_bundle_id
   team id: $codesign_team
   app UUID: $app_uuid
   Sentry UUID: $sentry_uuid

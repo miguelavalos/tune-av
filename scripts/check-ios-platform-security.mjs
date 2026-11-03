@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 
 const infoPlistPath = "apps/ios/TuneAV/App/Info.plist";
 const entitlementsPath = "apps/ios/TuneAV/App/TuneAV.entitlements";
+const widgetsInfoPlistPath = "apps/ios/TuneAVWidgets/Info.plist";
+const widgetsEntitlementsPath = "apps/ios/TuneAVWidgets/TuneAVWidgets.entitlements";
+const widgetsPrivacyManifestPath = "apps/ios/TuneAVWidgets/PrivacyInfo.xcprivacy";
+const appGroupValue = "group.$(TUNEAV_BUNDLE_IDENTIFIER)";
 
 function readPlist(path) {
   const json = execFileSync("plutil", ["-convert", "json", "-o", "-", path], {
@@ -70,6 +74,7 @@ if (!backgroundModes.includes("audio")) {
 
 const allowedEntitlementKeys = new Set([
   "com.apple.developer.applesignin",
+  "com.apple.security.application-groups",
   "keychain-access-groups",
 ]);
 for (const key of Object.keys(entitlements)) {
@@ -90,6 +95,47 @@ if (
   keychainGroups[0] !== "$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)"
 ) {
   fail("keychain-access-groups must stay scoped to the app bundle identifier.");
+}
+
+function checkAppGroup(label, value) {
+  if (!Array.isArray(value) || value.length !== 1 || value[0] !== appGroupValue) {
+    fail(`${label} application group must stay limited to ${appGroupValue}.`);
+  }
+}
+
+checkAppGroup("iOS app", entitlements["com.apple.security.application-groups"]);
+
+if (info.NSSupportsLiveActivities !== true) {
+  fail("NSSupportsLiveActivities must be enabled for the now playing Live Activity.");
+}
+if (Object.hasOwn(info, "NSSupportsLiveActivitiesFrequentUpdates")) {
+  fail("NSSupportsLiveActivitiesFrequentUpdates is not needed: Live Activity updates are local and throttled.");
+}
+if (info.TuneAVAppGroupIdentifier !== appGroupValue) {
+  fail(`TuneAVAppGroupIdentifier must be ${appGroupValue} in the app Info.plist.`);
+}
+
+const widgetsInfo = readPlist(widgetsInfoPlistPath);
+const widgetsEntitlements = readPlist(widgetsEntitlementsPath);
+readPlist(widgetsPrivacyManifestPath);
+
+for (const key of Object.keys(widgetsEntitlements)) {
+  if (key !== "com.apple.security.application-groups") {
+    fail(`unexpected TuneAVWidgets entitlement: ${key}`);
+  }
+}
+checkAppGroup("TuneAVWidgets", widgetsEntitlements["com.apple.security.application-groups"]);
+
+if (widgetsInfo.NSExtension?.NSExtensionPointIdentifier !== "com.apple.widgetkit-extension") {
+  fail("TuneAVWidgets must stay a WidgetKit extension.");
+}
+if (widgetsInfo.TuneAVAppGroupIdentifier !== appGroupValue) {
+  fail(`TuneAVAppGroupIdentifier must be ${appGroupValue} in the TuneAVWidgets Info.plist.`);
+}
+for (const key of ["CFBundleShortVersionString", "CFBundleVersion"]) {
+  if (widgetsInfo[key] !== info[key]) {
+    fail(`TuneAVWidgets ${key} (${widgetsInfo[key]}) must match the app (${info[key]}).`);
+  }
 }
 
 if (

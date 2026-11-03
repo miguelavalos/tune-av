@@ -48,6 +48,8 @@
 		<key>NSAllowsArbitraryLoadsForMedia</key>
 		<true/>
 	</dict>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>SUPPORTAV_BASE_URL</key>
 	<string>$(SUPPORTAV_BASE_URL)</string>
 	<key>SUPPORT_EMAIL_TO</key>
@@ -74,6 +76,8 @@
 	<string>$(TUNEAV_REVENUECAT_PUBLIC_API_KEY)</string>
 	<key>TUNEAV_TERMS_URL</key>
 	<string>$(TUNEAV_TERMS_URL)</string>
+	<key>TuneAVAppGroupIdentifier</key>
+	<string>group.$(TUNEAV_BUNDLE_IDENTIFIER)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
