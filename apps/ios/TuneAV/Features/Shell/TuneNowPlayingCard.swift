@@ -31,20 +31,20 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
                         .font(.system(size: 12, weight: .black, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.white.opacity(0.86))
-                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.78)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Self.headerAccessorySize)
+                .frame(maxWidth: .infinity, minHeight: 22)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(stationName)
             .accessibilityIdentifier("avi.footerPlayer.primaryTitle")
-            .padding(.horizontal, Self.headerAccessorySize)
-            .frame(height: 22)
             .overlay(alignment: .trailing) {
                 headerAccessory()
-                    .frame(width: Self.headerAccessorySize, height: Self.headerAccessorySize)
             }
 
             Spacer()

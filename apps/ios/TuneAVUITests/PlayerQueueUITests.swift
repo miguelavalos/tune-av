@@ -74,11 +74,13 @@ final class PlayerQueueUITests: TuneAVUITestCase {
 
         let stationTitle = app.descendants(matching: .any)["avi.footerPlayer.primaryTitle"].firstMatch
         XCTAssertTrue(stationTitle.exists)
-        XCTAssertFalse(airPlay.frame.intersects(stationTitle.frame))
+        XCTAssertGreaterThanOrEqual(airPlay.frame.midY, stationTitle.frame.minY)
+        XCTAssertLessThanOrEqual(airPlay.frame.midY, stationTitle.frame.maxY)
         XCTAssertLessThan(airPlay.frame.maxY, playPause.frame.minY)
 
         let container = app.descendants(matching: .any)["avi.footerPlayer.container"].firstMatch
         XCTAssertTrue(container.frame.contains(airPlay.frame))
+        XCTAssertGreaterThan(airPlay.frame.minX, container.frame.midX)
 
         for identifier in ["queue", "previous", "next", "sleepTimer"] {
             XCTAssertTrue(app.descendants(matching: .any)["avi.footerPlayer.\(identifier)"].firstMatch.exists, identifier)
