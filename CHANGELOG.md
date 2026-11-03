@@ -54,8 +54,10 @@ This project follows semantic versioning once public source releases begin.
   reverses it. With Reduce Motion on, the two simply crossfade.
 - Make the iOS launch-time check in CI steadier: it launches the app once
   without timing it, then times two more launches and keeps the faster one
-  against the same budget. It fails if the app stops before or just after it
-  reaches Home, and logs every measured time.
+  against the same budget. If the test loses its connection to the app on that
+  first launch while the app is still on screen, it relaunches, up to three
+  times. It fails if the app stops before or just after it reaches Home, and
+  logs every measured time.
 
 ## 1.0.9 - 2026-11-01
 

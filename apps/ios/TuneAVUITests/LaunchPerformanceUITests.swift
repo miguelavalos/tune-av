@@ -42,8 +42,8 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
         }
         guard warmUp.reachedHome, warmUp.appState == .runningForeground else {
             XCTFail(
-                "Tune AV did not reach and stay on the home shell on the warm-up launch within "
-                    + "\(Int(Self.warmUpTimeout))s after \(warmUpAttempt) attempt(s) (reachedHome \(warmUp.reachedHome), "
+                "Tune AV did not reach and stay on the home shell on warm-up attempt \(warmUpAttempt) "
+                    + "within \(Int(Self.warmUpTimeout))s (reachedHome \(warmUp.reachedHome), "
                     + "app state \(warmUp.appState.rawValue), lost automation \(warmUp.lostAutomation))."
             )
             return
@@ -79,16 +79,15 @@ final class LaunchPerformanceUITests: TuneAVUITestCase {
         let options = XCTExpectedFailure.Options()
         options.isStrict = false
         options.issueMatcher = { issue in
-            guard issue.compactDescription.contains(Self.lostAutomationMarker) else { return false }
+            let text = [issue.compactDescription, issue.detailedDescription ?? ""].joined(separator: " ")
+            guard text.contains(Self.lostAutomationMarker) else { return false }
             lostAutomation.set()
             return true
         }
 
-        var result: LaunchReadiness?
-        XCTExpectFailure("The automation connection to the app can drop on a cold simulator.", options: options) {
-            result = measureLaunchReadiness(timeout: Self.warmUpTimeout, lostAutomation: lostAutomation)
+        return XCTExpectFailure("The automation connection to the app can drop on a cold simulator.", options: options) {
+            measureLaunchReadiness(timeout: Self.warmUpTimeout, lostAutomation: lostAutomation)
         }
-        return result ?? LaunchReadiness(milliseconds: .infinity, reachedHome: false, appState: .unknown, lostAutomation: true)
     }
 
     private func measureLaunchReadiness(
