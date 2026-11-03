@@ -18,6 +18,30 @@ repo-local purpose-named `-derivedDataPath` directories and remove repo-local
 `.DerivedData*`/`.derived-data*` caches after the task when no build is using
 them.
 
+## Review
+
+The independent review that sets the `agent-review` status follows
+[`project-bootstrap/docs/REVIEW.md`](https://github.com/miguelavalos/project-bootstrap/blob/main/docs/REVIEW.md)
+(`~/github/project-bootstrap/docs/REVIEW.md` on agent machines). The reviewer
+is a fresh agent that did not write the change, and its review comment starts
+with `PASS` or `BLOCK`.
+
+## Verification before a pull request
+
+Run once, before opening a pull request:
+
+```bash
+TUNEAV_IOS_SIMULATOR_NAME="iPhone 17" TUNEAV_IOS_SKIP_LAUNCH_PERF_SMOKE=1 ./scripts/ios-ci-test.sh
+```
+
+The full suite, release builds and device runs belong to CI and to the
+required checks; do not repeat them locally unless the change needs it.
+
+A fresh worktree is prepared by `t3.json`, which runs
+`scripts/setup-worktree.sh` (links the `account-av` and `apps-av` siblings from
+the main checkout, then XcodeGen for `apps/ios` and `apps/macos`); wait
+for it to finish before installing anything by hand.
+
 This public repo does not define the full signed-runtime testing workflow.
 
 For any native app workflow validation that touches signed account state,
