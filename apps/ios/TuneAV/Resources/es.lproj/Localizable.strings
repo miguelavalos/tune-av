@@ -438,6 +438,7 @@
 "shell.avi.title" = "Avi";
 "shell.error.home" = "Comprueba tu conexión o prueba con otro género.";
 "shell.error.search" = "No hemos podido cargar emisoras. Prueba con otra búsqueda.";
+"shell.explore.title" = "Explorar";
 "shell.featured.play" = "Reproducir ahora";
 "shell.header.account" = "Mi cuenta";
 "shell.header.settings" = "Ajustes";
@@ -730,8 +731,10 @@
 "stationService.fallback.unknownCountry" = "País desconocido";
 "stationService.fallback.unknownLanguage" = "Idioma desconocido";
 "stationService.fallback.unnamed" = "Emisora sin nombre";
+"tab.explore" = "Explorar";
 "tab.home" = "Inicio";
 "tab.library" = "Radios";
+"tab.libraryHub" = "Biblioteca";
 "tab.music" = "Música";
 "tab.profile" = "Perfil";
 "tab.search" = "Buscar";
@@ -984,6 +987,9 @@
 "shell.library.sort.mostPlayed" = "Más escuchadas";
 "shell.library.sort.recentlyAdded" = "Añadidas recientemente";
 "shell.library.sort.title" = "Orden";
+"shell.libraryHub.segment.radios" = "Radios";
+"shell.libraryHub.segment.songs" = "Canciones";
+"shell.libraryHub.segments" = "Secciones de la biblioteca";
 "shell.music.overview.artists" = "Artistas";
 "shell.music.overview.empty" = "Aún no hay música";
 "shell.music.overview.empty.action" = "Buscar una radio";

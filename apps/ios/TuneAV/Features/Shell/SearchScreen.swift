@@ -61,7 +61,7 @@ struct SearchScreen: View {
                 query: queryText,
                 discoveryMode: discoveryMode
             ),
-            title: L10n.string("shell.search.title"),
+            title: L10n.string("shell.explore.title"),
             summary: searchAviDetail,
             showsAviImage: false,
             accessibilityIdentifier: "search.aviHeader"

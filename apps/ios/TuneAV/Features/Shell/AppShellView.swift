@@ -61,6 +61,7 @@ struct AppShellView: View {
     @StateObject var chromeActions = AppShellChromeActions()
     @StateObject var searchPresentation: SearchPresentationStore
     @State var selectedTab: AppShellTab
+    @State var lastLibraryTab: AppShellTab
     @State var homeStations: [Station] = []
     @State var homeIsLoading = false
     @State var homeErrorMessage: String?
@@ -130,7 +131,9 @@ struct AppShellView: View {
         self.launchContext = launchContext
         self.startSignInFlow = startSignInFlow
         self.synchronizeLibraryNow = synchronizeLibraryNow
-        _selectedTab = State(initialValue: AppShellTab(launchContext.preferredTab, preferredSearchQuery: launchContext.preferredSearchQuery))
+        let initialTab = AppShellTab(launchContext.preferredTab, preferredSearchQuery: launchContext.preferredSearchQuery)
+        _selectedTab = State(initialValue: initialTab)
+        _lastLibraryTab = State(initialValue: initialTab.librarySegment == nil ? .library : initialTab)
         _searchPresentation = StateObject(wrappedValue: SearchPresentationStore(query: launchContext.preferredSearchQuery ?? ""))
     }
 
@@ -183,6 +186,9 @@ struct AppShellView: View {
                 await refreshUserSummaryForVisibleTab()
             }
             .onChange(of: selectedTab) { _, newValue in
+                if newValue.librarySegment != nil {
+                    lastLibraryTab = newValue
+                }
                 guard newValue == .home else { return }
                 refreshHomePresentation()
             }
@@ -236,7 +242,7 @@ struct AppShellView: View {
                 if tab == .avi {
                     openContextualAvi()
                 } else {
-                    selectedTab = tab
+                    selectNavigationTab(tab)
                 }
             },
             content: {
@@ -311,10 +317,8 @@ struct AppShellView: View {
             searchScreen
         case .avi:
             aviScreen
-        case .library:
-            libraryScreen
-        case .music:
-            musicScreen
+        case .library, .music:
+            libraryHubScreen
         case .profile:
             profileScreen
         }
@@ -588,6 +592,25 @@ struct AppShellView: View {
                 closeFocusedAviDetail()
             }
         )
+    }
+
+    var libraryHubScreen: some View {
+        LibraryHubScreen(
+            segment: Binding(
+                get: { selectedTab.librarySegment ?? .radios },
+                set: { segment in
+                    guard selectedTab != segment.tab else { return }
+                    AVHaptics.perform(.navigation)
+                    selectedTab = segment.tab
+                }
+            ),
+            radios: { libraryScreen },
+            songs: { musicScreen }
+        )
+    }
+
+    func selectNavigationTab(_ tab: AppShellTab) {
+        selectedTab = selectedTab.selectingNavigationTab(tab, lastLibraryTab: lastLibraryTab)
     }
 
     func openSearchTab() {

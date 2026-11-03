@@ -387,6 +387,7 @@
 "shell.avi.title" = "Avi";
 "shell.error.home" = "Prüfe deine Verbindung oder probiere ein anderes Genre.";
 "shell.error.search" = "Sender konnten nicht geladen werden. Probiere eine andere Suche.";
+"shell.explore.title" = "Entdecken";
 "shell.featured.play" = "Jetzt abspielen";
 "shell.header.account" = "Mein Konto";
 "shell.header.settings" = "Einstellungen";
@@ -661,8 +662,10 @@
 "stationService.fallback.unknownCountry" = "Unbekanntes Land";
 "stationService.fallback.unknownLanguage" = "Unbekannte Sprache";
 "stationService.fallback.unnamed" = "Unbenannter Sender";
+"tab.explore" = "Entdecken";
 "tab.home" = "Start";
 "tab.library" = "Radios";
+"tab.libraryHub" = "Bibliothek";
 "tab.music" = "Musik";
 "tab.profile" = "Profil";
 "tab.search" = "Suche";
@@ -882,6 +885,9 @@
 "shell.library.sort.mostPlayed" = "Meistgehört";
 "shell.library.sort.recentlyAdded" = "Zuletzt hinzugefügt";
 "shell.library.sort.title" = "Sortierung";
+"shell.libraryHub.segment.radios" = "Radios";
+"shell.libraryHub.segment.songs" = "Songs";
+"shell.libraryHub.segments" = "Bibliotheksbereiche";
 "shell.music.overview.artists" = "Künstler";
 "shell.music.overview.empty" = "Noch keine Musik";
 "shell.music.overview.empty.detail" = "Wenn Avi Songs erkennt, erscheinen die neuesten hier.";

@@ -63,22 +63,41 @@ class TuneAVUITestCase: XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) -> XCUIElement {
-        let compactButton = app.descendants(matching: .any)["tab.\(id)"].firstMatch
-        let tabletButton = app.descendants(matching: .any)["tune.sidebar.\(id)"].firstMatch
+        let candidates = ["shell.tab.\(id)", "tab.\(id)", "tune.sidebar.\(id)"].map {
+            app.descendants(matching: .any)[$0].firstMatch
+        }
 
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if compactButton.exists {
-                return compactButton
-            }
-            if tabletButton.exists {
-                return tabletButton
+            if let button = candidates.first(where: { $0.exists }) {
+                return button
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
 
-        XCTAssertTrue(compactButton.exists || tabletButton.exists, file: file, line: line)
-        return tabletButton
+        XCTAssertTrue(candidates.contains(where: { $0.exists }), file: file, line: line)
+        return candidates[0]
+    }
+
+    func librarySegment(
+        _ id: String,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        app.buttons["library.segment.\(id)"].firstMatch
+    }
+
+    func openLibrarySegment(
+        _ id: String,
+        in app: XCUIApplication,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        tapShellButton("library", in: app, timeout: timeout, file: file, line: line)
+        let segment = librarySegment(id, in: app)
+        XCTAssertTrue(segment.waitForExistence(timeout: timeout), file: file, line: line)
+        segment.tap()
+        XCTAssertTrue(segment.isSelected, file: file, line: line)
     }
 
     func tapShellButton(

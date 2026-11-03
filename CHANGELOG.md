@@ -6,6 +6,11 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Three tabs on iPhone and iPad: Home, Explore (search with mood and genre
+  chips) and Library, which joins Radios and Songs behind one segmented
+  control. Avi stays the floating button and Profile stays in the header;
+  routes and `TUNEAV_OPEN_TAB` values that opened Radios or Music now land on
+  the matching Library segment.
 - No more sentences cut off with "…" on iOS: shorter first-person Avi lines on
   Home and in the full player in all five languages, a short status pill on the
   Home card, and Avi texts and station names that wrap instead of truncating.
