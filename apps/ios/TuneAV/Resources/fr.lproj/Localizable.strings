@@ -1184,3 +1184,19 @@
 "accountAPI.error.missingBaseURL" = "URL de base de l'API Apps AV manquante.";
 "accountAPI.error.requestFailed" = "La requête vers l'API Apps AV a échoué avec le statut %d.";
 "stationService.error.requestFailed" = "La requête vers le service des stations a échoué avec le statut %d.";
+
+"widget.myRadio.title" = "Ma radio";
+"widget.myRadio.description" = "Lancez votre radio d'un seul toucher.";
+"widget.favorites.title" = "Radio et favorites";
+"widget.favorites.description" = "Votre radio, le morceau et vos radios favorites, à portée de doigt.";
+"widget.lockScreen.title" = "Lancer ma radio";
+"widget.lockScreen.description" = "Lancez votre radio depuis l'écran verrouillé.";
+"widget.status.loading" = "Chargement";
+"widget.action.playStation" = "Lire %@";
+"widget.action.openPlayer" = "Ouvre le lecteur";
+"widget.empty.title" = "Choisissez une radio";
+"widget.empty.message" = "Ouvrez Tune AV et lancez une radio. Elle apparaîtra ici.";
+"widget.intent.playStation" = "Lire la radio";
+"widget.intent.station" = "Station de radio";
+"widget.intent.favoriteShortcut" = "Depuis les favorites";
+"widget.intent.wasPlaying" = "Était en lecture";

@@ -178,10 +178,25 @@ struct TuneAVActivityControls: View {
     }
 }
 
+enum TuneAVArtworkLocation {
+    case liveActivity
+    case widgets
+
+    func url(for fileName: String) -> URL? {
+        switch self {
+        case .liveActivity:
+            return TuneAVSharedContainer.liveActivityArtworkURL(fileName: fileName)
+        case .widgets:
+            return TuneAVSharedContainer.widgetArtworkURL(fileName: fileName)
+        }
+    }
+}
+
 struct TuneAVActivityArtwork: View {
     let fileName: String?
     let size: CGFloat
     let cornerRadius: CGFloat
+    var location: TuneAVArtworkLocation = .liveActivity
 
     var body: some View {
         ZStack {
@@ -206,7 +221,7 @@ struct TuneAVActivityArtwork: View {
 
     private var image: UIImage? {
         guard let fileName,
-              let url = TuneAVSharedContainer.liveActivityArtworkURL(fileName: fileName) else { return nil }
+              let url = location.url(for: fileName) else { return nil }
         return UIImage(contentsOfFile: url.path)
     }
 }
