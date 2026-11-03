@@ -28,7 +28,62 @@ final class TuneAVSurpriseStationPickerTests: XCTestCase {
         let fresh = station("fresh")
         let picked = pick(favorites: [current, disliked, notForMe, fresh], recentPlays: [], feedback: feedback, popular: [], currentStationID: current.id)
         XCTAssertEqual(picked?.station.id, fresh.id)
-        XCTAssertEqual(picked?.reason, .unplayedFavorite)
+        XCTAssertEqual(picked?.reason, .savedFavorite)
+    }
+
+    func testFavoriteWithoutADatedPlayIsOnlyCalledSaved() {
+        // Played before the play log existed, more than 14 days ago, or on another device:
+        // Avi cannot know it was never played, so the reason must not say so.
+        let favorite = station("favorite")
+
+        let picked = pick(favorites: [favorite], recentPlays: [], playedStations: [favorite], feedback: [:], popular: [])
+
+        XCTAssertEqual(picked?.station.id, favorite.id)
+        XCTAssertEqual(picked?.reason, .savedFavorite)
+        XCTAssertEqual(picked?.reasonKey, "shell.home.surprise.reason.favoriteSaved")
+        XCTAssertEqual(picked?.reasonArguments, [favorite.name])
+    }
+
+    func testFavoriteMatchesItsPlaysByStreamWhenTheIDsDiffer() {
+        let favorite = station("synced-favorite-id", stream: "shared")
+        let playedCopy = station("local-recent-id", stream: "shared")
+        let popular = station("popular", tags: "news")
+
+        let playedYesterday = pick(
+            favorites: [favorite],
+            recentPlays: [play(playedCopy, daysAgo: 1, hour: 8)],
+            feedback: [:],
+            popular: [popular]
+        )
+        XCTAssertEqual(playedYesterday?.station.id, popular.id, "A favorite played yesterday under another id is not offered again")
+        XCTAssertEqual(playedYesterday?.reason, .popular)
+
+        let playedLastWeek = pick(
+            favorites: [favorite],
+            recentPlays: [play(playedCopy, daysAgo: 6, hour: 8)],
+            feedback: [:],
+            popular: [popular]
+        )
+        XCTAssertEqual(playedLastWeek?.station.id, favorite.id)
+        XCTAssertEqual(playedLastWeek?.reason, .restedFavorite)
+    }
+
+    func testNewForYouSkipsRadiosPlayedWithoutADateOrAlreadySaved() {
+        let favorite = station("favorite", tags: "rock")
+        let undatedRecent = station("undated-recent", tags: "rock")
+        let popularCopyOfFavorite = station("popular-copy", tags: "rock", stream: "favorite")
+        let fresh = station("fresh", tags: "rock")
+
+        let picked = pick(
+            favorites: [favorite],
+            recentPlays: [play(favorite, daysAgo: 0, hour: 8)],
+            playedStations: [favorite, undatedRecent],
+            feedback: [:],
+            popular: [undatedRecent, popularCopyOfFavorite, fresh]
+        )
+
+        XCTAssertEqual(picked?.station.id, fresh.id)
+        XCTAssertEqual(picked?.reason, .tag("rock"))
     }
 
     func testRestedFavoriteComesFirstAndTheOldestWins() {
@@ -163,6 +218,7 @@ final class TuneAVSurpriseStationPickerTests: XCTestCase {
     private func pick(
         favorites: [Station],
         recentPlays: [TuneAVRecentPlay],
+        playedStations: [Station] = [],
         feedback: [String: TuneAVStationFeedback],
         popular: [Station],
         currentStationID: String? = nil
@@ -170,6 +226,7 @@ final class TuneAVSurpriseStationPickerTests: XCTestCase {
         TuneAVSurpriseStationPicker.pick(
             favorites: favorites,
             recentPlays: recentPlays,
+            playedStations: playedStations,
             feedback: feedback,
             popular: popular,
             now: now,
@@ -186,14 +243,14 @@ final class TuneAVSurpriseStationPickerTests: XCTestCase {
         calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
     }
 
-    private func station(_ id: String, tags: String = "") -> Station {
+    private func station(_ id: String, tags: String = "", stream: String? = nil) -> Station {
         Station(
             id: id,
             name: "Station \(id)",
             country: "Spain",
             language: "Spanish",
             tags: tags,
-            streamURL: "https://example.com/\(id)"
+            streamURL: "https://example.com/\(stream ?? id)"
         )
     }
 }

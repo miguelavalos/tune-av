@@ -470,7 +470,7 @@
 "shell.home.surprise.action" = "Surprise me";
 "shell.home.surprise.unavailable" = "I need a few more radios first. Play or save some and ask me again.";
 "shell.home.surprise.reason.favoriteRested" = "You haven't played %@ in days. Let's go again.";
-"shell.home.surprise.reason.favoriteUnplayed" = "You saved %@ and never played it. Let's hear it.";
+"shell.home.surprise.reason.favoriteSaved" = "You have %@ saved. Let's hear it.";
 "shell.home.surprise.reason.band.morning" = "In the morning you often play %@. Let's try it.";
 "shell.home.surprise.reason.band.midday" = "Around midday you often play %@. Let's try it.";
 "shell.home.surprise.reason.band.afternoon" = "In the afternoon you often play %@. Let's try it.";
