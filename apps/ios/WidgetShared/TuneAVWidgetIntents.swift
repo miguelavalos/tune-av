@@ -3,14 +3,29 @@ import Foundation
 
 enum TuneAVWidgetAction: Sendable, Equatable {
     case playStation(id: String, isFavoriteShortcut: Bool, expectsActivePlayback: Bool)
+    case startMyRadio
+    case startStation(id: String)
+    case pausePlayback
+}
+
+enum TuneAVWidgetActionOutcome: Sendable, Equatable {
+    case done
+    case playing
+    case alreadyPlaying
+    case paused
+    case nothingToPause
+    case noStation
+    case needsApp(TuneAVWidgetDeepLink)
 }
 
 @MainActor
 enum TuneAVWidgetActionRouter {
-    static var handler: (@MainActor (TuneAVWidgetAction) async -> Void)?
+    static var handler: (@MainActor (TuneAVWidgetAction) async -> TuneAVWidgetActionOutcome)?
+    static var appLinkHandler: (@MainActor (TuneAVWidgetDeepLink) -> Void)?
 
-    static func perform(_ action: TuneAVWidgetAction) async {
-        await handler?(action)
+    @discardableResult
+    static func perform(_ action: TuneAVWidgetAction) async -> TuneAVWidgetActionOutcome {
+        await handler?(action) ?? .noStation
     }
 }
 

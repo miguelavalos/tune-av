@@ -1200,3 +1200,15 @@
 "widget.intent.station" = "Radiosender";
 "widget.intent.favoriteShortcut" = "Aus den Favoriten";
 "widget.intent.wasPlaying" = "Lief gerade";
+"control.intent.isPlaying" = "Läuft";
+"control.myRadio.description" = "Spiel dein Radio ab oder pausiere es.";
+"siri.shortcut.playMyRadio" = "Mein Radio abspielen";
+"siri.shortcut.pause" = "Radio pausieren";
+"siri.shortcut.playStation" = "Ein Radio abspielen";
+"siri.intent.playMyRadio.description" = "Spielt dein letztes Radio oder deinen ersten Favoriten ab.";
+"siri.intent.playStation.description" = "Spielt eines deiner favorisierten oder letzten Radios ab.";
+"siri.intent.pause.description" = "Pausiert das laufende Radio.";
+"siri.error.noRadio" = "Wähle zuerst ein Radio in Tune AV.";
+"siri.error.stationUnavailable" = "Dieses Radio ist nicht mehr in deinen Favoriten oder letzten Radios.";
+"siri.dialog.continueInApp" = "Öffne Tune AV zum Abspielen. Du wolltest vor der Nutzung mobiler Daten gewarnt werden.";
+"control.intent.link" = "Verknüpfung";

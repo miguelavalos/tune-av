@@ -2,14 +2,22 @@ import SwiftUI
 
 extension AppShellView {
     func registerWidgetPlayback() {
-        widgetPlaybackRegistration = TuneAVWidgetController.shared.registerShellPlayback { station, queueSource, queue in
-            playStation(station, queueSource: queueSource, queue: queue)
-        }
+        widgetPlaybackRegistration = TuneAVWidgetController.shared.registerShellPlayback(
+            { station, queueSource, queue in
+                playStation(station, queueSource: queueSource, queue: queue)
+            },
+            deepLink: { link in
+                handleWidgetDeepLink(link)
+            }
+        )
     }
 
     func handleWidgetDeepLink(_ url: URL) {
         guard let link = TuneAVWidgetDeepLink(url: url) else { return }
+        handleWidgetDeepLink(link)
+    }
 
+    func handleWidgetDeepLink(_ link: TuneAVWidgetDeepLink) {
         switch link {
         case .home:
             selectedTab = .home
