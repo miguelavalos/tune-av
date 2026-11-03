@@ -419,7 +419,7 @@
 "shell.home.surprise.action" = "Sorprèn-me";
 "shell.home.surprise.unavailable" = "Encara em falten ràdios. Posa'n o desa'n alguna i torna-m'ho a demanar.";
 "shell.home.surprise.reason.favoriteRested" = "Fa dies que no poses %@. Hi tornem.";
-"shell.home.surprise.reason.favoriteUnplayed" = "Vas desar %@ i no l'has posat mai. Escoltem-la.";
+"shell.home.surprise.reason.favoriteSaved" = "Tens %@ desada. Escoltem-la.";
 "shell.home.surprise.reason.band.morning" = "Al matí sols escoltar %@. Provem-ho.";
 "shell.home.surprise.reason.band.midday" = "Al migdia sols escoltar %@. Provem-ho.";
 "shell.home.surprise.reason.band.afternoon" = "A la tarda sols escoltar %@. Provem-ho.";

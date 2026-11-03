@@ -391,6 +391,7 @@ struct AppShellView: View {
         let pick = TuneAVSurpriseStationPicker.pick(
             favorites: enrichedFavoriteStations,
             recentPlays: stationPlayLog.recentPlays(stations: enrichedRecentStations, lastPlayedByID: lastPlayedByID),
+            playedStations: enrichedRecentStations,
             feedback: libraryStore.stationFeedback,
             popular: enrichedStations(homeSnapshot.stations),
             now: .now,

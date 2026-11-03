@@ -351,15 +351,7 @@ final class TuneAVMacModel: ObservableObject {
     /// normal play path, then says why on Home.
     func surpriseMe() {
         let currentStationID = currentStation?.id
-        let pick = TuneAVSurpriseStationPicker.pick(
-            favorites: favoriteStations,
-            recentPlays: stationPlayLog.recentPlays(stations: recentStations),
-            feedback: stationFeedback,
-            popular: featuredStations,
-            now: nowProvider(),
-            currentStationID: currentStationID
-        )
-        guard let pick else {
+        guard let pick = surprisePick() else {
             homeSurpriseBrief = MacHomeSurpriseBrief(
                 stationID: nil,
                 currentStationIDAtRequest: currentStationID,
@@ -373,6 +365,20 @@ final class TuneAVMacModel: ObservableObject {
             reason: pick.localizedReason()
         )
         play(pick.station, queue: [pick.station], source: .homeDiscovery)
+    }
+
+    /// The radio "Surprise me" would play now. Recents count as played even without a logged
+    /// play: they carry no date on macOS and the play log keeps only 14 days.
+    func surprisePick() -> TuneAVSurprisePick? {
+        TuneAVSurpriseStationPicker.pick(
+            favorites: favoriteStations,
+            recentPlays: stationPlayLog.recentPlays(stations: recentStations),
+            playedStations: recentStations,
+            feedback: stationFeedback,
+            popular: featuredStations,
+            now: nowProvider(),
+            currentStationID: currentStation?.id
+        )
     }
 
     var moodGenreSuggestions: [MacHomeMoodGenreSuggestion] {

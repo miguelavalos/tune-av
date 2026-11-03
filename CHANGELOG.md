@@ -6,6 +6,12 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Surprise me on Home no longer says a saved radio was "never played" when it
+  was played before 1.1.0, more than two weeks ago or on another device: Avi
+  now only says the radio is saved. Saved radios and recents count as played
+  even with a different id or no logged date, so they are no longer offered as
+  "New for you" either (iOS and macOS).
+
 ## 1.1.0 - 2026-11-03
 
 iOS/iPadOS `1.1.0 (62)` and macOS `1.1.0 (67)`. Siri, Control Center, widgets,
