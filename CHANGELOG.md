@@ -6,6 +6,8 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+## 1.1.0 - 2026-11-03
+
 - Siri, Shortcuts and the Action button on iPhone: "Play my radio on Tune AV"
   starts your last or favorite radio, "Pause Tune AV" pauses it, and "Play
   <radio> on Tune AV" starts one of your favorite or recent radios by name, in
@@ -26,6 +28,19 @@ This project follows semantic versioning once public source releases begin.
   shares artwork with the app through the `group.<bundle id>` App Group.
 - Add an AirPlay button to the iOS full player card, next to the station name,
   to send the radio to AirPlay speakers, Apple TV or Bluetooth.
+- The Pro paywall on iPhone and iPad shows every text in full: titles, offer
+  details, benefits, buttons and the Terms, Privacy, Restore and Redeem links
+  wrap or stack instead of being cut off with "…" or shrunk. Prices, the
+  monthly plan and purchases are unchanged.
+- Make the iOS launch-time check in CI steadier: it launches the app once
+  without timing it, then times two more launches and keeps the faster one
+  against the same budget. If the test loses its connection to the app on that
+  first launch while the app is still on screen, it relaunches, up to three
+  times. It fails if the app stops before or just after it reaches Home, and
+  logs every measured time.
+
+## 1.0.9 - 2026-11-01
+
 - The Pro paywall on iPhone and iPad always shows the Terms and Privacy links,
   and the sign-in consent links no longer open missing pages: iOS and macOS use
   the public default URLs `https://tune-av.avalsys.com/terms` and
@@ -59,15 +74,6 @@ This project follows semantic versioning once public source releases begin.
 - Open and close the iOS full player smoothly: the card grows from the mini
   player and the artwork moves into place with a short spring, and closing
   reverses it. With Reduce Motion on, the two simply crossfade.
-- Make the iOS launch-time check in CI steadier: it launches the app once
-  without timing it, then times two more launches and keeps the faster one
-  against the same budget. If the test loses its connection to the app on that
-  first launch while the app is still on screen, it relaunches, up to three
-  times. It fails if the app stops before or just after it reaches Home, and
-  logs every measured time.
-
-## 1.0.9 - 2026-11-01
-
 - Let Avi speak in first person on iOS and macOS: the Avi signals, moods, related
   radios, recommendation fallback and the Home brief now read as a companion
   talking to the listener in all five locales, and the Home brief notices a
