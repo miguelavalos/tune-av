@@ -14,12 +14,15 @@ final class TuneAVWidgetController {
     private static let coalescingDelay: Duration = .milliseconds(500)
     private static let launchSettleDelay: Duration = .seconds(2)
     private static let artworkPixelSize = 180
+    private static let artworkRetryInterval: TimeInterval = 300
+    private static let favoriteCandidateLimit = 12
     private nonisolated static let artworkCompressionQuality: CGFloat = 0.82
 
     private weak var audioPlayer: AudioPlayerService?
     private weak var libraryStore: LibraryStore?
     private weak var accessController: AccessController?
     private var shellPlaybackHandler: ShellPlaybackHandler?
+    private var shellPlaybackToken: UUID?
     private var cancellables: Set<AnyCancellable> = []
     private var directory: URL?
     private var isLaunchSettled = false
@@ -31,7 +34,9 @@ final class TuneAVWidgetController {
     private var reloadThrottle = TuneAVLiveActivityUpdateThrottle(minimumInterval: TuneAVWidgetReloadPlanner.minimumInterval)
     private var artworkFileNames: [URL: String] = [:]
     private var artworkInFlight: [URL: String] = [:]
-    private var artworkFailures: Set<URL> = []
+    private var artworkFailures: [URL: Date] = [:]
+    private var launchArtworkFileNames: Set<String> = []
+    private var pendingReloadKinds: Set<String> = []
     private var pendingRecentStationID: String?
 
     private init() {}
@@ -85,12 +90,17 @@ final class TuneAVWidgetController {
             .store(in: &cancellables)
     }
 
-    func registerShellPlayback(_ handler: @escaping ShellPlaybackHandler) {
+    func registerShellPlayback(_ handler: @escaping ShellPlaybackHandler) -> UUID {
+        let token = UUID()
         shellPlaybackHandler = handler
+        shellPlaybackToken = token
+        return token
     }
 
-    func unregisterShellPlayback() {
+    func unregisterShellPlayback(token: UUID?) {
+        guard let token, token == shellPlaybackToken else { return }
         shellPlaybackHandler = nil
+        shellPlaybackToken = nil
     }
 
     private func settleAfterLaunch(delay: Duration) {
@@ -99,13 +109,20 @@ final class TuneAVWidgetController {
             if delay > .zero {
                 try? await Task.sleep(for: delay)
             }
-            let (directory, baseline) = await Task.detached(priority: .utility) { () -> (URL?, TuneAVWidgetSnapshot?) in
-                guard let directory = TuneAVSharedContainer.widgetsDirectoryURL else { return (nil, nil) }
-                return (directory, TuneAVWidgetSnapshotStore.read(from: directory))
+            let (directory, baseline, artworkFileNames) = await Task.detached(priority: .utility) {
+                () -> (URL?, TuneAVWidgetSnapshot?, Set<String>) in
+                guard let directory = TuneAVSharedContainer.widgetsDirectoryURL else { return (nil, nil, []) }
+                let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+                return (
+                    directory,
+                    TuneAVWidgetSnapshotStore.read(from: directory),
+                    Set(fileNames.filter(TuneAVSharedContainer.isValidArtworkFileName))
+                )
             }.value
             guard let self else { return }
             self.directory = directory
             self.lastSnapshot = baseline
+            self.launchArtworkFileNames = artworkFileNames
             self.isLaunchSettled = true
             self.launchSettleTask = nil
             self.evaluate(bypassThrottle: false)
@@ -123,10 +140,11 @@ final class TuneAVWidgetController {
         guard let audioPlayer, let libraryStore else { return }
 
         switch action {
-        case let .playStation(id, isFavoriteShortcut):
+        case let .playStation(id, isFavoriteShortcut, expectsActivePlayback):
             switch TuneAVWidgetPlaybackPlanner.command(
                 stationID: id,
                 isFavoriteShortcut: isFavoriteShortcut,
+                expectsActivePlayback: expectsActivePlayback,
                 currentStationID: audioPlayer.currentStation?.id,
                 status: audioPlayer.status
             ) {
@@ -145,6 +163,11 @@ final class TuneAVWidgetController {
                 let queue = isFavoriteShortcut ? libraryStore.favoriteStations() : nil
                 if let shellPlaybackHandler {
                     shellPlaybackHandler(station, source, queue)
+                } else if ShellCellularPlaybackGate.decision(
+                    warnBeforeCellularPlayback: libraryStore.settings.warnBeforeCellularPlayback,
+                    currentNetworkIsExpensive: audioPlayer.currentNetworkIsExpensive
+                ) == .requestConfirmation {
+                    Self.logger.debug("Widget playback waits for the cellular confirmation in the app")
                 } else {
                     audioPlayer.play(
                         station: station,
@@ -184,7 +207,7 @@ final class TuneAVWidgetController {
         recordWidgetStartedPlaybackIfNeeded(audioPlayer: audioPlayer, libraryStore: libraryStore)
 
         let favorites = libraryStore.favorites
-            .prefix(TuneAVWidgetSnapshot.maximumFavorites + 1)
+            .prefix(Self.favoriteCandidateLimit)
             .map(Station.init(favorite:))
         var input = TuneAVWidgetSnapshotInput(
             currentStation: audioPlayer.currentStation,
@@ -200,6 +223,13 @@ final class TuneAVWidgetController {
         let sources = TuneAVWidgetSnapshotMapper.artworkSources(for: input)
         let wanted = Set(sources)
         artworkFileNames = artworkFileNames.filter { wanted.contains($0.key) }
+        for url in sources where artworkFileNames[url] == nil {
+            let fileName = TuneAVLiveActivityController.artworkFileName(for: url)
+            if launchArtworkFileNames.contains(fileName) {
+                artworkFileNames[url] = fileName
+            }
+        }
+        launchArtworkFileNames = []
         input.artworkFileNames = artworkFileNames
         requestArtwork(sources, directory: directory)
 
@@ -229,6 +259,7 @@ final class TuneAVWidgetController {
             now: Date()
         )
         guard decision != .none else { return }
+        pendingReloadKinds.formUnion(TuneAVWidgetReloadPlanner.kinds(previous: lastSnapshot, next: snapshot))
         lastSnapshot = snapshot
 
         let keeping = keptFileNames(for: snapshot)
@@ -261,10 +292,13 @@ final class TuneAVWidgetController {
         scheduledReload?.cancel()
         scheduledReload = nil
         reloadThrottle.recordUpdate(at: Date())
+        let kinds = TuneAVWidgetKind.all.filter(pendingReloadKinds.contains)
+        pendingReloadKinds = []
+        guard !kinds.isEmpty else { return }
         let pendingWrites = ioTail
         Task {
             await pendingWrites?.value
-            for kind in TuneAVWidgetKind.all {
+            for kind in kinds {
                 WidgetCenter.shared.reloadTimelines(ofKind: kind)
             }
         }
@@ -294,7 +328,9 @@ final class TuneAVWidgetController {
     }
 
     private func requestArtwork(_ urls: [URL], directory: URL) {
-        for url in urls where artworkFileNames[url] == nil && artworkInFlight[url] == nil && !artworkFailures.contains(url) {
+        let now = Date()
+        artworkFailures = artworkFailures.filter { now.timeIntervalSince($0.value) < Self.artworkRetryInterval }
+        for url in urls where artworkFileNames[url] == nil && artworkInFlight[url] == nil && artworkFailures[url] == nil {
             let fileName = TuneAVLiveActivityController.artworkFileName(for: url)
             let fileURL = directory.appendingPathComponent(fileName, isDirectory: false)
             artworkInFlight[url] = fileName
@@ -320,7 +356,7 @@ final class TuneAVWidgetController {
         guard artworkInFlight[url] == fileName else { return }
         artworkInFlight[url] = nil
         guard didStore else {
-            artworkFailures.insert(url)
+            artworkFailures[url] = Date()
             return
         }
         artworkFileNames[url] = fileName

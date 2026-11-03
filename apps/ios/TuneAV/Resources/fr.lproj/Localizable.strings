@@ -1199,3 +1199,4 @@
 "widget.intent.playStation" = "Lire la radio";
 "widget.intent.station" = "Station de radio";
 "widget.intent.favoriteShortcut" = "Depuis les favorites";
+"widget.intent.wasPlaying" = "Était en lecture";

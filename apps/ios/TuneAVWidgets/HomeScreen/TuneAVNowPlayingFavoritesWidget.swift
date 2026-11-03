@@ -133,7 +133,7 @@ struct TuneAVWidgetFavoritesGrid: View {
                     .foregroundStyle(TuneAVWidgetBrand.paper)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
             }
             .padding(.horizontal, 4)
             .padding(.vertical, 5)

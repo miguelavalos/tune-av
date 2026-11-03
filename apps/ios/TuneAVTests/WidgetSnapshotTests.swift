@@ -230,7 +230,39 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(Planner.queueSource(isFavoriteShortcut: false), .singleStation)
     }
 
+    func testPlaybackPlannerIgnoresStalePauseTaps() {
+        typealias Planner = TuneAVWidgetPlaybackPlanner
+        XCTAssertEqual(
+            Planner.command(stationID: "a", isFavoriteShortcut: false, expectsActivePlayback: true, currentStationID: nil, status: .idle),
+            .none
+        )
+        XCTAssertEqual(
+            Planner.command(stationID: "a", isFavoriteShortcut: false, expectsActivePlayback: true, currentStationID: "a", status: .paused),
+            .none
+        )
+        XCTAssertEqual(
+            Planner.command(stationID: "a", isFavoriteShortcut: false, expectsActivePlayback: true, currentStationID: "a", status: .playing),
+            .pause
+        )
+    }
+
     // MARK: Reload throttling
+
+    func testReloadKindsSkipCompactWidgetsForSongAndFavoriteChanges() {
+        let base = snapshot(input(current: station("now"), status: .playing, title: "Roundabout", artist: "Yes", favorites: [station("a")]))
+        var songChanged = base
+        songChanged.songTitle = "Heart of the Sunrise"
+        var favoritesChanged = base
+        favoritesChanged.favorites = []
+        var playbackChanged = base
+        playbackChanged.playback = .paused
+
+        XCTAssertEqual(TuneAVWidgetReloadPlanner.kinds(previous: nil, next: base), Set(TuneAVWidgetKind.all))
+        XCTAssertEqual(TuneAVWidgetReloadPlanner.kinds(previous: base, next: base), [])
+        XCTAssertEqual(TuneAVWidgetReloadPlanner.kinds(previous: base, next: songChanged), [TuneAVWidgetKind.nowPlayingFavorites])
+        XCTAssertEqual(TuneAVWidgetReloadPlanner.kinds(previous: base, next: favoritesChanged), [TuneAVWidgetKind.nowPlayingFavorites])
+        XCTAssertEqual(TuneAVWidgetReloadPlanner.kinds(previous: base, next: playbackChanged), Set(TuneAVWidgetKind.all))
+    }
 
     func testReloadPlannerSkipsUnchangedAndThrottlesChanges() {
         let first = snapshot(input(current: station("now"), status: .playing))

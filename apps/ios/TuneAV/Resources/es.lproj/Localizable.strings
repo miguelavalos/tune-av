@@ -1199,3 +1199,4 @@
 "widget.intent.playStation" = "Reproducir radio";
 "widget.intent.station" = "Emisora";
 "widget.intent.favoriteShortcut" = "Desde favoritas";
+"widget.intent.wasPlaying" = "Estaba sonando";

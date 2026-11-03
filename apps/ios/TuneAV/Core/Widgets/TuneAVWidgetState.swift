@@ -145,9 +145,14 @@ enum TuneAVWidgetPlaybackPlanner {
     static func command(
         stationID: String,
         isFavoriteShortcut: Bool,
+        expectsActivePlayback: Bool = false,
         currentStationID: String?,
         status: TuneAVPlaybackState
     ) -> Command {
+        let isActive = currentStationID == stationID && (status == .playing || status == .loading)
+        if expectsActivePlayback, !isActive {
+            return .none
+        }
         guard currentStationID == stationID else { return .play }
         switch status {
         case .playing, .loading:
@@ -170,6 +175,21 @@ enum TuneAVWidgetReloadPlanner {
     }
 
     static let minimumInterval: TimeInterval = 2
+
+    static func kinds(previous: TuneAVWidgetSnapshot?, next: TuneAVWidgetSnapshot) -> Set<String> {
+        guard let previous else { return Set(TuneAVWidgetKind.all) }
+        guard previous != next else { return [] }
+        guard compactContent(of: previous) == compactContent(of: next) else { return Set(TuneAVWidgetKind.all) }
+        return [TuneAVWidgetKind.nowPlayingFavorites]
+    }
+
+    private static func compactContent(of snapshot: TuneAVWidgetSnapshot) -> TuneAVWidgetSnapshot {
+        var compact = snapshot
+        compact.songTitle = nil
+        compact.songArtist = nil
+        compact.favorites = []
+        return compact
+    }
 
     static func decision(
         previous: TuneAVWidgetSnapshot?,

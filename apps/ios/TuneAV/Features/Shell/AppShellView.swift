@@ -93,6 +93,7 @@ struct AppShellView: View {
     @State var isConfirmingStopPlayback = false
     @State var stationPlayLog = TuneAVStationPlayLog.load()
     @State var homeSurpriseBrief: HomeSurpriseBrief?
+    @State var widgetPlaybackRegistration: UUID?
 
     let stationService = StationService()
     let stationNowPlayingService = NowPlayingService()
@@ -177,7 +178,8 @@ struct AppShellView: View {
                 registerWidgetPlayback()
             }
             .onDisappear {
-                TuneAVWidgetController.shared.unregisterShellPlayback()
+                TuneAVWidgetController.shared.unregisterShellPlayback(token: widgetPlaybackRegistration)
+                widgetPlaybackRegistration = nil
             }
             .onOpenURL { url in
                 handleWidgetDeepLink(url)

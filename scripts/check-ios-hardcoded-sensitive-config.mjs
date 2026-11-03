@@ -2,7 +2,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-const sourceRoots = ["apps/ios/TuneAV", "shared/apple"];
+const sourceRoots = ["apps/ios/TuneAV", "apps/ios/TuneAVWidgets", "apps/ios/WidgetShared", "shared/apple"];
 const excludedPathFragments = [
   "/Tools/",
   "/Preview Content/",

@@ -2,7 +2,7 @@ import SwiftUI
 
 extension AppShellView {
     func registerWidgetPlayback() {
-        TuneAVWidgetController.shared.registerShellPlayback { station, queueSource, queue in
+        widgetPlaybackRegistration = TuneAVWidgetController.shared.registerShellPlayback { station, queueSource, queue in
             playStation(station, queueSource: queueSource, queue: queue)
         }
     }

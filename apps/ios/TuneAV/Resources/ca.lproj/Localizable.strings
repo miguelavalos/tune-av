@@ -1199,3 +1199,4 @@
 "widget.intent.playStation" = "Reprodueix la ràdio";
 "widget.intent.station" = "Emissora";
 "widget.intent.favoriteShortcut" = "Des de les preferides";
+"widget.intent.wasPlaying" = "Estava sonant";

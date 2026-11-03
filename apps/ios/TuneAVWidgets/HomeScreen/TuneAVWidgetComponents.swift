@@ -42,8 +42,12 @@ struct TuneAVWidgetPlayControl<Label: View>: View {
     var allowsLink = true
     @ViewBuilder let label: () -> Label
 
+    private var pausesCurrentPlayback: Bool {
+        !isFavoriteShortcut && snapshot.isPlaybackActive && station.id == snapshot.myRadio?.id
+    }
+
     var body: some View {
-        if snapshot.opensAppToPlay {
+        if snapshot.opensAppToPlay, !pausesCurrentPlayback {
             if allowsLink, let url = TuneAVWidgetDeepLink.play(stationID: station.id, isFavoriteShortcut: isFavoriteShortcut).url() {
                 Link(destination: url) {
                     label()
@@ -55,7 +59,11 @@ struct TuneAVWidgetPlayControl<Label: View>: View {
                     .accessibilityLabel(accessibilityText)
             }
         } else {
-            Button(intent: TuneAVPlayStationIntent(stationID: station.id, isFavoriteShortcut: isFavoriteShortcut)) {
+            Button(intent: TuneAVPlayStationIntent(
+                stationID: station.id,
+                isFavoriteShortcut: isFavoriteShortcut,
+                expectsActivePlayback: pausesCurrentPlayback
+            )) {
                 label()
             }
             .buttonStyle(.plain)
