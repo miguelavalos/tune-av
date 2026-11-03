@@ -63,20 +63,16 @@ class TuneAVUITestCase: XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) -> XCUIElement {
-        let candidates = ["shell.tab.\(id)", "tab.\(id)", "tune.sidebar.\(id)"].map {
-            app.descendants(matching: .any)[$0].firstMatch
-        }
+        let button = shellElement(id, in: app)
+        XCTAssertTrue(button.exists || button.waitForExistence(timeout: timeout), file: file, line: line)
+        return button
+    }
 
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if let button = candidates.first(where: { $0.exists }) {
-                return button
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
-        }
-
-        XCTAssertTrue(candidates.contains(where: { $0.exists }), file: file, line: line)
-        return candidates[0]
+    func shellElement(_ id: String, in app: XCUIApplication) -> XCUIElement {
+        let identifiers = ["shell.tab.\(id)", "tab.\(id)", "tune.sidebar.\(id)"]
+        return app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier IN %@", identifiers))
+            .firstMatch
     }
 
     func librarySegment(
