@@ -8,9 +8,13 @@ This project follows semantic versioning once public source releases begin.
 
 ## 1.1.0 - 2026-11-03
 
-iOS/iPadOS `1.1.0 (61)` and macOS `1.1.0 (67)`. Siri, Control Center, widgets,
+iOS/iPadOS `1.1.0 (62)` and macOS `1.1.0 (67)`. Siri, Control Center, widgets,
 the Live Activity and AirPlay are iPhone and iPad only; on Mac this release
 changes only the paywall texts, the Terms and Privacy links and cached artwork.
+
+iOS build `62` replaces `61`, which App Store Connect rejected with ITMS-90626
+because App Intents string keys contained "siri": they are renamed from
+`siri.*` to `appShortcut.*`, with the same texts.
 
 - Siri, Shortcuts and the Action button on iPhone: "Play my radio on Tune AV"
   starts your last or favorite radio, "Pause Tune AV" pauses it, and "Play

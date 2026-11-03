@@ -216,6 +216,29 @@ function compareAppleShortcutPhrases() {
   return failures;
 }
 
+// App Store Connect rejects App Intents whose string keys contain "siri" (ITMS-90626).
+function rejectSiriInAppleKeys() {
+  const failures = [];
+  for (const locale of appleLocales) {
+    const resources = join(rootDir, `apps/ios/TuneAV/Resources/${locale}.lproj`);
+    for (const key of parseStringsFile(join(resources, "Localizable.strings")).keys()) {
+      if (/siri/i.test(key)) failures.push(`Apple ${locale}: key ${key} contains "siri" (ITMS-90626)`);
+    }
+    let shortcuts;
+    try {
+      shortcuts = parseStringsFile(join(resources, "AppShortcuts.strings"));
+    } catch {
+      continue; // compareAppleShortcutPhrases reports the missing file.
+    }
+    for (const [phrase, value] of shortcuts) {
+      if (/siri/i.test(phrase) || /siri/i.test(value)) {
+        failures.push(`Apple App Shortcuts ${locale}: phrase ${phrase} contains "siri" (ITMS-90626)`);
+      }
+    }
+  }
+  return failures;
+}
+
 function compareWebStrings() {
   const appWebDir = join(rootDir, "apps/web");
   const auditFilePath = join(appWebDir, ".i18n-parity-audit.test.ts");
@@ -309,7 +332,12 @@ function compareWebStrings() {
   }
 }
 
-const failures = [...compareAppleStrings(), ...compareAppleShortcutPhrases(), ...compareWebStrings()];
+const failures = [
+  ...compareAppleStrings(),
+  ...compareAppleShortcutPhrases(),
+  ...rejectSiriInAppleKeys(),
+  ...compareWebStrings()
+];
 
 if (failures.length > 0) {
   console.error(`i18n parity audit failed with ${failures.length} issue(s):`);
