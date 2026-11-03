@@ -8,6 +8,10 @@ This project follows semantic versioning once public source releases begin.
 
 ## 1.1.0 - 2026-11-03
 
+iOS/iPadOS `1.1.0 (61)` and macOS `1.1.0 (67)`. Siri, Control Center, widgets,
+the Live Activity and AirPlay are iPhone and iPad only; on Mac this release
+changes only the paywall texts, the Terms and Privacy links and cached artwork.
+
 - Siri, Shortcuts and the Action button on iPhone: "Play my radio on Tune AV"
   starts your last or favorite radio, "Pause Tune AV" pauses it, and "Play
   <radio> on Tune AV" starts one of your favorite or recent radios by name, in
@@ -28,10 +32,17 @@ This project follows semantic versioning once public source releases begin.
   shares artwork with the app through the `group.<bundle id>` App Group.
 - Add an AirPlay button to the iOS full player card, next to the station name,
   to send the radio to AirPlay speakers, Apple TV or Bluetooth.
-- The Pro paywall on iPhone and iPad shows every text in full: titles, offer
-  details, benefits, buttons and the Terms, Privacy, Restore and Redeem links
-  wrap or stack instead of being cut off with "…" or shrunk. Prices, the
-  monthly plan and purchases are unchanged.
+- The Pro paywall on iPhone, iPad and Mac shows every text in full: titles,
+  offer details, benefits, buttons and the Terms, Privacy, Restore and Redeem
+  links wrap or stack instead of being cut off with "…" or shrunk. Prices,
+  the monthly plan and purchases are unchanged.
+- On Mac, the Terms and Privacy links in Settings and on the Pro paywall come
+  from the same shared defaults as iOS, `https://tune-av.avalsys.com/terms`
+  and `https://tune-av.avalsys.com/privacy`, unless private config sets other
+  https URLs. The Mac already used these addresses, so the links look and
+  open as before.
+- On Mac, radio and song artwork that is already loaded shows at once when a
+  view appears again, instead of flashing the placeholder first.
 - Make the iOS launch-time check in CI steadier: it launches the app once
   without timing it, then times two more launches and keeps the faster one
   against the same budget. If the test loses its connection to the app on that
