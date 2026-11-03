@@ -82,6 +82,8 @@ struct AviExpandedFooterPlayerView: View {
             backdrop
         } controls: {
             controlsRow
+        } headerAccessory: {
+            TuneAVRoutePickerButton()
         }
         .sheet(isPresented: $isShowingQueueSwitcher) {
             AviQueueSwitcherSheet(

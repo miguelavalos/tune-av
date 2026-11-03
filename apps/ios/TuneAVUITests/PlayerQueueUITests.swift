@@ -50,4 +50,38 @@ final class PlayerQueueUITests: TuneAVUITestCase {
         waitForExpectations(timeout: 5)
     }
 
+    func testFullPlayerShowsAirPlayRoutePicker() {
+        let app = launchApp(
+            preferredTab: "player",
+            extraEnvironment: [
+                "TUNEAV_DEMO_MODE": "1",
+                "TUNEAV_SEED_FAVORITE": "1"
+            ]
+        )
+
+        let playPause = app.buttons["avi.footerPlayer.playPause"].firstMatch
+        if !playPause.waitForExistence(timeout: 2) {
+            let miniPlayer = app.descendants(matching: .any)["miniPlayer.container"].firstMatch
+            XCTAssertTrue(miniPlayer.waitForExistence(timeout: 5))
+            miniPlayer.tap()
+        }
+        XCTAssertTrue(playPause.waitForExistence(timeout: 5))
+
+        let airPlay = app.buttons["avi.footerPlayer.airplay"].firstMatch
+        XCTAssertTrue(airPlay.waitForExistence(timeout: 5))
+        XCTAssertTrue(airPlay.isHittable)
+        XCTAssertFalse(airPlay.label.isEmpty)
+
+        let stationTitle = app.descendants(matching: .any)["avi.footerPlayer.primaryTitle"].firstMatch
+        XCTAssertTrue(stationTitle.exists)
+        XCTAssertFalse(airPlay.frame.intersects(stationTitle.frame))
+        XCTAssertLessThan(airPlay.frame.maxY, playPause.frame.minY)
+
+        let container = app.descendants(matching: .any)["avi.footerPlayer.container"].firstMatch
+        XCTAssertTrue(container.frame.contains(airPlay.frame))
+
+        for identifier in ["queue", "previous", "next", "sleepTimer"] {
+            XCTAssertTrue(app.descendants(matching: .any)["avi.footerPlayer.\(identifier)"].firstMatch.exists, identifier)
+        }
+    }
 }
