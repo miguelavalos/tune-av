@@ -6,6 +6,11 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Live Activity on the iPhone lock screen and Dynamic Island while a radio
+  plays: station, current song and artist, artwork (or the AV mark), a heart
+  that saves the song (or the radio when there is no song) like the full
+  player, and play/pause. It lives in the new `TuneAVWidgets` extension, which
+  shares artwork with the app through the `group.<bundle id>` App Group.
 - Add an AirPlay button to the iOS full player card, next to the station name,
   to send the radio to AirPlay speakers, Apple TV or Bluetooth.
 - The Pro paywall on iPhone and iPad always shows the Terms and Privacy links,

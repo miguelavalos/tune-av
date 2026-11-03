@@ -176,25 +176,11 @@ extension AppShellView {
     }
 
     func toggleFavorite(_ station: Station) {
-        let resolvedStation = enrichedStation(station)
-
-        if libraryStore.isFavorite(resolvedStation) {
-            AVHaptics.perform(.undo)
-            libraryStore.toggleFavorite(for: resolvedStation)
-            return
-        }
-
-        let state = accessController.limitState(
-            for: .favoriteStations,
-            currentUsage: libraryStore.favorites.count
+        TuneAVHeartAction.toggleStationFavorite(
+            enrichedStation(station),
+            libraryStore: libraryStore,
+            accessController: accessController
         )
-        guard state.isAllowed else {
-            accessController.presentUpgradePrompt(for: .favoriteStations, currentUsage: state.currentUsage)
-            return
-        }
-
-        AVHaptics.perform(.affirm)
-        libraryStore.toggleFavorite(for: resolvedStation)
     }
 
     func setStationFeedbackWithHaptic(_ station: Station, feedback: TuneAVStationFeedback?) {

@@ -219,41 +219,19 @@ extension AviScreen {
             return true
         }
 
-        let state = accessController.limitState(
-            for: .savedTracks,
-            currentUsage: libraryStore.savedDiscoveriesCount
-        )
-
-        let isAlreadySaved = isCurrentTrackSaved(for: station)
-        if !ShellCurrentDiscoveryCoordinator.canToggleTrack(
-            isAlreadySaved: isAlreadySaved,
-            canMarkInteresting: libraryStore.canMarkTrackInteresting(
-                title: currentTrackTitle,
-                artist: currentTrackArtist,
-                station: station,
-                limit: state.limit
-            )
-        ) {
-            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-            return false
-        }
-
-        let didToggle = libraryStore.toggleDiscoveredTrackSaved(
+        let outcome = TuneAVHeartAction.toggleCurrentSong(
             title: currentTrackTitle,
             artist: currentTrackArtist,
-            station: station,
             artworkURL: currentTrackArtworkURL,
-            savedLimit: state.limit,
-            discoveryLimit: accessController.limits.discoveredTracks
+            station: station,
+            libraryStore: libraryStore,
+            accessController: accessController
         )
-        guard didToggle else {
-            accessController.presentUpgradePrompt(for: .savedTracks, currentUsage: state.currentUsage)
-            return false
-        }
+        guard outcome != .blocked else { return false }
 
         showAviReaction(
             ShellCurrentDiscoveryCoordinator.reactionAfterToggle(
-                isSaved: isCurrentTrackSaved(for: station)
+                isSaved: outcome == .saved
             )
         )
         return true

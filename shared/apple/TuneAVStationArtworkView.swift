@@ -756,9 +756,19 @@ actor TuneAVArtworkImagePipeline {
     }
 
     func image(from url: URL, maxPixelSize: Int) async -> Image? {
+        await platformImageBox(from: url, maxPixelSize: maxPixelSize).map { Image(platformImage: $0.image) }
+    }
+
+    #if canImport(UIKit)
+    func uiImage(from url: URL, maxPixelSize: Int) async -> UIImage? {
+        await platformImageBox(from: url, maxPixelSize: maxPixelSize)?.image
+    }
+    #endif
+
+    private func platformImageBox(from url: URL, maxPixelSize: Int) async -> TuneAVPlatformImageBox? {
         let key = Self.cacheKey(url: url, maxPixelSize: maxPixelSize)
-        if let cached = cache.object(forKey: key)?.image {
-            return Image(platformImage: cached)
+        if let cached = cache.object(forKey: key) {
+            return cached
         }
         if let failedLookup = failedLookups[key] {
             if failedLookup.expiresAt > Date() {
@@ -768,7 +778,7 @@ actor TuneAVArtworkImagePipeline {
         }
 
         if let task = inFlight[key] {
-            return await task.value.map { Image(platformImage: $0.image) }
+            return await task.value
         }
 
         let task = Task { [session] in
@@ -789,7 +799,7 @@ actor TuneAVArtworkImagePipeline {
         } else {
             failedLookups[key] = FailedLookup(expiresAt: Date().addingTimeInterval(Self.failedLookupTTL))
         }
-        return loadedImageBox.map { Image(platformImage: $0.image) }
+        return loadedImageBox
     }
 
     func clearMemoryCache() {

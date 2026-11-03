@@ -59,7 +59,9 @@ targets:
         excludes:
           - Tools/**
       - path: ../../shared/apple
+      - path: WidgetShared
     dependencies:
+      - target: TuneAVWidgets
       - package: AccountAV
         product: AccountAV
       - package: AppsAV
@@ -101,6 +103,32 @@ targets:
         SKIP_INSTALL: NO
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: Apple Development
+        Release:
+          CODE_SIGN_IDENTITY: Apple Development
+
+  TuneAVWidgets:
+    type: app-extension
+    platform: iOS
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
+    sources:
+      - path: TuneAVWidgets
+      - path: WidgetShared
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: TuneAVWidgets/TuneAVWidgets.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "$(AVALSYS_APPLE_DEVELOPMENT_TEAM)"
+        INFOPLIST_FILE: TuneAVWidgets/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_NAME: TuneAVWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: "$(TUNEAV_BUNDLE_IDENTIFIER).widgets"
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
       configs:
         Debug:
           CODE_SIGN_IDENTITY: Apple Development

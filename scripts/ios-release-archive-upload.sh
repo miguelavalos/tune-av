@@ -73,8 +73,10 @@ run_step() {
 plist_set() {
   local key="$1"
   local value="$2"
-  local plist="$repo_root/apps/ios/TuneAV/App/Info.plist"
-  /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  local plist
+  for plist in "$repo_root/apps/ios/TuneAV/App/Info.plist" "$repo_root/apps/ios/TuneAVWidgets/Info.plist"; do
+    /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  done
 }
 
 plist_get() {
