@@ -46,7 +46,7 @@ extension AviScreen {
                     Text(defaultPublicSignalInfo(for: station))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,7 +80,7 @@ extension AviScreen {
             Text(focusedSignalDetail(for: station))
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(TuneAVTheme.textSecondary)
-                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
         .background(TuneAVTheme.cardSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -150,7 +150,7 @@ extension AviScreen {
                     Text(aviPrimaryLine)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -324,6 +324,7 @@ extension AviScreen {
                     .foregroundStyle(TuneAVTheme.highlight)
                     .textCase(.uppercase)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Spacer(minLength: 8)
 

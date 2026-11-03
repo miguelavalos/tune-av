@@ -69,6 +69,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
                         .foregroundStyle(Color.white.opacity(0.72))
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())

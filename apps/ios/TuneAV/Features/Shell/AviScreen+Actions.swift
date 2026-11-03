@@ -382,7 +382,7 @@ extension AviScreen {
                         Text(L10n.string("shell.avi.related.subtitle", relatedStationContext.baseStation.name))
                             .font(.system(size: 15, weight: .black))
                             .foregroundStyle(TuneAVTheme.textPrimary)
-                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -452,12 +452,13 @@ extension AviScreen {
                         Text(recommendation.station.name)
                             .font(.system(size: 19, weight: .black))
                             .foregroundStyle(TuneAVTheme.textPrimary)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
 
                         Text(recommendation.reason)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(TuneAVTheme.textSecondary)
-                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }

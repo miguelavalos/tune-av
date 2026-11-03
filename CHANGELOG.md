@@ -6,6 +6,9 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- No more sentences cut off with "…" on iOS: shorter first-person Avi lines on
+  Home and in the full player in all five languages, a short status pill on the
+  Home card, and Avi texts and station names that wrap instead of truncating.
 - Simplify Home on iOS: drop the "Daily Tuning Desk" title and the explanatory
   subtitles under every section, and remove the like, neutral and dislike
   buttons from the main Home card. Feedback stays in the player.

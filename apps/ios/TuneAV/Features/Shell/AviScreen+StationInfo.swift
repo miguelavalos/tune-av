@@ -159,7 +159,6 @@ extension AviScreen {
                 Text(aviDetailLine)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(TuneAVTheme.textSecondary)
-                    .lineLimit(4)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -200,7 +199,7 @@ extension AviScreen {
                     Text(focusedSignalDetail(for: focusedStation))
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(TuneAVTheme.textSecondary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 HStack(spacing: 12) {
