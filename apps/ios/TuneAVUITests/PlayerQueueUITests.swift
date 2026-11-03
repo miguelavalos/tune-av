@@ -50,4 +50,41 @@ final class PlayerQueueUITests: TuneAVUITestCase {
         waitForExpectations(timeout: 5)
     }
 
+    func testFullPlayerShowsAirPlayRoutePicker() {
+        let app = launchApp(
+            preferredTab: "player",
+            extraEnvironment: [
+                "TUNEAV_DEMO_MODE": "1",
+                "TUNEAV_SEED_FAVORITE": "1"
+            ]
+        )
+
+        let playPause = app.buttons["avi.footerPlayer.playPause"].firstMatch
+        if !playPause.waitForExistence(timeout: 2) {
+            let opener = UIDevice.current.userInterfaceIdiom == .pad
+                ? app.descendants(matching: .any)["tune.sidebar.avi"].firstMatch
+                : app.descendants(matching: .any)["miniPlayer.container"].firstMatch
+            XCTAssertTrue(opener.waitForExistence(timeout: 5))
+            opener.tap()
+        }
+        XCTAssertTrue(playPause.waitForExistence(timeout: 5))
+
+        let airPlay = app.buttons["avi.footerPlayer.airplay"].firstMatch
+        XCTAssertTrue(airPlay.waitForExistence(timeout: 5))
+        XCTAssertTrue(airPlay.isHittable)
+        XCTAssertFalse(airPlay.label.isEmpty)
+
+        let stationTitle = app.descendants(matching: .any)["avi.footerPlayer.primaryTitle"].firstMatch
+        XCTAssertTrue(stationTitle.exists)
+        XCTAssertGreaterThanOrEqual(airPlay.frame.midY, stationTitle.frame.minY)
+        XCTAssertLessThanOrEqual(airPlay.frame.midY, stationTitle.frame.maxY)
+        XCTAssertLessThan(airPlay.frame.maxY, playPause.frame.minY)
+
+        XCTAssertGreaterThan(airPlay.frame.minX, stationTitle.frame.midX)
+        XCTAssertLessThanOrEqual(airPlay.frame.maxX, stationTitle.frame.maxX + 1)
+
+        for identifier in ["queue", "previous", "next", "sleepTimer"] {
+            XCTAssertTrue(app.descendants(matching: .any)["avi.footerPlayer.\(identifier)"].firstMatch.exists, identifier)
+        }
+    }
 }

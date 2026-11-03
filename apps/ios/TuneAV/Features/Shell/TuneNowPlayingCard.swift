@@ -1,7 +1,9 @@
+import AVKit
 import SwiftUI
 
-struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
+struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderAccessory: View>: View {
     static var height: CGFloat { 440 }
+    static var headerAccessorySize: CGFloat { 44 }
 
     let stationName: String
     let title: String
@@ -16,6 +18,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let backdrop: () -> Backdrop
     @ViewBuilder let controls: () -> Controls
+    @ViewBuilder let headerAccessory: () -> HeaderAccessory
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,16 +31,21 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
                         .font(.system(size: 12, weight: .black, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.white.opacity(0.86))
-                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.78)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Self.headerAccessorySize)
+                .frame(maxWidth: .infinity, minHeight: 22)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(stationName)
             .accessibilityIdentifier("avi.footerPlayer.primaryTitle")
-            .frame(height: 22)
+            .overlay(alignment: .trailing) {
+                headerAccessory()
+            }
 
             Spacer()
                 .frame(height: 12)
@@ -117,6 +125,57 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View>: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
         .accessibilityIdentifier("avi.footerPlayer.container")
+    }
+}
+
+struct TuneAVRoutePickerButton: View {
+    var body: some View {
+        TuneAVRoutePicker(accessibilityIdentifier: "avi.footerPlayer.airplay")
+            .frame(width: 44, height: 44)
+    }
+}
+
+struct TuneAVRoutePicker: UIViewRepresentable {
+    let accessibilityIdentifier: String
+
+    func makeUIView(context: Context) -> TuneAVRoutePickerView {
+        let view = TuneAVRoutePickerView()
+        view.backgroundColor = .clear
+        view.tintColor = .white
+        view.activeTintColor = UIColor(TuneAVTheme.highlight)
+        view.prioritizesVideoDevices = false
+        view.routeButtonIdentifier = accessibilityIdentifier
+        return view
+    }
+
+    func updateUIView(_ uiView: TuneAVRoutePickerView, context: Context) {
+        uiView.routeButtonIdentifier = accessibilityIdentifier
+    }
+}
+
+final class TuneAVRoutePickerView: AVRoutePickerView {
+    var routeButtonIdentifier: String? {
+        didSet { applyRouteButtonIdentifier() }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        applyRouteButtonIdentifier()
+    }
+
+    private func applyRouteButtonIdentifier() {
+        for button in routeButtons(in: self) {
+            button.accessibilityIdentifier = routeButtonIdentifier
+        }
+    }
+
+    private func routeButtons(in view: UIView) -> [UIButton] {
+        view.subviews.flatMap { subview -> [UIButton] in
+            if let button = subview as? UIButton {
+                return [button]
+            }
+            return routeButtons(in: subview)
+        }
     }
 }
 
