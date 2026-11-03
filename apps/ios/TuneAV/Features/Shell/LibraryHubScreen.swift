@@ -26,7 +26,6 @@ struct LibraryHubScreen<Radios: View, Songs: View>: View {
             }
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .accessibilityIdentifier("library.hub")
     }
 }
 
@@ -41,6 +40,7 @@ struct LibrarySegmentPicker: View {
                 segmentButton(segment)
             }
         }
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86), value: selection)
         .padding(4)
         .background(TuneAVTheme.cardSurface, in: Capsule(style: .continuous))
         .overlay {
@@ -56,9 +56,7 @@ struct LibrarySegmentPicker: View {
         let isSelected = selection == segment
 
         return Button {
-            withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86)) {
-                selection = segment
-            }
+            selection = segment
         } label: {
             Text(segment.title)
                 .font(.subheadline.weight(.semibold))

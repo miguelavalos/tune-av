@@ -23,7 +23,7 @@ extension AviScreen {
             }
 
             HStack(spacing: 12) {
-                AVAviActionButton(title: L10n.string("tab.search"), systemImage: "magnifyingglass", action: openSearch)
+                AVAviActionButton(title: L10n.string("tab.explore"), systemImage: "safari", action: openSearch)
                 AVAviActionButton(title: L10n.string("shell.avi.action.saved"), systemImage: "bookmark.fill", action: openLibrary)
             }
         }
