@@ -185,7 +185,7 @@ the removed Convex Swift binary dependency.
 
 ### Requirements
 
-- Xcode 16 or newer, with the macOS 15 SDK: the app's deployment target is
+- Xcode with the macOS 15 SDK or newer: the app's deployment target is
   macOS 15.0.
 - `pnpm install` from the repository root.
 - Optional `apps/macos/Config/Local.xcconfig` generated outside git if you need
