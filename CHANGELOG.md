@@ -27,6 +27,9 @@ This project follows semantic versioning once public source releases begin.
 - On iOS 26 and later, the confirmation to clear the discoveries in Library ›
   Songs opens next to the trash button that asked for it, instead of floating
   in the middle of the screen on iPhone or at the sidebar edge on iPad (iOS).
+- The saved-radio badge on the station cards of Home "Para ti" and the
+  Library carousels is visible in dark mode: it was a white icon on a white
+  circle (iOS).
 
 ## 1.1.0 - 2026-11-03
 
