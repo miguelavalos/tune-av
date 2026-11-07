@@ -17,8 +17,9 @@ approval records outside this repository.
   feedback can differ across devices by design.
 - iOS and macOS should be tested together with the same signed-in Pro account
   before submission.
-- macOS is currently Apple Silicon-only while the Convex Swift binary dependency
-  does not include an Intel macOS slice.
+- macOS builds universal (Apple Silicon and Intel) since `1.0.9`; the earlier
+  Apple Silicon-only constraint came from the Convex Swift binary dependency,
+  removed on 2026-11-01.
 - macOS TestFlight/App Store auth uses the stable Account AV keychain service
   `com.avalsys.tuneav.account.v2` and keychain access group
   `935PM55U6R.com.avalsys.tuneav`; repeated Keychain access prompts are not
@@ -34,6 +35,13 @@ approval records outside this repository.
 ## Suggested Public Release Copy
 
 ## Current App Store Status
+
+- Current builds, 2026-11-07: the latest TestFlight builds are iOS/iPadOS
+  `1.1.0 (63)` and macOS `1.1.0 (68)` from public commit `bad896d`; neither has
+  been submitted to App Review. The latest App Store approved versions remain
+  iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)` (approval checkpoint below).
+  `1.0.9` (iOS `58`, macOS `66`, uploaded on 2026-11-01) was the first train
+  without the Convex realtime layer and the first universal macOS archive.
 
 - Subscription-repair delivery, 2026-08-01: iOS/iPadOS `1.0.8 (57)` and macOS
   `1.0.8 (65)` contain bounded purchase/restore reconciliation and were
@@ -137,8 +145,8 @@ notes or private release operations, never in this public repository.
   the app and from App Store Connect metadata.
 - Confirm subscription copy and pricing match the active Tune AV Pro product in
   App Store Connect.
-- Confirm macOS metadata does not imply Intel support while the release target is
-  Apple Silicon-only.
+- Confirm macOS metadata matches the universal (Apple Silicon and Intel)
+  release target; it no longer needs to exclude Intel Macs.
 
 Apple references:
 
