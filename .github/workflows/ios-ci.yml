@@ -2,23 +2,11 @@ name: iOS CI
 
 on:
   workflow_dispatch:
+  # Every pull request starts this workflow, so the required checks
+  # "Build and test iOS" and "Build and test macOS" always report. The
+  # `changes` job skips both builds when no code changed; a skipped required
+  # job counts as passing for branch protection.
   pull_request:
-    paths:
-      - ".github/workflows/**"
-      - "apps/ios/**"
-      - "apps/macos/**"
-      - "apps/web/**"
-      - "package.json"
-      - "shared/**"
-      - "scripts/check-github-actions-pinning.sh"
-      - "scripts/check-github-workflow-permissions.mjs"
-      - "scripts/check-github-workflow-timeouts.mjs"
-      - "scripts/ios-ci-test.sh"
-      - "scripts/macos-ci-test.sh"
-      - "scripts/report-ios-app-size.sh"
-      - "scripts/check-public-config-hygiene.sh"
-      - "scripts/check-i18n-parity.mjs"
-      - "scripts/check-ios-network-privacy.sh"
   push:
     branches:
       - main
@@ -51,8 +39,93 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect code changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # The paths the `pull_request` trigger filtered on before every pull
+          # request started this workflow; keep in sync with the `push` filter.
+          code_paths=(
+            ".github/workflows/*"
+            "apps/ios/*"
+            "apps/macos/*"
+            "apps/web/*"
+            "package.json"
+            "shared/*"
+            "scripts/check-github-actions-pinning.sh"
+            "scripts/check-github-workflow-permissions.mjs"
+            "scripts/check-github-workflow-timeouts.mjs"
+            "scripts/ios-ci-test.sh"
+            "scripts/macos-ci-test.sh"
+            "scripts/report-ios-app-size.sh"
+            "scripts/check-public-config-hygiene.sh"
+            "scripts/check-i18n-parity.mjs"
+            "scripts/check-ios-network-privacy.sh"
+          )
+
+          code=false
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "Event '$EVENT_NAME' always counts as a code change."
+            code=true
+          elif ! merge_base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"; then
+            echo "::warning::No merge base between $BASE_SHA and $HEAD_SHA; treating the pull request as a code change."
+            code=true
+          else
+            echo "Base $BASE_SHA, head $HEAD_SHA, merge base $merge_base."
+            # NUL-separated and without rename detection: a path is never
+            # quoted or escaped, so every file matches its glob, and a file
+            # moved out of a code path still lists its old location.
+            changed_list="$(mktemp)"
+            if ! git diff -z --name-only --no-renames "$merge_base" "$HEAD_SHA" > "$changed_list"; then
+              echo "::warning::Could not list the files changed since $merge_base; treating the pull request as a code change."
+              code=true
+            else
+              echo "Changed files:"
+              tr '\0' '\n' < "$changed_list"
+              while IFS= read -r -d '' file; do
+                for pattern in "${code_paths[@]}"; do
+                  # shellcheck disable=SC2254 # the pattern must stay a glob
+                  case "$file" in
+                    $pattern)
+                      echo "Code change: $file (matches $pattern)"
+                      code=true
+                      break
+                      ;;
+                  esac
+                done
+              done < "$changed_list"
+            fi
+          fi
+
+          echo "code=$code"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   test:
     name: Build and test iOS
+    needs: changes
+    # The builds run unless the `changes` job positively reports no code change,
+    # so a failed detection never lets a pull request merge without them.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.code != 'false') }}
     runs-on: macos-15
     timeout-minutes: 30
 
@@ -138,6 +211,8 @@ jobs:
 
   macos-test:
     name: Build and test macOS
+    needs: changes
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.code != 'false') }}
     runs-on: macos-26
     timeout-minutes: 30
 
