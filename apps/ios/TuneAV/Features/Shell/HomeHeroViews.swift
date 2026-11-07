@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HomeTuningDeskHero: View {
     @Environment(\.colorScheme) private var colorScheme
-    @ScaledMetric(relativeTo: .body) private var bookmarkIconSize: CGFloat = 18
 
     let station: Station
     let presentation: HomeStationPresentation
@@ -158,7 +157,7 @@ struct HomeTuningDeskHero: View {
             .accessibilityLabel(playTitle)
 
             Button(action: favoriteAction) {
-                TuneAVSavedStationIcon(isSaved: isFavorite, size: bookmarkIconSize)
+                HomeDeskBookmarkIcon(isSaved: isFavorite)
                     .frame(width: 50, height: 50)
                     .background(
                         isFavorite ? TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.28 : 0.18) : heroControlSurface,
@@ -319,6 +318,18 @@ struct HomeTuningDeskHero: View {
             return L10n.string("player.control.pause")
         }
         return L10n.string("shell.featured.play")
+    }
+}
+
+/// Owns the bookmark's scaled size inside the capped controls row, so it stops growing
+/// at the same text size as the play and info icons next to it.
+private struct HomeDeskBookmarkIcon: View {
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 18
+
+    let isSaved: Bool
+
+    var body: some View {
+        TuneAVSavedStationIcon(isSaved: isSaved, size: iconSize)
     }
 }
 

@@ -101,8 +101,9 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
                 .frame(maxWidth: .infinity)
         }
         .padding(16)
-        // `height` at the default text size; the card grows only when larger text needs
-        // more lines (the shell reads the measured height for its scroll padding).
+        // `height` unless the station name, title and artist need more lines than fit in
+        // it, with larger text or a long title (the shell reads the measured height for
+        // its scroll padding).
         .frame(minHeight: Self.height)
         .fixedSize(horizontal: false, vertical: true)
         .background {
