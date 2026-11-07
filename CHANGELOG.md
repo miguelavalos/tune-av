@@ -6,6 +6,13 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- The full player and Home follow the text size chosen in iOS Settings,
+  including the accessibility sizes: station names, song lines, Avi's words
+  and the section titles grow with it and wrap instead of being cut with
+  "…". The player controls, the Home radio carousel, the hero buttons and
+  the mood and genre pills stop growing at the second accessibility size so
+  they keep fitting on the screen (iOS).
+
 ## 1.1.0 - 2026-11-03
 
 iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)`. Siri, Control Center, widgets

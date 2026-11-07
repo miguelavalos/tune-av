@@ -84,6 +84,7 @@
 		CFB26F3D659677A0FEB999BF /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473B194F4640945709B1E509 /* TuneAVGuestOnboardingPolicy.swift */; };
 		D2A2809CD021AE8BDE052152 /* TuneAVServiceAliases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723D9E1AF58671365E8BAFDD /* TuneAVServiceAliases.swift */; };
 		D774A784D00818331E675973 /* TuneAVMacModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8425B1402FA50BFD3C07728 /* TuneAVMacModel.swift */; };
+		DC5B77383D61683BE5C910AD /* TuneAVScaledFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFB5776FC743983180D7B64 /* TuneAVScaledFont.swift */; };
 		DDA998109C1046A0DD10C1B5 /* TuneAVUpgradePromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F6AD1F2BC87C2DB981CB689 /* TuneAVUpgradePromptContent.swift */; };
 		E001508D1B89AF2D87BE7995 /* AVLaunchFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 852F686E59DEE687DF7D7A21 /* AVLaunchFoundation */; };
 		E2172617569AE8FD4167CC02 /* TuneAVLibraryStationLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C4509340FBCDAC730F4CFE /* TuneAVLibraryStationLogic.swift */; };
@@ -165,6 +166,7 @@
 		86CD08CE301FC574BB23998D /* TuneAVAppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppTheme.swift; sourceTree = "<group>"; };
 		86CDFEA1924E937953B580A6 /* MacSubscriptionPurchasingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSubscriptionPurchasingTests.swift; sourceTree = "<group>"; };
 		891985721D6B47B10DA4E6F8 /* TuneAVText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVText.swift; sourceTree = "<group>"; };
+		8FFB5776FC743983180D7B64 /* TuneAVScaledFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVScaledFont.swift; sourceTree = "<group>"; };
 		918B443508AFB391669B94FE /* TuneAVURLSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVURLSupport.swift; sourceTree = "<group>"; };
 		9597B7E83173DB8C28C137D0 /* account-av */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "account-av"; path = "../../../account-av"; sourceTree = SOURCE_ROOT; };
 		982EBF907088952B44522371 /* TuneAVExternalSearchURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVExternalSearchURL.swift; sourceTree = "<group>"; };
@@ -378,6 +380,7 @@
 				2CF084428D8097AE805BEA5F /* TuneAVRevenueCatPlanMapping.swift */,
 				DDCA11EFF39C50A234F6A6C7 /* TuneAVSavedDiscoveryPolicy.swift */,
 				2C7D3F1E4C73F0AFA606C8E3 /* TuneAVSavedStationIcon.swift */,
+				8FFB5776FC743983180D7B64 /* TuneAVScaledFont.swift */,
 				723D9E1AF58671365E8BAFDD /* TuneAVServiceAliases.swift */,
 				C842F5937F9CA95EE8F66DA5 /* TuneAVSharedTheme.swift */,
 				F2DE0A373AB37620B340E29C /* TuneAVSleepTimerController.swift */,
@@ -615,6 +618,7 @@
 				F34A723563A5C566B111EC7F /* TuneAVRevenueCatPlanMapping.swift in Sources */,
 				4517CBAFE4D60F933644F368 /* TuneAVSavedDiscoveryPolicy.swift in Sources */,
 				BE7765ACC4B1BEDE27DACCD8 /* TuneAVSavedStationIcon.swift in Sources */,
+				DC5B77383D61683BE5C910AD /* TuneAVScaledFont.swift in Sources */,
 				D2A2809CD021AE8BDE052152 /* TuneAVServiceAliases.swift in Sources */,
 				568500727A804FA666B64035 /* TuneAVSharedTheme.swift in Sources */,
 				AB092889DDAB13A902A0E08A /* TuneAVSleepTimerController.swift in Sources */,

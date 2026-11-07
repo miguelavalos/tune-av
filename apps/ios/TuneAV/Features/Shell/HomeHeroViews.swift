@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeTuningDeskHero: View {
     @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .body) private var bookmarkIconSize: CGFloat = 18
 
     let station: Station
     let presentation: HomeStationPresentation
@@ -64,7 +65,7 @@ struct HomeTuningDeskHero: View {
 
             if presentation.tier == .rich {
                 Image(systemName: "sparkle")
-                    .font(.system(size: 15, weight: .bold))
+                    .tuneScaledFont(size: 15, weight: .bold)
                     .foregroundStyle(TuneAVTheme.highlight)
                     .padding(9)
                     .background(heroChipFill, in: Circle())
@@ -90,10 +91,10 @@ struct HomeTuningDeskHero: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(presentation.title)
-                    .font(.system(size: heroTitleSize, weight: .black))
+                    .tuneScaledFont(size: heroTitleSize, weight: .black)
                     .foregroundStyle(heroTitleColor)
-                    .lineLimit(2)
                     .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let stationFeedback {
                     TuneAVFeedbackBadge(feedback: stationFeedback, size: 24, fontSize: 11, borderOpacity: 0.82)
@@ -103,14 +104,14 @@ struct HomeTuningDeskHero: View {
 
             if let primaryLine = presentation.primaryLine {
                 Text(primaryLine)
-                    .font(.system(size: presentation.tier == .rich ? 15 : 14, weight: .semibold))
+                    .tuneScaledFont(size: presentation.tier == .rich ? 15 : 14, weight: .semibold)
                     .foregroundStyle(heroSecondaryColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if let secondaryLine = presentation.secondaryLine {
                 Text(secondaryLine)
-                    .font(.system(size: 12, weight: .semibold))
+                    .tuneScaledFont(size: 12, weight: .semibold)
                     .foregroundStyle(heroSecondaryColor.opacity(0.78))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -148,7 +149,7 @@ struct HomeTuningDeskHero: View {
         HStack(spacing: 10) {
             Button(action: playAction) {
                 Image(systemName: playIconName)
-                    .font(.system(size: 19, weight: .black))
+                    .tuneScaledFont(size: 19, weight: .black)
                     .foregroundStyle(TuneAVTheme.brandBlack)
                     .frame(width: 56, height: 56)
                     .background(TuneAVTheme.highlight, in: Circle())
@@ -157,7 +158,7 @@ struct HomeTuningDeskHero: View {
             .accessibilityLabel(playTitle)
 
             Button(action: favoriteAction) {
-                TuneAVSavedStationIcon(isSaved: isFavorite, size: 18)
+                TuneAVSavedStationIcon(isSaved: isFavorite, size: bookmarkIconSize)
                     .frame(width: 50, height: 50)
                     .background(
                         isFavorite ? TuneAVTheme.highlight.opacity(colorScheme == .dark ? 0.28 : 0.18) : heroControlSurface,
@@ -174,7 +175,7 @@ struct HomeTuningDeskHero: View {
 
             Button(action: detailsAction) {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 18, weight: .semibold))
+                    .tuneScaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(heroControlIconColor)
                     .frame(width: 50, height: 50)
                     .background(heroControlSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -186,6 +187,9 @@ struct HomeTuningDeskHero: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("common.more"))
         }
+        // The three controls keep their 56 and 50 pt boxes; past the second accessibility
+        // size the icons would no longer fit inside them.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
     private var heroBackground: some View {
@@ -331,7 +335,7 @@ private struct HomeLiveStatePill: View {
                 .frame(width: 6, height: 6)
 
             Text(title)
-                .font(.system(size: 11, weight: .black))
+                .tuneScaledFont(size: 11, weight: .black)
                 .tracking(0.7)
                 .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite.opacity(0.78))
                 .lineLimit(1)
@@ -363,9 +367,9 @@ private struct HomeDeskBadge: View {
 
     var body: some View {
         Text(title)
-            .font(.system(size: 11, weight: .bold))
+            .tuneScaledFont(size: 11, weight: .bold)
             .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textSecondary : TuneAVTheme.brandGraphite.opacity(0.76))
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
             .homeHeroCapsule(
                 horizontalPadding: 8,
                 verticalPadding: 5,
@@ -387,7 +391,7 @@ private struct HomeDeskSignalPill: View {
                 .frame(width: 7, height: 7)
 
             Text(title)
-                .font(.system(size: 12, weight: .black))
+                .tuneScaledFont(size: 12, weight: .black)
                 .tracking(0.9)
                 .foregroundStyle(colorScheme == .dark ? TuneAVTheme.textPrimary : TuneAVTheme.brandGraphite)
                 .lineLimit(1)

@@ -22,12 +22,13 @@ struct StationSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 20, weight: .bold))
+                    .tuneScaledFont(size: 20, weight: .bold)
                     .foregroundStyle(TuneAVTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 14, weight: .medium))
+                        .tuneScaledFont(size: 14, weight: .medium)
                         .foregroundStyle(TuneAVTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

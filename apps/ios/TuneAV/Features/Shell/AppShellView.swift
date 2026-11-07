@@ -94,6 +94,9 @@ struct AppShellView: View {
     @State var stationPlayLog = TuneAVStationPlayLog.load()
     @State var homeSurpriseBrief: HomeSurpriseBrief?
     @State var widgetPlaybackRegistration: UUID?
+    /// Measured height of the full player card; it is `TuneNowPlayingCardMetric.height` at
+    /// the default text size and grows with larger text sizes.
+    @State var fullPlayerCardHeight: CGFloat = TuneNowPlayingCardMetric.height
 
     let stationService = StationService()
     let stationNowPlayingService = NowPlayingService()
@@ -291,6 +294,11 @@ struct AppShellView: View {
                         stopPlaybackAndCloseSignal()
                     } playStationFromQueue: { station, source, queue in
                         playStation(station, queueSource: source, queue: queue)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        fullPlayerCardHeight = height
                     }
                     .transition(TunePlayerTransition.cardTransition(reduceMotion: reduceMotion))
                 } else {
@@ -759,7 +767,7 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 186
         }
-        return isAviFullPlayerActive ? 580 : 224
+        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 224
     }
 
     var shellFooterBackdropHeight: CGFloat {
@@ -769,7 +777,13 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 156
         }
-        return isAviFullPlayerActive ? 580 : 210
+        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 210
+    }
+
+    /// How much the full player card has grown past its default height because of the
+    /// text size chosen in Settings; zero at the default size.
+    var fullPlayerCardExtraHeight: CGFloat {
+        max(0, fullPlayerCardHeight - TuneNowPlayingCardMetric.height)
     }
 
     var shellFooterPlayerTabSpacing: CGFloat {

@@ -102,6 +102,8 @@ struct AviScreen: View {
     @State var selectedArtistDetailSection: ArtistDetailSection = .info
     @State var openArtistDetailAviActionsID: String?
     @State var isShowingPlanComparison = false
+    @ScaledMetric(relativeTo: .caption) var fullPlayerAviActionsButtonHeight: CGFloat = 32
+    @ScaledMetric(relativeTo: .callout) var fullPlayerHeartButtonHeight: CGFloat = 52
 
     var browserRouter: ShellBrowserRouter {
         ShellBrowserRouter(

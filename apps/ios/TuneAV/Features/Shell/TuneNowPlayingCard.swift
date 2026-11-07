@@ -1,8 +1,13 @@
 import AVKit
 import SwiftUI
 
+enum TuneNowPlayingCardMetric {
+    /// The card's height at the default text size; larger text sizes make it taller.
+    static let height: CGFloat = 440
+}
+
 struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderAccessory: View>: View {
-    static var height: CGFloat { 440 }
+    static var height: CGFloat { TuneNowPlayingCardMetric.height }
     static var headerAccessorySize: CGFloat { 44 }
 
     let stationName: String
@@ -28,7 +33,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
                         .frame(width: 30, height: 11)
 
                     Text(stationName.uppercased())
-                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .tuneScaledFont(size: 12, weight: .black, design: .rounded)
                         .tracking(0.6)
                         .foregroundStyle(Color.white.opacity(0.86))
                         .multilineTextAlignment(.center)
@@ -66,18 +71,20 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
             Button(action: metadataAction) {
                 VStack(spacing: 4) {
                     Text(title)
-                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .tuneScaledFont(size: 22, weight: .black, design: .rounded)
                         .foregroundStyle(Color.white)
                         .multilineTextAlignment(.center)
-                        .lineLimit(2)
+                        .lineLimit(3)
                         .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(subtitle)
-                        .font(.system(size: 15, weight: .semibold))
+                        .tuneScaledFont(size: 15, weight: .semibold)
                         .foregroundStyle(Color.white.opacity(0.72))
                         .multilineTextAlignment(.center)
-                        .lineLimit(1)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
@@ -85,7 +92,7 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
             .buttonStyle(.plain)
             .accessibilityLabel(artworkAccessibilityLabel)
             .accessibilityIdentifier("avi.footerPlayer.textZoom")
-            .frame(height: 70)
+            .frame(minHeight: 70)
 
             Spacer(minLength: 0)
 
@@ -94,7 +101,10 @@ struct TuneNowPlayingCard<Artwork: View, Backdrop: View, Controls: View, HeaderA
                 .frame(maxWidth: .infinity)
         }
         .padding(16)
-        .frame(height: Self.height)
+        // `height` at the default text size; the card grows only when larger text needs
+        // more lines (the shell reads the measured height for its scroll padding).
+        .frame(minHeight: Self.height)
+        .fixedSize(horizontal: false, vertical: true)
         .background {
             ZStack {
                 Color.black

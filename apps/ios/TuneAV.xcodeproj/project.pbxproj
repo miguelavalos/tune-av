@@ -53,6 +53,7 @@
 		28BEEB94A110045030CEE485 /* AppShellView+Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98AF851755C4BBE2BD0E7F41 /* AppShellView+Playback.swift */; };
 		29E66E7283CBCFED6811C14C /* TuneAVLocalRecommendationScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E377A482C9F747CDD7B4E0 /* TuneAVLocalRecommendationScorer.swift */; };
 		2AB11B4DCEFD1E10988F7B65 /* TuneAVLocalFeedbackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4442649A1E700CC3A17083F9 /* TuneAVLocalFeedbackStore.swift */; };
+		2BE95D61ED92FCD13B91A9D1 /* TuneAVScaledFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE40948C4E877EF9897E1B3 /* TuneAVScaledFont.swift */; };
 		2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */; };
 		2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */; };
 		2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */; };
@@ -390,6 +391,7 @@
 		5A4A5CDB7CB1D479EFCF11EC /* AviEmotionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviEmotionViews.swift; sourceTree = "<group>"; };
 		5A8835ADB721A8104013EBE0 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
 		5F025118D227F7F3E635ED83 /* HomeMoodGenreTagBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMoodGenreTagBuilder.swift; sourceTree = "<group>"; };
+		5FE40948C4E877EF9897E1B3 /* TuneAVScaledFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVScaledFont.swift; sourceTree = "<group>"; };
 		604190C7A168380EB4909040 /* ShellPlaybackQueueBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellPlaybackQueueBuilder.swift; sourceTree = "<group>"; };
 		605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSleepTimerController.swift; sourceTree = "<group>"; };
 		60E377A482C9F747CDD7B4E0 /* TuneAVLocalRecommendationScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLocalRecommendationScorer.swift; sourceTree = "<group>"; };
@@ -880,6 +882,7 @@
 				2C5F45DB0981BD30B476ED1B /* TuneAVRevenueCatPlanMapping.swift */,
 				8C0C0C8E1735D7E25BCDA665 /* TuneAVSavedDiscoveryPolicy.swift */,
 				B88BE8A291767D3B19DB2920 /* TuneAVSavedStationIcon.swift */,
+				5FE40948C4E877EF9897E1B3 /* TuneAVScaledFont.swift */,
 				889CB176F07AC88686CFE630 /* TuneAVServiceAliases.swift */,
 				47AB8529661BE430C13DB085 /* TuneAVSharedTheme.swift */,
 				605157C6CFFB1D9BAEE35088 /* TuneAVSleepTimerController.swift */,
@@ -1407,6 +1410,7 @@
 				62167863AB5CD3D4D89D93FA /* TuneAVRevenueCatPlanMapping.swift in Sources */,
 				8F1A8A26BBE4A617B23DAEC8 /* TuneAVSavedDiscoveryPolicy.swift in Sources */,
 				D2528A14030A3AF11F0F76B9 /* TuneAVSavedStationIcon.swift in Sources */,
+				2BE95D61ED92FCD13B91A9D1 /* TuneAVScaledFont.swift in Sources */,
 				35E62D1CAA5B80E2C3B64C47 /* TuneAVServiceAliases.swift in Sources */,
 				D3A7E73AF8A4D548E0D389C2 /* TuneAVSharedTheme.swift in Sources */,
 				164BE7E072E94C313F109B3F /* TuneAVSiriIntents.swift in Sources */,
