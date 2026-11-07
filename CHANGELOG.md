@@ -10,6 +10,9 @@ This project follows semantic versioning once public source releases begin.
   station's stream with ShazamKit when the station sends no title, and brings
   the exact artwork and the Apple Music link; the song then saves, reacts and
   shows in the history like any detected one (iPhone and iPad).
+- Docs: the public docs record the 1.1.1 TestFlight builds and drop two
+  obsolete sections; the iOS install prerequisite names the iOS 18 SDK and
+  the Xcode versions CI and the releases use instead of "Xcode 26.4.1".
 
 ## 1.1.1 - 2026-11-07
 

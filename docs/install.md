@@ -55,7 +55,10 @@ Before changing runtime configuration scripts, read
 
 ### Prerequisites
 
-1. Xcode 26.4.1 or later installed.
+1. Xcode with the iOS 18 SDK or newer: the app's deployment target is iOS
+   18.0. `apps/ios/project.yml` sets XcodeGen's `xcodeVersion` to 16.0, CI
+   builds the app with Xcode 16.4 and the iOS 18.5 SDK, and the current
+   releases are built with Xcode 27.x.
 2. Command line tools selected from that Xcode.
 3. `vp` 1.3.13 or later.
 4. An Apple account in Xcode if testing on a physical device.
@@ -158,8 +161,9 @@ find . -type d \( -name '.DerivedData*' -o -name '.derived-data*' -o -name 'Deri
 - macOS signed/TestFlight auth builds must keep both a stable Account AV
   keychain service (`com.avalsys.tuneav.account.v2` for prod,
   `com.avalsys.tuneav.mac.dev.account.v2` for dev) and the matching keychain
-  access group (`935PM55U6R.com.avalsys.tuneav` for prod,
-  `935PM55U6R.com.avalsys.tuneav.mac.dev` for dev). Do not leave
+  access group (`<team id>.com.avalsys.tuneav` for prod,
+  `<team id>.com.avalsys.tuneav.mac.dev` for dev, as set in
+  `apps/macos/Config/Release.xcconfig` and `Debug.xcconfig`). Do not leave
   `ACCOUNTAV_KEYCHAIN_SERVICE` or `ACCOUNTAV_KEYCHAIN_ACCESS_GROUP` empty or
   inherited.
 - Repeated macOS Keychain prompts in TestFlight/App Store builds mean the
