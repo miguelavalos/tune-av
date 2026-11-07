@@ -6,6 +6,9 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Explore keeps working when one Radio Browser mirror is down: the emergency
+  catalog fallback now resolves the live mirrors instead of a fixed one, picks
+  one at random and tries the next on failure (iOS and macOS).
 - The Mac app installs again on macOS 15 and newer; the 26.2 minimum came
   from the removed Convex dependency (macOS).
 

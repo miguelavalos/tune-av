@@ -78,6 +78,7 @@
 		C06D14E62FEA5E809E1473B2 /* AVPaywallFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 03B5B5A2694F2E77ABD921B8 /* AVPaywallFoundation */; };
 		C11E80DE5CF0F91C08416A98 /* TuneAVStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7B802F2803AADAE5AB954A /* TuneAVStation.swift */; };
 		C2D3A2783AC8110494801974 /* MacAviActionLimitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0096109F625DD7590DF6E176 /* MacAviActionLimitTests.swift */; };
+		C61FD6E85AFD963342830E5B /* TuneAVRadioBrowserMirrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DEB91FA8C63C4F906894F6 /* TuneAVRadioBrowserMirrors.swift */; };
 		CA27342578046FF28B0ECB8D /* TuneAVL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = C547C8DDD40412AA45F4F655 /* TuneAVL10n.swift */; };
 		CEBC3B1592332B76535B408B /* TuneAVAppShellHomeFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = E80A66F42DA2B6DE1F514487 /* TuneAVAppShellHomeFeed.swift */; };
 		CEE7318443B34B96E5D0D969 /* TuneAVStationArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EE7710AA11913E59C7F507 /* TuneAVStationArtworkView.swift */; };
@@ -159,6 +160,7 @@
 		6EBD5A13ED5B6CA4B0D0C3AA /* TuneAVAppShellSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVAppShellSearch.swift; sourceTree = "<group>"; };
 		71BE3ED81CF6D4259BE5EFCB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		723D9E1AF58671365E8BAFDD /* TuneAVServiceAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVServiceAliases.swift; sourceTree = "<group>"; };
+		72DEB91FA8C63C4F906894F6 /* TuneAVRadioBrowserMirrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVRadioBrowserMirrors.swift; sourceTree = "<group>"; };
 		73B5FFF1029C0AAF57A57692 /* TuneAVCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVCountry.swift; sourceTree = "<group>"; };
 		78C434A9C4A7C9D1C159BE9A /* TuneAVStationInfoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVStationInfoViews.swift; sourceTree = "<group>"; };
 		79E0AFF731DA84386253FCFA /* TuneAVLaunchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVLaunchContext.swift; sourceTree = "<group>"; };
@@ -375,6 +377,7 @@
 				43020E23D4675B7E49C389AF /* TuneAVNowPlayingService.swift */,
 				E6EF830E1C7E4B9705454FDC /* TuneAVOverviewSectionViews.swift */,
 				EDC7CA0264359FBBE98CFE98 /* TuneAVPlaybackQueueLogic.swift */,
+				72DEB91FA8C63C4F906894F6 /* TuneAVRadioBrowserMirrors.swift */,
 				2CF084428D8097AE805BEA5F /* TuneAVRevenueCatPlanMapping.swift */,
 				DDCA11EFF39C50A234F6A6C7 /* TuneAVSavedDiscoveryPolicy.swift */,
 				2C7D3F1E4C73F0AFA606C8E3 /* TuneAVSavedStationIcon.swift */,
@@ -612,6 +615,7 @@
 				1DF728FAF762A189306E64B5 /* TuneAVNowPlayingService.swift in Sources */,
 				515217DA05C2C4778E39FDE6 /* TuneAVOverviewSectionViews.swift in Sources */,
 				8DEC02A9A9F73926CC97E2D0 /* TuneAVPlaybackQueueLogic.swift in Sources */,
+				C61FD6E85AFD963342830E5B /* TuneAVRadioBrowserMirrors.swift in Sources */,
 				F34A723563A5C566B111EC7F /* TuneAVRevenueCatPlanMapping.swift in Sources */,
 				4517CBAFE4D60F933644F368 /* TuneAVSavedDiscoveryPolicy.swift in Sources */,
 				BE7765ACC4B1BEDE27DACCD8 /* TuneAVSavedStationIcon.swift in Sources */,
