@@ -24,6 +24,9 @@ This project follows semantic versioning once public source releases begin.
 - Docs: the public client docs describe the current state (universal Mac app,
   no Convex realtime layer, `1.1.0` TestFlight builds and `1.0.7` App Store
   versions) instead of the July and August candidates.
+- The saved-radio badge on the station cards of Home "Para ti" and the
+  Library carousels is visible in dark mode: it was a white icon on a white
+  circle (iOS).
 
 ## 1.1.0 - 2026-11-03
 

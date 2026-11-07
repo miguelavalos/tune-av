@@ -67,6 +67,7 @@ struct StationCompactCarousel: View {
 
 private struct StationCompactCard: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
+    @Environment(\.colorScheme) private var colorScheme
     /// The text column is as tall as the artwork at the default text size and grows with
     /// the station name's font, so the same lines fit at every size.
     @ScaledMetric(relativeTo: .subheadline) private var textColumnHeight: CGFloat = StationCompactMetrics.artworkSize
@@ -280,7 +281,7 @@ private struct StationCompactCard: View {
         Button(action: toggleFavorite) {
             TuneAVSavedStationIcon(isSaved: isFavorite, size: favoriteIconSize)
                 .frame(width: StationCompactMetrics.favoriteButtonSize, height: StationCompactMetrics.favoriteButtonSize)
-                .background(isFavorite ? TuneAVTheme.highlight.opacity(0.14) : Color.white.opacity(0.72), in: Circle())
+                .background(isFavorite ? TuneAVTheme.highlight.opacity(0.14) : favoriteBadgeSurface, in: Circle())
                 .overlay {
                     Circle()
                         .stroke(isFavorite ? TuneAVTheme.highlight.opacity(0.28) : TuneAVTheme.borderSubtle.opacity(0.65), lineWidth: 1)
@@ -290,6 +291,13 @@ private struct StationCompactCard: View {
         .contentShape(Circle())
         .accessibilityLabel(isFavorite ? L10n.string("player.station.unsave") : L10n.string("player.station.save"))
         .accessibilityIdentifier("stationRow.favorite.\(station.id)")
+    }
+
+    /// The badge sits on the artwork, not on the card, and its bookmark takes the theme's
+    /// primary text color: graphite in light, white in dark. A white disc behind it made
+    /// the dark-mode icon invisible, so there the disc takes the card surface instead.
+    private var favoriteBadgeSurface: Color {
+        colorScheme == .dark ? TuneAVTheme.cardSurface.opacity(0.92) : Color.white.opacity(0.72)
     }
 
     private func stationQualityBadges(hasNowPlaying: Bool) -> some View {
