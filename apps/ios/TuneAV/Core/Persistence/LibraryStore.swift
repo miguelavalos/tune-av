@@ -190,12 +190,29 @@ final class LibraryStore: ObservableObject {
     }
 
     private func refreshFavorites() {
-        let favoriteDescriptor = FetchDescriptor<FavoriteStation>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        let storedFavorites = (try? context.fetch(FetchDescriptor<FavoriteStation>())) ?? []
+        let nextFavorites = FavoriteStationOrder.ordered(
+            storedFavorites,
+            position: \.sortPosition,
+            savedAt: \.createdAt,
+            id: \.stationID
         )
-        let nextFavorites = (try? context.fetch(favoriteDescriptor)) ?? []
+        normalizeFavoritePositions(nextFavorites)
         guard favoriteSignature(favorites) != favoriteSignature(nextFavorites) else { return }
         favorites = nextFavorites
+    }
+
+    /// Keeps the positions contiguous from 0 in the listener's order: rows saved before the order
+    /// existed get one on the first load, and an unsave closes the gap it leaves.
+    private func normalizeFavoritePositions(_ orderedFavorites: [FavoriteStation]) {
+        var didChange = false
+        for (index, favorite) in orderedFavorites.enumerated() where favorite.sortPosition != index {
+            favorite.sortPosition = index
+            didChange = true
+        }
+        if didChange {
+            try? context.save()
+        }
     }
 
     private func refreshRecents() {
@@ -227,6 +244,7 @@ final class LibraryStore: ObservableObject {
             [
                 favorite.stationID,
                 TuneAVAppDataService.isoString(from: favorite.createdAt),
+                String(favorite.sortPosition ?? -1),
                 favorite.stationSnapshotJSON ?? ""
             ].joined(separator: "\u{1F}")
         }
@@ -292,7 +310,13 @@ final class LibraryStore: ObservableObject {
                 createdAt: TuneAVAppDataService.isoString(from: createdAt)
             )
             removeTombstone(resource: "favorites", identityKey: identityKey)
-            context.insert(FavoriteStation(station: station, createdAt: createdAt))
+            context.insert(
+                FavoriteStation(
+                    station: station,
+                    createdAt: createdAt,
+                    sortPosition: FavoriteStationOrder.nextPosition(after: favorites, position: \.sortPosition)
+                )
+            )
             operation = (.upsert, record)
         }
 
@@ -657,7 +681,12 @@ final class LibraryStore: ObservableObject {
     func ensureSeededStation(_ station: Station, favorite: Bool) {
         if favorite, !isFavorite(station) {
             removeTombstone(resource: "favorites", identityKey: Self.stationIdentityKey(for: station))
-            context.insert(FavoriteStation(station: station))
+            context.insert(
+                FavoriteStation(
+                    station: station,
+                    sortPosition: FavoriteStationOrder.nextPosition(after: favorites, position: \.sortPosition)
+                )
+            )
         }
 
         if recents.contains(where: { $0.stationID == station.id }) == false {
@@ -671,6 +700,17 @@ final class LibraryStore: ObservableObject {
 
     func favoriteStations() -> [Station] {
         favorites.map(Station.init(favorite:))
+    }
+
+    /// Moves saved stations as `List.onMove` reports it and keeps the new order on this device.
+    /// Nothing reaches the cloud: the order is not part of the Pro sync payload.
+    func moveFavorites(fromOffsets source: IndexSet, toOffset destination: Int) {
+        let reordered = FavoriteStationOrder.moved(favorites, fromOffsets: source, toOffset: destination)
+        guard reordered.map(\.stationID) != favorites.map(\.stationID) else { return }
+        for (index, favorite) in reordered.enumerated() where favorite.sortPosition != index {
+            favorite.sortPosition = index
+        }
+        saveAndRefresh(.favorites, syncsCloud: false)
     }
 
     func recentStations() -> [Station] {
@@ -2190,6 +2230,18 @@ final class LibraryStore: ObservableObject {
         isApplyingRemoteSnapshot = true
         defer { isApplyingRemoteSnapshot = false }
 
+        // The listener's order is device-local (docs/pro-sync-scope.md): a station that stays saved
+        // keeps its position through the pull, and the stations the pull brings in go to the end,
+        // oldest save first.
+        var localPositionsByStationID: [String: Int] = [:]
+        var localPositionsByIdentityKey: [String: Int] = [:]
+        for favorite in favorites {
+            guard let position = favorite.sortPosition else { continue }
+            localPositionsByStationID[favorite.stationID] = position
+            localPositionsByIdentityKey[Self.stationIdentityKey(for: Station(favorite: favorite))] = position
+        }
+        var nextIncomingPosition = FavoriteStationOrder.nextPosition(after: favorites, position: \.sortPosition)
+
         for favorite in favorites {
             context.delete(favorite)
         }
@@ -2198,6 +2250,7 @@ final class LibraryStore: ObservableObject {
             context.delete(tombstone)
         }
 
+        var incomingFavorites: [FavoriteStationRecord] = []
         for favorite in snapshot.favorites {
             if let deletedAt = favorite.deletedAt {
                 rememberTombstone(
@@ -2208,11 +2261,33 @@ final class LibraryStore: ObservableObject {
                 )
                 continue
             }
+            incomingFavorites.append(favorite)
+        }
+
+        let incomingByOldestSave = incomingFavorites.sorted { lhs, rhs in
+            let lhsCreatedAt = lhs.createdAt.map(Self.date(from:)) ?? .distantPast
+            let rhsCreatedAt = rhs.createdAt.map(Self.date(from:)) ?? .distantPast
+            if lhsCreatedAt != rhsCreatedAt {
+                return lhsCreatedAt < rhsCreatedAt
+            }
+            return TuneAVLibrarySnapshotMerger.stationIdentityKey(lhs.station)
+                < TuneAVLibrarySnapshotMerger.stationIdentityKey(rhs.station)
+        }
+        for favorite in incomingByOldestSave {
+            let identityKey = TuneAVLibrarySnapshotMerger.stationIdentityKey(favorite.station)
+            let sortPosition: Int
+            if let localPosition = localPositionsByStationID[favorite.station.id] ?? localPositionsByIdentityKey[identityKey] {
+                sortPosition = localPosition
+            } else {
+                sortPosition = nextIncomingPosition
+                nextIncomingPosition += 1
+            }
 
             context.insert(
                 FavoriteStation(
                     station: Station(record: favorite.station),
-                    createdAt: favorite.createdAt.map(Self.date(from:)) ?? .distantPast
+                    createdAt: favorite.createdAt.map(Self.date(from:)) ?? .distantPast,
+                    sortPosition: sortPosition
                 )
             )
         }

@@ -11,6 +11,7 @@
 		00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */; };
 		02733C45F13B09949F90D851 /* TuneAVUpgradeMomentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC03433AEFD375F909F71ED /* TuneAVUpgradeMomentPolicy.swift */; };
 		0329AE84F43EFCEDA3B88D1D /* AviFullPlayerViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFBAB687CBE9428A86618D4 /* AviFullPlayerViews.swift */; };
+		043C0432C5873BC00AA542B5 /* LibraryReorderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADA7418BE6904BEC8837127 /* LibraryReorderUITests.swift */; };
 		048EAE755F2A9BD6B24B09F7 /* AVLaunchFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 321C1010CFADDB13248FB756 /* AVLaunchFoundation */; };
 		04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */; };
 		054EDB1A6A553D8548C6A9B6 /* HomeScreenSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7B4AB74E73BDD74174C98B /* HomeScreenSections.swift */; };
@@ -41,6 +42,7 @@
 		1942DA912442970369F37736 /* TuneAVLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6DB57EC51BF76028CE91B8 /* TuneAVLiveActivityController.swift */; };
 		19D12529EFE7CA401E3471B3 /* TuneAVAppShellSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4FA0485464024DD786C5D1 /* TuneAVAppShellSearch.swift */; };
 		1B9CAAECDA989644C403FC7B /* TuneAVControlIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED07D3E2F60B28F7ACC6B0AC /* TuneAVControlIntents.swift */; };
+		1BACB997C79EBE2256C40094 /* LibraryFavoriteReorderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F68AEE90E1CD67AC0494029F /* LibraryFavoriteReorderSheet.swift */; };
 		1BEA0ADD69D85ECAAF67FDA6 /* FeedbackBadgeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C2142EBD775E3AAAED9E58 /* FeedbackBadgeViews.swift */; };
 		1D3B255DAE1AD98462B78DC5 /* ShellAviActionsRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B314ABD80140CF0AE14B2A /* ShellAviActionsRouter.swift */; };
 		1E49912E49913AA8B37F7653 /* ShellCommonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */; };
@@ -56,6 +58,7 @@
 		2BE95D61ED92FCD13B91A9D1 /* TuneAVScaledFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE40948C4E877EF9897E1B3 /* TuneAVScaledFont.swift */; };
 		2DF23419951372827284C64E /* AviPlanComparisonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F81EC54576D2C06AF59629E /* AviPlanComparisonSheet.swift */; };
 		2EDDE7779B531AE80EB61C2C /* TuneAVStreamMetadataDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7AF6B5572F4DFA7AC1D85A /* TuneAVStreamMetadataDelegate.swift */; };
+		2F0E5D28A5E8A83CE9704972 /* FavoriteStationOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991BAF5E2BE9CCFB11A96D66 /* FavoriteStationOrderTests.swift */; };
 		2F163C08BF99BBD7CA37CDCE /* TuneAVStationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4283B749D76B085D6D1E50E /* TuneAVStationService.swift */; };
 		2F65C8472D88CA7FBAFE52BF /* AccessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE496FF33E54B703864FACD2 /* AccessController.swift */; };
 		318ED69750E46FB124579702 /* StationCompactCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C498EDA730C2559B9F1014D9 /* StationCompactCarousel.swift */; };
@@ -89,6 +92,7 @@
 		539316900AC7FAA45AAA2E2D /* TuneAVGuestOnboardingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE36B05D156BB70FB19ACC /* TuneAVGuestOnboardingPolicy.swift */; };
 		53A7832073531879C19477E4 /* HomePersonalStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */; };
 		53C0BDDB8DE64709781948DE /* HomeDerivedStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6AC9F70FFAE20091FFEE89 /* HomeDerivedStateBuilder.swift */; };
+		54D73305284E99EB3DE0256A /* FavoriteStationOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F67787935C46969C121E8D /* FavoriteStationOrder.swift */; };
 		570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */; };
 		594C9BBB691649AB55A2611C /* HomeRecentFavoriteStationSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CCE395C3CD3B9A506022B /* HomeRecentFavoriteStationSelector.swift */; };
 		59591917AC2A3E7480834BC0 /* TuneAVSurpriseStationPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D973989ECDA76787FA8EDF /* TuneAVSurpriseStationPickerTests.swift */; };
@@ -320,6 +324,7 @@
 		1667E2EFC88D39F6B00F4E37 /* TuneAdaptiveLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAdaptiveLayout.swift; sourceTree = "<group>"; };
 		1713B09701E9777A700FA782 /* ShellChromeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellChromeViews.swift; sourceTree = "<group>"; };
 		198A05B4515ED79560A09DEF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		19F67787935C46969C121E8D /* FavoriteStationOrder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteStationOrder.swift; sourceTree = "<group>"; };
 		19FB0ED9FA7E77E305808692 /* TuneAVOverviewSectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVOverviewSectionViews.swift; sourceTree = "<group>"; };
 		1B61305E0867F482CEA3CA5B /* HomeHeroViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHeroViews.swift; sourceTree = "<group>"; };
 		1D354EAC64C6CDA6F6F543AE /* TuneAVWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVWidgetsBundle.swift; sourceTree = "<group>"; };
@@ -462,6 +467,7 @@
 		9233A3EA38F07EA9D6DFA8A8 /* AviScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviScreen.swift; sourceTree = "<group>"; };
 		969857CE9E9F5A0C0E195E34 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		98AF851755C4BBE2BD0E7F41 /* AppShellView+Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppShellView+Playback.swift"; sourceTree = "<group>"; };
+		991BAF5E2BE9CCFB11A96D66 /* FavoriteStationOrderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteStationOrderTests.swift; sourceTree = "<group>"; };
 		99668EA286936B4217A4DA02 /* AccountDeletionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionScreen.swift; sourceTree = "<group>"; };
 		9C071CD5FC33A2899B94A407 /* ShellSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellSessionState.swift; sourceTree = "<group>"; };
 		9D8ECC5B0990E98451E93F5F /* HomePersonalStationSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePersonalStationSelector.swift; sourceTree = "<group>"; };
@@ -509,6 +515,7 @@
 		C5749DAB52B36F86B75C6A85 /* AviScreen+PlayerDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+PlayerDock.swift"; sourceTree = "<group>"; };
 		C7CA644B88FEB854728F54E5 /* AviScreen+RadioDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+RadioDetail.swift"; sourceTree = "<group>"; };
 		CAA24FC8CFC43BB76E54AAC9 /* SearchQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueueUITests.swift; sourceTree = "<group>"; };
+		CADA7418BE6904BEC8837127 /* LibraryReorderUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryReorderUITests.swift; sourceTree = "<group>"; };
 		CB38C54C898527793A45E995 /* TuneAVNowPlayingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVNowPlayingService.swift; sourceTree = "<group>"; };
 		CD03A8EDEA34E4573F0DC2EB /* TuneAVWidgetState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVWidgetState.swift; sourceTree = "<group>"; };
 		CDB09F6C8FF012A635BC807B /* DiscoveriesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveriesUITests.swift; sourceTree = "<group>"; };
@@ -550,6 +557,7 @@
 		F42536EDA2D0C5B41E3727D4 /* TuneAVSurpriseStationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneAVSurpriseStationPicker.swift; sourceTree = "<group>"; };
 		F4293B6BDA411F401C66E7E7 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		F46080E97EDF938F8D3AFBB0 /* AviScreen+Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AviScreen+Feedback.swift"; sourceTree = "<group>"; };
+		F68AEE90E1CD67AC0494029F /* LibraryFavoriteReorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFavoriteReorderSheet.swift; sourceTree = "<group>"; };
 		F74E6E316E280471C6DFE11B /* ShellUITestBootstrapSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITestBootstrapSeeder.swift; sourceTree = "<group>"; };
 		F8BD9529BD68EE0F2DEAA11E /* ShellCommonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommonViews.swift; sourceTree = "<group>"; };
 		F97D4A7D40F1763112C81473 /* AviReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviReactionState.swift; sourceTree = "<group>"; };
@@ -625,6 +633,7 @@
 				AC56032BF991BF606EDC6911 /* AccountDeletionViewModelTests.swift */,
 				EBC446925FF19C1BB5A0F233 /* AviReturnContextTests.swift */,
 				22960F9DB31B02288E9C8F8B /* AviStationDetailBuilderTests.swift */,
+				991BAF5E2BE9CCFB11A96D66 /* FavoriteStationOrderTests.swift */,
 				277B4A256CED6FACDEB971D2 /* HomeHeroActionRouterTests.swift */,
 				1D64CC267622A41C612A3FF7 /* HomeScreenStateBuilderTests.swift */,
 				09680111116E70A5EC1A4F74 /* LibraryStoreTests.swift */,
@@ -705,6 +714,7 @@
 				8B7B4AB74E73BDD74174C98B /* HomeScreenSections.swift */,
 				69777DC9CD8AED418E5B8C17 /* HomeScreenStateBuilder.swift */,
 				815CCCE0491942879FC47E75 /* HomeStationPresentationBuilder.swift */,
+				F68AEE90E1CD67AC0494029F /* LibraryFavoriteReorderSheet.swift */,
 				6BED62931399000173045B4A /* LibraryHubScreen.swift */,
 				AEEFAB97F10E3027AE027E62 /* LibraryRadioViews.swift */,
 				2C6FA815423F3608CDA5F3E3 /* LibraryScreen.swift */,
@@ -942,6 +952,7 @@
 		AE3069F5E99E6AE3F5ECE216 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				19F67787935C46969C121E8D /* FavoriteStationOrder.swift */,
 				45E041E8E7568784E3A837D8 /* LibraryStore.swift */,
 				0A2443197B44A3463AFABCB5 /* PersistenceController.swift */,
 			);
@@ -1033,6 +1044,7 @@
 				750DE299A9025433BB6E8297 /* HomeRefreshUITests.swift */,
 				9DEE3F34FD450A73E2EDA648 /* HomeUITests.swift */,
 				839E00089501B759C66E7F76 /* LaunchPerformanceUITests.swift */,
+				CADA7418BE6904BEC8837127 /* LibraryReorderUITests.swift */,
 				67C87E7F1CCBA264A41AF5F8 /* LimitsUITests.swift */,
 				74194B0B1D604F32BCC62F2F /* OnboardingUITests.swift */,
 				D75A1C8B560D71B2B0518DB0 /* PlayerQueueUITests.swift */,
@@ -1240,6 +1252,7 @@
 				C01D6D0D97D384604F8D7651 /* AccountDeletionViewModelTests.swift in Sources */,
 				A194C514460CDFC92E4C5122 /* AviReturnContextTests.swift in Sources */,
 				04975669EDD224061FE00553 /* AviStationDetailBuilderTests.swift in Sources */,
+				2F0E5D28A5E8A83CE9704972 /* FavoriteStationOrderTests.swift in Sources */,
 				52F63407C3660C485A435BC3 /* HomeHeroActionRouterTests.swift in Sources */,
 				FAE2D86B8E94C39687AC6C77 /* HomeScreenStateBuilderTests.swift in Sources */,
 				570DAE07C363505EC990EA39 /* LibraryStoreTests.swift in Sources */,
@@ -1308,6 +1321,7 @@
 				8A3124E735C1C420E748E70B /* AviScreen.swift in Sources */,
 				59FAD11BBE53696B96C6C29A /* AviStationDetailBuilder.swift in Sources */,
 				EBF37FA94A66A374376D44D0 /* EntitlementService.swift in Sources */,
+				54D73305284E99EB3DE0256A /* FavoriteStationOrder.swift in Sources */,
 				1BEA0ADD69D85ECAAF67FDA6 /* FeedbackBadgeViews.swift in Sources */,
 				5DFF6C1E322A870C345FCAFD /* HomeAroundYouStationSelector.swift in Sources */,
 				FF79C327A739AFD202471187 /* HomeAviBrief.swift in Sources */,
@@ -1332,6 +1346,7 @@
 				00F6E7D36B6587F6F8AC8865 /* HomeStationPresentationBuilder.swift in Sources */,
 				945C03B5BD5BF30B6FB06C87 /* InAppBrowserView.swift in Sources */,
 				FDC09EEB954564744391453A /* LaunchContext.swift in Sources */,
+				1BACB997C79EBE2256C40094 /* LibraryFavoriteReorderSheet.swift in Sources */,
 				E7C527C16C463E7CA5C7D030 /* LibraryHubScreen.swift in Sources */,
 				2765BEAD37E1BE15277E578E /* LibraryRadioViews.swift in Sources */,
 				6C281077597DCDF4A556D5AC /* LibraryScreen.swift in Sources */,
@@ -1464,6 +1479,7 @@
 				634403CECCF87F79302E718A /* HomeRefreshUITests.swift in Sources */,
 				673F0D5A1BD5E542E4A4293B /* HomeUITests.swift in Sources */,
 				B0BB1D68BF07EB0CC962AB3D /* LaunchPerformanceUITests.swift in Sources */,
+				043C0432C5873BC00AA542B5 /* LibraryReorderUITests.swift in Sources */,
 				184D726B58DC9874B2B235CB /* LimitsUITests.swift in Sources */,
 				AB79C7E2DE4BF9E89AD10494 /* OnboardingUITests.swift in Sources */,
 				A85E21A4D8B01574008347D6 /* PlayerQueueUITests.swift in Sources */,
