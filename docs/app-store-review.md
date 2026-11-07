@@ -72,6 +72,14 @@ notes or private release operations, never in this public repository.
 - Confirm the privacy policy and App Store privacy labels describe account-linked
   product interaction or preference data if saved radios, saved songs, or
   feedback are collected for sync, personalization, analytics, or support.
+- Confirm the privacy policy describes song identification ("What's
+  playing?", ShazamKit): only when the listener taps the button, the app
+  sends a 12-second audio fingerprint of the playing stream to Apple's Shazam
+  service. It sends no raw audio, never uses the microphone and stores
+  nothing on Tune AV servers. Under Apple's App Privacy definitions, Audio
+  Data is the user's own voice or sound recordings, and the fingerprint goes
+  only to Apple, so Audio Data stays Not Collected unless the owner chooses to
+  declare it.
 - Confirm the macOS archive contains `Contents/Resources/PrivacyInfo.xcprivacy`
   and that App Store Connect declares account-linked Product Interaction data
   used for App Functionality and Analytics before enabling macOS listening
