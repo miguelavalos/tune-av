@@ -2,7 +2,7 @@ name: TuneAVMac
 options:
   bundleIdPrefix: com.avalsys
   deploymentTarget:
-    macOS: "26.2"
+    macOS: "15.0"
   xcodeVersion: "16.0"
 
 settings:
