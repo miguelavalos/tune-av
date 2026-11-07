@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 typealias NowPlayingTrack = TuneAVNowPlayingTrack
 
@@ -165,34 +166,63 @@ private extension NowPlayingService {
     }
 }
 
+/// Finds, on Radio Browser, a direct stream of the same station whose ICY
+/// metadata can be read when the station's own stream carries none. The lookup
+/// goes to the live Radio Browser mirrors (`TuneAVRadioBrowserMirrors`) with the
+/// failover rules of the station search, so one mirror being down does not lose
+/// the alternate stream.
 struct TuneAVAlternateMetadataStreamResolver {
     private let session: URLSession
-    private let baseURL: URL
+    private let radioBrowserMirrors: TuneAVRadioBrowserMirrors
     private let cache: TuneAVAlternateMetadataStreamCache
+
+    private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "nowPlaying")
 
     init(
         session: URLSession = TuneAVURLSessions.catalog,
-        baseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
+        radioBrowserMirrors: TuneAVRadioBrowserMirrors = .shared,
         cache: TuneAVAlternateMetadataStreamCache = .shared
     ) {
         self.session = session
-        self.baseURL = baseURL
+        self.radioBrowserMirrors = radioBrowserMirrors
         self.cache = cache
     }
 
     func resolveAlternateStreamURL(for station: Station) async -> URL? {
-        guard let request = request(for: station) else { return nil }
-        let key = Self.cacheKey(for: station, request: request)
+        let components = Self.searchComponents(for: station)
+        let key = Self.cacheKey(for: station, components: components)
 
         return await cache.url(for: key) {
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
-                return nil
-            }
-
-            let candidates = try JSONDecoder().decode([RadioBrowserMetadataCandidate].self, from: data)
-            return Self.bestAlternateStreamURL(for: station, candidates: candidates)
+            try await loadAlternateStreamURL(for: station, components: components)
         }
+    }
+
+    /// Runs the lookup against the live mirrors in turn, as the station search
+    /// does: a mirror that cannot be reached, times out or answers 5xx is skipped
+    /// for the next one, up to `TuneAVStationService.maxRadioBrowserMirrorAttempts`;
+    /// any other error surfaces at once. When every mirror fails, the mirror list
+    /// is marked for refresh and the last error surfaces.
+    func loadAlternateStreamURL(for station: Station, components: URLComponents) async throws -> URL? {
+        let hosts = await radioBrowserMirrors.hosts()
+        var lastError: Error = URLError(.badURL)
+        var attempts = 0
+
+        for host in hosts where attempts < TuneAVStationService.maxRadioBrowserMirrorAttempts {
+            var mirrorComponents = components
+            mirrorComponents.host = host
+            guard let url = mirrorComponents.url else { continue }
+            attempts += 1
+
+            do {
+                return try await fetchAlternateStreamURL(for: station, url: url)
+            } catch where TuneAVStationService.shouldTryNextRadioBrowserMirror(after: error) {
+                Self.logger.notice("Radio Browser mirror \(host, privacy: .public) failed the alternate stream lookup; trying the next one")
+                lastError = error
+            }
+        }
+
+        await radioBrowserMirrors.recordTotalFailure()
+        throw lastError
     }
 
     static func bestAlternateStreamURL(for station: Station, candidates: [RadioBrowserMetadataCandidate]) -> URL? {
@@ -212,9 +242,13 @@ struct TuneAVAlternateMetadataStreamResolver {
             .map(\.url)
     }
 
-    private func request(for station: Station) -> URLRequest? {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
-        components?.queryItems = [
+    /// The Radio Browser search for the station, without a host: the mirror is
+    /// set per attempt.
+    static func searchComponents(for station: Station) -> URLComponents {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.path = TuneAVStationService.radioBrowserSearchPath
+        components.queryItems = [
             URLQueryItem(name: "name", value: station.name),
             station.countryCode.map { URLQueryItem(name: "countrycode", value: $0) },
             URLQueryItem(name: "hidebroken", value: "true"),
@@ -222,21 +256,34 @@ struct TuneAVAlternateMetadataStreamResolver {
             URLQueryItem(name: "reverse", value: "true"),
             URLQueryItem(name: "limit", value: "12")
         ].compactMap { $0 }
+        return components
+    }
 
-        guard let url = components?.url else { return nil }
+    private func fetchAlternateStreamURL(for station: Station, url: URL) async throws -> URL? {
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
         request.setValue("TuneAV/0.1", forHTTPHeaderField: "User-Agent")
-        return request
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return nil
+        }
+        guard 200..<300 ~= httpResponse.statusCode else {
+            throw TuneAVStationService.ServiceError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let candidates = try JSONDecoder().decode([RadioBrowserMetadataCandidate].self, from: data)
+        return Self.bestAlternateStreamURL(for: station, candidates: candidates)
     }
 
-    private static func cacheKey(for station: Station, request: URLRequest) -> String {
+    /// The same lookup is served from the cache whichever mirror answered it.
+    private static func cacheKey(for station: Station, components: URLComponents) -> String {
         [
             station.id,
             station.name.normalizedMetadataIdentityValue,
             station.countryCode ?? "",
             station.streamURL.normalizedMetadataIdentityValue,
-            request.url?.absoluteString ?? ""
+            "\(components.path)?\(components.percentEncodedQuery ?? "")"
         ].joined(separator: "\u{1F}")
     }
 }

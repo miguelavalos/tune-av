@@ -1,9 +1,10 @@
 import XCTest
 @testable import TuneAV
 
-/// The emergency catalog fallback resolves the live Radio Browser mirrors and
-/// moves to the next one when one fails. No test here reaches the network:
-/// every request goes through `MirrorTestURLProtocol`.
+/// The emergency catalog fallback and the alternate metadata stream lookup
+/// resolve the live Radio Browser mirrors and move to the next one when one
+/// fails. No test here reaches the network: every request goes through
+/// `MirrorTestURLProtocol`.
 final class RadioBrowserMirrorTests: XCTestCase {
     private static let serversHost = "all.test"
     private static let staticHost = "static.test"
@@ -296,6 +297,162 @@ final class RadioBrowserMirrorTests: XCTestCase {
         XCTAssertFalse(Service.shouldTryNextRadioBrowserMirror(after: Service.ServiceError.invalidResponse("bad")))
     }
 
+    // MARK: - Alternate metadata stream lookup
+
+    func testAlternateStreamLookupUsesTheResolvedMirrorWithTheSameRequest() async throws {
+        var requests: [URLRequest] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            requests.append(request)
+            let host = request.url?.host ?? ""
+            if host == Self.serversHost {
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne]))
+            }
+            return (Self.response(request, status: 200), Self.candidateBody(mirror: host))
+        }
+
+        let resolver = makeAlternateStreamResolver(mirrors: makeMirrors())
+        let url = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+
+        XCTAssertEqual(url, Self.alternateStreamURL(mirror: Self.mirrorOne))
+        XCTAssertEqual(requests.map { $0.url?.host ?? "" }, [Self.serversHost, Self.mirrorOne])
+
+        let lookup = try XCTUnwrap(requests.last)
+        let lookupURL = try XCTUnwrap(lookup.url)
+        XCTAssertEqual(lookupURL.scheme, "https")
+        XCTAssertEqual(lookupURL.path, "/json/stations/search")
+        XCTAssertEqual(
+            URLComponents(url: lookupURL, resolvingAgainstBaseURL: false)?.percentEncodedQuery,
+            "name=Example%20Radio&countrycode=ES&hidebroken=true&order=clickcount&reverse=true&limit=12",
+            "Only the host changes; the query stays the one the lookup always sent"
+        )
+        XCTAssertEqual(lookup.value(forHTTPHeaderField: "User-Agent"), "TuneAV/0.1")
+        XCTAssertEqual(lookup.timeoutInterval, 8)
+    }
+
+    func testAlternateStreamLookupTriesTheNextMirrorWhenTheFirstAnswersAServerError() async {
+        var requestedHosts: [String] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            let host = request.url?.host ?? ""
+            requestedHosts.append(host)
+            switch host {
+            case Self.serversHost:
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne, Self.mirrorTwo]))
+            case Self.mirrorOne:
+                return (Self.response(request, status: 503), Data())
+            default:
+                return (Self.response(request, status: 200), Self.candidateBody(mirror: host))
+            }
+        }
+
+        let resolver = makeAlternateStreamResolver(mirrors: makeMirrors())
+        let url = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+
+        XCTAssertEqual(requestedHosts, [Self.serversHost, Self.mirrorOne, Self.mirrorTwo])
+        XCTAssertEqual(url, Self.alternateStreamURL(mirror: Self.mirrorTwo))
+    }
+
+    func testAlternateStreamLookupTriesTheNextMirrorWhenTheFirstCannotBeReached() async {
+        var requestedHosts: [String] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            let host = request.url?.host ?? ""
+            requestedHosts.append(host)
+            switch host {
+            case Self.serversHost:
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne, Self.mirrorTwo]))
+            case Self.mirrorOne:
+                throw URLError(.timedOut)
+            default:
+                return (Self.response(request, status: 200), Self.candidateBody(mirror: host))
+            }
+        }
+
+        let resolver = makeAlternateStreamResolver(mirrors: makeMirrors())
+        let url = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+
+        XCTAssertEqual(requestedHosts, [Self.serversHost, Self.mirrorOne, Self.mirrorTwo])
+        XCTAssertEqual(url, Self.alternateStreamURL(mirror: Self.mirrorTwo))
+    }
+
+    func testAlternateStreamLookupSurfacesTheLastErrorWhenEveryMirrorFails() async throws {
+        var requestedHosts: [String] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            let host = request.url?.host ?? ""
+            requestedHosts.append(host)
+            if host == Self.serversHost {
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne, Self.mirrorTwo]))
+            }
+            return (Self.response(request, status: host == Self.staticHost ? 502 : 503), Data())
+        }
+
+        let clock = MirrorTestClock(Date(timeIntervalSince1970: 1_000))
+        let resolver = makeAlternateStreamResolver(mirrors: makeMirrors(refreshInterval: 60, now: { clock.value }))
+        let station = Self.metadataStation
+
+        do {
+            _ = try await resolver.loadAlternateStreamURL(
+                for: station,
+                components: TuneAVAlternateMetadataStreamResolver.searchComponents(for: station)
+            )
+            XCTFail("The last mirror error should surface")
+        } catch TuneAVStationService.ServiceError.requestFailed(let statusCode) {
+            XCTAssertEqual(statusCode, 502, "The error of the last mirror tried, the static one, surfaces")
+        }
+        XCTAssertEqual(requestedHosts, [Self.serversHost, Self.mirrorOne, Self.mirrorTwo, Self.staticHost])
+
+        requestedHosts = []
+        clock.advance(by: 61)
+        let url = await resolver.resolveAlternateStreamURL(for: station)
+        XCTAssertNil(url, "Through the cache a lookup that failed on every mirror resolves to no alternate stream")
+        XCTAssertEqual(
+            requestedHosts,
+            [Self.serversHost, Self.mirrorOne, Self.mirrorTwo, Self.staticHost],
+            "After a total failure the mirror list is resolved again once the refresh interval passes"
+        )
+    }
+
+    func testAlternateStreamLookupDoesNotTryAnotherMirrorAfterAClientError() async {
+        var requestedHosts: [String] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            let host = request.url?.host ?? ""
+            requestedHosts.append(host)
+            if host == Self.serversHost {
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne, Self.mirrorTwo]))
+            }
+            return (Self.response(request, status: 404), Data())
+        }
+
+        let resolver = makeAlternateStreamResolver(mirrors: makeMirrors())
+        let url = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+
+        XCTAssertNil(url, "A client error resolves to no alternate stream, as before")
+        XCTAssertEqual(requestedHosts, [Self.serversHost, Self.mirrorOne])
+    }
+
+    func testTheSameAlternateStreamLookupIsServedFromTheCacheWhicheverMirrorWouldBeChosen() async {
+        var requestedHosts: [String] = []
+        MirrorTestURLProtocol.requestHandler = { request in
+            let host = request.url?.host ?? ""
+            requestedHosts.append(host)
+            if host == Self.serversHost {
+                return (Self.response(request, status: 200), Self.serversBody([Self.mirrorOne, Self.mirrorTwo]))
+            }
+            return (Self.response(request, status: 200), Self.candidateBody(mirror: host))
+        }
+
+        let orderCalls = MirrorTestCounter()
+        let mirrors = makeMirrors(order: { hosts in
+            orderCalls.increment() % 2 == 1 ? Array(hosts.reversed()) : hosts
+        })
+        let resolver = makeAlternateStreamResolver(mirrors: mirrors)
+
+        let first = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+        let second = await resolver.resolveAlternateStreamURL(for: Self.metadataStation)
+
+        XCTAssertEqual(first, Self.alternateStreamURL(mirror: Self.mirrorTwo))
+        XCTAssertEqual(second, Self.alternateStreamURL(mirror: Self.mirrorTwo))
+        XCTAssertEqual(requestedHosts, [Self.serversHost, Self.mirrorTwo], "The cache key does not depend on the mirror")
+    }
+
     // MARK: - Helpers
 
     private func makeService(mirrors: TuneAVRadioBrowserMirrors) -> TuneAVStationService {
@@ -322,6 +479,53 @@ final class RadioBrowserMirrorTests: XCTestCase {
             now: now,
             order: order
         )
+    }
+
+    private func makeAlternateStreamResolver(mirrors: TuneAVRadioBrowserMirrors) -> TuneAVAlternateMetadataStreamResolver {
+        TuneAVAlternateMetadataStreamResolver(
+            session: makeSession(),
+            radioBrowserMirrors: mirrors,
+            cache: TuneAVAlternateMetadataStreamCache()
+        )
+    }
+
+    /// An HLS station whose own stream carries no ICY metadata, the case the
+    /// alternate stream lookup exists for.
+    private static var metadataStation: Station {
+        Station(
+            id: "station-hls",
+            name: "Example Radio",
+            country: "Spain",
+            countryCode: "ES",
+            language: "Spanish",
+            tags: "pop",
+            streamURL: "https://example-radio.test/live/chunks.m3u8",
+            homepageURL: "https://www.example-radio.test/",
+            isHLS: true
+        )
+    }
+
+    /// The direct stream a mirror answers for `metadataStation`; the query names
+    /// the mirror so a test can tell which one answered.
+    private static func alternateStreamURL(mirror: String) -> URL {
+        URL(string: "http://stream.example-radio.test/live.mp3?mirror=\(mirror)")!
+    }
+
+    private static func candidateBody(mirror: String) -> Data {
+        let streamURL = alternateStreamURL(mirror: mirror).absoluteString
+        return Data(#"""
+        [
+          {
+            "name": "Example Radio",
+            "url": "\#(streamURL)",
+            "url_resolved": "\#(streamURL)",
+            "homepage": "https://example-radio.test/",
+            "codec": "MP3",
+            "hls": 0,
+            "lastcheckok": 1
+          }
+        ]
+        """#.utf8)
     }
 
     private func makeSession() -> URLSession {
