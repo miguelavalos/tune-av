@@ -6,6 +6,9 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- The Mac app installs again on macOS 15 and newer; the 26.2 minimum came
+  from the removed Convex dependency (macOS).
+
 ## 1.1.0 - 2026-11-03
 
 iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)`. Siri, Control Center, widgets
