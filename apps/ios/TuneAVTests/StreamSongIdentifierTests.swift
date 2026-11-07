@@ -471,7 +471,11 @@ final class StreamSongIdentifierTests: XCTestCase {
     func testIdentifierCancels() async throws {
         let stalled = FakeTransport(stream: .init(statusCode: 200, headers: ["Content-Type": "audio/mpeg"], chunks: [], stalls: true))
         let identifier = TuneAVStreamSongIdentifier(transport: stalled, matcher: FakeMatcher(outcome: .noMatch), userAgent: "TuneAVTests/1")
-        let task = Task { await identifier.identify(streamURL: Self.streamURL) { _ in } }
+        // Capture only Sendable values: Swift 6.1 (Xcode 16.4) rejects a Task closure that reaches the test case's `Self`.
+        let streamURL = Self.streamURL
+        let task = Task { @Sendable [identifier] in
+            await identifier.identify(streamURL: streamURL) { _ in }
+        }
         try await Task.sleep(for: .milliseconds(150))
         task.cancel()
         let result = await task.value
