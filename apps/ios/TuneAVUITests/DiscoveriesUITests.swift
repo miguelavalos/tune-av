@@ -119,7 +119,11 @@ final class DiscoveriesUITests: TuneAVUITestCase {
 
         discoveriesSection.buttons["discoveries.clear"].tap()
 
-        let confirmButton = app.buttons["Borrar descubrimientos"].firstMatch
+        // The trash button shares the confirm action's label; on iOS 26 and later the
+        // dialog is a popover anchored to that button, so match the action, not the button.
+        let confirmButton = app.buttons.matching(
+            NSPredicate(format: "label == %@ AND identifier != %@", "Borrar descubrimientos", "discoveries.clear")
+        ).firstMatch
         XCTAssertTrue(confirmButton.waitForExistence(timeout: 5))
         confirmButton.tap()
 

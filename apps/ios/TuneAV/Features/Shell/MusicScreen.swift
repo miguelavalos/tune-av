@@ -91,20 +91,6 @@ struct MusicScreen: View {
             }
         }
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
-        .confirmationDialog(
-            L10n.string("shell.library.discoveries.clear.confirmTitle"),
-            isPresented: $isConfirmingClearDiscoveries,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.string("shell.library.discoveries.clear.confirmAction"), role: .destructive) {
-                clearDiscoveries()
-            }
-            .accessibilityIdentifier("clear-discoveries")
-
-            Button(L10n.string("common.cancel"), role: .cancel) {}
-        } message: {
-            Text(L10n.string("shell.library.discoveries.clear.confirmMessage"))
-        }
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
         }
@@ -309,7 +295,8 @@ struct MusicScreen: View {
         MusicDiscoveryActions(
             snapshot: snapshot,
             shareAction: shareDiscoveries(_:),
-            clearAction: confirmClearDiscoveries
+            isConfirmingClear: $isConfirmingClearDiscoveries,
+            clearAction: clearDiscoveries
         )
     }
 
@@ -318,10 +305,6 @@ struct MusicScreen: View {
         guard useDailyFeatureIfAllowed(.discoveryShare, usageKey: shareText) else { return }
         discoveriesShareTextDraft = shareText
         isShowingDiscoveriesShare = true
-    }
-
-    private func confirmClearDiscoveries() {
-        isConfirmingClearDiscoveries = true
     }
 
     @ViewBuilder
