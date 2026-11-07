@@ -9,9 +9,15 @@ belong outside this repository.
 
 Current builds, 2026-11-07:
 
-- The latest TestFlight builds are iOS/iPadOS `1.1.0 (63)` and macOS
-  `1.1.0 (68)`, built from public commit `bad896d` (see the `1.1.0` entry in
-  [CHANGELOG.md](../CHANGELOG.md)). Neither has been submitted to App Review.
+- The latest TestFlight builds are iOS/iPadOS `1.1.1 (64)` and macOS
+  `1.1.1 (69)`, built from public commit `714bac4` and uploaded on 2026-11-07
+  (see the `1.1.1` entry in [CHANGELOG.md](../CHANGELOG.md)). Both are
+  available to the internal testers only; neither has been submitted to App
+  Review. The macOS deployment target is 15.0 again since `1.1.1`, so the Mac
+  app installs on macOS 15 and newer.
+- The previous TestFlight builds are iOS/iPadOS `1.1.0 (63)` and macOS
+  `1.1.0 (68)`, built from public commit `bad896d` and uploaded on 2026-11-04,
+  with the same scope: internal testers only, no App Review submission.
 - The latest App Store approved versions are iOS/iPadOS `1.0.7 (56)`, built
   from public commit `ba140ef`, and macOS `1.0.7 (64)`, built from public
   commit `d0d4993`. The owner submitted both on 2026-07-29 and confirmed their

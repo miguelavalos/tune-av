@@ -32,14 +32,15 @@ approval records outside this repository.
   local availability states and should not surface as reviewer-visible raw
   diagnostics.
 
-## Suggested Public Release Copy
-
 ## Current App Store Status
 
 - Current builds, 2026-11-07: the latest TestFlight builds are iOS/iPadOS
-  `1.1.0 (63)` and macOS `1.1.0 (68)` from public commit `bad896d`; neither has
-  been submitted to App Review. The latest App Store approved versions remain
-  iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)` (approval checkpoint below).
+  `1.1.1 (64)` and macOS `1.1.1 (69)` from public commit `714bac4`, uploaded
+  on 2026-11-07 and available to the internal testers only; the previous ones
+  are iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)` from public commit
+  `bad896d`, uploaded on 2026-11-04. None of them has been submitted to App
+  Review. The latest App Store approved versions remain iOS/iPadOS `1.0.7 (56)`
+  and macOS `1.0.7 (64)` (approval checkpoint below).
   `1.0.9` (iOS `58`, macOS `66`, uploaded on 2026-11-01) was the first train
   without the Convex realtime layer and the first universal macOS archive.
 
