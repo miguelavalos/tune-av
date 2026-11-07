@@ -16,7 +16,8 @@ struct ShellUITestSongIdentifier: TuneAVStreamSongIdentifying {
     static let matchedArtist = "M83"
 
     let scenario: Scenario
-    var listeningDelay: Duration = .milliseconds(900)
+    /// Long enough for an XCUITest query to see the listening row before the outcome replaces it.
+    var listeningDelay: Duration = .milliseconds(2500)
 
     init(scenario rawValue: String?) {
         scenario = rawValue.flatMap(Scenario.init(rawValue:)) ?? .unsupported
@@ -46,16 +47,16 @@ struct ShellUITestSongIdentifier: TuneAVStreamSongIdentifying {
                         matchOffset: 42
                     )
                 ),
-                elapsed: 0.9
+                elapsed: 2.5
             )
         case .noMatch:
-            return TuneAVStreamSongIdentification(outcome: .noMatch, elapsed: 0.9)
+            return TuneAVStreamSongIdentification(outcome: .noMatch, elapsed: 2.5)
         case .unsupported:
-            return TuneAVStreamSongIdentification(outcome: .unsupportedStream(.container("fmp4")), elapsed: 0.9)
+            return TuneAVStreamSongIdentification(outcome: .unsupportedStream(.container("fmp4")), elapsed: 2.5)
         case .unavailable:
-            return TuneAVStreamSongIdentification(outcome: .unavailable(domain: "com.apple.ShazamCore", code: 102), elapsed: 0.9)
+            return TuneAVStreamSongIdentification(outcome: .unavailable(domain: "com.apple.ShazamCore", code: 102), elapsed: 2.5)
         case .network:
-            return TuneAVStreamSongIdentification(outcome: .networkFailure, elapsed: 0.9)
+            return TuneAVStreamSongIdentification(outcome: .networkFailure, elapsed: 2.5)
         }
     }
 }
