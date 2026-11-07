@@ -76,6 +76,9 @@ final class SongIdentificationUITests: TuneAVUITestCase {
                 "TUNEAV_DEMO_MODE": "1",
                 "TUNEAV_UI_TESTS_DISABLE_LIBRARY_SEED": "1",
                 "TUNEAV_UI_TEST_SONG_IDENTIFICATION": scenario,
+                // One identification is one Avi lookup; the simulator's UserDefaults may already hold
+                // today's Guest budget from earlier runs, so lift it for these scenarios.
+                "TUNEAV_UI_TEST_AVI_ACTION_LIMIT": "100",
             ]
         )
     }
