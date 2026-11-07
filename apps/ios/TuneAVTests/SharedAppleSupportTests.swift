@@ -4007,7 +4007,8 @@ final class SharedAppleSupportTests: XCTestCase {
             },
             openStationWebsiteOrSearch: { station in events.append("web:\(station.id)") },
             showRelatedStations: { station in events.append("related:\(station.id)") },
-            stopPlayback: { events.append("stop") }
+            stopPlayback: { events.append("stop") },
+            identifySong: { station in events.append("identify:\(station.id)") }
         )
 
         router.searchLyrics(for: station)
@@ -4017,6 +4018,7 @@ final class SharedAppleSupportTests: XCTestCase {
         router.showHistory(for: station)
         router.findRelatedRadios(for: station)
         router.closeSignal()
+        router.identifySong(for: station)
 
         XCTAssertEqual(events, [
             "reaction:curious",
@@ -4033,7 +4035,9 @@ final class SharedAppleSupportTests: XCTestCase {
             "related:nova",
             "close",
             "close",
-            "stop"
+            "stop",
+            "close",
+            "identify:nova"
         ])
     }
 

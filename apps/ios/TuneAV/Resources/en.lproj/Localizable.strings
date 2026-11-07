@@ -797,6 +797,16 @@
 "player.avi.feedback.tunedHint" = "Future recommendations will adjust.";
 "player.avi.listeningNowShort" = "Avi listens";
 "player.avi.moreWithAvi" = "More with Avi";
+"player.identify.action" = "What's playing?";
+"player.identify.exactAction" = "Identify the exact song";
+"player.identify.listening.title" = "Avi is listening…";
+"player.identify.listening.summary" = "I take twelve seconds of the stream. No microphone.";
+"player.identify.stationSays" = "The station says: %@";
+"player.identify.noMatch" = "I don't recognise it. Try again when music is playing.";
+"player.identify.unsupported" = "Not available on this station.";
+"player.identify.unavailable" = "I can't identify songs right now. Try again later.";
+"player.identify.network" = "I couldn't reach the station. Check your connection.";
+"player.identify.identifiedBadge" = "Identified from the stream";
 "player.avi.poorInfo" = "Avi can listen, but this station does not always say what is playing.";
 "player.avi.secondaryOffer.song" = "lyrics, artist, save, and more";
 "player.avi.secondaryOffer.stationSearch" = "search radio, favorite, and details";

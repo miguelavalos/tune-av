@@ -42,6 +42,7 @@ TESTS=(
   "TuneAVUITests/SearchQueueUITests/testSeededSearchQueryOpensResults"
   "TuneAVUITests/ZHomeEmptyStateUITests"
   "TuneAVUITests/HomeRefreshUITests"
+  "TuneAVUITests/SongIdentificationUITests"
 )
 
 cd "$IOS_DIR"

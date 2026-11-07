@@ -31,6 +31,19 @@ struct DiscoveryTrackCard: View {
         openAviActionsID == aviActionsID
     }
 
+    /// Recognised from the stream audio by "What's playing?", not sent by the station.
+    private var isIdentifiedFromStream: Bool {
+        TuneAVIdentifiedDiscoveryStore().contains(discovery.discoveryID)
+    }
+
+    private var accessibilityDescription: String {
+        var parts = [discovery.title, discovery.artistDisplayText, discovery.stationName]
+        if isIdentifiedFromStream {
+            parts.append(L10n.string("player.identify.identifiedBadge"))
+        }
+        return parts.joined(separator: ", ")
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: openTrackInfo) {
@@ -48,10 +61,19 @@ struct DiscoveryTrackCard: View {
                             .foregroundStyle(TuneAVTheme.highlight)
                             .lineLimit(1)
 
-                        Text(discovery.stationName)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.82))
-                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            if isIdentifiedFromStream {
+                                Image(systemName: "shazam.logo")
+                                    .font(.system(size: 10, weight: .black))
+                                    .foregroundStyle(TuneAVTheme.highlight)
+                                    .accessibilityHidden(true)
+                            }
+
+                            Text(discovery.stationName)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.82))
+                                .lineLimit(1)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -59,7 +81,7 @@ struct DiscoveryTrackCard: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("\(discovery.title), \(discovery.artistDisplayText), \(discovery.stationName)")
+            .accessibilityLabel(accessibilityDescription)
             .accessibilityHint(L10n.string("shell.music.discovery.openTrackInfo.hint"))
             .accessibilityIdentifier("discoveryTrack.openInfo.\(discovery.discoveryID)")
 

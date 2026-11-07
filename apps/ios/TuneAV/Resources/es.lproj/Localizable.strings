@@ -797,6 +797,16 @@
 "player.avi.feedback.tunedHint" = "Ajustaré próximas recomendaciones.";
 "player.avi.listeningNowShort" = "Avi escucha";
 "player.avi.moreWithAvi" = "Más con Avi";
+"player.identify.action" = "¿Qué suena?";
+"player.identify.exactAction" = "Identifica la canción exacta";
+"player.identify.listening.title" = "Avi está escuchando…";
+"player.identify.listening.summary" = "Tomo doce segundos de la emisión. Sin micrófono.";
+"player.identify.stationSays" = "La emisora dice: %@";
+"player.identify.noMatch" = "No lo reconozco. Prueba cuando suene música.";
+"player.identify.unsupported" = "No disponible en esta emisora.";
+"player.identify.unavailable" = "Ahora no puedo identificar canciones. Inténtalo más tarde.";
+"player.identify.network" = "No he podido conectar con la emisora. Revisa la conexión.";
+"player.identify.identifiedBadge" = "Identificada desde la emisión";
 "player.avi.poorInfo" = "Avi puede escuchar, pero esta radio no siempre dice qué está sonando.";
 "player.avi.secondaryOffer.song" = "letra, artista, guardar y más";
 "player.avi.secondaryOffer.stationSearch" = "buscar radio, favorita y detalle";

@@ -239,7 +239,8 @@ extension AppShellView {
         openAccount: @escaping () -> Void,
         startSignIn: @escaping () -> Void,
         openProPaywall: @escaping () -> Void,
-        closeFocusedDetail: @escaping () -> Void
+        closeFocusedDetail: @escaping () -> Void,
+        applyIdentifiedTrack: @escaping (Station, TuneAVIdentifiedTrack) -> Void
     ) -> some View {
         AviScreen(
             currentStation: currentStation,
@@ -285,7 +286,8 @@ extension AppShellView {
             openAccount: openAccount,
             startSignIn: startSignIn,
             openProPaywall: openProPaywall,
-            closeFocusedDetail: closeFocusedDetail
+            closeFocusedDetail: closeFocusedDetail,
+            applyIdentifiedTrack: applyIdentifiedTrack
         )
     }
 }

@@ -5,6 +5,8 @@ struct AviActionsPanelView: View {
     let state: ShellAviActionsPanelState
     let showsStationDetailAction: Bool
     let showsCloseSignalAction: Bool
+    /// The station is playing an `https` stream the identifier can read.
+    let showsIdentifySongAction: Bool
     let previousPage: () -> Void
     let nextPage: () -> Void
     let close: () -> Void
@@ -18,6 +20,7 @@ struct AviActionsPanelView: View {
     let openWebsite: () -> Void
     let findRelatedRadios: () -> Void
     let closeSignal: () -> Void
+    let identifySong: () -> Void
 
     var body: some View {
         AVAviActionPanel(
@@ -58,11 +61,17 @@ struct AviActionsPanelView: View {
             AVAviCommandButton(title: L10n.string("shell.avi.actions.searchYouTube"), systemImage: "play.rectangle", accessibilityIdentifier: "avi.actions.youtube", action: searchYouTube)
             AVAviCommandButton(title: L10n.string("shell.avi.actions.searchAppleMusic"), systemImage: "music.note", accessibilityIdentifier: "avi.actions.appleMusic", action: searchAppleMusic)
             AVAviCommandButton(title: L10n.string("shell.avi.actions.searchArtist"), systemImage: "person.crop.circle", accessibilityIdentifier: "avi.actions.artist", action: searchArtist)
+            if showsIdentifySongAction {
+                AVAviCommandButton(title: L10n.string("player.identify.exactAction"), systemImage: "shazam.logo", accessibilityIdentifier: "avi.actions.identifyExactSong", action: identifySong)
+            }
         }
     }
 
     private var stationActions: some View {
         Group {
+            if showsIdentifySongAction {
+                AVAviCommandButton(title: L10n.string("player.identify.action"), systemImage: "shazam.logo", accessibilityIdentifier: "avi.actions.identifySong", action: identifySong)
+            }
             AVAviCommandButton(title: L10n.string("shell.avi.actions.searchPublicInfo"), systemImage: "info.circle", accessibilityIdentifier: "avi.actions.publicInfo", action: searchPublicInfo)
             if showsStationDetailAction {
                 AVAviCommandButton(title: L10n.string("shell.avi.recommendation.details"), systemImage: "dot.radiowaves.left.and.right", accessibilityIdentifier: "avi.actions.radioDetails", action: showRadioDetails)

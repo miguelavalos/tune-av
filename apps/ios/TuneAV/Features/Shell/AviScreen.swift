@@ -33,6 +33,7 @@ struct AviScreen: View {
     @Environment(\.displayScale) var displayScale
     @EnvironmentObject var accessController: AccessController
     @EnvironmentObject var libraryStore: LibraryStore
+    @EnvironmentObject var songIdentification: ShellSongIdentificationController
 
     let currentStation: Station?
     let focusedStation: Station?
@@ -78,6 +79,8 @@ struct AviScreen: View {
     let startSignIn: () -> Void
     let openProPaywall: () -> Void
     let closeFocusedDetail: () -> Void
+    /// Shows a song recognised from the stream as the current track (player, heart, history).
+    let applyIdentifiedTrack: (Station, TuneAVIdentifiedTrack) -> Void
     @State var isShowingAviActions = false
     @State var isShowingMoreAviActions = false
     @State var isShowingFeedbackPicker = false

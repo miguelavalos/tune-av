@@ -9,6 +9,8 @@ struct ShellAviActionsRouter {
     let openStationWebsiteOrSearch: (Station) -> Void
     let showRelatedStations: (Station) -> Void
     let stopPlayback: () -> Void
+    /// "What's playing?": recognise the song from the stream audio.
+    let identifySong: (Station) -> Void
 
     func previousPage(from state: ShellAviActionsPanelState) {
         changeActionsPage(state.previousPage)
@@ -62,6 +64,11 @@ struct ShellAviActionsRouter {
         showReaction(.curious)
         showRelatedStations(station)
         closeAviActions()
+    }
+
+    func identifySong(for station: Station) {
+        closeAviActions()
+        identifySong(station)
     }
 
     func closeSignal() {

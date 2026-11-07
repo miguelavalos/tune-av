@@ -736,6 +736,16 @@
 "player.avi.feedback.tunedHint" = "Künftige Empfehlungen werden angepasst.";
 "player.avi.listeningNowShort" = "Avi hört zu";
 "player.avi.moreWithAvi" = "Mehr mit Avi";
+"player.identify.action" = "Was läuft gerade?";
+"player.identify.exactAction" = "Den genauen Song erkennen";
+"player.identify.listening.title" = "Avi hört zu…";
+"player.identify.listening.summary" = "Ich nehme zwölf Sekunden des Streams. Ohne Mikrofon.";
+"player.identify.stationSays" = "Der Sender meldet: %@";
+"player.identify.noMatch" = "Ich erkenne es nicht. Versuch es, wenn Musik läuft.";
+"player.identify.unsupported" = "Für diesen Sender nicht verfügbar.";
+"player.identify.unavailable" = "Ich kann gerade keine Songs erkennen. Versuch es später noch einmal.";
+"player.identify.network" = "Ich konnte den Sender nicht erreichen. Prüf die Verbindung.";
+"player.identify.identifiedBadge" = "Aus dem Stream erkannt";
 "player.avi.poorInfo" = "Avi kann zuhören, aber dieses Radio sagt nicht immer, was gerade läuft.";
 "player.avi.secondaryOffer.song" = "Songtext, Künstler, speichern und mehr";
 "player.avi.secondaryOffer.stationSearch" = "Radio suchen, Favorit und Details";

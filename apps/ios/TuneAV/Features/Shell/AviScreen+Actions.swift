@@ -35,7 +35,10 @@ extension AviScreen {
                 browserRouter.openStationWebsiteOrSearch(station, closesAviActions: true)
             },
             showRelatedStations: showRelatedStations,
-            stopPlayback: stopPlayback
+            stopPlayback: stopPlayback,
+            identifySong: { station in
+                identifyCurrentSong(for: station)
+            }
         )
     }
 
@@ -51,6 +54,7 @@ extension AviScreen {
             state: panelState,
             showsStationDetailAction: showsStationDetailAction,
             showsCloseSignalAction: isNowPlayingFullPlayer && isFocusedStationActive,
+            showsIdentifySongAction: canIdentifyCurrentSong(for: station),
             previousPage: { router.previousPage(from: panelState) },
             nextPage: { router.nextPage(from: panelState) },
             close: closeAviActions,
@@ -63,7 +67,8 @@ extension AviScreen {
             showHistory: { router.showHistory(for: station) },
             openWebsite: { router.openWebsite(for: station) },
             findRelatedRadios: { router.findRelatedRadios(for: station) },
-            closeSignal: router.closeSignal
+            closeSignal: router.closeSignal,
+            identifySong: { router.identifySong(for: station) }
         )
     }
 

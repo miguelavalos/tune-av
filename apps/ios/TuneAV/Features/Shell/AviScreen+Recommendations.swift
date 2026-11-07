@@ -80,7 +80,10 @@ extension AviScreen {
     }
 
     var aviEmotion: TuneAVAviEmotion {
-        TuneAVAviEmotionResolver.focusedSignalEmotion(
+        if isAviListeningForSong {
+            return .thinking
+        }
+        return TuneAVAviEmotionResolver.focusedSignalEmotion(
             focusedStation: focusedStation,
             isFocusedStationActive: isFocusedStationActive,
             isPlaying: isPlaying,
