@@ -6,30 +6,46 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+## 1.1.1 - 2026-11-07
+
+iOS/iPadOS `1.1.1 (64)` and macOS `1.1.1 (69)`. Both platforms resolve the
+live Radio Browser mirrors when Explore or the song lookup falls back to the
+public directory, and the Mac app installs on macOS 15 and newer again. On
+iPhone and iPad, Home, the full player, the mini player and the shared Avi
+components also follow the text size chosen in Settings, the confirmation to
+clear the discoveries opens next to its trash button on iOS 26, and the
+saved-radio badge shows in dark mode.
+
 - Explore keeps working when one Radio Browser mirror is down: the emergency
   catalog fallback now resolves the live mirrors instead of a fixed one, picks
-  one at random and tries the next on failure (iOS and macOS).
+  one at random and tries the next on failure. The lookup of a direct stream
+  for the song title, used when a station's own stream carries no metadata,
+  resolves the same live mirrors (iOS and macOS, #124 and #126).
 - The Mac app installs again on macOS 15 and newer; the 26.2 minimum came
-  from the removed Convex dependency (macOS).
+  from the removed Convex dependency (macOS, #122).
 - The full player and Home follow the text size chosen in iOS Settings,
   including the accessibility sizes: station names, song lines, Avi's words
   and the section titles grow with it and wrap instead of being cut with
   "…". The player controls, the Home radio carousel, the hero buttons and
   the mood and genre pills stop growing at the second accessibility size so
-  they keep fitting on the screen (iOS).
+  they keep fitting on the screen (iOS, #125).
+- The Avi brief card, the Surprise me button, the Avi actions panel, status
+  pills and badges and the mini player follow the text size too; they come
+  from the shared Apps AV package, apps-av #79 (iOS).
 - The mini player stays compact at large text sizes: it follows the text size
   up to xxxLarge and stops there, its play icon grows like the previous and
   next ones, and Home, Explore and Library scroll clear of it instead of
-  ending under it (iOS).
-- Docs: the public client docs describe the current state (universal Mac app,
-  no Convex realtime layer, `1.1.0` TestFlight builds and `1.0.7` App Store
-  versions) instead of the July and August candidates.
+  ending under it (iOS, #128).
 - On iOS 26 and later, the confirmation to clear the discoveries in Library ›
   Songs opens next to the trash button that asked for it, instead of floating
-  in the middle of the screen on iPhone or at the sidebar edge on iPad (iOS).
+  in the middle of the screen on iPhone or at the sidebar edge on iPad
+  (iOS, #129).
 - The saved-radio badge on the station cards of Home "Para ti" and the
   Library carousels is visible in dark mode: it was a white icon on a white
-  circle (iOS).
+  circle (iOS, #130).
+- Docs: the public client docs describe the current state (universal Mac app,
+  no Convex realtime layer, `1.1.0` TestFlight builds and `1.0.7` App Store
+  versions) instead of the July and August candidates (#123).
 
 ## 1.1.0 - 2026-11-03
 

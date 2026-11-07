@@ -88,8 +88,8 @@ targets:
     info:
       path: Supporting/Info.plist
       properties:
-        CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "68"
+        CFBundleShortVersionString: "1.1.1"
+        CFBundleVersion: "69"
         CFBundleDisplayName: $(TUNEAV_DISPLAY_NAME)
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
