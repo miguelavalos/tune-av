@@ -24,6 +24,9 @@ struct TuneAVLaunchContext {
     let uiTestTrackArtist: String?
     let uiTestUpgradePromptFeature: LimitedFeature?
     let uiTestCloudSyncStatus: String?
+    /// Scripted outcome for the "What's playing?" identifier in UI tests: `match`, `noMatch`,
+    /// `unsupported`, `unavailable` or `network`. The real identifier never runs under UI tests.
+    let uiTestSongIdentification: String?
 
     static let current = TuneAVLaunchContext(environment: ProcessInfo.processInfo.environment)
 
@@ -41,6 +44,7 @@ struct TuneAVLaunchContext {
         uiTestUpgradePromptFeature = environment["TUNEAV_UI_TEST_UPGRADE_PROMPT_FEATURE"]
             .flatMap(LimitedFeature.init(rawValue:))
         uiTestCloudSyncStatus = Self.nilIfEmpty(environment["TUNEAV_UI_TEST_CLOUD_SYNC_STATUS"])
+        uiTestSongIdentification = Self.nilIfEmpty(environment["TUNEAV_UI_TEST_SONG_IDENTIFICATION"])
         preferredTab = environment["TUNEAV_OPEN_TAB"].flatMap(Tab.init(rawValue:))
         seedFavorite = environment["TUNEAV_SEED_FAVORITE"] == "1"
         preferredSearchQuery = Self.nilIfEmpty(environment["TUNEAV_SEARCH_QUERY"])

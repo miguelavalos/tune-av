@@ -60,6 +60,7 @@ struct AppShellView: View {
 
     @StateObject var chromeActions = AppShellChromeActions()
     @StateObject var searchPresentation: SearchPresentationStore
+    @StateObject var songIdentification: ShellSongIdentificationController
     @State var selectedTab: AppShellTab
     @State var lastLibraryTab: AppShellTab
     @State var homeStations: [Station] = []
@@ -142,11 +143,16 @@ struct AppShellView: View {
         _selectedTab = State(initialValue: initialTab)
         _lastLibraryTab = State(initialValue: initialTab.librarySegment == nil ? .library : initialTab)
         _searchPresentation = StateObject(wrappedValue: SearchPresentationStore(query: launchContext.preferredSearchQuery ?? ""))
+        let identifier: any TuneAVStreamSongIdentifying = launchContext.isUITesting
+            ? ShellUITestSongIdentifier(scenario: launchContext.uiTestSongIdentification)
+            : TuneAVStreamSongIdentifier()
+        _songIdentification = StateObject(wrappedValue: ShellSongIdentificationController(identifier: identifier))
     }
 
     var body: some View {
         adaptiveShell
             .environmentObject(chromeActions)
+            .environmentObject(songIdentification)
             .onChange(of: chromeActions.request) { _, request in
                 guard let request else { return }
                 openChromeRequest(request.item)
@@ -210,6 +216,7 @@ struct AppShellView: View {
                 refreshHomePresentation()
             }
             .onChange(of: audioPlayer.currentStation?.id) { previousStationID, stationID in
+                songIdentification.resetIfNeeded(currentStationID: stationID)
                 if stationID == nil {
                     lastConfirmedPlaybackStationID = nil
                     return
@@ -618,6 +625,9 @@ struct AppShellView: View {
             openProPaywall: openProPaywall,
             closeFocusedDetail: {
                 closeFocusedAviDetail()
+            },
+            applyIdentifiedTrack: { station, track in
+                applyIdentifiedTrack(track, for: station)
             }
         )
     }

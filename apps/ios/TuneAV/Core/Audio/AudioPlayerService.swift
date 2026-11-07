@@ -113,6 +113,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         case stream
         case fallback
         case cached
+        /// Recognised from the stream audio by "What's playing?" (ShazamKit), not sent by the station.
+        case identified
     }
 
     private func setStatus(_ newStatus: PlaybackStatus) {
@@ -170,6 +172,29 @@ final class AudioPlayerService: NSObject, ObservableObject {
         guard TuneAVUITestEnvironment.current.isEnabled else { return }
         setCurrentTrackIdentity(title: title, artist: artist)
         currentTrackSource = title == nil && artist == nil ? nil : .fallback
+        persistCurrentNowPlayingState()
+        updateNowPlayingInfo()
+    }
+
+    /// Shows a song recognised from the stream by "What's playing?" as the current track, with the
+    /// catalog's exact artwork instead of the iTunes lookup, so the heart, the history and Avi's
+    /// lookups treat it like a title the station sent. Playback itself is not touched.
+    func applyIdentifiedTrack(_ track: TuneAVIdentifiedTrack, for station: Station) {
+        guard currentStation?.id == station.id else { return }
+        let artist = TuneAVTrackMetadataParser.sanitizeArtist(track.artist)
+        guard let title = TuneAVTrackMetadataParser.sanitizeTitle(track.title, artist: artist) else { return }
+
+        artworkResolutionTask?.cancel()
+        artworkResolutionTask = nil
+        setCurrentTrackMetadata(CurrentTrackMetadata(
+            title: title,
+            artist: artist,
+            albumTitle: nil,
+            artworkURL: track.artworkURL,
+            artistURL: nil
+        ))
+        currentTrackSource = .identified
+        currentStreamTrackMetadataAt = Date()
         persistCurrentNowPlayingState()
         updateNowPlayingInfo()
     }
@@ -886,6 +911,11 @@ final class AudioPlayerService: NSObject, ObservableObject {
             resolvedArtist = nil
         }
 
+        // A station that sends only slogans keeps the song recognised from its audio.
+        if currentTrackSource == .identified, resolvedTitle == nil {
+            return
+        }
+
         if resolvedTitle != currentTrackTitle || resolvedArtist != currentTrackArtist {
             setCurrentTrackIdentity(title: resolvedTitle, artist: resolvedArtist)
             persistCurrentNowPlayingState()
@@ -939,7 +969,7 @@ final class AudioPlayerService: NSObject, ObservableObject {
             return
         }
 
-        if currentTrackSource == .stream,
+        if currentTrackSource == .stream || currentTrackSource == .identified,
            !TuneAVAudioPlaybackPolicy.fallbackNowPlayingShouldReplaceStreamTrack(
                 currentTitle: currentTrackTitle,
                 currentArtist: currentTrackArtist,
@@ -962,7 +992,8 @@ final class AudioPlayerService: NSObject, ObservableObject {
         TuneAVUITestEnvironment.current.isEnabled &&
             (
                 TuneAVLaunchContext.current.uiTestTrackTitle != nil ||
-                TuneAVLaunchContext.current.uiTestTrackArtist != nil
+                TuneAVLaunchContext.current.uiTestTrackArtist != nil ||
+                TuneAVLaunchContext.current.uiTestSongIdentification != nil
             )
     }
 

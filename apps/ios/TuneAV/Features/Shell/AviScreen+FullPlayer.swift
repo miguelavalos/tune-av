@@ -338,6 +338,8 @@ extension AviScreen {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: 32)
 
+            fullPlayerSongIdentificationRow(for: station)
+
             fullPlayerHeartButton(for: station, selectedFeedback: selectedFeedback)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)

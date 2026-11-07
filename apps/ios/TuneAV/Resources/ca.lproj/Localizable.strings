@@ -736,6 +736,16 @@
 "player.avi.feedback.tunedHint" = "Ajustaré les properes recomanacions.";
 "player.avi.listeningNowShort" = "Avi escolta";
 "player.avi.moreWithAvi" = "Més amb Avi";
+"player.identify.action" = "Què sona?";
+"player.identify.exactAction" = "Identifica la cançó exacta";
+"player.identify.listening.title" = "Avi està escoltant…";
+"player.identify.listening.summary" = "Prenc dotze segons de l'emissió. Sense micròfon.";
+"player.identify.stationSays" = "L'emissora diu: %@";
+"player.identify.noMatch" = "No ho reconec. Prova quan soni música.";
+"player.identify.unsupported" = "No disponible en aquesta emissora.";
+"player.identify.unavailable" = "Ara no puc identificar cançons. Torna-ho a provar més tard.";
+"player.identify.network" = "No he pogut connectar amb l'emissora. Revisa la connexió.";
+"player.identify.identifiedBadge" = "Identificada des de l'emissió";
 "player.avi.poorInfo" = "Avi pot escoltar, però aquesta ràdio no sempre diu què està sonant.";
 "player.avi.secondaryOffer.song" = "lletra, artista, desar i més";
 "player.avi.secondaryOffer.stationSearch" = "cercar ràdio, preferida i detall";

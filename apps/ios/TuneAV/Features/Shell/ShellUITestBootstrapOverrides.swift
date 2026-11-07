@@ -20,4 +20,10 @@ enum ShellUITestBootstrapOverrides {
         guard launchContext.isUITesting else { return nil }
         return launchContext.uiTestUpgradePromptFeature
     }
+
+    /// The scripted "What's playing?" outcome; `nil` outside UI tests.
+    static func songIdentificationScenario(from launchContext: LaunchContext) -> ShellUITestSongIdentifier.Scenario? {
+        guard launchContext.isUITesting else { return nil }
+        return launchContext.uiTestSongIdentification.flatMap(ShellUITestSongIdentifier.Scenario.init(rawValue:))
+    }
 }

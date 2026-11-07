@@ -6,6 +6,11 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Avi can tell you what's playing: ¿Qué suena? identifies the song from the
+  station's stream with ShazamKit when the station sends no title, and brings
+  the exact artwork and the Apple Music link; the song then saves, reacts and
+  shows in the history like any detected one (iPhone and iPad).
+
 ## 1.1.1 - 2026-11-07
 
 iOS/iPadOS `1.1.1 (64)` and macOS `1.1.1 (69)`. Both platforms resolve the

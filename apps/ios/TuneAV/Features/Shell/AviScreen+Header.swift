@@ -108,6 +108,14 @@ extension AviScreen {
             )
         }
 
+        if songIdentification.isListening(stationID: station.id) {
+            return AviHeaderCopy(
+                label: L10n.string("shell.avi.header.listening.label"),
+                title: L10n.string("player.identify.listening.title"),
+                summary: L10n.string("player.identify.listening.summary")
+            )
+        }
+
         let feedback = focusedPrimaryFeedback(for: station)
         let hasSong = isFocusedStationActive && hasCurrentSongContext
         let isTrackSaved = hasSong && isCurrentTrackSaved(for: station)
