@@ -2,6 +2,14 @@ import AVAppShellFoundation
 import AVHaptics
 import SwiftUI
 
+enum MiniPlayerMetric {
+    /// The mini player's tallest height at the default text size: a station name on two
+    /// lines, the artist line and the song line, with the padding of the card (86.7 pt
+    /// measured on an iPhone 17). The shell's scroll padding and footer backdrop are built
+    /// on it; larger text sizes make the player taller and the shell adds the difference.
+    static let height: CGFloat = 87
+}
+
 struct MiniPlayerView: View {
     @Environment(\.displayScale) private var displayScale
     @EnvironmentObject private var audioPlayer: AudioPlayerService
@@ -50,7 +58,9 @@ struct MiniPlayerView: View {
                             .tint(playButtonForeground)
                     } else {
                         Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            // Scaled like the package's previous and next icons beside it, which
+                            // grow with the text size inside a circle that keeps its size.
+                            .tuneScaledFont(size: 14, weight: .bold)
                             .foregroundStyle(playButtonForeground)
                     }
                 }
@@ -64,6 +74,11 @@ struct MiniPlayerView: View {
                 audioPlayer.playNextInQueue()
             }
         }
+        // The mini player is a compact overlay over the content: past the xxxLarge text size
+        // its three wrapped lines would cover most of the screen, so it stops growing there,
+        // keeping two lines of station name plus the song lines; the full player follows the
+        // accessibility sizes.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .task(id: fullPlayerArtworkPrewarmKey) {
             guard let url = fullPlayerArtworkURL else { return }
             await TuneAVArtworkImagePipeline.shared.prewarm(url: url, size: Self.artworkSize, scale: displayScale)
