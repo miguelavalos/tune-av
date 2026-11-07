@@ -10,22 +10,22 @@ on:
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/**"
-      - "apps/ios/**"
-      - "apps/macos/**"
-      - "apps/web/**"
-      - "package.json"
-      - "shared/**"
-      - "scripts/check-github-actions-pinning.sh"
-      - "scripts/check-github-workflow-permissions.mjs"
-      - "scripts/check-github-workflow-timeouts.mjs"
-      - "scripts/ios-ci-test.sh"
-      - "scripts/macos-ci-test.sh"
-      - "scripts/report-ios-app-size.sh"
-      - "scripts/check-public-config-hygiene.sh"
-      - "scripts/check-i18n-parity.mjs"
-      - "scripts/check-ios-network-privacy.sh"
+    # A push builds unless every changed file is documentation or repository
+    # metadata that no build step reads. The one whole-repository step, the
+    # secret scan of `config:hygiene`, also runs on every pull request and
+    # push in repository-policy.yml, so these files stay scanned. Any other
+    # file, including one nobody thought of, is a build input. The `changes`
+    # job below applies the same list to pull requests, in bash `case` syntax
+    # (`docs/**` there is `docs/*`; `*.md` matches Markdown at the repository
+    # root only in both): keep the two in sync.
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - "LICENSE"
+      - "t3.json"
+      - ".github/CODEOWNERS"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/pull_request_template.md"
 
 concurrency:
   group: ios-ci-${{ github.workflow }}-${{ github.ref }}
@@ -63,25 +63,28 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The paths the `pull_request` trigger filtered on before every pull
-          # request started this workflow; keep in sync with the `push` filter.
-          code_paths=(
-            ".github/workflows/*"
-            "apps/ios/*"
-            "apps/macos/*"
-            "apps/web/*"
-            "package.json"
-            "shared/*"
-            "scripts/check-github-actions-pinning.sh"
-            "scripts/check-github-workflow-permissions.mjs"
-            "scripts/check-github-workflow-timeouts.mjs"
-            "scripts/ios-ci-test.sh"
-            "scripts/macos-ci-test.sh"
-            "scripts/report-ios-app-size.sh"
-            "scripts/check-public-config-hygiene.sh"
-            "scripts/check-i18n-parity.mjs"
-            "scripts/check-ios-network-privacy.sh"
-          )
+          # A changed file is a code change unless it is documentation or
+          # repository metadata that no build step reads: the same list as the
+          # `push` trigger's `paths-ignore` above, in bash `case` syntax.
+          # Everything else builds, including a new file nobody thought of.
+          is_code_change() {
+            case "$1" in
+              docs/* | LICENSE | t3.json | .github/CODEOWNERS | .github/ISSUE_TEMPLATE/* | .github/pull_request_template.md)
+                return 1
+                ;;
+              */*.md)
+                # Markdown inside a directory: XcodeGen bundles any non-source
+                # file it finds under apps/ and shared/ as a resource, so it
+                # builds, like every other file in those trees.
+                return 0
+                ;;
+              *.md)
+                # Markdown at the repository root: README, CHANGELOG, AGENTS...
+                return 1
+                ;;
+            esac
+            return 0
+          }
 
           code=false
           if [[ "$EVENT_NAME" != "pull_request" ]]; then
@@ -94,7 +97,7 @@ jobs:
             echo "Base $BASE_SHA, head $HEAD_SHA, merge base $merge_base."
             # NUL-separated and without rename detection: a path is never
             # quoted or escaped, so every file matches its glob, and a file
-            # moved out of a code path still lists its old location.
+            # moved into a documentation path still lists its old location.
             changed_list="$(mktemp)"
             if ! git diff -z --name-only --no-renames "$merge_base" "$HEAD_SHA" > "$changed_list"; then
               echo "::warning::Could not list the files changed since $merge_base; treating the pull request as a code change."
@@ -103,16 +106,12 @@ jobs:
               echo "Changed files:"
               tr '\0' '\n' < "$changed_list"
               while IFS= read -r -d '' file; do
-                for pattern in "${code_paths[@]}"; do
-                  # shellcheck disable=SC2254 # the pattern must stay a glob
-                  case "$file" in
-                    $pattern)
-                      echo "Code change: $file (matches $pattern)"
-                      code=true
-                      break
-                      ;;
-                  esac
-                done
+                if is_code_change "$file"; then
+                  echo "Code change: $file"
+                  code=true
+                else
+                  echo "Documentation or repository metadata: $file"
+                fi
               done < "$changed_list"
             fi
           fi
