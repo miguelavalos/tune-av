@@ -28,7 +28,7 @@ Current builds, 2026-11-07:
   and the macOS app builds universal (Apple Silicon and Intel) again; see the
   realtime retirement note below.
 
-Earlier TestFlight candidates reached the internal `Tune AV Test` group and
+Earlier TestFlight candidates reached the internal testers and
 were never submitted to App Review: iOS/iPadOS `1.0.8 (57)` and macOS
 `1.0.8 (65)` (2026-08-01, public source `126d989` with the bounded
 purchase/restore reconciliation repair in `b9b3cd8`; the `1.0.8` train was
@@ -305,15 +305,11 @@ Latest repaired-candidate delivery checkpoint, 2026-07-13: iOS/iPadOS
 `efc9515`, which contains the explicit-null repair. Production preflights
 passed with zero failures and zero warnings; the iOS Release simulator build,
 final archive, privacy, signing-team, architecture, and application/Sentry dSYM
-checks passed. App Store Connect accepted iOS at 20:57 CEST and macOS at 21:02
-CEST with `Upload succeeded` and `EXPORT SUCCEEDED`; both began processing.
-The signed-in browser session expired before finished-processing and internal
-group availability could be confirmed, so neither is yet recorded as ready to
-install or test. Neither build was submitted to App Review. Once availability
-is confirmed, the next gate is one bounded signed-in Pro save/clear trace on
-the repaired build: exactly one successful save PUT and one successful clear
-PUT, with no feedback GET, summary, retry, realtime request, second mutation,
-or outbox/Queue/Convex fanout. Physical iOS proof remains separate.
+checks passed, and both were uploaded for internal TestFlight testing.
+Neither build was submitted to App Review. The next gate is one bounded
+signed-in Pro save/clear trace on the repaired build: exactly one successful
+save PUT and one successful clear PUT, with no feedback GET, summary, retry,
+realtime request, second mutation, or outbox/Queue/Convex fanout. Physical iOS proof remains separate.
 
 Historical TestFlight delivery checkpoint, 2026-07-10:
 
@@ -327,19 +323,9 @@ Historical TestFlight delivery checkpoint, 2026-07-10:
 
 Latest post-approval source checkpoint, 2026-07-03:
 
-- App Store approved baselines are iPhone/iPad `1.0.5 (44)` and macOS
-  `1.0.5 (47)` per operator report; approval evidence remains private.
-- iPhone/iPad `1.0.6 (45)` was uploaded to App Store Connect and submitted to
-  App Review on 2026-07-03 per operator report; approval is pending. It filters
-  expected unavailable promo-code responses out of Sentry capture.
-- macOS `1.0.6 (49)` was uploaded to App Store Connect and submitted to App
-  Review on 2026-07-03; approval is pending. Review submission id:
-  `5e5d7cdb-7827-4472-ae9f-f737dd92fb24`. It includes the Music history
-  list-source fix, macOS radio-library regression coverage, and contextual Avi
-  navigation. The App Store Connect `1.0.5` pre-release train is closed after
-  approval, so new macOS TestFlight uploads must use the next marketing version.
-  The previous macOS `1.0.6 (48)` package was uploaded to App Store Connect on
-  2026-07-03 before the contextual Avi navigation update.
+- The `1.0.5` and `1.0.6` builds of that time are superseded by the `1.0.7`
+  approval listed under "Current builds" above; their records live in the
+  private release runbook.
 - The approved maintenance build includes the Account/Tune AV Pro access
   loading-state fix.
 - Public i18n parity and the targeted iOS/macOS Account loading checks passed

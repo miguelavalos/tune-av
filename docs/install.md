@@ -161,8 +161,9 @@ find . -type d \( -name '.DerivedData*' -o -name '.derived-data*' -o -name 'Deri
 - macOS signed/TestFlight auth builds must keep both a stable Account AV
   keychain service (`com.avalsys.tuneav.account.v2` for prod,
   `com.avalsys.tuneav.mac.dev.account.v2` for dev) and the matching keychain
-  access group (`935PM55U6R.com.avalsys.tuneav` for prod,
-  `935PM55U6R.com.avalsys.tuneav.mac.dev` for dev). Do not leave
+  access group (`<team id>.com.avalsys.tuneav` for prod,
+  `<team id>.com.avalsys.tuneav.mac.dev` for dev, as set in
+  `apps/macos/Config/Release.xcconfig` and `Debug.xcconfig`). Do not leave
   `ACCOUNTAV_KEYCHAIN_SERVICE` or `ACCOUNTAV_KEYCHAIN_ACCESS_GROUP` empty or
   inherited.
 - Repeated macOS Keychain prompts in TestFlight/App Store builds mean the
