@@ -63,18 +63,25 @@ struct TuneAVStationService {
 
     private let avalsysBaseURL: URL?
     private let avalsysPopularBaseURL: URL?
-    private let radioBrowserBaseURL: URL
+    private let radioBrowserMirrors: TuneAVRadioBrowserMirrors
     private let session: URLSession
     private let fallbacks: TuneAVStationFallbacks
     private let invalidResponseMessage: String
     private let backendGate: TuneAVBackendHealthGate
     private let responseCache: TuneAVStationResponseCache
 
+    /// The Radio Browser search endpoint, on whichever live mirror answers.
+    static let radioBrowserSearchPath = "/json/stations/search"
+    /// How many mirrors one search tries before giving up.
+    static let maxRadioBrowserMirrorAttempts = 3
+
+    private static let logger = Logger(subsystem: "com.avalsys.tuneav", category: "stations")
+
     init(
         session: URLSession = TuneAVURLSessions.catalog,
         avalsysBaseURL: URL? = TuneAVStationService.defaultAVALSYSBaseURL(path: "/v1/tune/stations/search"),
         avalsysPopularBaseURL: URL? = TuneAVStationService.defaultAVALSYSBaseURL(path: "/v1/tune/stations/popular"),
-        radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
+        radioBrowserMirrors: TuneAVRadioBrowserMirrors = .shared,
         fallbacks: TuneAVStationFallbacks = .english,
         invalidResponseMessage: String = "The station service returned an invalid response.",
         backendGate: TuneAVBackendHealthGate = .shared,
@@ -83,7 +90,7 @@ struct TuneAVStationService {
         self.session = session
         self.avalsysBaseURL = avalsysBaseURL
         self.avalsysPopularBaseURL = avalsysPopularBaseURL
-        self.radioBrowserBaseURL = radioBrowserBaseURL
+        self.radioBrowserMirrors = radioBrowserMirrors
         self.fallbacks = fallbacks
         self.invalidResponseMessage = invalidResponseMessage
         self.backendGate = backendGate
@@ -295,8 +302,10 @@ struct TuneAVStationService {
     }
 
     private func searchRadioBrowserPage(filters: NormalizedStationSearchFilters) async throws -> TuneAVStationSearchPage {
-        var components = URLComponents(url: radioBrowserBaseURL, resolvingAgainstBaseURL: false)
-        components?.queryItems = [
+        var components = URLComponents()
+        components.scheme = "https"
+        components.path = Self.radioBrowserSearchPath
+        components.queryItems = [
             filters.query.isEmpty ? nil : URLQueryItem(name: "name", value: filters.query),
             filters.country.isEmpty ? nil : URLQueryItem(name: "country", value: filters.country),
             filters.countryCode.isEmpty ? nil : URLQueryItem(name: "countrycode", value: filters.countryCode),
@@ -310,16 +319,11 @@ struct TuneAVStationService {
         ]
         .compactMap { $0 }
 
-        guard let url = components?.url else {
-            throw URLError(.badURL)
-        }
-
-        let cacheKey = "radioBrowser|\(url.absoluteString)"
+        // The same search is served from the cache whichever mirror answered it.
+        let searchComponents = components
+        let cacheKey = "radioBrowser|\(searchComponents.path)?\(searchComponents.percentEncodedQuery ?? "")"
         let stations = try await responseCache.stations(for: cacheKey) { _ in
-            let response = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
-            guard case .value(let stations, _) = response else {
-                throw ServiceError.invalidResponse(invalidResponseMessage)
-            }
+            let stations = try await loadRadioBrowserStations(components: searchComponents)
             let resolvedStations = stations.compactMap { $0.station(fallbacks: fallbacks) }
             let pageStations = applyExactTagFilterIfNeeded(deduplicatedStations(resolvedStations), tag: filters.tag, limit: filters.limit)
             return .updated(pageStations, etag: nil)
@@ -332,6 +336,56 @@ struct TuneAVStationService {
             hasMore: stations.count >= filters.limit,
             nextCursor: stations.count >= filters.limit ? encodedRadioBrowserOffset(offset + stations.count) : nil
         )
+    }
+
+    /// Runs one Radio Browser request against the live mirrors in turn. A mirror
+    /// that cannot be reached, times out or answers 5xx is skipped for the next
+    /// one, up to `maxRadioBrowserMirrorAttempts`; any other error surfaces at
+    /// once. When every mirror fails, the mirror list is marked for refresh and
+    /// the last error surfaces.
+    private func loadRadioBrowserStations(components: URLComponents) async throws -> [RadioBrowserStationDTO] {
+        let hosts = await radioBrowserMirrors.hosts()
+        var lastError: Error = URLError(.badURL)
+        var attempts = 0
+
+        for host in hosts where attempts < Self.maxRadioBrowserMirrorAttempts {
+            var mirrorComponents = components
+            mirrorComponents.host = host
+            guard let url = mirrorComponents.url else { continue }
+            attempts += 1
+
+            do {
+                let response = try await decodedResponse([RadioBrowserStationDTO].self, url: url)
+                guard case .value(let stations, _) = response else {
+                    throw ServiceError.invalidResponse(invalidResponseMessage)
+                }
+                return stations
+            } catch where Self.shouldTryNextRadioBrowserMirror(after: error) {
+                Self.logger.notice("Radio Browser mirror \(host, privacy: .public) failed; trying the next one")
+                lastError = error
+            }
+        }
+
+        await radioBrowserMirrors.recordTotalFailure()
+        throw lastError
+    }
+
+    /// Mirror-side failures move on to the next mirror. Errors that come from
+    /// this device (no connectivity, cancellation) or from the request itself
+    /// (4xx, a malformed URL) do not: no other mirror would answer differently.
+    static func shouldTryNextRadioBrowserMirror(after error: Error) -> Bool {
+        if case ServiceError.requestFailed(let statusCode) = error {
+            return 500..<600 ~= statusCode
+        }
+        guard let urlError = error as? URLError else {
+            return false
+        }
+        switch urlError.code {
+        case .cancelled, .notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff, .callIsActive, .badURL, .unsupportedURL:
+            return false
+        default:
+            return true
+        }
     }
 
     private func decodedResponse<T: Decodable>(

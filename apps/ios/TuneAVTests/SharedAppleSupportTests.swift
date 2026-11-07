@@ -2399,7 +2399,7 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: makeBackendGate()
         )
 
@@ -2427,7 +2427,7 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: makeBackendGate()
         )
 
@@ -2485,7 +2485,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let service = TuneAVStationService(
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: makeBackendGate()
         )
 
@@ -2515,7 +2515,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let service = TuneAVStationService(
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: gate,
             responseCache: TuneAVStationResponseCache()
         )
@@ -2547,7 +2547,7 @@ final class SharedAppleSupportTests: XCTestCase {
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
             avalsysPopularBaseURL: URL(string: "https://api.test/v1/tune/stations/popular")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: gate
         )
 
@@ -2622,7 +2622,7 @@ final class SharedAppleSupportTests: XCTestCase {
         let service = TuneAVStationService(
             session: testURLSession(),
             avalsysBaseURL: URL(string: "https://api.test/v1/tune/stations/search")!,
-            radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+            radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
             backendGate: gate,
             responseCache: TuneAVStationResponseCache()
         )
@@ -3306,7 +3306,7 @@ final class SharedAppleSupportTests: XCTestCase {
                 session: testURLSession(),
                 avalsysBaseURL: nil,
                 avalsysPopularBaseURL: nil,
-                radioBrowserBaseURL: URL(string: "https://radio.test/json/stations/search")!,
+                radioBrowserMirrors: TuneAVRadioBrowserMirrors(serversURL: nil, staticHosts: ["radio.test"]),
                 backendGate: makeBackendGate(),
                 responseCache: TuneAVStationResponseCache()
             ),

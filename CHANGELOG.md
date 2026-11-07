@@ -6,6 +6,9 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Explore keeps working when one Radio Browser mirror is down: the emergency
+  catalog fallback now resolves the live mirrors instead of a fixed one, picks
+  one at random and tries the next on failure (iOS and macOS).
 - The full player and Home follow the text size chosen in iOS Settings,
   including the accessibility sizes: station names, song lines, Avi's words
   and the section titles grow with it and wrap instead of being cut with
