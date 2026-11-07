@@ -7,7 +7,8 @@ This project follows semantic versioning once public source releases begin.
 ## Unreleased
 
 - Docs: the public docs record the 1.1.1 TestFlight builds and drop two
-  obsolete sections.
+  obsolete sections; the iOS install prerequisite names the iOS 18 SDK and
+  the Xcode versions CI and the releases use instead of "Xcode 26.4.1".
 
 ## 1.1.1 - 2026-11-07
 

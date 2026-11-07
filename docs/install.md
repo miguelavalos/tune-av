@@ -56,8 +56,9 @@ Before changing runtime configuration scripts, read
 ### Prerequisites
 
 1. Xcode with the iOS 18 SDK or newer: the app's deployment target is iOS
-   18.0. `apps/ios/project.yml` declares Xcode 16.0 as the minimum XcodeGen
-   target; the current releases are built with Xcode 27.x.
+   18.0. `apps/ios/project.yml` sets XcodeGen's `xcodeVersion` to 16.0, CI
+   builds the app with Xcode 16.4 and the iOS 18.5 SDK, and the current
+   releases are built with Xcode 27.x.
 2. Command line tools selected from that Xcode.
 3. `vp` 1.3.13 or later.
 4. An Apple account in Xcode if testing on a physical device.
