@@ -544,26 +544,31 @@ struct MusicDiscoverySongsHeader: View {
 struct MusicDiscoveryActions: View {
     let isShareDisabled: Bool
     let shareAction: () -> Void
+    @Binding var isConfirmingClear: Bool
     let clearAction: () -> Void
 
     init(
         isShareDisabled: Bool,
         shareAction: @escaping () -> Void,
+        isConfirmingClear: Binding<Bool>,
         clearAction: @escaping () -> Void
     ) {
         self.isShareDisabled = isShareDisabled
         self.shareAction = shareAction
+        _isConfirmingClear = isConfirmingClear
         self.clearAction = clearAction
     }
 
     init(
         snapshot: MusicLibraryDerivedState,
         shareAction: @escaping (MusicLibraryDerivedState) -> Void,
+        isConfirmingClear: Binding<Bool>,
         clearAction: @escaping () -> Void
     ) {
         self.init(
             isShareDisabled: snapshot.filteredDiscoveries.isEmpty,
             shareAction: { shareAction(snapshot) },
+            isConfirmingClear: isConfirmingClear,
             clearAction: clearAction
         )
     }
@@ -582,7 +587,9 @@ struct MusicDiscoveryActions: View {
             .accessibilityIdentifier("discoveries.share")
             .disabled(isShareDisabled)
 
-            Button(action: clearAction) {
+            Button {
+                isConfirmingClear = true
+            } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color(red: 1, green: 0.17, blue: 0.38))
@@ -592,6 +599,21 @@ struct MusicDiscoveryActions: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.string("shell.library.discoveries.clear"))
             .accessibilityIdentifier("discoveries.clear")
+            // iOS 26 and later present a confirmation dialog as a popover anchored to the
+            // view that carries the modifier: on the button it points at the trash icon
+            // instead of floating in the middle of the screen (or at the iPad sidebar edge).
+            .confirmationDialog(
+                L10n.string("shell.library.discoveries.clear.confirmTitle"),
+                isPresented: $isConfirmingClear,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.string("shell.library.discoveries.clear.confirmAction"), role: .destructive, action: clearAction)
+                    .accessibilityIdentifier("clear-discoveries")
+
+                Button(L10n.string("common.cancel"), role: .cancel) {}
+            } message: {
+                Text(L10n.string("shell.library.discoveries.clear.confirmMessage"))
+            }
         }
     }
 }
