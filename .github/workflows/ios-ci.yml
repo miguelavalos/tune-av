@@ -11,11 +11,13 @@ on:
     branches:
       - main
     # A push builds unless every changed file is documentation or repository
-    # metadata that no job reads. Any other file, including one nobody
-    # thought of, is a build input. The `changes` job below applies the same
-    # list to pull requests, in bash `case` syntax (`docs/**` there is
-    # `docs/*`; `*.md` matches Markdown at the repository root only in both):
-    # keep the two in sync.
+    # metadata that no build step reads. The one whole-repository step, the
+    # secret scan of `config:hygiene`, also runs on every pull request and
+    # push in repository-policy.yml, so these files stay scanned. Any other
+    # file, including one nobody thought of, is a build input. The `changes`
+    # job below applies the same list to pull requests, in bash `case` syntax
+    # (`docs/**` there is `docs/*`; `*.md` matches Markdown at the repository
+    # root only in both): keep the two in sync.
     paths-ignore:
       - "*.md"
       - "docs/**"
@@ -62,9 +64,9 @@ jobs:
           set -euo pipefail
 
           # A changed file is a code change unless it is documentation or
-          # repository metadata that no job reads: the same list as the `push`
-          # trigger's `paths-ignore` above, in bash `case` syntax. Everything
-          # else builds, including a new file nobody thought of.
+          # repository metadata that no build step reads: the same list as the
+          # `push` trigger's `paths-ignore` above, in bash `case` syntax.
+          # Everything else builds, including a new file nobody thought of.
           is_code_change() {
             case "$1" in
               docs/* | LICENSE | t3.json | .github/CODEOWNERS | .github/ISSUE_TEMPLATE/* | .github/pull_request_template.md)
