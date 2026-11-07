@@ -90,26 +90,31 @@ jobs:
           elif ! merge_base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"; then
             echo "::warning::No merge base between $BASE_SHA and $HEAD_SHA; treating the pull request as a code change."
             code=true
-          elif ! changed="$(git diff --name-only "$merge_base" "$HEAD_SHA")"; then
-            echo "::warning::Could not list the files changed since $merge_base; treating the pull request as a code change."
-            code=true
           else
             echo "Base $BASE_SHA, head $HEAD_SHA, merge base $merge_base."
-            echo "Changed files:"
-            printf '%s\n' "$changed"
-            while IFS= read -r file; do
-              [[ -z "$file" ]] && continue
-              for pattern in "${code_paths[@]}"; do
-                # shellcheck disable=SC2254 # the pattern must stay a glob
-                case "$file" in
-                  $pattern)
-                    echo "Code change: $file (matches $pattern)"
-                    code=true
-                    break
-                    ;;
-                esac
-              done
-            done <<< "$changed"
+            # NUL-separated and without rename detection: a path is never
+            # quoted or escaped, so every file matches its glob, and a file
+            # moved out of a code path still lists its old location.
+            changed_list="$(mktemp)"
+            if ! git diff -z --name-only --no-renames "$merge_base" "$HEAD_SHA" > "$changed_list"; then
+              echo "::warning::Could not list the files changed since $merge_base; treating the pull request as a code change."
+              code=true
+            else
+              echo "Changed files:"
+              tr '\0' '\n' < "$changed_list"
+              while IFS= read -r -d '' file; do
+                for pattern in "${code_paths[@]}"; do
+                  # shellcheck disable=SC2254 # the pattern must stay a glob
+                  case "$file" in
+                    $pattern)
+                      echo "Code change: $file (matches $pattern)"
+                      code=true
+                      break
+                      ;;
+                  esac
+                done
+              done < "$changed_list"
+            fi
           fi
 
           echo "code=$code"
