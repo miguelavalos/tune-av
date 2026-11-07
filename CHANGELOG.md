@@ -21,6 +21,9 @@ This project follows semantic versioning once public source releases begin.
   up to xxxLarge and stops there, its play icon grows like the previous and
   next ones, and Home, Explore and Library scroll clear of it instead of
   ending under it (iOS).
+- Docs: the public client docs describe the current state (universal Mac app,
+  no Convex realtime layer, `1.1.0` TestFlight builds and `1.0.7` App Store
+  versions) instead of the July and August candidates.
 
 ## 1.1.0 - 2026-11-03
 

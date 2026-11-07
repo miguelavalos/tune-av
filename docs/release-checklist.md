@@ -20,8 +20,10 @@ to App Review as the final implementation of that decision.
 Realtime retirement, 2026-11-01: current source contains no Convex client and
 no realtime-session request. Installed older builds that still call
 `POST /v1/tune/workspace/realtime-sessions` receive `503 realtime_disabled` and
-continue with their startup and manual sync paths. Keep that compatibility reply
-until the realtime-free iOS and macOS builds are released and verified.
+continue with their startup and manual sync paths. The realtime-free builds
+exist since `1.0.9` (iOS `58`, macOS `66`, uploaded on 2026-11-01); keep that
+compatibility reply while installed builds older than `1.0.9`, including the
+App Store approved `1.0.7`, can still call the endpoint.
 
 ## Repository Hygiene
 
@@ -201,7 +203,8 @@ separate development bundle identifier.
    build if `TUNEAV_API_BASE_URL` is missing, inherited, local, development, or
    preview-shaped.
 
-3. To create and upload a signed Apple Silicon-only App Store Connect build, run:
+3. To create and upload a signed universal (Apple Silicon and Intel) App Store
+   Connect build, run:
 
    ```bash
    vp run macos:release:archive -- --skip-preflight
@@ -212,7 +215,8 @@ separate development bundle identifier.
    for App Store Connect), stable Account AV keychain service
    (`com.avalsys.tuneav.account.v2`), Account AV keychain access group
    (`935PM55U6R.com.avalsys.tuneav`) in both Info.plist and signed
-   entitlements, signing class, team ID, and `arm64` architecture before upload.
+   entitlements, signing class, team ID, and the `arm64` slice (the universal
+   archive also carries `x86_64`) before upload.
    Treat any archive that uses the legacy service
    `com.avalsys.tuneav.account` as invalid, even if App Store Connect accepts
    the upload. That service can make Clerk's macOS legacy migration fallback
@@ -280,7 +284,7 @@ separate development bundle identifier.
 
 9. Before attaching the uploaded build to App Store review, reconcile App Store
    metadata, privacy answers, legal links, subscription text, release notes, and
-   Apple Silicon-only platform expectations with
+   universal (Apple Silicon and Intel) platform expectations with
    [app-store-review.md](app-store-review.md).
 
 10. Capture or upload App Store Connect macOS screenshots at an accepted size
@@ -852,9 +856,9 @@ adoption/deprecation window.
 These checks apply to the next Tune AV client release after the product API
 split:
 
-- Confirm search, station detail, saved radio feedback, song feedback,
-  listening analytics, and realtime session creation use the Tune product
-  backend.
+- Confirm search, station detail, saved radio feedback, song feedback, and
+  listening analytics use the Tune product backend; there is no realtime
+  session request since `1.0.9`.
 - Confirm sign-in, profile, entitlement, subscription, account deletion, app
   linking, terms, privacy, and support flows still use the shared Account
   backend.

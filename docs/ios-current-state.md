@@ -1,56 +1,40 @@
 # Tune AV iOS Current State
 
-Date: 2026-08-01
+Date: 2026-11-07
 
 This is the public source of truth for the current Tune AV Apple clients. It
 describes frontend behavior and local verification only. Release operations,
 approval status, signing, service setup, service consoles, and private evidence
 belong outside this repository.
 
-The current subscription-repair candidates are iOS/iPadOS `1.0.8 (57)` and
-macOS `1.0.8 (65)`, built from public source `126d989` on top of the bounded
-purchase/restore reconciliation repair in `b9b3cd8`. Both governed archives
-passed their platform release, signing, privacy, keychain, architecture, and
-matching dSYM checks, and App Store Connect accepted both uploads on
-2026-08-01. Authenticated readback confirms both builds are `VALID`,
-encryption-exempt, unexpired through 2026-10-29, and `IN_BETA_TESTING` only
-with the internal `Tune AV Test` group. Neither build has been attached or
-submitted to App Review. The `1.0.8` train was required because Apple rejected
-reuse of the closed approved `1.0.7` train before accepting any replacement
-upload.
+Current builds, 2026-11-07:
+
+- The latest TestFlight builds are iOS/iPadOS `1.1.0 (63)` and macOS
+  `1.1.0 (68)`, built from public commit `bad896d` (see the `1.1.0` entry in
+  [CHANGELOG.md](../CHANGELOG.md)). Neither has been submitted to App Review.
+- The latest App Store approved versions are iOS/iPadOS `1.0.7 (56)`, built
+  from public commit `ba140ef`, and macOS `1.0.7 (64)`, built from public
+  commit `d0d4993`. The owner submitted both on 2026-07-29 and confirmed their
+  approval; a signed-in App Store Connect read listed both `1.0.7` platform
+  versions as `Ready for Distribution`. They predate the realtime removal.
+- Since `1.0.9` (iOS `58` and macOS `66`, uploaded to App Store Connect for
+  TestFlight on 2026-11-01) the Apple clients contain no Convex realtime layer,
+  and the macOS app builds universal (Apple Silicon and Intel) again; see the
+  realtime retirement note below.
+
+Earlier TestFlight candidates reached the internal `Tune AV Test` group and
+were never submitted to App Review: iOS/iPadOS `1.0.8 (57)` and macOS
+`1.0.8 (65)` (2026-08-01, public source `126d989` with the bounded
+purchase/restore reconciliation repair in `b9b3cd8`; the `1.0.8` train was
+required because Apple rejected reuse of the closed approved `1.0.7` train),
+and iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)` (2026-07-13, public source
+`515bd93`).
 
 The authoritative cloud-sync boundary is
 [Tune AV Pro Sync Scope](pro-sync-scope.md). TestFlight builds `52` and `61`
 still implement the superseded feedback-sync behavior and must not be promoted.
 Current source implements the narrowed contract and has passed local iOS,
-macOS, localization, and backend-focused verification. Replacement candidates
-iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7 (62)` were accepted for TestFlight
-processing on 2026-07-13. Both finished processing and joined the internal test
-group; macOS `62` is installed and its cold-launch no-feedback-read gate passed.
-
-The current iOS/iPadOS account-transition candidate is `1.0.7 (56)`, built from
-public commit `ba140ef`. Its production configuration and signed Release build
-passed the repository gates, and the same build was installed and accepted on a
-physical iPhone and iPad. The verified archive was accepted by App Store
-Connect on 2026-07-29, finished processing, and is available to the internal
-`Tune AV Test` group. App Store Connect version `1.0.7` now uses build 56,
-manual release, and the narrowed-contract release notes in all five supported
-storefront locales. The global age-rating questionnaire records no social
-media capabilities and remains 4+. The owner submitted the iOS version on
-2026-07-29. The owner subsequently confirmed approval, and a signed-in App
-Store Connect read lists iOS `1.0.7` as `Ready for Distribution`.
-
-The matching macOS account-transition candidate is `1.0.7 (64)`, built from
-public commit `d0d4993`. Its current production configuration, complete 63-test
-suite, archive identity, privacy, signing, architecture, keychain, and dSYM
-checks passed. The owner accepted the exact archived app locally. App Store
-Connect accepted that archive on 2026-07-29, finished processing it, and lists
-build 64 as `Ready to Submit` in the internal `Tune AV Test` group. A macOS
-`1.0.7` App Store version is prepared with build 64, manual release, inherited
-five-screenshot metadata, and the same five localized release notes. The owner
-submitted macOS on 2026-07-29. The owner subsequently confirmed approval, and
-a signed-in App Store Connect read lists macOS `1.0.7` as `Ready for
-Distribution`.
+macOS, localization, and backend-focused verification.
 
 Realtime retirement note, 2026-11-01: the Convex realtime layer was removed
 from both Apple clients. Current source no longer links `ConvexMobile`, no
@@ -376,11 +360,13 @@ build, install, and launch the app.
 
 ## Open Public Work
 
-- release and verify iOS/macOS builds without the realtime layer so the
-  backend `503 realtime_disabled` compatibility reply can later be removed;
 - keep localization keys complete before adding visible SwiftUI copy;
 - continue testing playback and artwork behavior on real devices;
 - keep public docs focused on client behavior, local setup, and local
-  verification;
-- produce and verify the first universal (Apple Silicon and Intel) macOS
-  archive now that the arm64-only constraint is gone.
+  verification.
+
+Completed on 2026-11-01 with `1.0.9` (iOS `58`, macOS `66`): the first iOS and
+macOS builds without the realtime layer, and the first universal (Apple Silicon
+and Intel) macOS archive. The backend `503 realtime_disabled` compatibility
+reply stays while installed builds older than `1.0.9` can still request a
+realtime session.
