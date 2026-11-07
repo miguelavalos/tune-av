@@ -44,6 +44,9 @@ struct StationCompactCarousel: View {
             .padding(.vertical, 2)
         }
         .scrollClipDisabled()
+        // The cards keep a fixed width (258 pt on iPhone) with an 82 pt artwork on the left:
+        // past the second accessibility size the text column would be a few characters wide.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
     private var cardWidth: CGFloat {
@@ -64,6 +67,10 @@ struct StationCompactCarousel: View {
 
 private struct StationCompactCard: View {
     @EnvironmentObject private var audioPlayer: AudioPlayerService
+    /// The text column is as tall as the artwork at the default text size and grows with
+    /// the station name's font, so the same lines fit at every size.
+    @ScaledMetric(relativeTo: .subheadline) private var textColumnHeight: CGFloat = StationCompactMetrics.artworkSize
+    @ScaledMetric(relativeTo: .body) private var favoriteIconSize: CGFloat = 16
 
     let station: Station
     let isFavorite: Bool
@@ -190,7 +197,7 @@ private struct StationCompactCard: View {
                 compactText(showsSecondaryLine: false, showsStatusRow: false)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: StationCompactMetrics.artworkSize, alignment: .center)
+            .frame(height: textColumnHeight, alignment: .center)
             .contentShape(Rectangle())
             .onTapGesture(perform: detailsAction)
             .accessibilityElement(children: .contain)
@@ -213,20 +220,20 @@ private struct StationCompactCard: View {
     private func compactText(showsSecondaryLine: Bool, showsStatusRow: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(station.name)
-                .font(.system(size: 15, weight: .bold))
+                .tuneScaledFont(size: 15, weight: .bold)
                 .foregroundStyle(TuneAVTheme.textPrimary)
                 .lineLimit(showsStatusRow ? nil : 2)
                 .minimumScaleFactor(showsStatusRow ? 1 : 0.8)
 
             Text(compactPrimaryLine)
-                .font(.system(size: 12, weight: .semibold))
+                .tuneScaledFont(size: 12, weight: .semibold)
                 .foregroundStyle(reliableArtist != nil || reliableTitle != nil ? TuneAVTheme.highlight : TuneAVTheme.textSecondary.opacity(0.9))
                 .lineLimit(showsStatusRow ? nil : 2)
                 .minimumScaleFactor(showsStatusRow ? 1 : 0.8)
 
             if showsSecondaryLine {
                 Text(compactSecondaryLine)
-                    .font(.system(size: 11, weight: .medium))
+                    .tuneScaledFont(size: 11, weight: .medium)
                     .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.78))
             }
 
@@ -238,7 +245,7 @@ private struct StationCompactCard: View {
 
                     if compactStatusBadges.isEmpty {
                         Text(compactTertiaryLine)
-                            .font(.system(size: 11, weight: .medium))
+                            .tuneScaledFont(size: 11, weight: .medium)
                             .foregroundStyle(TuneAVTheme.textSecondary.opacity(0.72))
                             .layoutPriority(1)
                     }
@@ -263,7 +270,7 @@ private struct StationCompactCard: View {
             Circle()
                 .stroke(TuneAVTheme.highlight.opacity(0.42), lineWidth: 1)
             Image(systemName: isPlayingCurrentStation ? "pause.fill" : "play.fill")
-                .font(.system(size: 14, weight: .black))
+                .tuneScaledFont(size: 14, weight: .black)
                 .foregroundStyle(isPlayingCurrentStation ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
         }
         .frame(width: StationCompactMetrics.playBadgeSize, height: StationCompactMetrics.playBadgeSize)
@@ -271,7 +278,7 @@ private struct StationCompactCard: View {
 
     private var favoriteButton: some View {
         Button(action: toggleFavorite) {
-            TuneAVSavedStationIcon(isSaved: isFavorite, size: 16)
+            TuneAVSavedStationIcon(isSaved: isFavorite, size: favoriteIconSize)
                 .frame(width: StationCompactMetrics.favoriteButtonSize, height: StationCompactMetrics.favoriteButtonSize)
                 .background(isFavorite ? TuneAVTheme.highlight.opacity(0.14) : Color.white.opacity(0.72), in: Circle())
                 .overlay {

@@ -11,6 +11,12 @@ This project follows semantic versioning once public source releases begin.
   one at random and tries the next on failure (iOS and macOS).
 - The Mac app installs again on macOS 15 and newer; the 26.2 minimum came
   from the removed Convex dependency (macOS).
+- The full player and Home follow the text size chosen in iOS Settings,
+  including the accessibility sizes: station names, song lines, Avi's words
+  and the section titles grow with it and wrap instead of being cut with
+  "…". The player controls, the Home radio carousel, the hero buttons and
+  the mood and genre pills stop growing at the second accessibility size so
+  they keep fitting on the screen (iOS).
 
 ## 1.1.0 - 2026-11-03
 

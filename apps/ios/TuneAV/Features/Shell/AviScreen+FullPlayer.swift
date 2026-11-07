@@ -289,12 +289,12 @@ extension AviScreen {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: isShowingAviActions ? 424 : 96, alignment: .top)
+            .frame(minHeight: isShowingAviActions ? 424 : 96, alignment: .top)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: isShowingAviActions ? 570 : 240, alignment: .top)
+        .frame(minHeight: isShowingAviActions ? 570 : 240, alignment: .top)
         .background(TuneAVTheme.elevatedSurface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
@@ -318,47 +318,66 @@ extension AviScreen {
     func fullPlayerAviSignalSummary(for station: Station) -> some View {
         let selectedFeedback = focusedPrimaryFeedback(for: station)
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(TuneAVTheme.highlight)
-                    .textCase(.uppercase)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+            // One row at the default size; at larger text sizes the label and the
+            // button no longer fit side by side and stack instead of being cut.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 10) {
+                    fullPlayerAviSummaryLabel
 
-                Spacer(minLength: 8)
+                    Spacer(minLength: 8)
 
-                Button {
-                    openFullPlayerAviActions()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 12, weight: .black))
-                        Text(L10n.string("player.avi.moreWithAvi"))
-                            .font(.system(size: 12, weight: .black))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.78)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 9, weight: .black))
-                    }
-                    .foregroundStyle(TuneAVTheme.brandBlack)
-                    .padding(.horizontal, 10)
-                    .frame(height: 32)
-                    .background(TuneAVTheme.highlight, in: Capsule(style: .continuous))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(TuneAVTheme.brandBlack.opacity(0.08), lineWidth: 1)
-                    }
+                    fullPlayerMoreWithAviButton
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("avi.actions.toggle")
+
+                VStack(alignment: .leading, spacing: 8) {
+                    fullPlayerAviSummaryLabel
+
+                    fullPlayerMoreWithAviButton
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 32)
+            .frame(minHeight: 32)
 
             fullPlayerHeartButton(for: station, selectedFeedback: selectedFeedback)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    var fullPlayerAviSummaryLabel: some View {
+        Text(hasCurrentSongContext ? L10n.string("shell.avi.actions.songFeedback") : L10n.string("shell.avi.actions.radioFeedback"))
+            .tuneScaledFont(size: 11, weight: .black)
+            .foregroundStyle(TuneAVTheme.highlight)
+            .textCase(.uppercase)
+            .lineLimit(2)
+            .minimumScaleFactor(0.8)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    var fullPlayerMoreWithAviButton: some View {
+        Button {
+            openFullPlayerAviActions()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .tuneScaledFont(size: 12, weight: .black)
+                Text(L10n.string("player.avi.moreWithAvi"))
+                    .tuneScaledFont(size: 12, weight: .black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                Image(systemName: "chevron.down")
+                    .tuneScaledFont(size: 9, weight: .black)
+            }
+            .foregroundStyle(TuneAVTheme.brandBlack)
+            .padding(.horizontal, 10)
+            .frame(height: fullPlayerAviActionsButtonHeight)
+            .background(TuneAVTheme.highlight, in: Capsule(style: .continuous))
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(TuneAVTheme.brandBlack.opacity(0.08), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("avi.actions.toggle")
     }
 
     func fullPlayerHeartButton(for station: Station, selectedFeedback: TuneAVStationFeedback?) -> some View {
@@ -376,16 +395,17 @@ extension AviScreen {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: isSaved ? "heart.fill" : "heart")
-                    .font(.system(size: 20, weight: .black))
+                    .tuneScaledFont(size: 20, weight: .black)
                     .foregroundStyle(isSaved ? TuneAVTheme.highlight : TuneAVTheme.textPrimary)
                     .symbolEffect(.bounce, value: isSaved)
                     .accessibilityHidden(true)
 
                 Text(title)
-                    .font(.system(size: 16, weight: .black, design: .rounded))
+                    .tuneScaledFont(size: 16, weight: .black, design: .rounded)
                     .foregroundStyle(TuneAVTheme.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 8)
 
@@ -395,8 +415,9 @@ extension AviScreen {
                 }
             }
             .padding(.horizontal, 14)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(minHeight: fullPlayerHeartButtonHeight)
             .background(
                 isSaved ? TuneAVTheme.highlight.opacity(0.16) : TuneAVTheme.borderSubtle.opacity(0.32),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)

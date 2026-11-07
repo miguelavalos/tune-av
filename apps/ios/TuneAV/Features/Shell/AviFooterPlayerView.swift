@@ -115,6 +115,9 @@ struct AviExpandedFooterPlayerView: View {
         }
         .frame(height: 72)
         .frame(maxWidth: .infinity)
+        // The controls are 54 and 72 pt circles in one row: past the second accessibility
+        // size their icons and the sleep timer's minutes would no longer fit inside them.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
     private var playPauseButton: some View {
@@ -135,7 +138,7 @@ struct AviExpandedFooterPlayerView: View {
                         .tint(audioPlayer.isPlaying ? TuneAVTheme.brandBlack : .white)
                 } else {
                     Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 22, weight: .bold))
+                        .tuneScaledFont(size: 22, weight: .bold)
                         .foregroundStyle(audioPlayer.isPlaying ? TuneAVTheme.brandBlack : .white)
                 }
             }
@@ -285,10 +288,10 @@ struct AviExpandedFooterPlayerView: View {
                 .fill(TuneAVTheme.mutedSurface.opacity(0.82))
             VStack(spacing: 1) {
                 Image(systemName: "timer")
-                    .font(.system(size: remainingMinutes == nil ? 18 : 15, weight: .black))
+                    .tuneScaledFont(size: remainingMinutes == nil ? 18 : 15, weight: .black)
             if let remainingMinutes {
                 Text("\(remainingMinutes) min")
-                    .font(.system(size: 8, weight: .black))
+                    .tuneScaledFont(size: 8, weight: .black, relativeTo: .caption2)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)

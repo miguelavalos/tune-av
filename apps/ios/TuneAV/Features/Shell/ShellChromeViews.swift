@@ -55,7 +55,7 @@ struct LiveNowPanel: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text(L10n.string("shell.liveNow.title"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .tuneScaledFont(size: 12, weight: .semibold)
                     .tracking(1.2)
                     .foregroundStyle(TuneAVTheme.highlight)
 
@@ -81,21 +81,21 @@ struct LiveNowPanel: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(audioPlayer.currentTrackTitle ?? currentStation?.name ?? L10n.string("shell.liveNow.ready"))
-                        .font(.system(size: 19, weight: .bold))
+                        .tuneScaledFont(size: 19, weight: .bold)
                         .foregroundStyle(TuneAVTheme.textInverse)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if let currentTrackArtist = audioPlayer.currentTrackArtist, !currentTrackArtist.isEmpty {
                         Text(currentTrackArtist)
-                            .font(.system(size: 13, weight: .semibold))
+                            .tuneScaledFont(size: 13, weight: .semibold)
                             .foregroundStyle(TuneAVTheme.highlight)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Text(audioPlayer.currentTrackAlbumTitle ?? currentStation?.shortMeta ?? L10n.string("shell.liveNow.subtitle.empty"))
-                        .font(.system(size: 12, weight: .medium))
+                        .tuneScaledFont(size: 12, weight: .medium)
                         .foregroundStyle(TuneAVTheme.textInverse.opacity(0.68))
                         .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(3)
                 }
             }
         }

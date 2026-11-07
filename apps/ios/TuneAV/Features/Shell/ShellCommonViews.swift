@@ -10,17 +10,19 @@ struct EmptyLibraryState: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .tuneScaledFont(size: 16, weight: .semibold)
                 .foregroundStyle(TuneAVTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(detail)
-                .font(.system(size: 14, weight: .medium))
+                .tuneScaledFont(size: 14, weight: .medium)
                 .foregroundStyle(TuneAVTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if let actionTitle, let action {
                 Button(action: action) {
                     Label(actionTitle, systemImage: actionSystemImage ?? "arrow.right")
-                        .font(.system(size: 14, weight: .black))
+                        .tuneScaledFont(size: 14, weight: .black)
                         .foregroundStyle(TuneAVTheme.textInverse)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
