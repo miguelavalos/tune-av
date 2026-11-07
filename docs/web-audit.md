@@ -61,12 +61,10 @@ Tune AV app web now exists at `apps/web`.
 - `apps/web` now has `qa:shared`, powered by the shared Apps AV smoke QA runner
   across `en`, `es`, `fr`, `de`, and `ca` for public routes, protected gates,
   language preservation, product identity, and no guest product copy.
-- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
-  Worker version `f7581398-52fe-45a8-a9dc-977727d4183d`; shared web QA passed
-  across five locales and eight routes.
-- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
-  version `78ee5cc2-2854-4e9f-aad3-41ebb75bdb1f`; shared web QA passed across
-  five locales and eight routes.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com`; shared
+  web QA passed across five locales and eight routes.
+- Production deploy completed for `https://app.tune-av.avalsys.com`; shared web
+  QA passed across five locales and eight routes.
 
 ## 2026-06-19 Player Hydration Hotfix
 
@@ -74,12 +72,10 @@ Tune AV app web now exists at `apps/web`.
   restores local favorites/player state after mount instead of during
   hydration.
 - Hotfix commit `955fcc4` was pushed to `main`.
-- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
-  Worker version `1a755412-cd49-4a2a-bc03-2bfda033576e`; shared web QA passed
-  across five locales and eight routes.
-- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
-  version `dff8a094-b4c7-4fa8-b737-eeaff7619aba`; shared web QA passed across
-  five locales and eight routes.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com`; shared
+  web QA passed across five locales and eight routes.
+- Production deploy completed for `https://app.tune-av.avalsys.com`; shared web
+  QA passed across five locales and eight routes.
 - In-app browser QA on production passed for signed-in `/listen?lang=es`,
   station playback attempt, persisted player reload, full player, and mobile
   viewport. No new React hydration errors were captured in fresh production
@@ -91,9 +87,8 @@ Tune AV app web now exists at `apps/web`.
   `@avalsys/apps-av-web`.
 - The settings screen exposes the shared engine list through shared
   `SettingsSelect` rather than product-local buttons or form styling.
-- Production deploy completed for `https://app.tune-av.avalsys.com` with Worker
-  version `045ac1dd-2025-4191-81bb-18dde4855f28`; HTTP smoke passed for `/` and
-  `/settings`.
+- Production deploy completed for `https://app.tune-av.avalsys.com`; HTTP smoke
+  passed for `/` and `/settings`.
 
 ## 2026-11-01 Account-Only Reduction
 
@@ -145,10 +140,9 @@ Tune AV app web now exists at `apps/web`.
   (CSS 58.1 kB to 47.8 kB); player and public-scene CSS and six unused
   brand images under `public/assets` were removed. Typecheck, `vp test run` (i18n parity test), and
   `build:preview` pass.
-- Preview deploy completed for `https://app.tune-av-preview.avalsys.com` with
-  Worker version `1fe58fe7-3c4e-4724-97d4-a4b96a083d34`. HTTP checks: `/` 200,
-  `/account?lang=es` 200, `/settings?lang=fr` 200, `/sign-in` 200, `/listen`
-  404.
+- Preview deploy completed for `https://app.tune-av-preview.avalsys.com`. HTTP
+  checks: `/` 200, `/account?lang=es` 200, `/settings?lang=fr` 200, `/sign-in`
+  200, `/listen` 404.
 - Known limitation, pre-existing: the server render emits only the document
   head; the body is filled on the client because `SignedIn`/`SignedOut` in
   `@avalsys/account-av-web` wait for Clerk to load. Production

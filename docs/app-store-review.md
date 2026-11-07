@@ -21,9 +21,9 @@ approval records outside this repository.
   Apple Silicon-only constraint came from the Convex Swift binary dependency,
   removed on 2026-11-01.
 - macOS TestFlight/App Store auth uses the stable Account AV keychain service
-  `com.avalsys.tuneav.account.v2` and keychain access group
-  `935PM55U6R.com.avalsys.tuneav`; repeated Keychain access prompts are not
-  expected in a clean signed build.
+  `com.avalsys.tuneav.account.v2` and the team-prefixed keychain access group
+  `<team id>.com.avalsys.tuneav` set in `apps/macos/Config/Release.xcconfig`;
+  repeated Keychain access prompts are not expected in a clean signed build.
 - The old macOS Account AV keychain service `com.avalsys.tuneav.account` must
   not be reused. If a macOS TestFlight build prompts for login-keychain access
   to that service, discard the build and ship a new build with the `.v2`
@@ -34,88 +34,24 @@ approval records outside this repository.
 
 ## Current App Store Status
 
-- Current builds, 2026-11-07: the latest TestFlight builds are iOS/iPadOS
-  `1.1.1 (64)` and macOS `1.1.1 (69)` from public commit `714bac4`, uploaded
-  on 2026-11-07 and available to the internal testers only; the previous ones
-  are iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)` from public commit
-  `bad896d`, uploaded on 2026-11-04. None of them has been submitted to App
-  Review. The latest App Store approved versions remain iOS/iPadOS `1.0.7 (56)`
-  and macOS `1.0.7 (64)` (approval checkpoint below).
-  `1.0.9` (iOS `58`, macOS `66`, uploaded on 2026-11-01) was the first train
-  without the Convex realtime layer and the first universal macOS archive.
-
-- Subscription-repair delivery, 2026-08-01: iOS/iPadOS `1.0.8 (57)` and macOS
-  `1.0.8 (65)` contain bounded purchase/restore reconciliation and were
-  accepted by App Store Connect. Authenticated readback now confirms both
-  builds are `VALID`, encryption-exempt, unexpired through 2026-10-29, and
-  `IN_BETA_TESTING` only with the internal `Tune AV Test` group. Neither build
-  has been attached or submitted to App Review.
-
-- Approval checkpoint, 2026-07-29: the owner confirmed approval of
-  iOS/iPadOS `1.0.7 (56)` and macOS `1.0.7 (64)`. A signed-in App Store Connect
-  read listed both `1.0.7` platform versions as `Ready for Distribution`. No
-  agent performed a post-approval manual-release action. Verify both exact
-  builds after installation from App Store before closing the replacement
-  release or retiring compatibility for older clients.
-
-- Replacement delivery, 2026-07-13: iOS/iPadOS `1.0.7 (53)` and macOS `1.0.7
-  (62)` were archived from public source commit `515bd93`, passed their release,
-  security, privacy, signing, and dSYM checks, and were accepted for processing
-  by App Store Connect at 19:15 and 19:18 CEST. Apple then marked both uploads
-  complete, made builds `53` and `62` ready to test, and assigned them to the
-  internal `Tune AV Test` group. macOS `62` was automatically installed and its
-  signed-in Pro cold launch passed the no-feedback-read gate. Neither build was
-  submitted to App Review. Install iOS `53` and complete the remaining focused
-  physical traffic gate before promotion.
-
-- Product-scope decision, 2026-07-13: TestFlight iOS `1.0.7 (52)` and macOS
-  `1.0.7 (61)` still contain the superseded feedback bootstrap/restore contract
-  and user-facing copy. Their saved-radio and saved-song traffic evidence is
-  valid, but neither build is the final App Review candidate. Submit only a
-  later build that implements [the approved scope](pro-sync-scope.md) and passes
-  the focused migration gates.
-
-- TestFlight delivery checkpoint, 2026-07-10: iPhone/iPad `1.0.7 (46)` and
-  macOS `1.0.7 (55)` were accepted for processing by App Store Connect from
-  public commit `1f65bc0`. Both passed final archive and privacy validation and
-  include bounded Pro realtime-session renewal. Processing completion and
-  tester-group availability remain to be confirmed; neither delivery is an App
-  Review submission.
-- iPhone/iPad approved baseline: `1.0.5 (44)` per 2026-07-03 operator report.
-- macOS approved baseline: `1.0.5 (47)` per 2026-07-03 operator report.
-- iPhone/iPad `1.0.6 (45)` was uploaded to App Store Connect and submitted to
-  App Review on 2026-07-03 per operator report; approval is pending. It carries
-  the Sentry diagnostic filter for expected unavailable promo-code responses.
-- macOS `1.0.6 (49)` was uploaded to App Store Connect and submitted to App
-  Review on 2026-07-03; approval is pending. Review submission id:
-  `5e5d7cdb-7827-4472-ae9f-f737dd92fb24`. It carries the Music history
-  list-source fix, macOS radio-library regression coverage, and contextual
-  macOS Avi navigation. App Store Connect rejects new `1.0.5` builds after the
-  approved `1.0.5 (47)` train, so macOS must use the next marketing version for
-  TestFlight submissions. The previous macOS `1.0.6 (48)` package was uploaded
-  to App Store Connect on 2026-07-03 before the contextual Avi navigation
-  update.
-- Previous cross-platform baseline: iOS/iPadOS `1.0.4 (42)` and macOS
-  `1.0.4 (45)` were approved on 2026-07-02 per operator report.
-- The current approved maintenance build keeps the Account/Tune AV Pro state in
-  a loading state until the latest account access refresh completes.
-- macOS App Store first release review used the same Tune AV app record and was
-  submitted after the build, metadata, subscription setup, manual release
-  setting, screenshots, and macOS TestFlight Pro purchase/restore visibility
-  checks were completed in App Store Connect.
-- iOS public release notes can stay generic for this maintenance release, for
-  example `Bug fixes.`.
-- macOS is a first platform release. Do not use maintenance-release language such
-  as `Bug fixes.` for macOS. Use first-release product copy such as
-  `Tune AV is now available on Mac.` where App Store Connect asks for
-  promotional text or release copy.
-- macOS release preview v1 screenshots are prepared locally in
-  `docs/app-store/screenshots/macos/`:
-  `01-home.png`, `02-search.png`, `03-music.png`, `04-library.png`, and
-  `05-profile.png`.
-- The prepared macOS screenshot assets are `1440 x 900` PNGs and should be
-  kept locally as the release preview v1 source assets. They are intentionally
-  local/ignored release assets, not public-source files.
+- Latest App Store approved versions: iOS/iPadOS `1.0.7 (56)` and macOS
+  `1.0.7 (64)`, approved in July 2026.
+- Latest TestFlight builds: iOS/iPadOS `1.1.1 (64)` and macOS `1.1.1 (69)`
+  from public commit `714bac4`, uploaded on 2026-11-07 and available to the
+  internal testers only; not submitted to App Review. Every TestFlight build
+  since `1.0.8` has had the same scope.
+- [ios-current-state.md](ios-current-state.md) and the delivery checkpoints in
+  [release-checklist.md](release-checklist.md) carry the public build list.
+  Upload, processing, tester-group and review records live in the private
+  release runbook.
+- macOS has shipped on the App Store since `1.0.4`, so release notes for both
+  platforms describe the changes of the version; first-release copy such as
+  `Tune AV is now available on Mac.` no longer applies.
+- macOS App Store screenshots are prepared locally in
+  `docs/app-store/screenshots/macos/` (`01-home.png`, `02-search.png`,
+  `03-music.png`, `04-library.png`, `05-profile.png`, `1440 x 900` PNGs). The
+  folder is intentionally gitignored: they are release assets, not public
+  source files.
 
 ## Suggested Review Notes
 
