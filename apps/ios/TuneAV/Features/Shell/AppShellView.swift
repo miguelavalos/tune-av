@@ -97,6 +97,9 @@ struct AppShellView: View {
     /// Measured height of the full player card; it is `TuneNowPlayingCardMetric.height` at
     /// the default text size and grows with larger text sizes.
     @State var fullPlayerCardHeight: CGFloat = TuneNowPlayingCardMetric.height
+    /// Measured height of the mini player; it is at most `MiniPlayerMetric.height` at the
+    /// default text size and grows with larger text sizes.
+    @State var miniPlayerHeight: CGFloat = MiniPlayerMetric.height
 
     let stationService = StationService()
     let stationNowPlayingService = NowPlayingService()
@@ -307,6 +310,11 @@ struct AppShellView: View {
                         artworkMorphNamespace: playerArtworkMorphNamespace
                     ) {
                         openNowPlayingFullPlayer(displayStation)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        miniPlayerHeight = height
                     }
                     .transition(.opacity)
                 }
@@ -767,7 +775,7 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 186
         }
-        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 224
+        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 224 + miniPlayerExtraHeight
     }
 
     var shellFooterBackdropHeight: CGFloat {
@@ -777,13 +785,19 @@ struct AppShellView: View {
         if isAviFullPlayerActive && isAviActionPanelOpen {
             return 156
         }
-        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 210
+        return isAviFullPlayerActive ? 580 + fullPlayerCardExtraHeight : 210 + miniPlayerExtraHeight
     }
 
     /// How much the full player card has grown past its default height because of the
     /// text size chosen in Settings; zero at the default size.
     var fullPlayerCardExtraHeight: CGFloat {
         max(0, fullPlayerCardHeight - TuneNowPlayingCardMetric.height)
+    }
+
+    /// How much the mini player has grown past its tallest default height because of the
+    /// text size chosen in Settings; zero at the default size.
+    var miniPlayerExtraHeight: CGFloat {
+        max(0, miniPlayerHeight - MiniPlayerMetric.height)
     }
 
     var shellFooterPlayerTabSpacing: CGFloat {

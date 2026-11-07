@@ -17,6 +17,10 @@ This project follows semantic versioning once public source releases begin.
   "…". The player controls, the Home radio carousel, the hero buttons and
   the mood and genre pills stop growing at the second accessibility size so
   they keep fitting on the screen (iOS).
+- The mini player stays compact at large text sizes: it follows the text size
+  up to xxxLarge and stops there, its play icon grows like the previous and
+  next ones, and Home, Explore and Library scroll clear of it instead of
+  ending under it (iOS).
 
 ## 1.1.0 - 2026-11-03
 
