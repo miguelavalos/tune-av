@@ -63,7 +63,7 @@ struct StationService {
         session: URLSession = TuneAVURLSessions.catalog,
         avalsysBaseURL: URL?,
         avalsysPopularBaseURL: URL?,
-        radioBrowserBaseURL: URL = URL(string: "https://de1.api.radio-browser.info/json/stations/search")!,
+        radioBrowserMirrors: TuneAVRadioBrowserMirrors = .shared,
         backendGate: TuneAVBackendHealthGate = .shared,
         responseCache: TuneAVStationResponseCache = .shared
     ) {
@@ -71,7 +71,7 @@ struct StationService {
             session: session,
             avalsysBaseURL: avalsysBaseURL,
             avalsysPopularBaseURL: avalsysPopularBaseURL,
-            radioBrowserBaseURL: radioBrowserBaseURL,
+            radioBrowserMirrors: radioBrowserMirrors,
             fallbacks: TuneAVStationFallbacks(
                 unnamed: L10n.string("stationService.fallback.unnamed"),
                 unknownCountry: L10n.string("stationService.fallback.unknownCountry"),

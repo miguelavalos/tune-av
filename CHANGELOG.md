@@ -6,6 +6,10 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Explore keeps working when one Radio Browser mirror is down: the emergency
+  catalog fallback now resolves the live mirrors instead of a fixed one, picks
+  one at random and tries the next on failure (iOS and macOS).
+
 ## 1.1.0 - 2026-11-03
 
 iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)`. Siri, Control Center, widgets
