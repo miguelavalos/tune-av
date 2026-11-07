@@ -851,24 +851,6 @@ realtime endpoint. Retain that legacy deployment until both replacements are
 verified after App Store installation and complete an explicit
 adoption/deprecation window.
 
-## Pending Product API Transition Checks
-
-These checks apply to the next Tune AV client release after the product API
-split:
-
-- Confirm search, station detail, saved radio feedback, song feedback, and
-  listening analytics use the Tune product backend; there is no realtime
-  session request since `1.0.9`.
-- Confirm sign-in, profile, entitlement, subscription, account deletion, app
-  linking, terms, privacy, and support flows still use the shared Account
-  backend.
-- Confirm signed-in Free and Pro flows still behave correctly if the Tune
-  product backend is reachable but the shared Account backend is temporarily
-  unavailable, and vice versa.
-- Keep existing App Store compatibility in mind: older installed clients may
-  still use the shared Account backend for Tune product routes until a newer
-  build has been published and adopted.
-
 ## macOS Listening Analytics Privacy Gate
 
 - `apps/macos/Supporting/PrivacyInfo.xcprivacy` must remain in the app target and
@@ -926,3 +908,18 @@ account-only web app).
 - No App Review attachment or submission, no external testing, no backend or
   production-data change from this delivery. Generated production config was
   removed after the uploads.
+
+## 1.1.0 and 1.1.1 TestFlight delivery checkpoints, 2026-11
+
+- `1.1.0`, 2026-11-04: iOS/iPadOS `1.1.0 (63)` and macOS `1.1.0 (68)` were
+  archived from public source `bad896d` (#121) and uploaded to App Store
+  Connect. Both are available to the internal testers only; neither was
+  submitted to App Review.
+- `1.1.1`, 2026-11-07: iOS/iPadOS `1.1.1 (64)` and macOS `1.1.1 (69)` were
+  archived from public source `714bac4` (#131) and uploaded to App Store
+  Connect, same scope: internal testers only, no App Review submission. The
+  macOS deployment target is 15.0 again since #122, so the Mac app installs on
+  macOS 15 and newer. The changes are listed in
+  [CHANGELOG.md](../CHANGELOG.md) under `1.1.1 - 2026-11-07`.
+- The latest App Store approved versions remain iOS/iPadOS `1.0.7 (56)` and
+  macOS `1.0.7 (64)`.

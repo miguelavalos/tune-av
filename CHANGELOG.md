@@ -6,6 +6,9 @@ This project follows semantic versioning once public source releases begin.
 
 ## Unreleased
 
+- Docs: the public docs record the 1.1.1 TestFlight builds and drop two
+  obsolete sections.
+
 ## 1.1.1 - 2026-11-07
 
 iOS/iPadOS `1.1.1 (64)` and macOS `1.1.1 (69)`. Both platforms resolve the
