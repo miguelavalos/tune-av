@@ -171,8 +171,12 @@ final class FavoriteStation {
     var geoLongitude: Double?
     var stationSnapshotJSON: String?
     var createdAt: Date
+    /// Position in the order the listener sets in Library. `nil` on rows saved before the order
+    /// existed; `LibraryStore` gives them one on load (see `FavoriteStationOrder`). Device-local:
+    /// never part of the Pro sync payload (`docs/pro-sync-scope.md`).
+    var sortPosition: Int?
 
-    init(station: Station, createdAt: Date = .now) {
+    init(station: Station, createdAt: Date = .now, sortPosition: Int? = nil) {
         self.stationID = station.id
         self.name = station.name
         self.country = station.country
@@ -197,6 +201,7 @@ final class FavoriteStation {
         self.geoLongitude = station.geoLongitude
         self.stationSnapshotJSON = station.persistenceSnapshotJSON
         self.createdAt = createdAt
+        self.sortPosition = sortPosition
     }
 
     var stationSnapshot: Station? {

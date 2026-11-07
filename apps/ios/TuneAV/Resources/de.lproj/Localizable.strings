@@ -885,6 +885,9 @@
 "shell.library.sort.mostPlayed" = "Meistgehört";
 "shell.library.sort.recentlyAdded" = "Zuletzt hinzugefügt";
 "shell.library.sort.title" = "Sortierung";
+"shell.library.reorder.action" = "Neu anordnen";
+"shell.library.reorder.hint" = "Ziehe ein Radio am Griff, um die Reihenfolge zu ändern. Zurück und Weiter folgen ihr.";
+"shell.library.reorder.title" = "Reihenfolge der gespeicherten Radios";
 "shell.libraryHub.segment.radios" = "Radios";
 "shell.libraryHub.segment.songs" = "Songs";
 "shell.libraryHub.segments" = "Bibliotheksbereiche";

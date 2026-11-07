@@ -647,7 +647,9 @@ final class LibraryStoreTests: XCTestCase {
             recentLimit: 10
         )
 
-        XCTAssertEqual(store.favoriteStations().map(\.id), Array(Station.samples.prefix(2)).map(\.id).reversed())
+        // Saved radios keep the order the listener sets; a new save goes to the end, so the seeded
+        // favorites list in save order while recents stay newest first.
+        XCTAssertEqual(store.favoriteStations().map(\.id), Array(Station.samples.prefix(2)).map(\.id))
         XCTAssertEqual(store.recentStations().map(\.id), Array(Station.samples.prefix(3)).map(\.id).reversed())
         XCTAssertEqual(store.discoveries.map(\.title).sorted(), ["Midnight City", "Sweet Disposition"])
         XCTAssertEqual(store.discoveries.filter(\.isMarkedInteresting).map(\.title), ["Sweet Disposition"])

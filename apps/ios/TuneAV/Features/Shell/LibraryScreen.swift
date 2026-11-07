@@ -51,6 +51,7 @@ struct LibraryScreen: View {
     let toggleFavorite: (Station) -> Void
     let showStationDetails: (Station, AudioPlayerService.PlaybackQueue.Source, [Station]?, RadioLibraryMode?, Bool?) -> Void
     @State private var browserDestination: BrowserDestination?
+    @State private var isShowingFavoriteReorder = false
 
     var body: some View {
         let showsOverview = isShowingOverview && trimmedQuery.isEmpty
@@ -94,6 +95,15 @@ struct LibraryScreen: View {
         .background(TuneAVTheme.shellBackground.ignoresSafeArea())
         .sheet(item: $browserDestination) { destination in
             InAppBrowserView(destination: destination)
+        }
+        .sheet(isPresented: $isShowingFavoriteReorder) {
+            LibraryFavoriteReorderSheet(
+                stations: favorites,
+                moveStations: { source, destination in
+                    libraryStore.moveFavorites(fromOffsets: source, toOffset: destination)
+                },
+                onDismiss: { isShowingFavoriteReorder = false }
+            )
         }
         .onAppear {
             normalizeInitialMode()
@@ -199,6 +209,7 @@ struct LibraryScreen: View {
                     value: favorites.count,
                     systemImage: "dot.radiowaves.left.and.right",
                     tint: TuneAVTheme.highlight,
+                    accessibilityIdentifier: "library.overview.saved",
                     action: { openMode(.saved) }
                 )
                 RadioOverviewMetricCard(
@@ -308,6 +319,15 @@ struct LibraryScreen: View {
     }
 
     private func radioDetailSection(_ derivedState: DerivedState) -> some View {
+        // The reorder control stays outside the station list: the list's accessibility identifier
+        // is applied to every child of its stack and would replace the button's own.
+        VStack(alignment: .leading, spacing: 12) {
+            favoriteReorderControl
+            radioStationList(derivedState)
+        }
+    }
+
+    private func radioStationList(_ derivedState: DerivedState) -> some View {
         let snapshot = derivedState.activeStationSnapshot
         return VStack(alignment: .leading, spacing: 12) {
             if snapshot.filteredStations.isEmpty {
@@ -346,6 +366,34 @@ struct LibraryScreen: View {
         .accessibilityIdentifier("library.section.\(selectedMode.rawValue)")
     }
 
+    /// Opens the sheet where the listener drags saved radios into the order Library and the
+    /// previous and next buttons follow. Only the whole Saved list is reordered, never a search.
+    @ViewBuilder
+    private var favoriteReorderControl: some View {
+        if selectedMode == .saved, trimmedQuery.isEmpty, favorites.count > 1 {
+            HStack {
+                Spacer(minLength: 0)
+
+                Button {
+                    AVHaptics.perform(.openPanel)
+                    isShowingFavoriteReorder = true
+                } label: {
+                    Label(L10n.string("shell.library.reorder.action"), systemImage: "arrow.up.arrow.down")
+                        .tuneScaledFont(size: 13, weight: .black)
+                        .foregroundStyle(TuneAVTheme.highlight)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 36)
+                        .background(TuneAVTheme.highlight.opacity(0.10), in: Capsule())
+                        .overlay {
+                            Capsule().stroke(TuneAVTheme.highlight.opacity(0.22), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("library.saved.reorder")
+            }
+        }
+    }
+
     private func radioDerivedState(includeDetail: Bool) -> DerivedState {
         let tunedStations = (favorites + recents).uniquedByStationID().filter { stationFeedback[$0.id] != nil }
         let musicStations = musicStations
@@ -369,7 +417,8 @@ struct LibraryScreen: View {
 
         switch selectedMode {
         case .saved:
-            baseStations = sortedStations(favorites, sort: savedSort, recentRanks: recentRanks)
+            // The order the listener set (`LibraryStore.favorites`); previous and next follow it.
+            baseStations = favorites
         case .recent:
             baseStations = sortedStations(recents, sort: recentSort, recentRanks: recentRanks)
         case .tuned:

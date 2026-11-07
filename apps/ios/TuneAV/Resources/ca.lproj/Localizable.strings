@@ -885,6 +885,9 @@
 "shell.library.sort.mostPlayed" = "Més escoltades";
 "shell.library.sort.recentlyAdded" = "Afegides recentment";
 "shell.library.sort.title" = "Ordre";
+"shell.library.reorder.action" = "Reordena";
+"shell.library.reorder.hint" = "Arrossega una ràdio per la seva nansa per canviar l'ordre. Anterior i següent el segueixen.";
+"shell.library.reorder.title" = "Ordre de les ràdios desades";
 "shell.libraryHub.segment.radios" = "Ràdios";
 "shell.libraryHub.segment.songs" = "Cançons";
 "shell.libraryHub.segments" = "Seccions de la biblioteca";
